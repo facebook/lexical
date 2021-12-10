@@ -11,23 +11,33 @@ import type {
   OutlineEditor,
   EditorState,
   OutlineNode,
+  Selection,
   NodeKey,
   IntentionallyMarkedAsDirtyElement,
   CommandListenerEditorPriority,
 } from 'outline';
 
-import {$isTextNode, isRootNode} from 'outline';
+import {$isTextNode, $isElementNode, isRootNode, $getSelection} from 'outline';
 import {useCallback, useEffect, useMemo} from 'react';
 
+type MergeAction = 0 | 1 | 2;
 const MERGE = 0;
 const NO_MERGE = 1;
 const DISCARD = 2;
+
+type ChangeType = 0 | 1 | 2 | 3 | 4;
+const OTHER = 0;
+const COMPOSING_CHARACTER = 1;
+const INSERT_CHARACTER_AFTER_SELECTION = 2;
+const DELETE_CHARACTER_BEFORE_SELECTION = 3;
+const DELETE_CHARACTER_AFTER_SELECTION = 4;
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
 export type HistoryStateEntry = {
   editor: OutlineEditor,
   editorState: EditorState,
+  undoSelection?: Selection | null,
 };
 
 export type HistoryState = {
@@ -68,80 +78,172 @@ function getDirtyNodes(
   return nodes;
 }
 
-function getMergeAction(
+function getChangeType(
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
   dirtyLeavesSet: Set<NodeKey>,
   dirtyElementsSet: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-  tags: Set<string>,
-  canMergeWithinDelay: boolean,
-): 0 | 1 | 2 {
-  // If we have an editor state that doesn't want its history
-  // recorded then we always merge the changes.
-  if (tags.has('without-history')) {
-    return MERGE;
+  isComposing: boolean,
+): ChangeType {
+  if (
+    prevEditorState === null ||
+    (dirtyLeavesSet.size === 0 && dirtyElementsSet.size === 0)
+  ) {
+    return OTHER;
   }
-  if (prevEditorState === null) {
-    return NO_MERGE;
-  }
-  const selection = nextEditorState._selection;
+
+  const nextSelection = nextEditorState._selection;
   const prevSelection = prevEditorState._selection;
-  const hasDirtyNodes = dirtyLeavesSet.size > 0 || dirtyElementsSet.size > 0;
-  if (!hasDirtyNodes) {
-    if (prevSelection === null && selection !== null) {
-      return MERGE;
-    }
-    return DISCARD;
+  if (isComposing) {
+    return COMPOSING_CHARACTER;
+  }
+  if (
+    nextSelection === null ||
+    prevSelection === null ||
+    !prevSelection.isCollapsed() ||
+    !nextSelection.isCollapsed()
+  ) {
+    return OTHER;
   }
   const dirtyNodes = getDirtyNodes(
     nextEditorState,
     dirtyLeavesSet,
     dirtyElementsSet,
   );
-  if (dirtyNodes.length === 1 && canMergeWithinDelay) {
-    const prevNodeMap = prevEditorState._nodeMap;
-    const nextDirtyNode = dirtyNodes[0];
-    const prevDirtyNodeKey = nextDirtyNode.__key;
-    const prevDirtyNode = prevNodeMap.get(prevDirtyNodeKey);
+
+  if (dirtyNodes.length === 0) {
+    return OTHER;
+  }
+
+  // Catching the case when inserting new text node into an element (e.g. first char in paragraph/list/etc),
+  // relying on selection change: anchor was within element, and after the change it'll be within newly
+  // created text node with 1 char offset.
+  if (dirtyNodes.length > 1) {
+    const nextNodeMap = nextEditorState._nodeMap;
+    const elementNode = nextNodeMap.get(prevSelection.anchor.key);
+    const textNode = nextNodeMap.get(nextSelection.anchor.key);
     if (
-      prevDirtyNode !== undefined &&
-      $isTextNode(prevDirtyNode) &&
-      $isTextNode(nextDirtyNode) &&
-      prevDirtyNode.__mode === nextDirtyNode.__mode
+      !$isTextNode(textNode) ||
+      !$isElementNode(elementNode) ||
+      prevEditorState._nodeMap.has(textNode.__key) ||
+      textNode.__text.length !== 1 ||
+      nextSelection.anchor.offset !== 1
     ) {
-      const prevText = prevDirtyNode.__text;
-      const nextText = nextDirtyNode.__text;
-      if (prevText === '') {
-        return NO_MERGE;
-      }
-      const textDiff = nextText.length - prevText.length;
-      if (prevText === nextText) {
+      return OTHER;
+    }
+
+    const hasOnlyOneTextNode = dirtyNodes.every(
+      (node, index) => node === textNode || !$isTextNode(node),
+    );
+    return hasOnlyOneTextNode ? INSERT_CHARACTER_AFTER_SELECTION : OTHER;
+  }
+
+  const nextDirtyNode = dirtyNodes[0];
+  const prevDirtyNode = prevEditorState._nodeMap.get(nextDirtyNode.__key);
+  if (
+    !$isTextNode(prevDirtyNode) ||
+    !$isTextNode(nextDirtyNode) ||
+    prevDirtyNode.__mode !== nextDirtyNode.__mode
+  ) {
+    return OTHER;
+  }
+
+  const prevText = prevDirtyNode.__text;
+  const nextText = nextDirtyNode.__text;
+  if (prevText === nextText) {
+    return OTHER;
+  }
+
+  const nextAnchor = nextSelection.anchor;
+  const prevAnchor = prevSelection.anchor;
+  if (nextAnchor.key !== prevAnchor.key || nextAnchor.type !== 'text') {
+    return OTHER;
+  }
+
+  const nextAnchorOffset = nextAnchor.offset;
+  const prevAnchorOffset = prevAnchor.offset;
+  const textDiff = nextText.length - prevText.length;
+  if (textDiff === 1 && prevAnchorOffset === nextAnchorOffset - 1) {
+    return INSERT_CHARACTER_AFTER_SELECTION;
+  }
+  if (textDiff === -1 && prevAnchorOffset === nextAnchorOffset + 1) {
+    return DELETE_CHARACTER_BEFORE_SELECTION;
+  }
+  if (textDiff === -1 && prevAnchorOffset === nextAnchorOffset) {
+    return DELETE_CHARACTER_AFTER_SELECTION;
+  }
+
+  return OTHER;
+}
+
+function createMergeActionGetter(
+  editor: OutlineEditor,
+  delay: number,
+): (
+  prevEditorState: null | EditorState,
+  nextEditorState: EditorState,
+  currentHistoryEntry: null | HistoryStateEntry,
+  dirtyLeaves: Set<NodeKey>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  tags: Set<string>,
+) => MergeAction {
+  let prevChangeTime = Date.now();
+  let prevChangeType = OTHER;
+
+  return (
+    prevEditorState,
+    nextEditorState,
+    currentHistoryEntry,
+    dirtyLeaves,
+    dirtyElements,
+    tags,
+  ) => {
+    const changeTime = Date.now();
+    const changeType = getChangeType(
+      prevEditorState,
+      nextEditorState,
+      dirtyLeaves,
+      dirtyElements,
+      editor.isComposing(),
+    );
+
+    const mergeAction = (() => {
+      if (tags.has('without-history')) {
         return MERGE;
       }
-      // Only merge if we're adding/removing a single character
-      // or if there is not change at all.
-      if (textDiff === -1 || textDiff === 1) {
-        if (selection === null || prevSelection === null) {
-          return MERGE;
-        }
-        const anchor = selection.anchor;
-        const prevAnchor = prevSelection.anchor;
-        const anchorKey = anchor.key;
-        const prevAnchorKey = prevAnchor.key;
-        if (anchorKey !== prevAnchorKey || anchor.type !== 'text') {
-          return NO_MERGE;
-        }
-        const anchorOffset = anchor.offset;
-        const prevAnchorOffset = prevAnchor.offset;
-        // If we've inserted some text that is a single character
-        // after, then merge it.
-        if (prevAnchorOffset === anchorOffset - 1) {
-          return MERGE;
-        }
+      if (prevEditorState === null) {
+        return NO_MERGE;
       }
-    }
-  }
-  return NO_MERGE;
+      const selection = nextEditorState._selection;
+      const prevSelection = prevEditorState._selection;
+      const hasDirtyNodes = dirtyLeaves.size > 0 || dirtyElements.size > 0;
+      if (!hasDirtyNodes) {
+        if (prevSelection === null && selection !== null) {
+          return MERGE;
+        }
+        return DISCARD;
+      }
+
+      const isSameEditor =
+        currentHistoryEntry === null || currentHistoryEntry.editor === editor;
+
+      if (
+        changeType !== OTHER &&
+        changeType === prevChangeType &&
+        changeTime < prevChangeTime + delay &&
+        isSameEditor
+      ) {
+        return MERGE;
+      }
+
+      return NO_MERGE;
+    })();
+
+    prevChangeTime = changeTime;
+    prevChangeType = changeType;
+
+    return mergeAction;
+  };
 }
 
 export function useOutlineHistory(
@@ -155,15 +257,19 @@ export function useOutlineHistory(
   );
 
   useEffect(() => {
-    let lastChangeTime = Date.now();
-    const canMergeWithinDelay = (): boolean => {
-      const changeTime = Date.now();
-      const canMerge = changeTime < lastChangeTime + delay;
-      lastChangeTime = changeTime;
-      return canMerge;
-    };
-
-    const applyChange = ({editorState, dirtyLeaves, dirtyElements, tags}) => {
+    const getMergeAction = createMergeActionGetter(editor, delay);
+    const applyChange = ({
+      editorState,
+      prevEditorState,
+      dirtyLeaves,
+      dirtyElements,
+      tags,
+    }) => {
+      // If applying changes from history stack there's no need
+      // to run history logic again, as history entries already calculated
+      if (tags.has('historic')) {
+        return;
+      }
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;
@@ -172,25 +278,31 @@ export function useOutlineHistory(
       if (current !== null && editorState === currentEditorState) {
         return;
       }
+
       const mergeAction = getMergeAction(
-        currentEditorState,
+        prevEditorState,
         editorState,
+        current,
         dirtyLeaves,
         dirtyElements,
         tags,
-        canMergeWithinDelay(),
       );
+
       if (mergeAction === NO_MERGE) {
         if (redoStack.length !== 0) {
           historyState.redoStack = [];
         }
         if (current !== null) {
-          undoStack.push(current);
+          undoStack.push({
+            ...current,
+            undoSelection: prevEditorState.read($getSelection),
+          });
           editor.execCommand('canUndo', true);
         }
       } else if (mergeAction === DISCARD) {
         return;
       }
+
       // Else we merge
       historyState.current = {
         editor,
@@ -216,6 +328,13 @@ export function useOutlineHistory(
         if (undoStack.length === 0) {
           editor.execCommand('canUndo', false);
         }
+        historyState.current = historyStateEntry;
+        historyStateEntry.editor.setEditorState(
+          historyStateEntry.editorState.clone(historyStateEntry.undoSelection),
+          {
+            tag: 'historic',
+          },
+        );
       }
     };
 
@@ -224,18 +343,18 @@ export function useOutlineHistory(
       const undoStack = historyState.undoStack;
       if (redoStack.length !== 0) {
         const current = historyState.current;
-        const historyStateEntry = redoStack.pop();
-        historyState.current = historyStateEntry;
-        historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-          tag: 'historic',
-        });
         if (current !== null) {
           undoStack.push(current);
           editor.execCommand('canUndo', true);
         }
+        const historyStateEntry = redoStack.pop();
         if (redoStack.length === 0) {
           editor.execCommand('canRedo', false);
         }
+        historyState.current = historyStateEntry;
+        historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
+          tag: 'historic',
+        });
       }
     };
 

@@ -67,9 +67,9 @@ export class EditorState {
   _flushSync: boolean;
   _readOnly: boolean;
 
-  constructor(nodeMap: NodeMap) {
+  constructor(nodeMap: NodeMap, selection?: Selection | null) {
     this._nodeMap = nodeMap;
-    this._selection = null;
+    this._selection = selection || null;
     this._flushSync = false;
     this._readOnly = false;
   }
@@ -78,6 +78,14 @@ export class EditorState {
   }
   read<V>(callbackFn: () => V): V {
     return readEditorState(this, callbackFn);
+  }
+  clone(selection?: Selection | null): EditorState {
+    const editorState = new EditorState(
+      this._nodeMap,
+      selection === undefined ? this._selection : selection,
+    );
+    editorState._readOnly = true;
+    return editorState;
   }
   toJSON(space?: string | number): JSONEditorState {
     const selection = this._selection;

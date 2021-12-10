@@ -656,7 +656,7 @@ export default function ToolbarPlugin(): React$Node {
 
   const insertImage = useCallback(() => {
     activeEditor.update(() => {
-      $log('handleAddImage');
+      $log('insertImage');
       const selection = $getSelection();
       if (selection !== null) {
         const ref = createEditorStateRef(createUID(), null);

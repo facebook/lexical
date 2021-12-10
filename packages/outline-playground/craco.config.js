@@ -32,6 +32,8 @@ module.exports = {
         'outline-react/dist/useOutlinePlainText',
       'outline-react/useOutlineRichTextWithCollab':
         'outline-react/dist/useOutlineRichTextWithCollab',
+      'outline-react/useOutlinePlainTextWithCollab':
+        'outline-react/dist/useOutlinePlainTextWithCollab',
       'outline-react/useOutlineEditorEvents':
         'outline-react/dist/useOutlineEditorEvents',
       'outline-react/useOutlineAutoFormatter':

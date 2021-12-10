@@ -11,6 +11,7 @@ import type {OutlineNode} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
 import {ElementNode, $isElementNode} from './OutlineElementNode';
+import {$isDecoratorNode} from './OutlineDecoratorNode';
 import {NO_DIRTY_NODES} from './OutlineConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from './OutlineUpdates';
 import invariant from 'shared/invariant';
@@ -80,10 +81,11 @@ export class RootNode extends ElementNode {
 
   append(...nodesToAppend: OutlineNode[]): ElementNode {
     for (let i = 0; i < nodesToAppend.length; i++) {
-      if (!$isElementNode(nodesToAppend[i])) {
+      const node = nodesToAppend[i];
+      if (!$isElementNode(node) && !$isDecoratorNode(node)) {
         invariant(
           false,
-          'rootNode.append: Only element nodes can be appended to the root node',
+          'rootNode.append: Only element or decorator nodes can be appended to the root node',
         );
       }
     }

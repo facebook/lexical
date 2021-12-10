@@ -25,6 +25,7 @@ import TablesPlugin from './plugins/TablesPlugin';
 import TableCellActionMenuPlugin from './plugins/TableCellActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import LinksPlugin from './plugins/LinksPlugin';
+import StickyPlugin from './plugins/StickyPlugin';
 
 type Props = {
   isCollab: boolean,
@@ -50,6 +51,7 @@ export default function Editor({
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
+        <StickyPlugin />
         <MentionsPlugin />
         <TablesPlugin />
         <TableCellActionMenuPlugin />

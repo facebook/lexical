@@ -20,7 +20,7 @@ import {DecoratorNode, $log, $getNodeByKey} from 'outline';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
-import InlineEditor from '../ui/InlineEditor';
+import RichInlineEditor from '../ui/InlineRichEditor';
 import RichTextCollabPlugin from '../plugins/RichTextCollabPlugin';
 import RichTextPlugin from '../plugins/RichTextPlugin';
 
@@ -367,7 +367,7 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <InlineEditor
+            <RichInlineEditor
               controlled={true}
               onChange={onChange}
               initialEditorStateRef={editorStateRef}>
@@ -379,7 +379,7 @@ function ImageComponent({
               ) : (
                 <RichTextPlugin placeholder="Enter a caption..." />
               )}
-            </InlineEditor>
+            </RichInlineEditor>
           </div>
         )}
         {resizable && (hasFocus || isResizing) && (
@@ -409,6 +409,7 @@ export class ImageNode extends DecoratorNode {
   static getType(): string {
     return 'image';
   }
+
   static clone(node: ImageNode): ImageNode {
     return new ImageNode(
       node.__src,
@@ -446,6 +447,7 @@ export class ImageNode extends DecoratorNode {
     writable.__width = width;
     writable.__height = height;
   }
+
   setCaption(caption: boolean): void {
     const writable = this.getWritable();
     writable.__caption = caption;
@@ -462,10 +464,12 @@ export class ImageNode extends DecoratorNode {
     }
     return span;
   }
+
   updateDOM(): false {
     return false;
   }
-  decorate(editor: OutlineEditor): React.Node {
+
+  decorate(editor: OutlineEditor): React$Node {
     return (
       <ImageComponent
         src={this.__src}

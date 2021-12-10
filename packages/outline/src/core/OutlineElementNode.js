@@ -281,6 +281,18 @@ export class ElementNode extends OutlineNode {
     }
     return writableSelf;
   }
+  split(offset: number = 0): [ElementNode, ElementNode] {
+    const next = new this.constructor();
+    // invariant if out of range?
+    if (offset !== 0) {
+      const splitNode = this.getChildAtIndex(offset - 1);
+      if (splitNode) {
+        const nextSiblings = splitNode.getNextSiblings();
+        next.append(...nextSiblings);
+      }
+    }
+    return [this, next];
+  }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
     const self = this.getWritable();

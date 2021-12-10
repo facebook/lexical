@@ -14,23 +14,28 @@ import type {
   TextNode,
   Selection,
 } from 'outline';
+import type {ListItemNode} from 'outline/ListItemNode';
 
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {$isHeadingNode} from 'outline/HeadingNode';
-import {$isListNode} from 'outline/ListNode';
 import {$createParagraphNode} from 'outline/ParagraphNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
-import {$createListNode} from 'outline/ListNode';
-import {$createListItemNode} from 'outline/ListItemNode';
+import {$createListNode, $isListNode} from 'outline/ListNode';
+import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
 import {$createQuoteNode} from 'outline/QuoteNode';
 import {$createCodeNode} from 'outline/CodeNode';
 import {
   $log,
   $getSelection,
   $setSelection,
+  $isLineBreakNode,
+  createEditorStateRef,
+  $isRootNode,
+  $isLeafNode,
+  $isElementNode,
 } from 'outline';
 import {$createLinkNode, $isLinkNode} from 'outline/LinkNode';
 import {
@@ -305,38 +310,161 @@ function BlockOptionsDropdownList({
     setShowBlockOptionsDropDown(false);
   };
 
+  const removeList = () => {
+    editor.update(() => {
+      $log('removeList');
+      const selection = $getSelection();
+      if (selection !== null) {
+        const anchorNode = selection.anchor.getNode();
+        const topBlock = anchorNode.getTopLevelElementOrThrow();
+        if ($isListNode(topBlock)) {
+          //$FlowFixMe - this should always be correct.
+          const listItemNodes: Array<ListItemNode> = topBlock
+            .getChildren()
+            .filter($isListItemNode);
+          // This is a special case for when there's nothing selected
+          if (listItemNodes.length === 0) {
+            const paragraph = $createParagraphNode();
+            topBlock.replace(paragraph);
+            paragraph.select();
+          }
+          let previousElement = topBlock;
+          listItemNodes.forEach((listItem, index) => {
+            let nextElement = null;
+            listItem.getChildren().forEach((child) => {
+              if (
+                $isLeafNode(child) ||
+                ($isElementNode(child) && child.isInline())
+              ) {
+                nextElement =
+                  nextElement !== null ? nextElement : $createParagraphNode();
+                nextElement.append(child);
+                if (index === 0) {
+                  topBlock.replace(nextElement);
+                }
+                previousElement = nextElement;
+              } else {
+                if (index === 0) {
+                  topBlock.replace(child);
+                } else {
+                  previousElement.insertAfter(child);
+                }
+                previousElement = child;
+              }
+            });
+          });
+        }
+      }
+    });
+  };
+
+  const insertList = (listType: 'ul' | 'ol') => {
+    editor.update(() => {
+      $log('formatList');
+      const selection = $getSelection();
+      if (selection !== null) {
+        const nodes = selection.getNodes();
+        const list = $createListNode(listType);
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        const anchorNode = anchor.getNode();
+        const focusNode = focus.getNode();
+        const isBackward = selection.isBackward();
+        // this logic makes sure we get the right siblings
+        // regardless of whether the user selects text starting
+        // from the top or the bottom
+        const previousSiblings = isBackward
+          ? anchorNode.getPreviousSiblings()
+          : focusNode.getPreviousSiblings();
+        const nextSiblings = isBackward
+          ? focusNode.getNextSiblings()
+          : anchorNode.getNextSiblings();
+        const insertionPoint = anchorNode.getParentOrThrow();
+        // This is a special case for when there's nothing selected
+        if (nodes.length === 0) {
+          const listItem = $createListItemNode();
+          list.append(listItem);
+          if ($isRootNode(insertionPoint)) {
+            anchorNode.replace(list);
+          } else if ($isListItemNode(anchorNode)) {
+            const parent = anchorNode.getParentOrThrow();
+            parent.replace(list);
+          }
+          listItem.select();
+        }
+        // This is when we have siblings on either side of the selection and the selection is within a single block.
+        else if (
+          previousSiblings.length > 0 &&
+          nextSiblings.length > 0 &&
+          insertionPoint.is(focusNode.getParentOrThrow())
+        ) {
+          // split the block - ideally we'd probably create whatever
+          // kind of node it is, but it's always a paragraph for now.
+          const [_, nextBlock] = insertionPoint.split();
+          nextBlock.append(...nextSiblings);
+          insertionPoint.insertAfter(list);
+          list.insertAfter(nextBlock);
+          // the selection anchor has some siblings before it, but not
+          // after so we can just insert the list after them
+        } else if (previousSiblings.length > 0) {
+          insertionPoint.insertAfter(list);
+          // the selection anchor has some siblings after it, but not
+          // before, so we can just insert the list before it.
+        } else if (nextSiblings.length > 0) {
+          insertionPoint.insertBefore(list);
+          // otherwise we can just insert the list after the anchor parent block.
+        } else {
+          insertionPoint.insertAfter(list);
+        }
+        if (nodes.length > 0) {
+          let currentListItem = $createListItemNode();
+          list.append(currentListItem);
+          const handled = new Set();
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (!handled.has(node)) {
+              if ($isLineBreakNode(node)) {
+                node.remove();
+              } else if (
+                $isLeafNode(node) ||
+                ($isElementNode(node) && node.isInline())
+              ) {
+                currentListItem.append(node);
+                const parent = node.getParent();
+                handled.add(node);
+                if ($isElementNode(node)) {
+                  handled.add(...node.getChildren());
+                }
+                if (parent && parent.getChildrenSize() === 0) {
+                  parent.remove();
+                }
+              } else if ($isElementNode(node)) {
+                currentListItem = $createListItemNode();
+                currentListItem.append(node);
+                list.append(currentListItem);
+                handled.add(node, ...node.getChildren());
+              }
+            }
+          }
+        }
+      }
+    });
+  };
+
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      editor.update((state) => {
-        $log('formatBulletList');
-        const selection = $getSelection();
-
-        if (selection !== null) {
-          $wrapLeafNodesInElements(
-            selection,
-            () => $createListItemNode(),
-            $createListNode('ul'),
-          );
-        }
-      });
+      insertList('ul');
+    } else {
+      removeList();
     }
     setShowBlockOptionsDropDown(false);
   };
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      editor.update((state) => {
-        $log('formatNumberedList');
-        const selection = $getSelection();
-
-        if (selection !== null) {
-          $wrapLeafNodesInElements(
-            selection,
-            () => $createListItemNode(),
-            $createListNode('ol'),
-          );
-        }
-      });
+      insertList('ol');
+    } else {
+      removeList();
     }
     setShowBlockOptionsDropDown(false);
   };

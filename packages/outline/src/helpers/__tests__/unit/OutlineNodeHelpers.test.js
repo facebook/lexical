@@ -14,7 +14,7 @@ import {
   $createTestElementNode,
 } from '../../../__tests__/utils';
 import {
-  $dfs,
+  $dfs__DEPRECATED,
   $getTopListNode,
   $isLastItemInList,
   $areSiblingsNullOrSpace,
@@ -79,7 +79,7 @@ describe('OutlineNodeHelpers tests', () => {
       const dfsKeys = [];
       await editor.update((state: State) => {
         const root = $getRoot();
-        $dfs(root, (node: OutlineNode) => {
+        $dfs__DEPRECATED(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           return node;
         });
@@ -105,7 +105,7 @@ describe('OutlineNodeHelpers tests', () => {
       const dfsKeys = [];
       await editor.update((state: State) => {
         const root = $getRoot();
-        $dfs(root, (node: OutlineNode) => {
+        $dfs__DEPRECATED(root, (node: OutlineNode) => {
           dfsKeys.push(node.getKey());
           if ($isParagraphNode(node)) {
             return (

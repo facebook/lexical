@@ -22,7 +22,7 @@ import {
   $getCompositionKey,
   $setCompositionKey,
   toggleTextFormatType,
-  internallyMarkSiblingsAsDirty,
+  $internallyMarkSiblingsAsDirty,
 } from './OutlineUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from './OutlineUpdates';
@@ -581,7 +581,7 @@ export class TextNode extends OutlineNode {
     }
 
     // Insert the nodes into the parent's children
-    internallyMarkSiblingsAsDirty(this);
+    $internallyMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);

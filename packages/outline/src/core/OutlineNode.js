@@ -23,11 +23,11 @@ import {
   getActiveEditor,
 } from './OutlineUpdates';
 import {
-  generateKey,
+  $generateKey,
   $getCompositionKey,
   $getNodeByKey,
-  internallyMarkNodeAsDirty,
-  internallyMarkSiblingsAsDirty,
+  $internallyMarkNodeAsDirty,
+  $internallyMarkSiblingsAsDirty,
   markParentElementsAsDirty,
   $setCompositionKey,
 } from './OutlineUtils';
@@ -72,7 +72,7 @@ export function removeNode(
   if (index === -1) {
     invariant(false, 'Node is not a child of its parent');
   }
-  internallyMarkSiblingsAsDirty(nodeToRemove);
+  $internallyMarkSiblingsAsDirty(nodeToRemove);
   parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
@@ -119,7 +119,7 @@ export class OutlineNode {
 
   constructor(key?: NodeKey) {
     this.__type = this.constructor.getType();
-    this.__key = key || generateKey(this);
+    this.__key = key || $generateKey(this);
     this.__parent = null;
 
     // Ensure custom nodes implement required methods.
@@ -472,7 +472,7 @@ export class OutlineNode {
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      internallyMarkNodeAsDirty(latestNode);
+      $internallyMarkNodeAsDirty(latestNode);
       return latestNode;
     }
     const constructor = latestNode.constructor;
@@ -493,7 +493,7 @@ export class OutlineNode {
     }
     cloneNotNeeded.add(key);
     mutableNode.__key = key;
-    internallyMarkNodeAsDirty(mutableNode);
+    $internallyMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
     return mutableNode;
@@ -547,7 +547,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      internallyMarkSiblingsAsDirty(writableReplaceWith);
+      $internallyMarkSiblingsAsDirty(writableReplaceWith);
       children.splice(index, 1);
     }
     const newParent = this.getParentOrThrow();
@@ -561,7 +561,7 @@ export class OutlineNode {
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
-    internallyMarkSiblingsAsDirty(writableReplaceWith);
+    $internallyMarkSiblingsAsDirty(writableReplaceWith);
     const selection = $getSelection();
     if (selection !== null) {
       const anchor = selection.anchor;
@@ -590,7 +590,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      internallyMarkSiblingsAsDirty(writableNodeToInsert);
+      $internallyMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -602,7 +602,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index + 1, 0, insertKey);
-    internallyMarkSiblingsAsDirty(writableNodeToInsert);
+    $internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if (selection !== null) {
       $updateElementSelectionOnCreateDeleteNode(
@@ -625,7 +625,7 @@ export class OutlineNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      internallyMarkSiblingsAsDirty(writableNodeToInsert);
+      $internallyMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -637,7 +637,7 @@ export class OutlineNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index, 0, insertKey);
-    internallyMarkSiblingsAsDirty(writableNodeToInsert);
+    $internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if (selection !== null) {
       $updateElementSelectionOnCreateDeleteNode(

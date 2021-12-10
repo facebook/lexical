@@ -104,7 +104,7 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
-export function isTokenOrInertOrSegmented(node: TextNode): boolean {
+export function $isTokenOrInertOrSegmented(node: TextNode): boolean {
   return node.isToken() || node.isInert() || node.isSegmented();
 }
 
@@ -146,7 +146,7 @@ export function $isLeafNode(node: ?OutlineNode): boolean %checks {
   return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-export function generateKey(node: OutlineNode): NodeKey {
+export function $generateKey(node: OutlineNode): NodeKey {
   errorOnReadOnly();
   errorOnInfiniteTransforms();
   const editor = getActiveEditor();
@@ -185,7 +185,7 @@ export function markParentElementsAsDirty(
 
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
-export function internallyMarkNodeAsDirty(node: OutlineNode): void {
+export function $internallyMarkNodeAsDirty(node: OutlineNode): void {
   errorOnInfiniteTransforms();
   const latest = node.getLatest();
   const parent = latest.__parent;
@@ -206,14 +206,14 @@ export function internallyMarkNodeAsDirty(node: OutlineNode): void {
   }
 }
 
-export function internallyMarkSiblingsAsDirty(node: OutlineNode) {
+export function $internallyMarkSiblingsAsDirty(node: OutlineNode) {
   const previousNode = node.getPreviousSibling();
   const nextNode = node.getNextSibling();
   if (previousNode !== null) {
-    internallyMarkNodeAsDirty(previousNode);
+    $internallyMarkNodeAsDirty(previousNode);
   }
   if (nextNode !== null) {
-    internallyMarkNodeAsDirty(nextNode);
+    $internallyMarkNodeAsDirty(nextNode);
   }
 }
 

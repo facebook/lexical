@@ -387,7 +387,7 @@ function $getNodeStyleValueForProperty(
   return defaultValue;
 }
 
-function $moveCaretSelection(
+export function $moveCaretSelection(
   selection: Selection,
   isHoldingShift: boolean,
   isBackward: boolean,

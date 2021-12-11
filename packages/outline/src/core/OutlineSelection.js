@@ -194,7 +194,7 @@ function $transferStartingElementPointToTextPoint(
   start.set(textNode.getKey(), 0, 'text');
 }
 
-export function $setPointValues(
+function $setPointValues(
   point: PointType,
   key: NodeKey,
   offset: number,

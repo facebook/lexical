@@ -13,8 +13,10 @@ import type {
   ElementNode,
   TextNode,
   Selection,
+  OutlineNode,
 } from 'outline';
 import type {ListItemNode} from 'outline/ListItemNode';
+import type {ListNode} from 'outline/ListNode';
 
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -44,8 +46,12 @@ import {
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
 } from 'outline/selection';
+
+import {$createTableNodeWithDimensions, $getTopListNode} from 'outline/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+
+import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -310,52 +316,87 @@ function BlockOptionsDropdownList({
     setShowBlockOptionsDropDown(false);
   };
 
+  const findNearestListItemNode = (node: OutlineNode): ListItemNode | null => {
+    if ($isListItemNode(node)) {
+      return node;
+    }
+    let parent = node.getParent();
+    while (!$isRootNode(parent) && parent != null) {
+      if ($isListItemNode(parent)) {
+        return parent;
+      }
+      parent = parent.getParent();
+    }
+    return null;
+  };
+
+  const getAllListItems = (node: ListNode): Array<ListItemNode> => {
+    let listItemNodes: Array<ListItemNode> = [];
+    //$FlowFixMe
+    const listChildren: Array<ListItemNode> = node
+      .getChildren()
+      .filter($isListItemNode);
+    for (let i = 0; i < listChildren.length; i++) {
+      const listItemNode = listChildren[i];
+      const firstChild = listItemNode.getFirstChild();
+      if ($isListNode(firstChild)) {
+        listItemNodes = listItemNodes.concat(getAllListItems(firstChild));
+      } else {
+        listItemNodes.push(listItemNode);
+      }
+    }
+    return listItemNodes;
+  };
+
   const removeList = () => {
     editor.update(() => {
       $log('removeList');
       const selection = $getSelection();
       if (selection !== null) {
-        const anchorNode = selection.anchor.getNode();
-        const topBlock = anchorNode.getTopLevelElementOrThrow();
-        if ($isListNode(topBlock)) {
-          //$FlowFixMe - this should always be correct.
-          const listItemNodes: Array<ListItemNode> = topBlock
-            .getChildren()
-            .filter($isListItemNode);
-          // This is a special case for when there's nothing selected
-          if (listItemNodes.length === 0) {
-            const paragraph = $createParagraphNode();
-            topBlock.replace(paragraph);
-            paragraph.select();
+        const listNodes = new Set();
+        const nodes = selection.getNodes();
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          if ($isLeafNode(node)) {
+            const listItemNode = findNearestListItemNode(node);
+            if (listItemNode != null) {
+              listNodes.add($getTopListNode(listItemNode));
+            }
           }
-          let previousElement = topBlock;
-          listItemNodes.forEach((listItem, index) => {
-            let nextElement = null;
-            listItem.getChildren().forEach((child) => {
-              if (
-                $isLeafNode(child) ||
-                ($isElementNode(child) && child.isInline())
-              ) {
-                nextElement =
-                  nextElement !== null ? nextElement : $createParagraphNode();
-                nextElement.append(child);
-                if (index === 0) {
-                  topBlock.replace(nextElement);
-                }
-                previousElement = nextElement;
-              } else {
-                if (index === 0) {
-                  topBlock.replace(child);
-                } else {
-                  previousElement.insertAfter(child);
-                }
-                previousElement = child;
-              }
-            });
-          });
         }
+        listNodes.forEach((listNode) => {
+          let insertionPoint = listNode;
+          const listItems = getAllListItems(listNode);
+          listItems.forEach((listItemNode, index) => {
+            if (listItemNode != null) {
+              const paragraph = $createParagraphNode();
+              paragraph.append(...listItemNode.getChildren());
+              insertionPoint.insertAfter(paragraph);
+              insertionPoint = paragraph;
+              listItemNode.remove();
+            }
+          });
+          listNode.remove();
+        });
       }
     });
+  };
+
+  const getTopLevelNodesFromSelection = (
+    selection: Selection,
+  ): Array<OutlineNode> => {
+    const nodes = selection.getNodes();
+    const selectedNodes = new Set(nodes);
+    const topLevelNodes = [];
+    for (let i = 0; i < nodes.length; i++) {
+      const currentNode = nodes[i];
+      const parent = currentNode.getParent();
+      // safe to use referential equality here?
+      if (!selectedNodes.has(parent)) {
+        topLevelNodes.push(currentNode);
+      }
+    }
+    return topLevelNodes;
   };
 
   const insertList = (listType: 'ul' | 'ol') => {
@@ -364,6 +405,7 @@ function BlockOptionsDropdownList({
       const selection = $getSelection();
       if (selection !== null) {
         const nodes = selection.getNodes();
+        const topLevelNodes = getTopLevelNodesFromSelection(selection);
         const list = $createListNode(listType);
         const anchor = selection.anchor;
         const focus = selection.focus;
@@ -418,14 +460,15 @@ function BlockOptionsDropdownList({
         }
         if (nodes.length > 0) {
           let currentListItem = null;
-          let isFirstBlock = true;
           const handled = new Set();
-          for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i];
+          for (let i = 0; i < topLevelNodes.length; i++) {
+            const node = topLevelNodes[i];
             if (!handled.has(node)) {
               if ($isLineBreakNode(node)) {
                 node.remove();
-              } else if (
+                continue;
+              }
+              if (
                 $isLeafNode(node) ||
                 ($isElementNode(node) && node.isInline())
               ) {
@@ -434,22 +477,22 @@ function BlockOptionsDropdownList({
                   currentListItem = $createListItemNode();
                   list.append(currentListItem);
                 }
-                currentListItem.append(node);
+                if ($isElementNode(node)) {
+                  handled.add(...node.getChildren());
+                  currentListItem.append(...node.getChildren());
+                } else if ($isLeafNode(node) && parent != null) {
+                  currentListItem.append(...parent.getChildren());
+                }
                 if (parent && parent.getChildrenSize() === 0) {
                   parent.remove();
                 }
                 handled.add(node);
-                if ($isElementNode(node)) {
-                  handled.add(...node.getChildren());
-                }
-              } else {
-                if (isFirstBlock) {
-                  isFirstBlock = false;
-                } else {
-                  currentListItem = $createListItemNode();
-                  list.append(currentListItem);
-                  handled.add(node);
-                }
+              } else if ($isElementNode(node)) {
+                currentListItem = $createListItemNode();
+                currentListItem.append(...node.getChildren());
+                node.remove();
+                list.append(currentListItem);
+                handled.add(node);
               }
             }
           }

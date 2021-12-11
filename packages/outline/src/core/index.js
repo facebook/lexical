@@ -56,7 +56,6 @@ import {
   $createEmptySelection as $createSelection,
   $getSelection,
   $getPreviousSelection,
-  $setPointValues,
 } from './OutlineSelection';
 import {$createNodeFromParse} from './OutlineParsing';
 import {createEditorStateRef, isEditorStateRef} from './OutlineReference';
@@ -87,7 +86,6 @@ export {
   $getPreviousSelection,
   $clearSelection,
   $setSelection,
-  $setPointValues,
   $setCompositionKey,
   $getCompositionKey,
   $getNearestNodeFromDOMNode,

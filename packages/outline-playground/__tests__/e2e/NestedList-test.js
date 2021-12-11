@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts';
+import {selectAll, moveLeft, selectCharacters} from '../keyboardShortcuts';
 import {
   initializeE2E,
   assertHTML,
@@ -14,6 +14,13 @@ import {
   waitForSelector,
   click,
 } from '../utils';
+
+async function toggleBulletList(page) {
+  await waitForSelector(page, '.block-controls');
+  await click(page, '.block-controls');
+  await waitForSelector(page, '.dropdown .icon.bullet-list');
+  await click(page, '.dropdown .icon.bullet-list');
+}
 
 describe('Nested List', () => {
   initializeE2E((e2e) => {
@@ -96,6 +103,130 @@ describe('Nested List', () => {
       );
     });
 
+    it(`Can create a list and then toggle it back to original state.`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await assertHTML(page, '<p class="editor-paragraph"><br/></p>');
+
+      await page.keyboard.type('Hello');
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+      );
+
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('from');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('the');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('other');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('side');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+      );
+
+      await selectAll(page);
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+      );
+
+      // works for an indented list
+
+      await toggleBulletList(page);
+
+      await waitForSelector(page, 'button .indent');
+      await click(page, 'button .indent');
+      await click(page, 'button .indent');
+      await click(page, 'button .indent');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+      );
+    });
+
+    it(`Can create a list containing inline blocks and then toggle it back to original state.`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await assertHTML(page, '<p class="editor-paragraph"><br/></p>');
+
+      await page.keyboard.type('One two three');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">One two three</span></p>',
+      );
+
+      await moveLeft(page, 6);
+      await selectCharacters(page, 'left', 3);
+
+      // link
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
+      );
+
+      // await toggleBulletList(page);
+
+      // await assertHTML(
+      //   page,
+      //   '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
+      // );
+
+      // await toggleBulletList(page);
+
+      // await assertHTML(
+      //   page,
+      //   '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+      // );
+    });
+
     it(`Can create an unordered list and convert it to an ordered list `, async () => {
       const {isRichText, page} = e2e;
 
@@ -125,16 +256,14 @@ describe('Nested List', () => {
         '<ol class="editor-list-ol"><li class="editor-listitem"><br></li></ol>',
       );
 
-      // Issue #904 Converting back to a ul from ol doesn't work properly.
+      await click(page, '.block-controls');
+      await waitForSelector(page, '.dropdown .icon.bullet-list');
+      await click(page, '.dropdown .icon.bullet-list');
 
-      // await click(page, '#block-controls button');
-      // await waitForSelector(page, '.dropdown .icon.bullet-list');
-      // await click(page, '.dropdown .icon.bullet-list');
-
-      // await assertHTML(
-      //   page,
-      //   '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
-      // );
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+      );
     });
   });
 });

@@ -21,7 +21,7 @@ export class ParagraphNode extends ElementNode {
     return new ParagraphNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
   }
 

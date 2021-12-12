@@ -77,7 +77,7 @@ class Point {
   offset: number;
   type: 'text' | 'element';
 
-  constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
+  constructor(key: NodeKey, offset: number, type: 'text' | 'element'): void {
     this.key = key;
     this.offset = offset;
     this.type = type;
@@ -109,7 +109,7 @@ class Point {
   getCharacterOffset(): number {
     return this.type === 'text' ? this.offset : 0;
   }
-  getNode() {
+  getNode(): OutlineNode {
     const key = this.key;
     const node = $getNodeByKey(key);
     if (node === null) {
@@ -213,7 +213,7 @@ export class Selection {
   dirty: boolean;
   format: number;
 
-  constructor(anchor: PointType, focus: PointType, format: number) {
+  constructor(anchor: PointType, focus: PointType, format: number): void {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;

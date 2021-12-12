@@ -21,7 +21,7 @@ export class HashtagNode extends TextNode {
     return new HashtagNode(node.__text, node.__key);
   }
 
-  constructor(text: string, key?: NodeKey) {
+  constructor(text: string, key?: NodeKey): void {
     super(text, key);
   }
 

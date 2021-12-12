@@ -357,7 +357,7 @@ export class TableNode extends ElementNode {
     return new TableNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
   }
 

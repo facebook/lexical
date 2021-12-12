@@ -27,7 +27,7 @@ export class HeadingNode extends ElementNode {
     return new HeadingNode(node.__tag, node.__key);
   }
 
-  constructor(tag: HeadingTagType, key?: NodeKey) {
+  constructor(tag: HeadingTagType, key?: NodeKey): void {
     super(key);
     this.__tag = tag;
   }

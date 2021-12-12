@@ -12,13 +12,18 @@ import type {EditorState} from './OutlineEditorState';
 
 export type OutlineRef = EditorStateRef;
 
+type JSONOutput = $ReadOnly<{
+  id: string,
+  type: string,
+  editorState: null | string,
+}>;
 export interface Ref<Data> {
   id: string;
   _type: string;
 
   get(editor: OutlineEditor): null | Data;
   set(editor: OutlineEditor, data: Data): void;
-  toJSON(): {type: string, editorState: null | string};
+  toJSON(): JSONOutput;
   isEmpty(): boolean;
 }
 
@@ -34,7 +39,7 @@ export class EditorStateRef implements Ref<EditorState> {
   _editorState: null | EditorState | string;
   _editor: null | OutlineEditor;
 
-  constructor(id: string, editorState: null | EditorState | string) {
+  constructor(id: string, editorState: null | EditorState | string): void {
     this.id = id;
     this._type = 'editorstate';
     this._editorState = editorState;
@@ -55,7 +60,7 @@ export class EditorStateRef implements Ref<EditorState> {
     this._editor = editor;
   }
 
-  toJSON(): {id: string, type: string, editorState: null | string} {
+  toJSON(): JSONOutput {
     const editorState = this._editorState;
     return {
       id: this.id,

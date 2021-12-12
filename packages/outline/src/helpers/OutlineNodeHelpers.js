@@ -29,7 +29,7 @@ import {$createTableCellNode} from 'outline/TableCellNode';
 export function $dfs__DEPRECATED(
   startingNode: OutlineNode,
   nextNode: (OutlineNode) => null | OutlineNode,
-) {
+): void {
   let node = startingNode;
   nextNode(node);
   while (node !== null) {

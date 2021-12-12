@@ -18,7 +18,7 @@ import invariant from 'shared/invariant';
 export class DecoratorNode extends OutlineNode {
   __ref: null | OutlineRef;
 
-  constructor(ref?: null | OutlineRef, key?: NodeKey) {
+  constructor(ref?: null | OutlineRef, key?: NodeKey): void {
     super(key);
     this.__ref = ref || null;
 

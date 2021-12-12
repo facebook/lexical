@@ -26,7 +26,7 @@ export class ElementNode extends OutlineNode {
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
     this.__children = [];
     this.__format = 0;

@@ -35,7 +35,7 @@ export class ListItemNode extends ElementNode {
     return new ListItemNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
   }
 

@@ -23,7 +23,7 @@ export class TableCellNode extends ElementNode {
     return new TableCellNode(false, node.__key);
   }
 
-  constructor(isHeader?: boolean = false, key?: NodeKey) {
+  constructor(isHeader?: boolean = false, key?: NodeKey): void {
     super(key);
     this.__isHeader = isHeader;
   }

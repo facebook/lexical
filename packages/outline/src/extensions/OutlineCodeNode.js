@@ -23,7 +23,7 @@ export class CodeNode extends ElementNode {
     return new CodeNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
   }
 

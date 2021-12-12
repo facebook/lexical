@@ -54,7 +54,7 @@ export class LinkNode extends ElementNode {
   }
 
   setURL(url: string): void {
-    const writable = this.getWritable<LinkNode>();
+    const writable = this.getWritable();
     writable.__url = url;
   }
 

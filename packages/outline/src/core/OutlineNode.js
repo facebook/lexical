@@ -448,14 +448,16 @@ export class OutlineNode {
   isComposing(): boolean {
     return this.__key === $getCompositionKey();
   }
-  getLatest<N: OutlineNode>(): N {
-    const latest = $getNodeByKey<N>(this.__key);
+  // $FlowFixMe this is OutlineNode
+  getLatest<T: OutlineNode>(this: T): T {
+    const latest = $getNodeByKey(this.__key);
     if (latest === null) {
       invariant(false, 'getLatest: node not found');
     }
     return latest;
   }
-  getWritable<N>(): N {
+  // $FlowFixMe this is OutlineNode
+  getWritable<T: OutlineNode>(this: T): T {
     errorOnReadOnly();
     const editorState = getActiveEditorState();
     const editor = getActiveEditor();
@@ -473,17 +475,17 @@ export class OutlineNode {
     const constructor = latestNode.constructor;
     const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
-    if ($isElementNode(mutableNode)) {
+    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
       mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__indent = latestNode.__indent;
       mutableNode.__format = latestNode.__format;
       mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(mutableNode)) {
+    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
       mutableNode.__mode = latestNode.__mode;
       mutableNode.__detail = latestNode.__detail;
-    } else if ($isDecoratorNode(mutableNode)) {
+    } else if ($isDecoratorNode(latestNode) && $isDecoratorNode(mutableNode)) {
       mutableNode.__ref = latestNode.__ref;
     }
     cloneNotNeeded.add(key);
@@ -491,6 +493,7 @@ export class OutlineNode {
     $internallyMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
+    // $FlowFixMe this is OutlineNode
     return mutableNode;
   }
   // TODO remove this completely
@@ -533,7 +536,7 @@ export class OutlineNode {
   replace<N: OutlineNode>(replaceWith: N): N {
     errorOnReadOnly();
     const toReplaceKey = this.__key;
-    const writableReplaceWith = replaceWith.getWritable<N>();
+    const writableReplaceWith = replaceWith.getWritable();
     const oldParent = writableReplaceWith.getParent();
     if (oldParent !== null) {
       const writableParent = oldParent.getWritable();

@@ -230,6 +230,7 @@ export function syncPropertiesFromYjs(
       if (writableNode === undefined) {
         writableNode = outlineNode.getWritable();
       }
+      // $FlowFixMe
       writableNode[property] = nextValue;
     }
   }

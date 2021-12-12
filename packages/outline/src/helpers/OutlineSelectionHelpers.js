@@ -33,19 +33,20 @@ function $cloneWithProperties<T: OutlineNode>(node: T): T {
   const constructor = latest.constructor;
   const clone = constructor.clone(latest);
   clone.__parent = latest.__parent;
-  if ($isElementNode(latest)) {
+  if ($isElementNode(latest) && $isElementNode(clone)) {
     clone.__children = Array.from(latest.__children);
     clone.__format = latest.__format;
     clone.__indent = latest.__indent;
     clone.__dir = latest.__dir;
-  } else if ($isTextNode(latest)) {
+  } else if ($isTextNode(latest) && $isTextNode(clone)) {
     clone.__format = latest.__format;
     clone.__style = latest.__style;
     clone.__mode = latest.__mode;
     clone.__detail = latest.__detail;
-  } else if ($isDecoratorNode(latest)) {
+  } else if ($isDecoratorNode(latest) && $isDecoratorNode(clone)) {
     clone.__ref = latest.__ref;
   }
+  // $FlowFixMe
   return clone;
 }
 

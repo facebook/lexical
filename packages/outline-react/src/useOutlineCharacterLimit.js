@@ -37,7 +37,7 @@ export function useCharacterLimit(
   editor: OutlineEditor,
   maxCharacters: number,
   optional: OptionalProps = {},
-) {
+): void {
   const {
     strlen = (input) => input.length, // UTF-16
     remainingCharacters = (characters) => {},
@@ -126,7 +126,7 @@ function findOffset(
   return offsetUtf16;
 }
 
-function $wrapOverflowedNodes(offset: number) {
+function $wrapOverflowedNodes(offset: number): void {
   const root = $getRoot();
   let accumulatedLength = 0;
 
@@ -212,7 +212,7 @@ export class OverflowNode extends ElementNode {
     return new OverflowNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
     this.__type = 'overflow';
   }
@@ -265,7 +265,7 @@ function $unwrapNode(node: OverflowNode): OutlineNode | null {
   return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
-export function mergePrevious(overflowNode: OverflowNode) {
+export function mergePrevious(overflowNode: OverflowNode): void {
   const previousNode = overflowNode.getPreviousSibling();
   if (!isOverflowNode(previousNode)) {
     return;

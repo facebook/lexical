@@ -60,7 +60,7 @@ type OffsetNode = OffsetElementNode | OffsetTextNode | OffsetInlineNode;
 
 type OffsetMap = Map<NodeKey, OffsetNode>;
 
-class OffsetView {
+export class OffsetView {
   _offsetMap: OffsetMap;
   _firstNode: null | OffsetNode;
   _blockOffsetSize: number;

@@ -20,7 +20,7 @@ export class LineBreakNode extends OutlineNode {
     return new LineBreakNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
   }
 

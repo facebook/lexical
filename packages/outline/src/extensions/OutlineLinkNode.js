@@ -23,7 +23,7 @@ export class LinkNode extends ElementNode {
     return new LinkNode(node.__url, node.__key);
   }
 
-  constructor(url: string, key?: NodeKey) {
+  constructor(url: string, key?: NodeKey): void {
     super(key);
     this.__url = url;
   }

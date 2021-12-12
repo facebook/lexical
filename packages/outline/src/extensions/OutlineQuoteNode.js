@@ -23,7 +23,7 @@ export class QuoteNode extends ElementNode {
     return new QuoteNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
   }
 

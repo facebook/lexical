@@ -542,7 +542,7 @@ export function onCompositionStart(
 function onCompositionEndInternal(
   event: CompositionEvent,
   editor: OutlineEditor,
-) {
+): void {
   editor.update(() => {
     $log('onCompositionEnd');
     $setCompositionKey(null);
@@ -932,7 +932,7 @@ export function onBeforeInput(event: InputEvent, editor: OutlineEditor): void {
 function $updateSelectedTextFromDOM(
   editor: OutlineEditor,
   compositionEnd: boolean,
-) {
+): void {
   // Update the text content with the latest composition text
   const domSelection = window.getSelection();
   if (domSelection === null) {

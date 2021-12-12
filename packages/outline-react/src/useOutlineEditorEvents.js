@@ -23,7 +23,7 @@ function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
     : rootElement;
 }
 
-function isRootEditable(editor: OutlineEditor) {
+function isRootEditable(editor: OutlineEditor): boolean {
   const rootElement = editor.getRootElement();
   return rootElement !== null && rootElement.contentEditable === 'true';
 }

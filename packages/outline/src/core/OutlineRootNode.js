@@ -27,7 +27,7 @@ export class RootNode extends ElementNode {
     return new RootNode();
   }
 
-  constructor() {
+  constructor(): void {
     super('root');
     this.__cachedText = null;
   }
@@ -63,7 +63,7 @@ export class RootNode extends ElementNode {
     invariant(false, 'replace: cannot be called on root nodes');
   }
 
-  insertBefore() {
+  insertBefore(): OutlineNode {
     invariant(false, 'insertBefore: cannot be called on root nodes');
   }
 

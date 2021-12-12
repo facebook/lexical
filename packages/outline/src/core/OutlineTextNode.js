@@ -263,7 +263,7 @@ export class TextNode extends OutlineNode {
     return self.__text;
   }
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
-    const self = this.getLatest<TextNode>();
+    const self = this.getLatest();
     const format = self.__format;
     return toggleTextFormatType(format, type, alignWithFormat);
   }

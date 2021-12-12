@@ -274,7 +274,9 @@ function registerNode<T: OutlineNode>(
 }
 
 function defaultErrorListener(error: Error, _log: Array<string>): void {
-  throw error;
+  if (__DEV__) {
+    throw error;
+  }
 }
 
 class BaseOutlineEditor {

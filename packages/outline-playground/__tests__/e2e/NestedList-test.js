@@ -227,6 +227,62 @@ describe('Nested List', () => {
       // );
     });
 
+    it(`Can create mutliple bullet lists and then toggle off the list.`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await assertHTML(page, '<p class="editor-paragraph"><br/></p>');
+
+      await page.keyboard.type('Hello');
+
+      await toggleBulletList(page);
+
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('from');
+
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+
+      await page.keyboard.type('the');
+
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+
+      await page.keyboard.type('other');
+
+      await toggleBulletList(page);
+
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('side');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph"><br></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      await selectAll(page);
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem"><br></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem"><br></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+    });
+
     it(`Can create an unordered list and convert it to an ordered list `, async () => {
       const {isRichText, page} = e2e;
 

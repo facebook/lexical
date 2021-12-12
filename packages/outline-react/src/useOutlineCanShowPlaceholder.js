@@ -11,20 +11,22 @@ import type {OutlineEditor} from 'outline';
 
 import useLayoutEffect from 'shared/useLayoutEffect';
 import {useState} from 'react';
-import {canShowPlaceholderCurry} from 'outline/root';
+import {$canShowPlaceholderCurry} from 'outline/root';
 
 export default function useOutlineCanShowPlaceholder(
   editor: OutlineEditor,
 ): boolean {
   const [canShowPlaceholder, setCanShowPlaceholder] = useState(
-    editor.getEditorState().read(canShowPlaceholderCurry(editor.isComposing())),
+    editor
+      .getEditorState()
+      .read($canShowPlaceholderCurry(editor.isComposing())),
   );
 
   useLayoutEffect(() => {
     return editor.addListener('update', ({editorState}) => {
       const isComposing = editor.isComposing();
       const currentCanShowPlaceholder = editorState.read(
-        canShowPlaceholderCurry(isComposing),
+        $canShowPlaceholderCurry(isComposing),
       );
       setCanShowPlaceholder(currentCanShowPlaceholder);
     });

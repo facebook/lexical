@@ -27,7 +27,7 @@ function isCharacterBetweenValid(char: string): boolean {
   return /[\s\d.,\\/!$%^&*;:{}=\-`~()]/.test(char);
 }
 
-function plainTextToKeywordTransform(node: TextNode): void {
+function $plainTextToKeywordTransform(node: TextNode): void {
   // Only allow keywords in paragraphs
   if (!$isParagraphNode(node.getParentOrThrow())) {
     return;
@@ -51,7 +51,7 @@ function plainTextToKeywordTransform(node: TextNode): void {
     // Handle when a text node occurs after a keyword, but doesn't include a space.
     const prevSibling = node.getPreviousSibling();
     if ($isKeywordNode(prevSibling)) {
-      convertKeywordNodeToPlainTextNode(prevSibling);
+      $convertKeywordNodeToPlainTextNode(prevSibling);
     }
   }
 
@@ -116,9 +116,9 @@ function plainTextToKeywordTransform(node: TextNode): void {
   }
 }
 
-function keywordToPlainTextTransform(keyword: KeywordNode) {
+function $keywordToPlainTextTransform(keyword: KeywordNode): void {
   if (!$areSiblingsNullOrSpace(keyword)) {
-    convertKeywordNodeToPlainTextNode(keyword);
+    $convertKeywordNodeToPlainTextNode(keyword);
   }
 }
 
@@ -128,11 +128,11 @@ function useKeywords(editor: OutlineEditor): void {
 
     const removePlainTextToKeywordTransform = editor.addTransform(
       TextNode,
-      plainTextToKeywordTransform,
+      $plainTextToKeywordTransform,
     );
     const removeKeywordToPlainTextTransform = editor.addTransform(
       KeywordNode,
-      keywordToPlainTextTransform,
+      $keywordToPlainTextTransform,
     );
 
     return () => {
@@ -143,7 +143,7 @@ function useKeywords(editor: OutlineEditor): void {
   }, [editor]);
 }
 
-function convertKeywordNodeToPlainTextNode(node: KeywordNode): void {
+function $convertKeywordNodeToPlainTextNode(node: KeywordNode): void {
   const textNode = $createTextNode(node.getTextContent());
   node.replace(textNode);
 }

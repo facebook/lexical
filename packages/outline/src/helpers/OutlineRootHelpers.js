@@ -70,7 +70,7 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
   return true;
 }
 
-export function canShowPlaceholderCurry(
+export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,
 ): () => boolean {
   return () => $canShowPlaceholder(isEditorComposing);

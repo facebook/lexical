@@ -21,7 +21,7 @@ export class TableRowNode extends ElementNode {
     return new TableRowNode(node.__key);
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     super(key);
   }
 

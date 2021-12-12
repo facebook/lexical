@@ -77,7 +77,7 @@ function $copyLeafNodeBranchToRoot(
   isLeftSide: boolean,
   range: Array<NodeKey>,
   nodeMap: Map<NodeKey, OutlineNode>,
-) {
+): void {
   let node = leaf;
   let offset = startingOffset;
   while (node !== null) {

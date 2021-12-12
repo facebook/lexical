@@ -35,7 +35,7 @@ export class ListNode extends ElementNode {
     return new ListNode(node.__tag, node.__start, node.__key);
   }
 
-  constructor(tag: ListNodeTagType, start: number, key?: NodeKey) {
+  constructor(tag: ListNodeTagType, start: number, key?: NodeKey): void {
     super(key);
     this.__tag = tag;
     this.__start = start;

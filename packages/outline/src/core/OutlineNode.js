@@ -116,7 +116,7 @@ export class OutlineNode {
     );
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: NodeKey): void {
     this.__type = this.constructor.getType();
     this.__key = key || $generateKey(this);
     this.__parent = null;

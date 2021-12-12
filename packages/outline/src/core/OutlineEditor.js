@@ -273,6 +273,10 @@ function registerNode<T: OutlineNode>(
   };
 }
 
+function defaultErrorListener(error: Error, _log: Array<string>): void {
+  throw error;
+}
+
 class BaseOutlineEditor {
   _parentEditor: null | OutlineEditor;
   _rootElement: null | HTMLElement;
@@ -349,6 +353,8 @@ class BaseOutlineEditor {
     this._log = [];
     // Used for identifying owning editors
     this._key = generateRandomKey();
+    // Register default overridable error listener
+    this.addListener('error', defaultErrorListener);
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -379,7 +385,21 @@ class BaseOutlineEditor {
     priority?: CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];
-    if (type === 'command' && priority !== undefined) {
+    if (type === 'error') {
+      const errorListeners = this._listeners.error;
+      const hasDefaultErrorListener = errorListeners.has(defaultErrorListener);
+      if (hasDefaultErrorListener) {
+        this._listeners.error.delete(defaultErrorListener);
+      } else if (errorListeners.size > 0) {
+        invariant(false, 'Attempted to register more than one error listener.');
+      }
+      // $FlowFixMe: cast
+      errorListeners.add(listener);
+      return () => {
+        // $FlowFixMe: cast
+        errorListeners.delete(listener);
+      };
+    } else if (type === 'command' && priority !== undefined) {
       // $FlowFixMe: unsure how to csae this
       const commands: Array<Set<CommandListener>> = listenerSetOrMap;
       const commandSet = commands[priority];

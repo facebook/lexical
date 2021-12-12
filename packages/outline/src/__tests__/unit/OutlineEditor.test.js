@@ -21,6 +21,7 @@ import {
   $getSelection,
   $getNodeByKey,
   $isTextNode,
+  createEditor,
 } from 'outline';
 import {$createParagraphNode, ParagraphNode} from 'outline/ParagraphNode';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
@@ -1436,5 +1437,20 @@ describe('OutlineEditor tests', () => {
     });
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith('foobar');
+  });
+
+  it('errors throw by default', () => {
+    const simpleEditor = createEditor({});
+    const badUpdate = () =>
+      simpleEditor.update(() => {
+        throw new Error();
+      });
+    expect(badUpdate).toThrow();
+
+    simpleEditor.addListener('error', () => {});
+    expect(badUpdate).not.toThrow();
+
+    // Too many error listeners
+    expect(() => simpleEditor.addListener('error', () => {})).toThrow();
   });
 });

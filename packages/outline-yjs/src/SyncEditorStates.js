@@ -178,11 +178,7 @@ function handleNormalizationMergeConflicts(
         }
         const parent = collabNode._parent;
         collabNode._normalized = true;
-        // Only try and delete the collab node if its backing
-        // map is not empty;
-        if (collabNode._map._length !== 0) {
-          parent._xmlText.delete(offset, 1);
-        }
+        parent._xmlText.delete(offset, 1);
         collabNodeMap.delete(nodeKey);
         const parentChildren = parent._children;
         const index = parentChildren.indexOf(collabNode);
@@ -206,6 +202,7 @@ export function syncOutlineUpdateToYjs(
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void {
+  window.foo = binding.doc;
   binding.doc.transact(() => {
     currEditorState.read(() => {
       // We check if the update has come from a origin where the origin

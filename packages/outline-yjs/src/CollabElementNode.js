@@ -149,24 +149,20 @@ export class CollabElementNode {
               delCount === 1 &&
               nodeIndex > 0 &&
               prevCollabNode instanceof CollabTextNode &&
-              nodeSize
+              length === nodeSize
             ) {
               // Merge the text node with previous.
               prevCollabNode._text += node._text;
               children.splice(nodeIndex, 1);
-            } else if (offset === 0 && delCount >= nodeSize - 1) {
+            } else if (offset === 0 && delCount === nodeSize) {
               // The entire thing needs removing
               children.splice(nodeIndex, 1);
-              const diff = nodeSize - delCount;
-              if (diff > 0) {
-                this._xmlText.delete(offset, diff);
-              }
             } else {
               node._text = spliceString(node._text, offset, delCount, '');
             }
             deletionSize -= delCount;
           } else {
-            // throw new Error('Should never happen for ' + String(node));
+            // Can occur due to the deletion from the dangling text heuristic below.
             break;
           }
         }

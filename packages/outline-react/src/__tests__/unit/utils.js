@@ -196,4 +196,5 @@ export async function waitForReact(cb) {
     cb();
     await Promise.resolve().then();
   });
+  await Promise.resolve().then();
 }

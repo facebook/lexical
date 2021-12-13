@@ -534,7 +534,9 @@ function beginUpdate(
     tag = options.tag;
     skipTransforms = options.skipTransforms;
   }
-
+  if (onUpdate) {
+    deferred.push(onUpdate);
+  }
   const currentEditorState = editor._editorState;
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
@@ -627,9 +629,6 @@ function beginUpdate(
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
-    if (onUpdate) {
-      deferred.push(onUpdate);
-    }
     if (tag != null) {
       editor._updateTags.add(tag);
     }
@@ -642,6 +641,10 @@ function beginUpdate(
       });
     }
   } else {
+    if (onUpdate) {
+      const index = deferred.indexOf(onUpdate);
+      deferred.splice(index, 1);
+    }
     pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;

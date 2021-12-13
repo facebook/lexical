@@ -369,6 +369,7 @@ function BlockOptionsDropdownList({
           const listItems = getAllListItems(listNode);
           listItems.forEach((listItemNode, index) => {
             if (listItemNode != null) {
+              // Is it ok to nest paragraphs?
               const paragraph = $createParagraphNode();
               paragraph.append(...listItemNode.getChildren());
               insertionPoint.insertAfter(paragraph);
@@ -404,7 +405,6 @@ function BlockOptionsDropdownList({
       $log('formatList');
       const selection = $getSelection();
       if (selection !== null) {
-        const nodes = selection.getNodes();
         const topLevelNodes = getTopLevelNodesFromSelection(selection);
         const list = $createListNode(listType);
         const anchor = selection.anchor;
@@ -423,7 +423,7 @@ function BlockOptionsDropdownList({
           : anchorNode.getNextSiblings();
         const insertionPoint = anchorNode.getParentOrThrow();
         // This is a special case for when there's nothing selected
-        if (nodes.length === 0) {
+        if (topLevelNodes.length === 0) {
           const listItem = $createListItemNode();
           list.append(listItem);
           if ($isRootNode(insertionPoint)) {
@@ -458,42 +458,31 @@ function BlockOptionsDropdownList({
         } else {
           insertionPoint.insertAfter(list);
         }
-        if (nodes.length > 0) {
+        if (topLevelNodes.length > 0) {
           let currentListItem = null;
-          const handled = new Set();
           for (let i = 0; i < topLevelNodes.length; i++) {
             const node = topLevelNodes[i];
-            if (!handled.has(node)) {
-              if ($isLineBreakNode(node)) {
-                node.remove();
-                continue;
-              }
-              if (
-                $isLeafNode(node) ||
-                ($isElementNode(node) && node.isInline())
-              ) {
-                const parent = node.getParent();
-                if (currentListItem === null) {
-                  currentListItem = $createListItemNode();
-                  list.append(currentListItem);
-                }
-                if ($isElementNode(node)) {
-                  handled.add(...node.getChildren());
-                  currentListItem.append(...node.getChildren());
-                } else if ($isLeafNode(node) && parent != null) {
-                  currentListItem.append(...parent.getChildren());
-                }
-                if (parent && parent.getChildrenSize() === 0) {
-                  parent.remove();
-                }
-                handled.add(node);
-              } else if ($isElementNode(node)) {
+            if ($isLineBreakNode(node)) {
+              node.remove();
+              continue;
+            }
+            if ($isLeafNode(node) || ($isElementNode(node) && node.isInline())) {
+              if (currentListItem === null) {
                 currentListItem = $createListItemNode();
-                currentListItem.append(...node.getChildren());
-                node.remove();
                 list.append(currentListItem);
-                handled.add(node);
               }
+              if ($isElementNode(node)) {
+                currentListItem.append(node);
+              } else if ($isLeafNode(node)) {
+                const parent = node.getParent();
+                if (parent != null) {
+                  currentListItem.append(parent);
+                }
+              }
+            } else if ($isElementNode(node)) {
+              currentListItem = $createListItemNode();
+              currentListItem.append(node);
+              list.append(currentListItem);
             }
           }
         }

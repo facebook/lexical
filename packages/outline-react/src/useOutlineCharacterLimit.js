@@ -15,9 +15,6 @@ import type {
   Selection,
 } from 'outline';
 
-import {$isElementNode} from '../../outline/src/core/OutlineElementNode';
-import {$isLineBreakNode} from '../../outline/src/core/OutlineLineBreakNode';
-
 import {
   ElementNode,
   $isLeafNode,
@@ -26,6 +23,8 @@ import {
   $getSelection,
   $getRoot,
   $setSelection,
+  $isElementNode,
+  $isLineBreakNode,
 } from 'outline';
 import {$dfs__DEPRECATED} from 'outline/nodes';
 import {$textContentCurry} from 'outline/root';

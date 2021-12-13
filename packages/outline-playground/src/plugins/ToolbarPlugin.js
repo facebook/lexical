@@ -23,7 +23,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {$isHeadingNode} from 'outline/HeadingNode';
-import {$createParagraphNode, $isParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
 import {$createListNode, $isListNode} from 'outline/ListNode';
 import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
@@ -348,6 +348,17 @@ function BlockOptionsDropdownList({
     return listItemNodes;
   };
 
+  const getParentList = (node: OutlineNode): ListNode | null => {
+    let parent = node;
+    while (parent != null) {
+      if ($isListNode(parent)) {
+        return parent;
+      }
+      parent = parent.getParent();
+    }
+    return parent;
+  };
+
   const removeList = () => {
     editor.update(() => {
       $log('removeList');
@@ -387,13 +398,12 @@ function BlockOptionsDropdownList({
     selection: Selection,
   ): Array<OutlineNode> => {
     const nodes = selection.getNodes();
-    const selectedNodes = new Set(nodes);
+    const selectedNodes = new Set(nodes.map((node) => node.getKey()));
     const topLevelNodes = [];
     for (let i = 0; i < nodes.length; i++) {
       const currentNode = nodes[i];
       const parent = currentNode.getParent();
-      // safe to use referential equality here?
-      if (!selectedNodes.has(parent)) {
+      if (parent != null && !selectedNodes.has(parent.getKey())) {
         topLevelNodes.push(currentNode);
       }
     }
@@ -405,6 +415,7 @@ function BlockOptionsDropdownList({
       $log('formatList');
       const selection = $getSelection();
       if (selection !== null) {
+        const nodes = selection.getNodes();
         const topLevelNodes = getTopLevelNodesFromSelection(selection);
         const list = $createListNode(listType);
         const anchor = selection.anchor;
@@ -423,7 +434,7 @@ function BlockOptionsDropdownList({
           : anchorNode.getNextSiblings();
         const insertionPoint = anchorNode.getParentOrThrow();
         // This is a special case for when there's nothing selected
-        if (topLevelNodes.length === 0) {
+        if (nodes.length === 0) {
           const listItem = $createListItemNode();
           list.append(listItem);
           if ($isRootNode(insertionPoint)) {
@@ -458,31 +469,39 @@ function BlockOptionsDropdownList({
         } else {
           insertionPoint.insertAfter(list);
         }
-        if (topLevelNodes.length > 0) {
+        if (nodes.length > 0) {
           let currentListItem = null;
-          for (let i = 0; i < topLevelNodes.length; i++) {
-            const node = topLevelNodes[i];
-            if ($isLineBreakNode(node)) {
-              node.remove();
-              continue;
+          const handled = new Set();
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (
+              $isElementNode(node) &&
+              node.isEmpty() &&
+              !handled.has(node.getKey())
+            ) {
+              currentListItem = $createListItemNode();
+              list.append(currentListItem);
+              currentListItem.append(node);
             }
-            if ($isLeafNode(node) || ($isElementNode(node) && node.isInline())) {
-              if (currentListItem === null) {
-                currentListItem = $createListItemNode();
-                list.append(currentListItem);
-              }
-              if ($isElementNode(node)) {
-                currentListItem.append(node);
-              } else if ($isLeafNode(node)) {
-                const parent = node.getParent();
-                if (parent != null) {
-                  currentListItem.append(parent);
+            if ($isLeafNode(node)) {
+              let parent = node.getParent();
+              while (parent != null) {
+                if ($isListNode(parent) && parent.getTag() !== listType) {
+                  parent.setTag(listType);
+                  break;
+                } else {
+                  const nextParent = parent.getParent();
+                  const parentKey = parent.getKey();
+                  if ($isRootNode(nextParent) && !handled.has(parentKey)) {
+                    handled.add(parentKey);
+                    currentListItem = $createListItemNode();
+                    list.append(currentListItem);
+                    currentListItem.append(parent);
+                    break;
+                  }
+                  parent = nextParent;
                 }
               }
-            } else if ($isElementNode(node)) {
-              currentListItem = $createListItemNode();
-              currentListItem.append(node);
-              list.append(currentListItem);
             }
           }
         }

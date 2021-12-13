@@ -534,16 +534,10 @@ function beginUpdate(
     tag = options.tag;
     skipTransforms = options.skipTransforms;
   }
-  if (onUpdate) {
-    deferred.push(onUpdate);
-  }
+
   const currentEditorState = editor._editorState;
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
-
-  if (tag != null) {
-    editor._updateTags.add(tag);
-  }
 
   if (pendingEditorState === null) {
     pendingEditorState = editor._pendingEditorState =
@@ -633,6 +627,12 @@ function beginUpdate(
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
+    if (onUpdate) {
+      deferred.push(onUpdate);
+    }
+    if (tag != null) {
+      editor._updateTags.add(tag);
+    }
     if (pendingEditorState._flushSync) {
       pendingEditorState._flushSync = false;
       commitPendingUpdates(editor);

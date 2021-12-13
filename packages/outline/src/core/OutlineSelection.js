@@ -315,7 +315,10 @@ export class Selection {
           textContent += text;
         } else if ($isLineBreakNode(node)) {
           textContent += '\n';
-        } else if ($isDecoratorNode(node)) {
+        } else if (
+          $isDecoratorNode(node) &&
+          (node !== lastNode || !this.isCollapsed())
+        ) {
           textContent += node.getTextContent();
         }
       }

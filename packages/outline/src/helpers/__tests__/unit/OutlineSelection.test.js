@@ -21,6 +21,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 import useOutlineRichText from 'outline-react/useOutlineRichText';
 import {
   $createTestElementNode,
+  $createTestDecoratorNode,
   createTestEditor,
 } from '../../../__tests__/utils';
 
@@ -1492,5 +1493,90 @@ describe('OutlineSelection tests', () => {
       focus.set(paragraphKey, 0, 'block');
       expect(selection.isBackward()).toBe(true);
     });
+  });
+
+  describe('Decorator text content for selection', () => {
+    [
+      {
+        name: 'Not included if cursor right before it',
+        fn: ({textNode1, anchor, focus}) => {
+          anchor.set(textNode1.getKey(), 1, 'text');
+          focus.set(textNode1.getKey(), 1, 'text');
+          return '';
+        },
+      },
+      {
+        name: 'Not included if cursor right after it',
+        fn: ({textNode2, anchor, focus}) => {
+          anchor.set(textNode2.getKey(), 0, 'text');
+          focus.set(textNode2.getKey(), 0, 'text');
+          return '';
+        },
+      },
+      {
+        name: 'Included if decorator is selected within text',
+        fn: ({textNode1, textNode2, decorator, anchor, focus}) => {
+          anchor.set(textNode1.getKey(), 1, 'text');
+          focus.set(textNode2.getKey(), 0, 'text');
+          return decorator.getTextContent();
+        },
+      },
+      {
+        name: 'Included if decorator is selected with another node before it',
+        fn: ({textNode1, textNode2, decorator, anchor, focus}) => {
+          anchor.set(textNode1.getKey(), 0, 'text');
+          focus.set(textNode2.getKey(), 0, 'text');
+          return textNode1.getTextContent() + decorator.getTextContent();
+        },
+      },
+      {
+        name: 'Included if decorator is selected with another node after it',
+        fn: ({textNode1, textNode2, decorator, anchor, focus}) => {
+          anchor.set(textNode1.getKey(), 1, 'text');
+          focus.set(textNode2.getKey(), 1, 'text');
+          return decorator.getTextContent() + textNode2.getTextContent();
+        },
+      },
+      {
+        name: 'Included if decorator is selected as the only node',
+        fn: ({paragraph, textNode1, textNode2, decorator, anchor, focus}) => {
+          textNode1.remove();
+          textNode2.remove();
+          anchor.set(paragraph.getKey(), 0, 'block');
+          focus.set(paragraph.getKey(), 1, 'block');
+          return decorator.getTextContent();
+        },
+      },
+    ]
+      .reduce((testSuite, testCase) => {
+        const inverse = {
+          ...testCase,
+          name: testCase.name + ' (inverse selection)',
+          invertSelection: true,
+        };
+        return testSuite.concat(testCase, inverse);
+      }, [])
+      .forEach(({name, fn, invertSelection}) => {
+        it(name, async () => {
+          await editor.update(() => {
+            const root = $getRoot();
+            const paragraph = root.getFirstChild();
+            const textNode1 = $createTextNode('1');
+            const textNode2 = $createTextNode('2');
+            const decorator = $createTestDecoratorNode();
+            paragraph.append(textNode1, decorator, textNode2);
+            const selection: Selection = $getSelection();
+            const expectedTextContent = fn({
+              paragraph,
+              decorator,
+              anchor: invertSelection ? selection.focus : selection.anchor,
+              focus: invertSelection ? selection.anchor : selection.focus,
+              textNode1,
+              textNode2,
+            });
+            expect(selection.getTextContent()).toBe(expectedTextContent);
+          });
+        });
+      });
   });
 });

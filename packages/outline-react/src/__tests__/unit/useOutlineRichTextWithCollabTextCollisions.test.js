@@ -98,6 +98,7 @@ describe('useOutlineRichTextWithCollabLists', () => {
   it('Remove text at within the first of multiple paragraphs colliding with removing first paragraph.', async () => {
     const clientCount = 2;
     const connector = createTestConnection();
+    const sampleParagraphCount = 2;
     const clients: Array<Client> = createAndStartClients(
       connector,
       container,
@@ -111,11 +112,11 @@ describe('useOutlineRichTextWithCollabLists', () => {
     await waitForReact(() => {
       clients[0].update(() => {
         removeInitialParagraph();
-        createSampleParagraphsWithClient(clients[0], clientCount);
+        createSampleParagraphsWithClient(clients[0], sampleParagraphCount);
       });
     });
 
-    verifySampleParagraphsWithClient(clients[0], clientCount);
+    verifySampleParagraphsWithClient(clients[0], sampleParagraphCount);
 
     disconnectClients(clients);
 
@@ -151,5 +152,121 @@ describe('useOutlineRichTextWithCollabLists', () => {
 
     testClientsForEquality(clients);
     stopClients(clients);
+  });
+
+  it('General text deletion collision testing.', async () => {
+    type ClientTest = {
+      anchorIndex: number,
+      anchorOffset: number,
+      focusIndex: number,
+      focusOffset: number,
+      removeText: boolean,
+    };
+
+    type TestCriteriaForTextCollabCollisions = {
+      clientCount: number,
+      clientTestCriteria: Array<ClientTest>,
+      sampleParagraphCount: number,
+      testCount: number,
+    };
+
+    const testCriteria: TestCriteriaForTextCollabCollisions = {
+      clientCount: 2,
+      clientTestCriteria: [
+        {
+          anchorIndex: 0,
+          anchorOffset: 5,
+          focusIndex: 1,
+          focusOffset: 6,
+          removeText: true,
+        },
+        {
+          anchorIndex: 0,
+          anchorOffset: 5,
+          focusIndex: 1,
+          focusOffset: 6,
+          removeText: true,
+        },
+      ],
+      sampleParagraphCount: 2,
+      testCount: 2,
+    };
+
+    for (let testIndex = 0; testIndex < testCriteria.testCount; ++testIndex) {
+      const connector = createTestConnection();
+      const clients: Array<Client> = createAndStartClients(
+        connector,
+        container,
+        testCriteria.clientCount,
+      );
+      const testCriterion = testCriteria.clientTestCriteria[testIndex];
+
+      const client = clients[0];
+      expect(client != null).toBe(true);
+
+      // Setup document for collision tests.
+      await waitForReact(() => {
+        clients[0].update(() => {
+          removeInitialParagraph();
+          createSampleParagraphsWithClient(
+            clients[0],
+            testCriteria.sampleParagraphCount,
+          );
+        });
+      });
+
+      verifySampleParagraphsWithClient(
+        clients[0],
+        testCriteria.sampleParagraphCount,
+      );
+
+      disconnectClients(clients);
+
+      // Perform edits on the clients
+      let clientIndex = 0;
+      await waitForReact(() => {
+        clients[clientIndex].update(() => {
+          const root = $getRoot();
+          const paragraph1 = root.getFirstChild();
+          // const paragraph2 = paragraph1.getNextSibling();
+          const textNode = paragraph1.getFirstChild();
+          textNode.select(0, 0);
+          const selection = $getSelection();
+
+          selection.anchor.set(
+            root.getChildrenKeys()[testCriterion[clientIndex].anchorIndex],
+            testCriterion[clientIndex].anchorOffset,
+            'text',
+          );
+
+          selection.focus.set(
+            root.getChildrenKeys()[testCriterion[clientIndex].focusIndex],
+            testCriterion[clientIndex].focusOffset,
+            'text',
+          );
+
+          if (testCriterion[clientIndex].removeText === true) {
+            selection.removeText();
+          }
+        });
+      });
+
+      // Remove paragraph 2.
+      clientIndex = 1;
+      await waitForReact(() => {
+        clients[clientIndex].update(() => {
+          const root = $getRoot();
+          const paragraph = root.getFirstChild();
+          paragraph.remove();
+        });
+      });
+
+      await waitForReact(() => {
+        connectClients(clients);
+      });
+
+      testClientsForEquality(clients);
+      stopClients(clients);
+    }
   });
 });

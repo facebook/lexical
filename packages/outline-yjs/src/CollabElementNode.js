@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {TextOperation, Map as YMap, XmlText, XmlElement} from 'yjs';
+import type {TextOperation, XmlText, XmlElement} from 'yjs';
 import type {
   ElementNode,
   NodeKey,
@@ -35,6 +35,7 @@ import {
   $isDecoratorNode,
 } from 'outline';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
+import {Map as YMap} from 'yjs';
 
 export class CollabElementNode {
   _key: NodeKey;
@@ -139,15 +140,34 @@ export class CollabElementNode {
             deletionSize -= 1;
           } else if (node instanceof CollabTextNode) {
             const delCount = Math.min(deletionSize, length);
-            if (offset === 0 && delCount === node.getSize()) {
+            const prevCollabNode =
+              nodeIndex !== 0 ? children[nodeIndex - 1] : null;
+            const nodeSize = node.getSize();
+
+            if (
+              offset === 0 &&
+              delCount === 1 &&
+              nodeIndex > 0 &&
+              prevCollabNode instanceof CollabTextNode &&
+              nodeSize
+            ) {
+              // Merge the text node with previous.
+              prevCollabNode._text += node._text;
+              children.splice(nodeIndex, 1);
+            } else if (offset === 0 && delCount >= nodeSize - 1) {
               // The entire thing needs removing
               children.splice(nodeIndex, 1);
+              const diff = nodeSize - delCount;
+              if (diff > 0) {
+                this._xmlText.delete(offset, diff);
+              }
             } else {
               node._text = spliceString(node._text, offset, delCount, '');
             }
             deletionSize -= delCount;
           } else {
-            throw new Error('Should never happen for ' + String(node));
+            // throw new Error('Should never happen for ' + String(node));
+            break;
           }
         }
       } else if (insertDelta != null) {
@@ -161,7 +181,15 @@ export class CollabElementNode {
           if (node instanceof CollabTextNode) {
             node._text = spliceString(node._text, offset, 0, insertDelta);
           } else {
-            throw new Error('Should never happen');
+            // TODO: maybe we can improve this by keeping around a redundant
+            // text node map, rather than removing all the text nodes, so there
+            // never can be dangling text.
+
+            // We have a conflict where there was likely a CollabTextNode and
+            // an Outline TextNode too, but they were removed in a merge. So
+            // let's just ignore the text and trigger a removal for it from our
+            // shared type.
+            this._xmlText.delete(offset, insertDelta.length);
           }
           currIndex += insertDelta.length;
         } else {
@@ -365,6 +393,7 @@ export class CollabElementNode {
     const nextChildren = nextOutlineNode.__children;
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
+    const collabNodeMap = binding.collabNodeMap;
     let prevChildrenSet: void | Set<NodeKey>;
     let nextChildrenSet: void | Set<NodeKey>;
     let prevIndex = 0;
@@ -408,6 +437,7 @@ export class CollabElementNode {
             nextChildNode,
             this,
           );
+          collabNodeMap.set(nextKey, collabNode);
           if (prevHasNextKey) {
             this.splice(binding, nextIndex, 1, collabNode);
             prevIndex++;
@@ -432,9 +462,10 @@ export class CollabElementNode {
           this,
         );
         this.append(collabNode);
+        collabNodeMap.set(key, collabNode);
       }
     } else if (removeOldChildren && !appendNewChildren) {
-      for (let i = prevEndIndex; i >= prevIndex; i--) {
+      for (let i = this._children.length - 1; i >= nextIndex; i--) {
         this.splice(binding, i, 1);
       }
     }
@@ -494,6 +525,8 @@ export class CollabElementNode {
     }
     const xmlText = this._xmlText;
     if (delCount !== 0) {
+      // What if we delete many nodes, don't we need to get all their
+      // sizes?
       xmlText.delete(offset, child.getSize());
     }
     if (collabNode instanceof CollabElementNode) {

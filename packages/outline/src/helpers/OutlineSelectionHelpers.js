@@ -23,6 +23,7 @@ import {
   $isTextNode,
   $isElementNode,
   $createTextNode,
+  $isLineBreakNode,
   $isRootNode,
 } from 'outline';
 
@@ -250,7 +251,12 @@ export function $patchStyleText(
   }
   const anchor = selection.anchor;
   const focus = selection.focus;
-  const firstNodeText = firstNode.getTextContent();
+  const firstNodeText =
+    $isTextNode(firstNode) ||
+    $isLineBreakNode(firstNode) ||
+    $isElementNode(firstNode)
+      ? firstNode.getTextContent()
+      : '';
   const firstNodeTextLength = firstNodeText.length;
   const focusOffset = focus.offset;
   let anchorOffset = anchor.offset;
@@ -263,7 +269,12 @@ export function $patchStyleText(
 
   // This is the case where the user only selected the very end of the
   // first node so we don't want to include it in the formatting change.
-  if (startOffset === firstNode.getTextContentSize()) {
+  if (
+    ($isTextNode(firstNode) ||
+      $isElementNode(firstNode) ||
+      $isLineBreakNode(firstNode)) &&
+    startOffset === firstNode.getTextContentSize()
+  ) {
     const nextSibling = firstNode.getNextSibling();
 
     if ($isTextNode(nextSibling)) {

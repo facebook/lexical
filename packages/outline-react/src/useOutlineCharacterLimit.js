@@ -15,6 +15,9 @@ import type {
   Selection,
 } from 'outline';
 
+import {$isElementNode} from '../../outline/src/core/OutlineElementNode';
+import {$isLineBreakNode} from '../../outline/src/core/OutlineLineBreakNode';
+
 import {
   ElementNode,
   $isLeafNode,
@@ -159,7 +162,11 @@ function $wrapOverflowedNodes(offset: number): void {
       } else if (previousLength < offset) {
         const descendant = node.getFirstDescendant();
         const descendantLength =
-          descendant !== null ? descendant.getTextContentSize() : 0;
+          $isTextNode(descendant) ||
+          $isLineBreakNode(descendant) ||
+          $isElementNode(descendant)
+            ? descendant.getTextContentSize()
+            : 0;
         const previousPlusDescendantLength = previousLength + descendantLength;
         // For simple text we can redimension the overflow into a smaller and more accurate
         // container
@@ -174,7 +181,10 @@ function $wrapOverflowedNodes(offset: number): void {
       }
     } else if ($isLeafNode(node)) {
       const previousAccumulatedLength = accumulatedLength;
-      accumulatedLength += node.getTextContentSize();
+      accumulatedLength +=
+        $isTextNode(node) || $isLineBreakNode(node)
+          ? node.getTextContentSize()
+          : 0;
       if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {
         const previousSelection = $getSelection();
         let overflowNode;

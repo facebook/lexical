@@ -14,7 +14,13 @@ import type {
   EditorThemeClasses,
 } from 'outline';
 
-import {$createTextNode, ElementNode} from 'outline';
+import {
+  $createTextNode,
+  $isTextNode,
+  $isLineBreakNode,
+  $isElementNode,
+  ElementNode,
+} from 'outline';
 import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
 import {
   addClassNamesToElement,
@@ -82,7 +88,11 @@ export class ListNode extends ElementNode {
         const listItemNode = $createListItemNode();
         if ($isListNode(currentNode)) {
           listItemNode.append(currentNode);
-        } else {
+        } else if (
+          $isTextNode(currentNode) ||
+          $isElementNode(currentNode) ||
+          $isLineBreakNode(currentNode)
+        ) {
           const textNode = $createTextNode(currentNode.getTextContent());
           listItemNode.append(textNode);
         }

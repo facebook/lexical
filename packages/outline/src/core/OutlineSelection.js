@@ -315,8 +315,6 @@ export class Selection {
           textContent += text;
         } else if ($isLineBreakNode(node)) {
           textContent += '\n';
-        } else if ($isDecoratorNode(node)) {
-          textContent += node.getTextContent();
         }
       }
     }
@@ -504,7 +502,8 @@ export class Selection {
       // Handle mutations to the last node.
       if (
         (endPoint.type === 'text' &&
-          (endOffset !== 0 || lastNode.getTextContent() === '')) ||
+          (endOffset !== 0 ||
+            ($isTextNode(lastNode) && lastNode.getTextContent() === ''))) ||
         (endPoint.type === 'element' &&
           lastNode.getIndexWithinParent() < endOffset)
       ) {
@@ -634,7 +633,12 @@ export class Selection {
     }
     const anchor = this.anchor;
     const focus = this.focus;
-    const firstNodeText = firstNode.getTextContent();
+    const firstNodeText =
+      $isTextNode(firstNode) ||
+      $isElementNode(firstNode) ||
+      $isLineBreakNode(firstNode)
+        ? firstNode.getTextContent()
+        : '';
     const firstNodeTextLength = firstNodeText.length;
     const focusOffset = focus.offset;
     let firstNextFormat = 0;
@@ -655,7 +659,12 @@ export class Selection {
 
     // This is the case where the user only selected the very end of the
     // first node so we don't want to include it in the formatting change.
-    if (startOffset === firstNode.getTextContentSize()) {
+    if (
+      ($isTextNode(firstNode) ||
+        $isElementNode(firstNode) ||
+        $isLineBreakNode(firstNode)) &&
+      startOffset === firstNode.getTextContentSize()
+    ) {
       const nextSibling = firstNode.getNextSibling();
 
       if ($isTextNode(nextSibling)) {

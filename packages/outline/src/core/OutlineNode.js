@@ -496,17 +496,6 @@ export class OutlineNode {
     // $FlowFixMe this is OutlineNode
     return mutableNode;
   }
-  // TODO remove this completely
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
-    return '';
-  }
-  // TODO remove this completely
-  getTextContentSize(
-    includeInert?: boolean,
-    includeDirectionless?: false,
-  ): number {
-    return this.getTextContent(includeInert, includeDirectionless).length;
-  }
 
   // View
 

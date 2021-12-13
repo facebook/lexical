@@ -262,6 +262,12 @@ export class TextNode extends OutlineNode {
     const self = this.getLatest();
     return self.__text;
   }
+  getTextContentSize(
+    includeInert?: boolean,
+    includeDirectionless?: false,
+  ): number {
+    return this.getTextContent(includeInert, includeDirectionless).length;
+  }
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
     const self = this.getLatest();
     const format = self.__format;

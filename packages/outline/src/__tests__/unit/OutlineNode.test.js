@@ -559,27 +559,6 @@ describe('OutlineNode tests', () => {
       });
     });
 
-    test('OutlineNode.getTextContent()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const node = new OutlineNode();
-        expect(node.getTextContent()).toBe('');
-      });
-      await editor.getEditorState().read(() => {
-        expect(textNode.getTextContent()).toBe('foo');
-      });
-      expect(() => textNode.getTextContent()).toThrow();
-    });
-
-    test('OutlineNode.getTextContentSize()', async () => {
-      const {editor} = testEnv;
-      await editor.getEditorState().read(() => {
-        expect(textNode.getTextContentSize()).toBe('foo'.length);
-        // TODO: more tests with inert and directionless children
-      });
-      expect(() => textNode.getTextContentSize()).toThrow();
-    });
-
     test('OutlineNode.createDOM()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

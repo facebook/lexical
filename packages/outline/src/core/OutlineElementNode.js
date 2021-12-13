@@ -10,7 +10,7 @@
 import type {NodeKey} from './OutlineNode';
 import type {Selection} from './OutlineSelection';
 
-import {$isTextNode, TextNode} from '.';
+import {$isTextNode, $isLineBreakNode, TextNode} from '.';
 import {OutlineNode} from './OutlineNode';
 import {$makeSelection, $getSelection} from './OutlineSelection';
 import {errorOnReadOnly, getActiveEditor} from './OutlineUpdates';
@@ -173,12 +173,22 @@ export class ElementNode extends OutlineNode {
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
-      textContent += child.getTextContent(includeInert, includeDirectionless);
-      if ($isElementNode(child) && i !== childrenLength - 1) {
-        textContent += '\n\n';
+      if ($isTextNode(child) || $isElementNode(child)) {
+        textContent += child.getTextContent(includeInert, includeDirectionless);
+        if ($isElementNode(child) && i !== childrenLength - 1) {
+          textContent += '\n\n';
+        }
+      } else if ($isLineBreakNode(child)) {
+        textContent += '\n';
       }
     }
     return textContent;
+  }
+  getTextContentSize(
+    includeInert?: boolean,
+    includeDirectionless?: false,
+  ): number {
+    return this.getTextContent(includeInert, includeDirectionless).length;
   }
   getDirection(): 'ltr' | 'rtl' | null {
     return this.__dir;

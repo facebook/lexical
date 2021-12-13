@@ -156,21 +156,23 @@ function createNode(
       }
       // Decorators are always non editable
       dom.contentEditable = 'false';
-    } else {
+    } else if ($isTextNode(node)) {
       const text = node.getTextContent();
-      if ($isTextNode(node)) {
-        if (!node.isDirectionless()) {
-          subTreeDirectionedTextContent += text;
-        }
-        if (node.isInert()) {
-          const domStyle = dom.style;
-          domStyle.pointerEvents = 'none';
-          domStyle.userSelect = 'none';
-          dom.contentEditable = 'false';
-          // To support Safari
-          domStyle.setProperty('-webkit-user-select', 'none');
-        }
+      if (!node.isDirectionless()) {
+        subTreeDirectionedTextContent += text;
       }
+      if (node.isInert()) {
+        const domStyle = dom.style;
+        domStyle.pointerEvents = 'none';
+        domStyle.userSelect = 'none';
+        dom.contentEditable = 'false';
+        // To support Safari
+        domStyle.setProperty('-webkit-user-select', 'none');
+      }
+      subTreeTextContent += text;
+      editorTextContent += text;
+    } else if ($isLineBreakNode(node)) {
+      const text = node.getTextContent();
       subTreeTextContent += text;
       editorTextContent += text;
     }
@@ -416,11 +418,15 @@ function reconcileNode(
       if (previousSubTreeDirectionTextContent !== undefined) {
         subTreeDirectionedTextContent += previousSubTreeDirectionTextContent;
       }
-    } else if (!$isDecoratorNode(prevNode)) {
+    } else if ($isTextNode(prevNode)) {
       const text = prevNode.getTextContent();
-      if ($isTextNode(prevNode) && !prevNode.isDirectionless()) {
+      if (!prevNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
+      editorTextContent += text;
+      subTreeTextContent += text;
+    } else if ($isLineBreakNode(prevNode)) {
+      const text = prevNode.getTextContent();
       editorTextContent += text;
       subTreeTextContent += text;
     }
@@ -463,12 +469,16 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-    } else {
+    } else if ($isTextNode(nextNode)) {
       // Handle text content, for LTR, LTR cases.
       const text = nextNode.getTextContent();
-      if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
+      if (!nextNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
+      subTreeTextContent += text;
+      editorTextContent += text;
+    } else if ($isLineBreakNode(nextNode)) {
+      const text = nextNode.getTextContent();
       subTreeTextContent += text;
       editorTextContent += text;
     }

@@ -28,6 +28,10 @@ export class LineBreakNode extends OutlineNode {
     return '\n';
   }
 
+  getTextContentSize(): 1 {
+    return 1;
+  }
+
   createDOM(): HTMLElement {
     return document.createElement('br');
   }

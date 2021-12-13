@@ -195,6 +195,6 @@ export async function waitForReact(cb) {
   await ReactTestUtils.act(async () => {
     cb();
     await Promise.resolve().then();
+    await Promise.resolve().then();
   });
-  await Promise.resolve().then();
 }

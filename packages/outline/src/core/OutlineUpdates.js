@@ -541,10 +541,6 @@ function beginUpdate(
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
 
-  if (tag != null) {
-    editor._updateTags.add(tag);
-  }
-
   if (pendingEditorState === null) {
     pendingEditorState = editor._pendingEditorState =
       cloneEditorState(currentEditorState);
@@ -633,6 +629,9 @@ function beginUpdate(
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
+    if (tag != null) {
+      editor._updateTags.add(tag);
+    }
     if (pendingEditorState._flushSync) {
       pendingEditorState._flushSync = false;
       commitPendingUpdates(editor);
@@ -642,6 +641,10 @@ function beginUpdate(
       });
     }
   } else {
+    if (onUpdate) {
+      const index = deferred.indexOf(onUpdate);
+      deferred.splice(index, 1);
+    }
     pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;

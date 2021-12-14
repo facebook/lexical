@@ -124,16 +124,13 @@ export class OutlineNode {
     // Ensure custom nodes implement required methods.
     if (__DEV__) {
       const proto = Object.getPrototypeOf(this);
-      if (!proto.constructor.hasOwnProperty('getType')) {
-        console.warn(
-          `${this.constructor.name} must implement static "getType" method`,
-        );
-      }
-      if (!proto.constructor.hasOwnProperty('clone')) {
-        console.warn(
-          `${this.constructor.name} must implement static "clone" method`,
-        );
-      }
+      ['getType', 'clone'].forEach((method) => {
+        if (!proto.constructor.hasOwnProperty(method)) {
+          console.warn(
+            `${this.constructor.name} must implement static "${method}" method`,
+          );
+        }
+      });
       if (this.__type !== 'root') {
         errorOnReadOnly();
         errorOnTypeKlassMismatch(this.__type, this.constructor);

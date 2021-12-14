@@ -293,15 +293,25 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
         (hasEmptyDirectionedTextContent && direction === 'ltr')
       ) {
         dom.removeAttribute('dir');
-        const previousDirectionTheme = theme[previousDirection];
+        let previousDirectionTheme = theme[previousDirection];
         if (previousDirectionTheme !== undefined) {
+          if (typeof previousDirectionTheme === 'string') {
+            const classNamesArr = previousDirectionTheme.split(' ');
+            // $FlowFixMe: intentional
+            previousDirectionTheme = theme[previousDirection] = classNamesArr;
+          }
           // $FlowFixMe: intentional
-          classList.remove(previousDirectionTheme);
+          classList.remove(...previousDirectionTheme);
         }
       } else if (direction !== null) {
-        const directionTheme = theme[direction];
+        let directionTheme = theme[direction];
         if (directionTheme !== undefined) {
-          classList.add(directionTheme);
+          if (typeof directionTheme === 'string') {
+            const classNamesArr = directionTheme.split(' ');
+            // $FlowFixMe: intentional
+            directionTheme = theme[previousDirection] = classNamesArr;
+          }
+          classList.add(...directionTheme);
         }
         dom.dir = direction;
       }

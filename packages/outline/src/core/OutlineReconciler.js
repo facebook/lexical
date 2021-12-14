@@ -473,7 +473,11 @@ function reconcileNode(
       editorTextContent += text;
     }
   }
-  if ($isRootNode(nextNode) && nextNode.__cachedText !== editorTextContent) {
+  if (
+    !activeEditorStateReadOnly &&
+    $isRootNode(nextNode) &&
+    nextNode.__cachedText !== editorTextContent
+  ) {
     // Cache the latest text content.
     nextNode = nextNode.getWritable();
     nextNode.__cachedText = editorTextContent;

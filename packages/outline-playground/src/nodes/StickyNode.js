@@ -159,8 +159,8 @@ function StickyComponent({
       rootElementRect !== null
     ) {
       positioning.x =
-        event.clientX - positioning.offsetX - rootElementRect.left;
-      positioning.y = event.clientY - positioning.offsetY - rootElementRect.top;
+        event.pageX - positioning.offsetX - rootElementRect.left;
+      positioning.y = event.pageY - positioning.offsetY - rootElementRect.top;
       positionSticky(stickyContainer, positioning);
     }
   }, []);

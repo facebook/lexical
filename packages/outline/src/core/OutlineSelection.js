@@ -313,10 +313,8 @@ export class Selection {
               : text.slice(0, anchorOffset);
           }
           textContent += text;
-        } else if ($isLineBreakNode(node)) {
-          textContent += '\n';
         } else if (
-          $isDecoratorNode(node) &&
+          ($isDecoratorNode(node) || $isLineBreakNode(node)) &&
           (node !== lastNode || !this.isCollapsed())
         ) {
           textContent += node.getTextContent();

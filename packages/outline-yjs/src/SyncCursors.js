@@ -89,14 +89,14 @@ function createAbsolutePosition(
 }
 
 function shouldUpdatePosition(
-  currentPos: null | RelativePosition,
-  pos: null | RelativePosition,
+  currentPos: ?RelativePosition,
+  pos: ?RelativePosition,
 ): boolean {
-  if (currentPos === null) {
-    if (pos !== null) {
+  if (currentPos == null) {
+    if (pos != null) {
       return true;
     }
-  } else if (pos === null || !compareRelativePositions(currentPos, pos)) {
+  } else if (pos == null || !compareRelativePositions(currentPos, pos)) {
     return true;
   }
   return false;
@@ -248,8 +248,12 @@ function updateCursor(
   ) {
     focusOffset = 1;
   }
-  range.setStart(anchorDOM, anchorOffset);
-  range.setEnd(focusDOM, focusOffset);
+  try {
+    range.setStart(anchorDOM, anchorOffset);
+    range.setEnd(focusDOM, focusOffset);
+  } catch (e) {
+    return;
+  }
 
   if (
     range.collapsed &&
@@ -304,6 +308,9 @@ export function syncLocalCursorPosition(
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();
+  if (localState === null) {
+    return;
+  }
   const anchorPos = localState.anchorPos;
   const focusPos = localState.focusPos;
 
@@ -470,13 +477,17 @@ export function syncOutlineSelectionToYjs(
   nextSelection: null | Selection,
 ): void {
   const awareness = provider.awareness;
+  const localState = awareness.getLocalState();
+  if (localState === null) {
+    return;
+  }
   const {
     anchorPos: currentAnchorPos,
     focusPos: currentFocusPos,
     name,
     color,
     focusing,
-  } = awareness.getLocalState();
+  } = localState;
   let anchorPos = null;
   let focusPos = null;
 

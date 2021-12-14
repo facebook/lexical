@@ -7,25 +7,58 @@
  * @flow strict
  */
 
-import type {OutlineEditor} from 'outline';
+import type {ElementNode, CommandListenerEditorPriority} from 'outline';
 
 import {useEffect} from 'react';
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
-
+import {$log, $getSelection} from 'outline';
 import {TableNode} from 'outline/TableNode';
 import {TableCellNode} from 'outline/TableCellNode';
 import {TableRowNode} from 'outline/TableRowNode';
+import {$createTableNodeWithDimensions} from 'outline/nodes';
+import {$createParagraphNode} from 'outline/ParagraphNode';
 
-function useTables(editor: OutlineEditor): void {
-  useEffect(() => {
-    return editor.registerNodes([TableNode, TableCellNode, TableRowNode]);
-  }, [editor]);
-}
+const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function TablesPlugin(): React$Node {
   const [editor] = useOutlineComposerContext();
 
-  useTables(editor);
+  useEffect(() => {
+    const removeCommandListener = editor.addListener(
+      'command',
+      (type) => {
+        if (type === 'insertTable') {
+          $log('handleAddTable');
+          const selection = $getSelection();
+          if (selection === null) {
+            return true;
+          }
+          const focusNode = selection.focus.getNode();
+    
+          if (focusNode !== null) {
+            const topLevelNode = focusNode.getTopLevelElementOrThrow();
+            const tableNode = $createTableNodeWithDimensions(3, 3);
+            topLevelNode.insertAfter(tableNode);
+            tableNode.insertAfter($createParagraphNode());
+            const firstCell = tableNode
+              .getFirstChildOrThrow<ElementNode>()
+              .getFirstChildOrThrow<ElementNode>();
+            firstCell.select();
+          }
+          return true;
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+
+    const removeNodes = editor.registerNodes([TableNode, TableCellNode, TableRowNode]);
+
+    return () => {
+      removeCommandListener();
+      removeNodes();
+    };
+  }, [editor]);
 
   return null;
 }

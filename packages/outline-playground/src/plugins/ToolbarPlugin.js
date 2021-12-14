@@ -432,7 +432,7 @@ function BlockOptionsDropdownList({
         const nextSiblings = isBackward
           ? focusNode.getNextSiblings()
           : anchorNode.getNextSiblings();
-        const insertionPoint = anchorNode.getParentOrThrow();
+        const insertionPoint = anchorNode.getTopLevelElementOrThrow();
         // This is a special case for when there's nothing selected
         if (nodes.length === 0) {
           const listItem = $createListItemNode();
@@ -486,8 +486,14 @@ function BlockOptionsDropdownList({
             if ($isLeafNode(node)) {
               let parent = node.getParent();
               while (parent != null) {
-                if ($isListNode(parent) && parent.getTag() !== listType) {
-                  parent.setTag(listType);
+                const parentKey = parent.getKey();
+                if ($isListNode(parent)) {
+                  if (!handled.has(parentKey)) {
+                    const newListNode = $createListNode(listType);
+                    newListNode.append(...parent.getChildren());
+                    parent.replace(newListNode);
+                    handled.add(parentKey);
+                  }
                   break;
                 } else {
                   const nextParent = parent.getParent();
@@ -503,6 +509,9 @@ function BlockOptionsDropdownList({
                 }
               }
             }
+          }
+          if (list.isEmpty()) {
+            list.remove();
           }
         }
       }
@@ -727,7 +736,6 @@ export default function ToolbarPlugin(): React$Node {
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
-
     if (selection !== null) {
       const anchorNode = selection.anchor.getNode();
       const element =
@@ -735,17 +743,17 @@ export default function ToolbarPlugin(): React$Node {
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
-      if (elementKey !== selectedElementKey) {
-        const elementDOM = activeEditor.getElementByKey(elementKey);
-        if (elementDOM !== null) {
-          setSelectedElementKey(elementKey);
-          const type =
-            $isHeadingNode(element) || $isListNode(element)
-              ? element.getTag()
-              : element.getType();
-          setBlockType(type);
-        }
+      //if (elementKey !== selectedElementKey) {
+      const elementDOM = activeEditor.getElementByKey(elementKey);
+      if (elementDOM !== null) {
+        setSelectedElementKey(elementKey);
+        const type =
+          $isHeadingNode(element) || $isListNode(element)
+            ? element.getTag()
+            : element.getType();
+        setBlockType(type);
       }
+      //}
       // Hande buttons
       setFontSize(
         $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),

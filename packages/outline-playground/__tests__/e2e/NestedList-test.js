@@ -212,19 +212,22 @@ describe('Nested List', () => {
         '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
       );
 
-      // await toggleBulletList(page);
+      await toggleBulletList(page);
 
-      // await assertHTML(
-      //   page,
-      //   '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
-      // );
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
+      );
 
-      // await toggleBulletList(page);
+      // click to close the floating link bar
+      await page.click('div.editor');
 
-      // await assertHTML(
-      //   page,
-      //   '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p>',
-      // );
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
+      );
     });
 
     it(`Can create mutliple bullet lists and then toggle off the list.`, async () => {

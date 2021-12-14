@@ -432,24 +432,29 @@ function BlockOptionsDropdownList({
         const nextSiblings = isBackward
           ? focusNode.getNextSiblings()
           : anchorNode.getNextSiblings();
-        const insertionPoint = anchorNode.getTopLevelElementOrThrow();
+        const anchorNodeParent = anchorNode.getParent();
+        const insertionPoint = $isRootNode(anchorNodeParent)
+          ? anchorNode
+          : anchorNode.getTopLevelElementOrThrow();
         // This is a special case for when there's nothing selected
         if (nodes.length === 0) {
           const listItem = $createListItemNode();
           list.append(listItem);
-          if ($isRootNode(insertionPoint)) {
+          if ($isRootNode(anchorNodeParent)) {
             anchorNode.replace(list);
           } else if ($isListItemNode(anchorNode)) {
             const parent = anchorNode.getParentOrThrow();
             parent.replace(list);
           }
           listItem.select();
+          return;
         }
         // This is when we have siblings on either side of the selection and the selection is within a single block.
         else if (
           previousSiblings.length > 0 &&
           nextSiblings.length > 0 &&
-          insertionPoint.is(focusNode.getParentOrThrow())
+          insertionPoint.is(focusNode.getParentOrThrow()) &&
+          $isElementNode(insertionPoint)
         ) {
           // split the block - ideally we'd probably create whatever
           // kind of node it is, but it's always a paragraph for now.

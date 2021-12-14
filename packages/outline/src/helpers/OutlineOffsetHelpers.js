@@ -24,7 +24,7 @@ import {
 import invariant from 'shared/invariant';
 
 type OffsetElementNode = {
-  type: 'block',
+  type: 'element',
   child: null | OffsetNode,
   prev: null | OffsetNode,
   next: null | OffsetNode,
@@ -323,7 +323,7 @@ function $searchForNodeWithOffset(
   while (currentNode !== null) {
     const end =
       currentNode.end +
-      (currentNode.type !== 'block' || blockOffsetSize === 0 ? 1 : 0);
+      (currentNode.type !== 'element' || blockOffsetSize === 0 ? 1 : 0);
     if (offset < end) {
       const child = currentNode.child;
       if (child !== null) {
@@ -343,7 +343,7 @@ function $searchForNodeWithOffset(
 
 function $createInternalOffsetNode<N>(
   child: null | OffsetNode,
-  type: 'block' | 'text' | 'inline',
+  type: 'element' | 'text' | 'inline',
   start: number,
   end: number,
   key: NodeKey,
@@ -398,7 +398,7 @@ function $createOffsetNode(
     }
     const offsetNode = $createInternalOffsetNode<OffsetElementNode>(
       child,
-      'block',
+      'element',
       start,
       start,
       key,

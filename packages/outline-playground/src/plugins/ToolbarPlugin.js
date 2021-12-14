@@ -31,9 +31,7 @@ import {
   $log,
   $getSelection,
   $setSelection,
-  createEditorStateRef,
 } from 'outline';
-import {$createImageNode} from '../nodes/ImageNode';
 import {$createLinkNode, $isLinkNode} from 'outline/LinkNode';
 import {
   $wrapLeafNodesInElements,
@@ -41,20 +39,10 @@ import {
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
 } from 'outline/selection';
-import {$createTableNodeWithDimensions} from 'outline/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
-import yellowFlowerImage from '../images/image/yellow-flower.jpg';
-
 const LowPriority: CommandListenerLowPriority = 1;
-
-function createUID(): string {
-  return Math.random()
-    .toString(36)
-    .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
-}
 
 const supportedBlockTypes = new Set([
   'paragraph',
@@ -654,44 +642,6 @@ export default function ToolbarPlugin(): React$Node {
     [applyStyleText],
   );
 
-  const insertImage = useCallback(() => {
-    activeEditor.update(() => {
-      $log('insertImage');
-      const selection = $getSelection();
-      if (selection !== null) {
-        const ref = createEditorStateRef(createUID(), null);
-        const imageNode = $createImageNode(
-          yellowFlowerImage,
-          'Yellow flower in tilt shift lens',
-          ref,
-        );
-        selection.insertNodes([imageNode]);
-      }
-    });
-  }, [activeEditor]);
-
-  const insertTable = useCallback(() => {
-    activeEditor.update(() => {
-      $log('handleAddTable');
-      const selection = $getSelection();
-      if (selection === null) {
-        return;
-      }
-      const focusNode = selection.focus.getNode();
-
-      if (focusNode !== null) {
-        const topLevelNode = focusNode.getTopLevelElementOrThrow();
-        const tableNode = $createTableNodeWithDimensions(3, 3);
-        topLevelNode.insertAfter(tableNode);
-        tableNode.insertAfter($createParagraphNode());
-        const firstCell = tableNode
-          .getFirstChildOrThrow<ElementNode>()
-          .getFirstChildOrThrow<ElementNode>();
-        firstCell.select();
-      }
-    });
-  }, [activeEditor]);
-
   const insertLink = useCallback(() => {
     if (!isLink) {
       toggleLinksOnSelection(activeEditor, 'http://');
@@ -721,7 +671,7 @@ export default function ToolbarPlugin(): React$Node {
         <i className="format redo" />
       </button>
       <Divider />
-      {supportedBlockTypes.has(blockType) && (
+      {supportedBlockTypes.has(blockType) && activeEditor === editor && (
         <>
           <button
             className="toolbar-item block-controls"
@@ -836,13 +786,17 @@ export default function ToolbarPlugin(): React$Node {
           document.body,
         )}
       <button
-        onClick={insertImage}
+        onClick={() => {
+          activeEditor.execCommand('insertImage');
+        }}
         className="toolbar-item spaced"
         aria-label="Insert Image">
         <i className="format image" />
       </button>
       <button
-        onClick={insertTable}
+        onClick={() => {
+          activeEditor.execCommand('insertTable');
+        }}
         className="toolbar-item"
         aria-label="Insert Table">
         <i className="format table" />

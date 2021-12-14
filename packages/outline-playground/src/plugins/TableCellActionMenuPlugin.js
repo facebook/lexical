@@ -17,7 +17,7 @@ import {
   OutlineNode,
   $createTextNode,
   $getSelection,
-  $clearSelection,
+  $setSelection,
 } from 'outline';
 import {TableRowNode, $createTableRowNode} from 'outline/TableRowNode';
 import {$createTableCellNode} from 'outline/TableCellNode';
@@ -256,7 +256,7 @@ function TableActionMenu({
 
         insertTableRow(tableNode, tableRowIndex, shouldInsertAfter);
 
-        $clearSelection();
+        $setSelection(null);
 
         onClose();
       });
@@ -288,7 +288,7 @@ function TableActionMenu({
 
       removeTableRowAtIndex(tableNode, tableRowIndex);
 
-      $clearSelection();
+      $setSelection(null);
 
       onClose();
     });
@@ -300,7 +300,7 @@ function TableActionMenu({
 
       tableNode.remove();
 
-      $clearSelection();
+      $setSelection(null);
 
       onClose();
     });
@@ -315,7 +315,7 @@ function TableActionMenu({
 
       deleteTableColumn(tableNode, tableColumnIndex);
 
-      $clearSelection();
+      $setSelection(null);
 
       onClose();
     });

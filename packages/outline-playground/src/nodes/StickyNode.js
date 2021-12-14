@@ -17,7 +17,7 @@ import type {
 
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {DecoratorNode, $getNodeByKey} from 'outline';
+import {DecoratorNode, $getNodeByKey, $setSelection} from 'outline';
 import InlineSimpleEditor from '../ui/InlineSimpleEditor';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -305,6 +305,7 @@ export class StickyNode extends DecoratorNode {
     const writable = this.getWritable();
     writable.__x = x;
     writable.__y = y;
+    $setSelection(null)
   }
 
   toggleColor(): void {

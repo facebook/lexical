@@ -6,7 +6,12 @@
  *
  */
 
-import {selectAll, moveLeft, selectCharacters} from '../keyboardShortcuts';
+import {
+  selectAll,
+  moveLeft,
+  selectCharacters,
+  moveToParagraphEnd,
+} from '../keyboardShortcuts';
 import {
   initializeE2E,
   assertHTML,
@@ -219,15 +224,15 @@ describe('Nested List', () => {
         '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
       );
 
+      // move to end of paragraph to close the floating link bar
+      await moveToParagraphEnd(page);
+
       await toggleBulletList(page);
 
       await assertHTML(
         page,
         '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
       );
-
-      // click to close the floating link bar
-      await page.click('div.editor');
 
       await toggleBulletList(page);
 

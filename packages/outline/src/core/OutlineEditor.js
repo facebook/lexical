@@ -413,9 +413,23 @@ class BaseOutlineEditor {
   addTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T: OutlineNode> in the
     // declaration below guarantees these are OutlineNodes.
-    klass: Class<OutlineNode>,
+    klassOrArray: Array<Class<OutlineNode>> | Class<OutlineNode>,
     listener: Transform<OutlineNode>,
   ): () => void {
+    if (Array.isArray(klassOrArray)) {
+      const removeListeners = [];
+      const klassOrArrayLength = klassOrArray.length;
+      for (let i = 0; i < klassOrArrayLength; i++) {
+        const currentKlass = klassOrArray[i];
+        removeListeners.push(this.addTransform(currentKlass, listener));
+      }
+      return () => {
+        for (let i = 0; i < removeListeners.length; i++) {
+          removeListeners[i]();
+        }
+      };
+    }
+    const klass = klassOrArray;
     const type = klass.getType();
     const registeredNode = this._registeredNodes.get(type);
     if (registeredNode === undefined) {
@@ -586,6 +600,10 @@ declare export class OutlineEditor {
   ): () => void;
   addTransform<T: OutlineNode>(
     klass: Class<T>,
+    listener: Transform<T>,
+  ): () => void;
+  addTransform<T: OutlineNode>(
+    klass: Array<Class<T>>,
     listener: Transform<T>,
   ): () => void;
   execCommand(type: string, payload: CommandPayload): boolean;

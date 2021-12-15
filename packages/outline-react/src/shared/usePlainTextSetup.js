@@ -151,8 +151,6 @@ export default function usePlainTextSetup(
               return true;
             case 'insertImage':
             case 'insertTable':
-            case 'indentContent':
-            case 'outdentContent':
             case 'formatElement':
             case 'formatText': {
               return true;

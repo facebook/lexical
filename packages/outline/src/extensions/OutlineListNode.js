@@ -14,8 +14,6 @@ import type {
   EditorThemeClasses,
 } from 'outline';
 
-import {errorOnReadOnly} from '../core/OutlineUpdates';
-
 import {$createTextNode, ElementNode} from 'outline';
 import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
 import {
@@ -45,13 +43,6 @@ export class ListNode extends ElementNode {
 
   getTag(): ListNodeTagType {
     return this.__tag;
-  }
-
-  setTag(tag: ListNodeTagType): this {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    self.__tag = tag;
-    return self;
   }
 
   // View

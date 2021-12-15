@@ -27,6 +27,7 @@ function createUID(): string {
 }
 
 export default function ActionsPlugins({
+  // eslint-disable-next-line
   isRichText,
 }: {
   isRichText: boolean,

@@ -668,7 +668,7 @@ function MentionsTypeahead({
 
   useEffect(() => {
     return registerKeys({
-      ArrowDown(event, state) {
+      ArrowDown(event) {
         if (results !== null && selectedIndex !== null) {
           if (
             selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
@@ -680,7 +680,7 @@ function MentionsTypeahead({
           event.stopImmediatePropagation();
         }
       },
-      ArrowUp(event, state) {
+      ArrowUp(event) {
         if (results !== null && selectedIndex !== null) {
           if (selectedIndex !== 0) {
             updateSelectedIndex(selectedIndex - 1);
@@ -689,7 +689,7 @@ function MentionsTypeahead({
           event.stopImmediatePropagation();
         }
       },
-      Escape(event, state) {
+      Escape(event) {
         if (results === null || selectedIndex === null) {
           return;
         }
@@ -697,7 +697,7 @@ function MentionsTypeahead({
         event.stopImmediatePropagation();
         close();
       },
-      Tab(event, state) {
+      Tab(event) {
         if (results === null || selectedIndex === null) {
           return;
         }
@@ -705,7 +705,7 @@ function MentionsTypeahead({
         event.stopImmediatePropagation();
         applyCurrentSelected();
       },
-      Enter(event, state) {
+      Enter(event) {
         if (results === null || selectedIndex === null) {
           return;
         }

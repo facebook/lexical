@@ -33,8 +33,6 @@ import {
   $log,
   $getSelection,
   $setSelection,
-  $isLineBreakNode,
-  createEditorStateRef,
   $isRootNode,
   $isLeafNode,
   $isElementNode,
@@ -47,11 +45,9 @@ import {
   $isAtNodeEnd,
 } from 'outline/selection';
 
-import {$createTableNodeWithDimensions, $getTopListNode} from 'outline/nodes';
+import {$getTopListNode} from 'outline/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-
-import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -172,7 +168,7 @@ function FloatingLinkEditor({editor}: {editor: OutlineEditor}): React$Node {
 
     const removeCommandListener = editor.addListener(
       'command',
-      (type, payload) => {
+      (type) => {
         if (type === 'selectionChange') {
           updateLinkEditor();
         }
@@ -304,7 +300,7 @@ function BlockOptionsDropdownList({
 
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
-      editor.update((state) => {
+      editor.update(() => {
         $log('formatSmallHeading');
         const selection = $getSelection();
 
@@ -367,7 +363,7 @@ function BlockOptionsDropdownList({
         listNodes.forEach((listNode) => {
           let insertionPoint = listNode;
           const listItems = getAllListItems(listNode);
-          listItems.forEach((listItemNode, index) => {
+          listItems.forEach((listItemNode) => {
             if (listItemNode != null) {
               const paragraph = $createParagraphNode();
               paragraph.append(...listItemNode.getChildren());
@@ -498,7 +494,7 @@ function BlockOptionsDropdownList({
 
   const formatQuote = () => {
     if (blockType !== 'quote') {
-      editor.update((state) => {
+      editor.update(() => {
         $log('formatQuote');
         const selection = $getSelection();
 
@@ -512,7 +508,7 @@ function BlockOptionsDropdownList({
 
   const formatCode = () => {
     if (blockType !== 'code') {
-      editor.update((state) => {
+      editor.update(() => {
         $log('formatCode');
         const selection = $getSelection();
 
@@ -751,7 +747,7 @@ export default function ToolbarPlugin(): React$Node {
         setIsLink(false);
       }
     }
-  }, [activeEditor, selectedElementKey]);
+  }, [activeEditor]);
 
   useEffect(() => {
     return activeEditor.addListener('update', ({editorState}) => {

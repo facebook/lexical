@@ -192,7 +192,7 @@ function ImageResizer({
       }
     }
   };
-  const handlePointerUp = (event: PointerEvent) => {
+  const handlePointerUp = (_event: PointerEvent) => {
     const image = imageRef.current;
     const positioning = positioningRef.current;
     if (image !== null && positioning.isResizing) {

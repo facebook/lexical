@@ -349,7 +349,7 @@ export class ElementNode extends OutlineNode {
   canSelectionRemove(): boolean {
     return true;
   }
-  canMerge(node: ElementNode): boolean {
+  canMergeWith(node: ElementNode): boolean {
     return false;
   }
 }

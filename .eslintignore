@@ -2,5 +2,8 @@ packages/**/dist/*.js
 packages/**/config/*.js
 packages/playwright
 packages/playwright-core
+packages/babel-plugin-transform-stylex
+packages/eslint-plugin-stylex
+packages/stylex
 **/node_modules
 scripts/**

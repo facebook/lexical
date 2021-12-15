@@ -17,6 +17,7 @@ module.exports = {
     'no-function-declare-after-return',
     'react',
     'no-only-tests',
+    'eslint-plugin-stylex'
   ],
 
   parser: 'babel-eslint',

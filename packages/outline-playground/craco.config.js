@@ -1,4 +1,7 @@
 module.exports = {
+  babel: {
+    plugins: [['babel-plugin-transform-stylex', {dev: true}]],
+  },
   webpack: {
     alias: {
       // Outline Extensions

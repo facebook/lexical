@@ -85,6 +85,9 @@ const outlineReactModuleExternals = outlineReactModules.map((module) => {
 });
 
 const externals = [
+  // Note: do not add stylex here, as we can't export and sync
+  // modules that use Stylex to www (the babel plugin on www
+  // is different to that of the OSS version).
   'outline',
   'Outline',
   'outline-yjs',

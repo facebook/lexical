@@ -1,0 +1,16 @@
+{
+  "name": "babel-plugin-transform-stylex",
+  "version": "1.0.0",
+  "description": "StyleX eslint plugin.",
+  "main": "src/index.js",
+  "repository": "https://github.com/facebookexternal/stylex/eslint",
+  "author": "Naman Goel <nmn@fb.com>",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "postcss-value-parser": "^4.1.0",
+    "@babel/types": "^7.15.6"
+  }
+}

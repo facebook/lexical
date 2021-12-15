@@ -9,9 +9,20 @@
 
 import type {EditorThemeClasses} from 'outline';
 
+import stylex from 'stylex';
+
+const styles = stylex.create({
+  ltr: {
+    textAlign: 'left',
+  },
+  rtl: {
+    textAlign: 'right',
+  },
+});
+
 const theme: EditorThemeClasses = {
-  ltr: 'ltr',
-  rtl: 'rtl',
+  ltr: stylex(styles.ltr),
+  rtl: stylex(styles.rtl),
   paragraph: 'editor-paragraph',
   quote: 'editor-quote',
   heading: {

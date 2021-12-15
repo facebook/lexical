@@ -520,5 +520,48 @@ describe('Nested List', () => {
         '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
+
+    it(`Should merge selected nodes into existing list siblings when formatting to a list`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      // Hello
+      // - from
+      // the
+      // - other
+      // side
+      await page.keyboard.type('Hello');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('from');
+      await toggleBulletList(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('the');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('other');
+      await toggleBulletList(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('side');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+      );
+
+      await selectAll(page);
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+    });
   });
 });

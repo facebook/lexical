@@ -61,7 +61,7 @@ export class ListItemNode extends ElementNode {
   append(...nodes: OutlineNode[]): ListItemNode {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if ($isElementNode(node) && this.canMerge(node)) {
+      if ($isElementNode(node) && this.canMergeWith(node)) {
         const children = node.getChildren();
         this.append(...children);
         node.remove();
@@ -216,7 +216,7 @@ export class ListItemNode extends ElementNode {
     return $isListItemNode(replacement);
   }
 
-  canMerge(node: OutlineNode): boolean {
+  canMergeWith(node: OutlineNode): boolean {
     return $isParagraphNode(node) || $isListItemNode(node);
   }
 }

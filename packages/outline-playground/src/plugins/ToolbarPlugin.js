@@ -332,7 +332,7 @@ function BlockOptionsDropdownList({
 
   const getAllListItems = (node: ListNode): Array<ListItemNode> => {
     let listItemNodes: Array<ListItemNode> = [];
-    //$FlowFixMe
+    //$FlowFixMe - the result of this will always be an array of ListItemNodes.
     const listChildren: Array<ListItemNode> = node
       .getChildren()
       .filter($isListItemNode);
@@ -369,7 +369,6 @@ function BlockOptionsDropdownList({
           const listItems = getAllListItems(listNode);
           listItems.forEach((listItemNode, index) => {
             if (listItemNode != null) {
-              // Is it ok to nest paragraphs?
               const paragraph = $createParagraphNode();
               paragraph.append(...listItemNode.getChildren());
               insertionPoint.insertAfter(paragraph);
@@ -383,20 +382,36 @@ function BlockOptionsDropdownList({
     });
   };
 
-  const getTopLevelNodesFromSelection = (
-    selection: Selection,
-  ): Array<OutlineNode> => {
-    const nodes = selection.getNodes();
-    const selectedNodes = new Set(nodes.map((node) => node.getKey()));
-    const topLevelNodes = [];
-    for (let i = 0; i < nodes.length; i++) {
-      const currentNode = nodes[i];
-      const parent = currentNode.getParent();
-      if (parent != null && !selectedNodes.has(parent.getKey())) {
-        topLevelNodes.push(currentNode);
-      }
+  const createListOrMerge = (
+    node: ElementNode,
+    listType: 'ul' | 'ol',
+  ): ListNode => {
+    if ($isListNode(node)) {
+      return node;
     }
-    return topLevelNodes;
+    const previousSibling = node.getPreviousSibling();
+    const nextSibling = node.getNextSibling();
+    const listItem = $createListItemNode();
+    if ($isListNode(previousSibling)) {
+      listItem.append(node);
+      previousSibling.append(listItem);
+      // if there are lists on both sides, merge them.
+      if ($isListNode(nextSibling)) {
+        previousSibling.append(...nextSibling.getChildren());
+        nextSibling.remove();
+      }
+      return previousSibling;
+    } else if ($isListNode(nextSibling)) {
+      listItem.append(node);
+      nextSibling.getFirstChildOrThrow().insertBefore(listItem);
+      return nextSibling;
+    } else {
+      const list = $createListNode(listType);
+      list.append(listItem);
+      node.replace(list);
+      listItem.append(node);
+      return list;
+    }
   };
 
   const insertList = (listType: 'ul' | 'ol') => {
@@ -405,27 +420,12 @@ function BlockOptionsDropdownList({
       const selection = $getSelection();
       if (selection !== null) {
         const nodes = selection.getNodes();
-        const list = $createListNode(listType);
         const anchor = selection.anchor;
-        const focus = selection.focus;
         const anchorNode = anchor.getNode();
-        const focusNode = focus.getNode();
-        const isBackward = selection.isBackward();
-        // this logic makes sure we get the right siblings
-        // regardless of whether the user selects text starting
-        // from the top or the bottom
-        const previousSiblings = isBackward
-          ? anchorNode.getPreviousSiblings()
-          : focusNode.getPreviousSiblings();
-        const nextSiblings = isBackward
-          ? focusNode.getNextSiblings()
-          : anchorNode.getNextSiblings();
         const anchorNodeParent = anchorNode.getParent();
-        const insertionPoint = $isRootNode(anchorNodeParent)
-          ? anchorNode
-          : anchorNode.getTopLevelElementOrThrow();
         // This is a special case for when there's nothing selected
         if (nodes.length === 0) {
+          const list = $createListNode(listType);
           const listItem = $createListItemNode();
           list.append(listItem);
           if ($isRootNode(anchorNodeParent)) {
@@ -436,34 +436,7 @@ function BlockOptionsDropdownList({
           }
           listItem.select();
           return;
-        }
-        // This is when we have siblings on either side of the selection and the selection is within a single block.
-        else if (
-          previousSiblings.length > 0 &&
-          nextSiblings.length > 0 &&
-          insertionPoint.is(focusNode.getParentOrThrow()) &&
-          $isElementNode(insertionPoint)
-        ) {
-          // split the block - ideally we'd probably create whatever
-          // kind of node it is, but it's always a paragraph for now.
-          const [_, nextBlock] = insertionPoint.split();
-          nextBlock.append(...nextSiblings);
-          insertionPoint.insertAfter(list);
-          list.insertAfter(nextBlock);
-          // the selection anchor has some siblings before it, but not
-          // after so we can just insert the list after them
-        } else if (previousSiblings.length > 0) {
-          insertionPoint.insertAfter(list);
-          // the selection anchor has some siblings after it, but not
-          // before, so we can just insert the list before it.
-        } else if (nextSiblings.length > 0) {
-          insertionPoint.insertBefore(list);
-          // otherwise we can just insert the list after the anchor parent block.
         } else {
-          insertionPoint.insertAfter(list);
-        }
-        if (nodes.length > 0) {
-          let currentListItem = null;
           const handled = new Set();
           for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
@@ -472,9 +445,8 @@ function BlockOptionsDropdownList({
               node.isEmpty() &&
               !handled.has(node.getKey())
             ) {
-              currentListItem = $createListItemNode();
-              list.append(currentListItem);
-              currentListItem.append(node);
+              createListOrMerge(node, listType);
+              continue;
             }
             if ($isLeafNode(node)) {
               let parent = node.getParent();
@@ -493,18 +465,13 @@ function BlockOptionsDropdownList({
                   const parentKey = parent.getKey();
                   if ($isRootNode(nextParent) && !handled.has(parentKey)) {
                     handled.add(parentKey);
-                    currentListItem = $createListItemNode();
-                    list.append(currentListItem);
-                    currentListItem.append(parent);
+                    createListOrMerge(parent, listType);
                     break;
                   }
                   parent = nextParent;
                 }
               }
             }
-          }
-          if (list.isEmpty()) {
-            list.remove();
           }
         }
       }

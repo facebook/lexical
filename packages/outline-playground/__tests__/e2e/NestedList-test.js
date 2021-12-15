@@ -22,6 +22,13 @@ async function toggleBulletList(page) {
   await click(page, '.dropdown .icon.bullet-list');
 }
 
+async function toggleNumberedList(page) {
+  await waitForSelector(page, '.block-controls');
+  await click(page, '.block-controls');
+  await waitForSelector(page, '.dropdown .icon.numbered-list');
+  await click(page, '.dropdown .icon.numbered-list');
+}
+
 describe('Nested List', () => {
   initializeE2E((e2e) => {
     it(`Can create a list and indent/outdent it`, async () => {
@@ -297,31 +304,220 @@ describe('Nested List', () => {
 
       await waitForSelector(page, '.block-controls');
 
-      await click(page, '.block-controls');
-      await waitForSelector(page, '.dropdown .icon.bullet-list');
-      await click(page, '.dropdown .icon.bullet-list');
+      await toggleBulletList(page);
 
       await assertHTML(
         page,
         '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
       );
 
-      await click(page, '.block-controls');
-      await waitForSelector(page, '.dropdown .icon.numbered-list');
-      await click(page, '.dropdown .icon.numbered-list');
+      await toggleNumberedList(page);
 
       await assertHTML(
         page,
         '<ol class="editor-list-ol"><li class="editor-listitem"><br></li></ol>',
       );
 
-      await click(page, '.block-controls');
-      await waitForSelector(page, '.dropdown .icon.bullet-list');
-      await click(page, '.dropdown .icon.bullet-list');
+      await toggleBulletList(page);
 
       await assertHTML(
         page,
         '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+      );
+    });
+
+    it(`Can create a single item unordered list with text and convert it to an ordered list `, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await toggleBulletList(page);
+
+      await page.keyboard.type('Hello');
+
+      await toggleNumberedList(page);
+
+      await assertHTML(
+        page,
+        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li></ol>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
+      );
+    });
+
+    it(`Can create a multi-line unordered list and convert it to an ordered list `, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await toggleBulletList(page);
+
+      await page.keyboard.type('Hello');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('from');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('the');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('other');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('side');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      await toggleNumberedList(page);
+
+      await assertHTML(
+        page,
+        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+    });
+
+    it(`Can create an indented multi-line unordered list and convert it to an ordered list `, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await toggleBulletList(page);
+
+      await page.keyboard.type('Hello');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('from');
+      await click(page, 'button .indent');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('the');
+      await click(page, 'button .indent');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('other');
+      await click(page, 'button .outdent');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('side');
+      await click(page, 'button .outdent');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      await selectAll(page);
+
+      await toggleNumberedList(page);
+
+      await assertHTML(
+        page,
+        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+    });
+
+    it(`Can create an indented multi-line unordered list and convert individual lists in the nested structure to a numbered list. `, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await toggleBulletList(page);
+
+      await page.keyboard.type('Hello');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('from');
+      await click(page, 'button .indent');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('the');
+      await click(page, 'button .indent');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('other');
+      await click(page, 'button .outdent');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('side');
+      await click(page, 'button .outdent');
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      await toggleNumberedList(page);
+
+      await assertHTML(
+        page,
+        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      // move to next item up in list
+      await page.keyboard.press('ArrowUp');
+
+      await toggleNumberedList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      // move to next item up in list
+      await page.keyboard.press('ArrowUp');
+
+      await toggleNumberedList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
   });

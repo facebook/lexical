@@ -348,17 +348,6 @@ function BlockOptionsDropdownList({
     return listItemNodes;
   };
 
-  const getParentList = (node: OutlineNode): ListNode | null => {
-    let parent = node;
-    while (parent != null) {
-      if ($isListNode(parent)) {
-        return parent;
-      }
-      parent = parent.getParent();
-    }
-    return parent;
-  };
-
   const removeList = () => {
     editor.update(() => {
       $log('removeList');
@@ -416,7 +405,6 @@ function BlockOptionsDropdownList({
       const selection = $getSelection();
       if (selection !== null) {
         const nodes = selection.getNodes();
-        const topLevelNodes = getTopLevelNodesFromSelection(selection);
         const list = $createListNode(listType);
         const anchor = selection.anchor;
         const focus = selection.focus;
@@ -739,6 +727,17 @@ export default function ToolbarPlugin(): React$Node {
   const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
     useState(false);
 
+  function getParentList(node: OutlineNode): ListNode | null {
+    let parent = node;
+    while (parent != null) {
+      if ($isListNode(parent)) {
+        return parent;
+      }
+      parent = parent.getParent();
+    }
+    return parent;
+  }
+
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if (selection !== null) {
@@ -748,17 +747,20 @@ export default function ToolbarPlugin(): React$Node {
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
-      //if (elementKey !== selectedElementKey) {
       const elementDOM = activeEditor.getElementByKey(elementKey);
       if (elementDOM !== null) {
         setSelectedElementKey(elementKey);
-        const type =
-          $isHeadingNode(element) || $isListNode(element)
+        if ($isListNode(element)) {
+          const parentList = getParentList(anchorNode);
+          const type = parentList ? parentList.getTag() : element.getTag();
+          setBlockType(type);
+        } else {
+          const type = $isHeadingNode(element)
             ? element.getTag()
             : element.getType();
-        setBlockType(type);
+          setBlockType(type);
+        }
       }
-      //}
       // Hande buttons
       setFontSize(
         $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),

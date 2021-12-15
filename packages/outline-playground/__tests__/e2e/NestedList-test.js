@@ -127,14 +127,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p>',
       );
 
       await page.keyboard.press('Enter');
@@ -148,7 +148,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       await selectAll(page);
@@ -157,14 +157,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       // works for an indented list
@@ -178,14 +178,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
+        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
     });
 
@@ -204,7 +204,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">One two three</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One two three</span></p>',
       );
 
       await moveLeft(page, 6);
@@ -216,14 +216,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
       );
 
       // click to close the floating link bar
@@ -233,7 +233,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link ltr" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
       );
     });
 
@@ -273,7 +273,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph"><br></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph"><br></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await selectAll(page);
@@ -282,14 +282,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem"><br></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem"><br></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem"><br></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem"><br></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -343,14 +343,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li></ol>',
+        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
       );
     });
 
@@ -377,21 +377,21 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleNumberedList(page);
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -422,7 +422,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await selectAll(page);
@@ -431,14 +431,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -469,21 +469,21 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleNumberedList(page);
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       // move to next item up in list
@@ -493,14 +493,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       // move to next item up in list
@@ -510,14 +510,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -551,7 +551,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">Hello</span></p><ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">the</span></p><ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li></ul><p class="editor-paragraph ltr" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       await selectAll(page);
@@ -560,7 +560,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem ltr" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
   });

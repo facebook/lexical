@@ -13,10 +13,7 @@ import type {
   ElementNode,
   TextNode,
   Selection,
-  OutlineNode,
 } from 'outline';
-import type {ListItemNode} from 'outline/ListItemNode';
-import type {ListNode} from 'outline/ListNode';
 
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -25,8 +22,12 @@ import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {$isHeadingNode} from 'outline/HeadingNode';
 import {$createParagraphNode} from 'outline/ParagraphNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
-import {$createListNode, $isListNode} from 'outline/ListNode';
-import {$createListItemNode, $isListItemNode} from 'outline/ListItemNode';
+import {$createListNode, $isListNode, ListNode} from 'outline/ListNode';
+import {
+  $createListItemNode,
+  $isListItemNode,
+  ListItemNode,
+} from 'outline/ListItemNode';
 import {$createQuoteNode} from 'outline/QuoteNode';
 import {$createCodeNode} from 'outline/CodeNode';
 import {
@@ -45,7 +46,7 @@ import {
   $isAtNodeEnd,
 } from 'outline/selection';
 
-import {$getTopListNode} from 'outline/nodes';
+import {$getTopListNode, $getNearestNodeOfType} from 'outline/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
@@ -312,20 +313,6 @@ function BlockOptionsDropdownList({
     setShowBlockOptionsDropDown(false);
   };
 
-  const findNearestListItemNode = (node: OutlineNode): ListItemNode | null => {
-    if ($isListItemNode(node)) {
-      return node;
-    }
-    let parent = node.getParent();
-    while (!$isRootNode(parent) && parent != null) {
-      if ($isListItemNode(parent)) {
-        return parent;
-      }
-      parent = parent.getParent();
-    }
-    return null;
-  };
-
   const getAllListItems = (node: ListNode): Array<ListItemNode> => {
     let listItemNodes: Array<ListItemNode> = [];
     //$FlowFixMe - the result of this will always be an array of ListItemNodes.
@@ -354,7 +341,7 @@ function BlockOptionsDropdownList({
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
           if ($isLeafNode(node)) {
-            const listItemNode = findNearestListItemNode(node);
+            const listItemNode = $getNearestNodeOfType(node, ListItemNode);
             if (listItemNode != null) {
               listNodes.add($getTopListNode(listItemNode));
             }
@@ -690,17 +677,6 @@ export default function ToolbarPlugin(): React$Node {
   const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
     useState(false);
 
-  function getParentList(node: OutlineNode): ListNode | null {
-    let parent = node;
-    while (parent != null) {
-      if ($isListNode(parent)) {
-        return parent;
-      }
-      parent = parent.getParent();
-    }
-    return parent;
-  }
-
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if (selection !== null) {
@@ -714,7 +690,7 @@ export default function ToolbarPlugin(): React$Node {
       if (elementDOM !== null) {
         setSelectedElementKey(elementKey);
         if ($isListNode(element)) {
-          const parentList = getParentList(anchorNode);
+          const parentList = $getNearestNodeOfType(anchorNode, ListNode);
           const type = parentList ? parentList.getTag() : element.getTag();
           setBlockType(type);
         } else {

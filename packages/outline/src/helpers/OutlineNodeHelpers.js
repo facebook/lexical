@@ -86,6 +86,20 @@ export function $isLastItemInList(listItem: ListItemNode): boolean {
   return isLast;
 }
 
+export function $getNearestNodeOfType<T: OutlineNode>(
+  node: OutlineNode,
+  klass: Class<T>,
+): T | null {
+  let parent = node;
+  while (parent != null) {
+    if (parent instanceof klass) {
+      return parent;
+    }
+    parent = parent.getParent();
+  }
+  return parent;
+}
+
 export type DOMNodeToOutlineConversion = (element: Node) => OutlineNode;
 export type DOMNodeToOutlineConversionMap = {
   [string]: DOMNodeToOutlineConversion,

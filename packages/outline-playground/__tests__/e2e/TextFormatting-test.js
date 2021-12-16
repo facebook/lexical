@@ -37,7 +37,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type(' World');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><strong class="editor-text-bold" data-outline-text="true"> World</strong></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true"> World</strong></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -52,7 +52,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type('!');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><strong class="editor-text-bold" data-outline-text="true"> World</strong><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true"> World</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -77,7 +77,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type(' World');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><em class="editor-text-italic" data-outline-text="true"> World</em></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-outline-text="true"> World</em></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -92,7 +92,7 @@ describe('TextFormatting', () => {
       await page.keyboard.type('!');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><em class="editor-text-italic" data-outline-text="true"> World</em><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-outline-text="true"> World</em><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -129,7 +129,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">world</strong><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true">world</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -143,7 +143,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -174,7 +174,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="editor-text-bold" data-outline-text="true">hello world</strong></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true">hello world</strong></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p>',
       );
     });
 
@@ -205,7 +205,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><em class="editor-text-italic" data-outline-text="true">world</em><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-outline-text="true">world</em><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -219,7 +219,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -256,7 +256,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="editor-text-underline" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -270,7 +270,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -288,7 +288,7 @@ describe('TextFormatting', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="editor-text-underlineStrikethrough" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderlineStrikethrough kf6cyplv" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -302,7 +302,7 @@ describe('TextFormatting', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="editor-text-underline" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-outline-text="true">world</span><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -340,7 +340,7 @@ describe('TextFormatting', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px;">world</span><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px;">world</span><span data-outline-text="true">!</span></p>',
       );
 
       await assertSelection(page, {
@@ -379,7 +379,7 @@ describe('TextFormatting', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px;">world</span><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px;">world</span><span data-outline-text="true">!</span></p>',
       );
 
       await assertSelection(page, {
@@ -394,7 +394,7 @@ describe('TextFormatting', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px; font-family: Georgia;">world</span><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 10px; font-family: Georgia;">world</span><span data-outline-text="true">!</span></p>',
       );
 
       await assertSelection(page, {
@@ -409,7 +409,7 @@ describe('TextFormatting', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 20px; font-family: Georgia;">world</span><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span data-outline-text="true" style="font-size: 20px; font-family: Georgia;">world</span><span data-outline-text="true">!</span></p>',
       );
 
       await assertSelection(page, {
@@ -447,7 +447,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">world</strong><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true">world</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -474,7 +474,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">w</strong><strong class="editor-text-bold editor-text-italic" data-outline-text="true">or</strong><strong class="editor-text-bold" data-outline-text="true">ld</strong><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true">w</strong><strong class="PlaygroundEditorTheme__textBold igjjae4c PlaygroundEditorTheme__textItalic qp0gn4il" data-outline-text="true">or</strong><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true">ld</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -488,7 +488,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="editor-text-bold" data-outline-text="true">w</strong><em class="editor-text-italic" data-outline-text="true">or</em><strong class="editor-text-bold" data-outline-text="true">ld</strong><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true">w</strong><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-outline-text="true">or</em><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-outline-text="true">ld</strong><span data-outline-text="true">!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -516,7 +516,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello w</span><em class="editor-text-italic" data-outline-text="true">or</em><span data-outline-text="true">ld!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello w</span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-outline-text="true">or</em><span data-outline-text="true">ld!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -530,7 +530,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><em class="editor-text-italic" data-outline-text="true">world</em><span data-outline-text="true">!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-outline-text="true">world</em><span data-outline-text="true">!</span></p>',
       );
 
       if (E2E_BROWSER === 'webkit') {
@@ -554,7 +554,7 @@ describe('TextFormatting', () => {
       await keyUpCtrlOrMeta(page);
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello world!</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

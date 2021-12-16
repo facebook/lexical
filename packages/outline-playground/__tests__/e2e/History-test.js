@@ -39,7 +39,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -50,7 +50,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -65,7 +65,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -76,7 +76,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -91,7 +91,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -102,7 +102,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -116,7 +116,7 @@ describe('History', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -129,7 +129,7 @@ describe('History', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -140,7 +140,10 @@ describe('History', () => {
 
       await undo(page);
 
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -152,7 +155,7 @@ describe('History', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -165,7 +168,7 @@ describe('History', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -179,7 +182,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph"><br></p',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -190,7 +193,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -205,7 +208,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -216,7 +219,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -231,7 +234,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -242,7 +245,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -259,7 +262,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -270,7 +273,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -285,7 +288,7 @@ describe('History', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -296,7 +299,7 @@ describe('History', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">hello world</span><br><span data-outline-text="true">hello world, again and again</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],

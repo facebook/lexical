@@ -21,10 +21,10 @@ describe('Regression test #221', () => {
 
       await focusEditor(page);
       await page.keyboard.type('#yolo');
-      await waitForSelector(page, '.editor-text-hashtag');
+      await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -38,7 +38,7 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Space');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yo</span><span data-outline-text="true"> lo</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#yo</span><span data-outline-text="true"> lo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -53,10 +53,10 @@ describe('Regression test #221', () => {
 
       await focusEditor(page);
       await page.keyboard.type('#yolo ');
-      await waitForSelector(page, '.editor-text-hashtag');
+      await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -69,7 +69,7 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -84,10 +84,10 @@ describe('Regression test #221', () => {
 
       await focusEditor(page);
       await page.keyboard.type('#yolo ');
-      await waitForSelector(page, '.editor-text-hashtag');
+      await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#yolo</span><span data-outline-text="true"> </span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 1, 0],
@@ -100,7 +100,7 @@ describe('Regression test #221', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#yol</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#yol</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

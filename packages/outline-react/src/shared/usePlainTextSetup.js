@@ -37,6 +37,7 @@ import {
 } from 'outline/events';
 import {$moveCharacter} from 'outline/selection';
 import useLayoutEffect from 'shared/useLayoutEffect';
+import withSubscriptions from 'outline-react/withSubscriptions';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -111,7 +112,7 @@ export default function usePlainTextSetup(
   callbackFn?: (callbackFn?: () => void) => void,
 ) => void {
   useLayoutEffect(() => {
-    const teardown = [
+    const removeSubscriptions = withSubscriptions(
       editor.registerNodes([ParagraphNode]),
       editor.addListener('textmutation', $onTextMutation),
       editor.addListener(
@@ -199,13 +200,13 @@ export default function usePlainTextSetup(
         },
         EditorPriority,
       ),
-    ];
+    );
+
     if (init) {
       initEditor(editor);
     }
-    return () => {
-      teardown.forEach((t) => t());
-    };
+
+    return removeSubscriptions;
   }, [editor, init]);
 
   useOutlineEditorEvents(events, editor);

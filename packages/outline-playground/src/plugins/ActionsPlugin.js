@@ -39,7 +39,7 @@ export default function ActionsPlugins({
   const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    return editor.addListener(
       'command',
       (type, payload) => {
         if (type === 'readOnly') {
@@ -53,10 +53,6 @@ export default function ActionsPlugins({
       },
       EditorPriority,
     );
-
-    return () => {
-      removeCommandListener();
-    };
   }, [editor]);
 
   const insertSticky = useCallback(() => {

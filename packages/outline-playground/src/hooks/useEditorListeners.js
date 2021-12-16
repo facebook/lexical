@@ -24,7 +24,7 @@ export default function useEditorListeners(
   const [isReadOnly, setIsReadyOnly] = useState(false);
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    return editor.addListener(
       'command',
       (type, payload) => {
         if (type === 'readOnly') {
@@ -48,10 +48,6 @@ export default function useEditorListeners(
       },
       EditorPriority,
     );
-
-    return () => {
-      removeCommandListener();
-    };
   }, [clear, connect, connected, disconnect, editor]);
 
   useEffect(() => {

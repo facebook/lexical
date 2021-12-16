@@ -173,7 +173,10 @@ Note: Outline does not support Internet Explorer or legacy versions of Edge.
 
 ## Running tests
 
-* `npm run test-unit` runs only unit tests.
-* `npm run test-e2e:chromium` runs only chromium e2e tests.
-* `npm run test-e2e:firefox` runs only firefox e2e tests.
-* `npm run test-e2e:webkit` runs only webkit e2e tests.
+- `npm run test-unit` runs only unit tests.
+- `npm run test-e2e:chromium` runs only chromium e2e tests.
+- `npm run debug-test-e2e:chromium` runs only chromium e2e tests in head mode for debugging.
+- `npm run test-e2e:firefox` runs only firefox e2e tests.
+- `npm run debug-test-e2e:firefox` runs only firefox e2e tests in head mode for debugging.
+- `npm run test-e2e:webkit` runs only webkit e2e tests.
+- `npm run debug-test-e2e:webkit` runs only webkit e2e tests in head mode for debugging.

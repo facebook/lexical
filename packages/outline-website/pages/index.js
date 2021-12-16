@@ -1,5 +1,4 @@
 import Head from 'next/head'
-import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 
 export default function Home() {
@@ -13,6 +12,7 @@ export default function Home() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
+          { /* eslint-disable-next-line @next/next/no-img-element */ }
           <img className={styles.logo} src="/logo.svg" alt="Outline Logo: containing an icon of a text editor glyph containing a text cursor on the left, with the text of 'Ouline' on the right." />
         </h1>
 
@@ -22,13 +22,7 @@ export default function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Copyright © 2021 Meta Inc.
-        </a>
+        Copyright © 2021 Meta Inc.
       </footer>
     </div>
   )

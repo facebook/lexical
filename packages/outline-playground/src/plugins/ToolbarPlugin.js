@@ -45,6 +45,7 @@ import {
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
 } from 'outline/selection';
+import withSubscriptions from 'outline-react/withSubscriptions';
 
 import {$getTopListNode, $getNearestNodeOfType} from 'outline/nodes';
 // $FlowFixMe
@@ -158,30 +159,24 @@ function FloatingLinkEditor({editor}: {editor: OutlineEditor}): React$Node {
   }, [editor]);
 
   useEffect(() => {
-    const removeUpdateListener = editor.addListener(
-      'update',
-      ({editorState}) => {
+    return withSubscriptions(
+      editor.addListener('update', ({editorState}) => {
         editorState.read(() => {
           updateLinkEditor();
         });
-      },
-    );
+      }),
 
-    const removeCommandListener = editor.addListener(
-      'command',
-      (type) => {
-        if (type === 'selectionChange') {
-          updateLinkEditor();
-        }
-        return false;
-      },
-      LowPriority,
+      editor.addListener(
+        'command',
+        (type) => {
+          if (type === 'selectionChange') {
+            updateLinkEditor();
+          }
+          return false;
+        },
+        LowPriority,
+      ),
     );
-
-    return () => {
-      removeUpdateListener();
-      removeCommandListener();
-    };
   }, [editor, updateLinkEditor]);
 
   return (

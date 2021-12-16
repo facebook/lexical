@@ -413,15 +413,11 @@ function TableCellActionMenuContainer(): React.MixedElement {
   }, [editor]);
 
   useEffect(() => {
-    const removeUpdateListener = editor.addListener('update', () => {
+    return editor.addListener('update', () => {
       editor.getEditorState().read(() => {
         moveMenu();
       });
     });
-
-    return () => {
-      removeUpdateListener();
-    };
   });
 
   useEffect(() => {

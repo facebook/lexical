@@ -18,10 +18,11 @@ import {
   $getTopListNode,
   $isLastItemInList,
   $areSiblingsNullOrSpace,
+  $getNearestNodeOfType,
 } from 'outline/nodes';
 import {$createParagraphNode, $isParagraphNode} from 'outline/ParagraphNode';
 import {$createTextNode, $getRoot} from 'outline';
-import {$createListNode} from 'outline/ListNode';
+import {$createListNode, ListNode} from 'outline/ListNode';
 import {$createListItemNode} from 'outline/ListItemNode';
 
 describe('OutlineNodeHelpers tests', () => {
@@ -296,6 +297,121 @@ describe('OutlineNodeHelpers tests', () => {
         topListNode.append(listItem2);
         const result = $isLastItemInList(listItem1);
         expect(result).toEqual(false);
+      });
+    });
+
+    test('getNearestNodeOfType should return the top node if it is of the given type.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((state: State) => {
+        // Root
+        //   |- ListNode
+        //      |- ListItemNode
+        //        |- Text
+        //      |- ListItemNode
+        //        |- Text
+        const root = $getRoot();
+        const topListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const text1 = $createTextNode('Hello');
+        const text2 = $createTextNode('world');
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        listItem1.append(text1);
+        listItem2.append(text2);
+        const result = $getNearestNodeOfType(text2, ListNode);
+        expect(result.getKey()).toEqual(topListNode.getKey());
+      });
+    });
+
+    test('getNearestNodeOfType should return a nested node of the given type.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((state: State) => {
+        // Root
+        //   |- ListNode
+        //      |- ListItemNode
+        //        |- Text
+        //      |- ListItemNode
+        //        |- Text
+        //      |- ListItemNode
+        //        |-ListNode
+        //          |-ListItemNode
+        //            |- Text
+        const root = $getRoot();
+        const topListNode = $createListNode('ul');
+        const nestedListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
+        const listItem4 = $createListItemNode();
+        const text1 = $createTextNode('Hello');
+        const text2 = $createTextNode('from');
+        const text3 = $createTextNode('the');
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        topListNode.append(listItem3);
+        listItem3.append(nestedListNode);
+        nestedListNode.append(listItem4);
+        listItem1.append(text1);
+        listItem2.append(text2);
+        listItem4.append(text3);
+        const result = $getNearestNodeOfType(text3, ListNode);
+        expect(result.getKey()).toEqual(nestedListNode.getKey());
+      });
+    });
+
+    test('getNearestNodeOfType should return a nested node of the given type if provided with an ElementNode as the starting point.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((state: State) => {
+        // Root
+        //   |- ListNode
+        //      |- ListItemNode
+        //        |- Text
+        //      |- ListItemNode
+        //        |- Text
+        //      |- ListItemNode
+        //        |-ListNode
+        //          |-ListItemNode
+        //            |- Text
+        const root = $getRoot();
+        const topListNode = $createListNode('ul');
+        const nestedListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
+        const listItem4 = $createListItemNode();
+        const text1 = $createTextNode('Hello');
+        const text2 = $createTextNode('from');
+        const text3 = $createTextNode('the');
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        topListNode.append(listItem3);
+        listItem3.append(nestedListNode);
+        nestedListNode.append(listItem4);
+        listItem1.append(text1);
+        listItem2.append(text2);
+        listItem4.append(text3);
+        const result = $getNearestNodeOfType(listItem4, ListNode);
+        expect(result.getKey()).toEqual(nestedListNode.getKey());
+      });
+    });
+
+    test('getNearestNodeOfType should return null if there is no node of the give type in the subtree.', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((state: State) => {
+        // Root
+        //   |- Paragraph
+        //      |- Text
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello world');
+        root.append(paragraph);
+        paragraph.append(text);
+        const result = $getNearestNodeOfType(text, ListNode);
+        expect(result).toEqual(null);
       });
     });
 

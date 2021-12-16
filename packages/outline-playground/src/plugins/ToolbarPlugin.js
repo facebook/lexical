@@ -20,17 +20,23 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {useOutlineComposerContext} from 'outline-react/OutlineComposerContext';
 import {$isHeadingNode} from 'outline/HeadingNode';
-import {$isListNode} from 'outline/ListNode';
 import {$createParagraphNode} from 'outline/ParagraphNode';
 import {$createHeadingNode} from 'outline/HeadingNode';
-import {$createListNode} from 'outline/ListNode';
-import {$createListItemNode} from 'outline/ListItemNode';
+import {$createListNode, $isListNode, ListNode} from 'outline/ListNode';
+import {
+  $createListItemNode,
+  $isListItemNode,
+  ListItemNode,
+} from 'outline/ListItemNode';
 import {$createQuoteNode} from 'outline/QuoteNode';
 import {$createCodeNode} from 'outline/CodeNode';
 import {
   $log,
   $getSelection,
   $setSelection,
+  $isRootNode,
+  $isLeafNode,
+  $isElementNode,
 } from 'outline';
 import {$createLinkNode, $isLinkNode} from 'outline/LinkNode';
 import {
@@ -39,6 +45,8 @@ import {
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
 } from 'outline/selection';
+
+import {$getTopListNode, $getNearestNodeOfType} from 'outline/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
@@ -161,7 +169,7 @@ function FloatingLinkEditor({editor}: {editor: OutlineEditor}): React$Node {
 
     const removeCommandListener = editor.addListener(
       'command',
-      (type, payload) => {
+      (type) => {
         if (type === 'selectionChange') {
           updateLinkEditor();
         }
@@ -293,7 +301,7 @@ function BlockOptionsDropdownList({
 
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
-      editor.update((state) => {
+      editor.update(() => {
         $log('formatSmallHeading');
         const selection = $getSelection();
 
@@ -305,45 +313,175 @@ function BlockOptionsDropdownList({
     setShowBlockOptionsDropDown(false);
   };
 
+  const getAllListItems = (node: ListNode): Array<ListItemNode> => {
+    let listItemNodes: Array<ListItemNode> = [];
+    //$FlowFixMe - the result of this will always be an array of ListItemNodes.
+    const listChildren: Array<ListItemNode> = node
+      .getChildren()
+      .filter($isListItemNode);
+    for (let i = 0; i < listChildren.length; i++) {
+      const listItemNode = listChildren[i];
+      const firstChild = listItemNode.getFirstChild();
+      if ($isListNode(firstChild)) {
+        listItemNodes = listItemNodes.concat(getAllListItems(firstChild));
+      } else {
+        listItemNodes.push(listItemNode);
+      }
+    }
+    return listItemNodes;
+  };
+
+  const removeList = () => {
+    editor.update(() => {
+      $log('removeList');
+      const selection = $getSelection();
+      if (selection !== null) {
+        const listNodes = new Set();
+        const nodes = selection.getNodes();
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          if ($isLeafNode(node)) {
+            const listItemNode = $getNearestNodeOfType(node, ListItemNode);
+            if (listItemNode != null) {
+              listNodes.add($getTopListNode(listItemNode));
+            }
+          }
+        }
+        listNodes.forEach((listNode) => {
+          let insertionPoint = listNode;
+          const listItems = getAllListItems(listNode);
+          listItems.forEach((listItemNode) => {
+            if (listItemNode != null) {
+              const paragraph = $createParagraphNode();
+              paragraph.append(...listItemNode.getChildren());
+              insertionPoint.insertAfter(paragraph);
+              insertionPoint = paragraph;
+              listItemNode.remove();
+            }
+          });
+          listNode.remove();
+        });
+      }
+    });
+  };
+
+  const createListOrMerge = (
+    node: ElementNode,
+    listType: 'ul' | 'ol',
+  ): ListNode => {
+    if ($isListNode(node)) {
+      return node;
+    }
+    const previousSibling = node.getPreviousSibling();
+    const nextSibling = node.getNextSibling();
+    const listItem = $createListItemNode();
+    if ($isListNode(previousSibling)) {
+      listItem.append(node);
+      previousSibling.append(listItem);
+      // if there are lists on both sides, merge them.
+      if ($isListNode(nextSibling)) {
+        previousSibling.append(...nextSibling.getChildren());
+        nextSibling.remove();
+      }
+      return previousSibling;
+    } else if ($isListNode(nextSibling)) {
+      listItem.append(node);
+      nextSibling.getFirstChildOrThrow().insertBefore(listItem);
+      return nextSibling;
+    } else {
+      const list = $createListNode(listType);
+      list.append(listItem);
+      node.replace(list);
+      listItem.append(node);
+      return list;
+    }
+  };
+
+  const insertList = (listType: 'ul' | 'ol') => {
+    editor.update(() => {
+      $log('formatList');
+      const selection = $getSelection();
+      if (selection !== null) {
+        const nodes = selection.getNodes();
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+        const anchorNodeParent = anchorNode.getParent();
+        // This is a special case for when there's nothing selected
+        if (nodes.length === 0) {
+          const list = $createListNode(listType);
+          const listItem = $createListItemNode();
+          list.append(listItem);
+          if ($isRootNode(anchorNodeParent)) {
+            anchorNode.replace(list);
+          } else if ($isListItemNode(anchorNode)) {
+            const parent = anchorNode.getParentOrThrow();
+            parent.replace(list);
+          }
+          listItem.select();
+          return;
+        } else {
+          const handled = new Set();
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (
+              $isElementNode(node) &&
+              node.isEmpty() &&
+              !handled.has(node.getKey())
+            ) {
+              createListOrMerge(node, listType);
+              continue;
+            }
+            if ($isLeafNode(node)) {
+              let parent = node.getParent();
+              while (parent != null) {
+                const parentKey = parent.getKey();
+                if ($isListNode(parent)) {
+                  if (!handled.has(parentKey)) {
+                    const newListNode = $createListNode(listType);
+                    newListNode.append(...parent.getChildren());
+                    parent.replace(newListNode);
+                    handled.add(parentKey);
+                  }
+                  break;
+                } else {
+                  const nextParent = parent.getParent();
+                  const parentKey = parent.getKey();
+                  if ($isRootNode(nextParent) && !handled.has(parentKey)) {
+                    handled.add(parentKey);
+                    createListOrMerge(parent, listType);
+                    break;
+                  }
+                  parent = nextParent;
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+  };
+
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      editor.update((state) => {
-        $log('formatBulletList');
-        const selection = $getSelection();
-
-        if (selection !== null) {
-          $wrapLeafNodesInElements(
-            selection,
-            () => $createListItemNode(),
-            $createListNode('ul'),
-          );
-        }
-      });
+      insertList('ul');
+    } else {
+      removeList();
     }
     setShowBlockOptionsDropDown(false);
   };
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      editor.update((state) => {
-        $log('formatNumberedList');
-        const selection = $getSelection();
-
-        if (selection !== null) {
-          $wrapLeafNodesInElements(
-            selection,
-            () => $createListItemNode(),
-            $createListNode('ol'),
-          );
-        }
-      });
+      insertList('ol');
+    } else {
+      removeList();
     }
     setShowBlockOptionsDropDown(false);
   };
 
   const formatQuote = () => {
     if (blockType !== 'quote') {
-      editor.update((state) => {
+      editor.update(() => {
         $log('formatQuote');
         const selection = $getSelection();
 
@@ -357,7 +495,7 @@ function BlockOptionsDropdownList({
 
   const formatCode = () => {
     if (blockType !== 'code') {
-      editor.update((state) => {
+      editor.update(() => {
         $log('formatCode');
         const selection = $getSelection();
 
@@ -541,7 +679,6 @@ export default function ToolbarPlugin(): React$Node {
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
-
     if (selection !== null) {
       const anchorNode = selection.anchor.getNode();
       const element =
@@ -549,14 +686,17 @@ export default function ToolbarPlugin(): React$Node {
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
-      if (elementKey !== selectedElementKey) {
-        const elementDOM = activeEditor.getElementByKey(elementKey);
-        if (elementDOM !== null) {
-          setSelectedElementKey(elementKey);
-          const type =
-            $isHeadingNode(element) || $isListNode(element)
-              ? element.getTag()
-              : element.getType();
+      const elementDOM = activeEditor.getElementByKey(elementKey);
+      if (elementDOM !== null) {
+        setSelectedElementKey(elementKey);
+        if ($isListNode(element)) {
+          const parentList = $getNearestNodeOfType(anchorNode, ListNode);
+          const type = parentList ? parentList.getTag() : element.getTag();
+          setBlockType(type);
+        } else {
+          const type = $isHeadingNode(element)
+            ? element.getTag()
+            : element.getType();
           setBlockType(type);
         }
       }
@@ -583,7 +723,7 @@ export default function ToolbarPlugin(): React$Node {
         setIsLink(false);
       }
     }
-  }, [activeEditor, selectedElementKey]);
+  }, [activeEditor]);
 
   useEffect(() => {
     return activeEditor.addListener('update', ({editorState}) => {

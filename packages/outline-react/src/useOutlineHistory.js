@@ -19,6 +19,7 @@ import type {
 
 import {$isTextNode, $isElementNode, $isRootNode, $getSelection} from 'outline';
 import {useCallback, useEffect, useMemo} from 'react';
+import withSubscriptions from 'outline-react/withSubscriptions';
 
 type MergeAction = 0 | 1 | 2;
 const MERGE = 0;
@@ -366,17 +367,10 @@ export function useOutlineHistory(
       return false;
     };
 
-    const removeCommandListener = editor.addListener(
-      'command',
-      applyCommand,
-      EditorPriority,
+    return withSubscriptions(
+      editor.addListener('command', applyCommand, EditorPriority),
+      editor.addListener('update', applyChange),
     );
-    const removeUpdateListener = editor.addListener('update', applyChange);
-
-    return () => {
-      removeCommandListener();
-      removeUpdateListener();
-    };
   }, [delay, editor, historyState]);
 
   const clearHistory = useCallback(() => {

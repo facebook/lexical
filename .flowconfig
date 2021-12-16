@@ -54,6 +54,7 @@ module.name_mapper='^outline-react/useOutlineCharacterLimit' -> '<PROJECT_ROOT>/
 module.name_mapper='^outline-react/useOutlineHistory' -> '<PROJECT_ROOT>/packages/outline-react/src/useOutlineHistory.js'
 module.name_mapper='^outline-react/OutlineComposer' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineComposer.js'
 module.name_mapper='^outline-react/OutlineComposerContext' -> '<PROJECT_ROOT>/packages/outline-react/src/OutlineComposerContext.js'
+module.name_mapper='^outline-react/withSubscriptions' -> '<PROJECT_ROOT>/packages/outline-react/src/withSubscriptions.js'
 
 # Composer Plugins
 module.name_mapper='^outline-react/AutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/outline-react/src/AutoFormatterPlugin.js'

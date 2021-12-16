@@ -52,6 +52,7 @@ module.exports = {
       'outline-react/useOutlineCharacterLimit':
         'outline-react/dist/useOutlineCharacterLimit',
       'outline-react/useOutlineHistory': 'outline-react/dist/useOutlineHistory',
+      'outline-react/withSubscriptions': 'outline-react/dist/withSubscriptions',
 
       // Composer and it's plugins
       'outline-react/OutlineComposer': 'outline-react/dist/OutlineComposer',

@@ -317,10 +317,6 @@ export function useOutlineHistory(
       if (undoStackLength !== 0) {
         const current = historyState.current;
         const historyStateEntry = undoStack.pop();
-        historyState.current = historyStateEntry;
-        historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-          tag: 'historic',
-        });
         if (current !== null) {
           redoStack.push(current);
           editor.execCommand('canRedo', true);

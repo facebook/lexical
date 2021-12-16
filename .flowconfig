@@ -31,7 +31,6 @@ module.name_mapper='^outline/HashtagNode' -> '<PROJECT_ROOT>/packages/outline/sr
 
 module.name_mapper='^outline/selection' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineSelectionHelpers.js'
 module.name_mapper='^outline/text' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineTextHelpers.js'
-module.name_mapper='^outline/keys' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineKeyHelpers.js'
 module.name_mapper='^outline/nodes' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineNodeHelpers.js'
 module.name_mapper='^outline/elements' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineElementHelpers.js'
 module.name_mapper='^outline/events' -> '<PROJECT_ROOT>/packages/outline/src/helpers/OutlineEventHelpers.js'

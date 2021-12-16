@@ -144,12 +144,6 @@ async function build(name, inputFile, outputFile) {
             ),
           },
           {
-            find: isWWW ? 'Outline/keys' : 'outline/keys',
-            replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineKeyHelpers',
-            ),
-          },
-          {
             find: isWWW ? 'Outline/nodes' : 'outline/nodes',
             replacement: path.resolve(
               'packages/outline/src/helpers/OutlineNodeHelpers',

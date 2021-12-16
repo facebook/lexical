@@ -18,9 +18,6 @@ async function prepareOutlinePackage() {
     `mv ./packages/outline/npm/OutlineTextHelpers.js ./packages/outline/npm/text.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineKeyHelpers.js ./packages/outline/npm/keys.js`,
-  );
-  await exec(
     `mv ./packages/outline/npm/OutlineEventHelpers.js ./packages/outline/npm/events.js`,
   );
   await exec(

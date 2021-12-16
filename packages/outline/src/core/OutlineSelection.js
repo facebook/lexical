@@ -1070,7 +1070,7 @@ export class Selection {
           anchorOffset > focusOffset ? anchorOffset : focusOffset;
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const node = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        return [node];
+        return node != null ? [node] : [];
       }
       return [firstNode];
     }

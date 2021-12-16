@@ -1838,3 +1838,34 @@ describe('OutlineSelectionHelpers tests', () => {
     });
   });
 });
+
+describe('extract', () => {
+  test('', async () => {
+    const editor = createTestEditor();
+    editor.addListener('error', (error) => {
+      throw error;
+    });
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('Existing text...');
+      paragraph.append(text);
+      root.append(paragraph);
+
+      setAnchorPoint({
+        type: 'text',
+        offset: 16,
+        key: text.getKey(),
+      });
+      setFocusPoint({
+        type: 'text',
+        offset: 16,
+        key: text.getKey(),
+      });
+      const selection = $getSelection();
+      expect(selection.extract()).toEqual([]);
+    });
+  });
+});

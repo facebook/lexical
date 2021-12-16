@@ -33,7 +33,9 @@ import {
   $onTextMutation,
   onInput,
   onClick,
+  $shouldOverrideDefaultCharacterSelection,
 } from 'outline/events';
+import {$moveCharacter} from 'outline/selection';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -149,11 +151,48 @@ export default function usePlainTextSetup(
             case 'insertParagraph':
               selection.insertLineBreak();
               return true;
+            case 'indentContent':
+            case 'outdentContent':
             case 'insertImage':
             case 'insertTable':
             case 'formatElement':
             case 'formatText': {
               return true;
+            }
+            case 'keyArrowLeft': {
+              const event: KeyboardEvent = payload;
+              const isHoldingShift = event.shiftKey;
+              if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
+                event.preventDefault();
+                $moveCharacter(selection, isHoldingShift, true);
+                return true;
+              }
+              return false;
+            }
+            case 'keyArrowRight': {
+              const event: KeyboardEvent = payload;
+              const isHoldingShift = event.shiftKey;
+              if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
+                event.preventDefault();
+                $moveCharacter(selection, isHoldingShift, false);
+                return true;
+              }
+              return false;
+            }
+            case 'keyBackspace': {
+              const event: KeyboardEvent = payload;
+              event.preventDefault();
+              return editor.execCommand('deleteCharacter', true);
+            }
+            case 'keyDelete': {
+              const event: KeyboardEvent = payload;
+              event.preventDefault();
+              return editor.execCommand('deleteCharacter', false);
+            }
+            case 'keyEnter': {
+              const event: KeyboardEvent = payload;
+              event.preventDefault();
+              return editor.execCommand('insertLineBreak');
             }
           }
           return false;

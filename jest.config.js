@@ -49,8 +49,6 @@ module.exports = {
           '<rootDir>/packages/outline/src/helpers/OutlineSelectionHelpers.js',
         '^outline/text$':
           '<rootDir>/packages/outline/src/helpers/OutlineTextHelpers.js',
-        '^outline/keys$':
-          '<rootDir>/packages/outline/src/helpers/OutlineKeyHelpers.js',
         '^outline/nodes$':
           '<rootDir>/packages/outline/src/helpers/OutlineNodeHelpers.js',
         '^outline/elements$':

@@ -34,7 +34,7 @@ describe('Images', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -63,7 +63,10 @@ describe('Images', () => {
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -79,13 +82,16 @@ describe('Images', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;" class="focused"><button class="image-caption-button">Add Caption</button><div class="image-resizer-ne"></div><div class="image-resizer-se"></div><div class="image-resizer-sw"></div><div class="image-resizer-nw"></div></span><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;" class="focused"><button class="image-caption-button">Add Caption</button><div class="image-resizer-ne"></div><div class="image-resizer-se"></div><div class="image-resizer-sw"></div><div class="image-resizer-nw"></div></span><br></p>',
         true,
       );
 
       await page.keyboard.press('Backspace');
 
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
 
       await click(page, 'button .image');
 
@@ -95,7 +101,7 @@ describe('Images', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -107,7 +113,10 @@ describe('Images', () => {
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('Delete');
 
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
 
       await assertSelection(page, {
         anchorPath: [0],
@@ -140,7 +149,7 @@ describe('Images', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -152,7 +161,7 @@ describe('Images', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -162,7 +171,10 @@ describe('Images', () => {
       });
 
       await page.keyboard.press('Delete');
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,
@@ -180,7 +192,7 @@ describe('Images', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Test</span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Test</span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -191,7 +203,7 @@ describe('Images', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Test</span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Test</span><span class="editor-image" data-outline-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit;"></span><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

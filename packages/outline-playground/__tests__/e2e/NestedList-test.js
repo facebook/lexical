@@ -55,7 +55,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
       );
 
       // Should allow indenting an empty list item
@@ -65,7 +65,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem"><br></li></ul></li></ul></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul></li></ul></li></ul>',
       );
 
       // Backspace should "unindent" the first list item.
@@ -74,7 +74,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
       );
 
       await page.keyboard.type('Hello');
@@ -89,7 +89,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await selectAll(page);
@@ -101,7 +101,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
       );
 
       await waitForSelector(page, 'button .outdent');
@@ -111,7 +111,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -124,7 +124,10 @@ describe('Nested List', () => {
 
       await focusEditor(page);
 
-      await assertHTML(page, '<p class="editor-paragraph"><br/></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br/></p>',
+      );
 
       await page.keyboard.type('Hello');
 
@@ -132,14 +135,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p>',
       );
 
       await page.keyboard.press('Enter');
@@ -153,7 +156,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       await selectAll(page);
@@ -162,14 +165,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       // works for an indented list
@@ -183,14 +186,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul></li></ul></li></ul></li></ul',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
     });
 
@@ -203,13 +206,16 @@ describe('Nested List', () => {
 
       await focusEditor(page);
 
-      await assertHTML(page, '<p class="editor-paragraph"><br/></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br/></p>',
+      );
 
       await page.keyboard.type('One two three');
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One two three</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One two three</span></p>',
       );
 
       await moveLeft(page, 6);
@@ -221,7 +227,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
       );
 
       // move to end of paragraph to close the floating link bar
@@ -231,14 +237,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="editor-text-link PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">One </span><a href="http://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">two</span></a><span data-outline-text="true"> three</span></p>',
       );
     });
 
@@ -251,7 +257,10 @@ describe('Nested List', () => {
 
       await focusEditor(page);
 
-      await assertHTML(page, '<p class="editor-paragraph"><br/></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br/></p>',
+      );
 
       await page.keyboard.type('Hello');
 
@@ -278,7 +287,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph"><br></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await selectAll(page);
@@ -287,14 +296,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem"><br></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem"><br></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -313,21 +322,21 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
       );
 
       await toggleNumberedList(page);
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem"><br></li></ol>',
+        '<ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
       );
     });
 
@@ -348,14 +357,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ol>',
+        '<ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li></ul>',
       );
     });
 
@@ -382,21 +391,21 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleNumberedList(page);
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+        '<ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -427,7 +436,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await selectAll(page);
@@ -436,14 +445,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+        '<ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -474,21 +483,21 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleNumberedList(page);
 
       await assertHTML(
         page,
-        '<ol class="editor-list-ol"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
+        '<ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ol>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       // move to next item up in list
@@ -498,14 +507,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ol></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       // move to next item up in list
@@ -515,14 +524,14 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ol class="editor-list-ol editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ol class="PlaygroundEditorTheme__ol srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ol></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
 
       await toggleBulletList(page);
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem editor-nested-list-listitem"><ul class="editor-list-ul editor-nested-list-list"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__nestedListItem a75w6hnp"><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
 
@@ -556,7 +565,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></p><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></p>',
       );
 
       await selectAll(page);
@@ -565,7 +574,7 @@ describe('Nested List', () => {
 
       await assertHTML(
         page,
-        '<ul class="editor-list-ul"><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="editor-listitem PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">side</span></li></ul>',
       );
     });
   });

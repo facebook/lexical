@@ -30,7 +30,10 @@ describe('Placeholder', () => {
         expect(content).toBe('Enter some plain text...');
       }
 
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,

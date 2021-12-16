@@ -26,6 +26,7 @@ import {useCollaborationContext} from '../context/CollaborationContext';
 import PlainTextPlugin from '../plugins/PlainTextPlugin';
 import PlainTextCollabPlugin from '../plugins/PlainTextCollabPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
+import StickyEditorTheme from '../themes/StickyEditorTheme';
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -158,8 +159,7 @@ function StickyComponent({
       positioning.isDragging &&
       rootElementRect !== null
     ) {
-      positioning.x =
-        event.pageX - positioning.offsetX - rootElementRect.left;
+      positioning.x = event.pageX - positioning.offsetX - rootElementRect.left;
       positioning.y = event.pageY - positioning.offsetY - rootElementRect.top;
       positionSticky(stickyContainer, positioning);
     }
@@ -243,7 +243,8 @@ function StickyComponent({
       </button>
       <InlineSimpleEditor
         onChange={onChange}
-        initialEditorStateRef={editorStateRef}>
+        initialEditorStateRef={editorStateRef}
+        theme={StickyEditorTheme}>
         {isCollab ? (
           <PlainTextCollabPlugin
             id={editorStateRef.id}
@@ -305,7 +306,7 @@ export class StickyNode extends DecoratorNode {
     const writable = this.getWritable();
     writable.__x = x;
     writable.__y = y;
-    $setSelection(null)
+    $setSelection(null);
   }
 
   toggleColor(): void {

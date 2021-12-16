@@ -21,7 +21,7 @@ describe('Regression test #231', () => {
       const {page} = e2e;
       await focusEditor(page);
       await page.keyboard.type('#foo');
-      await waitForSelector(page, '.editor-text-hashtag');
+      await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
       await repeat(4, async () => {
         await page.keyboard.press('ArrowLeft');
       });
@@ -33,7 +33,7 @@ describe('Regression test #231', () => {
       await repeat(5, async () => {
         await page.keyboard.press('Backspace');
       });
-      await assertHTML(page, '<p class="editor-paragraph"><br></p>');
+      await assertHTML(page, '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>');
       await assertSelection(page, {
         anchorPath: [0],
         anchorOffset: 0,

@@ -23,7 +23,7 @@ describe('Regression test #429', () => {
       await page.keyboard.type(':) or :(');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 2, 0],
@@ -39,7 +39,7 @@ describe('Regression test #429', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="editor-paragraph"><br></p><p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 0, 0],
@@ -50,7 +50,7 @@ describe('Regression test #429', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><br><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><br><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -63,7 +63,7 @@ describe('Regression test #429', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-outline-text="true">🙂</span><span data-outline-text="true"> or </span><span class="emoji unhappysmile" data-outline-text="true">🙁</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

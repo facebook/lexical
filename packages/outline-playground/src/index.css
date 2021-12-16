@@ -92,64 +92,6 @@ header h1 {
   pointer-events: none;
 }
 
-.editor-shell div.editor h1 {
-  font-size: 24px;
-  color: rgb(5, 5, 5);
-  font-weight: 400;
-  margin: 0 0 12px 0;
-  padding: 0;
-  text-align: left;
-}
-
-.editor-shell div.editor h2 {
-  font-size: 15px;
-  color: rgb(101, 103, 107);
-  font-weight: 700;
-  margin: 10px 0 0 0;
-  padding: 0;
-  text-align: left;
-  text-transform: uppercase;
-}
-
-.editor-shell div.editor ul, .editor-shell div.editor ol {
-  padding: 0;
-  margin: 0
-}
-
-.editor-shell div.editor .editor-nested-list-listitem {
-  list-style-type: none;
-}
-
-.editor-shell .editor-list-ul .editor-list-ul {
-  margin-left: 16px;
-}
-
-.editor-shell div.editor a.editor-text-link {
-  color: rgb(33, 111, 219);
-  text-decoration: none;
-}
-
-.editor-shell div.editor blockquote {
-  margin: 20px 0;
-  font-size: 15px;
-  color: rgb(101, 103, 107);
-  border-left-color: rgb(206, 208, 212);
-  border-left-width: 4px;
-  border-left-style: solid;
-  padding-left: 16px;
-}
-
-.editor-shell div.editor code {
-  background-color: rgb(240, 242, 245);
-  padding: 1px 0.25rem;
-  font-family: Menlo, Consolas, Monaco, monospace;
-  font-size: 94%;
-}
-
-.editor-shell div.editor ul li, .editor-shell div.editor ol li {
-  margin: 8px 32px 8px 32px;
-}
-
 .test-recorder-output {
   margin: 20px auto 20px auto;
   width: 900px;
@@ -597,48 +539,6 @@ i.sticky {
   color: red;
 }
 
-.editor-shell div.editor span.editor-text-bold,
-.editor-shell div.editor strong.editor-text-bold,
-.editor-shell div.editor em.editor-text-bold {
-  font-weight: bold;
-}
-
-.editor-shell div.editor span.editor-text-italic,
-.editor-shell div.editor strong.editor-text-italic,
-.editor-shell div.editor em.editor-text-italic {
-  font-style: italic;
-}
-
-.editor-shell div.editor span.editor-text-strikethrough,
-.editor-shell div.editor strong.editor-text-strikethrough,
-.editor-shell div.editor em.editor-text-strikethrough {
-  text-decoration: line-through;
-}
-
-.editor-shell div.editor span.editor-text-underline,
-.editor-shell div.editor strong.editor-text-underline,
-.editor-shell div.editor em.editor-text-underline {
-  text-decoration: underline;
-}
-
-.editor-shell div.editor span.editor-text-underlineStrikethrough,
-.editor-shell div.editor strong.editor-text-underlineStrikethrough,
-.editor-shell div.editor em.editor-text-underlineStrikethrough {
-  text-decoration: underline line-through;
-}
-
-.editor-shell div.editor span.editor-text-hashtag,
-.editor-shell div.editor strong.editor-text-hashtag,
-.editor-shell div.editor em.editor-text-hashtag {
-  background-color: rgba(88, 144, 255, .15);
-  border-bottom: 1px solid rgba(88, 144, 255, .3);
-}
-
-.editor-shell div.editor .editor-character-limit {
-  display: inline;
-  background-color: #ffbbbb !important;
-}
-
 .dropdown {
   z-index: 5;
   display: block;
@@ -814,24 +714,6 @@ i.sticky {
 
 .switch button[aria-checked="true"] span {
   transform: translateX(20px);
-}
-
-.editor-shell div.editor .editor-paragraph {
-  margin: 0 0 8px 0;
-  position: relative;
-}
-
-.editor-shell div.editor .editor-paragraph span {
-  display: inline;
-}
-
-.editor-shell div.editor .editor-code {
-  display: block;
-  padding: 8px;
-  line-height: 1.53;
-  font-size: 13px;
-  margin: 8px 0;
-  tab-size: 2;
 }
 
 .editor-shell div.editor span.editor-image {
@@ -1142,27 +1024,6 @@ i.chevron-down {
   pointer-events: none;
 }
 
-.editor-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-  max-width: 100%;
-  overflow-y: scroll;
-  table-layout: fixed;
-  width: 100%;
-}
-
-.editor-table-cell {
-  border: 1px solid black;
-  height: 40px;
-  min-width: 75px;
-  padding: 0 10px;
-}
-
-.editor-table-cell-header {
-  background-color: #F2F3F5;
-  text-align: start;
-}
-
 .ltr {
   text-align: left;
 }
@@ -1314,10 +1175,6 @@ i.chevron-down {
   background: rgba(0, 0, 0, 0.2);
   box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.40);
   transform: matrix(-1, -0.1, 0, 1, 0, 0);
-}
-
-.sticky-note .editor-paragraph {
-  margin: 0;
 }
 
 .sticky-note .editor-placeholder {

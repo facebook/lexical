@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {EditorState, OutlineEditor, EditorStateRef} from 'outline';
+import type {
+  EditorState,
+  OutlineEditor,
+  EditorStateRef,
+  EditorThemeClasses,
+} from 'outline';
 
 import * as React from 'react';
 
@@ -18,16 +23,20 @@ type Props = {
   children?: React$Node,
   onChange?: (editorState: EditorState, editor: OutlineEditor) => void,
   initialEditorStateRef?: EditorStateRef,
+  theme?: EditorThemeClasses,
 };
 
 export default function InlineSimpleEditor({
   children,
   onChange,
   initialEditorStateRef,
+  theme,
 }: Props): React$Node {
   return (
     <div className="inline-editor-container">
-      <OutlineComposer initialEditorStateRef={initialEditorStateRef}>
+      <OutlineComposer
+        initialEditorStateRef={initialEditorStateRef}
+        theme={theme}>
         {onChange && <OnChangePlugin onChange={onChange} />}
         {children}
       </OutlineComposer>

@@ -9,7 +9,7 @@
 
 import type {SettingName} from './appSettings';
 
-import PlaygroundEditorTheme from './PlaygroundEditorTheme';
+import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import * as React from 'react';
 import {useCallback, useState} from 'react';
 import useSettings from './hooks/useSettings';

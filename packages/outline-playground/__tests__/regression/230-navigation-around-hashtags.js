@@ -21,7 +21,7 @@ describe('Regression test #230', () => {
       const {page} = e2e;
       await focusEditor(page);
       await page.keyboard.type('#foo');
-      await waitForSelector(page, '.editor-text-hashtag');
+      await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
       await repeat(4, async () => {
         await page.keyboard.press('ArrowLeft');
       });
@@ -30,7 +30,7 @@ describe('Regression test #230', () => {
       await page.keyboard.press('ArrowRight');
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-text-hashtag" data-outline-text="true">#foo</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#foo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

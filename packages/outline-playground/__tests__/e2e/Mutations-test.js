@@ -17,7 +17,7 @@ import {
 async function validateContent(page) {
   await assertHTML(
     page,
-    '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="editor-text-hashtag" data-outline-text="true">#world</span><span data-outline-text="true">. This content </span><span class="editor-text-hashtag" data-outline-text="true">#should</span><span data-outline-text="true"> remain </span><span class="editor-text-hashtag" data-outline-text="true">#intact</span><span data-outline-text="true">.</span></p>',
+    '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#world</span><span data-outline-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#should</span><span data-outline-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#intact</span><span data-outline-text="true">.</span></p>',
   );
   await assertSelection(page, {
     anchorPath: [0, 6, 0],
@@ -199,7 +199,7 @@ describe('Mutations', () => {
       });
       await assertHTML(
         page,
-        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Bonjour </span><span class="editor-text-hashtag" data-outline-text="true">#world</span><span data-outline-text="true">. This content </span><span class="editor-text-hashtag" data-outline-text="true">#should</span><span data-outline-text="true"> remain </span><span class="editor-text-hashtag" data-outline-text="true">#intact</span><span data-outline-text="true">.</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Bonjour </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#world</span><span data-outline-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#should</span><span data-outline-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-outline-text="true">#intact</span><span data-outline-text="true">.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 6, 0],

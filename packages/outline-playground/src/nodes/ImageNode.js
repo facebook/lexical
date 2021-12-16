@@ -49,6 +49,7 @@ function LazyImage({
   src,
   width,
   height,
+  maxWidth,
 }: {
   altText: string,
   className: ?string,
@@ -59,6 +60,7 @@ function LazyImage({
   src: string,
   width: 'inherit' | number,
   height: 'inherit' | number,
+  maxWidth: number,
 }): React.Node {
   useSuspenseImage(src);
   // TODO: This needs to be made accessible.
@@ -77,6 +79,7 @@ function LazyImage({
       style={{
         width,
         height,
+        maxWidth,
       }}
     />
   );
@@ -257,6 +260,7 @@ function ImageComponent({
   nodeKey,
   width,
   height,
+  maxWidth,
   resizable,
   showCaption,
   editorStateRef,
@@ -266,6 +270,7 @@ function ImageComponent({
   nodeKey: NodeKey,
   width: 'inherit' | number,
   height: 'inherit' | number,
+  maxWidth: number,
   resizable: boolean,
   showCaption: boolean,
   editorStateRef: EditorStateRef,
@@ -364,6 +369,7 @@ function ImageComponent({
           onKeyDown={handleKeyDown}
           width={width}
           height={height}
+          maxWidth={maxWidth}
         />
         {showCaption && (
           <div className="image-caption-container">
@@ -402,6 +408,7 @@ export class ImageNode extends DecoratorNode {
   __altText: string;
   __width: 'inherit' | number;
   __height: 'inherit' | number;
+  __maxWidth: number;
   // $FlowFixMe: __ref is never null
   __ref: EditorStateRef;
   __caption: boolean;
@@ -414,6 +421,7 @@ export class ImageNode extends DecoratorNode {
     return new ImageNode(
       node.__src,
       node.__altText,
+      node.__maxWidth,
       node.__ref,
       node.__width,
       node.__height,
@@ -425,6 +433,7 @@ export class ImageNode extends DecoratorNode {
   constructor(
     src: string,
     altText: string,
+    maxWidth: number,
     ref: EditorStateRef,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
@@ -434,6 +443,7 @@ export class ImageNode extends DecoratorNode {
     super(ref, key);
     this.__src = src;
     this.__altText = altText;
+    this.__maxWidth = maxWidth;
     this.__width = width || 'inherit';
     this.__height = height || 'inherit';
     this.__caption = caption || false;
@@ -476,6 +486,7 @@ export class ImageNode extends DecoratorNode {
         altText={this.__altText}
         width={this.__width}
         height={this.__height}
+        maxWidth={this.__maxWidth}
         nodeKey={this.getKey()}
         editorStateRef={this.__ref}
         showCaption={this.__caption}
@@ -488,9 +499,10 @@ export class ImageNode extends DecoratorNode {
 export function $createImageNode(
   src: string,
   altText: string,
+  maxWidth: number,
   ref: EditorStateRef,
 ): ImageNode {
-  return new ImageNode(src, altText, ref);
+  return new ImageNode(src, altText, maxWidth, ref);
 }
 
 export function $isImageNode(node: ?OutlineNode): boolean %checks {

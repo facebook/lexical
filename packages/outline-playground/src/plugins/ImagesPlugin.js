@@ -40,6 +40,7 @@ export default function ImagesPlugin(): React$Node {
             const imageNode = $createImageNode(
               yellowFlowerImage,
               'Yellow flower in tilt shift lens',
+              500,
               ref,
             );
             selection.insertNodes([imageNode]);

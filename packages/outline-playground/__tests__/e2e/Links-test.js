@@ -97,6 +97,37 @@ describe('Links', () => {
       });
     });
 
+    it(`Does nothing if the selection is collapsed at the end of a text node.`, async () => {
+      const {isRichText, page} = e2e;
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+      await page.keyboard.type('Hello');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+      );
+
+      // link
+      await waitForSelector(page, '.link');
+      await click(page, '.link');
+
+      await assertHTML(
+        page,
+        '<p class="editor-paragraph PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-outline-text="true">Hello</span></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 5,
+        focusPath: [0, 0, 0],
+        focusOffset: 5,
+      });
+    });
+
     it(`Can type text before and after`, async () => {
       const {isRichText, page} = e2e;
       if (!isRichText) {

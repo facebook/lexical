@@ -18,31 +18,8 @@ import type {
   TextMutation,
 } from 'outline';
 
-import {
-  isDeleteBackward,
-  isDeleteForward,
-  isDeleteLineBackward,
-  isDeleteLineForward,
-  isDeleteWordBackward,
-  isDeleteWordForward,
-  isLineBreak,
-  isOpenLineBreak,
-  isParagraph,
-  isBold,
-  isItalic,
-  isUnderline,
-  isTab,
-  isMoveBackward,
-  isMoveForward,
-  isUndo,
-  isRedo,
-} from 'outline/keys';
 import isTokenOrInert from 'shared/isTokenOrInert';
-import {
-  $cloneContents,
-  $insertRichText,
-  $moveCharacter,
-} from 'outline/selection';
+import {$cloneContents, $insertRichText} from 'outline/selection';
 import {
   $createTextNode,
   $createNodeFromParse,
@@ -58,7 +35,7 @@ import {
   $flushMutations,
   $createLineBreakNode,
 } from 'outline';
-import {IS_FIREFOX} from 'shared/environment';
+import {IS_FIREFOX, IS_APPLE} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 import {$createListNode} from 'outline/ListNode';
 import {$createListItemNode} from 'outline/ListItemNode';
@@ -289,7 +266,7 @@ function $insertDataTransferForPlainText(
   }
 }
 
-function $shouldOverrideDefaultCharacterSelection(
+export function $shouldOverrideDefaultCharacterSelection(
   selection: Selection,
   isBackward: boolean,
 ): boolean {
@@ -298,6 +275,201 @@ function $shouldOverrideDefaultCharacterSelection(
     isBackward,
   );
   return $isDecoratorNode(possibleDecoratorNode);
+}
+
+function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
+  if (IS_APPLE) {
+    return metaKey;
+  }
+  return ctrlKey;
+}
+
+function isReturn(event: KeyboardEvent): boolean {
+  return event.keyCode === 13;
+}
+
+function isBackspace(keyCode: number): boolean {
+  return keyCode === 8;
+}
+
+function isDelete(keyCode: number): boolean {
+  return keyCode === 46;
+}
+
+function isTab(keyCode: number, altKey, ctrlKey, metaKey): boolean {
+  return keyCode === 9 && !altKey && !ctrlKey && !metaKey;
+}
+
+function isBold(keyCode: number, metaKey: boolean, ctrlKey: boolean): boolean {
+  return keyCode === 66 && controlOrMeta(metaKey, ctrlKey);
+}
+
+function isItalic(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 73 && controlOrMeta(metaKey, ctrlKey);
+}
+
+function isUnderline(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 85 && controlOrMeta(metaKey, ctrlKey);
+}
+
+function isParagraph(event: KeyboardEvent): boolean {
+  return isReturn(event) && !event.shiftKey;
+}
+
+function isLineBreak(event: KeyboardEvent): boolean {
+  return isReturn(event) && event.shiftKey;
+}
+
+// Inserts a new line after the selection
+function isOpenLineBreak(keyCode: number, ctrlKey: boolean): boolean {
+  // 79 = KeyO
+  return IS_APPLE && ctrlKey && keyCode === 79;
+}
+
+function isDeleteWordBackward(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return isBackspace(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+}
+
+function isDeleteWordForward(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return isDelete(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+}
+
+function isDeleteLineBackward(keyCode: number, metaKey: boolean): boolean {
+  return IS_APPLE && metaKey && isBackspace(keyCode);
+}
+
+function isDeleteLineForward(keyCode: number, metaKey: boolean): boolean {
+  return IS_APPLE && metaKey && isDelete(keyCode);
+}
+
+function isDeleteBackward(
+  keyCode: number,
+  altKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    if (altKey || metaKey) {
+      return false;
+    }
+    return isBackspace(keyCode) || (keyCode === 72 && ctrlKey);
+  }
+  if (ctrlKey || altKey || metaKey) {
+    return false;
+  }
+  return isBackspace(keyCode);
+}
+
+function isDeleteForward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    if (shiftKey || altKey || metaKey) {
+      return false;
+    }
+    return isDelete(keyCode) || (keyCode === 68 && ctrlKey);
+  }
+  if (ctrlKey || altKey || metaKey) {
+    return false;
+  }
+  return isDelete(keyCode);
+}
+
+function isUndo(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 90 && !shiftKey && controlOrMeta(metaKey, ctrlKey);
+}
+
+function isRedo(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    return keyCode === 90 && metaKey && shiftKey;
+  }
+  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
+}
+
+function isArrowLeft(keyCode: number): boolean {
+  return keyCode === 37;
+}
+
+function isArrowRight(keyCode: number): boolean {
+  return keyCode === 39;
+}
+
+function isArrowUp(keyCode: number): boolean {
+  return keyCode === 38;
+}
+
+function isArrowDown(keyCode: number): boolean {
+  return keyCode === 40;
+}
+
+function isMoveBackward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowLeft(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+function isMoveForward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowRight(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+function isMoveUp(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowUp(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+function isMoveDown(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowDown(keyCode) && !ctrlKey && !metaKey && !altKey;
 }
 
 export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
@@ -312,63 +484,62 @@ export function onKeyDown(event: KeyboardEvent, editor: OutlineEditor): void {
     if (selection === null) {
       return;
     }
-    const isHoldingShift = event.shiftKey;
-    if (isMoveBackward(event)) {
-      if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
-        event.preventDefault();
-        $moveCharacter(selection, isHoldingShift, true);
-      }
-    } else if (isMoveForward(event)) {
-      if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
-        event.preventDefault();
-        $moveCharacter(selection, isHoldingShift, false);
-      }
+    const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
+
+    if (isMoveForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+      editor.execCommand('keyArrowRight', event);
+    } else if (isMoveBackward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+      editor.execCommand('keyArrowLeft', event);
+    } else if (isMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+      editor.execCommand('keyArrowUp', event);
+    } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+      editor.execCommand('keyArrowDown', event);
     } else if (isLineBreak(event)) {
-      event.preventDefault();
-      editor.execCommand('insertLineBreak');
-    } else if (isOpenLineBreak(event)) {
+      editor.execCommand('keyEnter', event);
+    } else if (isOpenLineBreak(keyCode, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('insertLineBreak', true);
     } else if (isParagraph(event)) {
-      event.preventDefault();
-      editor.execCommand('insertParagraph');
-    } else if (isDeleteBackward(event)) {
-      event.preventDefault();
-      editor.execCommand('deleteCharacter', true);
-    } else if (isDeleteForward(event)) {
-      event.preventDefault();
-      editor.execCommand('deleteCharacter', false);
-    } else if (isDeleteWordBackward(event)) {
+      editor.execCommand('keyEnter', event);
+    } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
+      if (isBackspace(keyCode)) {
+        editor.execCommand('keyBackspace', event);
+      } else {
+        editor.execCommand('deleteCharacter', true);
+      }
+    } else if (isDeleteForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+      if (isDelete(keyCode)) {
+        editor.execCommand('keyDelete', event);
+      } else {
+        editor.execCommand('deleteCharacter', false);
+      }
+    } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('deleteWord', true);
-    } else if (isDeleteWordForward(event)) {
+    } else if (isDeleteWordForward(keyCode, altKey, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('deleteWord', false);
-    } else if (isDeleteLineBackward(event)) {
+    } else if (isDeleteLineBackward(keyCode, metaKey)) {
       event.preventDefault();
       editor.execCommand('deleteLine', true);
-    } else if (isDeleteLineForward(event)) {
+    } else if (isDeleteLineForward(keyCode, metaKey)) {
       event.preventDefault();
       editor.execCommand('deleteLine', false);
-    } else if (isBold(event)) {
+    } else if (isBold(keyCode, metaKey, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('formatText', 'bold');
-    } else if (isUnderline(event)) {
+    } else if (isUnderline(keyCode, metaKey, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('formatText', 'underline');
-    } else if (isItalic(event)) {
+    } else if (isItalic(keyCode, metaKey, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('formatText', 'italic');
-    } else if (isTab(event)) {
-      if (
-        editor.execCommand(event.shiftKey ? 'outdentContent' : 'indentContent')
-      ) {
-        event.preventDefault();
-      }
-    } else if (isUndo(event)) {
+    } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {
+      editor.execCommand('keyTab', event);
+    } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('undo');
-    } else if (isRedo(event)) {
+    } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('redo');
     }

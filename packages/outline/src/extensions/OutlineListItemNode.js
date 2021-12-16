@@ -17,7 +17,7 @@ import type {
 import type {ParagraphNode} from 'outline/ParagraphNode';
 
 import {$isElementNode, ElementNode} from 'outline';
-import {$createParagraphNode} from 'outline/ParagraphNode';
+import {$createParagraphNode, $isParagraphNode} from 'outline/ParagraphNode';
 import {$createListNode, $isListNode} from 'outline/ListNode';
 import invariant from 'shared/invariant';
 import {$getTopListNode, $isLastItemInList} from 'outline/nodes';
@@ -57,6 +57,20 @@ export class ListItemNode extends ElementNode {
   }
 
   // Mutation
+
+  append(...nodes: OutlineNode[]): ListItemNode {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if ($isElementNode(node) && this.canMergeWith(node)) {
+        const children = node.getChildren();
+        this.append(...children);
+        node.remove();
+      } else {
+        super.append(node);
+      }
+    }
+    return this;
+  }
 
   replace<N: OutlineNode>(replaceWithNode: N): N {
     if ($isListItemNode(replaceWithNode)) {
@@ -200,6 +214,10 @@ export class ListItemNode extends ElementNode {
 
   canReplaceWith(replacement: OutlineNode): boolean {
     return $isListItemNode(replacement);
+  }
+
+  canMergeWith(node: OutlineNode): boolean {
+    return $isParagraphNode(node) || $isListItemNode(node);
   }
 }
 

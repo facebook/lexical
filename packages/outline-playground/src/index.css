@@ -111,7 +111,7 @@ header h1 {
   text-transform: uppercase;
 }
 
-.editor-shell div.editor ul {
+.editor-shell div.editor ul, .editor-shell div.editor ol {
   padding: 0;
   margin: 0
 }
@@ -146,9 +146,8 @@ header h1 {
   font-size: 94%;
 }
 
-.editor-shell div.editor ul li {
+.editor-shell div.editor ul li, .editor-shell div.editor ol li {
   margin: 8px 32px 8px 32px;
-  list-style-type: disc;
 }
 
 .test-recorder-output {
@@ -1140,7 +1139,7 @@ i.chevron-down {
   user-select: none;
   white-space: nowrap;
   display: inline-block;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .editor-table {
@@ -1281,7 +1280,7 @@ i.chevron-down {
   margin-left: -25px;
   margin-top: 11px;
   margin-right: 10px;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .toolbar .divider {
@@ -1292,20 +1291,20 @@ i.chevron-down {
 
 .sticky-note {
   line-height: 1;
-  text-align: left;     
-  width: 120px;    
-  margin: 25px;    
+  text-align: left;
+  width: 120px;
+  margin: 25px;
   padding: 20px 10px;
-  position: absolute;   
-  border: 1px solid #E8E8E8;  
-  font-family: 'Reenie Beanie';    
-  font-size: 24px;      
+  position: absolute;
+  border: 1px solid #E8E8E8;
+  font-family: 'Reenie Beanie';
+  font-size: 24px;
   border-bottom-right-radius: 60px 5px;
-  display: inline-block;    
+  display: inline-block;
   cursor: move;
 }
 
-.sticky-note:after {     
+.sticky-note:after {
   content: "";
   position: absolute;
   z-index: -1;
@@ -1314,7 +1313,7 @@ i.chevron-down {
   height: 25px;
   background: rgba(0, 0, 0, 0.2);
   box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.40);
-  transform: matrix(-1, -0.1, 0, 1, 0, 0);       
+  transform: matrix(-1, -0.1, 0, 1, 0, 0);
 }
 
 .sticky-note .editor-paragraph {
@@ -1332,7 +1331,7 @@ i.chevron-down {
   white-space: nowrap;
   display: inline-block;
   pointer-events: none;
-  width: 120px;  
+  width: 120px;
 }
 
 .sticky-note.yellow {

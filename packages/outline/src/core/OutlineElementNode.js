@@ -281,6 +281,7 @@ export class ElementNode extends OutlineNode {
     }
     return writableSelf;
   }
+
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
     const self = this.getWritable();
@@ -336,6 +337,9 @@ export class ElementNode extends OutlineNode {
   }
   canSelectionRemove(): boolean {
     return true;
+  }
+  canMergeWith(node: ElementNode): boolean {
+    return false;
   }
 }
 

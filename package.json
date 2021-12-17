@@ -1,5 +1,5 @@
 {
-  "description": "Outline is an extensible text-editor that provides reliable, accessible and performant typing experiences.",
+  "description": "Outline is an extensible text editor engine that provides excellent reliability, accessible and performance.",
   "version": "0.1.0",
   "license": "MIT",
   "author": {
@@ -17,8 +17,9 @@
   "engineStrict": true,
   "scripts": {
     "start": "concurrently \"npm:build\" \"npm:collab\" \"npm run start --prefix packages/outline-playground\"",
+    "start:website": "concurrently \"npm:build\" \"npm run start --prefix packages/outline-website -- -p 3030\"",
     "dev": "concurrently \"npm:watch\" \"npm run start --prefix packages/outline-playground\"",
-    "dev-repl": "concurrently \"npm:watch\" \"npm run dev --prefix packages/outline-repl\"",
+    "dev:website": "concurrently \"npm:build\" \"npm run dev --prefix packages/outline-website -- -p 3030\"",
     "build": "node scripts/build.js --clean",
     "build-prod": "node scripts/build.js --prod --clean",
     "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod",

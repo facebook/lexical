@@ -6,7 +6,7 @@ export default function Home() {
     <div className={styles.container}>
       <Head>
         <title>Outline</title>
-        <meta name="description" content="Outline is an extensible text editor engine that provides excellent reliability, accessible and performance." />
+        <meta name="description" content="Outline is an extensible text editor library that provides excellent reliability, accessible and performance." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -17,7 +17,7 @@ export default function Home() {
         </h1>
 
         <p className={styles.description}>
-          An extensible text editor engine that does things differently.
+          An extensible text editor library that does things differently.
         </p>
         <p>
           Coming early 2022

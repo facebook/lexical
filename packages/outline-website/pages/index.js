@@ -17,7 +17,10 @@ export default function Home() {
         </h1>
 
         <p className={styles.description}>
-          Watch this space&hellip;
+          An extensible text editor engine that does things differently.
+        </p>
+        <p>
+          Coming early 2022
         </p>
       </main>
 

@@ -71,7 +71,7 @@ function Editor() {
 ## Working with Outline
 
 This section covers how to use Outline, independently of any framework or library. For those intending to use Outline in their React applications,
-it's advisable to [check out the source-code for the hooks that are shipped in `outline-react`](https://github.com/facebookexternal/Outline/tree/main/packages/outline-react/src).
+it's advisable to [check out the source-code for the hooks that are shipped in `outline-react`](https://github.com/facebook/outline/tree/main/packages/outline-react/src).
 
 ### Creating an editor instance and using it
 

@@ -17,7 +17,7 @@
   "main": "Outline.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebookexternal/Outline",
+    "url": "https://github.com/facebook/outline",
     "directory": "packages/outline"
   }
 }

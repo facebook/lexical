@@ -4,10 +4,10 @@
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "Outline is an extensible text editor library that provides excellent reliability, accessible and performance.",
+  "description": "Outline.js is an extensible text editor library that provides excellent reliability, accessible and performance.",
   "keywords": [
     "react",
-    "outline",
+    "outlinejs",
     "editor",
     "contenteditable",
     "rich-text"

@@ -5,19 +5,19 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <Head>
-        <title>Outline</title>
-        <meta name="description" content="Outline is an extensible text editor library that provides excellent reliability, accessible and performance." />
+        <title>Outline.js</title>
+        <meta name="description" content="Outline.js is an extensible text editor library that provides excellent reliability, accessible and performance." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className={styles.main}>
         <h1 className={styles.title}>
           { /* eslint-disable-next-line @next/next/no-img-element */ }
-          <img className={styles.logo} src="/logo.svg" alt="Outline Logo: containing an icon of a text editor glyph containing a text cursor on the left, with the text of 'Ouline' on the right." />
+          <img className={styles.logo} src="/logo.svg" alt="Outline.js Logo: containing an icon of a text editor glyph containing a text cursor on the left, with the text of 'Ouline' on the right." />
         </h1>
 
         <p className={styles.description}>
-          An extensible text editor library that does things differently.
+          Outline.js is an extensible text editor library that does things differently.
         </p>
         <p>
           Coming early 2022

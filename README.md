@@ -1,18 +1,18 @@
-# Outline
+# Outline.js
 
-Outline is a fast, light-weight, extensible library for building rich text editors on the web.
+Outline.js is a fast, light-weight, extensible library for building rich text editors on the web.
 
-The core of Outline is a dependency-free text editor engine that allows for powerful, simple and complex,
+The core of Outline.js is a dependency-free text editor engine that allows for powerful, simple and complex,
 editor implementations to be built on top. Outline's engine provides three main parts:
 - editor instances that each attach to a single content editable element.
 - a set of editor states that represent the current and pending states of the editor at any given time.
 - a DOM reconciler that takes a set of editor states, diffs the changes, and updates the DOM according to their state.
 
-By design, the core of Outline doesn't do anything else, such as listen for keyboard input or other events. Instead
+By design, the core of Outline.js doesn't do anything else, such as listen for keyboard input or other events. Instead
 this logic can be wired up manually, or via a preshipped package. This ensures tight extensibilty and keeps code-sizes
 to a minimal – ensuring apps only pay the cost for what they actually import.
 
-For React apps, Outline has tight intergration with React 18+ via the optional `outline-react` package. This package provides
+For React apps, Outline.js has tight intergration with React 18+ via the optional `outline-react` package. This package provides
 production-ready utility functions, helpers and React hooks that make it seemless to create text editors within React.
 
 ## Getting started with React
@@ -68,9 +68,9 @@ function Editor() {
 }
 ```
 
-## Working with Outline
+## Working with Outline.js
 
-This section covers how to use Outline, independently of any framework or library. For those intending to use Outline in their React applications,
+This section covers how to use Outline.js, independently of any framework or library. For those intending to use Outline in their React applications,
 it's advisable to [check out the source-code for the hooks that are shipped in `outline-react`](https://github.com/facebook/outline/tree/main/packages/outline-react/src).
 
 ### Creating an editor instance and using it
@@ -117,7 +117,7 @@ There are two ways to update an editor instance, either with `editor.update()` o
 
 TODO
 
-## Contributing to Outline
+## Contributing to Outline.js
 
 1. Clone this repository
 

@@ -4,10 +4,10 @@
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "The library provides Outline helpers and utilities for React applications.",
+  "description": "The library provides Outline.js helpers and utilities for React applications.",
   "keywords": [
     "react",
-    "outline",
+    "outlinejs",
     "editor",
     "rich-text"
   ],

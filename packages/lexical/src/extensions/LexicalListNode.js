@@ -16,6 +16,8 @@ import type {
 
 import {$createTextNode, ElementNode} from 'lexical';
 import {$createListItemNode, $isListItemNode} from 'lexical/ListItemNode';
+import invariant from 'shared/invariant';
+
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -93,6 +95,24 @@ export class ListNode extends ElementNode {
   }
 }
 
+function getListDepth(listNode: ListNode): number {
+  let depth = 1;
+  let parent = listNode.getParent();
+  while (parent != null) {
+    if ($isListItemNode(parent)) {
+      const parentList = parent.getParent();
+      if ($isListNode(parentList)) {
+        depth++;
+        parent = parentList.getParent();
+        continue;
+      }
+      invariant(false, 'A ListItemNode must have a ListNode for a parent.');
+    }
+    return depth;
+  }
+  return depth;
+}
+
 function setListThemeClassNames(
   dom: HTMLElement,
   editorThemeClasses: EditorThemeClasses,
@@ -101,22 +121,31 @@ function setListThemeClassNames(
   const classesToAdd = [];
   const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
-
   if (listTheme !== undefined) {
-    const listClassName = listTheme[node.__tag];
+    const listDepth = getListDepth(node);
+    const normalizedListDepth = listDepth % 5;
+    const listThemeLevel = normalizedListDepth === 0 ? 5 : normalizedListDepth;
+    const listThemeLevelClassName = node.__tag + listThemeLevel;
+    const listClassName = listTheme[listThemeLevelClassName];
     let nestedListClassName;
-    if (editorThemeClasses.nestedList) {
-      nestedListClassName = editorThemeClasses.nestedList.list;
+    const nestedListTheme = listTheme.nested;
+    if (nestedListTheme !== undefined && nestedListTheme.list) {
+      nestedListClassName = nestedListTheme.list;
     }
 
     if (listClassName !== undefined) {
       const listItemClasses = listClassName.split(' ');
       classesToAdd.push(...listItemClasses);
+      for (let i = 1; i < 6; i++) {
+        if (i !== normalizedListDepth) {
+          classesToRemove.push(node.__tag + i);
+        }
+      }
     }
 
     if (nestedListClassName !== undefined) {
       const nestedListItemClasses = nestedListClassName.split(' ');
-      if ($isListItemNode(node.getParent())) {
+      if (listDepth > 1) {
         classesToAdd.push(...nestedListItemClasses);
       } else {
         classesToRemove.push(...nestedListItemClasses);

@@ -40,37 +40,26 @@ export class CodeNode extends ElementNode {
   }
 
   // Mutation
-
   insertNewAfter(selection: Selection): null | ParagraphNode {
-    const textContent = this.getTextContent();
-    const anchorNode = selection.anchor.getNode();
-    const anchorTextContentLength = anchorNode.getTextContentSize();
     const children = this.getChildren();
     const childrenLength = children.length;
-    const lastChild = children[childrenLength - 1];
-    const hasTwoEndingLineBreaks = textContent.slice(-2) === '\n\n';
 
-    const offset = selection.anchor.offset;
     if (
-      anchorNode !== lastChild ||
-      offset !== anchorTextContentLength ||
-      !hasTwoEndingLineBreaks
+      childrenLength >= 2 &&
+      children[childrenLength - 1].getTextContent() === '\n' &&
+      children[childrenLength - 2].getTextContent() === '\n' &&
+      selection.isCollapsed() &&
+      selection.anchor.key === this.__key &&
+      selection.anchor.offset === childrenLength
     ) {
-      return null;
+      children[childrenLength - 1].remove();
+      children[childrenLength - 2].remove();
+      const newElement = $createParagraphNode();
+      this.insertAfter(newElement);
+      return newElement;
     }
-    // Remove the dangling new lines
-    if (hasTwoEndingLineBreaks) {
-      // We offset by 1 extra because the last node should always be a text
-      // node to ensure selection works as intended.
-      const firstLinkBreak = children[childrenLength - 2];
-      // Again offset because of wrapped text nodes
-      const secondLinkBreak = children[childrenLength - 4];
-      firstLinkBreak.remove();
-      secondLinkBreak.remove();
-    }
-    const newElement = $createParagraphNode();
-    this.insertAfter(newElement);
-    return newElement;
+
+    return null;
   }
 
   canInsertTab(): true {

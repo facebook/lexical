@@ -6,104 +6,104 @@ const {exec} = require('child-process-promise');
 const fs = require('fs');
 const path = require('path');
 
-async function prepareOutlinePackage() {
-  await exec(`rm -rf ./packages/outline/npm`);
-  await exec(`mkdir ./packages/outline/npm`);
-  await exec(`cp -R ./packages/outline/dist/*.js ./packages/outline/npm`);
+async function prepareLexicalPackage() {
+  await exec(`rm -rf ./packages/lexical/npm`);
+  await exec(`mkdir ./packages/lexical/npm`);
+  await exec(`cp -R ./packages/lexical/dist/*.js ./packages/lexical/npm`);
   // Remap the helper packages to their short versions
   await exec(
-    `mv ./packages/outline/npm/OutlineSelectionHelpers.js ./packages/outline/npm/selection.js`,
+    `mv ./packages/lexical/npm/LexicalSelectionHelpers.js ./packages/lexical/npm/selection.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineTextHelpers.js ./packages/outline/npm/text.js`,
+    `mv ./packages/lexical/npm/LexicalTextHelpers.js ./packages/lexical/npm/text.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineEventHelpers.js ./packages/outline/npm/events.js`,
+    `mv ./packages/lexical/npm/LexicalEventHelpers.js ./packages/lexical/npm/events.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineOffsetHelpers.js ./packages/outline/npm/offsets.js`,
+    `mv ./packages/lexical/npm/LexicalOffsetHelpers.js ./packages/lexical/npm/offsets.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineNodeHelpers.js ./packages/outline/npm/nodes.js`,
+    `mv ./packages/lexical/npm/LexicalNodeHelpers.js ./packages/lexical/npm/nodes.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineElementHelpers.js ./packages/outline/npm/elements.js`,
+    `mv ./packages/lexical/npm/LexicalElementHelpers.js ./packages/lexical/npm/elements.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineRootHelpers.js ./packages/outline/npm/validation.js`,
+    `mv ./packages/lexical/npm/LexicalRootHelpers.js ./packages/lexical/npm/validation.js`,
   );
   // Remap the node extensions to their short versions
   await exec(
-    `mv ./packages/outline/npm/OutlineCodeNode.js ./packages/outline/npm/CodeNode.js`,
+    `mv ./packages/lexical/npm/LexicalCodeNode.js ./packages/lexical/npm/CodeNode.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineParagraphNode.js ./packages/outline/npm/ParagraphNode.js`,
+    `mv ./packages/lexical/npm/LexicalParagraphNode.js ./packages/lexical/npm/ParagraphNode.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineQuoteNode.js ./packages/outline/npm/QuoteNode.js`,
+    `mv ./packages/lexical/npm/LexicalQuoteNode.js ./packages/lexical/npm/QuoteNode.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineHashtagNode.js ./packages/outline/npm/HashtagNode.js`,
+    `mv ./packages/lexical/npm/LexicalHashtagNode.js ./packages/lexical/npm/HashtagNode.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineListNode.js ./packages/outline/npm/ListNode.js`,
+    `mv ./packages/lexical/npm/LexicalListNode.js ./packages/lexical/npm/ListNode.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineListItemNode.js ./packages/outline/npm/ListItemNode.js`,
-  );
-
-  await exec(
-    `mv ./packages/outline/npm/OutlineTableNode.js ./packages/outline/npm/TableNode.js`,
-  );
-  await exec(
-    `mv ./packages/outline/npm/OutlineTableRowNode.js ./packages/outline/npm/TableRowNode.js`,
-  );
-  await exec(
-    `mv ./packages/outline/npm/OutlineTableCellNode.js ./packages/outline/npm/TableCellNode.js`,
+    `mv ./packages/lexical/npm/LexicalListItemNode.js ./packages/lexical/npm/ListItemNode.js`,
   );
 
   await exec(
-    `mv ./packages/outline/npm/OutlineLinkNode.js ./packages/outline/npm/LinkNode.js`,
+    `mv ./packages/lexical/npm/LexicalTableNode.js ./packages/lexical/npm/TableNode.js`,
   );
   await exec(
-    `mv ./packages/outline/npm/OutlineHeadingNode.js ./packages/outline/npm/HeadingNode.js`,
+    `mv ./packages/lexical/npm/LexicalTableRowNode.js ./packages/lexical/npm/TableRowNode.js`,
+  );
+  await exec(
+    `mv ./packages/lexical/npm/LexicalTableCellNode.js ./packages/lexical/npm/TableCellNode.js`,
+  );
+
+  await exec(
+    `mv ./packages/lexical/npm/LexicalLinkNode.js ./packages/lexical/npm/LinkNode.js`,
+  );
+  await exec(
+    `mv ./packages/lexical/npm/LexicalHeadingNode.js ./packages/lexical/npm/HeadingNode.js`,
   );
   // Other bits
-  await exec(`cp -R ./packages/outline/package.json ./packages/outline/npm`);
-  await exec(`cp -R LICENSE ./packages/outline/npm`);
-  await exec(`cp -R ./packages/outline/README.md ./packages/outline/npm`);
+  await exec(`cp -R ./packages/lexical/package.json ./packages/lexical/npm`);
+  await exec(`cp -R LICENSE ./packages/lexical/npm`);
+  await exec(`cp -R ./packages/lexical/README.md ./packages/lexical/npm`);
 }
 
-async function prepareOutlineReactPackage() {
-  await exec(`rm -rf ./packages/outline-react/npm`);
-  await exec(`mkdir ./packages/outline-react/npm`);
+async function prepareLexicalReactPackage() {
+  await exec(`rm -rf ./packages/lexical-react/npm`);
+  await exec(`mkdir ./packages/lexical-react/npm`);
   await exec(
-    `cp -R ./packages/outline-react/dist/*.js ./packages/outline-react/npm`,
+    `cp -R ./packages/lexical-react/dist/*.js ./packages/lexical-react/npm`,
   );
   await exec(
-    `cp -R ./packages/outline-react/package.json ./packages/outline-react/npm`,
+    `cp -R ./packages/lexical-react/package.json ./packages/lexical-react/npm`,
   );
-  await exec(`cp -R LICENSE ./packages/outline-react/npm`);
+  await exec(`cp -R LICENSE ./packages/lexical-react/npm`);
   await exec(
-    `cp -R ./packages/outline-react/README.md ./packages/outline-react/npm`,
-  );
-}
-
-async function prepareOutlineYjsPackage() {
-  await exec(`rm -rf ./packages/outline-yjs/npm`);
-  await exec(`mkdir ./packages/outline-yjs/npm`);
-  await exec(
-    `cp -R ./packages/outline-yjs/dist/OutlineYjs.js ./packages/outline-yjs/npm/index.js`,
-  );
-  await exec(
-    `cp -R ./packages/outline-yjs/package.json ./packages/outline-yjs/npm`,
-  );
-  await exec(`cp -R LICENSE ./packages/outline-yjs/npm`);
-  await exec(
-    `cp -R ./packages/outline-yjs/README.md ./packages/outline-yjs/npm`,
+    `cp -R ./packages/lexical-react/README.md ./packages/lexical-react/npm`,
   );
 }
 
-prepareOutlinePackage();
-prepareOutlineReactPackage();
-prepareOutlineYjsPackage();
+async function prepareLexicalYjsPackage() {
+  await exec(`rm -rf ./packages/lexical-yjs/npm`);
+  await exec(`mkdir ./packages/lexical-yjs/npm`);
+  await exec(
+    `cp -R ./packages/lexical-yjs/dist/LexicalYjs.js ./packages/lexical-yjs/npm/index.js`,
+  );
+  await exec(
+    `cp -R ./packages/lexical-yjs/package.json ./packages/lexical-yjs/npm`,
+  );
+  await exec(`cp -R LICENSE ./packages/lexical-yjs/npm`);
+  await exec(
+    `cp -R ./packages/lexical-yjs/README.md ./packages/lexical-yjs/npm`,
+  );
+}
+
+prepareLexicalPackage();
+prepareLexicalReactPackage();
+prepareLexicalYjsPackage();

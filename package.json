@@ -1,5 +1,5 @@
 {
-  "description": "Outline is an extensible text editor library that provides excellent reliability, accessible and performance.",
+  "description": "Lexical is an extensible text editor library that provides excellent reliability, accessible and performance.",
   "version": "0.1.1",
   "license": "MIT",
   "author": {
@@ -16,14 +16,14 @@
   },
   "engineStrict": true,
   "scripts": {
-    "start": "concurrently \"npm:build\" \"npm:collab\" \"npm run start --prefix packages/outline-playground\"",
-    "start:website": "concurrently \"npm:build\" \"npm run start --prefix packages/outline-website -- -p 3030\"",
-    "dev": "concurrently \"npm:watch\" \"npm run start --prefix packages/outline-playground\"",
-    "dev:website": "concurrently \"npm:build\" \"npm run dev --prefix packages/outline-website -- -p 3030\"",
+    "start": "concurrently \"npm:build\" \"npm:collab\" \"npm run start --prefix packages/lexical-playground\"",
+    "start:website": "concurrently \"npm:build\" \"npm run start --prefix packages/lexical-website -- -p 3030\"",
+    "dev": "concurrently \"npm:watch\" \"npm run start --prefix packages/lexical-playground\"",
+    "dev:website": "concurrently \"npm:build\" \"npm run dev --prefix packages/lexical-website -- -p 3030\"",
     "build": "node scripts/build.js --clean",
     "build-prod": "node scripts/build.js --prod --clean",
     "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod",
-    "build-flow": "gen-flow-files ./packages/outline/src --out-dir ./packages/outline/dist && gen-flow-files ./packages/outline-react/src --out-dir ./packages/outline-react/dist",
+    "build-flow": "gen-flow-files ./packages/lexical/src --out-dir ./packages/lexical/dist && gen-flow-files ./packages/lexical-react/src --out-dir ./packages/lexical-react/dist",
     "clean": "node scripts/build.js --clean",
     "extract-codes": "node scripts/build.js --codes",
     "watch": "node scripts/build.js --watch",
@@ -74,8 +74,8 @@
     "lint": "node ./scripts/tasks/eslint.js",
     "prettier": "node ./scripts/prettier.js write-changed",
     "prettier-all": "node ./scripts/prettier.js write",
-    "prepare-ci": "npm run build --prefix packages/outline-playground && serve packages/outline-playground/build -l 4000",
-    "prepare-ci-collab": "npm run build --prefix packages/outline-playground && concurrently \"npm run collab\" \"serve packages/outline-playground/build -l 4000\"",
+    "prepare-ci": "npm run build --prefix packages/lexical-playground && serve packages/lexical-playground/build -l 4000",
+    "prepare-ci-collab": "npm run build --prefix packages/lexical-playground && concurrently \"npm run collab\" \"serve packages/lexical-playground/build -l 4000\"",
     "prepare-release": "npm run build-prod && node ./scripts/prepare-release.js",
     "prepare": "husky install",
     "prepare-size-compare": "npm run build-prod && node ./scripts/prepare-size-compare.js"

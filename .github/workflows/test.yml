@@ -1,4 +1,4 @@
-name: Outline Tests
+name: Lexical Tests
 
 on: [push]
 

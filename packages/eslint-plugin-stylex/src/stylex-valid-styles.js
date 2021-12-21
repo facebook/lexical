@@ -881,11 +881,11 @@ const offsetInlineStart = isString;
 const opacity = isNumber;
 const order = isNumber;
 const orphans = isNumber;
-const outline = isString;
-// const outlineColor = isUnion(color, isLiteral('invert'));
-// const outlineOffset = isNumber;
-// const outlineStyle = isUnion(isLiteral('auto'), brStyle);
-// const outlineWidth = borderWidth;
+const lexical = isString;
+// const lexicalColor = isUnion(color, isLiteral('invert'));
+// const lexicalOffset = isNumber;
+// const lexicalStyle = isUnion(isLiteral('auto'), brStyle);
+// const lexicalWidth = borderWidth;
 const overflow = isUnion(
   isLiteral('visible'),
   isLiteral('hidden'),
@@ -1651,11 +1651,11 @@ const CSSProperties = {
   opacity: opacity,
   order: order,
   orphans: orphans,
-  outline: outline,
-  // outlineColor: outlineColor,
-  // outlineOffset: outlineOffset,
-  // outlineStyle: outlineStyle,
-  // outlineWidth: outlineWidth,
+  lexical: lexical,
+  // lexicalColor: lexicalColor,
+  // lexicalOffset: lexicalOffset,
+  // lexicalStyle: lexicalStyle,
+  // lexicalWidth: lexicalWidth,
   overflow: overflow,
   overflowAnchor: overflowAnchor,
   overflowClipBox: overflowClipBox,

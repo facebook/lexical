@@ -9,7 +9,7 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {$createTextNode, $getSelection, $getNodeByKey, $getRoot} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
@@ -18,7 +18,7 @@ import {
   isOverflowNode,
   OverflowNode,
 } from '../../useLexicalCharacterLimit';
-import type {ParagraphNode} from '../../../../lexical/src/extensions/LexicalParagraphNode';
+import type {ParagraphNode} from 'lexical/src/extensions/LexicalParagraphNode';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {

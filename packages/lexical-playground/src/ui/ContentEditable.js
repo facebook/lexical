@@ -10,7 +10,7 @@
 import * as React from 'react';
 
 const editorStyle = {
-  lexical: 0,
+  outline: 0,
   overflowWrap: 'break-word',
   padding: '10px',
   userSelect: 'text',

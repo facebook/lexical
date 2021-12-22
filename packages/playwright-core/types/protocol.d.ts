@@ -9055,13 +9055,13 @@ should be omitted for worker targets.
      */
     export interface SourceOrderConfig {
       /**
-       * the color to outline the givent element in.
+       * the color to lexical the givent element in.
        */
-      parentOutlineColor: DOM.RGBA;
+      parentLexicalColor: DOM.RGBA;
       /**
-       * the color to outline the child elements in.
+       * the color to lexical the child elements in.
        */
-      childOutlineColor: DOM.RGBA;
+      childLexicalColor: DOM.RGBA;
     }
     /**
      * Configuration data for the highlighting of Grid elements.
@@ -9375,9 +9375,9 @@ should be omitted for worker targets.
        */
       contentColor?: DOM.RGBA;
       /**
-       * The content box highlight outline color (default: transparent).
+       * The content box highlight lexical color (default: transparent).
        */
-      outlineColor?: DOM.RGBA;
+      lexicalColor?: DOM.RGBA;
     }
     export interface ContainerQueryHighlightConfig {
       /**
@@ -9553,9 +9553,9 @@ the owner node in the client and use highlightNode.
        */
       contentColor?: DOM.RGBA;
       /**
-       * The content box highlight outline color (default: transparent).
+       * The content box highlight lexical color (default: transparent).
        */
-      contentOutlineColor?: DOM.RGBA;
+      contentLexicalColor?: DOM.RGBA;
     }
     export type highlightFrameReturnValue = {
     }
@@ -9600,9 +9600,9 @@ objectId must be specified.
        */
       color?: DOM.RGBA;
       /**
-       * The highlight outline color (default: transparent).
+       * The highlight lexical color (default: transparent).
        */
-      outlineColor?: DOM.RGBA;
+      lexicalColor?: DOM.RGBA;
     }
     export type highlightQuadReturnValue = {
     }
@@ -9631,9 +9631,9 @@ objectId must be specified.
        */
       color?: DOM.RGBA;
       /**
-       * The highlight outline color (default: transparent).
+       * The highlight lexical color (default: transparent).
        */
-      outlineColor?: DOM.RGBA;
+      lexicalColor?: DOM.RGBA;
     }
     export type highlightRectReturnValue = {
     }

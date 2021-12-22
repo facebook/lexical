@@ -7,18 +7,18 @@
   },
   "keywords": [
     "react",
-    "outline",
+    "lexical",
     "editor",
     "rich-text"
   ],
   "license": "MIT",
   "version": "0.1.1",
   "dependencies": {
-    "outline": "0.1.1"
+    "lexical": "0.1.1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/facebook/outline",
+    "url": "https://github.com/facebook/lexical",
     "directory": "packages/shared"
   }
 }

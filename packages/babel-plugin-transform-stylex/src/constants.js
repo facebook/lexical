@@ -231,12 +231,12 @@ const overrideProperties = {
     'grid-template-columns',
     'grid-template-rows',
   ],
-  outline: [
-    'outline',
-    'outline-color',
-    'outline-offset',
-    'outline-style',
-    'outline-width',
+  lexical: [
+    'lexical',
+    'lexical-color',
+    'lexical-offset',
+    'lexical-style',
+    'lexical-width',
   ],
   overflow: [
     'overflow',
@@ -341,7 +341,7 @@ const rulePriorities = {
   // These rules only have one "root"
   margin: 0.1,
   padding: 0.1,
-  outline: 0.1,
+  lexical: 0.1,
   background: 0.1,
   borderRadius: 0.1,
   'list-style': 0.1,

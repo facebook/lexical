@@ -38,38 +38,38 @@ const closureOptions = {
 };
 
 if (isClean) {
-  fs.removeSync(path.resolve('./packages/outline/dist'));
-  fs.removeSync(path.resolve('./packages/outline-react/dist'));
-  fs.removeSync(path.resolve('./packages/outline-yjs/dist'));
+  fs.removeSync(path.resolve('./packages/lexical/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-react/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
-  outline: 'Outline',
+  lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
-  'outline-yjs': 'OutlineYjs',
+  'lexical-yjs': 'LexicalYjs',
 };
 
-const outlineExtensions = fs
-  .readdirSync(path.resolve('./packages/outline/src/extensions'))
+const lexicalExtensions = fs
+  .readdirSync(path.resolve('./packages/lexical/src/extensions'))
   .map((str) => path.basename(str, '.js'))
   .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
-const outlineExtensionsExternals = outlineExtensions.map((node) => {
-  const external = `outline/${node.replace('Outline', '')}`;
+const lexicalExtensionsExternals = lexicalExtensions.map((node) => {
+  const external = `lexical/${node.replace('Lexical', '')}`;
   wwwMappings[external] = node;
   return external;
 });
 
-const outlineShared = fs
+const lexicalShared = fs
   .readdirSync(path.resolve('./packages/shared/src'))
   .map((str) => path.basename(str, '.js'));
 
-const outlineHelpers = fs
-  .readdirSync(path.resolve('./packages/outline/src/helpers'))
+const lexicalHelpers = fs
+  .readdirSync(path.resolve('./packages/lexical/src/helpers'))
   .map((str) => path.basename(str, '.js'))
   .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
 
-const outlineReactModules = fs
-  .readdirSync(path.resolve('./packages/outline-react/src'))
+const lexicalReactModules = fs
+  .readdirSync(path.resolve('./packages/lexical-react/src'))
   .map((str) => path.basename(str, '.js'))
   .filter(
     (str) =>
@@ -78,8 +78,8 @@ const outlineReactModules = fs
       !str.includes('test-utils') &&
       !str.includes('composer'),
   );
-const outlineReactModuleExternals = outlineReactModules.map((module) => {
-  const external = `outline-react/${module}`;
+const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
+  const external = `lexical-react/${module}`;
   wwwMappings[external] = module;
   return external;
 });
@@ -88,17 +88,17 @@ const externals = [
   // Note: do not add stylex here, as we can't export and sync
   // modules that use Stylex to www (the babel plugin on www
   // is different to that of the OSS version).
-  'outline',
-  'Outline',
-  'outline-yjs',
-  'outline-react',
+  'lexical',
+  'Lexical',
+  'lexical-yjs',
+  'lexical-react',
   'react-dom',
   'ReactDOMComet',
   'react',
   'yjs',
   'y-websocket',
-  ...outlineExtensionsExternals,
-  ...outlineReactModuleExternals,
+  ...lexicalExtensionsExternals,
+  ...lexicalReactModuleExternals,
   ...Object.values(wwwMappings),
 ];
 
@@ -136,47 +136,47 @@ async function build(name, inputFile, outputFile) {
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
-          // We inline both these helpers to improve the bundle size of the outline-react modules
+          // We inline both these helpers to improve the bundle size of the lexical-react modules
           {
-            find: isWWW ? 'Outline/selection' : 'outline/selection',
+            find: isWWW ? 'Lexical/selection' : 'lexical/selection',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineSelectionHelpers',
+              'packages/lexical/src/helpers/LexicalSelectionHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/nodes' : 'outline/nodes',
+            find: isWWW ? 'Lexical/nodes' : 'lexical/nodes',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineNodeHelpers',
+              'packages/lexical/src/helpers/LexicalNodeHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/elements' : 'outline/elements',
+            find: isWWW ? 'Lexical/elements' : 'lexical/elements',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineElementHelpers',
+              'packages/lexical/src/helpers/LexicalElementHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/text' : 'outline/text',
+            find: isWWW ? 'Lexical/text' : 'lexical/text',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineTextHelpers',
+              'packages/lexical/src/helpers/LexicalTextHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/events' : 'outline/events',
+            find: isWWW ? 'Lexical/events' : 'lexical/events',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineEventHelpers',
+              'packages/lexical/src/helpers/LexicalEventHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/offsets' : 'outline/offsets',
+            find: isWWW ? 'Lexical/offsets' : 'lexical/offsets',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineOffsetHelpers',
+              'packages/lexical/src/helpers/LexicalOffsetHelpers',
             ),
           },
           {
-            find: isWWW ? 'Outline/root' : 'outline/root',
+            find: isWWW ? 'Lexical/root' : 'lexical/root',
             replacement: path.resolve(
-              'packages/outline/src/helpers/OutlineRootHelpers',
+              'packages/lexical/src/helpers/LexicalRootHelpers',
             ),
           },
         ],
@@ -283,60 +283,60 @@ function getFileName(fileName) {
   return `${fileName}.js`;
 }
 
-outlineExtensions.forEach((module) => {
+lexicalExtensions.forEach((module) => {
   build(
-    `Outline Extensions - ${module}`,
-    path.resolve(`./packages/outline/src/extensions/${module}.js`),
-    path.resolve(`./packages/outline/dist/${getFileName(module)}`),
+    `Lexical Extensions - ${module}`,
+    path.resolve(`./packages/lexical/src/extensions/${module}.js`),
+    path.resolve(`./packages/lexical/dist/${getFileName(module)}`),
   );
 });
 
-outlineHelpers.forEach((module) => {
+lexicalHelpers.forEach((module) => {
   build(
-    `Outline Helpers - ${module}`,
-    path.resolve(`./packages/outline/src/helpers/${module}.js`),
-    path.resolve(`./packages/outline/dist/${getFileName(module)}`),
+    `Lexical Helpers - ${module}`,
+    path.resolve(`./packages/lexical/src/helpers/${module}.js`),
+    path.resolve(`./packages/lexical/dist/${getFileName(module)}`),
   );
 });
 
-outlineShared.forEach((module) => {
+lexicalShared.forEach((module) => {
   build(
-    `Outline Shared - ${module}`,
+    `Lexical Shared - ${module}`,
     path.resolve(`./packages/shared/src/${module}.js`),
     path.resolve(`./packages/shared/dist/${getFileName(module)}`),
   );
 });
 
 build(
-  'Outline Core',
-  path.resolve('./packages/outline/src/core/index.js'),
-  path.resolve(`./packages/outline/dist/${getFileName('Outline')}`),
+  'Lexical Core',
+  path.resolve('./packages/lexical/src/core/index.js'),
+  path.resolve(`./packages/lexical/dist/${getFileName('Lexical')}`),
 );
 
-outlineReactModules.forEach((outlineReactModule) => {
+lexicalReactModules.forEach((lexicalReactModule) => {
   // We don't want to sync these modules, as they're bundled in the other
   // modules already.
   if (
-    outlineReactModule === 'OutlineEnv' ||
-    outlineReactModule === 'useOutlineDragonSupport' ||
-    outlineReactModule === 'usePlainTextSetup' ||
-    outlineReactModule === 'useRichTextSetup' ||
-    outlineReactModule === 'useYjsCollaboration' ||
-    outlineReactModule === 'OutlineReactUtils'
+    lexicalReactModule === 'LexicalEnv' ||
+    lexicalReactModule === 'useLexicalDragonSupport' ||
+    lexicalReactModule === 'usePlainTextSetup' ||
+    lexicalReactModule === 'useRichTextSetup' ||
+    lexicalReactModule === 'useYjsCollaboration' ||
+    lexicalReactModule === 'LexicalReactUtils'
   ) {
     return;
   }
   build(
-    `Outline React - ${outlineReactModule}`,
-    path.resolve(`./packages/outline-react/src/${outlineReactModule}.js`),
+    `Lexical React - ${lexicalReactModule}`,
+    path.resolve(`./packages/lexical-react/src/${lexicalReactModule}.js`),
     path.resolve(
-      `./packages/outline-react/dist/${getFileName(outlineReactModule)}`,
+      `./packages/lexical-react/dist/${getFileName(lexicalReactModule)}`,
     ),
   );
 });
 
 build(
-  'Outline Yjs',
-  path.resolve('./packages/outline-yjs/src/index.js'),
-  path.resolve(`./packages/outline-yjs/dist/${getFileName('OutlineYjs')}`),
+  'Lexical Yjs',
+  path.resolve('./packages/lexical-yjs/src/index.js'),
+  path.resolve(`./packages/lexical-yjs/dist/${getFileName('LexicalYjs')}`),
 );

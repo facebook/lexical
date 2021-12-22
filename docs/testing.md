@@ -1,10 +1,10 @@
 # Testing
 
-Outline relies on tests to ensure that changes don't break anything, using a mix of unit and end-to-end tests.
+Lexical relies on tests to ensure that changes don't break anything, using a mix of unit and end-to-end tests.
 
 ## Unit tests
 
-We use Jest to run unit tests in core (`outline` package). The goal is to have a well tested API, enabling us to add or modify features without breaking it.
+We use Jest to run unit tests in core (`lexical` package). The goal is to have a well tested API, enabling us to add or modify features without breaking it.
 
 To run the tests use:
 
@@ -12,15 +12,15 @@ To run the tests use:
 npm run test-unit
 ```
 
-Unit tests can be found in [this directory](/packages/outline/src/__tests__).
+Unit tests can be found in [this directory](/packages/lexical/src/__tests__).
 
 ## End-to-end (E2E) tests
 
 We use [Playwright](https://playwright.dev/) for running E2E tests in Chromium, Firefox and WebKit.
 
-These tests run in the `outline-playground` package and are divided into proactive and reactive tests (`e2e` and `regression` directories).
+These tests run in the `lexical-playground` package and are divided into proactive and reactive tests (`e2e` and `regression` directories).
 
-The goal for this type of test is to validate the behavior of Outline in a browser, without necessarily knowing how the internals work.
+The goal for this type of test is to validate the behavior of Lexical in a browser, without necessarily knowing how the internals work.
 
 To run E2E tests use:
 
@@ -29,7 +29,7 @@ npm run start &
 npm run test-e2e:chromium # or :firefox, :webkit
 ```
 
-E2E tests can be found in [this directory](/packages/outline-playground/__tests__)
+E2E tests can be found in [this directory](/packages/lexical-playground/__tests__)
 
 ## General guidelines
 

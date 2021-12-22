@@ -1,0 +1,29 @@
+{
+  "name": "lexical-yjs",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "The library provides Yjs editor bindings for Lexical.",
+  "keywords": [
+    "react",
+    "lexical",
+    "editor",
+    "rich-text",
+    "colllaboration",
+    "yjs",
+    "crdt"
+  ],
+  "license": "MIT",
+  "version": "0.1.1",
+  "main": "LexicalYjs.js",
+  "dependencies": {
+    "lexical": "0.1.1",
+    "yjs": ">=13.5.22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-yjs"
+  }
+}

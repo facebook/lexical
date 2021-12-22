@@ -81,7 +81,7 @@ describe.skip('babel-plugin-transform-stylex', () => {
       ['margin', multiLength],
       ['marginBlock', multiLength],
       ['marginInline', multiLength],
-      ['outline', '1px solid red'],
+      ['lexical', '1px solid red'],
       ['overflow', 'hidden visible'],
       ['padding', multiLength],
       ['paddingBlock', multiLength],

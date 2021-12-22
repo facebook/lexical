@@ -167,11 +167,7 @@ const theme: EditorThemeClasses = {
     h2: stylex(styles.h2),
   },
   list: {
-    ul1: stylex(styles.ul),
-    ul2: stylex(styles.ul),
-    ul3: stylex(styles.ul),
-    ul4: stylex(styles.ul),
-    ul5: stylex(styles.ul),
+    ul: stylex(styles.ul),
     ol1: stylex(styles.ol1),
     ol2: stylex(styles.ol2),
     ol3: stylex(styles.ol3),

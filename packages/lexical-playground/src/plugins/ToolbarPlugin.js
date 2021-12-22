@@ -404,15 +404,15 @@ function BlockOptionsDropdownList({
         // This is a special case for when there's nothing selected
         if (nodes.length === 0) {
           const list = $createListNode(listType);
-          const listItem = $createListItemNode();
-          list.append(listItem);
           if ($isRootNode(anchorNodeParent)) {
             anchorNode.replace(list);
+            const listItem = $createListItemNode();
+            list.append(listItem);
           } else if ($isListItemNode(anchorNode)) {
             const parent = anchorNode.getParentOrThrow();
+            list.append(...parent.getChildren());
             parent.replace(list);
           }
-          listItem.select();
           return;
         } else {
           const handled = new Set();

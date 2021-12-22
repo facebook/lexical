@@ -1,32 +1,32 @@
-# Outline
+# Lexical
 
-Outline is a fast, light-weight, extensible library for building rich text editors on the web.
+Lexical is a fast, light-weight, extensible library for building rich text editors on the web.
 
-The core of Outline is a dependency-free text editor engine that allows for powerful, simple and complex,
-editor implementations to be built on top. Outline's engine provides three main parts:
+The core of Lexical is a dependency-free text editor engine that allows for powerful, simple and complex,
+editor implementations to be built on top. Lexical's engine provides three main parts:
 - editor instances that each attach to a single content editable element.
 - a set of editor states that represent the current and pending states of the editor at any given time.
 - a DOM reconciler that takes a set of editor states, diffs the changes, and updates the DOM according to their state.
 
-By design, the core of Outline doesn't do anything else, such as listen for keyboard input or other events. Instead
+By design, the core of Lexical doesn't do anything else, such as listen for keyboard input or other events. Instead
 this logic can be wired up manually, or via a preshipped package. This ensures tight extensibilty and keeps code-sizes
 to a minimal – ensuring apps only pay the cost for what they actually import.
 
-For React apps, Outline has tight intergration with React 18+ via the optional `outline-react` package. This package provides
+For React apps, Lexical has tight intergration with React 18+ via the optional `lexical-react` package. This package provides
 production-ready utility functions, helpers and React hooks that make it seemless to create text editors within React.
 
 ## Getting started with React
 
-Below is an example of a basic plain text editor using `outline` and `outline-react` ([try it yourself](https://codesandbox.io/s/outline-plain-text-example-g932e)).
+Below is an example of a basic plain text editor using `lexical` and `lexical-react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
 
 
 ```jsx
 import {useCallback} from 'react';
-import useOutline from 'outline-react/useOutline';
-import useOutlinePlainText from 'outline-react/useOutlinePlainText';
+import useLexical from 'lexical-react/useLexical';
+import useLexicalPlainText from 'lexical-react/useLexicalPlainText';
 
 const editorConfig = {
-  // When Outline encounters an error, this is where
+  // When Lexical encounters an error, this is where
   // we can report/handle it.
   onError(error) {
     throw error;
@@ -34,14 +34,14 @@ const editorConfig = {
 };
 
 function Editor() {
-  // Create an Outline editor instance and also a ref
+  // Create an Lexical editor instance and also a ref
   // that we need to pass to our content editable.
-  const [editor, contentEditableRef, showPlaceholder] = useOutline(
+  const [editor, contentEditableRef, showPlaceholder] = useLexical(
     editorConfig,
   );
 
   // Setup plain text entry event handlers.
-  useOutlinePlainText(editor);
+  useLexicalPlainText(editor);
 
   // Our <div> content editable element with some basic styling.
   return (
@@ -52,7 +52,7 @@ function Editor() {
         role="textbox"
         spellCheck={true}
         style={{
-          outline: 0,
+          lexical: 0,
           overflowWrap: 'break-word',
           padding: '10px',
           userSelect: 'text',
@@ -68,18 +68,18 @@ function Editor() {
 }
 ```
 
-## Working with Outline
+## Working with Lexical
 
-This section covers how to use Outline, independently of any framework or library. For those intending to use Outline in their React applications,
-it's advisable to [check out the source-code for the hooks that are shipped in `outline-react`](https://github.com/facebook/outline/tree/main/packages/outline-react/src).
+This section covers how to use Lexical, independently of any framework or library. For those intending to use Lexical in their React applications,
+it's advisable to [check out the source-code for the hooks that are shipped in `lexical-react`](https://github.com/facebook/lexical/tree/main/packages/lexical-react/src).
 
 ### Creating an editor instance and using it
 
-When you work with Outline, you normally work with a single editor instance. An editor instance can be created from the `outline` package and accepts
+When you work with Lexical, you normally work with a single editor instance. An editor instance can be created from the `lexical` package and accepts
 an optional configuration object that allows for theming and the passing of context:
 
 ```js
-import {createEditor} from 'outline';
+import {createEditor} from 'lexical';
 
 const config = {
   onError(error) {
@@ -117,7 +117,7 @@ There are two ways to update an editor instance, either with `editor.update()` o
 
 TODO
 
-## Contributing to Outline
+## Contributing to Lexical
 
 1. Clone this repository
 
@@ -144,7 +144,7 @@ TODO
 
 ## Documentation
 
-- [How Outline was designed](/docs/design.md)
+- [How Lexical was designed](/docs/design.md)
 - [Testing](/docs/testing.md)
 
 ## Browser Support
@@ -157,7 +157,7 @@ TODO
 - iPad OS 13+ (Safari)
 - Android Chrome 72+
 
-Note: Outline does not support Internet Explorer or legacy versions of Edge.
+Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 
 ## Contributing
 

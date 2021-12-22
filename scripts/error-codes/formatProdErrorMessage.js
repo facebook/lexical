@@ -13,7 +13,7 @@
 
 function formatProdErrorMessage(code) {
   throw Error(
-    `Minified Outline error #${code}; see codes.json for the full message or ` +
+    `Minified Lexical error #${code}; see codes.json for the full message or ` +
       'use the non-minified dev environment for full errors and additional ' +
       'helpful warnings.',
   );

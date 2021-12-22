@@ -1,5 +1,5 @@
 {
-  "0": "OutlineComposerContext.useOutlineComposerContext: cannot find a OutlineComposerContext",
+  "0": "LexicalComposerContext.useLexicalComposerContext: cannot find a LexicalComposerContext",
   "1": "insertAfter: list node is not parent of list item node",
   "2": "A ListItemNode must have a ListNode for a parent.",
   "3": "createOffsetModel: could not find node by key",
@@ -30,8 +30,8 @@
   "28": "Unable to find an active editor. This method can only be used synchronously during the callback of editor.update().",
   "29": "updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.",
   "30": "updateEditor: selection has been lost because the previously selected nodes have been removed and selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
-  "31": "OutlineNode: Node %s does not implement .getType().",
-  "32": "OutlineNode: Node %s does not implement .clone().",
+  "31": "LexicalNode: Node %s does not implement .getType().",
+  "32": "LexicalNode: Node %s does not implement .clone().",
   "33": "Expected node %s to have a parent.",
   "34": "Expected node %s to have a top parent element.",
   "35": "getNodesBetween: ancestor is null",

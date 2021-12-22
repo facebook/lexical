@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {OutlineNode, Point} from 'outline';
+import type {LexicalNode, Point} from 'lexical';
 
 export default function getPossibleDecoratorNode(
   focus: Point,
   isBackward: boolean,
-): null | OutlineNode {
+): null | LexicalNode {
   const focusOffset = focus.offset;
   if (focus.type === 'element') {
     const block = focus.getNode();

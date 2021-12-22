@@ -23,9 +23,9 @@ const SIGNIFICANCE_THRESHOLD = 0.002;
 const CRITICAL_ARTIFACT_PATHS = new Set([
   // We always report changes to these bundles, even if the change is
   // insiginificant or non-existent.
-  'Outline.js',
-  'useOutlinePlainText.js',
-  'useOutlineRichText.js',
+  'Lexical.js',
+  'useLexicalPlainText.js',
+  'useLexicalRichText.js',
 ]);
 
 const kilobyteFormatter = new Intl.NumberFormat('en', {

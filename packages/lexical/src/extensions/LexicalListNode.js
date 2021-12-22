@@ -16,7 +16,6 @@ import type {
 
 import {$createTextNode, ElementNode} from 'lexical';
 import {$createListItemNode, $isListItemNode} from 'lexical/ListItemNode';
-import invariant from 'shared/invariant';
 
 import {
   addClassNamesToElement,

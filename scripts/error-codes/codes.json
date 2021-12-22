@@ -44,5 +44,6 @@
   "42": "createNode: node does not exist in nodeMap",
   "43": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "44": "reconcileNode: parentDOM is null",
-  "45": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "45": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "46": "rootNode.append: Only element or decorator nodes can be appended to the root node"
 }

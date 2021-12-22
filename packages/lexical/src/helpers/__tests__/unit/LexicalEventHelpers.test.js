@@ -53,10 +53,10 @@ describe('LexicalEventHelpers', () => {
               h5: 'editor-heading-h5',
             },
             list: {
-              ol: 'editor-list-ol',
-              ul: 'editor-list-ul',
+              ol1: 'editor-list-ol',
+              ul1: 'editor-list-ul',
+              listitem: 'editor-listitem',
             },
-            listitem: 'editor-listitem',
             image: 'editor-image',
             text: {
               bold: 'editor-text-bold',

@@ -16,10 +16,12 @@ import type {
 
 import {$createTextNode, ElementNode} from 'lexical';
 import {$createListItemNode, $isListItemNode} from 'lexical/ListItemNode';
+
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from 'lexical/elements';
+import {$getListDepth} from 'lexical/nodes';
 
 type ListNodeTagType = 'ul' | 'ol';
 
@@ -101,22 +103,36 @@ function setListThemeClassNames(
   const classesToAdd = [];
   const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
-
   if (listTheme !== undefined) {
+    const listDepth = $getListDepth(node);
+    const normalizedListDepth = listDepth % 5;
+    const listThemeLevel = normalizedListDepth === 0 ? 5 : normalizedListDepth;
+    const listThemeLevelClassName = node.__tag + listThemeLevel;
+    const listLevelClassName = listTheme[listThemeLevelClassName];
     const listClassName = listTheme[node.__tag];
     let nestedListClassName;
-    if (editorThemeClasses.nestedList) {
-      nestedListClassName = editorThemeClasses.nestedList.list;
+    const nestedListTheme = listTheme.nested;
+    if (nestedListTheme !== undefined && nestedListTheme.list) {
+      nestedListClassName = nestedListTheme.list;
     }
 
     if (listClassName !== undefined) {
-      const listItemClasses = listClassName.split(' ');
+      classesToAdd.push(listClassName);
+    }
+
+    if (listLevelClassName !== undefined) {
+      const listItemClasses = listLevelClassName.split(' ');
       classesToAdd.push(...listItemClasses);
+      for (let i = 1; i < 6; i++) {
+        if (i !== normalizedListDepth) {
+          classesToRemove.push(node.__tag + i);
+        }
+      }
     }
 
     if (nestedListClassName !== undefined) {
       const nestedListItemClasses = nestedListClassName.split(' ');
-      if ($isListItemNode(node.getParent())) {
+      if (listDepth > 1) {
         classesToAdd.push(...nestedListItemClasses);
       } else {
         classesToRemove.push(...nestedListItemClasses);

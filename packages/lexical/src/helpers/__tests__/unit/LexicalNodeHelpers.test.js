@@ -15,6 +15,7 @@ import {
 } from '../../../__tests__/utils';
 import {
   $dfs__DEPRECATED,
+  $getListDepth,
   $getTopListNode,
   $isLastItemInList,
   $areSiblingsNullOrSpace,
@@ -117,6 +118,81 @@ describe('LexicalNodeHelpers tests', () => {
         });
       });
       expect(dfsKeys).toEqual(expectedKeys);
+    });
+
+    test('getListDepth should return the 1-based depth of a list with one levels', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((state: State) => {
+        // Root
+        //   |- ListNode
+        const root = $getRoot();
+        const topListNode = $createListNode('ul');
+        root.append(topListNode);
+        const result = $getListDepth(topListNode);
+        expect(result).toEqual(1);
+      });
+    });
+
+    test('getListDepth should return the 1-based depth of a list with two levels', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((state: State) => {
+        // Root
+        //   |- ListNode
+        //         |- ListItemNode
+        //         |- ListItemNode
+        //         |- ListNode
+        //               |- ListItemNode
+        const root = $getRoot();
+        const topListNode = $createListNode('ul');
+        const secondLevelListNode = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        topListNode.append(listItem2);
+        topListNode.append(secondLevelListNode);
+        secondLevelListNode.append(listItem3);
+        const result = $getListDepth(secondLevelListNode);
+        expect(result).toEqual(2);
+      });
+    });
+
+    test('getListDepth should return the 1-based depth of a list with five levels', async () => {
+      const editor: OutlineEditor = testEnv.editor;
+      await editor.update((state: State) => {
+        // Root
+        //   |- ListNode
+        //        |- ListItemNode
+        //             |- ListNode
+        //                  |- ListItemNode
+        //                       |- ListNode
+        //                            |- ListItemNode
+        //                                 |- ListNode
+        //                                     |- ListItemNode
+        //                                          |- ListNode
+        const root = $getRoot();
+        const topListNode = $createListNode('ul');
+        const listNode2 = $createListNode('ul');
+        const listNode3 = $createListNode('ul');
+        const listNode4 = $createListNode('ul');
+        const listNode5 = $createListNode('ul');
+        const listItem1 = $createListItemNode();
+        const listItem2 = $createListItemNode();
+        const listItem3 = $createListItemNode();
+        const listItem4 = $createListItemNode();
+        root.append(topListNode);
+        topListNode.append(listItem1);
+        listItem1.append(listNode2);
+        listNode2.append(listItem2);
+        listItem2.append(listNode3);
+        listNode3.append(listItem3);
+        listItem3.append(listNode4);
+        listNode4.append(listItem4);
+        listItem4.append(listNode5);
+        const result = $getListDepth(listNode5);
+        expect(result).toEqual(5);
+      });
     });
 
     test('getTopListNode should return the top list node when the list is a direct child of the RootNode', async () => {

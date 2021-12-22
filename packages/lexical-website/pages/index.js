@@ -19,7 +19,7 @@ export default function Home() {
           <img
             className={styles.logo}
             src="/logo.svg"
-            alt="Lexical Logo: containing an icon of a text editor glyph containing a text cursor on the left, with the text of 'Ouline' on the right."
+            alt="Lexical Logo: containing an icon of a text editor glyph containing a text cursor on the left, with the text of 'Lexical' on the right."
           />
         </h1>
 

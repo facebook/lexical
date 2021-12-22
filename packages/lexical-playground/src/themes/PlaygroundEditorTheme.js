@@ -115,10 +115,34 @@ const styles = stylex.create({
     display: 'inline',
     backgroundColor: '#ffbbbb !important',
   },
-  ol: {
+  ol1: {
     padding: 0,
     margin: 0,
     marginLeft: 16,
+  },
+  ol2: {
+    padding: 0,
+    margin: 0,
+    marginLeft: 16,
+    listStyleType: 'upper-alpha',
+  },
+  ol3: {
+    padding: 0,
+    margin: 0,
+    marginLeft: 16,
+    listStyleType: 'lower-alpha',
+  },
+  ol4: {
+    padding: 0,
+    margin: 0,
+    marginLeft: 16,
+    listStyleType: 'upper-roman',
+  },
+  ol5: {
+    padding: 0,
+    margin: 0,
+    marginLeft: 16,
+    listStyleType: 'lower-roman',
   },
   ul: {
     padding: 0,
@@ -143,13 +167,17 @@ const theme: EditorThemeClasses = {
     h2: stylex(styles.h2),
   },
   list: {
-    ol: stylex(styles.ol),
     ul: stylex(styles.ul),
+    ol1: stylex(styles.ol1),
+    ol2: stylex(styles.ol2),
+    ol3: stylex(styles.ol3),
+    ol4: stylex(styles.ol4),
+    ol5: stylex(styles.ol5),
+    listitem: stylex(styles.listItem),
+    nested: {
+      listitem: stylex(styles.nestedListItem),
+    },
   },
-  nestedList: {
-    listitem: stylex(styles.nestedListItem),
-  },
-  listitem: stylex(styles.listItem),
   image: 'editor-image', // TODO convert to stylex
   text: {
     bold: stylex(styles.textBold),

@@ -228,10 +228,11 @@ function $setListItemThemeClassNames(
 ): void {
   const classesToAdd = [];
   const classesToRemove = [];
-  const listItemClassName = editorThemeClasses.listitem;
+  const listTheme = editorThemeClasses.list;
+  const listItemClassName = listTheme ? listTheme.listitem : undefined;
   let nestedListItemClassName;
-  if (editorThemeClasses.nestedList) {
-    nestedListItemClassName = editorThemeClasses.nestedList.listitem;
+  if (listTheme && listTheme.nested) {
+    nestedListItemClassName = listTheme.nested.listitem;
   }
 
   if (listItemClassName !== undefined) {

@@ -53,6 +53,24 @@ export function $dfs__DEPRECATED(
   }
 }
 
+export function $getListDepth(listNode: ListNode): number {
+  let depth = 1;
+  let parent = listNode.getParent();
+  while (parent != null) {
+    if ($isListItemNode(parent)) {
+      const parentList = parent.getParent();
+      if ($isListNode(parentList)) {
+        depth++;
+        parent = parentList.getParent();
+        continue;
+      }
+      invariant(false, 'A ListItemNode must have a ListNode for a parent.');
+    }
+    return depth;
+  }
+  return depth;
+}
+
 export function $getTopListNode(listItem: ListItemNode): ListNode {
   let list = listItem.getParent();
   if (!$isListNode(list)) {

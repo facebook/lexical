@@ -22,6 +22,7 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from 'lexical/elements';
+import {$getListDepth} from 'lexical/nodes';
 
 type ListNodeTagType = 'ul' | 'ol';
 
@@ -95,24 +96,6 @@ export class ListNode extends ElementNode {
   }
 }
 
-function getListDepth(listNode: ListNode): number {
-  let depth = 1;
-  let parent = listNode.getParent();
-  while (parent != null) {
-    if ($isListItemNode(parent)) {
-      const parentList = parent.getParent();
-      if ($isListNode(parentList)) {
-        depth++;
-        parent = parentList.getParent();
-        continue;
-      }
-      invariant(false, 'A ListItemNode must have a ListNode for a parent.');
-    }
-    return depth;
-  }
-  return depth;
-}
-
 function setListThemeClassNames(
   dom: HTMLElement,
   editorThemeClasses: EditorThemeClasses,
@@ -122,7 +105,7 @@ function setListThemeClassNames(
   const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
   if (listTheme !== undefined) {
-    const listDepth = getListDepth(node);
+    const listDepth = $getListDepth(node);
     const normalizedListDepth = listDepth % 5;
     const listThemeLevel = normalizedListDepth === 0 ? 5 : normalizedListDepth;
     const listThemeLevelClassName = node.__tag + listThemeLevel;

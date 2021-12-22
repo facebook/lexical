@@ -109,7 +109,8 @@ function setListThemeClassNames(
     const normalizedListDepth = listDepth % 5;
     const listThemeLevel = normalizedListDepth === 0 ? 5 : normalizedListDepth;
     const listThemeLevelClassName = node.__tag + listThemeLevel;
-    const listClassName = listTheme[listThemeLevelClassName];
+    const listLevelClassName = listTheme[listThemeLevelClassName];
+    const listClassName = listTheme[node.__tag];
     let nestedListClassName;
     const nestedListTheme = listTheme.nested;
     if (nestedListTheme !== undefined && nestedListTheme.list) {
@@ -117,7 +118,11 @@ function setListThemeClassNames(
     }
 
     if (listClassName !== undefined) {
-      const listItemClasses = listClassName.split(' ');
+      classesToAdd.push(listClassName);
+    }
+
+    if (listLevelClassName !== undefined) {
+      const listItemClasses = listLevelClassName.split(' ');
       classesToAdd.push(...listItemClasses);
       for (let i = 1; i < 6; i++) {
         if (i !== normalizedListDepth) {

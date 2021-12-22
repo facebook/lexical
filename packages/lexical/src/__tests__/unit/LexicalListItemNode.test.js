@@ -17,9 +17,11 @@ import {initializeUnitTest} from '../utils';
 
 const editorConfig = Object.freeze({
   theme: {
-    listitem: 'my-listItem-item-class',
-    nestedList: {
-      listitem: 'my-nested-list-listItem-class',
+    list: {
+      listitem: 'my-listItem-item-class',
+      nested: {
+        listitem: 'my-nested-list-listItem-class',
+      },
     },
   },
 });

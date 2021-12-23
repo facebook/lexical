@@ -10,7 +10,7 @@
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
-import type {DOMTransformerMap} from '../helpers/LexicalEventHelpers';
+import type {DOMConversionMap} from '../helpers/LexicalEventHelpers';
 
 import {
   commitPendingUpdates,
@@ -98,7 +98,7 @@ export type EditorThemeClasses = {
 export type EditorConfig<EditorContext> = {
   theme: EditorThemeClasses,
   context: EditorContext,
-  htmlTransforms?: DOMTransformerMap,
+  htmlTransforms?: DOMConversionMap,
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -216,7 +216,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
-  htmlTransforms?: DOMTransformerMap,
+  htmlTransforms?: DOMConversionMap,
   parentEditor?: LexicalEditor,
 }): LexicalEditor {
   const config = editorConfig || {};

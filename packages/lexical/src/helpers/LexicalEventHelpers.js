@@ -57,16 +57,16 @@ export type EventHandler = (
   editor: LexicalEditor,
 ) => void;
 
-export type DOMTransformer = (element: Node) => DOMTransformOutput;
-export type DOMTransformerMap = {
-  [string]: DOMTransformer,
+export type DOMConversion = (element: Node) => DOMConversionOutput;
+export type DOMConversionMap = {
+  [string]: DOMConversion,
 };
-type DOMTransformOutput = {
+type DOMConversionOutput = {
   node: LexicalNode | null,
   format?: TextFormatType,
 };
 
-const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMTransformerMap = {
+const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   ul: () => ({node: $createListNode('ul')}),
   ol: () => ({node: $createListNode('ol')}),
   li: () => ({node: $createListItemNode()}),
@@ -129,7 +129,7 @@ function $generateNodes(nodeRange: {
 
 export function $createNodesFromDOM(
   node: Node,
-  conversionMap: DOMTransformerMap,
+  conversionMap: DOMConversionMap,
   editor: LexicalEditor,
   textFormat?: number,
 ): Array<LexicalNode> {
@@ -186,7 +186,7 @@ export function $createNodesFromDOM(
 
 function $generateNodesFromDOM(
   dom: Document,
-  conversionMap: DOMTransformerMap,
+  conversionMap: DOMConversionMap,
   editor: LexicalEditor,
 ): Array<LexicalNode> {
   let lexicalNodes = [];

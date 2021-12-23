@@ -12,6 +12,7 @@ import type {LexicalEditor, ElementNode} from 'lexical';
 import {CodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {
   $createLineBreakNode,
+  $createTextNode,
   LexicalNode,
   TextNode,
   $isTextNode,
@@ -88,6 +89,10 @@ function textNodeTransform(node: TextNode, editor: LexicalEditor): void {
   const parentNode = node.getParent();
   if ($isCodeNode(parentNode)) {
     codeNodeTransform(parentNode, editor);
+  } else if ($isCodeHighlightNode(node)) {
+    // When code block converted into paragraph or other element
+    // code highlight nodes converted back to normal text
+    node.replace($createTextNode(node.__text));
   }
 }
 

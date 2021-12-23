@@ -117,7 +117,7 @@ function getHighlightNodes(elements): Array<LexicalNode> {
         nodes.push(
           $createCodeHighlightNode(
             node.children[0].value,
-            node.properties.className.join(' '),
+            node.properties.className.join('-'),
           ),
         );
       } else {
@@ -277,7 +277,8 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   // returning false so that it's transformed into code highlight node
   if ($isCodeHighlightNode(nodeA) && $isCodeHighlightNode(nodeB)) {
     return (
-      nodeA.__text === nodeB.__text && nodeA.__className === nodeB.__className
+      nodeA.__text === nodeB.__text &&
+      nodeA.__highlightType === nodeB.__highlightType
     );
   }
 

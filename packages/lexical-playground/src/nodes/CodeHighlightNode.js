@@ -7,16 +7,20 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig} from 'lexical';
+import type {NodeKey, EditorConfig, EditorThemeClasses} from 'lexical';
 
 import {LexicalNode, TextNode} from 'lexical';
+import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from 'lexical/elements';
 
 export class CodeHighlightNode extends TextNode {
-  __className: ?string;
+  __highlightType: ?string;
 
-  constructor(text: string, className?: string, key?: NodeKey): void {
+  constructor(text: string, highlightType?: string, key?: NodeKey): void {
     super(text, key);
-    this.__className = className;
+    this.__highlightType = highlightType;
   }
 
   static getType(): string {
@@ -26,16 +30,18 @@ export class CodeHighlightNode extends TextNode {
   static clone(node: CodeHighlightNode): CodeHighlightNode {
     return new CodeHighlightNode(
       node.__text,
-      node.__className || undefined,
+      node.__highlightType || undefined,
       node.__key,
     );
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = super.createDOM(config);
-    if (this.__className) {
-      element.classList.add(...this.__className.split(' '));
-    }
+    const className = getHighlightThemeClass(
+      config.theme,
+      this.__highlightType,
+    );
+    addClassNamesToElement(element, className);
     return element;
   }
 
@@ -46,11 +52,21 @@ export class CodeHighlightNode extends TextNode {
     config: EditorConfig<EditorContext>,
   ): boolean {
     const update = super.updateDOM(prevNode, dom, config);
-    const prevClassName = prevNode.__className;
-    const nextClassName = this.__className;
+    const prevClassName = getHighlightThemeClass(
+      config.theme,
+      prevNode.__highlightType,
+    );
+    const nextClassName = getHighlightThemeClass(
+      config.theme,
+      this.__highlightType,
+    );
     if (prevClassName !== nextClassName) {
-      prevClassName && dom.classList.remove(...prevClassName.split(' '));
-      nextClassName && dom.classList.add(...nextClassName.split(' '));
+      if (prevClassName) {
+        removeClassNamesFromElement(dom, prevClassName);
+      }
+      if (nextClassName) {
+        addClassNamesToElement(dom, nextClassName);
+      }
     }
     return update;
   }
@@ -61,11 +77,24 @@ export class CodeHighlightNode extends TextNode {
   }
 }
 
+function getHighlightThemeClass(
+  theme: EditorThemeClasses,
+  highlightType: ?string,
+): ?string {
+  console.log({highlightType});
+  return (
+    theme &&
+    theme.codeHighlight &&
+    highlightType &&
+    theme.codeHighlight[highlightType]
+  );
+}
+
 export function $createCodeHighlightNode(
   text: string,
-  className?: string,
+  highlightType?: string,
 ): CodeHighlightNode {
-  return new CodeHighlightNode(text, className);
+  return new CodeHighlightNode(text, highlightType);
 }
 
 export function $isCodeHighlightNode(node: ?LexicalNode): boolean %checks {

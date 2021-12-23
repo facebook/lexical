@@ -155,6 +155,30 @@ const styles = stylex.create({
   nestedListItem: {
     listStyleType: 'none',
   },
+  tokenComment: {
+    color: 'slategray',
+  },
+  tokenPunctuation: {
+    color: '#999',
+  },
+  tokenProperty: {
+    color: '#905',
+  },
+  tokenSelector: {
+    color: '#690',
+  },
+  tokenOperator: {
+    color: '#9a6e3a',
+  },
+  tokenAttr: {
+    color: '#07a',
+  },
+  tokenVariable: {
+    color: '#e90',
+  },
+  tokenFunction: {
+    color: '#DD4A68',
+  },
 });
 
 const theme: EditorThemeClasses = {
@@ -189,6 +213,38 @@ const theme: EditorThemeClasses = {
   },
   hashtag: stylex(styles.hashtag),
   code: stylex(styles.code),
+  codeHighlight: {
+    'token-comment': stylex(styles.tokenComment),
+    'token-prolog': stylex(styles.tokenComment),
+    'token-doctype': stylex(styles.tokenComment),
+    'token-cdata': stylex(styles.tokenComment),
+    'token-punctuation': stylex(styles.tokenPunctuation),
+    'token-namespace': stylex(styles.tokenVariable),
+    'token-property': stylex(styles.tokenProperty),
+    'token-tag': stylex(styles.tokenProperty),
+    'token-boolean': stylex(styles.tokenProperty),
+    'token-number': stylex(styles.tokenProperty),
+    'token-constant': stylex(styles.tokenProperty),
+    'token-symbol': stylex(styles.tokenProperty),
+    'token-deleted': stylex(styles.tokenProperty),
+    'token-selector': stylex(styles.tokenSelector),
+    'token-string': stylex(styles.tokenSelector),
+    'token-char': stylex(styles.tokenSelector),
+    'token-builtin': stylex(styles.tokenSelector),
+    'token-inserted': stylex(styles.tokenSelector),
+    'token-operator': stylex(styles.tokenOperator),
+    'token-entity': stylex(styles.tokenOperator),
+    'token-url': stylex(styles.tokenOperator),
+    'token-attr': stylex(styles.tokenAttr),
+    'token-atrule': stylex(styles.tokenAttr),
+    'token-keyword': stylex(styles.tokenAttr),
+    'token-function': stylex(styles.tokenFunction),
+    'token-class': stylex(styles.tokenFunction),
+    'token-class-name': stylex(styles.tokenFunction),
+    'token-regex': stylex(styles.tokenVariable),
+    'token-important': stylex(styles.tokenVariable),
+    'token-variable': stylex(styles.tokenVariable),
+  },
   link: stylex(styles.link),
   characterLimit: stylex(styles.characterLimit),
   table: stylex(styles.table),

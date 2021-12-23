@@ -8,7 +8,7 @@
  */
 
 import type {LexicalEditor, EditorThemeClasses, EditorState} from 'lexical';
-import type {DOMTransformerMap} from 'lexical/events';
+import type {DOMConversionMap} from 'lexical/events';
 
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
@@ -23,7 +23,7 @@ export default function useLexical<EditorContext>(editorConfig?: {
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
-  htmlTransforms?: DOMTransformerMap,
+  htmlTransforms?: DOMConversionMap,
   parentEditor?: LexicalEditor,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {
   const onError =

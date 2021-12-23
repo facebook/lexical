@@ -89,7 +89,7 @@ const styles = stylex.create({
     margin: 0,
     marginTop: 8,
     marginBottom: 8,
-    tabSsize: 2,
+    tabSize: 2,
   },
   table: {
     borderCollapse: 'collapse',

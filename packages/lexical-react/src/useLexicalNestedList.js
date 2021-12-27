@@ -83,6 +83,9 @@ function getUniqueListItemNodes(
 function handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
+    if (isNestedListNode(listItemNode)) {
+      return;
+    }
     const parent = listItemNode.getParent();
     const nextSibling = listItemNode.getNextSibling();
     const previousSibling = listItemNode.getPreviousSibling();
@@ -140,6 +143,9 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
 function handleOutdent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
+    if (isNestedListNode(listItemNode)) {
+      return;
+    }
     const parentList = listItemNode.getParent();
     const grandparentListItem = parentList ? parentList.getParent() : undefined;
     const greatGrandparentList = grandparentListItem

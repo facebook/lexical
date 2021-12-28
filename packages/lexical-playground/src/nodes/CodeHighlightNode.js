@@ -81,11 +81,10 @@ function getHighlightThemeClass(
   theme: EditorThemeClasses,
   highlightType: ?string,
 ): ?string {
-  console.log({highlightType});
   return (
+    highlightType &&
     theme &&
     theme.codeHighlight &&
-    highlightType &&
     theme.codeHighlight[highlightType]
   );
 }

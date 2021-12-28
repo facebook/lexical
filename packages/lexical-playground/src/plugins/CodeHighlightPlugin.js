@@ -23,13 +23,15 @@ import {useEffect} from 'react';
 import withSubscriptions from 'lexical-react/withSubscriptions';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 // $FlowFixMe Add flow types
-import {refractor} from 'refractor/lib/common';
+import Prism from 'prismjs';
 import {Array} from 'yjs';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
   CodeHighlightNode,
 } from '../nodes/CodeHighlightNode';
+
+const DEFAULT_CODE_LANGUAGE = 'javascript';
 
 export default function CodeHighlightPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -63,8 +65,13 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
     () => {
       updateAndRetainSelection(node, () => {
         const code = node.getTextContent();
-        const ast = refractor.highlight(code, 'js');
-        const highlightNodes = getHighlightNodes(ast.children);
+        const language = DEFAULT_CODE_LANGUAGE;
+        const tokens = Prism.tokenize(
+          code,
+          Prism.languages[language],
+          language,
+        );
+        const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(node.getChildren(), highlightNodes);
         if (diffRange !== null) {
           const {from, to, nodesForReplacement} = diffRange;
@@ -96,12 +103,21 @@ function textNodeTransform(node: TextNode, editor: LexicalEditor): void {
   }
 }
 
-function getHighlightNodes(elements): Array<LexicalNode> {
+// eslint-disable-next-line no-use-before-define
+type PrismTokenStream = Array<string | PrismToken>;
+
+type PrismToken = {
+  type: string,
+  alias: string | Array<string>,
+  content: string | PrismTokenStream,
+};
+
+function getHighlightNodes(tokens: PrismTokenStream): Array<LexicalNode> {
   const nodes = [];
 
-  elements.forEach((node) => {
-    if (node.type === 'text') {
-      const partials = node.value.split('\n');
+  tokens.forEach((token) => {
+    if (typeof token === 'string') {
+      const partials = token.split('\n');
       for (let i = 0; i < partials.length; i++) {
         const text = partials[i];
         if (text.length) {
@@ -112,16 +128,13 @@ function getHighlightNodes(elements): Array<LexicalNode> {
         }
       }
     } else {
-      const {children} = node;
-      if (children.length === 1 && children[0].type === 'text') {
-        nodes.push(
-          $createCodeHighlightNode(
-            node.children[0].value,
-            node.properties.className.join('-'),
-          ),
-        );
+      const {content} = token;
+      if (typeof content === 'string') {
+        nodes.push($createCodeHighlightNode(content, token.type));
+      } else if (content.length === 1 && typeof content[0] === 'string') {
+        nodes.push($createCodeHighlightNode(content[0], token.type));
       } else {
-        nodes.push(...getHighlightNodes(children));
+        nodes.push(...getHighlightNodes(content));
       }
     }
   });
@@ -247,8 +260,8 @@ function getDiffRange(
     trailingMatch++;
     if (
       !isEqual(
-        prevNodes[prevNodesLength - 1 - trailingMatch],
-        nextNodes[nextNodesLength - 1 - trailingMatch],
+        prevNodes[prevNodesLength - trailingMatch],
+        nextNodes[nextNodesLength - trailingMatch],
       )
     ) {
       trailingMatch--;

@@ -22,8 +22,18 @@ import {
 import {useEffect} from 'react';
 import withSubscriptions from 'lexical-react/withSubscriptions';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-// $FlowFixMe Add flow types
-import Prism from 'prismjs';
+import Prism from 'prismjs/components/prism-core';
+import 'prismjs/components/prism-clike';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-c';
+import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-objectivec';
+import 'prismjs/components/prism-sql';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-rust';
+import 'prismjs/components/prism-swift';
 import {Array} from 'yjs';
 import {
   $createCodeHighlightNode,
@@ -32,6 +42,17 @@ import {
 } from '../nodes/CodeHighlightNode';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
+
+export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
+
+export const getCodeLanguages = (): Array<string> =>
+  Object.keys(Prism.languages)
+    .filter(
+      // Prism has several language helpers mixed into languages object
+      // so filtering them out here to get langs list
+      (language) => typeof Prism.languages[language] !== 'function',
+    )
+    .sort();
 
 export default function CodeHighlightPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -63,13 +84,17 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
   isHighlighting = true;
   editor.update(
     () => {
+      // When new code block inserted it might not have language selected
+      if (node.getLanguage() === undefined) {
+        node.setLanguage(DEFAULT_CODE_LANGUAGE);
+      }
+
       updateAndRetainSelection(node, () => {
         const code = node.getTextContent();
-        const language = DEFAULT_CODE_LANGUAGE;
         const tokens = Prism.tokenize(
           code,
-          Prism.languages[language],
-          language,
+          Prism.languages[node.getLanguage() || ''] ||
+            Prism.languages[DEFAULT_CODE_LANGUAGE],
         );
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(node.getChildren(), highlightNodes);
@@ -103,16 +128,7 @@ function textNodeTransform(node: TextNode, editor: LexicalEditor): void {
   }
 }
 
-// eslint-disable-next-line no-use-before-define
-type PrismTokenStream = Array<string | PrismToken>;
-
-type PrismToken = {
-  type: string,
-  alias: string | Array<string>,
-  content: string | PrismTokenStream,
-};
-
-function getHighlightNodes(tokens: PrismTokenStream): Array<LexicalNode> {
+function getHighlightNodes(tokens): Array<LexicalNode> {
   const nodes = [];
 
   tokens.forEach((token) => {

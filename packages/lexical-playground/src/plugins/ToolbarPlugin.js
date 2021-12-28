@@ -16,7 +16,7 @@ import type {
 } from 'lexical';
 
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {$isHeadingNode} from 'lexical/HeadingNode';
@@ -24,8 +24,8 @@ import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from 'lexical/ListNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
-import {$createCodeNode} from 'lexical/CodeNode';
-import {$log, $getSelection, $setSelection} from 'lexical';
+import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {$log, $getNodeByKey, $getSelection, $setSelection} from 'lexical';
 import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
 import {
   $wrapLeafNodesInElements,
@@ -34,6 +34,7 @@ import {
   $isAtNodeEnd,
 } from 'lexical/selection';
 import withSubscriptions from 'lexical-react/withSubscriptions';
+import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
 
 import {$getNearestNodeOfType} from 'lexical/nodes';
 // $FlowFixMe
@@ -511,6 +512,7 @@ export default function ToolbarPlugin(): React$Node {
   const [canRedo, setCanRedo] = useState(false);
   const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
     useState(false);
+  const [codeLanguage, setCodeLanguage] = useState<string>('');
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -533,6 +535,9 @@ export default function ToolbarPlugin(): React$Node {
             ? element.getTag()
             : element.getType();
           setBlockType(type);
+          if ($isCodeNode(element)) {
+            setCodeLanguage(element.getLanguage() || getDefaultCodeLanguage());
+          }
         }
       }
       // Hande buttons
@@ -625,6 +630,21 @@ export default function ToolbarPlugin(): React$Node {
     }
   }, [activeEditor, isLink]);
 
+  const codeLanguges = useMemo(() => getCodeLanguages(), []);
+  const onCodeLanguageSelect = useCallback(
+    (e) => {
+      activeEditor.update(() => {
+        if (selectedElementKey !== null) {
+          const node = $getNodeByKey(selectedElementKey);
+          if ($isCodeNode(node)) {
+            node.setLanguage(e.target.value);
+          }
+        }
+      });
+    },
+    [activeEditor, selectedElementKey],
+  );
+
   return (
     <div className="toolbar" ref={toolbarRef}>
       <button
@@ -671,111 +691,128 @@ export default function ToolbarPlugin(): React$Node {
           <Divider />
         </>
       )}
-      <>
-        <Select
-          className="toolbar-item font-family"
-          onChange={onFontFamilySelect}
-          options={[
-            'Arial',
-            'Courier New',
-            'Georgia',
-            'Times New Roman',
-            'Trebuchet MS',
-            'Verdana',
-          ]}
-          value={fontFamily}
-        />
-        <i className="chevron-down inside" />
-      </>
-      <>
-        <Select
-          className="toolbar-item font-size"
-          onChange={onFontSizeSelect}
-          options={[
-            '10px',
-            '11px',
-            '12px',
-            '13px',
-            '14px',
-            '15px',
-            '16px',
-            '17px',
-            '18px',
-            '19px',
-            '20px',
-          ]}
-          value={fontSize}
-        />
-        <i className="chevron-down inside" />
-      </>
-      <Divider />
-      <button
-        onClick={() => {
-          activeEditor.execCommand('formatText', 'bold');
-        }}
-        className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-        aria-label="Format Bold">
-        <i className="format bold" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.execCommand('formatText', 'italic');
-        }}
-        className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-        aria-label="Format Italics">
-        <i className="format italic" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.execCommand('formatText', 'underline');
-        }}
-        className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-        aria-label="Format Underline">
-        <i className="format underline" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.execCommand('formatText', 'strikethrough');
-        }}
-        className={'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')}
-        aria-label="Format Strikethrough">
-        <i className="format strikethrough" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.execCommand('formatText', 'code');
-        }}
-        className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
-        aria-label="Insert Code">
-        <i className="format code" />
-      </button>
-      <button
-        onClick={insertLink}
-        className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-        aria-label="Insert Link">
-        <i className="format link" />
-      </button>
-      {isLink &&
-        createPortal(
-          <FloatingLinkEditor editor={activeEditor} />,
-          document.body,
-        )}
-      <button
-        onClick={() => {
-          activeEditor.execCommand('insertImage');
-        }}
-        className="toolbar-item spaced"
-        aria-label="Insert Image">
-        <i className="format image" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.execCommand('insertTable');
-        }}
-        className="toolbar-item"
-        aria-label="Insert Table">
-        <i className="format table" />
-      </button>
+      {blockType === 'code' ? (
+        <>
+          <Select
+            className="toolbar-item code-language"
+            onChange={onCodeLanguageSelect}
+            options={codeLanguges}
+            value={codeLanguage}
+          />
+          <i className="chevron-down inside" />
+        </>
+      ) : (
+        <>
+          <>
+            <Select
+              className="toolbar-item font-family"
+              onChange={onFontFamilySelect}
+              options={[
+                'Arial',
+                'Courier New',
+                'Georgia',
+                'Times New Roman',
+                'Trebuchet MS',
+                'Verdana',
+              ]}
+              value={fontFamily}
+            />
+            <i className="chevron-down inside" />
+          </>
+          <>
+            <Select
+              className="toolbar-item font-size"
+              onChange={onFontSizeSelect}
+              options={[
+                '10px',
+                '11px',
+                '12px',
+                '13px',
+                '14px',
+                '15px',
+                '16px',
+                '17px',
+                '18px',
+                '19px',
+                '20px',
+              ]}
+              value={fontSize}
+            />
+            <i className="chevron-down inside" />
+          </>
+          <Divider />
+          <button
+            onClick={() => {
+              activeEditor.execCommand('formatText', 'bold');
+            }}
+            className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
+            aria-label="Format Bold">
+            <i className="format bold" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('formatText', 'italic');
+            }}
+            className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
+            aria-label="Format Italics">
+            <i className="format italic" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('formatText', 'underline');
+            }}
+            className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
+            aria-label="Format Underline">
+            <i className="format underline" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('formatText', 'strikethrough');
+            }}
+            className={
+              'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
+            }
+            aria-label="Format Strikethrough">
+            <i className="format strikethrough" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('formatText', 'code');
+            }}
+            className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
+            aria-label="Insert Code">
+            <i className="format code" />
+          </button>
+          <button
+            onClick={insertLink}
+            className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
+            aria-label="Insert Link">
+            <i className="format link" />
+          </button>
+          {isLink &&
+            createPortal(
+              <FloatingLinkEditor editor={activeEditor} />,
+              document.body,
+            )}
+          <button
+            onClick={() => {
+              activeEditor.execCommand('insertImage');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Image">
+            <i className="format image" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('insertTable');
+            }}
+            className="toolbar-item"
+            aria-label="Insert Table">
+            <i className="format table" />
+          </button>
+        </>
+      )}
+
       <Divider />
       <button
         onClick={() => {

@@ -10,12 +10,16 @@
 import type {NodeKey} from '../../LexicalNode';
 import type {Selection} from '../../LexicalSelection';
 
-import {$isTextNode, TextNode} from '../../';
+import {$isRootNode, $isTextNode, TextNode} from '../../';
 import {LexicalNode} from '../../LexicalNode';
 import {$makeSelection, $getSelection} from '../../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../../LexicalUpdates';
 import {ELEMENT_TYPE_TO_FORMAT} from '../../LexicalConstants';
-import {$getNodeByKey, $internallyMarkNodeAsDirty} from '../../LexicalUtils';
+import {
+  $getNodeByKey,
+  $internallyMarkNodeAsDirty,
+  $internallyMarkSiblingsAsDirty,
+} from '../../LexicalUtils';
 import invariant from 'shared/invariant';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
@@ -264,7 +268,6 @@ export class ElementNode extends LexicalNode {
         invariant(false, 'append: attemtping to append self');
       }
       const writableNodeToAppend = nodeToAppend.getWritable();
-
       // Remove node from previous parent
       const oldParent = writableNodeToAppend.getParent();
       if (oldParent !== null) {
@@ -278,7 +281,6 @@ export class ElementNode extends LexicalNode {
       }
       // Set child parent to self
       writableNodeToAppend.__parent = writableSelfKey;
-      // Append children.
       const newKey = writableNodeToAppend.__key;
       writableSelfChildren.push(newKey);
     }
@@ -303,7 +305,78 @@ export class ElementNode extends LexicalNode {
     self.__indent = indentLevel;
     return this;
   }
+  insertRange(
+    from: number,
+    to: number,
+    nodesToInsert: Array<LexicalNode>,
+  ): ElementNode {
+    errorOnReadOnly();
+    const writableSelf = this.getWritable();
+    const writableSelfKey = writableSelf.__key;
+    const writableSelfChildren = writableSelf.__children;
+    const nodesToInsertLength = nodesToInsert.length;
+    const nodesToInsertKeys = [];
 
+    // Remove nodes to insert from their previous parent
+    for (let i = 0; i < nodesToInsertLength; i++) {
+      const nodeToInsert = nodesToInsert[i];
+      const writableNodeToInsert = nodeToInsert.getWritable();
+
+      const oldParent = writableNodeToInsert.getParent();
+      if (oldParent !== null) {
+        const writableParent = oldParent.getWritable();
+        const children = writableParent.__children;
+        const index = children.indexOf(writableNodeToInsert.__key);
+        if (index === -1) {
+          invariant(false, 'Node is not a child of its parent');
+        }
+        $internallyMarkSiblingsAsDirty(writableNodeToInsert);
+        children.splice(index, 1);
+      }
+      // Set child parent to self
+      writableNodeToInsert.__parent = writableSelfKey;
+      const newKey = writableNodeToInsert.__key;
+      nodesToInsertKeys.push(newKey);
+    }
+
+    // Remove defined range of children
+    const removedNodesKeys = writableSelfChildren.splice(
+      from,
+      to - from,
+      ...nodesToInsertKeys,
+    );
+
+    // Unlink removed nodes from current parent
+    const removedNodesKeysLength = removedNodesKeys.length;
+    for (let i = 0; i < removedNodesKeysLength; i++) {
+      const nodeToRemove = $getNodeByKey<LexicalNode>(removedNodesKeys[i]);
+      if (nodeToRemove != null) {
+        const writableNodeToRemove = nodeToRemove.getWritable();
+        writableNodeToRemove.__parent = null;
+      }
+    }
+
+    // Mark range edges siblings as dirty
+    const nodeBeforeRange = this.getChildAtIndex(from);
+    const nodeAfterRange = this.getChildAtIndex(to);
+    if (nodeBeforeRange) {
+      $internallyMarkNodeAsDirty(nodeBeforeRange);
+    }
+    if (nodeAfterRange) {
+      $internallyMarkNodeAsDirty(nodeAfterRange);
+    }
+
+    // Cleanup if node can't be empty
+    if (
+      writableSelfChildren.length === 0 &&
+      !this.canBeEmpty() &&
+      !$isRootNode(this)
+    ) {
+      this.remove();
+    }
+
+    return writableSelf;
+  }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(selection: Selection): null | LexicalNode {
     return null;

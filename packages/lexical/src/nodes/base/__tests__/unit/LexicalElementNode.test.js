@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {$createTextNode, $getRoot} from 'lexical';
+import {$createTextNode, $getRoot, TextNode} from 'lexical';
 import {
   $createTestElementNode,
   createTestEditor,
@@ -215,6 +215,172 @@ describe('LexicalElementNode tests', () => {
         expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
         $getRoot().append(block);
+      });
+    });
+  });
+
+  describe('insertRange', () => {
+    let block;
+
+    beforeEach(async () => {
+      await update(() => {
+        block = $getRoot().getFirstChildOrThrow();
+      });
+    });
+
+    const BASE_INSERTIONS: Array<{
+      name: string,
+      from: number,
+      to: number,
+      expectedText: string,
+      skipNodes: ?boolean,
+    }> = [
+      // Do nothing
+      {
+        name: 'Insert in the beginning',
+        from: 0,
+        to: 0,
+        skipNodes: true,
+        expectedText: 'FooBarBaz',
+      },
+
+      // Insert
+      {
+        name: 'Insert in the beginning',
+        from: 0,
+        to: 0,
+        expectedText: 'QuxQuuzFooBarBaz',
+      },
+      {
+        name: 'Insert in the middle',
+        from: 1,
+        to: 0,
+        expectedText: 'FooQuxQuuzBarBaz',
+      },
+      {
+        name: 'Insert in the end',
+        from: 3,
+        to: 0,
+        expectedText: 'FooBarBazQuxQuuz',
+      },
+
+      // Delete
+      {
+        name: 'Delete in the beginning',
+        from: 0,
+        to: 1,
+        skipNodes: true,
+        expectedText: 'BarBaz',
+      },
+      {
+        name: 'Delete in the middle',
+        from: 1,
+        to: 2,
+        skipNodes: true,
+        expectedText: 'FooBaz',
+      },
+      {
+        name: 'Delete in the end',
+        from: 2,
+        to: 3,
+        skipNodes: true,
+        expectedText: 'FooBar',
+      },
+      {
+        name: 'Delete all',
+        from: 0,
+        to: 3,
+        skipNodes: true,
+        expectedText: '',
+      },
+
+      // Replace
+      {
+        name: 'Replace in the beginning',
+        from: 0,
+        to: 1,
+        expectedText: 'QuxQuuzBarBaz',
+      },
+      {
+        name: 'Replace in the middle',
+        from: 1,
+        to: 2,
+        expectedText: 'FooQuxQuuzBaz',
+      },
+      {
+        name: 'Replace in the end',
+        from: 2,
+        to: 3,
+        expectedText: 'FooBarQuxQuuz',
+      },
+      {
+        name: 'Replace all',
+        from: 0,
+        to: 3,
+        expectedText: 'QuxQuuz',
+      },
+    ];
+
+    BASE_INSERTIONS.forEach((testCase) => {
+      it(testCase.name, async () => {
+        await update(() => {
+          block.insertRange(
+            testCase.from,
+            testCase.to,
+            testCase.skipNodes
+              ? []
+              : [$createTextNode('Qux'), $createTextNode('Quuz')],
+          );
+
+          // TODO:
+          // Manually update selection, since selected node might've been deleted
+          // Temp code till selection retention is added to insertRange
+          block.select();
+          expect(block.getTextContent()).toEqual(testCase.expectedText);
+        });
+      });
+    });
+
+    it('Running transforms for inserted nodes, their previous siblings and new siblings', async () => {
+      const transforms = new Set();
+      const expectedTransforms = [];
+
+      const removeTransform = editor.addTransform(TextNode, (node) => {
+        transforms.add(node.__key);
+      });
+
+      await update(() => {
+        const anotherBlock = $createTestElementNode();
+        const text1 = $createTextNode('1');
+        // Prevent text nodes from combining
+        const text2 = $createTextNode('2');
+        text2.setMode('segmented');
+        const text3 = $createTextNode('3');
+        anotherBlock.append(text1, text2, text3);
+        $getRoot().append(anotherBlock);
+
+        // Expect inserted node, its old siblings and new siblings to receive
+        // transformer calls
+        expectedTransforms.push(
+          text1.__key,
+          text2.__key,
+          text3.__key,
+          block.getChildAtIndex(0).__key,
+          block.getChildAtIndex(1).__key,
+        );
+      });
+
+      await update(() => {
+        block.insertRange(1, 1, [$getRoot().getLastChild().getChildAtIndex(1)]);
+      });
+
+      removeTransform();
+
+      await update(() => {
+        expect(block.getTextContent()).toEqual('Foo2BarBaz');
+        expectedTransforms.forEach((key) => {
+          expect(transforms.has(key)).toBe(true);
+        });
       });
     });
   });

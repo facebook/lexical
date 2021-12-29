@@ -35,6 +35,7 @@ import {createWebsocketProvider} from './collaboration';
 import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
+import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 
 type Props = {
   isCollab: boolean,
@@ -81,6 +82,7 @@ export default function Editor({
         <HashtagsPlugin />
         <KeywordsPlugin />
         <SpeechToTextPlugin />
+        <AutoLinkPlugin />
         {isRichText ? (
           <>
             {isCollab ? (

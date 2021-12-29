@@ -9,6 +9,7 @@
     "lexical": "0.1.4",
     "@lexical/react": "0.1.4",
     "@lexical/helpers": "0.1.4",
+    "link-preview-generator": "1.0.7",
     "@craco/craco": "6.1.2",
     "@excalidraw/excalidraw": "latest",
     "yjs": ">=13.5.22",

@@ -12,7 +12,10 @@ import type {EventHandler} from '@lexical/helpers/events';
 
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export type InputEvents = Array<[string, EventHandler]>;
+export type InputEvents = Array<
+  | [string, EventHandler]
+  | [string, EventHandler, EventListenerOptionsOrUseCapture],
+>;
 
 function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
   return eventName === 'selectionchange' ||
@@ -38,6 +41,8 @@ export default function useEditorEvents(
 
     for (let i = 0; i < events.length; i++) {
       const [eventName, handler] = events[i];
+      const captureOrOptions =
+        events[i].length === 3 ? events[i][2] : undefined;
 
       const handlerWrapper = (event: Event) => {
         if (isRootEditable(editor)) {
@@ -48,12 +53,14 @@ export default function useEditorEvents(
         getTarget(eventName, rootElement).addEventListener(
           eventName,
           handlerWrapper,
+          captureOrOptions,
         );
       });
       destroy.push((rootElement: HTMLElement) => {
         getTarget(eventName, rootElement).removeEventListener(
           eventName,
           handlerWrapper,
+          captureOrOptions,
         );
       });
     }

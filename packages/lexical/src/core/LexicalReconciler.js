@@ -557,9 +557,7 @@ function reconcileNodeChildren(
 
       if (!nextHasPrevKey) {
         // Remove prev
-        siblingDOM = getNextSibling(
-          getElementByKeyOrThrow(activeEditor, prevKey),
-        );
+        siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
         destroyNode(prevKey, dom);
         prevIndex++;
       } else if (!prevHasNextKey) {

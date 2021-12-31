@@ -108,7 +108,10 @@ export class ListItemNode extends ElementNode {
   }
 
   insertAfter(node: LexicalNode): LexicalNode {
+    const siblings = this.getNextSiblings();
     if ($isListItemNode(node)) {
+      // mark subsequent list items dirty to we update their value attribute.
+      siblings.forEach((sibling) => sibling.markDirty());
       return super.insertAfter(node);
     }
 
@@ -133,7 +136,6 @@ export class ListItemNode extends ElementNode {
 
     // Otherwise, split the list
     // Split the lists and insert the node in between them
-    const siblings = this.getNextSiblings();
     listNode.insertAfter(node);
     if (siblings.length !== 0) {
       const newListNode = $createListNode(listNode.getTag());

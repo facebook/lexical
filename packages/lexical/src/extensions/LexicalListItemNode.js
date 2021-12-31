@@ -43,6 +43,7 @@ export class ListItemNode extends ElementNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('li');
+    element.value = getListItemValue(this);
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
@@ -52,6 +53,8 @@ export class ListItemNode extends ElementNode {
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean {
+    //$FlowFixMe - this is always HTMLListItemElement
+    dom.value = getListItemValue(this);
     $setListItemThemeClassNames(dom, config.theme, this);
     return false;
   }
@@ -219,6 +222,18 @@ export class ListItemNode extends ElementNode {
   canMergeWith(node: LexicalNode): boolean {
     return $isParagraphNode(node) || $isListItemNode(node);
   }
+}
+
+function getListItemValue(listItem: ListItemNode): number {
+  let value = 1;
+  const siblings = listItem.getPreviousSiblings();
+  for (let i = 0; i < siblings.length; i++) {
+    const sibling = siblings[i];
+    if ($isListItemNode(sibling) && !$isListNode(sibling.getFirstChild())) {
+      value++;
+    }
+  }
+  return value;
 }
 
 function $setListItemThemeClassNames(

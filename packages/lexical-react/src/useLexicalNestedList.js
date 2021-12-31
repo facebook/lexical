@@ -83,25 +83,40 @@ function getUniqueListItemNodes(
 function handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
+    const parent = listItemNode.getParent();
     const nextSibling = listItemNode.getNextSibling();
     const previousSibling = listItemNode.getPreviousSibling();
-    // if the ListItemNode is next to a nested ListNode, merge them
-    if (isNestedListNode(nextSibling)) {
+    // if there are nested lists on either side, merge them all together.
+    if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
+      const innerList = previousSibling.getFirstChild();
+      if ($isListNode(innerList)) {
+        innerList.append(listItemNode);
+        const nextInnerList = nextSibling.getFirstChild();
+        if ($isListNode(nextInnerList)) {
+          const children = nextInnerList.getChildren();
+          innerList.append(...children);
+          nextInnerList.remove();
+        }
+        innerList.getChildren().forEach((child) => child.markDirty());
+      }
+    } else if (isNestedListNode(nextSibling)) {
+      // if the ListItemNode is next to a nested ListNode, merge them
       const innerList = nextSibling.getFirstChild();
       if ($isListNode(innerList)) {
         const firstChild = innerList.getFirstChild();
         if (firstChild !== null) {
           firstChild.insertBefore(listItemNode);
         }
+        innerList.getChildren().forEach((child) => child.markDirty());
       }
     } else if (isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
       if ($isListNode(innerList)) {
         innerList.append(listItemNode);
+        innerList.getChildren().forEach((child) => child.markDirty());
       }
     } else {
       // otherwise, we need to create a new nested ListNode
-      const parent = listItemNode.getParent();
       if ($isListNode(parent)) {
         const newListItem = $createListItemNode();
         const newList = $createListNode(parent.getTag());
@@ -115,6 +130,9 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
           parent.append(newListItem);
         }
       }
+    }
+    if ($isListNode(parent)) {
+      parent.getChildren().forEach((child) => child.markDirty());
     }
   });
 }
@@ -168,6 +186,8 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
         // replace the grandparent list item (now between the siblings) with the outdented list item.
         grandparentListItem.replace(listItemNode);
       }
+      parentList.getChildren().forEach((child) => child.markDirty());
+      greatGrandparentList.getChildren().forEach((child) => child.markDirty());
     }
   });
 }

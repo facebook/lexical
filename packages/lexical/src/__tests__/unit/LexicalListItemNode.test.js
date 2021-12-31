@@ -43,9 +43,11 @@ describe('LexicalListItemNode tests', () => {
       await editor.update(() => {
         const listItemNode = new ListItemNode();
         expect(listItemNode.createDOM(editorConfig).outerHTML).toBe(
-          '<li class="my-listItem-item-class"></li>',
+          '<li value="1" class="my-listItem-item-class"></li>',
         );
-        expect(listItemNode.createDOM({theme: {}}).outerHTML).toBe('<li></li>');
+        expect(listItemNode.createDOM({theme: {}}).outerHTML).toBe(
+          '<li value="1"></li>',
+        );
       });
     });
 
@@ -56,7 +58,7 @@ describe('LexicalListItemNode tests', () => {
           const listItemNode = new ListItemNode();
           const domElement = listItemNode.createDOM(editorConfig);
           expect(domElement.outerHTML).toBe(
-            '<li class="my-listItem-item-class"></li>',
+            '<li value="1" class="my-listItem-item-class"></li>',
           );
           const newListItemNode = new ListItemNode();
           const result = newListItemNode.updateDOM(
@@ -66,7 +68,7 @@ describe('LexicalListItemNode tests', () => {
           );
           expect(result).toBe(false);
           expect(domElement.outerHTML).toBe(
-            '<li class="my-listItem-item-class"></li>',
+            '<li value="1" class="my-listItem-item-class"></li>',
           );
         });
       });
@@ -79,7 +81,7 @@ describe('LexicalListItemNode tests', () => {
           parentListNode.append(parentlistItemNode);
           const domElement = parentlistItemNode.createDOM(editorConfig);
           expect(domElement.outerHTML).toBe(
-            '<li class="my-listItem-item-class"></li>',
+            '<li value="1" class="my-listItem-item-class"></li>',
           );
           const nestedListNode = new ListNode('ul', 1);
           nestedListNode.append(new ListItemNode());
@@ -91,7 +93,7 @@ describe('LexicalListItemNode tests', () => {
           );
           expect(result).toBe(false);
           expect(domElement.outerHTML).toBe(
-            '<li class="my-listItem-item-class my-nested-list-listItem-class"></li>',
+            '<li value="1" class="my-listItem-item-class my-nested-list-listItem-class"></li>',
           );
         });
       });
@@ -118,7 +120,7 @@ describe('LexicalListItemNode tests', () => {
           listNode.append(listItemNode1, listItemNode2, listItemNode3);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -137,14 +139,14 @@ describe('LexicalListItemNode tests', () => {
           root.append(listItemNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><li><br></li></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><li value="1"><br></li></div>',
         );
         await editor.update(() => {
           const textNode = new TextNode('foo');
           listItemNode.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><li><br></li></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><li value="1"><br></li></div>',
         );
       });
 
@@ -156,7 +158,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.replace(newListItemNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">bar</span></li><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">bar</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -164,14 +166,14 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
         await editor.update(() => {});
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
         await editor.update(() => {
           const textNode = new TextNode('bar');
           listItemNode1.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><span data-lexical-text="true">bar</span><ul><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><span data-lexical-text="true">bar</span><ul><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -182,7 +184,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li dir="ltr"><span data-lexical-text="true">two</span></li></ul><span data-lexical-text="true">bar</span></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li></ul><span data-lexical-text="true">bar</span></div>',
         );
       });
 
@@ -193,7 +195,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode2.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li></ul><span data-lexical-text="true">bar</span><ul><li dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul><span data-lexical-text="true">bar</span><ul><li value="1" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -204,7 +206,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.remove();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul></div>',
         );
         await editor.update(() => {
           const textNode = new TextNode('bar');
@@ -237,7 +239,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.append(new TextNode('three'));
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -247,7 +249,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li><br></li><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2"><br></li><li value="3" dir="ltr"><span data-lexical-text="true">two</span></li><li value="4" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -257,7 +259,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4"><br></li></ul></div>',
         );
       });
 
@@ -267,7 +269,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li dir="ltr"><span data-lexical-text="true">two</span></li><li dir="ltr"><span data-lexical-text="true">three</span></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4"><br></li></ul></div>',
         );
       });
 
@@ -278,13 +280,13 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.remove();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul></div>',
         );
         await editor.update(() => {
           listItemNode1.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li dir="ltr"><span data-lexical-text="true">one</span></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2"><br></li></ul></div>',
         );
       });
     });
@@ -307,7 +309,7 @@ describe('LexicalListItemNode tests', () => {
           listNode.append(listItemNode1, listItemNode2, listItemNode3);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li><br></li><li><br></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1"><br></li><li value="2"><br></li><li value="3"><br></li></ul></div>',
         );
       });
 
@@ -317,7 +319,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li><br></li><li><br></li><li><br></li><li><br></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1"><br></li><li value="2"><br></li><li value="3"><br></li><li value="4"><br></li></ul></div>',
         );
       });
 
@@ -327,7 +329,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li><br></li><li><br></li></ul><p><br></p></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1"><br></li><li value="2"><br></li></ul><p><br></p></div>',
         );
       });
 
@@ -337,7 +339,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li><br></li><li><br></li></ul><p><br></p></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1"><br></li><li value="2"><br></li></ul><p><br></p></div>',
         );
       });
 
@@ -348,7 +350,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.remove();
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><ul><li><br></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul><li value="1"><br></li></ul></div>',
         );
         await editor.update(() => {
           listItemNode1.insertNewAfter();

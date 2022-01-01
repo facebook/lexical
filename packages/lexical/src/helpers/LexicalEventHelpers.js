@@ -1028,7 +1028,7 @@ export function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       case 'insertFromPaste': {
         const dataTransfer = event.dataTransfer;
         if (dataTransfer != null) {
-          $insertDataTransferForRichText(dataTransfer, selection, editor);
+          $insertDataTransferForPlainText(dataTransfer, selection);
         } else {
           if (data) {
             editor.execCommand('insertText', data);

@@ -41,7 +41,6 @@ import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import {useSettings} from './context/SettingsContext';
 import AutoFocusPlugin from './plugins/AutoFocusPlugin';
-import LinkPreviewPlugin from './plugins/LinkPreviewPlugin';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
@@ -82,7 +81,6 @@ export default function Editor(): React$Node {
         <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
-        <LinkPreviewPlugin />
         {isRichText ? (
           <>
             {isCollab ? (

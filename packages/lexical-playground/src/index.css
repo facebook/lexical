@@ -3,7 +3,6 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', sans-serif;
-  font-weight: 500;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #eee;
@@ -249,18 +248,18 @@ pre::-webkit-scrollbar-thumb {
 }
 
 .link-editor {
-  padding: 4px;
   position: absolute;
   z-index: 100;
   top: -10000px;
   left: -10000px;
   margin-top: -6px;
+  max-width: 400px;
+  width: 100%;
   opacity: 0;
   background-color: #fff;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   transition: opacity 0.5s;
-  display: flex;
 }
 
 .link-editor .button {
@@ -393,29 +392,32 @@ i.diagram-2 {
 }
 
 .link-editor .link-input {
-  display: inline-block;
-  margin: 0 2px;
+  display: block;
+  width: calc(100% - 24px);
+  box-sizing: border-box;
+  margin: 8px 12px;
   padding: 8px 12px;
   border-radius: 15px;
-  background-color: rgb(240, 242, 245);
+  background-color: #eee;
   font-size: 15px;
   color: rgb(5, 5, 5);
-  min-width: 200px;
   border: 0;
   outline: 0;
   position: relative;
+  font-family: inherit;
 }
 
 .link-editor div.link-edit {
   background-image: url(images/icons/pencil-fill.svg);
-  background-size: contain;
-  display: inline-block;
-  height: 16px;
-  width: 16px;
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 35px;
   vertical-align: -0.25em;
   position: absolute;
-  right: 10px;
-  top: 10px;
+  right: 0;
+  top: 0;
+  bottom: 0;
   cursor: pointer;
 }
 
@@ -423,6 +425,10 @@ i.diagram-2 {
   color: rgb(33, 111, 219);
   text-decoration: none;
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  margin-right: 30px;
+  text-overflow: ellipsis;
 }
 
 .link-editor .link-input a:hover {

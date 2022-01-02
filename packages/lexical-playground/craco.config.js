@@ -101,8 +101,8 @@ module.exports = {
     setup: function (app, server) {
       app.get('/api/link-preview', function (req, res) {
         generateLinkPreview(req.query.url)
-          .then((preview) => res.json({preview, success: true}))
-          .catch(() => res.json({preview: null, success: false}));
+          .then((preview) => res.json({preview}))
+          .catch(() => res.json({preview: null}));
       });
     },
   },

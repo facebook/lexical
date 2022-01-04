@@ -57,10 +57,9 @@ module.name_mapper='^lexical-react/LexicalComposerContext' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^lexical-react/withSubscriptions' -> '<PROJECT_ROOT>/packages/lexical-react/src/withSubscriptions.js'
 
 # Composer Plugins
-module.name_mapper='^lexical-react/AutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/AutoFormatterPlugin.js'
-module.name_mapper='^lexical-react/BlockControlsPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/BlockControlsPlugin.js'
-module.name_mapper='^lexical-react/CharacterLimitPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/CharacterLimitPlugin.js'
-module.name_mapper='^lexical-react/HashtagsPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/HashtagsPlugin.js'
+module.name_mapper='^lexical-react/LexicalAutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoFormatterPlugin.js'
+module.name_mapper='^lexical-react/LexicalCharacterLimitPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalCharacterLimitPlugin.js'
+module.name_mapper='^lexical-react/LexicalHashtagsPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalHashtagsPlugin.js'
 
 module.name_mapper='^lexical-yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/src/index.js'
 

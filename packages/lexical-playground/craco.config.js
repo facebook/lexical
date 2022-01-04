@@ -59,10 +59,9 @@ module.exports = {
       'lexical-react/LexicalComposerContext':
         'lexical-react/dist/LexicalComposerContext',
       ...[
-        'AutoFormatterPlugin',
-        'BlockControlsPlugin',
-        'CharacterLimitPlugin',
-        'HashtagsPlugin',
+        'LexicalAutoFormatterPlugin',
+        'LexicalCharacterLimitPlugin',
+        'LexicalHashtagsPlugin',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

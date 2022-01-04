@@ -284,8 +284,8 @@ function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
   return ctrlKey;
 }
 
-function isReturn(event: KeyboardEvent): boolean {
-  return event.keyCode === 13;
+function isReturn(keyCode: number): boolean {
+  return keyCode === 13;
 }
 
 function isBackspace(keyCode: number): boolean {
@@ -320,12 +320,12 @@ function isUnderline(
   return keyCode === 85 && controlOrMeta(metaKey, ctrlKey);
 }
 
-function isParagraph(event: KeyboardEvent): boolean {
-  return isReturn(event) && !event.shiftKey;
+function isParagraph(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && !shiftKey;
 }
 
-function isLineBreak(event: KeyboardEvent): boolean {
-  return isReturn(event) && event.shiftKey;
+function isLineBreak(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && shiftKey;
 }
 
 // Inserts a new line after the selection
@@ -494,12 +494,12 @@ export function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       editor.execCommand('keyArrowUp', event);
     } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
       editor.execCommand('keyArrowDown', event);
-    } else if (isLineBreak(event)) {
+    } else if (isLineBreak(keyCode, shiftKey)) {
       editor.execCommand('keyEnter', event);
     } else if (isOpenLineBreak(keyCode, ctrlKey)) {
       event.preventDefault();
       editor.execCommand('insertLineBreak', true);
-    } else if (isParagraph(event)) {
+    } else if (isParagraph(keyCode, shiftKey)) {
       editor.execCommand('keyEnter', event);
     } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
       if (isBackspace(keyCode)) {

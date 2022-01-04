@@ -16,6 +16,7 @@ import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
 import {$log, $getRoot, createEditorStateRef} from 'lexical';
 import useLexicalList from 'lexical-react/useLexicalList';
+import {useFileImportPlugin, useFileExportPlugin} from './filePlugin';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -35,6 +36,8 @@ export default function ActionsPlugins({
   const [connected, setConnected] = useState(false);
   const [editor] = useLexicalComposerContext();
   useLexicalList(editor);
+  const importFile = useFileImportPlugin();
+  const exportFile = useFileExportPlugin();
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 
@@ -67,6 +70,12 @@ export default function ActionsPlugins({
 
   return (
     <div className="actions">
+      <button className="action-button import" onClick={importFile}>
+        <i className="import" />
+      </button>
+      <button className="action-button export" onClick={exportFile}>
+        <i className="export" />
+      </button>
       <button className="action-button sticky" onClick={insertSticky}>
         <i className="sticky" />
       </button>

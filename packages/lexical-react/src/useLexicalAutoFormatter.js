@@ -128,13 +128,13 @@ const allAutoFormatCriteria = [
   markdownOrderedListAsterisk,
 ];
 
-function updateTextNode(node: TextNode, count: number): void {
-  const textNode = node.spliceText(0, count, '', true);
-  if (textNode.getTextContent() === '') {
-    textNode.selectPrevious();
-    textNode.remove();
-  }
-}
+// function updateTextNode(node: TextNode, count: number): void {
+//   const textNode = node.spliceText(0, count, '', true);
+//   if (textNode.getTextContent() === '') {
+//     textNode.selectPrevious();
+//     textNode.remove();
+//   }
+// }
 
 function getMatchResultContextForCriteria(
   autoFormatCriteria: AutoFormatCriteria,

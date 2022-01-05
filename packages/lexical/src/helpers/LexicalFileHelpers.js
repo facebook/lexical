@@ -9,11 +9,9 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {useCallback} from 'react';
 import {VERSION} from 'lexical';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 
-function importFile(editor: LexicalEditor) {
+export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem((text) => {
     const json = JSON.parse(text);
     const editorState = editor.parseEditorState(
@@ -42,16 +40,20 @@ function readTextFileFromSystem(callback: (text: string) => void) {
   input.click();
 }
 
-function exportFile(editor: LexicalEditor) {
+export function exportFile(
+  editor: LexicalEditor,
+  config?: $ReadOnly<{source?: string, fileName?: string}> = {},
+) {
   const now = new Date();
   const editorState = editor.getEditorState();
   const documentJSON = {
-    source: 'lexical-playground',
+    source: config.source || 'Lexical',
     version: VERSION,
     lastSaved: now.getTime(),
     editorState: editorState,
   };
-  exportBlob(documentJSON, `Playground ${now.toJSON()}.lexical`);
+  const fileName = config.fileName || now.toISOString();
+  exportBlob(documentJSON, `${fileName}.lexical`);
 }
 
 // Adapted from https://stackoverflow.com/a/19328891/2013580
@@ -71,14 +73,4 @@ function exportBlob(data, fileName: string) {
   a.click();
   window.URL.revokeObjectURL(url);
   a.remove();
-}
-
-export function useFileImportPlugin(): () => void {
-  const [editor] = useLexicalComposerContext();
-  return useCallback(() => importFile(editor), [editor]);
-}
-
-export function useFileExportPlugin(): () => void {
-  const [editor] = useLexicalComposerContext();
-  return useCallback(() => exportFile(editor), [editor]);
 }

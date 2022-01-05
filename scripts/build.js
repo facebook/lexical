@@ -168,6 +168,12 @@ async function build(name, inputFile, outputFile) {
             ),
           },
           {
+            find: isWWW ? 'Lexical/file' : 'lexical/file',
+            replacement: path.resolve(
+              'packages/lexical/src/helpers/LexicalFileHelpers',
+            ),
+          },
+          {
             find: isWWW ? 'Lexical/offsets' : 'lexical/offsets',
             replacement: path.resolve(
               'packages/lexical/src/helpers/LexicalOffsetHelpers',

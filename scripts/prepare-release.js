@@ -21,6 +21,9 @@ async function prepareLexicalPackage() {
     `mv ./packages/lexical/npm/LexicalEventHelpers.js ./packages/lexical/npm/events.js`,
   );
   await exec(
+    `mv ./packages/lexical/npm/LexicalFileHelpers.js ./packages/lexical/npm/file.js`,
+  );
+  await exec(
     `mv ./packages/lexical/npm/LexicalOffsetHelpers.js ./packages/lexical/npm/offsets.js`,
   );
   await exec(

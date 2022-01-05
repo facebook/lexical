@@ -104,6 +104,25 @@ export function $isLastItemInList(listItem: ListItemNode): boolean {
   return isLast;
 }
 
+// This should probably be $getAllChildrenOfType
+export function $getAllListItems(node: ListNode): Array<ListItemNode> {
+  let listItemNodes: Array<ListItemNode> = [];
+  //$FlowFixMe - the result of this will always be an array of ListItemNodes.
+  const listChildren: Array<ListItemNode> = node
+    .getChildren()
+    .filter($isListItemNode);
+  for (let i = 0; i < listChildren.length; i++) {
+    const listItemNode = listChildren[i];
+    const firstChild = listItemNode.getFirstChild();
+    if ($isListNode(firstChild)) {
+      listItemNodes = listItemNodes.concat($getAllListItems(firstChild));
+    } else {
+      listItemNodes.push(listItemNode);
+    }
+  }
+  return listItemNodes;
+}
+
 export function $getNearestNodeOfType<T: LexicalNode>(
   node: LexicalNode,
   klass: Class<T>,

@@ -22,22 +22,10 @@ import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {$isHeadingNode} from 'lexical/HeadingNode';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$createListNode, $isListNode, ListNode} from 'lexical/ListNode';
-import {
-  $createListItemNode,
-  $isListItemNode,
-  ListItemNode,
-} from 'lexical/ListItemNode';
+import {$isListNode, ListNode} from 'lexical/ListNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode} from 'lexical/CodeNode';
-import {
-  $log,
-  $getSelection,
-  $setSelection,
-  $isRootNode,
-  $isLeafNode,
-  $isElementNode,
-} from 'lexical';
+import {$log, $getSelection, $setSelection} from 'lexical';
 import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
 import {
   $wrapLeafNodesInElements,
@@ -47,7 +35,7 @@ import {
 } from 'lexical/selection';
 import withSubscriptions from 'lexical-react/withSubscriptions';
 
-import {$getTopListNode, $getNearestNodeOfType} from 'lexical/nodes';
+import {$getNearestNodeOfType} from 'lexical/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
@@ -308,168 +296,20 @@ function BlockOptionsDropdownList({
     setShowBlockOptionsDropDown(false);
   };
 
-  const getAllListItems = (node: ListNode): Array<ListItemNode> => {
-    let listItemNodes: Array<ListItemNode> = [];
-    //$FlowFixMe - the result of this will always be an array of ListItemNodes.
-    const listChildren: Array<ListItemNode> = node
-      .getChildren()
-      .filter($isListItemNode);
-    for (let i = 0; i < listChildren.length; i++) {
-      const listItemNode = listChildren[i];
-      const firstChild = listItemNode.getFirstChild();
-      if ($isListNode(firstChild)) {
-        listItemNodes = listItemNodes.concat(getAllListItems(firstChild));
-      } else {
-        listItemNodes.push(listItemNode);
-      }
-    }
-    return listItemNodes;
-  };
-
-  const removeList = () => {
-    editor.update(() => {
-      $log('removeList');
-      const selection = $getSelection();
-      if (selection !== null) {
-        const listNodes = new Set();
-        const nodes = selection.getNodes();
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
-          if ($isLeafNode(node)) {
-            const listItemNode = $getNearestNodeOfType(node, ListItemNode);
-            if (listItemNode != null) {
-              listNodes.add($getTopListNode(listItemNode));
-            }
-          }
-        }
-        listNodes.forEach((listNode) => {
-          let insertionPoint = listNode;
-          const listItems = getAllListItems(listNode);
-          listItems.forEach((listItemNode) => {
-            if (listItemNode != null) {
-              const paragraph = $createParagraphNode();
-              paragraph.append(...listItemNode.getChildren());
-              insertionPoint.insertAfter(paragraph);
-              insertionPoint = paragraph;
-              listItemNode.remove();
-            }
-          });
-          listNode.remove();
-        });
-      }
-    });
-  };
-
-  const createListOrMerge = (
-    node: ElementNode,
-    listType: 'ul' | 'ol',
-  ): ListNode => {
-    if ($isListNode(node)) {
-      return node;
-    }
-    const previousSibling = node.getPreviousSibling();
-    const nextSibling = node.getNextSibling();
-    const listItem = $createListItemNode();
-    if ($isListNode(previousSibling)) {
-      listItem.append(node);
-      previousSibling.append(listItem);
-      // if there are lists on both sides, merge them.
-      if ($isListNode(nextSibling)) {
-        previousSibling.append(...nextSibling.getChildren());
-        nextSibling.remove();
-      }
-      return previousSibling;
-    } else if ($isListNode(nextSibling)) {
-      listItem.append(node);
-      nextSibling.getFirstChildOrThrow().insertBefore(listItem);
-      return nextSibling;
-    } else {
-      const list = $createListNode(listType);
-      list.append(listItem);
-      node.replace(list);
-      listItem.append(node);
-      return list;
-    }
-  };
-
-  const insertList = (listType: 'ul' | 'ol') => {
-    editor.update(() => {
-      $log('formatList');
-      const selection = $getSelection();
-      if (selection !== null) {
-        const nodes = selection.getNodes();
-        const anchor = selection.anchor;
-        const anchorNode = anchor.getNode();
-        const anchorNodeParent = anchorNode.getParent();
-        // This is a special case for when there's nothing selected
-        if (nodes.length === 0) {
-          const list = $createListNode(listType);
-          if ($isRootNode(anchorNodeParent)) {
-            anchorNode.replace(list);
-            const listItem = $createListItemNode();
-            list.append(listItem);
-          } else if ($isListItemNode(anchorNode)) {
-            const parent = anchorNode.getParentOrThrow();
-            list.append(...parent.getChildren());
-            parent.replace(list);
-          }
-          return;
-        } else {
-          const handled = new Set();
-          for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i];
-            if (
-              $isElementNode(node) &&
-              node.isEmpty() &&
-              !handled.has(node.getKey())
-            ) {
-              createListOrMerge(node, listType);
-              continue;
-            }
-            if ($isLeafNode(node)) {
-              let parent = node.getParent();
-              while (parent != null) {
-                const parentKey = parent.getKey();
-                if ($isListNode(parent)) {
-                  if (!handled.has(parentKey)) {
-                    const newListNode = $createListNode(listType);
-                    newListNode.append(...parent.getChildren());
-                    parent.replace(newListNode);
-                    handled.add(parentKey);
-                  }
-                  break;
-                } else {
-                  const nextParent = parent.getParent();
-                  const parentKey = parent.getKey();
-                  if ($isRootNode(nextParent) && !handled.has(parentKey)) {
-                    handled.add(parentKey);
-                    createListOrMerge(parent, listType);
-                    break;
-                  }
-                  parent = nextParent;
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-  };
-
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      insertList('ul');
+      editor.execCommand('insertUnorderedList');
     } else {
-      removeList();
+      editor.execCommand('removeList');
     }
     setShowBlockOptionsDropDown(false);
   };
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      insertList('ol');
+      editor.execCommand('insertOrderedList');
     } else {
-      removeList();
+      editor.execCommand('removeList');
     }
     setShowBlockOptionsDropDown(false);
   };

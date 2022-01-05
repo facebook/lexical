@@ -12,7 +12,7 @@ const replace = require('@rollup/plugin-replace');
 const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
 
-const license = ` * Copyright (c) Facebook, Inc. and its affiliates.
+const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.`;

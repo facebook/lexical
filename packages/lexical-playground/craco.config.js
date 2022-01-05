@@ -44,6 +44,7 @@ module.exports = {
         'lexical-react/dist/useLexicalDecorators',
       'lexical-react/useLexicalNestedList':
         'lexical-react/dist/useLexicalNestedList',
+      'lexical-react/useLexicalList': 'lexical-react/dist/useLexicalList',
       'lexical-react/useLexicalIsBlank': 'lexical-react/dist/useLexicalIsBlank',
       'lexical-react/useLexicalIsTextContentEmpty':
         'lexical-react/dist/useLexicalIsTextContentEmpty',

@@ -46,6 +46,7 @@ module.name_mapper='^lexical-react/useLexicalPlainTextWithCollab' -> '<PROJECT_R
 module.name_mapper='^lexical-react/useLexicalEditorEvents' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalEditorEvents.js'
 module.name_mapper='^lexical-react/useLexicalAutoFormatter' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalAutoFormatter.js'
 module.name_mapper='^lexical-react/useLexicalDecorators' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalDecorators.js'
+module.name_mapper='^lexical-react/useLexicalList' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalList.js'
 module.name_mapper='^lexical-react/useLexicalNestedList' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalNestedList.js'
 module.name_mapper='^lexical-react/useLexicalIsBlank' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalIsBlank.js'
 module.name_mapper='^lexical-react/useLexicalIsTextContentEmpty' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalIsTextContentEmpty.js'

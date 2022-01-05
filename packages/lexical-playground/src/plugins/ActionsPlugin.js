@@ -13,9 +13,9 @@ import * as React from 'react';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useCallback, useEffect, useState} from 'react';
-import useLexicalNestedList from 'lexical-react/useLexicalNestedList';
 import {$createStickyNode} from '../nodes/StickyNode';
 import {$log, $getRoot, createEditorStateRef} from 'lexical';
+import useLexicalList from 'lexical-react/useLexicalList';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -34,7 +34,7 @@ export default function ActionsPlugins({
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const [connected, setConnected] = useState(false);
   const [editor] = useLexicalComposerContext();
-  useLexicalNestedList(editor);
+  useLexicalList(editor);
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 

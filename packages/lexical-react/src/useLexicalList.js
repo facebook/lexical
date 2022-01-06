@@ -38,7 +38,7 @@ import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
-function removeList(editor: LexicalEditor) {
+function removeList(editor: LexicalEditor): void {
   editor.update(() => {
     $log('removeList');
     const selection = $getSelection();
@@ -101,7 +101,7 @@ function createListOrMerge(node: ElementNode, listType: 'ul' | 'ol'): ListNode {
   }
 }
 
-function insertList(editor: LexicalEditor, listType: 'ul' | 'ol') {
+function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
   editor.update(() => {
     $log('formatList');
     const selection = $getSelection();

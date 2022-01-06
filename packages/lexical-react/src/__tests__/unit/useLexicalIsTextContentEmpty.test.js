@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,7 +12,7 @@ import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {createEditor, $createTextNode, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
 import useLexicalIsTextContentEmpty from '../../useLexicalIsTextContentEmpty';
 
 describe('useLexicalIsTextContentEmpty', () => {
@@ -54,6 +54,7 @@ describe('useLexicalIsTextContentEmpty', () => {
       editor.addListener('error', (error) => {
         throw error;
       });
+      editor.registerNodes([ParagraphNode]);
       const isBlank = useLexicalIsTextContentEmpty(editor);
       expect(isBlank).toBe(!hasText);
       return <div ref={ref} contentEditable={true} />;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -34,6 +34,7 @@ export type {LineBreakNode} from './LexicalLineBreakNode';
 export type {RootNode} from './LexicalRootNode';
 export type {ElementFormatType} from './LexicalElementNode';
 
+import {VERSION} from './LexicalConstants';
 import {createEditor} from './LexicalEditor';
 import {$createTextNode, $isTextNode, TextNode} from './LexicalTextNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
@@ -60,6 +61,7 @@ import {$createNodeFromParse} from './LexicalParsing';
 import {createEditorStateRef, isEditorStateRef} from './LexicalReference';
 
 export {
+  VERSION,
   createEditor,
   ElementNode,
   DecoratorNode,

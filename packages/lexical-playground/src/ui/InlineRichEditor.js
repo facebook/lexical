@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,7 +14,7 @@ import * as React from 'react';
 import RichTextPlugin from '../plugins/RichTextPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import EmojisPlugin from '../plugins/EmojisPlugin';
-import HashtagsPlugin from 'lexical-react/HashtagsPlugin';
+import HashtagsPlugin from 'lexical-react/LexicalHashtagsPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
 import LexicalComposer from 'lexical-react/LexicalComposer';

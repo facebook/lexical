@@ -154,7 +154,7 @@ describe('LexicalEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">Other side</span></li><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">I must have called</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Other side</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">I must have called</span></li></ul></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from pasted HTML ol element',
@@ -164,7 +164,7 @@ describe('LexicalEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><ol class="editor-list-ol"><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">To tell you</span></li><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">I’m sorry</span></li></ol></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ol class="editor-list-ol"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">To tell you</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">I’m sorry</span></li></ol></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from pasted DOM Text Node',
@@ -238,7 +238,7 @@ describe('LexicalEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li value="3" class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
       },
       {
         name: 'onPasteForRichText should ignore multiple levels of DOM node types that do not have transformers, but still process their children.',
@@ -248,7 +248,7 @@ describe('LexicalEventHelpers', () => {
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li value="3" class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
       },
       {
         name: 'onPasteForRichText should respect htmlTransforms passed in via the editor config.',

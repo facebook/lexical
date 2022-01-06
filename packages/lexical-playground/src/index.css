@@ -401,6 +401,14 @@ i.mic {
   background-image: url(images/icons/mic.svg);
 }
 
+i.import {
+  background-image: url(images/icons/upload.svg);
+}
+
+i.export {
+  background-image: url(images/icons/download.svg);
+}
+
 .link-editor .button.active, .toolbar .button.active {
   background-color: rgb(223, 232, 250);
 }

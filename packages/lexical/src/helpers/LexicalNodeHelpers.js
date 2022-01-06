@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -102,6 +102,25 @@ export function $isLastItemInList(listItem: ListItemNode): boolean {
     parent = parent.getParent();
   }
   return isLast;
+}
+
+// This should probably be $getAllChildrenOfType
+export function $getAllListItems(node: ListNode): Array<ListItemNode> {
+  let listItemNodes: Array<ListItemNode> = [];
+  //$FlowFixMe - the result of this will always be an array of ListItemNodes.
+  const listChildren: Array<ListItemNode> = node
+    .getChildren()
+    .filter($isListItemNode);
+  for (let i = 0; i < listChildren.length; i++) {
+    const listItemNode = listChildren[i];
+    const firstChild = listItemNode.getFirstChild();
+    if ($isListNode(firstChild)) {
+      listItemNodes = listItemNodes.concat($getAllListItems(firstChild));
+    } else {
+      listItemNodes.push(listItemNode);
+    }
+  }
+  return listItemNodes;
 }
 
 export function $getNearestNodeOfType<T: LexicalNode>(

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -83,25 +83,43 @@ function getUniqueListItemNodes(
 function handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
+    if (isNestedListNode(listItemNode)) {
+      return;
+    }
+    const parent = listItemNode.getParent();
     const nextSibling = listItemNode.getNextSibling();
     const previousSibling = listItemNode.getPreviousSibling();
-    // if the ListItemNode is next to a nested ListNode, merge them
-    if (isNestedListNode(nextSibling)) {
+    // if there are nested lists on either side, merge them all together.
+    if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
+      const innerList = previousSibling.getFirstChild();
+      if ($isListNode(innerList)) {
+        innerList.append(listItemNode);
+        const nextInnerList = nextSibling.getFirstChild();
+        if ($isListNode(nextInnerList)) {
+          const children = nextInnerList.getChildren();
+          innerList.append(...children);
+          nextInnerList.remove();
+        }
+        innerList.getChildren().forEach((child) => child.markDirty());
+      }
+    } else if (isNestedListNode(nextSibling)) {
+      // if the ListItemNode is next to a nested ListNode, merge them
       const innerList = nextSibling.getFirstChild();
       if ($isListNode(innerList)) {
         const firstChild = innerList.getFirstChild();
         if (firstChild !== null) {
           firstChild.insertBefore(listItemNode);
         }
+        innerList.getChildren().forEach((child) => child.markDirty());
       }
     } else if (isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
       if ($isListNode(innerList)) {
         innerList.append(listItemNode);
+        innerList.getChildren().forEach((child) => child.markDirty());
       }
     } else {
       // otherwise, we need to create a new nested ListNode
-      const parent = listItemNode.getParent();
       if ($isListNode(parent)) {
         const newListItem = $createListItemNode();
         const newList = $createListNode(parent.getTag());
@@ -116,12 +134,18 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
         }
       }
     }
+    if ($isListNode(parent)) {
+      parent.getChildren().forEach((child) => child.markDirty());
+    }
   });
 }
 
 function handleOutdent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
+    if (isNestedListNode(listItemNode)) {
+      return;
+    }
     const parentList = listItemNode.getParent();
     const grandparentListItem = parentList ? parentList.getParent() : undefined;
     const greatGrandparentList = grandparentListItem
@@ -168,6 +192,8 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
         // replace the grandparent list item (now between the siblings) with the outdented list item.
         grandparentListItem.replace(listItemNode);
       }
+      parentList.getChildren().forEach((child) => child.markDirty());
+      greatGrandparentList.getChildren().forEach((child) => child.markDirty());
     }
   });
 }

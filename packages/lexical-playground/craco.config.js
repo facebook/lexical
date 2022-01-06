@@ -22,6 +22,7 @@ module.exports = {
       'lexical/nodes': 'lexical/dist/LexicalNodeHelpers',
       'lexical/elements': 'lexical/dist/LexicalElementHelpers',
       'lexical/events': 'lexical/dist/LexicalEventHelpers',
+      'lexical/file': 'lexical/dist/LexicalFileHelpers',
       'lexical/offsets': 'lexical/dist/LexicalOffsetHelpers',
       'lexical/root': 'lexical/dist/LexicalRootHelpers',
 
@@ -44,6 +45,7 @@ module.exports = {
         'lexical-react/dist/useLexicalDecorators',
       'lexical-react/useLexicalNestedList':
         'lexical-react/dist/useLexicalNestedList',
+      'lexical-react/useLexicalList': 'lexical-react/dist/useLexicalList',
       'lexical-react/useLexicalIsBlank': 'lexical-react/dist/useLexicalIsBlank',
       'lexical-react/useLexicalIsTextContentEmpty':
         'lexical-react/dist/useLexicalIsTextContentEmpty',
@@ -59,10 +61,9 @@ module.exports = {
       'lexical-react/LexicalComposerContext':
         'lexical-react/dist/LexicalComposerContext',
       ...[
-        'AutoFormatterPlugin',
-        'BlockControlsPlugin',
-        'CharacterLimitPlugin',
-        'HashtagsPlugin',
+        'LexicalAutoFormatterPlugin',
+        'LexicalCharacterLimitPlugin',
+        'LexicalHashtagsPlugin',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,10 +13,11 @@ import * as React from 'react';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {useCallback, useEffect, useState} from 'react';
-import useLexicalNestedList from 'lexical-react/useLexicalNestedList';
 import {$createStickyNode} from '../nodes/StickyNode';
 import {$log, $getRoot, createEditorStateRef} from 'lexical';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
+import useLexicalList from 'lexical-react/useLexicalList';
+import {importFile, exportFile} from 'lexical/file';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -36,7 +37,7 @@ export default function ActionsPlugins({
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
   const [editor] = useLexicalComposerContext();
-  useLexicalNestedList(editor);
+  useLexicalList(editor);
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 
@@ -82,6 +83,21 @@ export default function ActionsPlugins({
           <i className="mic" />
         </button>
       )}
+      <button
+        className="action-button import"
+        onClick={() => importFile(editor)}>
+        <i className="import" />
+      </button>
+      <button
+        className="action-button export"
+        onClick={() =>
+          exportFile(editor, {
+            fileName: `Playground ${new Date().toISOString()}`,
+            source: 'Playground',
+          })
+        }>
+        <i className="export" />
+      </button>
       <button className="action-button sticky" onClick={insertSticky}>
         <i className="sticky" />
       </button>

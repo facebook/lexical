@@ -99,7 +99,7 @@ export default function Editor({
 
   const placeholder = useCallback(() => {
     const text = isCollab
-      ? 'Enter some collaborative text...'
+      ? 'Enter some collaborative rich text...'
       : isRichText
       ? 'Enter some rich text...'
       : 'Enter some plain text...';

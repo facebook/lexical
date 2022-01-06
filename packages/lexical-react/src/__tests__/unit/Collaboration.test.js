@@ -10,7 +10,7 @@
 import {createTestConnection, waitForReact} from './utils';
 import {$getRoot, $createTextNode} from 'lexical';
 
-describe('useLexicalRichTextWithCollab', () => {
+describe('Collaboration', () => {
   let container = null;
 
   beforeEach(() => {

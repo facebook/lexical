@@ -10,21 +10,40 @@
 import * as React from 'react';
 import {createRoot} from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
-import useLexicalRichTextWithCollab from '../../useLexicalRichTextWithCollab';
-import useLexical from '../../useLexical';
+import {useCallback} from 'react';
+import {
+  CollaborationPlugin,
+  useCollaborationContext,
+} from '../../LexicalCollaborationPlugin';
+import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
+import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import LexicalComposer from '../../LexicalComposer';
 import * as Y from 'yjs';
 
-const editorConfig = {
-  theme: {},
-};
+function Editor({doc, provider, setEditor}) {
+  const {yjsDocMap} = useCollaborationContext();
+  const [editor] = useLexicalComposerContext();
 
-function ClientEditor({id, provider, docMap, name, color, setEditor}) {
-  const [editor, rootElementRef] = useLexical(editorConfig);
-  useLexicalRichTextWithCollab(editor, 'main', provider, docMap, name, color);
+  yjsDocMap.set('main', doc);
+
+  const contentEditable = useCallback(
+    (rootElementRef) => <div ref={rootElementRef} contentEditable={true} />,
+    [],
+  );
+
+  const placeholder = useCallback(() => null, []);
 
   setEditor(editor);
 
-  return <div contentEditable={true} ref={rootElementRef} />;
+  return (
+    <>
+      <CollaborationPlugin id="main" providerFactory={() => provider} />
+      <LexicalRichTextPlugin
+        contentEditable={contentEditable}
+        placeholder={placeholder}
+      />
+    </>
+  );
 }
 
 class Client {
@@ -103,22 +122,18 @@ class Client {
   start(rootContainer) {
     const container = document.createElement('div');
     const reactRoot = createRoot(container);
-    const docMap = new Map([['main', this._doc]]);
     this._container = container;
     this._reactRoot = reactRoot;
     rootContainer.appendChild(container);
     ReactTestUtils.act(() => {
       reactRoot.render(
-        <ClientEditor
-          setEditor={(editor) => {
-            this._editor = editor;
-          }}
-          id={this._id}
-          provider={this}
-          docMap={docMap}
-          name={this._id}
-          color="None"
-        />,
+        <LexicalComposer>
+          <Editor
+            provider={this}
+            doc={this._doc}
+            setEditor={(editor) => (this._editor = editor)}
+          />
+        </LexicalComposer>,
         container,
       );
     });

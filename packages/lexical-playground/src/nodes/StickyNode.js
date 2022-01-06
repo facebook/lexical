@@ -22,11 +22,18 @@ import InlineSimpleEditor from '../ui/InlineSimpleEditor';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {useCollaborationContext} from '../context/CollaborationContext';
-import PlainTextPlugin from '../plugins/PlainTextPlugin';
-import PlainTextCollabPlugin from '../plugins/PlainTextCollabPlugin';
+import {
+  useCollaborationContext,
+  CollaborationPlugin,
+} from 'lexical-react/LexicalCollaborationPlugin';
+import PlainTextPlugin from 'lexical-react/LexicalPlainTextPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
+import Placeholder from '../ui/Placeholder';
+import ContentEditable from '../ui/ContentEditable';
+import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
+import {createWebsocketProvider} from '../collaboration';
+import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -213,6 +220,18 @@ function StickyComponent({
     [editorStateRef],
   );
 
+  const contentEditable = useCallback(
+    (ref, clear) => <ContentEditable rootElementRef={ref} />,
+    [],
+  );
+
+  const placeholder = useCallback(
+    () => <Placeholder>What's up?</Placeholder>,
+    [],
+  );
+
+  const {historyState} = useSharedHistoryContext();
+
   return (
     <div
       ref={stickyContainerRef}
@@ -246,13 +265,19 @@ function StickyComponent({
         initialEditorStateRef={editorStateRef}
         theme={StickyEditorTheme}>
         {isCollab ? (
-          <PlainTextCollabPlugin
+          <CollaborationPlugin
             id={editorStateRef.id}
-            placeholder="What's up?"
+            providerFactory={createWebsocketProvider}
+            initEditorState={false}
           />
         ) : (
-          <PlainTextPlugin placeholder="What's up?" />
+          <HistoryPlugin externalHistoryState={historyState} />
         )}
+        <PlainTextPlugin
+          contentEditable={contentEditable}
+          placeholder={placeholder}
+          skipInit={isCollab}
+        />
       </InlineSimpleEditor>
     </div>
   );

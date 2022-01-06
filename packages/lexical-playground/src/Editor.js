@@ -143,10 +143,13 @@ export default function Editor({
             <CodeHighlightPlugin />
           </>
         ) : (
-          <PlainTextPlugin
-            contentEditable={contentEditable}
-            placeholder={placeholder}
-          />
+          <>
+            <PlainTextPlugin
+              contentEditable={contentEditable}
+              placeholder={placeholder}
+            />
+            <HistoryPlugin externalHistoryState={historyState} />
+          </>
         )}
         {(isCharLimit || isCharLimitUtf8) && (
           <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />

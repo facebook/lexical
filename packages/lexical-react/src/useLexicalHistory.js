@@ -251,7 +251,7 @@ export function useLexicalHistory(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
   delay?: number = 1000,
-): () => void {
+): void {
   const historyState: HistoryState = useMemo(
     () => externalHistoryState || createEmptyHistoryState(),
     [externalHistoryState],
@@ -369,7 +369,8 @@ export function useLexicalHistory(
         case 'redo':
           redo();
           return true;
-        case 'clear-history':
+        case 'clearEditor':
+        case 'clearHistory':
           clearHistory();
           return true;
         default:
@@ -382,8 +383,6 @@ export function useLexicalHistory(
       editor.addListener('update', applyChange),
     );
   }, [clearHistory, delay, editor, historyState]);
-
-  return clearHistory;
 }
 
 export function createEmptyHistoryState(): HistoryState {

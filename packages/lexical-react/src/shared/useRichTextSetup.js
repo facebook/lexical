@@ -112,13 +112,7 @@ function clearEditor(
   );
 }
 
-export function useRichTextSetup(
-  editor: LexicalEditor,
-  init: boolean,
-): (
-  editor: LexicalEditor,
-  callbackFn?: (callbackFn?: () => void) => void,
-) => void {
+export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
       editor.registerNodes([
@@ -263,6 +257,10 @@ export function useRichTextSetup(
                 event.shiftKey ? 'outdentContent' : 'indentContent',
               );
             }
+            case 'clearEditor': {
+              clearEditor(editor);
+              return false;
+            }
           }
           return false;
         },
@@ -279,6 +277,4 @@ export function useRichTextSetup(
 
   useLexicalEditorEvents(events, editor);
   useLexicalDragonSupport(editor);
-
-  return clearEditor;
 }

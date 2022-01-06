@@ -104,7 +104,7 @@ export default function ActionsPlugins({
       <button
         className="action-button clear"
         onClick={() => {
-          editor.execCommand('clear');
+          editor.execCommand('clearEditor');
           editor.focus();
         }}>
         <i className="clear" />

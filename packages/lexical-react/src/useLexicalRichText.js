@@ -10,27 +10,13 @@
 import type {LexicalEditor} from 'lexical';
 import type {HistoryState} from './useLexicalHistory';
 
-import {useCallback} from 'react';
-
 import {useRichTextSetup} from './shared/useRichTextSetup';
 import {useLexicalHistory} from './useLexicalHistory';
 
 export default function useLexicalRichText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
-): () => void {
-  const clearEditor = useRichTextSetup(editor, true);
-  const clearHistory = useLexicalHistory(editor, externalHistoryState);
-
-  return useCallback(
-    (callbackFn?: () => void) => {
-      clearEditor(editor, () => {
-        clearHistory();
-        if (callbackFn) {
-          callbackFn();
-        }
-      });
-    },
-    [clearEditor, clearHistory, editor],
-  );
+): void {
+  useRichTextSetup(editor, true);
+  useLexicalHistory(editor, externalHistoryState);
 }

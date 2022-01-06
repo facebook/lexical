@@ -7,15 +7,19 @@
  * @flow strict
  */
 
+import type {CommandListenerEditorPriority} from 'lexical';
+
 import * as React from 'react';
+import {useEffect, useState} from 'react';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import useLexicalEditor from 'lexical-react/useLexicalEditor';
 import useLexicalRichText from 'lexical-react/useLexicalRichText';
 import useLexicalDecorators from 'lexical-react/useLexicalDecorators';
 import ContentEditable from '../ui/ContentEditable';
 import Placeholder from '../ui/Placeholder';
-import useEditorListeners from '../hooks/useEditorListeners';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+
+const EditorPriority: CommandListenerEditorPriority = 0;
 
 function onError(e: Error): void {
   throw e;
@@ -29,9 +33,23 @@ export default function RichTextPlugin({
   const [editor] = useLexicalComposerContext();
   const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
   const {historyState} = useSharedHistoryContext();
-  const clear = useLexicalRichText(editor, historyState);
+  const [isReadOnly, setIsReadyOnly] = useState(false);
+  useLexicalRichText(editor, historyState);
   const decorators = useLexicalDecorators(editor);
-  const isReadOnly = useEditorListeners(clear);
+
+  useEffect(() => {
+    return editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
+          setIsReadyOnly(readOnly);
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+  }, [editor]);
 
   return (
     <>

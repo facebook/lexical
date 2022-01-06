@@ -10,27 +10,13 @@
 import type {LexicalEditor} from 'lexical';
 import type {HistoryState} from './useLexicalHistory';
 
-import {useCallback} from 'react';
-
 import usePlainTextSetup from './shared/usePlainTextSetup';
 import {useLexicalHistory} from './useLexicalHistory';
 
 export default function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
-): () => void {
-  const clearEditor = usePlainTextSetup(editor, true);
-  const clearHistory = useLexicalHistory(editor, externalHistoryState);
-
-  return useCallback(
-    (callbackFn?: () => void) => {
-      clearEditor(editor, () => {
-        clearHistory();
-        if (callbackFn) {
-          callbackFn();
-        }
-      });
-    },
-    [clearEditor, clearHistory, editor],
-  );
+): void {
+  usePlainTextSetup(editor, true);
+  useLexicalHistory(editor, externalHistoryState);
 }

@@ -289,7 +289,7 @@ function useHashtags(editor: LexicalEditor): void {
   }, [editor]);
 }
 
-export default function HashtagsPlugin(): React$Node {
+export default function HashtagPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   useHashtags(editor);
 

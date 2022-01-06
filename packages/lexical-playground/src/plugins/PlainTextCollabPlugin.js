@@ -112,6 +112,7 @@ export default function PlainTextCollabPlugin({
       <ContentEditable
         isReadOnly={!hasInitRef.current || isReadOnly}
         rootElementRef={rootElementRef}
+        clear={clear}
       />
       {!hasInitRef.current && <div className="connecting">Connecting...</div>}
       {showPlaceholder && hasInitRef.current && (

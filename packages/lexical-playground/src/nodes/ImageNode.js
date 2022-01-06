@@ -20,9 +20,11 @@ import {DecoratorNode, $log, $getNodeByKey} from 'lexical';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
-import RichInlineEditor from '../ui/InlineRichEditor';
+import ControlledEditor from '../ui/ControlledEditor';
 import RichTextCollabPlugin from '../plugins/RichTextCollabPlugin';
-import RichTextPlugin from '../plugins/RichTextPlugin';
+import RichTextPlugin from 'lexical-react/LexicalRichTextPlugin';
+import Placeholder from '../ui/Placeholder';
+import ContentEditable from '../ui/ContentEditable';
 
 const imageCache = new Set();
 
@@ -353,6 +355,16 @@ function ImageComponent({
     setIsResizing(true);
   }, [editor]);
 
+  const contentEditable = useCallback(
+    (rootElementRef) => <ContentEditable rootElementRef={rootElementRef} />,
+    [],
+  );
+
+  const placeholder = useCallback(
+    () => <Placeholder>Enter a caption...</Placeholder>,
+    [],
+  );
+
   return (
     <Suspense fallback={null}>
       <>
@@ -373,8 +385,7 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <RichInlineEditor
-              controlled={true}
+            <ControlledEditor
               onChange={onChange}
               initialEditorStateRef={editorStateRef}>
               {isCollab ? (
@@ -383,9 +394,12 @@ function ImageComponent({
                   placeholder="Enter a caption..."
                 />
               ) : (
-                <RichTextPlugin placeholder="Enter a caption..." />
+                <RichTextPlugin
+                  contentEditable={contentEditable}
+                  placeholder={placeholder}
+                />
               )}
-            </RichInlineEditor>
+            </ControlledEditor>
           </div>
         )}
         {resizable && (hasFocus || isResizing) && (

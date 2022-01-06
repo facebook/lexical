@@ -23,10 +23,13 @@ import InlineSimpleEditor from '../ui/InlineSimpleEditor';
 import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {useCollaborationContext} from '../context/CollaborationContext';
-import PlainTextPlugin from '../plugins/PlainTextPlugin';
+import PlainTextPlugin from 'lexical-react/LexicalPlainTextPlugin';
 import PlainTextCollabPlugin from '../plugins/PlainTextCollabPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
+import Placeholder from '../ui/Placeholder';
+import ContentEditable from '../ui/ContentEditable';
+import useEditorListeners from '../hooks/useEditorListeners';
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -213,6 +216,18 @@ function StickyComponent({
     [editorStateRef],
   );
 
+  const contentEditable = useCallback((ref, clear) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const isReadOnly = useEditorListeners(clear);
+
+    return <ContentEditable isReadOnly={isReadOnly} rootElementRef={ref} />;
+  }, []);
+
+  const placeholder = useCallback(
+    () => <Placeholder>What's up?</Placeholder>,
+    [],
+  );
+
   return (
     <div
       ref={stickyContainerRef}
@@ -251,7 +266,10 @@ function StickyComponent({
             placeholder="What's up?"
           />
         ) : (
-          <PlainTextPlugin placeholder="What's up?" />
+          <PlainTextPlugin
+            contentEditable={contentEditable}
+            placeholder={placeholder}
+          />
         )}
       </InlineSimpleEditor>
     </div>

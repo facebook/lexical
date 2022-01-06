@@ -137,9 +137,8 @@ export default function Editor({
             <RichTextPlugin
               contentEditable={contentEditable}
               placeholder={placeholder}
-              initEditorState={!isCollab}
+              skipInit={isCollab}
             />
-
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
           </>
@@ -147,7 +146,6 @@ export default function Editor({
           <PlainTextPlugin
             contentEditable={contentEditable}
             placeholder={placeholder}
-            initEditorState={true}
           />
         )}
         {(isCharLimit || isCharLimitUtf8) && (

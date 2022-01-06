@@ -22,17 +22,17 @@ function onError(e: Error): void {
 export default function RichTextPlugin({
   contentEditable,
   placeholder,
-  initEditorState,
+  skipInit,
 }: {
   contentEditable: (
     rootElementRef: (node: null | HTMLElement) => void,
   ) => React$Node,
   placeholder: () => React$Node,
-  initEditorState?: boolean,
+  skipInit?: boolean,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
-  useRichTextSetup(editor, initEditorState || false);
+  useRichTextSetup(editor, !skipInit);
   const decorators = useLexicalDecorators(editor);
   const contentEditableNode: React$Node = useMemo(
     () => contentEditable(rootElementRef),

@@ -276,7 +276,7 @@ function StickyComponent({
         <PlainTextPlugin
           contentEditable={contentEditable}
           placeholder={placeholder}
-          initEditorState={!isCollab}
+          skipInit={isCollab}
         />
       </InlineSimpleEditor>
     </div>

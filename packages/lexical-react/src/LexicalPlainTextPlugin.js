@@ -22,17 +22,17 @@ function onError(e: Error): void {
 export default function PlainTextPlugin({
   contentEditable,
   placeholder,
-  initEditorState,
+  skipInit,
 }: {
   contentEditable: (
     rootElementRef: (node: null | HTMLElement) => void,
   ) => React$Node,
   placeholder: () => React$Node,
-  initEditorState?: boolean,
+  skipInit?: boolean,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
-  usePlainTextSetup(editor, initEditorState || false);
+  usePlainTextSetup(editor, !skipInit);
   const decorators = useLexicalDecorators(editor);
   const contentEditableNode: React$Node = useMemo(
     () => contentEditable(rootElementRef),

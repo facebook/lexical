@@ -407,7 +407,7 @@ function ImageComponent({
               <RichTextPlugin
                 contentEditable={contentEditable}
                 placeholder={placeholder}
-                initEditorState={!isCollab}
+                skipInit={isCollab}
               />
             </ControlledEditor>
           </div>

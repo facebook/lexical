@@ -1110,6 +1110,11 @@ i.chevron-down {
   text-overflow: ellipsis;
 }
 
+.toolbar select.code-language {
+  text-transform: capitalize;
+  width: 130px;
+}
+
 .toolbar .toolbar-item .text {
   display: flex;
   line-height: 20px;

@@ -15,20 +15,22 @@ import {ElementNode} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 export class CodeNode extends ElementNode {
+  __language: string | void;
+
   static getType(): string {
     return 'code';
   }
 
   static clone(node: CodeNode): CodeNode {
-    return new CodeNode(node.__key);
+    return new CodeNode(node.__language, node.__key);
   }
 
-  constructor(key?: NodeKey): void {
+  constructor(language?: string, key?: NodeKey): void {
     super(key);
+    this.__language = language;
   }
 
   // View
-
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('code');
     addClassNamesToElement(element, config.theme.code);
@@ -73,10 +75,19 @@ export class CodeNode extends ElementNode {
     this.replace(paragraph);
     return true;
   }
+
+  setLanguage(language: string): void {
+    const writable = this.getWritable();
+    writable.__language = language;
+  }
+
+  getLanguage(): string | void {
+    return this.getLatest().__language;
+  }
 }
 
-export function $createCodeNode(): CodeNode {
-  return new CodeNode();
+export function $createCodeNode(language?: string): CodeNode {
+  return new CodeNode(language);
 }
 
 export function $isCodeNode(node: ?LexicalNode): boolean %checks {

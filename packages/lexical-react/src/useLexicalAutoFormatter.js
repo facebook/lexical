@@ -16,6 +16,7 @@ import {$createListItemNode} from 'lexical/ListItemNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createListNode} from 'lexical/ListNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
+import {$createCodeNode} from 'lexical/CodeNode';
 
 function updateTextNode(node: TextNode, count: number): void {
   const textNode = node.spliceText(0, count, '', true);
@@ -79,6 +80,11 @@ function textNodeTransform(node: TextNode): void {
           list.append(listItem);
           element.replace(list);
         }
+      } else if (firstChar === '`' && secondChar === '`' && thirdChar === '`') {
+        updateTextNode(node, 3);
+        const codeNode = $createCodeNode();
+        codeNode.append(...element.getChildren());
+        element.replace(codeNode);
       }
     }
   }

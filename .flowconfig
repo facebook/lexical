@@ -82,7 +82,8 @@ suppress_type=$FlowExpectedError
 [libs]
 ./libdefs/
 ./scripts/flow/environment.js
-./scripts/flow/yjs.js
+./flow-typed/yjs.js
+./flow-typed/prism.js
 
 [strict]
 nonstrict-import

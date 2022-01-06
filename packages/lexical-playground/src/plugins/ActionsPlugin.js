@@ -15,6 +15,7 @@ import {useCollaborationContext} from '../context/CollaborationContext';
 import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
 import {$log, $getRoot, createEditorStateRef} from 'lexical';
+import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
 import useLexicalList from 'lexical-react/useLexicalList';
 import {importFile, exportFile} from 'lexical/file';
 
@@ -33,6 +34,7 @@ export default function ActionsPlugins({
   isRichText: boolean,
 }): React$Node {
   const [isReadOnly, setIsReadyOnly] = useState(false);
+  const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
   const [editor] = useLexicalComposerContext();
   useLexicalList(editor);
@@ -68,6 +70,19 @@ export default function ActionsPlugins({
 
   return (
     <div className="actions">
+      {SUPPORT_SPEECH_RECOGNITION && (
+        <button
+          onClick={() => {
+            editor.execCommand('speechToText', !isSpeechToText);
+            setIsSpeechToText(!isSpeechToText);
+          }}
+          className={
+            'action-button action-button-mic ' +
+            (isSpeechToText ? 'active' : '')
+          }>
+          <i className="mic" />
+        </button>
+      )}
       <button
         className="action-button import"
         onClick={() => importFile(editor)}>

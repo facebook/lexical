@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import useReport from '../hooks/useReport';
+
 import {useEffect} from 'react';
 
 const validInputTypes = new Set([
@@ -29,37 +31,13 @@ const validInputTypes = new Set([
 ]);
 
 export default function TypingPerfPlugin(): React$Node {
+  const report = useReport();
   useEffect(() => {
     let start = 0;
     let timerId = null;
     let log = [];
     let invalidatingEvent = false;
 
-    const report = () => {
-      const total = log.reduce((a, b) => a + b, 0);
-      const reportedText =
-        'Typing Perf: ' + Math.round((total / log.length) * 100) / 100 + 'ms';
-      console.log(reportedText);
-      // Show an element on the screen too :)
-      const element = document.createElement('div');
-      element.style.position = 'fixed';
-      element.style.top = '50%';
-      element.style.left = '50%';
-      element.style.fontSize = '32px';
-      element.style.transform = 'translate(-50%, -50px)';
-      element.style.padding = '20px';
-      element.style.background = 'rgba(255, 255, 255, 0.4)';
-      element.style.borderRadius = '20px';
-      element.textContent = reportedText;
-      const body = document.body;
-      if (body !== null) {
-        body.appendChild(element);
-        setTimeout(() => {
-          body.removeChild(element);
-        }, 1000);
-      }
-      log = [];
-    };
     const measureEvent = function measureEvent() {
       if (timerId != null) {
         clearTimeout(timerId);
@@ -75,7 +53,13 @@ export default function TypingPerfPlugin(): React$Node {
         }
         log.push(performance.now() - start);
       }, 0);
-      timerId = setTimeout(report, 2000);
+      timerId = setTimeout(() => {
+        const total = log.reduce((a, b) => a + b, 0);
+        const reportedText =
+          'Typing Perf: ' + Math.round((total / log.length) * 100) / 100 + 'ms';
+        report(reportedText);
+        log = [];
+      }, 2000);
     };
     const beforeInputHandler = function beforeInputHandler(event) {
       if (!validInputTypes.has(event.inputType) || invalidatingEvent) {
@@ -108,6 +92,6 @@ export default function TypingPerfPlugin(): React$Node {
       window.removeEventListener('paste', pasteHandler, true);
       window.removeEventListener('cut', cutHandler, true);
     };
-  }, []);
+  }, [report]);
   return null;
 }

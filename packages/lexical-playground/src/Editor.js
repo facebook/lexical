@@ -26,6 +26,7 @@ import TableCellActionMenuPlugin from './plugins/TableCellActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import LinksPlugin from './plugins/LinksPlugin';
 import StickyPlugin from './plugins/StickyPlugin';
+import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 
 type Props = {
@@ -61,6 +62,7 @@ export default function Editor({
         <EmojisPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
+        <SpeechToTextPlugin />
         {isRichText ? (
           <>
             {isCollab ? <RichTextCollabPlugin id="main" /> : <RichTextPlugin />}

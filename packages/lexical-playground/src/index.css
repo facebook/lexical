@@ -397,6 +397,10 @@ i.sticky {
   background-image: url(images/icons/sticky.svg);
 }
 
+i.mic {
+  background-image: url(images/icons/mic.svg);
+}
+
 i.import {
   background-image: url(images/icons/upload.svg);
 }
@@ -975,6 +979,16 @@ i.chevron-down {
 .action-button:hover {
   background-color: #ddd;
   color: #000;
+}
+
+.action-button-mic.active {
+  animation: mic-pulsate-color 3s infinite;
+}
+
+@keyframes mic-pulsate-color {
+  0% { background-color: #ffdcdc; }
+  50% { background-color: #ff8585; }
+  100% { background-color: #ffdcdc; }
 }
 
 .debug-timetravel-panel {

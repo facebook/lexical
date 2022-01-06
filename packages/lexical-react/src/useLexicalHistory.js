@@ -257,6 +257,12 @@ export function useLexicalHistory(
     [externalHistoryState],
   );
 
+  const clearHistory = useCallback(() => {
+    historyState.undoStack = [];
+    historyState.redoStack = [];
+    historyState.current = null;
+  }, [historyState]);
+
   useEffect(() => {
     const getMergeAction = createMergeActionGetter(editor, delay);
     const applyChange = ({
@@ -356,28 +362,26 @@ export function useLexicalHistory(
     };
 
     const applyCommand = (type) => {
-      if (type === 'undo') {
-        undo();
-        return true;
+      switch (type) {
+        case 'undo':
+          undo();
+          return true;
+        case 'redo':
+          redo();
+          return true;
+        case 'clear-history':
+          clearHistory();
+          return true;
+        default:
+          return false;
       }
-      if (type === 'redo') {
-        redo();
-        return true;
-      }
-      return false;
     };
 
     return withSubscriptions(
       editor.addListener('command', applyCommand, EditorPriority),
       editor.addListener('update', applyChange),
     );
-  }, [delay, editor, historyState]);
-
-  const clearHistory = useCallback(() => {
-    historyState.undoStack = [];
-    historyState.redoStack = [];
-    historyState.current = null;
-  }, [historyState]);
+  }, [clearHistory, delay, editor, historyState]);
 
   return clearHistory;
 }

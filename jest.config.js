@@ -57,6 +57,8 @@ module.exports = {
           '<rootDir>/packages/lexical/src/helpers/LexicalElementHelpers.js',
         '^lexical/events$':
           '<rootDir>/packages/lexical/src/helpers/LexicalEventHelpers.js',
+        '^lexical/file$':
+          '<rootDir>/packages/lexical/src/helpers/LexicalFileHelpers.js',
         '^lexical/offsets$':
           '<rootDir>/packages/lexical/src/helpers/LexicalOffsetHelpers.js',
         '^lexical/root$':

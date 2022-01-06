@@ -34,6 +34,7 @@ export type {LineBreakNode} from './LexicalLineBreakNode';
 export type {RootNode} from './LexicalRootNode';
 export type {ElementFormatType} from './LexicalElementNode';
 
+import {VERSION} from './LexicalConstants';
 import {createEditor} from './LexicalEditor';
 import {$createTextNode, $isTextNode, TextNode} from './LexicalTextNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
@@ -60,6 +61,7 @@ import {$createNodeFromParse} from './LexicalParsing';
 import {createEditorStateRef, isEditorStateRef} from './LexicalReference';
 
 export {
+  VERSION,
   createEditor,
   ElementNode,
   DecoratorNode,

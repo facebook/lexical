@@ -22,6 +22,7 @@ module.exports = {
       'lexical/nodes': 'lexical/dist/LexicalNodeHelpers',
       'lexical/elements': 'lexical/dist/LexicalElementHelpers',
       'lexical/events': 'lexical/dist/LexicalEventHelpers',
+      'lexical/file': 'lexical/dist/LexicalFileHelpers',
       'lexical/offsets': 'lexical/dist/LexicalOffsetHelpers',
       'lexical/root': 'lexical/dist/LexicalRootHelpers',
 

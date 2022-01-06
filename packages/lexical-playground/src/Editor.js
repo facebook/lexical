@@ -147,6 +147,7 @@ export default function Editor({
           <PlainTextPlugin
             contentEditable={contentEditable}
             placeholder={placeholder}
+            initEditorState={true}
           />
         )}
         {(isCharLimit || isCharLimitUtf8) && (

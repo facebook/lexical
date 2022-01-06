@@ -7,12 +7,14 @@
  * @flow strict
  */
 
+import type {CommandListenerEditorPriority} from 'lexical';
+
 import * as React from 'react';
-import {useCallback} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 import PlainTextPlugin from 'lexical-react/LexicalPlainTextPlugin';
 import RichTextPlugin from 'lexical-react/LexicalRichTextPlugin';
-import RichTextCollabPlugin from './plugins/RichTextCollabPlugin';
+import {CollaborationPlugin} from 'lexical-react/LexicalCollaborationPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import CharacterLimitPlugin from 'lexical-react/LexicalCharacterLimitPlugin';
@@ -32,7 +34,10 @@ import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
 import ContentEditable from './ui/ContentEditable';
-import useEditorListeners from './hooks/useEditorListeners';
+import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {createWebsocketProvider} from './collaboration';
+import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
+import {useSharedHistoryContext} from './context/SharedHistoryContext';
 
 type Props = {
   isCollab: boolean,
@@ -43,14 +48,32 @@ type Props = {
   showTreeView: boolean,
 };
 
+const EditorPriority: CommandListenerEditorPriority = 0;
+
+const skipCollaborationInit =
+  window.parent != null && window.parent.frames.right === window;
+
 function EditorContentEditable({
   rootElementRef,
-  clear,
 }: {
   rootElementRef: (null | HTMLElement) => void,
-  clear: () => void,
 }): React$Node {
-  const isReadOnly = useEditorListeners(clear);
+  const [editor] = useLexicalComposerContext();
+  const [isReadOnly, setIsReadyOnly] = useState(false);
+
+  useEffect(() => {
+    return editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
+          setIsReadyOnly(readOnly);
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+  }, [editor]);
 
   return (
     <ContentEditable isReadOnly={isReadOnly} rootElementRef={rootElementRef} />
@@ -65,22 +88,23 @@ export default function Editor({
   isRichText,
   showTreeView,
 }: Props): React$Node {
+  const {historyState} = useSharedHistoryContext();
+
   const contentEditable = useCallback(
-    (rootElementRef, clear) => (
-      <EditorContentEditable rootElementRef={rootElementRef} clear={clear} />
+    (rootElementRef) => (
+      <EditorContentEditable rootElementRef={rootElementRef} />
     ),
     [],
   );
 
-  const plainTextPlaceholder = useCallback(
-    () => <Placeholder>Enter some plain text...</Placeholder>,
-    [],
-  );
-
-  const richTextPlaceholder = useCallback(
-    () => <Placeholder>Enter some rich text...</Placeholder>,
-    [],
-  );
+  const placeholder = useCallback(() => {
+    const text = isCollab
+      ? 'Enter some collaborative text...'
+      : isRichText
+      ? 'Enter some rich text...'
+      : 'Enter some plain text...';
+    return <Placeholder>{text}</Placeholder>;
+  }, [isCollab, isRichText]);
 
   return (
     <>
@@ -102,20 +126,27 @@ export default function Editor({
         {isRichText ? (
           <>
             {isCollab ? (
-              <RichTextCollabPlugin id="main" />
-            ) : (
-              <RichTextPlugin
-                contentEditable={contentEditable}
-                placeholder={richTextPlaceholder}
+              <CollaborationPlugin
+                id="main"
+                providerFactory={createWebsocketProvider}
+                skipInit={skipCollaborationInit}
               />
+            ) : (
+              <HistoryPlugin externalHistoryState={historyState} />
             )}
+            <RichTextPlugin
+              contentEditable={contentEditable}
+              placeholder={placeholder}
+              initEditorState={!isCollab}
+            />
+
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
           </>
         ) : (
           <PlainTextPlugin
             contentEditable={contentEditable}
-            placeholder={plainTextPlaceholder}
+            placeholder={placeholder}
           />
         )}
         {(isCharLimit || isCharLimitUtf8) && (

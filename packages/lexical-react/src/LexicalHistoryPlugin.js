@@ -7,7 +7,7 @@
  * @flow strict
  */
 
- import type {HistoryState} from './useLexicalHistory';
+import type {HistoryState} from './useLexicalHistory';
 
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {useLexicalHistory} from 'lexical-react/useLexicalHistory';

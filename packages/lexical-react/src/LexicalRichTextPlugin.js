@@ -7,14 +7,12 @@
  * @flow strict
  */
 
-import type {HistoryState} from 'lexical-react/useLexicalHistory';
-
 import * as React from 'react';
 import {useMemo} from 'react';
 
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import useLexicalEditor from 'lexical-react/useLexicalEditor';
-import useLexicalRichText from 'lexical-react/useLexicalRichText';
+import {useRichTextSetup} from './shared/useRichTextSetup';
 import useLexicalDecorators from 'lexical-react/useLexicalDecorators';
 
 function onError(e: Error): void {
@@ -24,22 +22,21 @@ function onError(e: Error): void {
 export default function RichTextPlugin({
   contentEditable,
   placeholder,
-  historyState,
+  initEditorState,
 }: {
   contentEditable: (
     rootElementRef: (node: null | HTMLElement) => void,
-    clear: () => void,
   ) => React$Node,
   placeholder: () => React$Node,
-  historyState?: HistoryState,
+  initEditorState?: boolean,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
-  const clear = useLexicalRichText(editor, historyState);
+  useRichTextSetup(editor, initEditorState || false);
   const decorators = useLexicalDecorators(editor);
   const contentEditableNode: React$Node = useMemo(
-    () => contentEditable(rootElementRef, clear),
-    [contentEditable, rootElementRef, clear],
+    () => contentEditable(rootElementRef),
+    [contentEditable, rootElementRef],
   );
   const placeholderNode: React$Node = useMemo(placeholder, [placeholder]);
 

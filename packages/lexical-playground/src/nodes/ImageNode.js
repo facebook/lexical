@@ -18,13 +18,18 @@ import type {
 import * as React from 'react';
 import {DecoratorNode, $log, $getNodeByKey} from 'lexical';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {useCollaborationContext} from '../context/CollaborationContext';
+import {
+  useCollaborationContext,
+  CollaborationPlugin,
+} from 'lexical-react/LexicalCollaborationPlugin';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import ControlledEditor from '../ui/ControlledEditor';
-import RichTextCollabPlugin from '../plugins/RichTextCollabPlugin';
 import RichTextPlugin from 'lexical-react/LexicalRichTextPlugin';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
+import {createWebsocketProvider} from '../collaboration';
+import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
+import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 
 const imageCache = new Set();
 
@@ -365,6 +370,8 @@ function ImageComponent({
     [],
   );
 
+  const {historyState} = useSharedHistoryContext();
+
   return (
     <Suspense fallback={null}>
       <>
@@ -389,16 +396,19 @@ function ImageComponent({
               onChange={onChange}
               initialEditorStateRef={editorStateRef}>
               {isCollab ? (
-                <RichTextCollabPlugin
+                <CollaborationPlugin
                   id={editorStateRef.id}
-                  placeholder="Enter a caption..."
+                  providerFactory={createWebsocketProvider}
+                  initEditorState={false}
                 />
               ) : (
-                <RichTextPlugin
-                  contentEditable={contentEditable}
-                  placeholder={placeholder}
-                />
+                <HistoryPlugin externalHistoryState={historyState} />
               )}
+              <RichTextPlugin
+                contentEditable={contentEditable}
+                placeholder={placeholder}
+                initEditorState={!isCollab}
+              />
             </ControlledEditor>
           </div>
         )}

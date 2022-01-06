@@ -7,9 +7,16 @@
  * @flow strict
  */
 
+import type {Provider} from 'lexical-yjs';
 import type {Doc} from 'yjs';
 
-import {createContext, useContext} from 'react';
+import {createContext, useContext, useMemo} from 'react';
+import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {
+  useYjsCollaboration,
+  useYjsHistory,
+  useYjsFocusTracking,
+} from './shared/useYjsCollaboration';
 
 type CollaborationContextType = {
   yjsDocMap: Map<string, Doc>,
@@ -38,6 +45,36 @@ const entries = [
 
 const randomEntry =
   entries[Math.floor(Math.random() * (entries.length - 1 - 0 + 1) + 0)];
+
+export function CollaborationPlugin({
+  id,
+  providerFactory,
+  skipInit,
+}: {
+  id: string,
+  providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider,
+  skipInit?: boolean,
+}): React$Node {
+  const {yjsDocMap, name, color} = useCollaborationContext();
+  const [editor] = useLexicalComposerContext();
+  const provider = useMemo(
+    () => providerFactory(id, yjsDocMap),
+    [id, providerFactory, yjsDocMap],
+  );
+  const [cursors, binding] = useYjsCollaboration(
+    editor,
+    id,
+    provider,
+    yjsDocMap,
+    name,
+    color,
+    skipInit || false,
+  );
+  useYjsHistory(editor, binding);
+  useYjsFocusTracking(editor, provider);
+
+  return cursors;
+}
 
 export const CollaborationContext: React$Context<CollaborationContextType> =
   createContext({

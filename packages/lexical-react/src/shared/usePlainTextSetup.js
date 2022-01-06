@@ -107,10 +107,7 @@ function clearEditor(
 export default function usePlainTextSetup(
   editor: LexicalEditor,
   init: boolean,
-): (
-  editor: LexicalEditor,
-  callbackFn?: (callbackFn?: () => void) => void,
-) => void {
+): void {
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
       editor.registerNodes([ParagraphNode]),
@@ -195,6 +192,10 @@ export default function usePlainTextSetup(
               event.preventDefault();
               return editor.execCommand('insertLineBreak');
             }
+            case 'clearEditor': {
+              clearEditor(editor);
+              return false;
+            }
           }
           return false;
         },
@@ -211,6 +212,4 @@ export default function usePlainTextSetup(
 
   useLexicalEditorEvents(events, editor);
   useLexicalDragonSupport(editor);
-
-  return clearEditor;
 }

@@ -15,7 +15,7 @@ import * as React from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {
   createBinding,
   createUndoManager,
@@ -37,8 +37,7 @@ export function useYjsCollaboration(
   name: string,
   color: string,
   skipInit?: boolean,
-): [React$Node, Binding, boolean, () => void, () => void] {
-  const [connected, setConnected] = useState(false);
+): [React$Node, Binding] {
   const binding = useMemo(
     () => createBinding(editor, provider, id, docMap),
     [editor, provider, id, docMap],
@@ -61,7 +60,7 @@ export function useYjsCollaboration(
     const {awareness} = provider;
 
     const onStatus = ({status}: {status: string}) => {
-      setConnected(status === 'connected');
+      editor.execCommand('connected', status === 'connected');
     };
 
     const onSync = (isSynced: boolean) => {
@@ -140,7 +139,31 @@ export function useYjsCollaboration(
     return createPortal(<div ref={ref} />, document.body);
   }, [binding]);
 
-  return [cursorsContainer, binding, connected, connect, disconnect];
+  useEffect(() => {
+    return editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'toggleConnect') {
+          if (connect !== undefined && disconnect !== undefined) {
+            const shouldConnect = payload;
+            if (shouldConnect) {
+              // eslint-disable-next-line no-console
+              console.log('Collaboration connected!');
+              connect();
+            } else {
+              // eslint-disable-next-line no-console
+              console.log('Collaboration disconnected!');
+              disconnect();
+            }
+          }
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+  }, [connect, disconnect, editor]);
+
+  return [cursorsContainer, binding];
 }
 
 export function useYjsFocusTracking(editor: LexicalEditor, provider: Provider) {

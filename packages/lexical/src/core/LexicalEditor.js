@@ -83,6 +83,7 @@ export type EditorThemeClasses = {
   link?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   code?: EditorThemeClassName,
+  codeHighlight?: {[string]: EditorThemeClassName},
   hashtag?: EditorThemeClassName,
   heading?: {
     h1?: EditorThemeClassName,

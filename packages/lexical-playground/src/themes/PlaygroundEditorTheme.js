@@ -89,7 +89,7 @@ const styles = stylex.create({
     margin: 0,
     marginTop: 8,
     marginBottom: 8,
-    tabSsize: 2,
+    tabSize: 2,
   },
   table: {
     borderCollapse: 'collapse',
@@ -155,6 +155,30 @@ const styles = stylex.create({
   nestedListItem: {
     listStyleType: 'none',
   },
+  tokenComment: {
+    color: 'slategray',
+  },
+  tokenPunctuation: {
+    color: '#999',
+  },
+  tokenProperty: {
+    color: '#905',
+  },
+  tokenSelector: {
+    color: '#690',
+  },
+  tokenOperator: {
+    color: '#9a6e3a',
+  },
+  tokenAttr: {
+    color: '#07a',
+  },
+  tokenVariable: {
+    color: '#e90',
+  },
+  tokenFunction: {
+    color: '#DD4A68',
+  },
 });
 
 const theme: EditorThemeClasses = {
@@ -189,6 +213,38 @@ const theme: EditorThemeClasses = {
   },
   hashtag: stylex(styles.hashtag),
   code: stylex(styles.code),
+  codeHighlight: {
+    comment: stylex(styles.tokenComment),
+    prolog: stylex(styles.tokenComment),
+    doctype: stylex(styles.tokenComment),
+    cdata: stylex(styles.tokenComment),
+    punctuation: stylex(styles.tokenPunctuation),
+    namespace: stylex(styles.tokenVariable),
+    property: stylex(styles.tokenProperty),
+    tag: stylex(styles.tokenProperty),
+    boolean: stylex(styles.tokenProperty),
+    number: stylex(styles.tokenProperty),
+    constant: stylex(styles.tokenProperty),
+    symbol: stylex(styles.tokenProperty),
+    deleted: stylex(styles.tokenProperty),
+    selector: stylex(styles.tokenSelector),
+    string: stylex(styles.tokenSelector),
+    char: stylex(styles.tokenSelector),
+    builtin: stylex(styles.tokenSelector),
+    inserted: stylex(styles.tokenSelector),
+    operator: stylex(styles.tokenOperator),
+    entity: stylex(styles.tokenOperator),
+    url: stylex(styles.tokenOperator),
+    attr: stylex(styles.tokenAttr),
+    atrule: stylex(styles.tokenAttr),
+    keyword: stylex(styles.tokenAttr),
+    function: stylex(styles.tokenFunction),
+    class: stylex(styles.tokenFunction),
+    'class-name': stylex(styles.tokenFunction),
+    regex: stylex(styles.tokenVariable),
+    important: stylex(styles.tokenVariable),
+    variable: stylex(styles.tokenVariable),
+  },
   link: stylex(styles.link),
   characterLimit: stylex(styles.characterLimit),
   table: stylex(styles.table),

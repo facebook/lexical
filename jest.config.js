@@ -47,6 +47,16 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.js',
         '^lexical-react/withSubscriptions$':
           '<rootDir>/packages/lexical-react/src/withSubscriptions.js',
+        '^lexical-react/LexicalCollaborationPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.js',
+        '^lexical-react/LexicalPlainTextPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.js',
+        '^lexical-react/LexicalComposerContext$':
+          '<rootDir>/packages/lexical-react/src/LexicalComposerContext.js',
+        '^lexical-react/useLexicalEditor$':
+          '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
+          '^lexical-react/useLexicalDecorators$':
+          '<rootDir>/packages/lexical-react/src/useLexicalDecorators.js',
         '^lexical/selection$':
           '<rootDir>/packages/lexical/src/helpers/LexicalSelectionHelpers.js',
         '^lexical/text$':

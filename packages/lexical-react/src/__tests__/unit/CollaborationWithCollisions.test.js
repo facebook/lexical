@@ -82,7 +82,7 @@ function testClientsForEquality(clients: Array<Client>) {
   }
 }
 
-describe('useLexicalRichTextWithCollabLists', () => {
+describe('CollaborationWithCollisions', () => {
   let container = null;
 
   beforeEach(() => {

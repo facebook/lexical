@@ -11,10 +11,9 @@ import type {EditorState, LexicalEditor, EditorStateRef} from 'lexical';
 
 import * as React from 'react';
 
-import RichTextPlugin from '../plugins/RichTextPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import EmojisPlugin from '../plugins/EmojisPlugin';
-import HashtagsPlugin from 'lexical-react/LexicalHashtagsPlugin';
+import HashtagsPlugin from 'lexical-react/LexicalHashtagPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
 import LexicalComposer from 'lexical-react/LexicalComposer';
@@ -24,16 +23,14 @@ import ImagesPlugin from '../plugins/ImagesPlugin';
 import LinksPlugin from '../plugins/LinksPlugin';
 
 type Props = {
-  children?: React$Node,
-  controlled: boolean,
+  children: React$Node,
   onChange?: (editorState: EditorState, editor: LexicalEditor) => void,
   placeholder?: string,
   initialEditorStateRef?: EditorStateRef,
 };
 
-export default function InlineRichEditor({
+export default function ControlledEditor({
   children,
-  controlled,
   onChange,
   placeholder,
   initialEditorStateRef,
@@ -50,7 +47,7 @@ export default function InlineRichEditor({
         <EmojisPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
-        {controlled ? children : <RichTextPlugin placeholder={placeholder} />}
+        {children}
       </LexicalComposer>
     </div>
   );

@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import * as React from 'react';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {useCollaborationContext} from '../context/CollaborationContext';
+import {useCollaborationContext} from 'lexical-react/LexicalCollaborationPlugin';
 import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
 import {$log, $getRoot, createEditorStateRef} from 'lexical';

@@ -63,7 +63,11 @@ module.exports = {
       ...[
         'LexicalAutoFormatterPlugin',
         'LexicalCharacterLimitPlugin',
-        'LexicalHashtagsPlugin',
+        'LexicalHashtagPlugin',
+        'LexicalPlainTextPlugin',
+        'LexicalRichTextPlugin',
+        'LexicalCollaborationPlugin',
+        'LexicalHistoryPlugin',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

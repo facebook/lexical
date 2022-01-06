@@ -26,6 +26,7 @@ import TableCellActionMenuPlugin from './plugins/TableCellActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import LinksPlugin from './plugins/LinksPlugin';
 import StickyPlugin from './plugins/StickyPlugin';
+import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 
 type Props = {
   isCollab: boolean,
@@ -64,6 +65,7 @@ export default function Editor({
           <>
             {isCollab ? <RichTextCollabPlugin id="main" /> : <RichTextPlugin />}
             <AutoFormatterPlugin />
+            <CodeHighlightPlugin />
           </>
         ) : (
           <PlainTextPlugin />

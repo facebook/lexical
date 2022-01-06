@@ -11,8 +11,6 @@ import type {LexicalEditor} from 'lexical';
 import type {Provider} from 'lexical-yjs';
 import type {Doc} from 'yjs';
 
-import {useCallback} from 'react';
-
 import {useRichTextSetup} from './shared/useRichTextSetup';
 import {
   useYjsCollaboration,
@@ -28,28 +26,19 @@ export default function useLexicalRichTextWithCollab(
   name: string,
   color: string,
   skipInit?: boolean,
-): [React$Node, () => void, boolean, () => void, () => void] {
-  const clearEditor = useRichTextSetup(editor, false);
-  const [cursors, binding, connected, connect, disconnect] =
-    useYjsCollaboration(editor, id, provider, yjsDocMap, name, color, skipInit);
-  const clearHistory = useYjsHistory(editor, binding);
+): React$Node {
+  useRichTextSetup(editor, false);
+  const [cursors, binding] = useYjsCollaboration(
+    editor,
+    id,
+    provider,
+    yjsDocMap,
+    name,
+    color,
+    skipInit,
+  );
+  useYjsHistory(editor, binding);
   useYjsFocusTracking(editor, provider);
 
-  return [
-    cursors,
-    useCallback(
-      (callbackFn?: () => void) => {
-        clearEditor(editor, () => {
-          clearHistory();
-          if (callbackFn) {
-            callbackFn();
-          }
-        });
-      },
-      [clearEditor, clearHistory, editor],
-    ),
-    connected,
-    connect,
-    disconnect,
-  ];
+  return cursors;
 }

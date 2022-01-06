@@ -7,8 +7,10 @@
  * @flow strict
  */
 
+import type {CommandListenerEditorPriority} from 'lexical';
+
 import * as React from 'react';
-import {useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 
 import {useCollaborationContext} from '../context/CollaborationContext';
@@ -17,7 +19,6 @@ import useLexicalPlainTextWithCollab from 'lexical-react/useLexicalPlainTextWith
 import useLexicalDecorators from 'lexical-react/useLexicalDecorators';
 import ContentEditable from '../ui/ContentEditable';
 import Placeholder from '../ui/Placeholder';
-import useEditorListeners from '../hooks/useEditorListeners';
 
 // $FlowFixMe: need Flow typings for y-websocket
 import {WebsocketProvider} from 'y-websocket';
@@ -30,6 +31,8 @@ const params = new URLSearchParams(url.search);
 const WEBSOCKET_ENDPOINT = 'ws://localhost:1234';
 const WEBSOCKET_SLUG = 'playground';
 const WEBSOCKET_ID = params.get('collabId') || '0';
+
+const EditorPriority: CommandListenerEditorPriority = 0;
 
 function onError(e: Error): void {
   throw e;
@@ -51,6 +54,8 @@ export default function PlainTextCollabPlugin({
   const [editor] = useLexicalComposerContext();
   const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
   const hasInitRef = useRef(false);
+  const [connected, setConnected] = useState(false);
+  const [isReadOnly, setIsReadyOnly] = useState(false);
   const provider = useMemo(() => {
     let doc = yjsDocMap.get(id);
     if (doc === undefined) {
@@ -70,18 +75,33 @@ export default function PlainTextCollabPlugin({
     return provider;
   }, [id, yjsDocMap]);
 
-  const [cursors, clear, connected, connect, disconnect] =
-    useLexicalPlainTextWithCollab(
-      editor,
-      id,
-      provider,
-      yjsDocMap,
-      name,
-      color,
-      isRightFrame,
-    );
+  const cursors = useLexicalPlainTextWithCollab(
+    editor,
+    id,
+    provider,
+    yjsDocMap,
+    name,
+    color,
+    isRightFrame,
+  );
   const decorators = useLexicalDecorators(editor);
-  const isReadOnly = useEditorListeners(clear, connected, connect, disconnect);
+
+  useEffect(() => {
+    return editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
+          setIsReadyOnly(readOnly);
+        } else if (type === 'connected') {
+          const isConnected = payload;
+          setConnected(isConnected);
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+  }, [editor]);
 
   if (connected && !hasInitRef.current) {
     hasInitRef.current = true;

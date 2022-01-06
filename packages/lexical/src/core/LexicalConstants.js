@@ -10,6 +10,8 @@
 import type {TextFormatType, TextModeType} from './LexicalTextNode';
 import type {ElementFormatType} from './LexicalElementNode';
 
+export const VERSION = '0.1.1';
+
 // Reconciling
 export const NO_DIRTY_NODES = 0;
 export const HAS_DIRTY_NODES = 1;

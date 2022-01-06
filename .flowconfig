@@ -34,6 +34,7 @@ module.name_mapper='^lexical/text' -> '<PROJECT_ROOT>/packages/lexical/src/helpe
 module.name_mapper='^lexical/nodes' -> '<PROJECT_ROOT>/packages/lexical/src/helpers/LexicalNodeHelpers.js'
 module.name_mapper='^lexical/elements' -> '<PROJECT_ROOT>/packages/lexical/src/helpers/LexicalElementHelpers.js'
 module.name_mapper='^lexical/events' -> '<PROJECT_ROOT>/packages/lexical/src/helpers/LexicalEventHelpers.js'
+module.name_mapper='^lexical/file' -> '<PROJECT_ROOT>/packages/lexical/src/helpers/LexicalFileHelpers.js'
 module.name_mapper='^lexical/offsets' -> '<PROJECT_ROOT>/packages/lexical/src/helpers/LexicalOffsetHelpers.js'
 module.name_mapper='^lexical/root' -> '<PROJECT_ROOT>/packages/lexical/src/helpers/LexicalRootHelpers.js'
 

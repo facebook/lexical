@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {EditorState, LexicalEditor, EditorStateRef} from 'lexical';
+import type {EditorState, LexicalEditor, EditorStateRef} from '@lexical/core';
 
 import * as React from 'react';
 
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import EmojisPlugin from '../plugins/EmojisPlugin';
-import HashtagsPlugin from 'lexical-react/LexicalHashtagPlugin';
+import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
-import LexicalComposer from 'lexical-react/LexicalComposer';
+import LexicalComposer from '@lexical/react/LexicalComposer';
 import TablesPlugin from '../plugins/TablesPlugin';
 import TableCellActionMenuPlugin from '../plugins/TableCellActionMenuPlugin';
 import ImagesPlugin from '../plugins/ImagesPlugin';

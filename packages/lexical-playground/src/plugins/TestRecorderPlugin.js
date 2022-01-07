@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor} from '@lexical/core';
 
 import * as React from 'react';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
-import {$createTextNode, $log, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createTextNode, $log, $getRoot} from '@lexical/core';
+import {$createParagraphNode} from '@lexical/core/ParagraphNode';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
 

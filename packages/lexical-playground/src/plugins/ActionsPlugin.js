@@ -7,17 +7,17 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
+import type {CommandListenerEditorPriority} from '@lexical/core';
 
 import * as React from 'react';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {useCollaborationContext} from 'lexical-react/LexicalCollaborationPlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
-import {$log, $getRoot, createEditorStateRef} from 'lexical';
+import {$log, $getRoot, createEditorStateRef} from '@lexical/core';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
-import useLexicalList from 'lexical-react/useLexicalList';
-import {importFile, exportFile} from 'lexical/file';
+import useLexicalList from '@lexical/react/useLexicalList';
+import {importFile, exportFile} from '@lexical/helpers/file';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

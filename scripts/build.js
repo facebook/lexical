@@ -38,23 +38,24 @@ const closureOptions = {
 };
 
 if (isClean) {
-  fs.removeSync(path.resolve('./packages/lexical/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-core/dist'));
   fs.removeSync(path.resolve('./packages/lexical-react/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-helpers/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
-  lexical: 'Lexical',
+  '@lexical/core': 'Lexical',
   'react-dom': 'ReactDOMComet',
-  'lexical-yjs': 'LexicalYjs',
+  '@lexical/yjs': 'LexicalYjs',
 };
 
-const lexicalExtensions = fs
-  .readdirSync(path.resolve('./packages/lexical/src/extensions'))
+const lexicalNodes = fs
+  .readdirSync(path.resolve('./packages/lexical-core/src/nodes/extended'))
   .map((str) => path.basename(str, '.js'))
   .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
-const lexicalExtensionsExternals = lexicalExtensions.map((node) => {
-  const external = `lexical/${node.replace('Lexical', '')}`;
+const lexicalNodesExternals = lexicalNodes.map((node) => {
+  const external = `@lexical/core/${node.replace('Lexical', '')}`;
   wwwMappings[external] = node;
   return external;
 });
@@ -64,7 +65,7 @@ const lexicalShared = fs
   .map((str) => path.basename(str, '.js'));
 
 const lexicalHelpers = fs
-  .readdirSync(path.resolve('./packages/lexical/src/helpers'))
+  .readdirSync(path.resolve('./packages/lexical-helpers/src'))
   .map((str) => path.basename(str, '.js'))
   .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
 
@@ -79,7 +80,7 @@ const lexicalReactModules = fs
       !str.includes('composer'),
   );
 const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
-  const external = `lexical-react/${module}`;
+  const external = `@lexical/react/${module}`;
   wwwMappings[external] = module;
   return external;
 });
@@ -88,16 +89,13 @@ const externals = [
   // Note: do not add stylex here, as we can't export and sync
   // modules that use Stylex to www (the babel plugin on www
   // is different to that of the OSS version).
-  'lexical',
-  'Lexical',
-  'lexical-yjs',
-  'lexical-react',
+  '@lexical/core',
+  '@lexical/yjs',
   'react-dom',
-  'ReactDOMComet',
   'react',
   'yjs',
   'y-websocket',
-  ...lexicalExtensionsExternals,
+  ...lexicalNodesExternals,
   ...lexicalReactModuleExternals,
   ...Object.values(wwwMappings),
 ];
@@ -107,6 +105,13 @@ const errorCodeOpts = {
 };
 
 const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
+
+const strictWWWMappings = {};
+
+// Add quotes around mappings to make them more strict.
+Object.keys(wwwMappings).forEach(mapping => {
+  strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
+})
 
 async function build(name, inputFile, outputFile) {
   const inputOptions = {
@@ -138,51 +143,51 @@ async function build(name, inputFile, outputFile) {
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
           // We inline both these helpers to improve the bundle size of the lexical-react modules
           {
-            find: isWWW ? 'Lexical/selection' : 'lexical/selection',
+            find: '@lexical/helpers/selection',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalSelectionHelpers',
+              'packages/lexical-helpers/src/LexicalSelectionHelpers',
             ),
           },
           {
-            find: isWWW ? 'Lexical/nodes' : 'lexical/nodes',
+            find: '@lexical/helpers/nodes',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalNodeHelpers',
+              'packages/lexical-helpers/src/LexicalNodeHelpers',
             ),
           },
           {
-            find: isWWW ? 'Lexical/elements' : 'lexical/elements',
+            find: '@lexical/helpers/elements',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalElementHelpers',
+              'packages/lexical-helpers/src/LexicalElementHelpers',
             ),
           },
           {
-            find: isWWW ? 'Lexical/text' : 'lexical/text',
+            find: '@lexical/helpers/text',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalTextHelpers',
+              'packages/lexical-helpers/src/LexicalTextHelpers',
             ),
           },
           {
-            find: isWWW ? 'Lexical/events' : 'lexical/events',
+            find: '@lexical/helpers/events',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalEventHelpers',
+              'packages/lexical-helpers/src/LexicalEventHelpers',
             ),
           },
           {
-            find: isWWW ? 'Lexical/file' : 'lexical/file',
+            find: '@lexical/helpers/file',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalFileHelpers',
+              'packages/lexical-helpers/src/LexicalFileHelpers',
             ),
           },
           {
-            find: isWWW ? 'Lexical/offsets' : 'lexical/offsets',
+            find: '@lexical/helpers/offsets',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalOffsetHelpers',
+              'packages/lexical-helpers/src/LexicalOffsetHelpers',
             ),
           },
           {
-            find: isWWW ? 'Lexical/root' : 'lexical/root',
+            find: '@lexical/helpers/root',
             replacement: path.resolve(
-              'packages/lexical/src/helpers/LexicalRootHelpers',
+              'packages/lexical-helpers/src/LexicalRootHelpers',
             ),
           },
         ],
@@ -222,10 +227,11 @@ async function build(name, inputFile, outputFile) {
       replace(
         Object.assign(
           {
+            delimiters: ['', ''],
             preventAssignment: true,
             __DEV__: isProduction ? 'false' : 'true',
           },
-          isWWW && wwwMappings,
+          isWWW && strictWWWMappings
         ),
       ),
       isProduction && closure(closureOptions),
@@ -289,19 +295,25 @@ function getFileName(fileName) {
   return `${fileName}.js`;
 }
 
-lexicalExtensions.forEach((module) => {
+build(
+  'Lexical Core',
+  path.resolve('./packages/lexical-core/src/index.js'),
+  path.resolve(`./packages/lexical-core/dist/${getFileName('Lexical')}`),
+);
+
+lexicalNodes.forEach((module) => {
   build(
-    `Lexical Extensions - ${module}`,
-    path.resolve(`./packages/lexical/src/extensions/${module}.js`),
-    path.resolve(`./packages/lexical/dist/${getFileName(module)}`),
+    `Lexical Core Nodes - ${module}`,
+    path.resolve(`./packages/lexical-core/src/nodes/extended/${module}.js`),
+    path.resolve(`./packages/lexical-core/dist/${getFileName(module)}`),
   );
 });
 
 lexicalHelpers.forEach((module) => {
   build(
     `Lexical Helpers - ${module}`,
-    path.resolve(`./packages/lexical/src/helpers/${module}.js`),
-    path.resolve(`./packages/lexical/dist/${getFileName(module)}`),
+    path.resolve(`./packages/lexical-helpers/src/${module}.js`),
+    path.resolve(`./packages/lexical-helpers/dist/${getFileName(module)}`),
   );
 });
 
@@ -313,22 +325,14 @@ lexicalShared.forEach((module) => {
   );
 });
 
-build(
-  'Lexical Core',
-  path.resolve('./packages/lexical/src/core/index.js'),
-  path.resolve(`./packages/lexical/dist/${getFileName('Lexical')}`),
-);
-
 lexicalReactModules.forEach((lexicalReactModule) => {
   // We don't want to sync these modules, as they're bundled in the other
   // modules already.
   if (
-    lexicalReactModule === 'LexicalEnv' ||
     lexicalReactModule === 'useLexicalDragonSupport' ||
     lexicalReactModule === 'usePlainTextSetup' ||
     lexicalReactModule === 'useRichTextSetup' ||
-    lexicalReactModule === 'useYjsCollaboration' ||
-    lexicalReactModule === 'LexicalReactUtils'
+    lexicalReactModule === 'useYjsCollaboration'
   ) {
     return;
   }

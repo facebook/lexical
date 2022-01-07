@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import useLexicalAutoFormatter from 'lexical-react/useLexicalAutoFormatter';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import useLexicalAutoFormatter from '@lexical/react/useLexicalAutoFormatter';
 
 export default function AutoFormatterPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();

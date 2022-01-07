@@ -9,17 +9,17 @@
 
 import * as React from 'react';
 
-import PlainTextPlugin from 'lexical-react/LexicalPlainTextPlugin';
-import RichTextPlugin from 'lexical-react/LexicalRichTextPlugin';
-import {CollaborationPlugin} from 'lexical-react/LexicalCollaborationPlugin';
+import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
-import CharacterLimitPlugin from 'lexical-react/LexicalCharacterLimitPlugin';
+import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
-import HashtagsPlugin from 'lexical-react/LexicalHashtagPlugin';
+import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ActionsPlugin from './plugins/ActionsPlugin';
-import AutoFormatterPlugin from 'lexical-react/LexicalAutoFormatterPlugin';
+import AutoFormatterPlugin from '@lexical/react/LexicalAutoFormatterPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TablesPlugin from './plugins/TablesPlugin';
@@ -31,7 +31,7 @@ import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
 import {createWebsocketProvider} from './collaboration';
-import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
+import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
 

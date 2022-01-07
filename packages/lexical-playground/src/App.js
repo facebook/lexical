@@ -18,7 +18,7 @@ import Editor from './Editor';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
-import LexicalComposer from 'lexical-react/LexicalComposer';
+import LexicalComposer from '@lexical/react/LexicalComposer';
 
 function setURLParam(param: SettingName, value: null | boolean) {
   const url = new URL(window.location.href);

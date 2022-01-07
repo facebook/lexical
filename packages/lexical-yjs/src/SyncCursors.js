@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, Point, Selection, NodeMap} from 'lexical';
+import type {NodeKey, Point, Selection, NodeMap} from '@lexical/core';
 import type {Binding} from './Bindings';
 import type {Provider} from '.';
 import type {
@@ -27,7 +27,7 @@ import {
   $isElementNode,
   $getNodeByKey,
   $getSelection,
-} from 'lexical';
+} from '@lexical/core';
 import {CollabTextNode} from './CollabTextNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabDecoratorNode} from './CollabDecoratorNode';

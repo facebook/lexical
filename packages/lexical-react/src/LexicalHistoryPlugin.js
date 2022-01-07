@@ -9,8 +9,8 @@
 
 import type {HistoryState} from './useLexicalHistory';
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {useLexicalHistory} from 'lexical-react/useLexicalHistory';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalHistory} from '@lexical/react/useLexicalHistory';
 
 export default function HistoryPlugin({
   externalHistoryState,

@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalEditor, NodeKey, EditorConfig} from 'lexical';
+import type {LexicalEditor, NodeKey, EditorConfig} from '@lexical/core';
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 import {
   $isTextNode,
@@ -19,9 +19,9 @@ import {
   $getNodeByKey,
   $getSelection,
   $getRoot,
-} from 'lexical';
+} from '@lexical/core';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
-import {$textContentCurry} from 'lexical/root';
+import {$textContentCurry} from '@lexical/helpers/root';
 
 function useTypeahead(editor: LexicalEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);

@@ -7,11 +7,11 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor} from '@lexical/core';
 
 import useLayoutEffect from 'shared/useLayoutEffect';
 import {useState} from 'react';
-import {$canShowPlaceholderCurry} from 'lexical/root';
+import {$canShowPlaceholderCurry} from '@lexical/helpers/root';
 
 export default function useLexicalCanShowPlaceholder(
   editor: LexicalEditor,

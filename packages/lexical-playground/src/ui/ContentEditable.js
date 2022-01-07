@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
+import type {CommandListenerEditorPriority} from '@lexical/core';
 
 import * as React from 'react';
 import {useEffect, useState} from 'react';
-import LexicalComposerContentEditable from 'lexical-react/LexicalComposerContentEditable';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import LexicalComposerContentEditable from '@lexical/react/LexicalComposerContentEditable';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import stylex from 'stylex';
 
 const EditorPriority: CommandListenerEditorPriority = 0;

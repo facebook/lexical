@@ -13,30 +13,30 @@ import type {
   ElementNode,
   TextNode,
   Selection,
-} from 'lexical';
+} from '@lexical/core';
 
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {$isHeadingNode} from 'lexical/HeadingNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
-import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$isListNode, ListNode} from 'lexical/ListNode';
-import {$createQuoteNode} from 'lexical/QuoteNode';
-import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
-import {$log, $getNodeByKey, $getSelection, $setSelection} from 'lexical';
-import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$isHeadingNode} from '@lexical/core/HeadingNode';
+import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+import {$createHeadingNode} from '@lexical/core/HeadingNode';
+import {$isListNode, ListNode} from '@lexical/core/ListNode';
+import {$createQuoteNode} from '@lexical/core/QuoteNode';
+import {$createCodeNode, $isCodeNode} from '@lexical/core/CodeNode';
+import {$log, $getNodeByKey, $getSelection, $setSelection} from '@lexical/core';
+import {$createLinkNode, $isLinkNode} from '@lexical/core/LinkNode';
 import {
   $wrapLeafNodesInElements,
   $patchStyleText,
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
-} from 'lexical/selection';
-import withSubscriptions from 'lexical-react/withSubscriptions';
+} from '@lexical/helpers/selection';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
 
-import {$getNearestNodeOfType} from 'lexical/nodes';
+import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 

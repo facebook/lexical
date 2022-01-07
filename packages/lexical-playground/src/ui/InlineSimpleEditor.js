@@ -12,12 +12,12 @@ import type {
   LexicalEditor,
   EditorStateRef,
   EditorThemeClasses,
-} from 'lexical';
+} from '@lexical/core';
 
 import * as React from 'react';
 
 import OnChangePlugin from '../plugins/OnChangePlugin';
-import LexicalComposer from 'lexical-react/LexicalComposer';
+import LexicalComposer from '@lexical/react/LexicalComposer';
 
 type Props = {
   children?: React$Node,

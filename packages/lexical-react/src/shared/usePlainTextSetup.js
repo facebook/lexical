@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {InputEvents} from 'lexical-react/useLexicalEditorEvents';
+import type {InputEvents} from '@lexical/react/useLexicalEditorEvents';
 import type {
   LexicalEditor,
   RootNode,
   CommandListenerEditorPriority,
-} from 'lexical';
+} from '@lexical/core';
 
-import {$log, $getRoot, $getSelection} from 'lexical';
+import {$log, $getRoot, $getSelection} from '@lexical/core';
 import useLexicalEditorEvents from '../useLexicalEditorEvents';
-import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
+import {$createParagraphNode, ParagraphNode} from '@lexical/core/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
@@ -34,10 +34,10 @@ import {
   onInput,
   onClick,
   $shouldOverrideDefaultCharacterSelection,
-} from 'lexical/events';
-import {$moveCharacter} from 'lexical/selection';
+} from '@lexical/helpers/events';
+import {$moveCharacter} from '@lexical/helpers/selection';
 import useLayoutEffect from 'shared/useLayoutEffect';
-import withSubscriptions from 'lexical-react/withSubscriptions';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

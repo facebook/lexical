@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, LexicalNode, TextNode, Selection} from 'lexical';
+import type {NodeKey, LexicalNode, TextNode, Selection} from '@lexical/core';
 import type {YjsNode, Binding} from '.';
 
 import {
@@ -16,7 +16,7 @@ import {
   $isTextNode,
   $isLineBreakNode,
   $isDecoratorNode,
-} from 'lexical';
+} from '@lexical/core';
 import {CollabElementNode, $createCollabElementNode} from './CollabElementNode';
 import {CollabTextNode, $createCollabTextNode} from './CollabTextNode';
 import {

@@ -7,11 +7,11 @@
  * @flow
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor} from '@lexical/core';
 
 import useLayoutEffect from 'shared/useLayoutEffect';
 import {useState} from 'react';
-import {$isTextContentEmptyCurry} from 'lexical/root';
+import {$isTextContentEmptyCurry} from '@lexical/helpers/root';
 
 export default function useLexicalIsTextContentEmpty(
   editor: LexicalEditor,

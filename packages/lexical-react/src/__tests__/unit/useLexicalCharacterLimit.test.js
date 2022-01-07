@@ -7,18 +7,22 @@
  * @flow strict
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {LexicalEditor, NodeKey} from '@lexical/core';
 
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {$createTextNode, $getSelection, $getNodeByKey, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {initializeUnitTest} from '../../../../lexical-core/src/__tests__/utils';
+import {
+  $createTextNode,
+  $getSelection,
+  $getNodeByKey,
+  $getRoot,
+} from '@lexical/core';
+import {$createParagraphNode} from '@lexical/core/ParagraphNode';
 import {
   $createOverflowNode,
   mergePrevious,
   isOverflowNode,
   OverflowNode,
 } from '../../useLexicalCharacterLimit';
-import type {ParagraphNode} from 'lexical/src/extensions/LexicalParagraphNode';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {

@@ -7,9 +7,19 @@
  * @flow strict
  */
 
-import type {ElementNode, EditorState, LexicalEditor, Selection} from 'lexical';
+import type {
+  ElementNode,
+  EditorState,
+  LexicalEditor,
+  Selection,
+} from '@lexical/core';
 
-import {$isElementNode, $isTextNode, $getRoot, $getSelection} from 'lexical';
+import {
+  $isElementNode,
+  $isTextNode,
+  $getRoot,
+  $getSelection,
+} from '@lexical/core';
 
 import * as React from 'react';
 import {useState, useEffect, useRef} from 'react';

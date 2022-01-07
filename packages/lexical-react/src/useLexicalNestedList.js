@@ -11,13 +11,13 @@ import type {
   LexicalEditor,
   LexicalNode,
   CommandListenerLowPriority,
-} from 'lexical';
-import type {ListItemNode} from 'lexical/ListItemNode';
+} from '@lexical/core';
+import type {ListItemNode} from '@lexical/core/ListItemNode';
 
 import {useEffect} from 'react';
-import {$getSelection} from 'lexical';
-import {$createListItemNode, $isListItemNode} from 'lexical/ListItemNode';
-import {$createListNode, $isListNode} from 'lexical/ListNode';
+import {$getSelection} from '@lexical/core';
+import {$createListItemNode, $isListItemNode} from '@lexical/core/ListItemNode';
+import {$createListNode, $isListNode} from '@lexical/core/ListNode';
 
 const LowPriority: CommandListenerLowPriority = 1;
 

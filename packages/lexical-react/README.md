@@ -1,3 +1,3 @@
-# `lexical-react`
+# `@lexical/react`
 
-This package provides a set of helpers and utilities for Lexical that allow for text editing in React applications.
+This package provides a set of components and hooks for Lexical that allow for text editing in React applications.

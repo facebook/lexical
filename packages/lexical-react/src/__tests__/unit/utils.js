@@ -15,8 +15,8 @@ import {
   useCollaborationContext,
 } from '../../LexicalCollaborationPlugin';
 import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import LexicalComposerContentEditable from 'lexical-react/LexicalComposerContentEditable';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalComposerContentEditable from '@lexical/react/LexicalComposerContentEditable';
 import LexicalComposer from '../../LexicalComposer';
 import * as Y from 'yjs';
 

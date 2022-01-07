@@ -9,7 +9,7 @@
 
 import * as React from 'react';
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import usePlainTextSetup from './shared/usePlainTextSetup';
 import useLexicalDecorators from './useLexicalDecorators';
 import useLexicalCanShowPlaceholder from './useLexicalCanShowPlaceholder';

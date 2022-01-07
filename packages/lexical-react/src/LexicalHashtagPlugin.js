@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor} from '@lexical/core';
 
-import {TextNode} from 'lexical';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {TextNode} from '@lexical/core';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {HashtagNode, $toggleHashtag} from 'lexical/HashtagNode';
+import {HashtagNode, $toggleHashtag} from '@lexical/core/HashtagNode';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
   alpha: string,

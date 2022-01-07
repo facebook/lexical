@@ -48,10 +48,10 @@ of how you might listen to text input and update Lexical. You can see that we're
 helper selection functions provided by the Lexical pacakge:
 
 ```js
-import type {State, LexicalEditor, Selection} from 'lexical';
+import type {State, LexicalEditor, Selection} from '@lexical/core';
 
 import {insertText} from 'lexical/SelectionHlpers'
-import {$getSelection} from 'lexical';
+import {$getSelection} from '@lexical/core';
 
 function listenToTextInsertion(editor: LexicalEditor) {
 

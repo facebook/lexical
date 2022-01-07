@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {HistoryState} from 'lexical-react/useLexicalHistory';
+import type {HistoryState} from '@lexical/react/useLexicalHistory';
 
-import {createEmptyHistoryState} from 'lexical-react/useLexicalHistory';
+import {createEmptyHistoryState} from '@lexical/react/useLexicalHistory';
 import * as React from 'react';
 import {createContext, useContext, useMemo} from 'react';
 

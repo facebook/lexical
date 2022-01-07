@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {EditorThemeClasses} from 'lexical';
+import type {EditorThemeClasses} from '@lexical/core';
 
 import stylex from 'stylex';
 

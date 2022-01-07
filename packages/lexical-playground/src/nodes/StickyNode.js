@@ -13,25 +13,25 @@ import type {
   LexicalEditor,
   EditorStateRef,
   NodeKey,
-} from 'lexical';
+} from '@lexical/core';
 
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {DecoratorNode, $getNodeByKey, $setSelection} from 'lexical';
+import {DecoratorNode, $getNodeByKey, $setSelection} from '@lexical/core';
 import InlineSimpleEditor from '../ui/InlineSimpleEditor';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   useCollaborationContext,
   CollaborationPlugin,
-} from 'lexical-react/LexicalCollaborationPlugin';
-import PlainTextPlugin from 'lexical-react/LexicalPlainTextPlugin';
+} from '@lexical/react/LexicalCollaborationPlugin';
+import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
-import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
+import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import stylex from 'stylex';

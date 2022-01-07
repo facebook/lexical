@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {ElementNode, CommandListenerEditorPriority} from 'lexical';
+import type {ElementNode, CommandListenerEditorPriority} from '@lexical/core';
 
 import {useEffect} from 'react';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {$log, $getSelection} from 'lexical';
-import {TableNode} from 'lexical/TableNode';
-import {TableCellNode} from 'lexical/TableCellNode';
-import {TableRowNode} from 'lexical/TableRowNode';
-import {$createTableNodeWithDimensions} from 'lexical/nodes';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$log, $getSelection} from '@lexical/core';
+import {TableNode} from '@lexical/core/TableNode';
+import {TableCellNode} from '@lexical/core/TableCellNode';
+import {TableRowNode} from '@lexical/core/TableRowNode';
+import {$createTableNodeWithDimensions} from '@lexical/helpers/nodes';
+import {$createParagraphNode} from '@lexical/core/ParagraphNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

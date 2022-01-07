@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalEditor, EditorState} from 'lexical';
+import type {LexicalEditor, EditorState} from '@lexical/core';
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function OnChangePlugin({

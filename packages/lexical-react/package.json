@@ -1,10 +1,10 @@
 {
-  "name": "lexical-react",
+  "name": "@lexical/react",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "The library provides Lexical helpers and utilities for React applications.",
+  "description": "This package provides Lexical components and hooks for React applications.",
   "keywords": [
     "react",
     "lexical",
@@ -12,10 +12,11 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "dependencies": {
-    "lexical": "0.1.1",
-    "lexical-yjs": "0.1.1"
+    "@lexical/core": "0.1.0",
+    "@lexical/helpers": "0.1.0",
+    "@lexical/yjs": "0.1.0"
   },
   "peerDependencies": {
     "react": ">=17.x",

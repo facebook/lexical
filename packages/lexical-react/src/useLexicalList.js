@@ -12,7 +12,7 @@ import type {
   LexicalNode,
   CommandListenerLowPriority,
   ElementNode,
-} from 'lexical';
+} from '@lexical/core';
 
 import {useEffect} from 'react';
 import {
@@ -21,20 +21,20 @@ import {
   $isLeafNode,
   $isRootNode,
   $isElementNode,
-} from 'lexical';
+} from '@lexical/core';
 import {
   $createListItemNode,
   $isListItemNode,
   ListItemNode,
-} from 'lexical/ListItemNode';
-import {$createListNode, $isListNode} from 'lexical/ListNode';
-import type {ListNode} from 'lexical/ListNode';
+} from '@lexical/core/ListItemNode';
+import {$createListNode, $isListNode} from '@lexical/core/ListNode';
+import type {ListNode} from '@lexical/core/ListNode';
 import {
   $getAllListItems,
   $getNearestNodeOfType,
   $getTopListNode,
-} from 'lexical/nodes';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+} from '@lexical/helpers/nodes';
+import {$createParagraphNode} from '@lexical/core/ParagraphNode';
 
 const LowPriority: CommandListenerLowPriority = 1;
 

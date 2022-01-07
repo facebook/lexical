@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
-import type {Provider, Binding} from 'lexical-yjs';
+import type {LexicalEditor, CommandListenerEditorPriority} from '@lexical/core';
+import type {Provider, Binding} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
 import * as React from 'react';
@@ -24,7 +24,7 @@ import {
   syncCursorPositions,
   initLocalState,
   setLocalStateFocus,
-} from 'lexical-yjs';
+} from '@lexical/yjs';
 import {initEditor} from './useRichTextSetup';
 
 const EditorPriority: CommandListenerEditorPriority = 0;

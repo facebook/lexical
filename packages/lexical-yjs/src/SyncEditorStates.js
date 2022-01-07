@@ -11,7 +11,7 @@ import type {
   NodeKey,
   EditorState,
   IntentionallyMarkedAsDirtyElement,
-} from 'lexical';
+} from '@lexical/core';
 import type {Binding, Provider, YjsEvent} from '.';
 
 // $FlowFixMe: need Flow typings for yjs
@@ -22,7 +22,7 @@ import {
   $getRoot,
   $setSelection,
   $getNodeByKey,
-} from 'lexical';
+} from '@lexical/core';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
@@ -35,8 +35,8 @@ import {
   syncCursorPositions,
 } from './SyncCursors';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
-import {$createOffsetView} from 'lexical/offsets';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createOffsetView} from '@lexical/helpers/offsets';
+import {$createParagraphNode} from '@lexical/core/ParagraphNode';
 
 function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
   const {target} = event;

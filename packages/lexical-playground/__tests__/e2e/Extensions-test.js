@@ -69,7 +69,7 @@ describe('Extensions', () => {
             return dispatchPaste;
           }
 
-          const editor = document.querySelector('div.editor');
+          const editor = document.querySelector('div[contenteditable="true"]');
           const dispatchPaste = paste();
           dispatchPaste(editor, 'foo');
         },
@@ -103,7 +103,7 @@ describe('Extensions', () => {
           return dispatchPaste;
         }
 
-        const editor = document.querySelector('div.editor');
+        const editor = document.querySelector('div[contenteditable="true"]');
         const dispatchPaste = paste();
         dispatchPaste(editor, 'bar');
       });

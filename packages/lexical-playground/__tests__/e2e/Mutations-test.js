@@ -32,7 +32,7 @@ describe('Mutations', () => {
     it(`Can restore the DOM to the editor state state`, async () => {
       const {page} = e2e;
 
-      await focusEditor(page, 'div.editor');
+      await focusEditor(page, 'div[contenteditable="true"]');
       await page.keyboard.type(
         'Hello #world. This content #should remain #intact.',
       );
@@ -41,7 +41,7 @@ describe('Mutations', () => {
 
       // Remove the paragraph
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
 
         paragraph.remove();
@@ -50,7 +50,7 @@ describe('Mutations', () => {
 
       // Remove the paragraph content
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
 
         paragraph.textContent = '';
@@ -59,7 +59,7 @@ describe('Mutations', () => {
 
       // Remove the first text
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const firstTextNode = rootElement.firstChild.firstChild;
 
         firstTextNode.remove();
@@ -68,7 +68,7 @@ describe('Mutations', () => {
 
       // Remove the first text contents
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const firstTextNode = rootElement.firstChild.firstChild;
 
         firstTextNode.textContent = '';
@@ -77,7 +77,7 @@ describe('Mutations', () => {
 
       // Remove the second text
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const secondTextNode = rootElement.firstChild.firstChild.nextSibling;
 
         secondTextNode.remove();
@@ -86,7 +86,7 @@ describe('Mutations', () => {
 
       // Remove the third text
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const thirdTextNode =
           rootElement.firstChild.firstChild.nextSibling.nextSibling;
 
@@ -96,7 +96,7 @@ describe('Mutations', () => {
 
       // Remove the forth text
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const forthTextNode =
           rootElement.firstChild.firstChild.nextSibling.nextSibling.nextSibling;
 
@@ -106,7 +106,7 @@ describe('Mutations', () => {
 
       // Move last to first
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
         const forthTextNode =
@@ -118,7 +118,7 @@ describe('Mutations', () => {
 
       // Reverse sort all the children
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
         const secondTextNode = paragraph.firstChild.nextSibling;
@@ -134,7 +134,7 @@ describe('Mutations', () => {
 
       // Adding additional nodes to root
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const span = document.createElement('span');
         const span2 = document.createElement('span');
         const text = document.createTextNode('123');
@@ -146,7 +146,7 @@ describe('Mutations', () => {
 
       // Adding additional nodes to paragraph
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
         const span = document.createElement('span');
@@ -160,7 +160,7 @@ describe('Mutations', () => {
 
       // Adding additional nodes to text nodes
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
         const span = document.createElement('span');
@@ -172,7 +172,7 @@ describe('Mutations', () => {
 
       // Replace text nodes on text nodes #1
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
         const text = document.createTextNode('123');
@@ -182,7 +182,7 @@ describe('Mutations', () => {
 
       // Replace text nodes on line break #2
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
         const br = document.createElement('br');
@@ -192,7 +192,7 @@ describe('Mutations', () => {
 
       // Update text content, this should work :)
       await await evaluate(page, () => {
-        const rootElement = document.querySelector('div.editor');
+        const rootElement = document.querySelector('div[contenteditable="true"]');
         const paragraph = rootElement.firstChild;
         const firstTextNode = paragraph.firstChild;
         firstTextNode.firstChild.nodeValue = 'Bonjour ';

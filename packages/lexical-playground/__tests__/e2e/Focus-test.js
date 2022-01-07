@@ -19,7 +19,7 @@ describe('Focus', () => {
 
       await page.keyboard.press('Tab');
       const isEditorFocused = await page.evaluate(() => {
-        const editor = document.querySelector('div.editor');
+        const editor = document.querySelector('div[contenteditable="true"]');
         return editor === document.activeElement;
       });
 

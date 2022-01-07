@@ -10,13 +10,13 @@
 import * as React from 'react';
 import {createRoot} from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
-import {useCallback} from 'react';
 import {
   CollaborationPlugin,
   useCollaborationContext,
 } from '../../LexicalCollaborationPlugin';
 import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import LexicalComposerContentEditable from 'lexical-react/LexicalComposerContentEditable';
 import LexicalComposer from '../../LexicalComposer';
 import * as Y from 'yjs';
 
@@ -26,21 +26,14 @@ function Editor({doc, provider, setEditor}) {
 
   yjsDocMap.set('main', doc);
 
-  const contentEditable = useCallback(
-    (rootElementRef) => <div ref={rootElementRef} contentEditable={true} />,
-    [],
-  );
-
-  const placeholder = useCallback(() => null, []);
-
   setEditor(editor);
 
   return (
     <>
       <CollaborationPlugin id="main" providerFactory={() => provider} />
       <LexicalRichTextPlugin
-        contentEditable={contentEditable}
-        placeholder={placeholder}
+        contentEditable={<LexicalComposerContentEditable />}
+        placeholder={null}
       />
     </>
   );
@@ -174,7 +167,7 @@ class Client {
   }
 
   getHTML() {
-    return this._container.innerHTML;
+    return this._container.firstChild.innerHTML;
   }
 
   getDocJSON() {

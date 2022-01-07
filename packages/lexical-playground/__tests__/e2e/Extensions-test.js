@@ -124,7 +124,7 @@ describe('Extensions', () => {
       await focusEditor(page);
 
       await evaluate(page, () => {
-        const editor = document.querySelector('.editor');
+        const editor = document.querySelector('div[contenteditable="true"]');
         const dataTransfer = new DataTransfer();
         dataTransfer.setData('text/plain', 'foo');
         editor.dispatchEvent(

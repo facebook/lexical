@@ -13,7 +13,7 @@ describe('Selection', () => {
     it('does not focus the editor on load', async () => {
       const editorHasFocus = async () =>
         await evaluate(page, () => {
-          const editorElement = document.querySelector('div.editor');
+          const editorElement = document.querySelector('div[contenteditable="true"]');
           return document.activeElement === editorElement;
         });
       const {page} = e2e;

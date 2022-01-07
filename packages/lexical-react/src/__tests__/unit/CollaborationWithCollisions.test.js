@@ -62,7 +62,7 @@ function createSampleParagraphsWithClient(client: Client, count: number) {
 }
 
 function verifySampleParagraphsWithClient(client: Client, count: number) {
-  let expectedText = '<div contenteditable="true" data-lexical-editor="true">';
+  let expectedText = '';
 
   for (let i = 0; i < count; ++i) {
     const text = `Hello world ${i + 1}.`;
@@ -71,7 +71,6 @@ function verifySampleParagraphsWithClient(client: Client, count: number) {
     expectedText += '</span></p>';
   }
 
-  expectedText += '</div>';
   expect(expectedText).toEqual(client.getHTML());
 }
 

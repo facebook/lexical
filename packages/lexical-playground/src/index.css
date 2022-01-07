@@ -60,38 +60,6 @@ header h1 {
   border-top-right-radius: 10px;
 }
 
-.editor-shell div.editor {
-  min-height: 150px;
-  border: 0;
-  resize: none;
-  word-break: break-word;
-  cursor: text;
-  font-size: 15px;
-  caret-color: rgb(5, 5, 5);
-  display: block;
-  position: relative;
-  tab-size: 1;
-}
-
-.editor-shell div.editor > div {
-  margin: 0 0 15px 0;
-  position: relative;
-}
-
-.editor-shell div.editor-placeholder {
-  font-size: 15px;
-  color: #999;
-  overflow: hidden;
-  position: absolute;
-  text-overflow: ellipsis;
-  top: 10px;
-  left: 10px;
-  user-select: none;
-  white-space: nowrap;
-  display: inline-block;
-  pointer-events: none;
-}
-
 .test-recorder-output {
   margin: 20px auto 20px auto;
   width: 900px;
@@ -728,22 +696,22 @@ i.export {
   transform: translateX(20px);
 }
 
-.editor-shell div.editor span.editor-image {
+.editor-shell span.editor-image {
   cursor: default;
   display: inline-block;
   position: relative;
 }
 
-.editor-shell div.editor .editor-image img {
+.editor-shell .editor-image img {
   max-width: 100%;
 }
 
-.editor-shell div.editor .editor-image img.focused {
+.editor-shell .editor-image img.focused {
   outline: 2px solid rgb(60,132,244);
   user-select: none;
 }
 
-.editor-shell div.editor .editor-image .image-caption-container {
+.editor-shell .editor-image .image-caption-container {
   display: block;
   position: absolute;
   bottom: 4px;
@@ -759,17 +727,7 @@ i.export {
   overflow: hidden;
 }
 
-.editor-shell div.editor .editor-image .image-caption-container .editor {
-  font-size: 12px;
-  width: calc(100% - 20px)
-}
-
-.editor-shell div.editor .editor-image .image-caption-container div.editor-placeholder {
-  font-size: 12px;
-  color: #888;
-}
-
-.editor-shell div.editor .editor-image .image-caption-button {
+.editor-shell .editor-image .image-caption-button {
   display: block;
   position: absolute;
   bottom: 20px;
@@ -787,11 +745,11 @@ i.export {
   user-select: none;
 }
 
-.editor-shell div.editor .editor-image .image-caption-button:hover {
+.editor-shell .editor-image .image-caption-button:hover {
   background-color: rgba(60,132,244, 0.5);
 }
 
-.editor-shell div.editor .editor-image .image-resizer-sw {
+.editor-shell .editor-image .image-resizer-sw {
   display: block;
   width: 7px;
   height: 7px;
@@ -803,7 +761,7 @@ i.export {
   cursor: sw-resize;
 }
 
-.editor-shell div.editor .editor-image .image-resizer-ne {
+.editor-shell .editor-image .image-resizer-ne {
   display: block;
   width: 7px;
   height: 7px;
@@ -815,7 +773,7 @@ i.export {
   cursor: ne-resize;
 }
 
-.editor-shell div.editor .editor-image .image-resizer-nw {
+.editor-shell .editor-image .image-resizer-nw {
   display: block;
   width: 7px;
   height: 7px;
@@ -827,7 +785,7 @@ i.export {
   cursor: nw-resize;
 }
 
-.editor-shell div.editor .editor-image .image-resizer-se {
+.editor-shell .editor-image .image-resizer-se {
   display: block;
   width: 7px;
   height: 7px;
@@ -1202,20 +1160,6 @@ i.chevron-down {
   background: rgba(0, 0, 0, 0.2);
   box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.40);
   transform: matrix(-1, -0.1, 0, 1, 0, 0);
-}
-
-.sticky-note .editor-placeholder {
-  font-size: 24px;
-  color: #999;
-  overflow: hidden;
-  position: absolute;
-  top: 30px;
-  left: 20px;
-  user-select: none;
-  white-space: nowrap;
-  display: inline-block;
-  pointer-events: none;
-  width: 120px;
 }
 
 .sticky-note.yellow {

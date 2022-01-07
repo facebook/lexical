@@ -23,7 +23,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       return;
     }
     const {page} = e2e;
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('12345');
     await assertHTML(
@@ -68,7 +68,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     //   node as overflowed
     // - 56 is overflowed
     const {page} = e2e;
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('1234:)56');
     await assertHTML(
@@ -88,7 +88,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       return;
     }
     const {page, isRichText} = e2e;
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('123456');
     await page.keyboard.press('Enter');
@@ -117,7 +117,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       return;
     }
     const {page, isRichText} = e2e;
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('123456');
     await page.keyboard.press('Enter');
@@ -157,7 +157,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     }
     // See 'displays overflow on immutable nodes'
     const {page} = e2e;
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('1234:)56');
     await moveToLineBeginning(page);
@@ -184,7 +184,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (!isRichText) {
       return;
     }
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('- 1234');
     await page.keyboard.press('Enter');
@@ -211,7 +211,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (!isRichText) {
       return;
     }
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('12345');
     await page.keyboard.press('Enter');
@@ -234,7 +234,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       return;
     }
     const {page} = e2e;
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     // Worth 1 byte in UTF-16, 2 bytes in UTF-8
     await repeat(6, async () => await page.keyboard.type('à'));
@@ -256,7 +256,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       return;
     }
     const {page} = e2e;
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('👨‍👩‍👦‍👦');
     if (['chromium', 'webkit'].includes(E2E_BROWSER)) {

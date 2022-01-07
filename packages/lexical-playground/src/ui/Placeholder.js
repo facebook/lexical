@@ -8,11 +8,30 @@
  */
 
 import * as React from 'react';
+import stylex from 'stylex';
+
+const styles = stylex.create({
+  root: {
+    fontSize: 15,
+    color: '#999',
+    overflow: 'hidden',
+    position: 'absolute',
+    textOverflow: 'ellipsis',
+    top: 10,
+    left: 10,
+    userSelect: 'none',
+    whiteSpace: 'nowrap',
+    display: 'inline-block',
+    pointerEvents: 'none',
+  },
+});
 
 export default function Placeholder({
   children,
+  className,
 }: {
   children: string,
+  className?: string,
 }): React$Node {
-  return <div className="editor-placeholder">{children}</div>;
+  return <div className={className || stylex(styles.root)}>{children}</div>;
 }

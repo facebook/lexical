@@ -7,32 +7,61 @@
  * @flow strict
  */
 
-import * as React from 'react';
+import type {CommandListenerEditorPriority} from 'lexical';
 
-const editorStyle = {
-  outline: 0,
-  overflowWrap: 'break-word',
-  padding: '10px',
-  userSelect: 'text',
-  whiteSpace: 'pre-wrap',
-};
+import * as React from 'react';
+import {useEffect, useState} from 'react';
+import LexicalComposerContentEditable from 'lexical-react/LexicalComposerContentEditable';
+import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import stylex from 'stylex';
+
+const EditorPriority: CommandListenerEditorPriority = 0;
+
+const styles = stylex.create({
+  root: {
+    minHeight: 150,
+    border: 0,
+    resize: 'none',
+    cursor: 'text',
+    fontSize: 15,
+    caretColor: 'rgb(5, 5, 5)',
+    display: 'block',
+    position: 'relative',
+    tabSize: 1,
+    outline: 0,
+    padding: 10,
+    userSelect: 'text',
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'break-word',
+  },
+});
 
 export default function ContentEditable({
-  isReadOnly,
-  rootElementRef,
+  className,
 }: {
-  isReadOnly?: boolean,
-  rootElementRef: (null | HTMLElement) => void,
+  className?: string,
 }): React$Node {
+  const [editor] = useLexicalComposerContext();
+  const [isReadOnly, setIsReadyOnly] = useState(false);
+
+  useEffect(() => {
+    return editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'readOnly') {
+          const readOnly = payload;
+          setIsReadyOnly(readOnly);
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+  }, [editor]);
+
   return (
-    <div
-      className="editor"
-      contentEditable={isReadOnly !== true}
-      role="textbox"
-      ref={rootElementRef}
-      spellCheck={true}
-      style={editorStyle}
-      tabIndex={0}
+    <LexicalComposerContentEditable
+      className={className || stylex(styles.root)}
+      isReadOnly={isReadOnly}
     />
   );
 }

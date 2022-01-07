@@ -165,9 +165,9 @@ describe('TextFormatting', () => {
       await page.keyboard.press('Enter');
       await page.keyboard.type('hello world');
 
-      await click(page, 'div.editor > p', {clickCount: 1, delay: 100});
-      await click(page, 'div.editor > p', {clickCount: 2, delay: 100});
-      await click(page, 'div.editor > p', {clickCount: 3, delay: 100});
+      await click(page, 'div[contenteditable="true"] > p', {clickCount: 1, delay: 100});
+      await click(page, 'div[contenteditable="true"] > p', {clickCount: 2, delay: 100});
+      await click(page, 'div[contenteditable="true"] > p', {clickCount: 3, delay: 100});
 
       await keyDownCtrlOrMeta(page);
       await page.keyboard.type('b');

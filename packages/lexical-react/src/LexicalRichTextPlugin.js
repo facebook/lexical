@@ -8,14 +8,14 @@
  */
 
 import * as React from 'react';
-import {useMemo} from 'react';
 
 import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import useLexicalEditor from 'lexical-react/useLexicalEditor';
 import {useRichTextSetup} from './shared/useRichTextSetup';
-import useLexicalDecorators from 'lexical-react/useLexicalDecorators';
+import useLexicalDecorators from './useLexicalDecorators';
+import useLexicalCanShowPlaceholder from './useLexicalCanShowPlaceholder';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
-function onError(e: Error): void {
+function onErrorDefault(e: Error): void {
   throw e;
 }
 
@@ -23,27 +23,26 @@ export default function RichTextPlugin({
   contentEditable,
   placeholder,
   skipInit,
+  onError,
 }: {
-  contentEditable: (
-    rootElementRef: (node: null | HTMLElement) => void,
-  ) => React$Node,
-  placeholder: () => React$Node,
+  contentEditable: React$Node,
+  placeholder: React$Node,
   skipInit?: boolean,
+  onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
-  const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
+  const showPlaceholder = useLexicalCanShowPlaceholder(editor);
   useRichTextSetup(editor, !skipInit);
   const decorators = useLexicalDecorators(editor);
-  const contentEditableNode: React$Node = useMemo(
-    () => contentEditable(rootElementRef),
-    [contentEditable, rootElementRef],
-  );
-  const placeholderNode: React$Node = useMemo(placeholder, [placeholder]);
+
+  useLayoutEffect(() => {
+    return editor.addListener('error', onError || onErrorDefault);
+  }, [editor, onError]);
 
   return (
     <>
-      {contentEditableNode}
-      {showPlaceholder && placeholderNode}
+      {contentEditable}
+      {showPlaceholder && placeholder}
       {decorators}
     </>
   );

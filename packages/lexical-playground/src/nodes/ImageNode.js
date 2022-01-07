@@ -30,6 +30,40 @@ import ContentEditable from '../ui/ContentEditable';
 import {createWebsocketProvider} from '../collaboration';
 import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import stylex from 'stylex';
+
+const styles = stylex.create({
+  contentEditable: {
+    minHeight: 0,
+    border: 0,
+    resize: 'none',
+    cursor: 'text',
+    caretColor: 'rgb(5, 5, 5)',
+    display: 'block',
+    position: 'relative',
+    tabSize: 1,
+    outline: 0,
+    padding: 10,
+    userSelect: 'text',
+    fontSize: 12,
+    width: 'calc(100% - 20px)',
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'break-word',
+  },
+  placeholder: {
+    fontSize: 12,
+    color: '#888',
+    overflow: 'hidden',
+    position: 'absolute',
+    textOverflow: 'ellipsis',
+    top: 10,
+    left: 10,
+    userSelect: 'none',
+    whiteSpace: 'nowrap',
+    display: 'inline-block',
+    pointerEvents: 'none',
+  },
+});
 
 const imageCache = new Set();
 
@@ -360,16 +394,6 @@ function ImageComponent({
     setIsResizing(true);
   }, [editor]);
 
-  const contentEditable = useCallback(
-    (rootElementRef) => <ContentEditable rootElementRef={rootElementRef} />,
-    [],
-  );
-
-  const placeholder = useCallback(
-    () => <Placeholder>Enter a caption...</Placeholder>,
-    [],
-  );
-
   const {historyState} = useSharedHistoryContext();
 
   return (
@@ -405,8 +429,14 @@ function ImageComponent({
                 <HistoryPlugin externalHistoryState={historyState} />
               )}
               <RichTextPlugin
-                contentEditable={contentEditable}
-                placeholder={placeholder}
+                contentEditable={
+                  <ContentEditable className={stylex(styles.contentEditable)} />
+                }
+                placeholder={
+                  <Placeholder className={stylex(styles.placeholder)}>
+                    Enter a caption...
+                  </Placeholder>
+                }
                 skipInit={isCollab}
               />
             </ControlledEditor>

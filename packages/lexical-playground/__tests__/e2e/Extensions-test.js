@@ -69,7 +69,7 @@ describe('Extensions', () => {
             return dispatchPaste;
           }
 
-          const editor = document.querySelector('div.editor');
+          const editor = document.querySelector('div[contenteditable="true"]');
           const dispatchPaste = paste();
           dispatchPaste(editor, 'foo');
         },
@@ -103,7 +103,7 @@ describe('Extensions', () => {
           return dispatchPaste;
         }
 
-        const editor = document.querySelector('div.editor');
+        const editor = document.querySelector('div[contenteditable="true"]');
         const dispatchPaste = paste();
         dispatchPaste(editor, 'bar');
       });
@@ -124,7 +124,7 @@ describe('Extensions', () => {
       await focusEditor(page);
 
       await evaluate(page, () => {
-        const editor = document.querySelector('.editor');
+        const editor = document.querySelector('div[contenteditable="true"]');
         const dataTransfer = new DataTransfer();
         dataTransfer.setData('text/plain', 'foo');
         editor.dispatchEvent(

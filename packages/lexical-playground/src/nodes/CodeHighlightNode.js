@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, EditorThemeClasses} from 'lexical';
+import type {NodeKey, EditorConfig, EditorThemeClasses} from '@lexical/core';
 
-import {LexicalNode, TextNode} from 'lexical';
+import {LexicalNode, TextNode} from '@lexical/core';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
-} from 'lexical/elements';
+} from '@lexical/helpers/elements';
 
 export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;

@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode} from 'lexical';
+import type {EditorConfig, LexicalNode} from '@lexical/core';
 
-import {TextNode} from 'lexical';
+import {TextNode} from '@lexical/core';
 
 export class KeywordNode extends TextNode {
   static getType(): string {

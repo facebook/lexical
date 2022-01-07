@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {LineBreakNode, NodeKey} from 'lexical';
+import type {LineBreakNode, NodeKey} from '@lexical/core';
 import type {CollabElementNode} from './CollabElementNode';
 import type {Map as YMap} from 'yjs';
 import type {Binding} from '.';
 
-import {$isLineBreakNode, $getNodeByKey} from 'lexical';
+import {$isLineBreakNode, $getNodeByKey} from '@lexical/core';
 
 export class CollabLineBreakNode {
   _map: YMap;

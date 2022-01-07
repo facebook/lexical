@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {LinkNode} from 'lexical/LinkNode';
+import {LinkNode} from '@lexical/core/LinkNode';
 
 export default function LinksPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();

@@ -1,5 +1,5 @@
 {
-  "name": "lexical-yjs",
+  "name": "@lexical/yjs",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
@@ -15,10 +15,10 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "main": "LexicalYjs.js",
   "dependencies": {
-    "lexical": "0.1.1",
+    "@lexical/core": "0.1.0",
     "yjs": ">=13.5.22"
   },
   "repository": {

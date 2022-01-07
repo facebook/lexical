@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor} from '@lexical/core';
 
-import {$insertRichText} from 'lexical/selection';
+import {$insertRichText} from '@lexical/helpers/selection';
 
 import {useEffect} from 'react';
-import {$isTextNode, $log, $getSelection} from 'lexical';
+import {$isTextNode, $log, $getSelection} from '@lexical/core';
 
 export default function useLexicalDragonSupport(editor: LexicalEditor) {
   useEffect(() => {

@@ -22,8 +22,8 @@ Below is an example of a basic plain text editor using `lexical` and `lexical-re
 
 ```jsx
 import {useCallback} from 'react';
-import useLexical from 'lexical-react/useLexical';
-import useLexicalPlainText from 'lexical-react/useLexicalPlainText';
+import useLexical from '@lexical/react/useLexical';
+import useLexicalPlainText from '@lexical/react/useLexicalPlainText';
 
 const editorConfig = {
   // When Lexical encounters an error, this is where
@@ -79,7 +79,7 @@ When you work with Lexical, you normally work with a single editor instance. An 
 an optional configuration object that allows for theming and the passing of context:
 
 ```js
-import {createEditor} from 'lexical';
+import {createEditor} from '@lexical/core';
 
 const config = {
   onError(error) {

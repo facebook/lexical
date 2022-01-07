@@ -13,7 +13,7 @@ import type {
   NodeKey,
   LexicalNode,
   Selection,
-} from 'lexical';
+} from '@lexical/core';
 
 import {
   ElementNode,
@@ -23,11 +23,11 @@ import {
   $getSelection,
   $getRoot,
   $setSelection,
-} from 'lexical';
-import {$dfs__DEPRECATED} from 'lexical/nodes';
-import {$textContentCurry} from 'lexical/root';
+} from '@lexical/core';
+import {$dfs__DEPRECATED} from '@lexical/helpers/nodes';
+import {$textContentCurry} from '@lexical/helpers/root';
 import {useEffect} from 'react';
-import withSubscriptions from 'lexical-react/withSubscriptions';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 
 type OptionalProps = {
   strlen?: (input: string) => number,

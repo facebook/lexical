@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {TextNode} from 'lexical';
+import type {TextNode} from '@lexical/core';
 
 export default function isTokenOrInert(node: TextNode): boolean {
   return node.isToken() || node.isInert();

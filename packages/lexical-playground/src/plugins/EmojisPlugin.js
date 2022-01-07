@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {LexicalEditor, Selection} from 'lexical';
+import type {LexicalEditor, Selection} from '@lexical/core';
 
 import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
-import {$getSelection, TextNode} from 'lexical';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {$getSelection, TextNode} from '@lexical/core';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],

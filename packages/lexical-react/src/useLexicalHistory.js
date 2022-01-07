@@ -15,11 +15,16 @@ import type {
   NodeKey,
   IntentionallyMarkedAsDirtyElement,
   CommandListenerEditorPriority,
-} from 'lexical';
+} from '@lexical/core';
 
-import {$isTextNode, $isElementNode, $isRootNode, $getSelection} from 'lexical';
+import {
+  $isTextNode,
+  $isElementNode,
+  $isRootNode,
+  $getSelection,
+} from '@lexical/core';
 import {useCallback, useEffect, useMemo} from 'react';
-import withSubscriptions from 'lexical-react/withSubscriptions';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 
 type MergeAction = 0 | 1 | 2;
 const MERGE = 0;

@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
-import type {EventHandler} from 'lexical/events';
+import type {LexicalEditor} from '@lexical/core';
+import type {EventHandler} from '@lexical/helpers/events';
 
 import useLayoutEffect from 'shared/useLayoutEffect';
 

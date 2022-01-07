@@ -7,11 +7,11 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor} from '@lexical/core';
 
 import {useCallback} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
-import useLexicalCanShowPlaceholder from 'lexical-react/useLexicalCanShowPlaceholder';
+import useLexicalCanShowPlaceholder from '@lexical/react/useLexicalCanShowPlaceholder';
 
 export default function useLexicalEditor(
   editor: LexicalEditor,

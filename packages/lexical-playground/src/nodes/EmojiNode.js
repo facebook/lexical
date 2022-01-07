@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, LexicalNode} from 'lexical';
+import type {NodeKey, EditorConfig, LexicalNode} from '@lexical/core';
 
-import {TextNode} from 'lexical';
+import {TextNode} from '@lexical/core';
 
 export class EmojiNode extends TextNode {
   __className: string;

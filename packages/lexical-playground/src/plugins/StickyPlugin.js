@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {StickyNode} from '../nodes/StickyNode';
 

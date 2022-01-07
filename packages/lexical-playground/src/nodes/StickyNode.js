@@ -34,6 +34,40 @@ import ContentEditable from '../ui/ContentEditable';
 import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import stylex from 'stylex';
+
+const styles = stylex.create({
+  contentEditable: {
+    minHeight: 0,
+    border: 0,
+    resize: 'none',
+    cursor: 'text',
+    fontSize: 24,
+    caretColor: 'rgb(5, 5, 5)',
+    display: 'block',
+    position: 'relative',
+    tabSize: 1,
+    outline: 0,
+    padding: 10,
+    userSelect: 'text',
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'break-word',
+  },
+  placeholder: {
+    fontSize: 24,
+    color: '#999',
+    overflow: 'hidden',
+    position: 'absolute',
+    textOverflow: 'ellipsis',
+    top: 30,
+    left: 20,
+    width: 120,
+    userSelect: 'none',
+    whiteSpace: 'nowrap',
+    display: 'inline-block',
+    pointerEvents: 'none',
+  },
+});
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -220,16 +254,6 @@ function StickyComponent({
     [editorStateRef],
   );
 
-  const contentEditable = useCallback(
-    (ref, clear) => <ContentEditable rootElementRef={ref} />,
-    [],
-  );
-
-  const placeholder = useCallback(
-    () => <Placeholder>What's up?</Placeholder>,
-    [],
-  );
-
   const {historyState} = useSharedHistoryContext();
 
   return (
@@ -274,8 +298,14 @@ function StickyComponent({
           <HistoryPlugin externalHistoryState={historyState} />
         )}
         <PlainTextPlugin
-          contentEditable={contentEditable}
-          placeholder={placeholder}
+          contentEditable={
+            <ContentEditable className={stylex(styles.contentEditable)} />
+          }
+          placeholder={
+            <Placeholder className={stylex(styles.placeholder)}>
+              What's up?
+            </Placeholder>
+          }
           skipInit={isCollab}
         />
       </InlineSimpleEditor>

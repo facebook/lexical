@@ -57,6 +57,7 @@ module.name_mapper='^lexical-react/useLexicalHistory' -> '<PROJECT_ROOT>/package
 module.name_mapper='^lexical-react/LexicalComposer' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalComposer.js'
 module.name_mapper='^lexical-react/LexicalComposerContext' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalComposerContext.js'
 module.name_mapper='^lexical-react/withSubscriptions' -> '<PROJECT_ROOT>/packages/lexical-react/src/withSubscriptions.js'
+module.name_mapper='^lexical-react/LexicalComposerContentEditable' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalComposerContentEditable.js'
 
 # Composer Plugins
 module.name_mapper='^lexical-react/LexicalAutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoFormatterPlugin.js'

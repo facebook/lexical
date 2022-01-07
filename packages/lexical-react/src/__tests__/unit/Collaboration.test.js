@@ -25,17 +25,13 @@ describe('Collaboration', () => {
 
   async function exepctCorrectInitialContent(client1, client2) {
     // Should be empty, as client has not yet updated
-    expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"></div>',
-    );
+    expect(client1.getHTML()).toEqual('');
     expect(client1.getHTML()).toEqual(client2.getHTML());
 
     // Wait for clients to render the initial content
     await Promise.resolve().then();
 
-    expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
-    );
+    expect(client1.getHTML()).toEqual('<p><br></p>');
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
   }
@@ -61,7 +57,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -77,7 +73,7 @@ describe('Collaboration', () => {
     });
 
     expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello metaverse</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello metaverse</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -112,11 +108,9 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
-    expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
-    );
+    expect(client2.getHTML()).toEqual('<p><br></p>');
 
     // Insert some a text node on client 1
     await waitForReact(() => {
@@ -129,7 +123,7 @@ describe('Collaboration', () => {
     });
 
     expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
 
@@ -139,7 +133,7 @@ describe('Collaboration', () => {
 
     // Text content should be repeated, but there should only be a single node
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -159,10 +153,10 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
 
     await waitForReact(() => {
@@ -179,7 +173,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello world!</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -212,7 +206,7 @@ describe('Collaboration', () => {
     });
 
     expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
@@ -231,11 +225,9 @@ describe('Collaboration', () => {
       });
     });
 
-    expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
-    );
+    expect(client1.getHTML()).toEqual('<p><br></p>');
     expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
 
     // Insert some text on client 2
@@ -247,11 +239,9 @@ describe('Collaboration', () => {
       });
     });
 
-    expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
-    );
+    expect(client1.getHTML()).toEqual('<p><br></p>');
     expect(client2.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p></div>',
+      '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
 
     await waitForReact(() => {
@@ -265,9 +255,7 @@ describe('Collaboration', () => {
     // fallback maps. For now though, if a user clears all text nodes from an element
     // and another user inserts some text into the same element at the same time, the
     // deletion will take precedence on conflicts.
-    expect(client1.getHTML()).toEqual(
-      '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
-    );
+    expect(client1.getHTML()).toEqual('<p><br></p>');
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual({
       root: '',

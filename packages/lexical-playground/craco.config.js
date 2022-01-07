@@ -55,6 +55,8 @@ module.exports = {
         'lexical-react/dist/useLexicalCharacterLimit',
       'lexical-react/useLexicalHistory': 'lexical-react/dist/useLexicalHistory',
       'lexical-react/withSubscriptions': 'lexical-react/dist/withSubscriptions',
+      'lexical-react/LexicalComposerContentEditable':
+        'lexical-react/dist/LexicalComposerContentEditable',
 
       // Composer and it's plugins
       'lexical-react/LexicalComposer': 'lexical-react/dist/LexicalComposer',

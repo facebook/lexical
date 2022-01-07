@@ -53,9 +53,11 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.js',
         '^lexical-react/LexicalComposerContext$':
           '<rootDir>/packages/lexical-react/src/LexicalComposerContext.js',
+        '^lexical-react/LexicalComposerContentEditable$':
+          '<rootDir>/packages/lexical-react/src/LexicalComposerContentEditable.js',
         '^lexical-react/useLexicalEditor$':
           '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
-          '^lexical-react/useLexicalDecorators$':
+        '^lexical-react/useLexicalDecorators$':
           '<rootDir>/packages/lexical-react/src/useLexicalDecorators.js',
         '^lexical/selection$':
           '<rootDir>/packages/lexical/src/helpers/LexicalSelectionHelpers.js',

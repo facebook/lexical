@@ -21,7 +21,7 @@ describe('Placeholder', () => {
       const {page, isRichText} = e2e;
 
       await focusEditor(page);
-      const content = await textContent(page, '.editor-placeholder');
+      const content = await textContent(page, '.Placeholder__root');
       if (IS_COLLAB) {
         expect(content).toBe('Enter some collaborative rich text...');
       } else if (isRichText) {

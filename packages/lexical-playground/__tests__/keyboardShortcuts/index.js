@@ -104,7 +104,7 @@ export async function moveToParagraphEnd(page) {
 export async function selectAll(page) {
   if (E2E_BROWSER === 'firefox' && IS_LINUX) {
     await evaluate(page, () => {
-      const rootElement = document.querySelector('div.editor');
+      const rootElement = document.querySelector('div[contenteditable="true"]');
       const selection = window.getSelection();
       selection.setBaseAndExtent(
         rootElement,

@@ -24,7 +24,7 @@ describe('History', () => {
       }
       const {isRichText, page} = e2e;
 
-      await page.focus('div.editor');
+      await page.focus('div[contenteditable="true"]');
 
       await page.keyboard.type('hello');
       await sleep(1001); // default merge interval is 1000

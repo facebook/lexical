@@ -189,7 +189,7 @@ describe('Test case', () => {
     it('Should pass this test', async () => {
       const {page} = e2e;
 
-      await page.focus('div.editor');
+      await page.focus('div[contenteditable="true"]');
 ${steps.map(formatStep).join(`\n`)}
     });
 });

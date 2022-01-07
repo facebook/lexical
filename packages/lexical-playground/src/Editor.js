@@ -7,10 +7,7 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
 
 import PlainTextPlugin from 'lexical-react/LexicalPlainTextPlugin';
 import RichTextPlugin from 'lexical-react/LexicalRichTextPlugin';
@@ -33,11 +30,10 @@ import StickyPlugin from './plugins/StickyPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
-import ContentEditable from './ui/ContentEditable';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
 import {createWebsocketProvider} from './collaboration';
 import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
+import ContentEditable from './ui/ContentEditable';
 
 type Props = {
   isCollab: boolean,
@@ -48,37 +44,8 @@ type Props = {
   showTreeView: boolean,
 };
 
-const EditorPriority: CommandListenerEditorPriority = 0;
-
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
-
-function EditorContentEditable({
-  rootElementRef,
-}: {
-  rootElementRef: (null | HTMLElement) => void,
-}): React$Node {
-  const [editor] = useLexicalComposerContext();
-  const [isReadOnly, setIsReadyOnly] = useState(false);
-
-  useEffect(() => {
-    return editor.addListener(
-      'command',
-      (type, payload) => {
-        if (type === 'readOnly') {
-          const readOnly = payload;
-          setIsReadyOnly(readOnly);
-        }
-        return false;
-      },
-      EditorPriority,
-    );
-  }, [editor]);
-
-  return (
-    <ContentEditable isReadOnly={isReadOnly} rootElementRef={rootElementRef} />
-  );
-}
 
 export default function Editor({
   isCollab,
@@ -89,22 +56,12 @@ export default function Editor({
   showTreeView,
 }: Props): React$Node {
   const {historyState} = useSharedHistoryContext();
-
-  const contentEditable = useCallback(
-    (rootElementRef) => (
-      <EditorContentEditable rootElementRef={rootElementRef} />
-    ),
-    [],
-  );
-
-  const placeholder = useCallback(() => {
-    const text = isCollab
-      ? 'Enter some collaborative rich text...'
-      : isRichText
-      ? 'Enter some rich text...'
-      : 'Enter some plain text...';
-    return <Placeholder>{text}</Placeholder>;
-  }, [isCollab, isRichText]);
+  const text = isCollab
+    ? 'Enter some collaborative rich text...'
+    : isRichText
+    ? 'Enter some rich text...'
+    : 'Enter some plain text...';
+  const placeholder = <Placeholder>{text}</Placeholder>;
 
   return (
     <>
@@ -135,7 +92,7 @@ export default function Editor({
               <HistoryPlugin externalHistoryState={historyState} />
             )}
             <RichTextPlugin
-              contentEditable={contentEditable}
+              contentEditable={<ContentEditable />}
               placeholder={placeholder}
               skipInit={isCollab}
             />
@@ -145,7 +102,7 @@ export default function Editor({
         ) : (
           <>
             <PlainTextPlugin
-              contentEditable={contentEditable}
+              contentEditable={<ContentEditable />}
               placeholder={placeholder}
             />
             <HistoryPlugin externalHistoryState={historyState} />

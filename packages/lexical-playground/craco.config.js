@@ -45,8 +45,6 @@ module.exports = {
         '@lexical/react/dist/useLexicalAutoFormatter',
       '@lexical/react/useLexicalDecorators':
         '@lexical/react/dist/useLexicalDecorators',
-      '@lexical/react/useLexicalNestedList':
-        '@lexical/react/dist/useLexicalNestedList',
       '@lexical/react/useLexicalList': '@lexical/react/dist/useLexicalList',
       '@lexical/react/useLexicalIsBlank':
         '@lexical/react/dist/useLexicalIsBlank',

@@ -8,12 +8,12 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, EditorStateRef} from 'lexical';
-import {createEditor} from 'lexical';
+import type {EditorThemeClasses, EditorStateRef} from '@lexical/core';
+import {createEditor} from '@lexical/core';
 import {
   LexicalComposerContext,
   createLexicalComposerContext,
-} from 'lexical-react/LexicalComposerContext';
+} from '@lexical/react/LexicalComposerContext';
 import React, {useContext, useMemo} from 'react';
 
 type Props = {

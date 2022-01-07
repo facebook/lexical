@@ -6,75 +6,86 @@ const {exec} = require('child-process-promise');
 const fs = require('fs');
 const path = require('path');
 
-async function prepareLexicalPackage() {
-  await exec(`rm -rf ./packages/lexical/npm`);
-  await exec(`mkdir ./packages/lexical/npm`);
-  await exec(`cp -R ./packages/lexical/dist/*.js ./packages/lexical/npm`);
-  // Remap the helper packages to their short versions
-  await exec(
-    `mv ./packages/lexical/npm/LexicalSelectionHelpers.js ./packages/lexical/npm/selection.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalTextHelpers.js ./packages/lexical/npm/text.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalEventHelpers.js ./packages/lexical/npm/events.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalFileHelpers.js ./packages/lexical/npm/file.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalOffsetHelpers.js ./packages/lexical/npm/offsets.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalNodeHelpers.js ./packages/lexical/npm/nodes.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalElementHelpers.js ./packages/lexical/npm/elements.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalRootHelpers.js ./packages/lexical/npm/validation.js`,
-  );
+async function prepareLexicalCorePackage() {
+  await exec(`rm -rf ./packages/lexical-core/npm`);
+  await exec(`mkdir ./packages/lexical-core/npm`);
+  await exec(`cp -R ./packages/lexical-core/dist/*.js ./packages/lexical-core/npm`);
+
   // Remap the node extensions to their short versions
   await exec(
-    `mv ./packages/lexical/npm/LexicalCodeNode.js ./packages/lexical/npm/CodeNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalCodeNode.js ./packages/lexical-core/npm/CodeNode.js`,
   );
   await exec(
-    `mv ./packages/lexical/npm/LexicalParagraphNode.js ./packages/lexical/npm/ParagraphNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalParagraphNode.js ./packages/lexical-core/npm/ParagraphNode.js`,
   );
   await exec(
-    `mv ./packages/lexical/npm/LexicalQuoteNode.js ./packages/lexical/npm/QuoteNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalQuoteNode.js ./packages/lexical-core/npm/QuoteNode.js`,
   );
   await exec(
-    `mv ./packages/lexical/npm/LexicalHashtagNode.js ./packages/lexical/npm/HashtagNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalHashtagNode.js ./packages/lexical-core/npm/HashtagNode.js`,
   );
   await exec(
-    `mv ./packages/lexical/npm/LexicalListNode.js ./packages/lexical/npm/ListNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalListNode.js ./packages/lexical-core/npm/ListNode.js`,
   );
   await exec(
-    `mv ./packages/lexical/npm/LexicalListItemNode.js ./packages/lexical/npm/ListItemNode.js`,
-  );
-
-  await exec(
-    `mv ./packages/lexical/npm/LexicalTableNode.js ./packages/lexical/npm/TableNode.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalTableRowNode.js ./packages/lexical/npm/TableRowNode.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalTableCellNode.js ./packages/lexical/npm/TableCellNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalListItemNode.js ./packages/lexical-core/npm/ListItemNode.js`,
   );
 
   await exec(
-    `mv ./packages/lexical/npm/LexicalLinkNode.js ./packages/lexical/npm/LinkNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalTableNode.js ./packages/lexical-core/npm/TableNode.js`,
   );
   await exec(
-    `mv ./packages/lexical/npm/LexicalHeadingNode.js ./packages/lexical/npm/HeadingNode.js`,
+    `mv ./packages/lexical-core/npm/LexicalTableRowNode.js ./packages/lexical-core/npm/TableRowNode.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-core/npm/LexicalTableCellNode.js ./packages/lexical-core/npm/TableCellNode.js`,
+  );
+
+  await exec(
+    `mv ./packages/lexical-core/npm/LexicalLinkNode.js ./packages/lexical-core/npm/LinkNode.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-core/npm/LexicalHeadingNode.js ./packages/lexical-core/npm/HeadingNode.js`,
   );
   // Other bits
-  await exec(`cp -R ./packages/lexical/package.json ./packages/lexical/npm`);
-  await exec(`cp -R LICENSE ./packages/lexical/npm`);
-  await exec(`cp -R ./packages/lexical/README.md ./packages/lexical/npm`);
+  await exec(`cp -R ./packages/lexical-core/package.json ./packages/lexical-core/npm`);
+  await exec(`cp -R LICENSE ./packages/lexical-core/npm`);
+  await exec(`cp -R ./packages/lexical-core/README.md ./packages/lexical-core/npm`);
+}
+
+async function prepareLexicalHelpersPackage() {
+  await exec(`rm -rf ./packages/lexical-helpers/npm`);
+  await exec(`mkdir ./packages/lexical-helpers/npm`);
+  await exec(`cp -R ./packages/lexical-helpers/dist/*.js ./packages/lexical-helpers/npm`);
+  // Remap the helper packages to their short versions
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalSelectionHelpers.js ./packages/lexical-helpers/npm/selection.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalTextHelpers.js ./packages/lexical-helpers/npm/text.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalEventHelpers.js ./packages/lexical-helpers/npm/events.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalFileHelpers.js ./packages/lexical-helpers/npm/file.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalOffsetHelpers.js ./packages/lexical-helpers/npm/offsets.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalNodeHelpers.js ./packages/lexical-helpers/npm/nodes.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalElementHelpers.js ./packages/lexical-helpers/npm/elements.js`,
+  );
+  await exec(
+    `mv ./packages/lexical-helpers/npm/LexicalRootHelpers.js ./packages/lexical-helpers/npm/validation.js`,
+  );
+  // Other bits
+  await exec(`cp -R ./packages/lexical-helpers/package.json ./packages/lexical-helpers/npm`);
+  await exec(`cp -R LICENSE ./packages/lexical-helpers/npm`);
+  await exec(`cp -R ./packages/lexical-helpers/README.md ./packages/lexical-helpers/npm`);
 }
 
 async function prepareLexicalReactPackage() {
@@ -107,6 +118,7 @@ async function prepareLexicalYjsPackage() {
   );
 }
 
-prepareLexicalPackage();
+prepareLexicalCorePackage();
+prepareLexicalHelpersPackage();
 prepareLexicalReactPackage();
 prepareLexicalYjsPackage();

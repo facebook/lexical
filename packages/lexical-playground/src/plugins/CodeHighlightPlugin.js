@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalEditor, ElementNode} from 'lexical';
+import type {LexicalEditor, ElementNode} from '@lexical/core';
 
-import {CodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {CodeNode, $isCodeNode} from '@lexical/core/CodeNode';
 import {
   $createLineBreakNode,
   $createTextNode,
@@ -18,10 +18,10 @@ import {
   $isTextNode,
   $isLineBreakNode,
   $getSelection,
-} from 'lexical';
+} from '@lexical/core';
 import {useEffect} from 'react';
-import withSubscriptions from 'lexical-react/withSubscriptions';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import withSubscriptions from '@lexical/react/withSubscriptions';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import Prism from 'prismjs/components/prism-core';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';

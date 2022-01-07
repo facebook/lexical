@@ -13,22 +13,22 @@ import type {
   LexicalNode,
   LexicalEditor,
   EditorStateRef,
-} from 'lexical';
+} from '@lexical/core';
 
 import * as React from 'react';
-import {DecoratorNode, $log, $getNodeByKey} from 'lexical';
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
+import {DecoratorNode, $log, $getNodeByKey} from '@lexical/core';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   useCollaborationContext,
   CollaborationPlugin,
-} from 'lexical-react/LexicalCollaborationPlugin';
+} from '@lexical/react/LexicalCollaborationPlugin';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import ControlledEditor from '../ui/ControlledEditor';
-import RichTextPlugin from 'lexical-react/LexicalRichTextPlugin';
+import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
 import {createWebsocketProvider} from '../collaboration';
-import HistoryPlugin from 'lexical-react/LexicalHistoryPlugin';
+import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import stylex from 'stylex';
 

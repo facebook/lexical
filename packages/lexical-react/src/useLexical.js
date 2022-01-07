@@ -7,10 +7,14 @@
  * @flow strict
  */
 
-import type {LexicalEditor, EditorThemeClasses, EditorState} from 'lexical';
-import type {DOMConversionMap} from 'lexical/events';
+import type {
+  LexicalEditor,
+  EditorThemeClasses,
+  EditorState,
+  DOMConversionMap,
+} from '@lexical/core';
 
-import {createEditor} from 'lexical';
+import {createEditor} from '@lexical/core';
 import {useMemo} from 'react';
 import useLexicalEditor from './useLexicalEditor';
 

@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from 'lexical-react/LexicalComposerContext';
-import {useCharacterLimit} from 'lexical-react/useLexicalCharacterLimit';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useCharacterLimit} from '@lexical/react/useLexicalCharacterLimit';
 
 import * as React from 'react';
 import {useMemo, useState} from 'react';

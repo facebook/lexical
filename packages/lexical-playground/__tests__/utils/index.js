@@ -168,7 +168,7 @@ export async function repeat(times, cb) {
 
 async function assertHTMLOnPageOrFrame(pageOrFrame, expectedHtml) {
   // Assert HTML of the editor matches the given html
-  const actualHtml = await pageOrFrame.innerHTML('div.editor');
+  const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
   if (expectedHtml === '') {
     console.log('Output HTML:\n\n' + actualHtml);
     throw new Error('Empty HTML assertion!');
@@ -215,7 +215,7 @@ export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
 async function assertSelectionOnPageOrFrame(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
-    const rootElement = document.querySelector('div.editor');
+    const rootElement = document.querySelector('div[contenteditable="true"]');
 
     const getPathFromNode = (node) => {
       const path = [];
@@ -322,7 +322,7 @@ export async function keyUpCtrlOrAlt(page) {
 async function copyToClipboardPageOrFrame(pageOrFrame) {
   return await pageOrFrame.evaluate(() => {
     const clipboardData = {};
-    const editor = document.querySelector('div.editor');
+    const editor = document.querySelector('div[contenteditable="true"]');
     const copyEvent = new ClipboardEvent('copy');
     Object.defineProperty(copyEvent, 'clipboardData', {
       value: {
@@ -349,7 +349,7 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
   const canUseBeforeInput = supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
     async ({clipboardData, canUseBeforeInput}) => {
-      const editor = document.querySelector('div.editor');
+      const editor = document.querySelector('div[contenteditable="true"]');
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -408,9 +408,9 @@ export async function focusEditor(page) {
       });
       await sleep(500);
     }
-    await leftFrame.focus('div.editor');
+    await leftFrame.focus('div[contenteditable="true"]');
   } else {
-    await page.focus('div.editor');
+    await page.focus('div[contenteditable="true"]');
   }
 }
 

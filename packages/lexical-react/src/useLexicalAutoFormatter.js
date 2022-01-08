@@ -42,7 +42,7 @@ type NodeTransformationKind =
   | 'orderedList'
   | 'codeBlock';
 
-// The auto formatter life cycle is:
+// The auto formatter runs these steps:
 // 1. Examine the current and prior editor states to see if a potential auto format is triggered.
 // 2. If triggered, examine the current editor state to see if it matches a particular
 //    set of criteria from an array of criteria.
@@ -349,7 +349,6 @@ function updateAutoFormatting(editor: LexicalEditor): void {
 function shouldAttemptToAutoFormat(
   currentTriggerState: null | AutoFormatTriggerState,
   priorTriggerState: null | AutoFormatTriggerState,
-  lastEditorState,
 ): boolean {
   if (currentTriggerState == null || priorTriggerState == null) {
     return false;

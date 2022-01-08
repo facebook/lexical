@@ -30,7 +30,6 @@ type AutoFormatTriggerState = $ReadOnly<{
   isParentAParagraphNode: boolean,
   isSelectionCollapsed: boolean,
   isSimpleText: boolean,
-  isTextNode: boolean,
   nodeKey: NodeKey,
   textContent: string,
 }>;
@@ -355,10 +354,8 @@ function shouldAttemptToAutoFormat(
   }
 
   return (
-    currentTriggerState.isTextNode &&
     currentTriggerState.isSimpleText &&
     currentTriggerState.isSelectionCollapsed &&
-    currentTriggerState.isTextNode &&
     currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
     currentTriggerState.anchorOffset !== priorTriggerState.anchorOffset &&
     currentTriggerState.textContent !== priorTriggerState.textContent
@@ -377,12 +374,10 @@ function getTriggerState(
     }
     const node = selection.anchor.getNode();
     const parentNode = node.getParent();
-
     criteria = {
       anchorOffset: selection.anchor.offset,
       isSelectionCollapsed: selection.isCollapsed(),
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
-      isTextNode: $isTextNode(node),
       isParentAParagraphNode:
         parentNode !== null && $isParagraphNode(parentNode),
       nodeKey: node.getKey(),
@@ -395,6 +390,11 @@ function getTriggerState(
 
 export default function useLexicalAutoFormatter(editor: LexicalEditor): void {
   useEffect(() => {
+    // The priorTriggerState is compared against the currentTriggerState to determine
+    // if the user has performed some typing event that warrants an auto format.
+    // For example, typing "#" and then " ", shoud trigger an format.
+    // However, given "#A B", where the user delets "A" should not.
+
     let priorTriggerState: null | AutoFormatTriggerState = null;
     editor.addListener('update', ({tags}) => {
       if (tags.has('historic') === false) {

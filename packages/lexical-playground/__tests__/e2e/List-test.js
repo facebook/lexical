@@ -36,6 +36,34 @@ async function toggleNumberedList(page) {
 
 describe('Nested List', () => {
   initializeE2E((e2e) => {
+    it(`Can toggle an empty list on/off`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k" value="1"><br></li></ul>',
+      );
+
+      await toggleBulletList(page);
+
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+      );
+    });
     it(`Can create a list and indent/outdent it`, async () => {
       const {isRichText, page} = e2e;
 

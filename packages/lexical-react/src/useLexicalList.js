@@ -45,12 +45,17 @@ function removeList(editor: LexicalEditor): void {
     if (selection !== null) {
       const listNodes = new Set();
       const nodes = selection.getNodes();
-      for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-        if ($isLeafNode(node)) {
-          const listItemNode = $getNearestNodeOfType(node, ListItemNode);
-          if (listItemNode != null) {
-            listNodes.add($getTopListNode(listItemNode));
+      const anchorNode = selection.anchor.getNode();
+      if (nodes.length === 0 && $isListItemNode(anchorNode)) {
+        listNodes.add($getTopListNode(anchorNode));
+      } else {
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          if ($isLeafNode(node)) {
+            const listItemNode = $getNearestNodeOfType(node, ListItemNode);
+            if (listItemNode != null) {
+              listNodes.add($getTopListNode(listItemNode));
+            }
           }
         }
       }

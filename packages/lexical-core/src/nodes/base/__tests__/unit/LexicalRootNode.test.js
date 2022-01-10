@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isRootNode} from '@lexical/core';
+import {$isRootNode} from 'lexical';
 import {$createRootNode} from '../../LexicalRootNode';
 import {initializeUnitTest} from '../../../../__tests__/utils';
 

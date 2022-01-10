@@ -6,7 +6,7 @@
  *
  */
 
-import type {State} from '@lexical/core';
+import type {State} from 'lexical';
 
 import {
   IS_BOLD,
@@ -20,14 +20,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  $createTextNode,
-  $getRoot,
-  $getNodeByKey,
-  $getSelection,
-} from '@lexical/core';
+import {$createTextNode, $getRoot, $getNodeByKey, $getSelection} from 'lexical';
 
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
   $getCompositionKey,
   getEditorStateTextContent,

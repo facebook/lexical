@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode, NodeKey} from '@lexical/core';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from '@lexical/core';
+import {ElementNode} from 'lexical';
 
 export class TableRowNode extends ElementNode {
   static getType(): 'table-row' {

@@ -8,8 +8,8 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, EditorStateRef} from '@lexical/core';
-import {createEditor} from '@lexical/core';
+import type {EditorThemeClasses, EditorStateRef} from 'lexical';
+import {createEditor} from 'lexical';
 import {
   LexicalComposerContext,
   createLexicalComposerContext,

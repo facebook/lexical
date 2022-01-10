@@ -6,7 +6,7 @@
  *
  */
 
-import {$createTextNode, $isTextNode, $getSelection} from '@lexical/core';
+import {$createTextNode, $isTextNode, $getSelection} from 'lexical';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {

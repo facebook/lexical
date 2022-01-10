@@ -7,16 +7,12 @@
  * @flow strict
  */
 
-import type {DecoratorNode, NodeKey, LexicalRef, NodeMap} from '@lexical/core';
+import type {DecoratorNode, NodeKey, LexicalRef, NodeMap} from 'lexical';
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {XmlElement} from 'yjs';
 
-import {
-  createEditorStateRef,
-  $isDecoratorNode,
-  $getNodeByKey,
-} from '@lexical/core';
+import {createEditorStateRef, $isDecoratorNode, $getNodeByKey} from 'lexical';
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 import {Doc} from 'yjs';
 

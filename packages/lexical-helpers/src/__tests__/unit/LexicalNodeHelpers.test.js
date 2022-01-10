@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, State, NodeKey, LexicalNode} from '@lexical/core';
+import type {LexicalEditor, State, NodeKey, LexicalNode} from 'lexical';
 
 import {
   initializeUnitTest,
@@ -21,13 +21,10 @@ import {
   $areSiblingsNullOrSpace,
   $getNearestNodeOfType,
 } from '@lexical/helpers/nodes';
-import {
-  $createParagraphNode,
-  $isParagraphNode,
-} from '@lexical/core/ParagraphNode';
-import {$createTextNode, $getRoot} from '@lexical/core';
-import {$createListNode, ListNode} from '@lexical/core/ListNode';
-import {$createListItemNode} from '@lexical/core/ListItemNode';
+import {$createParagraphNode, $isParagraphNode} from 'lexical/ParagraphNode';
+import {$createTextNode, $getRoot} from 'lexical';
+import {$createListNode, ListNode} from 'lexical/ListNode';
+import {$createListItemNode} from 'lexical/ListItemNode';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {

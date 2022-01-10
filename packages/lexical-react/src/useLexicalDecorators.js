@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from '@lexical/core';
+import type {LexicalEditor} from 'lexical';
 
 // $FlowFixMe: Flow doesn't like this for some reason
 import {createPortal, flushSync} from 'react-dom';

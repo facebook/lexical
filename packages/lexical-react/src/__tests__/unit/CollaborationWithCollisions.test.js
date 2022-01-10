@@ -8,8 +8,8 @@
  */
 
 import {createTestConnection, waitForReact} from './utils';
-import {$getRoot, $createTextNode, $getSelection} from '@lexical/core';
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+import {$getRoot, $createTextNode, $getSelection} from 'lexical';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 function createAndStartClients(
   connector: TestConnection,

@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {TextNode, NodeKey, NodeMap} from '@lexical/core';
+import type {TextNode, NodeKey, NodeMap} from 'lexical';
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {Map as YMap} from 'yjs';
 
-import {$getSelection, $isTextNode, $getNodeByKey} from '@lexical/core';
+import {$getSelection, $isTextNode, $getNodeByKey} from 'lexical';
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
 function simpleDiffWithCursor(

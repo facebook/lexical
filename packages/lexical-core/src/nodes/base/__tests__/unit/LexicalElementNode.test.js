@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {$createTextNode, $getRoot} from '@lexical/core';
+import {$createTextNode, $getRoot} from 'lexical';
 import {
   $createTestElementNode,
   createTestEditor,

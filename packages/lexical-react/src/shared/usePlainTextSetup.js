@@ -12,11 +12,11 @@ import type {
   LexicalEditor,
   RootNode,
   CommandListenerEditorPriority,
-} from '@lexical/core';
+} from 'lexical';
 
-import {$log, $getRoot, $getSelection} from '@lexical/core';
+import {$log, $getRoot, $getSelection} from 'lexical';
 import useLexicalEditorEvents from '../useLexicalEditorEvents';
-import {$createParagraphNode, ParagraphNode} from '@lexical/core/ParagraphNode';
+import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {

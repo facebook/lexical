@@ -6,7 +6,7 @@
  *
  */
 
-import {$createTextNode, $getRoot} from '@lexical/core';
+import {$createTextNode, $getRoot} from 'lexical';
 
 import {
   emptyFunction,
@@ -20,8 +20,8 @@ import {
 
 import {initializeUnitTest} from '../utils';
 import {$getNodeByKey} from '../../LexicalUtils';
-import {$createParagraphNode, ParagraphNode} from '@lexical/core/ParagraphNode';
-import {TextNode} from '@lexical/core';
+import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
+import {TextNode} from 'lexical';
 
 describe('LexicalUtils tests', () => {
   initializeUnitTest((testEnv) => {

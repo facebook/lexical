@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {ListItemNode} from '@lexical/core/ListItemNode';
-import type {LexicalNode} from '@lexical/core';
-import type {ListNode} from '@lexical/core/ListNode';
-import type {TableNode} from '@lexical/core/TableNode';
+import type {ListItemNode} from 'lexical/ListItemNode';
+import type {LexicalNode} from 'lexical';
+import type {ListNode} from 'lexical/ListNode';
+import type {TableNode} from 'lexical/TableNode';
 
-import {$isListNode} from '@lexical/core/ListNode';
-import {$isListItemNode} from '@lexical/core/ListItemNode';
+import {$isListNode} from 'lexical/ListNode';
+import {$isListItemNode} from 'lexical/ListItemNode';
 import invariant from 'shared/invariant';
 import {
   $isElementNode,
@@ -21,10 +21,10 @@ import {
   $getRoot,
   $isLineBreakNode,
   $isTextNode,
-} from '@lexical/core';
-import {$createTableNode} from '@lexical/core/TableNode';
-import {$createTableRowNode} from '@lexical/core/TableRowNode';
-import {$createTableCellNode} from '@lexical/core/TableCellNode';
+} from 'lexical';
+import {$createTableNode} from 'lexical/TableNode';
+import {$createTableRowNode} from 'lexical/TableRowNode';
+import {$createTableCellNode} from 'lexical/TableCellNode';
 
 export function $dfs__DEPRECATED(
   startingNode: LexicalNode,

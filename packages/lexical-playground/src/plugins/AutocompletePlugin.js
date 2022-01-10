@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, NodeKey, EditorConfig} from '@lexical/core';
+import type {LexicalEditor, NodeKey, EditorConfig} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
@@ -19,7 +19,7 @@ import {
   $getNodeByKey,
   $getSelection,
   $getRoot,
-} from '@lexical/core';
+} from 'lexical';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {$textContentCurry} from '@lexical/helpers/root';
 

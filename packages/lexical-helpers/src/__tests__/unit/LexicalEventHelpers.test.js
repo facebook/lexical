@@ -1,12 +1,12 @@
-import {createEditor} from '@lexical/core';
+import {createEditor} from 'lexical';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useLexicalRichText from '@lexical/react/useLexicalRichText';
-import {$createTextNode} from '@lexical/core';
-import {LinkNode} from '@lexical/core/LinkNode';
+import {$createTextNode} from 'lexical';
+import {LinkNode} from 'lexical/LinkNode';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');

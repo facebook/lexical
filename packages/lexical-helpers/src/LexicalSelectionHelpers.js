@@ -14,7 +14,7 @@ import type {
   TextNode,
   ElementNode,
   Point,
-} from '@lexical/core';
+} from 'lexical';
 
 import {
   $createLineBreakNode,
@@ -24,7 +24,7 @@ import {
   $isElementNode,
   $createTextNode,
   $isRootNode,
-} from '@lexical/core';
+} from 'lexical';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 

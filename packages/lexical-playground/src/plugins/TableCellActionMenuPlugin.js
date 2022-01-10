@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {TableCellNode} from '@lexical/core/TableCellNode';
+import {TableCellNode} from 'lexical/TableCellNode';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
@@ -18,10 +18,10 @@ import {
   $createTextNode,
   $getSelection,
   $setSelection,
-} from '@lexical/core';
-import {TableRowNode, $createTableRowNode} from '@lexical/core/TableRowNode';
-import {$createTableCellNode} from '@lexical/core/TableCellNode';
-import {TableNode} from '@lexical/core/TableNode';
+} from 'lexical';
+import {TableRowNode, $createTableRowNode} from 'lexical/TableRowNode';
+import {$createTableCellNode} from 'lexical/TableCellNode';
+import {TableNode} from 'lexical/TableNode';
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 
 export function getTableCellNodeFromLexicalNode(

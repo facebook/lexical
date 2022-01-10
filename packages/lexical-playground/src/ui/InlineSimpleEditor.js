@@ -12,7 +12,7 @@ import type {
   LexicalEditor,
   EditorStateRef,
   EditorThemeClasses,
-} from '@lexical/core';
+} from 'lexical';
 
 import * as React from 'react';
 

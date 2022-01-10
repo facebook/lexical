@@ -12,10 +12,10 @@ import type {
   NodeKey,
   EditorConfig,
   EditorThemeClasses,
-} from '@lexical/core';
+} from 'lexical';
 
-import {$createTextNode, ElementNode} from '@lexical/core';
-import {$createListItemNode, $isListItemNode} from '@lexical/core/ListItemNode';
+import {$createTextNode, ElementNode} from 'lexical';
+import {$createListItemNode, $isListItemNode} from 'lexical/ListItemNode';
 
 import {
   addClassNamesToElement,

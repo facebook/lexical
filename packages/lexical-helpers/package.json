@@ -15,7 +15,7 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
-    "@lexical/core": "0.1.0"
+    "lexical": "0.1.0"
   },
   "peerDependencies": {
     "react": ">=17.x",

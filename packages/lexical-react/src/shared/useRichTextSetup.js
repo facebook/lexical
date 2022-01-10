@@ -13,18 +13,18 @@ import type {
   CommandListenerEditorPriority,
   TextFormatType,
   ElementFormatType,
-} from '@lexical/core';
+} from 'lexical';
 import type {InputEvents} from '@lexical/react/useLexicalEditorEvents';
 
-import {$log, $getSelection, $getRoot, $isElementNode} from '@lexical/core';
+import {$log, $getSelection, $getRoot, $isElementNode} from 'lexical';
 import useLexicalEditorEvents from '../useLexicalEditorEvents';
-import {HeadingNode} from '@lexical/core/HeadingNode';
-import {ListNode} from '@lexical/core/ListNode';
-import {QuoteNode} from '@lexical/core/QuoteNode';
-import {CodeNode} from '@lexical/core/CodeNode';
-import {ParagraphNode} from '@lexical/core/ParagraphNode';
-import {ListItemNode} from '@lexical/core/ListItemNode';
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+import {HeadingNode} from 'lexical/HeadingNode';
+import {ListNode} from 'lexical/ListNode';
+import {QuoteNode} from 'lexical/QuoteNode';
+import {CodeNode} from 'lexical/CodeNode';
+import {ParagraphNode} from 'lexical/ParagraphNode';
+import {ListItemNode} from 'lexical/ListItemNode';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {

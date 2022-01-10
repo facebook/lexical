@@ -13,15 +13,12 @@ import type {
   EditorThemeClasses,
   LexicalNode,
   Selection,
-} from '@lexical/core';
-import type {ParagraphNode} from '@lexical/core/ParagraphNode';
+} from 'lexical';
+import type {ParagraphNode} from 'lexical/ParagraphNode';
 
-import {$isElementNode, ElementNode} from '@lexical/core';
-import {
-  $createParagraphNode,
-  $isParagraphNode,
-} from '@lexical/core/ParagraphNode';
-import {$createListNode, $isListNode} from '@lexical/core/ListNode';
+import {$isElementNode, ElementNode} from 'lexical';
+import {$createParagraphNode, $isParagraphNode} from 'lexical/ParagraphNode';
+import {$createListNode, $isListNode} from 'lexical/ListNode';
 import invariant from 'shared/invariant';
 import {$getTopListNode, $isLastItemInList} from '@lexical/helpers/nodes';
 import {

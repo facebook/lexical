@@ -7,7 +7,7 @@
  * @flow
  */
 
-import type {LexicalEditor} from '@lexical/core';
+import type {LexicalEditor} from 'lexical';
 
 import useLayoutEffect from 'shared/useLayoutEffect';
 import {useState} from 'react';

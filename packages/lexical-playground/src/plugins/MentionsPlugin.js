@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {LexicalEditor, Selection} from '@lexical/core';
+import type {LexicalEditor, Selection} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {$log, $getSelection} from '@lexical/core';
+import {$log, $getSelection} from 'lexical';
 import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {MentionNode, $createMentionNode} from '../nodes/MentionNode';

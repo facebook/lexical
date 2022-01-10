@@ -17,7 +17,7 @@ import type {
   ElementNode,
   TextMutation,
   DOMConversionMap,
-} from '@lexical/core';
+} from 'lexical';
 
 import isTokenOrInert from 'shared/isTokenOrInert';
 import {$cloneContents, $insertRichText} from '@lexical/helpers/selection';
@@ -35,14 +35,14 @@ import {
   $getNearestNodeFromDOMNode,
   $flushMutations,
   $createLineBreakNode,
-} from '@lexical/core';
+} from 'lexical';
 import {IS_FIREFOX, IS_APPLE} from 'shared/environment';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {$createListNode} from '@lexical/core/ListNode';
-import {$createListItemNode} from '@lexical/core/ListItemNode';
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
-import {$createHeadingNode} from '@lexical/core/HeadingNode';
-import {$createLinkNode} from '@lexical/core/LinkNode';
+import {$createListNode} from 'lexical/ListNode';
+import {$createListItemNode} from 'lexical/ListItemNode';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createHeadingNode} from 'lexical/HeadingNode';
+import {$createLinkNode} from 'lexical/LinkNode';
 
 // TODO we shouldn't really be importing from core here.
 import {TEXT_TYPE_TO_FORMAT} from '../../lexical-core/src/LexicalConstants';

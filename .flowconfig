@@ -15,19 +15,19 @@ untyped-type-import=error
 [options]
 server.max_workers=4
 
-module.name_mapper='^@lexical/core$' -> '<PROJECT_ROOT>/packages/lexical-core/src/index.js'
+module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical-core/src/index.js'
 
-module.name_mapper='^@lexical/core/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalHeadingNode.js'
-module.name_mapper='^@lexical/core/ListNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalListNode.js'
-module.name_mapper='^@lexical/core/ListItemNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalListItemNode.js'
-module.name_mapper='^@lexical/core/TableNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalTableNode.js'
-module.name_mapper='^@lexical/core/TableRowNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalTableRowNode.js'
-module.name_mapper='^@lexical/core/TableCellNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalTableCellNode.js'
-module.name_mapper='^@lexical/core/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalQuoteNode.js'
-module.name_mapper='^@lexical/core/ParagraphNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalParagraphNode.js'
-module.name_mapper='^@lexical/core/CodeNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalCodeNode.js'
-module.name_mapper='^@lexical/core/LinkNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalLinkNode.js'
-module.name_mapper='^@lexical/core/HashtagNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalHashtagNode.js'
+module.name_mapper='^lexical/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalHeadingNode.js'
+module.name_mapper='^lexical/ListNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalListNode.js'
+module.name_mapper='^lexical/ListItemNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalListItemNode.js'
+module.name_mapper='^lexical/TableNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalTableNode.js'
+module.name_mapper='^lexical/TableRowNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalTableRowNode.js'
+module.name_mapper='^lexical/TableCellNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalTableCellNode.js'
+module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalQuoteNode.js'
+module.name_mapper='^lexical/ParagraphNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalParagraphNode.js'
+module.name_mapper='^lexical/CodeNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalCodeNode.js'
+module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalLinkNode.js'
+module.name_mapper='^lexical/HashtagNode' -> '<PROJECT_ROOT>/packages/lexical-core/src/nodes/extended/LexicalHashtagNode.js'
 
 module.name_mapper='^@lexical/helpers/selection' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalSelectionHelpers.js'
 module.name_mapper='^@lexical/helpers/text' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalTextHelpers.js'

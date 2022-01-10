@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalEditor, ElementNode} from '@lexical/core';
+import type {LexicalEditor, ElementNode} from 'lexical';
 
-import {CodeNode, $isCodeNode} from '@lexical/core/CodeNode';
+import {CodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {
   $createLineBreakNode,
   $createTextNode,
@@ -18,7 +18,7 @@ import {
   $isTextNode,
   $isLineBreakNode,
   $getSelection,
-} from '@lexical/core';
+} from 'lexical';
 import {useEffect} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';

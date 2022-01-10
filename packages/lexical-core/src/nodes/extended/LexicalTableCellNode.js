@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey, EditorConfig} from '@lexical/core';
+import type {LexicalNode, NodeKey, EditorConfig} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from '@lexical/core';
+import {ElementNode} from 'lexical';
 
 export class TableCellNode extends ElementNode {
   __isHeader: boolean;

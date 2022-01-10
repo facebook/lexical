@@ -6,7 +6,7 @@
  *
  */
 
-import type {State} from '@lexical/core';
+import type {State} from 'lexical';
 
 import {
   $createTextNode,
@@ -14,15 +14,15 @@ import {
   $getSelection,
   $getRoot,
   $getNodeByKey,
-} from '@lexical/core';
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+} from 'lexical';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$cloneContents} from '@lexical/helpers/selection';
 import {
   createTestEditor,
   $createTestElementNode,
   $createTestExcludeFromCopyElementNode,
 } from '../../../../lexical-core/src/__tests__/utils';
-import {$createHeadingNode} from '@lexical/core/HeadingNode';
+import {$createHeadingNode} from 'lexical/HeadingNode';
 
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = $createParagraphNode();

@@ -13,11 +13,11 @@ import type {
   LexicalEditor,
   EditorStateRef,
   NodeKey,
-} from '@lexical/core';
+} from 'lexical';
 
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {DecoratorNode, $getNodeByKey, $setSelection} from '@lexical/core';
+import {DecoratorNode, $getNodeByKey, $setSelection} from 'lexical';
 import InlineSimpleEditor from '../ui/InlineSimpleEditor';
 // $FlowFixMe
 import {createPortal} from 'react-dom';

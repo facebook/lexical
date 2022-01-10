@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {RootNode, TextNode} from '@lexical/core';
+import type {RootNode, TextNode} from 'lexical';
 
-import {$isTextNode, $isElementNode} from '@lexical/core';
+import {$isTextNode, $isElementNode} from 'lexical';
 
 export function $findTextIntersectionFromCharacters(
   root: RootNode,

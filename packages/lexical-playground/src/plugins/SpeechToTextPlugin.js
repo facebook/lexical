@@ -11,10 +11,10 @@ import type {
   CommandListenerEditorPriority,
   LexicalEditor,
   Selection,
-} from '@lexical/core';
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection} from '@lexical/core';
+import {$getSelection} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import useReport from '../hooks/useReport';
 

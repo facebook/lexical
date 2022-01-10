@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {State} from '@lexical/core';
+import type {State} from 'lexical';
 
-import {$createTextNode, $getRoot} from '@lexical/core';
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+import {$createTextNode, $getRoot} from 'lexical';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
   $isTextContentEmpty,
   $isTextContentEmptyCurry,

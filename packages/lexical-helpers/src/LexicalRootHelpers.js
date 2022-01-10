@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {$isElementNode, $isTextNode, $getRoot} from '@lexical/core';
+import {$isElementNode, $isTextNode, $getRoot} from 'lexical';
 
 export function $textContent(): string {
   const root = $getRoot();

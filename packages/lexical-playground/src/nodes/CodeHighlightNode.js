@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, EditorThemeClasses} from '@lexical/core';
+import type {NodeKey, EditorConfig, EditorThemeClasses} from 'lexical';
 
-import {LexicalNode, TextNode} from '@lexical/core';
+import {LexicalNode, TextNode} from 'lexical';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,

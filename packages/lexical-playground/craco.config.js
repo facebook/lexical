@@ -5,17 +5,17 @@ module.exports = {
   webpack: {
     alias: {
       // Lexical Core Nodes
-      '@lexical/core/HeadingNode': '@lexical/core/dist/LexicalHeadingNode',
-      '@lexical/core/ListNode': '@lexical/core/dist/LexicalListNode',
-      '@lexical/core/ListItemNode': '@lexical/core/dist/LexicalListItemNode',
-      '@lexical/core/TableNode': '@lexical/core/dist/LexicalTableNode',
-      '@lexical/core/TableRowNode': '@lexical/core/dist/LexicalTableRowNode',
-      '@lexical/core/TableCellNode': '@lexical/core/dist/LexicalTableCellNode',
-      '@lexical/core/QuoteNode': '@lexical/core/dist/LexicalQuoteNode',
-      '@lexical/core/ParagraphNode': '@lexical/core/dist/LexicalParagraphNode',
-      '@lexical/core/CodeNode': '@lexical/core/dist/LexicalCodeNode',
-      '@lexical/core/LinkNode': '@lexical/core/dist/LexicalLinkNode',
-      '@lexical/core/HashtagNode': '@lexical/core/dist/LexicalHashtagNode',
+      'lexical/HeadingNode': 'lexical/dist/LexicalHeadingNode',
+      'lexical/ListNode': 'lexical/dist/LexicalListNode',
+      'lexical/ListItemNode': 'lexical/dist/LexicalListItemNode',
+      'lexical/TableNode': 'lexical/dist/LexicalTableNode',
+      'lexical/TableRowNode': 'lexical/dist/LexicalTableRowNode',
+      'lexical/TableCellNode': 'lexical/dist/LexicalTableCellNode',
+      'lexical/QuoteNode': 'lexical/dist/LexicalQuoteNode',
+      'lexical/ParagraphNode': 'lexical/dist/LexicalParagraphNode',
+      'lexical/CodeNode': 'lexical/dist/LexicalCodeNode',
+      'lexical/LinkNode': 'lexical/dist/LexicalLinkNode',
+      'lexical/HashtagNode': 'lexical/dist/LexicalHashtagNode',
       // Lexical Helpers
       '@lexical/helpers/selection':
         '@lexical/helpers/dist/LexicalSelectionHelpers',

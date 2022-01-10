@@ -7,11 +7,11 @@
  * @flow strict
  */
 
-import type {LexicalEditor, Selection} from '@lexical/core';
+import type {LexicalEditor, Selection} from 'lexical';
 
 import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
-import {$getSelection, TextNode} from '@lexical/core';
+import {$getSelection, TextNode} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 const emojis: Map<string, [string, string]> = new Map([

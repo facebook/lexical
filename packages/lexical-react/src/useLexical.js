@@ -12,9 +12,9 @@ import type {
   EditorThemeClasses,
   EditorState,
   DOMConversionMap,
-} from '@lexical/core';
+} from 'lexical';
 
-import {createEditor} from '@lexical/core';
+import {createEditor} from 'lexical';
 import {useMemo} from 'react';
 import useLexicalEditor from './useLexicalEditor';
 

@@ -14,7 +14,7 @@ import type {
   NodeKey,
   TextFormatType,
   CommandListenerLowPriority,
-} from '@lexical/core';
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {
@@ -24,7 +24,7 @@ import {
   $createSelection,
   $getSelection,
   $setSelection,
-} from '@lexical/core';
+} from 'lexical';
 
 type Cell = {
   elem: HTMLElement,

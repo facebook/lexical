@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {$createCodeNode} from 'lexical/CodeNode';
+import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createListItemNode} from 'lexical/ListItemNode';
 import {$createListNode} from 'lexical/ListNode';
@@ -27,6 +27,7 @@ type TextNodeWithOffset = $ReadOnly<{
 
 type AutoFormatTriggerState = $ReadOnly<{
   anchorOffset: number,
+  isCodeBlock: boolean,
   isParentAParagraphNode: boolean,
   isSelectionCollapsed: boolean,
   isSimpleText: boolean,
@@ -348,6 +349,7 @@ function shouldAttemptToAutoFormat(
   }
 
   return (
+    currentTriggerState.isCodeBlock === false &&
     currentTriggerState.isSimpleText &&
     currentTriggerState.isSelectionCollapsed &&
     currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
@@ -370,6 +372,7 @@ function getTriggerState(
     const parentNode = node.getParent();
     criteria = {
       anchorOffset: selection.anchor.offset,
+      isCodeBlock: $isCodeNode(node),
       isSelectionCollapsed: selection.isCollapsed(),
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
       isParentAParagraphNode:

@@ -6,25 +6,20 @@
  *
  */
 
-import type {LexicalEditor} from '@lexical/core';
+import type {LexicalEditor} from 'lexical';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  createEditor,
-  ElementNode,
-  TextNode,
-  DecoratorNode,
-} from '@lexical/core';
-import {ParagraphNode} from '@lexical/core/ParagraphNode';
-import {HeadingNode} from '@lexical/core/HeadingNode';
-import {ListNode} from '@lexical/core/ListNode';
-import {ListItemNode} from '@lexical/core/ListItemNode';
-import {LinkNode} from '@lexical/core/LinkNode';
-import {QuoteNode} from '@lexical/core/QuoteNode';
-import {CodeNode} from '@lexical/core/CodeNode';
+import {createEditor, ElementNode, TextNode, DecoratorNode} from 'lexical';
+import {ParagraphNode} from 'lexical/ParagraphNode';
+import {HeadingNode} from 'lexical/HeadingNode';
+import {ListNode} from 'lexical/ListNode';
+import {ListItemNode} from 'lexical/ListItemNode';
+import {LinkNode} from 'lexical/LinkNode';
+import {QuoteNode} from 'lexical/QuoteNode';
+import {CodeNode} from 'lexical/CodeNode';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {

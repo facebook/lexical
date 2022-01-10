@@ -7,18 +7,18 @@
  * @flow strict
  */
 
-import {$createCodeNode} from '@lexical/core/CodeNode';
-import {$createHeadingNode} from '@lexical/core/HeadingNode';
-import {$createListItemNode} from '@lexical/core/ListItemNode';
-import {$createListNode} from '@lexical/core/ListNode';
-import {$createQuoteNode} from '@lexical/core/QuoteNode';
-import {$isParagraphNode} from '@lexical/core/ParagraphNode';
-import {$isTextNode, $getSelection} from '@lexical/core';
+import {$createCodeNode} from 'lexical/CodeNode';
+import {$createHeadingNode} from 'lexical/HeadingNode';
+import {$createListItemNode} from 'lexical/ListItemNode';
+import {$createListNode} from 'lexical/ListNode';
+import {$createQuoteNode} from 'lexical/QuoteNode';
+import {$isParagraphNode} from 'lexical/ParagraphNode';
+import {$isTextNode, $getSelection} from 'lexical';
 import {useEffect} from 'react';
-import type {EditorState, TextNode} from '@lexical/core';
-import type {ElementNode, LexicalEditor, Selection} from '@lexical/core';
-import type {HeadingTagType} from '@lexical/core/HeadingNode';
-import type {NodeKey, LexicalNode} from '@lexical/core';
+import type {EditorState, TextNode} from 'lexical';
+import type {ElementNode, LexicalEditor, Selection} from 'lexical';
+import type {HeadingTagType} from 'lexical/HeadingNode';
+import type {NodeKey, LexicalNode} from 'lexical';
 
 type TextNodeWithOffset = $ReadOnly<{
   node: TextNode,

@@ -6,13 +6,13 @@
  *
  */
 
-import {ListNode} from '@lexical/core/ListNode';
+import {ListNode} from 'lexical/ListNode';
 import {
   ListItemNode,
   $createListItemNode,
   $isListItemNode,
-} from '@lexical/core/ListItemNode';
-import {TextNode, $getRoot} from '@lexical/core';
+} from 'lexical/ListItemNode';
+import {TextNode, $getRoot} from 'lexical';
 import {initializeUnitTest} from '../../../../../../lexical-core/src/__tests__/utils';
 
 const editorConfig = Object.freeze({

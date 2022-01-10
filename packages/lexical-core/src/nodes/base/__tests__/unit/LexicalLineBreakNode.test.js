@@ -6,7 +6,7 @@
  *
  */
 
-import {$createLineBreakNode, $isLineBreakNode} from '@lexical/core';
+import {$createLineBreakNode, $isLineBreakNode} from 'lexical';
 import {initializeUnitTest} from '../../../../__tests__/utils';
 
 describe('LexicalLineBreakNode tests', () => {

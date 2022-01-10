@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from '@lexical/core';
+import type {LexicalEditor} from 'lexical';
 
-import {VERSION} from '@lexical/core';
+import {VERSION} from 'lexical';
 
 export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem((text) => {

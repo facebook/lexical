@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from '@lexical/core';
+import type {LexicalEditor} from 'lexical';
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -21,8 +21,8 @@ import {
   $getSelection,
   $getNodeByKey,
   $isTextNode,
-} from '@lexical/core';
-import {$createParagraphNode, ParagraphNode} from '@lexical/core/ParagraphNode';
+} from 'lexical';
+import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
 import useLexicalRichText from '@lexical/react/useLexicalRichText';
 import {getEditorStateTextContent} from '../../LexicalUtils';
 import {

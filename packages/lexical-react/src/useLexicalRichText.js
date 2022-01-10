@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from '@lexical/core';
+import type {LexicalEditor} from 'lexical';
 import type {HistoryState} from './useLexicalHistory';
 
 import {useRichTextSetup} from './shared/useRichTextSetup';

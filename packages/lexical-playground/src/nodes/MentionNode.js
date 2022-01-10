@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, LexicalNode} from '@lexical/core';
+import type {NodeKey, EditorConfig, LexicalNode} from 'lexical';
 
-import {TextNode} from '@lexical/core';
+import {TextNode} from 'lexical';
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 

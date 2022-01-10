@@ -79,7 +79,7 @@ When you work with Lexical, you normally work with a single editor instance. An 
 an optional configuration object that allows for theming and the passing of context:
 
 ```js
-import {createEditor} from '@lexical/core';
+import {createEditor} from 'lexical';
 
 const config = {
   onError(error) {

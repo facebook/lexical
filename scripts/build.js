@@ -45,7 +45,7 @@ if (isClean) {
 }
 
 const wwwMappings = {
-  '@lexical/core': 'Lexical',
+  lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
   '@lexical/yjs': 'LexicalYjs',
 };
@@ -55,7 +55,7 @@ const lexicalNodes = fs
   .map((str) => path.basename(str, '.js'))
   .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
 const lexicalNodesExternals = lexicalNodes.map((node) => {
-  const external = `@lexical/core/${node.replace('Lexical', '')}`;
+  const external = `lexical/${node.replace('Lexical', '')}`;
   wwwMappings[external] = node;
   return external;
 });
@@ -89,7 +89,7 @@ const externals = [
   // Note: do not add stylex here, as we can't export and sync
   // modules that use Stylex to www (the babel plugin on www
   // is different to that of the OSS version).
-  '@lexical/core',
+  'lexical',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -109,9 +109,9 @@ const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
 const strictWWWMappings = {};
 
 // Add quotes around mappings to make them more strict.
-Object.keys(wwwMappings).forEach(mapping => {
+Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
-})
+});
 
 async function build(name, inputFile, outputFile) {
   const inputOptions = {
@@ -231,7 +231,7 @@ async function build(name, inputFile, outputFile) {
             preventAssignment: true,
             __DEV__: isProduction ? 'false' : 'true',
           },
-          isWWW && strictWWWMappings
+          isWWW && strictWWWMappings,
         ),
       ),
       isProduction && closure(closureOptions),

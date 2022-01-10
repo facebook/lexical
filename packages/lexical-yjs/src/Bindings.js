@@ -8,7 +8,7 @@
  */
 
 import type {Cursor} from './SyncCursors';
-import type {NodeKey, LexicalEditor} from '@lexical/core';
+import type {NodeKey, LexicalEditor} from 'lexical';
 import type {Provider} from '.';
 import type {Doc} from 'yjs';
 import type {CollabElementNode} from './CollabElementNode';

@@ -13,7 +13,7 @@ import type {
   NodeKey,
   LexicalNode,
   Selection,
-} from '@lexical/core';
+} from 'lexical';
 
 import {
   ElementNode,
@@ -23,7 +23,7 @@ import {
   $getSelection,
   $getRoot,
   $setSelection,
-} from '@lexical/core';
+} from 'lexical';
 import {$dfs__DEPRECATED} from '@lexical/helpers/nodes';
 import {$textContentCurry} from '@lexical/helpers/root';
 import {useEffect} from 'react';

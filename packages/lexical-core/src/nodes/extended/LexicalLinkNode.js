@@ -7,15 +7,10 @@
  * @flow strict
  */
 
-import type {
-  NodeKey,
-  EditorConfig,
-  LexicalNode,
-  Selection,
-} from '@lexical/core';
+import type {NodeKey, EditorConfig, LexicalNode, Selection} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from '@lexical/core';
+import {ElementNode} from 'lexical';
 
 export class LinkNode extends ElementNode {
   __url: string;

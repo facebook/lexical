@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from '@lexical/core';
+import type {LexicalEditor} from 'lexical';
 
 import {useEffect} from 'react';
-import {TextNode} from '@lexical/core';
-import {$isParagraphNode} from '@lexical/core/ParagraphNode';
-import {$createListItemNode} from '@lexical/core/ListItemNode';
-import {$createHeadingNode} from '@lexical/core/HeadingNode';
-import {$createListNode} from '@lexical/core/ListNode';
-import {$createQuoteNode} from '@lexical/core/QuoteNode';
-import {$createCodeNode} from '@lexical/core/CodeNode';
+import {TextNode} from 'lexical';
+import {$isParagraphNode} from 'lexical/ParagraphNode';
+import {$createListItemNode} from 'lexical/ListItemNode';
+import {$createHeadingNode} from 'lexical/HeadingNode';
+import {$createListNode} from 'lexical/ListNode';
+import {$createQuoteNode} from 'lexical/QuoteNode';
+import {$createCodeNode} from 'lexical/CodeNode';
 
 function updateTextNode(node: TextNode, count: number): void {
   const textNode = node.spliceText(0, count, '', true);

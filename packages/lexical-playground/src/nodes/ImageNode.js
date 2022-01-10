@@ -13,10 +13,10 @@ import type {
   LexicalNode,
   LexicalEditor,
   EditorStateRef,
-} from '@lexical/core';
+} from 'lexical';
 
 import * as React from 'react';
-import {DecoratorNode, $log, $getNodeByKey} from '@lexical/core';
+import {DecoratorNode, $log, $getNodeByKey} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   useCollaborationContext,

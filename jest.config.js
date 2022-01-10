@@ -18,28 +18,28 @@ module.exports = {
       displayName: 'unit',
       testMatch: ['**/__tests__/unit/**/*.test.js'],
       moduleNameMapper: {
-        '^@lexical/core$': '<rootDir>/packages/lexical-core/src/index.js',
-        '^@lexical/core/ParagraphNode$':
+        '^lexical$': '<rootDir>/packages/lexical-core/src/index.js',
+        '^lexical/ParagraphNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalParagraphNode.js',
-        '^@lexical/core/HeadingNode$':
+        '^lexical/HeadingNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalHeadingNode.js',
-        '^@lexical/core/ListNode$':
+        '^lexical/ListNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalListNode.js',
-        '^@lexical/core/ListItemNode$':
+        '^lexical/ListItemNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalListItemNode.js',
-        '^@lexical/core/TableNode$':
+        '^lexical/TableNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalTableNode.js',
-        '^@lexical/core/TableRowNode$':
+        '^lexical/TableRowNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalTableRowNode.js',
-        '^@lexical/core/TableCellNode$':
+        '^lexical/TableCellNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalTableCellNode.js',
-        '^@lexical/core/LinkNode$':
+        '^lexical/LinkNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalLinkNode.js',
-        '^@lexical/core/QuoteNode$':
+        '^lexical/QuoteNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalQuoteNode.js',
-        '^@lexical/core/CodeNode$':
+        '^lexical/CodeNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalCodeNode.js',
-        '^@lexical/core/HashtagNode$':
+        '^lexical/HashtagNode$':
           '<rootDir>/packages/lexical-core/src/nodes/extended/LexicalHashtagNode.js',
         '^@lexical/react/useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/useLexicalRichText.js',

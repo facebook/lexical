@@ -7,11 +7,11 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from '@lexical/core';
+import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {$log, $getSelection, createEditorStateRef} from '@lexical/core';
+import {$log, $getSelection, createEditorStateRef} from 'lexical';
 import {ImageNode, $createImageNode} from '../nodes/ImageNode';
 
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';

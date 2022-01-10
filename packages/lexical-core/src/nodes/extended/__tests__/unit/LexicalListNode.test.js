@@ -6,14 +6,14 @@
  *
  */
 
-import {$createListNode, $isListNode} from '@lexical/core/ListNode';
+import {$createListNode, $isListNode} from 'lexical/ListNode';
 import {initializeUnitTest} from '../../../../../../lexical-core/src/__tests__/utils';
 import {
   $createListItemNode,
   $isListItemNode,
   ListItemNode,
-} from '@lexical/core/ListItemNode';
-import {TextNode} from '@lexical/core';
+} from 'lexical/ListItemNode';
+import {TextNode} from 'lexical';
 import {ParagraphNode} from '../../LexicalParagraphNode';
 import {ListNode} from '../../LexicalListNode';
 

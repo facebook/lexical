@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, EditorThemeClasses} from '@lexical/core';
+import type {LexicalEditor, EditorThemeClasses} from 'lexical';
 import invariant from 'shared/invariant';
 import {createContext as createReactContext, useContext} from 'react';
 

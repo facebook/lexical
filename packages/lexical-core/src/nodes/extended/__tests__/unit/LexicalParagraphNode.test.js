@@ -10,9 +10,9 @@ import {
   ParagraphNode,
   $createParagraphNode,
   $isParagraphNode,
-} from '@lexical/core/ParagraphNode';
+} from 'lexical/ParagraphNode';
 import {initializeUnitTest} from '../../../../../../lexical-core/src/__tests__/utils';
-import {$getRoot} from '@lexical/core';
+import {$getRoot} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {

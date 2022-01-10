@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import {$createCodeNode} from '@lexical/core/CodeNode';
 import {$createHeadingNode} from '@lexical/core/HeadingNode';
 import {$createListItemNode} from '@lexical/core/ListItemNode';
 import {$createListNode} from '@lexical/core/ListNode';
@@ -34,14 +35,29 @@ type AutoFormatTriggerState = $ReadOnly<{
   textContent: string,
 }>;
 
+// When auto formatting, this enum represents the potential new node paragraph level node kind.
+type NodeTransformationKind =
+  | 'blockQuote'
+  | 'unorderedList'
+  | 'orderedList'
+  | 'codeBlock';
+
+// The auto formatter life cycle is:
+// 1. Examine the current and prior editor states to see if a potential auto format is triggered.
+// 2. If triggered, examine the current editor state to see if it matches a particular
+//    set of criteria from an array of criteria.
+//    A match might be based on particular string (match), a particular regular expression (regEx)
+//    and/or other specifics. For example "# " would trigger a match only if typed at the start of
+//    a paragraph (requiresParagraphStart).
+// 3. Once the criteria is located, the auto formatter substitutes the new text and applies the new
+//    rich text formatting.
+
 type AutoFormatCriteria = $ReadOnly<{
   match: ?string,
   matchWithRegEx: boolean,
   requiresParagraphStart: ?boolean,
   headingTag: ?HeadingTagType,
-  isBlockQuote: boolean,
-  isUnorderedList: boolean,
-  isOrderedList: boolean,
+  nodeTransformationKind: ?NodeTransformationKind,
   regEx: RegExp,
   regExExpectedMatchCount: ?number,
 }>;
@@ -61,9 +77,7 @@ const autoFormatBase: AutoFormatCriteria = {
   matchWithRegEx: false,
   requiresParagraphStart: false,
   headingTag: null,
-  isBlockQuote: false,
-  isUnorderedList: false,
-  isOrderedList: false,
+  nodeTransformationKind: null,
   regEx: emptyRegExp,
   regExExpectedMatchCount: null,
 };
@@ -94,25 +108,31 @@ const markdownHeader3: AutoFormatCriteria = {
 const markdownBlockQuote: AutoFormatCriteria = {
   ...paragraphStartBase,
   match: '> ',
-  isBlockQuote: true,
+  nodeTransformationKind: 'blockQuote',
 };
 
 const markdownUnorderedListDash: AutoFormatCriteria = {
   ...paragraphStartBase,
   match: '- ',
-  isUnorderedList: true,
+  nodeTransformationKind: 'unorderedList',
 };
 
 const markdownUnorderedListAsterisk: AutoFormatCriteria = {
   ...paragraphStartBase,
   match: '* ',
-  isUnorderedList: true,
+  nodeTransformationKind: 'unorderedList',
+};
+
+const markdownCodeBlock: AutoFormatCriteria = {
+  ...paragraphStartBase,
+  match: '``` ',
+  nodeTransformationKind: 'codeBlock',
 };
 
 const markdownOrderedListAsterisk: AutoFormatCriteria = {
   ...paragraphStartBase,
   matchWithRegEx: true,
-  isOrderedList: true,
+  nodeTransformationKind: 'orderedList',
   regEx: /^(\d+)\.\s/,
   regExExpectedMatchCount: 2 /*1: 'number. ' 2: 'number'*/,
 };
@@ -125,6 +145,7 @@ const allAutoFormatCriteria = [
   markdownUnorderedListDash,
   markdownUnorderedListAsterisk,
   markdownOrderedListAsterisk,
+  markdownCodeBlock,
 ];
 
 function updateTextNode(node: TextNode, count: number): void {
@@ -244,27 +265,33 @@ function getNewNodeForCriteria(
     return newNode;
   }
 
-  if (autoFormatCriteria.isBlockQuote === true) {
-    newNode = $createQuoteNode();
-    newNode.append(...children);
-    return newNode;
-  }
-
-  if (autoFormatCriteria.isUnorderedList === true) {
-    newNode = $createListNode('ul');
-    const listItem = $createListItemNode();
-    listItem.append(...children);
-    newNode.append(listItem);
-    return newNode;
-  }
-
-  if (autoFormatCriteria.isOrderedList === true) {
-    const start = parseInt(matchResultContext.regExSupportingText, 10);
-    newNode = $createListNode('ol', start);
-    const listItem = $createListItemNode();
-    listItem.append(...children);
-    newNode.append(listItem);
-    return newNode;
+  if (autoFormatCriteria.nodeTransformationKind != null) {
+    switch (autoFormatCriteria.nodeTransformationKind) {
+      case 'blockQuote': {
+        newNode = $createQuoteNode();
+        newNode.append(...children);
+        return newNode;
+      }
+      case 'unorderedList': {
+        newNode = $createListNode('ul');
+        const listItem = $createListItemNode();
+        listItem.append(...children);
+        newNode.append(listItem);
+        return newNode;
+      }
+      case 'orderedList': {
+        const start = parseInt(matchResultContext.regExSupportingText, 10);
+        newNode = $createListNode('ol', start);
+        const listItem = $createListItemNode();
+        listItem.append(...children);
+        newNode.append(listItem);
+        return newNode;
+      }
+      case 'codeBlock': {
+        newNode = $createCodeNode();
+        newNode.append(...children);
+      }
+    }
   }
 
   return newNode;

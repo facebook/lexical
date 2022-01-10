@@ -159,21 +159,19 @@ function getMatchResultContextForCriteria(
   autoFormatCriteria: AutoFormatCriteria,
   textNodeWithOffset: TextNodeWithOffset,
 ): null | MatchResultContext {
-  let shouldFormat = true;
   const matchResultContext: MatchResultContext = {
     text: '',
     textIndex: -1,
     regExSupportingText: '',
   };
 
-  shouldFormat = textNodeWithOffset.node.getPreviousSibling() === null;
-  if (
-    shouldFormat &&
+  let shouldFormat = false;
+  const paragraphStartConditionPasses =
     autoFormatCriteria.requiresParagraphStart !== null &&
-    autoFormatCriteria.requiresParagraphStart === true
-  ) {
-  }
-  if (shouldFormat) {
+    autoFormatCriteria.requiresParagraphStart === true &&
+    textNodeWithOffset.node.getPreviousSibling() === null;
+
+  if (paragraphStartConditionPasses) {
     const text = textNodeWithOffset.node.getTextContent();
 
     if (autoFormatCriteria.matchWithRegEx === true) {
@@ -199,15 +197,11 @@ function getMatchResultContextForCriteria(
     }
 
     shouldFormat =
-      matchResultContext.textIndex >= 0 &&
+      matchResultContext.textIndex === 0 &&
       matchResultContext.textIndex + matchResultContext.text.length ===
         textNodeWithOffset.offset;
-
-    shouldFormat =
-      shouldFormat &&
-      (autoFormatCriteria.requiresParagraphStart == null ||
-        matchResultContext.textIndex === 0);
   }
+
   return shouldFormat ? matchResultContext : null;
 }
 
@@ -397,6 +391,7 @@ export default function useLexicalAutoFormatter(editor: LexicalEditor): void {
 
     let priorTriggerState: null | AutoFormatTriggerState = null;
     editor.addListener('update', ({tags}) => {
+      // Examine historic so that we are not running autoformatting within markdown.
       if (tags.has('historic') === false) {
         const currentTriggerState = getTriggerState(editor.getEditorState());
 

@@ -10,10 +10,10 @@ import {
   HeadingNode,
   $createHeadingNode,
   $isHeadingNode,
-} from '@lexical/core/HeadingNode';
-import {ParagraphNode} from '@lexical/core/ParagraphNode';
+} from 'lexical/HeadingNode';
+import {ParagraphNode} from 'lexical/ParagraphNode';
 import {initializeUnitTest} from '../../../../../../lexical-core/src/__tests__/utils';
-import {$createTextNode, $getRoot} from '@lexical/core';
+import {$createTextNode, $getRoot} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {

@@ -7,16 +7,11 @@
  * @flow strict
  */
 
-import type {LexicalEditor, NodeKey} from '@lexical/core';
+import type {LexicalEditor, NodeKey} from 'lexical';
 
 import {initializeUnitTest} from '../../../../lexical-core/src/__tests__/utils';
-import {
-  $createTextNode,
-  $getSelection,
-  $getNodeByKey,
-  $getRoot,
-} from '@lexical/core';
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+import {$createTextNode, $getSelection, $getNodeByKey, $getRoot} from 'lexical';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
   $createOverflowNode,
   mergePrevious,

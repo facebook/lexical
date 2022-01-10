@@ -12,7 +12,7 @@ import {
   Selection,
   $getSelection,
   $getRoot,
-} from '@lexical/core';
+} from 'lexical';
 
 import React from 'react';
 import ReactDOM from 'react-dom';

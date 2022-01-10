@@ -205,6 +205,15 @@ function createMergeActionGetter(
     tags,
   ) => {
     const changeTime = Date.now();
+
+    // If applying changes from history stack there's no need
+    // to run history logic again, as history entries already calculated
+    if (tags.has('historic')) {
+      prevChangeType = OTHER;
+      prevChangeTime = changeTime;
+      return DISCARD;
+    }
+
     const changeType = getChangeType(
       prevEditorState,
       nextEditorState,
@@ -277,11 +286,6 @@ export function useLexicalHistory(
       dirtyElements,
       tags,
     }) => {
-      // If applying changes from history stack there's no need
-      // to run history logic again, as history entries already calculated
-      if (tags.has('historic')) {
-        return;
-      }
       const current = historyState.current;
       const redoStack = historyState.redoStack;
       const undoStack = historyState.undoStack;

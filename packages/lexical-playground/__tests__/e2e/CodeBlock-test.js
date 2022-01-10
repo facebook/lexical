@@ -20,7 +20,7 @@ describe('CodeBlock', () => {
     it('Can create code block with markdown', async () => {
       const {page, isRichText} = e2e;
       await focusEditor(page);
-      await page.keyboard.type('```alert(1);');
+      await page.keyboard.type('``` alert(1);');
       if (isRichText) {
         await assertSelection(page, {
           anchorPath: [0, 4, 0],
@@ -53,7 +53,7 @@ describe('CodeBlock', () => {
       await focusEditor(page);
       await page.keyboard.type('alert(1);');
       await moveToEditorBeginning(page);
-      await page.keyboard.type('```');
+      await page.keyboard.type('``` ');
       if (isRichText) {
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -76,7 +76,7 @@ describe('CodeBlock', () => {
     it('Can switch highlighting language in a toolbar', async () => {
       const {page, isRichText} = e2e;
       await focusEditor(page);
-      await page.keyboard.type('```select * from users');
+      await page.keyboard.type('``` select * from users');
       if (isRichText) {
         await assertHTML(
           page,

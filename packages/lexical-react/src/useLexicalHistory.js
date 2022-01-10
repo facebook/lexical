@@ -15,14 +15,9 @@ import type {
   NodeKey,
   IntentionallyMarkedAsDirtyElement,
   CommandListenerEditorPriority,
-} from '@lexical/core';
+} from 'lexical';
 
-import {
-  $isTextNode,
-  $isElementNode,
-  $isRootNode,
-  $getSelection,
-} from '@lexical/core';
+import {$isTextNode, $isElementNode, $isRootNode, $getSelection} from 'lexical';
 import {useCallback, useEffect, useMemo} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 

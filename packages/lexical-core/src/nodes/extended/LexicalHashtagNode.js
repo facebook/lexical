@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {NodeKey, LexicalNode, EditorConfig} from '@lexical/core';
+import type {NodeKey, LexicalNode, EditorConfig} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {TextNode, $isTextNode, $createTextNode} from '@lexical/core';
+import {TextNode, $isTextNode, $createTextNode} from 'lexical';
 
 export class HashtagNode extends TextNode {
   static getType(): string {

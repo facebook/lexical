@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from '@lexical/core';
+import type {CommandListenerEditorPriority} from 'lexical';
 
 import * as React from 'react';
 import {useEffect, useState} from 'react';

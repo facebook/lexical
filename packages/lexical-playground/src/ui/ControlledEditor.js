@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {EditorState, LexicalEditor, EditorStateRef} from '@lexical/core';
+import type {EditorState, LexicalEditor, EditorStateRef} from 'lexical';
 
 import * as React from 'react';
 

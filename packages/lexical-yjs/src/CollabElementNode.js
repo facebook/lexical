@@ -13,7 +13,7 @@ import type {
   NodeKey,
   IntentionallyMarkedAsDirtyElement,
   NodeMap,
-} from '@lexical/core';
+} from 'lexical';
 import type {Binding} from '.';
 
 import {
@@ -33,7 +33,7 @@ import {
   $isTextNode,
   $getNodeByKey,
   $isDecoratorNode,
-} from '@lexical/core';
+} from 'lexical';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {Map as YMap} from 'yjs';
 

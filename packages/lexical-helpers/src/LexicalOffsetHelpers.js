@@ -13,14 +13,14 @@ import type {
   LexicalEditor,
   NodeMap,
   EditorState,
-} from '@lexical/core';
+} from 'lexical';
 
 import {
   $createSelection,
   $isElementNode,
   $isTextNode,
   $getNodeByKey,
-} from '@lexical/core';
+} from 'lexical';
 import invariant from 'shared/invariant';
 
 type OffsetElementNode = {

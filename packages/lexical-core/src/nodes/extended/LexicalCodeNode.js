@@ -7,17 +7,12 @@
  * @flow strict
  */
 
-import type {
-  NodeKey,
-  EditorConfig,
-  Selection,
-  LexicalNode,
-} from '@lexical/core';
-import type {ParagraphNode} from '@lexical/core/ParagraphNode';
+import type {NodeKey, EditorConfig, Selection, LexicalNode} from 'lexical';
+import type {ParagraphNode} from 'lexical/ParagraphNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from '@lexical/core';
-import {$createParagraphNode} from '@lexical/core/ParagraphNode';
+import {ElementNode} from 'lexical';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 export class CodeNode extends ElementNode {
   __language: string | void;

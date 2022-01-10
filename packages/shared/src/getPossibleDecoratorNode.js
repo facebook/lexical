@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalNode, Point} from '@lexical/core';
+import type {LexicalNode, Point} from 'lexical';
 
 export default function getPossibleDecoratorNode(
   focus: Point,

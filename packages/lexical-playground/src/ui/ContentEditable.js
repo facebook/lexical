@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import * as React from 'react';
 import {useEffect, useState} from 'react';
-import LexicalComposerContentEditable from '@lexical/react/LexicalComposerContentEditable';
+import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import stylex from 'stylex';
 
@@ -59,7 +59,7 @@ export default function ContentEditable({
   }, [editor]);
 
   return (
-    <LexicalComposerContentEditable
+    <LexicalContentEditable
       className={className || stylex(styles.root)}
       isReadOnly={isReadOnly}
     />

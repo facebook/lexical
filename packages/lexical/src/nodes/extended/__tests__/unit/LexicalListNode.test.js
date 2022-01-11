@@ -7,7 +7,7 @@
  */
 
 import {$createListNode, $isListNode} from 'lexical/ListNode';
-import {initializeUnitTest} from '../../../../../../lexical-core/src/__tests__/utils';
+import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 import {
   $createListItemNode,
   $isListItemNode,

@@ -7,7 +7,7 @@
  */
 
 import {LinkNode, $createLinkNode, $isLinkNode} from 'lexical/LinkNode';
-import {initializeUnitTest} from '../../../../../../lexical-core/src/__tests__/utils';
+import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   theme: {

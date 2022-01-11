@@ -12,7 +12,7 @@ import type {LexicalEditor, State, NodeKey, LexicalNode} from 'lexical';
 import {
   initializeUnitTest,
   $createTestElementNode,
-} from '../../../../lexical-core/src/__tests__/utils';
+} from '../../../../lexical/src/__tests__/utils';
 import {
   $dfs__DEPRECATED,
   $getListDepth,

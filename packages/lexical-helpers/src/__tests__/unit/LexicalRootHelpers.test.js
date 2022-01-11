@@ -17,7 +17,7 @@ import {
   $textContent,
   $textContentCurry,
 } from '@lexical/helpers/root';
-import {initializeUnitTest} from '../../../../lexical-core/src/__tests__/utils';
+import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 describe('LexicalRootHelpers tests', () => {
   initializeUnitTest((testEnv) => {

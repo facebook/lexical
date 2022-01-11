@@ -23,7 +23,7 @@ import {
   $createTestElementNode,
   $createTestDecoratorNode,
   createTestEditor,
-} from '../../../../lexical-core/src/__tests__/utils';
+} from '../../../../lexical/src/__tests__/utils';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');

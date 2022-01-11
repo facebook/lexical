@@ -58,8 +58,8 @@ module.exports = {
         '@lexical/react/dist/useLexicalHistory',
       '@lexical/react/withSubscriptions':
         '@lexical/react/dist/withSubscriptions',
-      '@lexical/react/LexicalComposerContentEditable':
-        '@lexical/react/dist/LexicalComposerContentEditable',
+      '@lexical/react/LexicalContentEditable':
+        '@lexical/react/dist/LexicalContentEditable',
 
       // Composer and it's plugins
       '@lexical/react/LexicalComposer': '@lexical/react/dist/LexicalComposer',

@@ -17,6 +17,14 @@ production-ready utility functions, helpers and React hooks that make it seemles
 
 ## Getting started with React
 
+You can create a new react project using [create-react-app](https://reactjs.org/docs/create-a-new-react-app.html)
+
+Install `lexical` and `lexical-react`:
+
+```
+npm install --save lexical @lexical/react
+```
+
 Below is an example of a basic plain text editor using `lexical` and `lexical-react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
 
 
@@ -113,7 +121,7 @@ TODO
 
 ### Updating an editor instance
 
-There are two ways to update an editor instance, either with `editor.update()` or `editor.setEditorState()`. 
+There are two ways to update an editor instance, either with `editor.update()` or `editor.setEditorState()`.
 
 TODO
 

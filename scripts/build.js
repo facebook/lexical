@@ -38,7 +38,7 @@ const closureOptions = {
 };
 
 if (isClean) {
-  fs.removeSync(path.resolve('./packages/lexical-core/dist'));
+  fs.removeSync(path.resolve('./packages/lexical/dist'));
   fs.removeSync(path.resolve('./packages/lexical-react/dist'));
   fs.removeSync(path.resolve('./packages/lexical-helpers/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
@@ -51,7 +51,7 @@ const wwwMappings = {
 };
 
 const lexicalNodes = fs
-  .readdirSync(path.resolve('./packages/lexical-core/src/nodes/extended'))
+  .readdirSync(path.resolve('./packages/lexical/src/nodes/extended'))
   .map((str) => path.basename(str, '.js'))
   .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
 const lexicalNodesExternals = lexicalNodes.map((node) => {
@@ -297,15 +297,15 @@ function getFileName(fileName) {
 
 build(
   'Lexical Core',
-  path.resolve('./packages/lexical-core/src/index.js'),
-  path.resolve(`./packages/lexical-core/dist/${getFileName('Lexical')}`),
+  path.resolve('./packages/lexical/src/index.js'),
+  path.resolve(`./packages/lexical/dist/${getFileName('Lexical')}`),
 );
 
 lexicalNodes.forEach((module) => {
   build(
     `Lexical Core Nodes - ${module}`,
-    path.resolve(`./packages/lexical-core/src/nodes/extended/${module}.js`),
-    path.resolve(`./packages/lexical-core/dist/${getFileName(module)}`),
+    path.resolve(`./packages/lexical/src/nodes/extended/${module}.js`),
+    path.resolve(`./packages/lexical/dist/${getFileName(module)}`),
   );
 });
 

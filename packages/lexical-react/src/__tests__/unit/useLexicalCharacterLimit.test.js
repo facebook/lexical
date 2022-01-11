@@ -9,7 +9,7 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {initializeUnitTest} from '../../../../lexical-core/src/__tests__/utils';
+import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {$createTextNode, $getSelection, $getNodeByKey, $getRoot} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {

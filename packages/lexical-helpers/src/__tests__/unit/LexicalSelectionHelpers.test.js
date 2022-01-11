@@ -21,7 +21,7 @@ import {
   createTestEditor,
   $createTestElementNode,
   $createTestExcludeFromCopyElementNode,
-} from '../../../../lexical-core/src/__tests__/utils';
+} from '../../../../lexical/src/__tests__/utils';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 
 function createParagraphWithNodes(editor, nodes) {

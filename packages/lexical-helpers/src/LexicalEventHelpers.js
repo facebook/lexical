@@ -45,7 +45,7 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 
 // TODO we shouldn't really be importing from core here.
-import {TEXT_TYPE_TO_FORMAT} from '../../lexical-core/src/LexicalConstants';
+import {TEXT_TYPE_TO_FORMAT} from '../../lexical/src/LexicalConstants';
 
 const NO_BREAK_SPACE_CHAR = '\u00A0';
 

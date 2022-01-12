@@ -25,7 +25,7 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import TableCellActionMenuPlugin from '@lexical/react/LexicalTableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
-import LinksPlugin from './plugins/LinksPlugin';
+import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import StickyPlugin from './plugins/StickyPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
@@ -75,7 +75,7 @@ export default function Editor({
         <TablesPlugin />
         <TableCellActionMenuPlugin />
         <ImagesPlugin />
-        <LinksPlugin />
+        <LinkPlugin />
         <EmojisPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />

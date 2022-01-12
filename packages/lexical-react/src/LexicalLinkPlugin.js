@@ -1,0 +1,126 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {CommandListenerEditorPriority} from 'lexical';
+
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useEffect} from 'react';
+import {$log, $getSelection, $setSelection} from 'lexical';
+import {$createLinkNode, LinkNode, $isLinkNode} from 'lexical/LinkNode';
+
+const EditorPriority: CommandListenerEditorPriority = 0;
+
+function toggleLink(url: null | string) {
+  const selection = $getSelection();
+  $log('toggleLink');
+  if (selection !== null) {
+    $setSelection(selection);
+  }
+  const sel = $getSelection();
+  if (sel !== null) {
+    const nodes = sel.extract();
+    if (url === null) {
+      // Remove LinkNodes
+      nodes.forEach((node) => {
+        const parent = node.getParent();
+
+        if ($isLinkNode(parent)) {
+          const children = parent.getChildren();
+          for (let i = 0; i < children.length; i++) {
+            parent.insertBefore(children[i]);
+          }
+          parent.remove();
+        }
+      });
+    } else {
+      // Add or merge LinkNodes
+      let prevParent = null;
+      let linkNode = null;
+      if (nodes.length === 1) {
+        const firstNode = nodes[0];
+        // if the first node is a LinkNode or if its
+        // parent is a LinkNode, we update the URL.
+        if ($isLinkNode(firstNode)) {
+          firstNode.setURL(url);
+          return;
+        } else {
+          const parent = firstNode.getParent();
+          if ($isLinkNode(parent)) {
+            // set parent to be the current linkNode
+            // so that other nodes in the same parent
+            // aren't handled separately below.
+            linkNode = parent;
+            parent.setURL(url);
+            return;
+          }
+        }
+      }
+      nodes.forEach((node) => {
+        const parent = node.getParent();
+        if (parent === linkNode || parent === null) {
+          return;
+        }
+        if (!parent.is(prevParent)) {
+          prevParent = parent;
+          linkNode = $createLinkNode(url);
+          if ($isLinkNode(parent)) {
+            if (node.getPreviousSibling() === null) {
+              parent.insertBefore(linkNode);
+            } else {
+              parent.insertAfter(linkNode);
+            }
+          } else {
+            node.insertBefore(linkNode);
+          }
+        }
+        if ($isLinkNode(node)) {
+          if (linkNode !== null) {
+            const children = node.getChildren();
+            for (let i = 0; i < children.length; i++) {
+              linkNode.append(children[i]);
+            }
+          }
+          node.remove();
+          return;
+        }
+        if (linkNode !== null) {
+          linkNode.append(node);
+        }
+      });
+    }
+  }
+}
+
+export default function LinkPlugin(): null {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const removeCommandListener = editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'toggleLink') {
+          const url: string | null = payload;
+          toggleLink(url);
+          return true;
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+
+    const unregisterNodes = editor.registerNodes([LinkNode]);
+
+    return () => {
+      removeCommandListener();
+      unregisterNodes();
+    };
+  }, [editor]);
+
+  return null;
+}

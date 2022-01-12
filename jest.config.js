@@ -55,6 +55,8 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.js',
         '^@lexical/react/LexicalTableActionMenuPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalTableActionMenuPlugin.js',
+        '^@lexical/react/LexicalLinkPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.js',
         '^@lexical/react/LexicalComposerContext$':
           '<rootDir>/packages/lexical-react/src/LexicalComposerContext.js',
         '^@lexical/react/LexicalContentEditable$':

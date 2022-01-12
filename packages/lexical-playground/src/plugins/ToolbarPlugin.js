@@ -25,8 +25,8 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from 'lexical/ListNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
-import {$log, $getNodeByKey, $getSelection, $setSelection} from 'lexical';
-import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
+import {$log, $getNodeByKey, $getSelection} from 'lexical';
+import {$isLinkNode} from 'lexical/LinkNode';
 import {
   $wrapLeafNodesInElements,
   $patchStyleText,
@@ -183,7 +183,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
               event.preventDefault();
               if (lastSelection !== null) {
                 if (linkUrl !== '') {
-                  toggleLinksOnSelection(editor, linkUrl);
+                  editor.execCommand('toggleLink', linkUrl);
                 }
                 setEditMode(false);
               }
@@ -411,89 +411,6 @@ function Select({
   );
 }
 
-function toggleLinksOnSelection(editor: LexicalEditor, url: null | string) {
-  editor.update(() => {
-    const selection = $getSelection();
-    $log('toggleLinksOnSelection');
-    if (selection !== null) {
-      $setSelection(selection);
-    }
-    const sel = $getSelection();
-    if (sel !== null) {
-      const nodes = sel.extract();
-      if (url === null) {
-        // Remove LinkNodes
-        nodes.forEach((node) => {
-          const parent = node.getParent();
-
-          if ($isLinkNode(parent)) {
-            const children = parent.getChildren();
-            for (let i = 0; i < children.length; i++) {
-              parent.insertBefore(children[i]);
-            }
-            parent.remove();
-          }
-        });
-      } else {
-        // Add or merge LinkNodes
-        let prevParent = null;
-        let linkNode = null;
-        if (nodes.length === 1) {
-          const firstNode = nodes[0];
-          // if the first node is a LinkNode or if its
-          // parent is a LinkNode, we update the URL.
-          if ($isLinkNode(firstNode)) {
-            firstNode.setURL(url);
-            return;
-          } else {
-            const parent = firstNode.getParent();
-            if ($isLinkNode(parent)) {
-              // set parent to be the current linkNode
-              // so that other nodes in the same parent
-              // aren't handled separately below.
-              linkNode = parent;
-              parent.setURL(url);
-              return;
-            }
-          }
-        }
-        nodes.forEach((node) => {
-          const parent = node.getParent();
-          if (parent === linkNode || parent === null) {
-            return;
-          }
-          if (!parent.is(prevParent)) {
-            prevParent = parent;
-            linkNode = $createLinkNode(url);
-            if ($isLinkNode(parent)) {
-              if (node.getPreviousSibling() === null) {
-                parent.insertBefore(linkNode);
-              } else {
-                parent.insertAfter(linkNode);
-              }
-            } else {
-              node.insertBefore(linkNode);
-            }
-          }
-          if ($isLinkNode(node)) {
-            if (linkNode !== null) {
-              const children = node.getChildren();
-              for (let i = 0; i < children.length; i++) {
-                linkNode.append(children[i]);
-              }
-            }
-            node.remove();
-            return;
-          }
-          if (linkNode !== null) {
-            linkNode.append(node);
-          }
-        });
-      }
-    }
-  });
-}
-
 export default function ToolbarPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
@@ -624,11 +541,11 @@ export default function ToolbarPlugin(): React$Node {
 
   const insertLink = useCallback(() => {
     if (!isLink) {
-      toggleLinksOnSelection(activeEditor, 'http://');
+      editor.execCommand('toggleLink', 'http://');
     } else {
-      toggleLinksOnSelection(activeEditor, null);
+      editor.execCommand('toggleLink', null);
     }
-  }, [activeEditor, isLink]);
+  }, [editor, isLink]);
 
   const codeLanguges = useMemo(() => getCodeLanguages(), []);
   const onCodeLanguageSelect = useCallback(

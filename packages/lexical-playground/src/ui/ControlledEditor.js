@@ -20,7 +20,7 @@ import LexicalComposer from '@lexical/react/LexicalComposer';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import TableCellActionMenuPlugin from '@lexical/react/LexicalTableActionMenuPlugin';
 import ImagesPlugin from '../plugins/ImagesPlugin';
-import LinksPlugin from '../plugins/LinksPlugin';
+import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 
 type Props = {
   children: React$Node,
@@ -43,7 +43,7 @@ export default function ControlledEditor({
         <TablesPlugin />
         <TableCellActionMenuPlugin />
         <ImagesPlugin />
-        <LinksPlugin />
+        <LinkPlugin />
         <EmojisPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />

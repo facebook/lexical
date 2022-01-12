@@ -23,7 +23,7 @@ import AutoFormatterPlugin from '@lexical/react/LexicalAutoFormatterPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
-import TableCellActionMenuPlugin from '@lexical/react/LexicalTableActionMenuPlugin';
+import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import StickyPlugin from './plugins/StickyPlugin';

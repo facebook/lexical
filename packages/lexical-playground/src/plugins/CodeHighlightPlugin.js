@@ -39,7 +39,7 @@ import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
   CodeHighlightNode,
-} from '../nodes/CodeHighlightNode';
+} from 'lexical/CodeHighlightNode';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 

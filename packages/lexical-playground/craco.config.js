@@ -16,6 +16,7 @@ module.exports = {
       'lexical/CodeNode': 'lexical/dist/LexicalCodeNode',
       'lexical/LinkNode': 'lexical/dist/LexicalLinkNode',
       'lexical/HashtagNode': 'lexical/dist/LexicalHashtagNode',
+      'lexical/CodeHighlightNode': 'lexical/dist/LexicalCodeHighlightNode',
       // Lexical Helpers
       '@lexical/helpers/selection':
         '@lexical/helpers/dist/LexicalSelectionHelpers',
@@ -74,7 +75,6 @@ module.exports = {
         'LexicalCollaborationPlugin',
         'LexicalHistoryPlugin',
         'LexicalTablePlugin',
-        'LexicalTableActionMenuPlugin',
         'LexicalLinkPlugin',
       ].reduce(
         (aliases, plugin) => ({

@@ -41,6 +41,8 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeNode.js',
         '^lexical/HashtagNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js',
+        '^lexical/CodeHighlightNode$':
+          '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js',
         '^@lexical/react/useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/useLexicalRichText.js',
         '^@lexical/react/useLexicalCanShowPlaceholder$':
@@ -53,8 +55,6 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.js',
         '^@lexical/react/LexicalTablePlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.js',
-        '^@lexical/react/LexicalTableActionMenuPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalTableActionMenuPlugin.js',
         '^@lexical/react/LexicalLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.js',
         '^@lexical/react/LexicalComposerContext$':

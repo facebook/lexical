@@ -18,7 +18,7 @@ import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import OnChangePlugin from '../plugins/OnChangePlugin';
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
-import TableCellActionMenuPlugin from '@lexical/react/LexicalTableActionMenuPlugin';
+import TableCellActionMenuPlugin from '../plugins/TableActionMenuPlugin';
 import ImagesPlugin from '../plugins/ImagesPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 

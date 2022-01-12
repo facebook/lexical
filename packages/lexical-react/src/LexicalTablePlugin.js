@@ -20,7 +20,7 @@ import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
-export default function TablesPlugin(): React$Node {
+export default function TablePlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

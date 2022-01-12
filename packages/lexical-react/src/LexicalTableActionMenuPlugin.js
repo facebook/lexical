@@ -7,24 +7,21 @@
  * @flow strict
  */
 
+import type {LexicalNode} from 'lexical';
+
 import {TableCellNode} from 'lexical/TableCellNode';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  LexicalNode,
-  $createTextNode,
-  $getSelection,
-  $setSelection,
-} from 'lexical';
+import {$createTextNode, $getSelection, $setSelection} from 'lexical';
 import {TableRowNode, $createTableRowNode} from 'lexical/TableRowNode';
 import {$createTableCellNode} from 'lexical/TableCellNode';
 import {TableNode} from 'lexical/TableNode';
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 
-export function getTableCellNodeFromLexicalNode(
+function getTableCellNodeFromLexicalNode(
   startingNode: LexicalNode,
 ): TableCellNode | null {
   const node = $findMatchingParent(
@@ -39,7 +36,7 @@ export function getTableCellNodeFromLexicalNode(
   return null;
 }
 
-export function getTableRowNodeFromTableCellNodeOrThrow(
+function getTableRowNodeFromTableCellNodeOrThrow(
   startingNode: LexicalNode,
 ): TableRowNode {
   const node = $findMatchingParent(
@@ -54,7 +51,7 @@ export function getTableRowNodeFromTableCellNodeOrThrow(
   throw new Error('Expected table cell to be inside of table row.');
 }
 
-export function getTableNodeFromLexicalNodeOrThrow(
+function getTableNodeFromLexicalNodeOrThrow(
   startingNode: LexicalNode,
 ): TableNode {
   const node = $findMatchingParent(startingNode, (n) => n instanceof TableNode);
@@ -66,7 +63,7 @@ export function getTableNodeFromLexicalNodeOrThrow(
   throw new Error('Expected table cell to be inside of table.');
 }
 
-export function getTableRowIndexFromTableCellNode(
+function getTableRowIndexFromTableCellNode(
   tableCellNode: TableCellNode,
 ): number {
   const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
@@ -76,7 +73,7 @@ export function getTableRowIndexFromTableCellNode(
   return tableNode.getChildren().findIndex((n) => n.is(tableRowNode));
 }
 
-export function getTableColumnIndexFromTableCellNode(
+function getTableColumnIndexFromTableCellNode(
   tableCellNode: TableCellNode,
 ): number {
   const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
@@ -84,7 +81,7 @@ export function getTableColumnIndexFromTableCellNode(
   return tableRowNode.getChildren().findIndex((n) => n.is(tableCellNode));
 }
 
-export function removeTableRowAtIndex(
+function removeTableRowAtIndex(
   tableNode: TableNode,
   indexToDelete: number,
 ): TableNode {
@@ -101,7 +98,7 @@ export function removeTableRowAtIndex(
   return tableNode;
 }
 
-export function insertTableRow(
+function insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
   shouldInsertAfter?: boolean = true,
@@ -115,7 +112,7 @@ export function insertTableRow(
   const targetRow = tableRows[targetIndex];
 
   if (targetRow instanceof TableRowNode) {
-    const tableColumnCount = targetRow.getChildren()?.length;
+    const tableColumnCount = targetRow.getChildren().length;
 
     const newTableRow = $createTableRowNode();
 
@@ -138,7 +135,7 @@ export function insertTableRow(
   return tableNode;
 }
 
-export function insertTableColumn(
+function insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
   shouldInsertAfter?: boolean = true,
@@ -172,7 +169,7 @@ export function insertTableColumn(
   return tableNode;
 }
 
-export function deleteTableColumn(
+function deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
 ): TableNode {
@@ -485,7 +482,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
   );
 }
 
-export default function TableCellActionMenuPlugin(): React.Portal {
+export default function TableActionMenuPlugin(): React.Portal {
   const [editor] = useLexicalComposerContext();
 
   return useMemo(

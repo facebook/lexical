@@ -16,7 +16,6 @@ import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
 import {$log, $getRoot, createEditorStateRef} from 'lexical';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
-import useLexicalList from '@lexical/react/useLexicalList';
 import {importFile, exportFile} from '@lexical/helpers/file';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -37,7 +36,6 @@ export default function ActionsPlugins({
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
   const [editor] = useLexicalComposerContext();
-  useLexicalList(editor);
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 

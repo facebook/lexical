@@ -76,6 +76,7 @@ module.exports = {
         'LexicalHistoryPlugin',
         'LexicalTablePlugin',
         'LexicalLinkPlugin',
+        'LexicalListPlugin',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

@@ -73,6 +73,8 @@ module.exports = {
         'LexicalRichTextPlugin',
         'LexicalCollaborationPlugin',
         'LexicalHistoryPlugin',
+        'LexicalTablePlugin',
+        'LexicalTableActionMenuPlugin',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

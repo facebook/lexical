@@ -50,7 +50,7 @@ function removeInitialParagraph() {
   paragraph.remove();
 }
 
-function createSampleParagraphsWithClient(client: Client, count: number) {
+function createParagraphs(count: number) {
   const root = $getRoot();
   for (let i = 0; i < count; ++i) {
     const paragraph = $createParagraphNode();
@@ -61,7 +61,7 @@ function createSampleParagraphsWithClient(client: Client, count: number) {
   }
 }
 
-function verifySampleParagraphsWithClient(client: Client, count: number) {
+function verifyParagraphs(client: Client, count: number) {
   let expectedText = '';
 
   for (let i = 0; i < count; ++i) {
@@ -97,7 +97,7 @@ describe('CollaborationWithCollisions', () => {
   it('Remove text at within the first of multiple paragraphs colliding with removing first paragraph.', async () => {
     const clientCount = 2;
     const connector = createTestConnection();
-    const sampleParagraphCount = 2;
+    const paragraphCount = 2;
     const clients: Array<Client> = createAndStartClients(
       connector,
       container,
@@ -111,11 +111,11 @@ describe('CollaborationWithCollisions', () => {
     await waitForReact(() => {
       clients[0].update(() => {
         removeInitialParagraph();
-        createSampleParagraphsWithClient(clients[0], sampleParagraphCount);
+        createParagraphs(paragraphCount);
       });
     });
 
-    verifySampleParagraphsWithClient(clients[0], sampleParagraphCount);
+    verifyParagraphs(clients[0], paragraphCount);
 
     disconnectClients(clients);
 
@@ -154,51 +154,62 @@ describe('CollaborationWithCollisions', () => {
   });
 
   it('General text deletion collision testing.', async () => {
-    type ClientTest = {
+    type TestAction = 'RemoveText';
+
+    type ClientTestAction = {
       anchorIndex: number,
       anchorOffset: number,
       focusIndex: number,
       focusOffset: number,
-      removeText: boolean,
+      testAction: TestAction,
     };
 
-    type TestCriteriaForTextCollabCollisions = {
-      clientCount: number,
-      clientTestCriteria: Array<ClientTest>,
-      sampleParagraphCount: number,
-      testCount: number,
+    type ClientTestActionArray = Array<ClientTestAction>;
+
+    type ClientTestArray = Array<ClientTestActionArray>;
+
+    type CollabTests = {
+      clientTestArray: ClientTestArray,
+      paragraphCount: number,
     };
 
-    const testCriteria: TestCriteriaForTextCollabCollisions = {
-      clientCount: 2,
-      clientTestCriteria: [
-        {
-          anchorIndex: 0,
-          anchorOffset: 5,
-          focusIndex: 1,
-          focusOffset: 6,
-          removeText: true,
-        },
-        {
-          anchorIndex: 0,
-          anchorOffset: 5,
-          focusIndex: 1,
-          focusOffset: 6,
-          removeText: true,
-        },
+    const collabTests: CollabTests = {
+      clientTestArray: [
+        [
+          {
+            anchorIndex: 0,
+            anchorOffset: 5,
+            focusIndex: 1,
+            focusOffset: 6,
+            testAction: 'RemoveText',
+          },
+          {
+            anchorIndex: 0,
+            anchorOffset: 5,
+            focusIndex: 1,
+            focusOffset: 6,
+            testAction: 'RemoveText',
+          },
+        ],
       ],
-      sampleParagraphCount: 2,
-      testCount: 2,
+      paragraphCount: 2,
     };
 
-    for (let testIndex = 0; testIndex < testCriteria.testCount; ++testIndex) {
+    for (
+      let testIndex = 0;
+      testIndex < collabTests.clientTestArray.length;
+      ++testIndex
+    ) {
+      const clientTestActionArray = collabTests.clientTestArray[testIndex];
+
+      // The client count equals the total client test actions.
+      const clientCount = clientTestActionArray.length;
       const connector = createTestConnection();
       const clients: Array<Client> = createAndStartClients(
         connector,
         container,
-        testCriteria.clientCount,
+        clientCount,
       );
-      const testCriterion = testCriteria.clientTestCriteria[testIndex];
 
       const client = clients[0];
       expect(client != null).toBe(true);
@@ -207,59 +218,49 @@ describe('CollaborationWithCollisions', () => {
       await waitForReact(() => {
         clients[0].update(() => {
           removeInitialParagraph();
-          createSampleParagraphsWithClient(
-            clients[0],
-            testCriteria.sampleParagraphCount,
-          );
+          createParagraphs(collabTests.paragraphCount);
         });
       });
 
-      verifySampleParagraphsWithClient(
-        clients[0],
-        testCriteria.sampleParagraphCount,
-      );
+      verifyParagraphs(clients[0], collabTests.paragraphCount);
 
+      // Stop all merges between clients.
       disconnectClients(clients);
 
-      // Perform edits on the clients
-      let clientIndex = 0;
-      await waitForReact(() => {
-        clients[clientIndex].update(() => {
-          const root = $getRoot();
-          const paragraph1 = root.getFirstChild();
-          // const paragraph2 = paragraph1.getNextSibling();
-          const textNode = paragraph1.getFirstChild();
-          textNode.select(0, 0);
-          const selection = $getSelection();
+      // Perform edits per each client.
+      for (let clientIndex = 0; clientIndex < clientCount; ++clientIndex) {
+        const clientTestAction: ClientTestAction =
+          clientTestActionArray[clientIndex];
 
-          selection.anchor.set(
-            root.getChildrenKeys()[testCriterion[clientIndex].anchorIndex],
-            testCriterion[clientIndex].anchorOffset,
-            'text',
-          );
+        await waitForReact(() => {
+          clients[clientIndex].update(() => {
+            const root = $getRoot();
+            const paragraph1 = root.getFirstChild();
+            // const paragraph2 = paragraph1.getNextSibling();
+            const textNode = paragraph1.getFirstChild();
+            textNode.select(0, 0);
+            const selection = $getSelection();
 
-          selection.focus.set(
-            root.getChildrenKeys()[testCriterion[clientIndex].focusIndex],
-            testCriterion[clientIndex].focusOffset,
-            'text',
-          );
+            selection.anchor.set(
+              root.getChildrenKeys()[clientTestAction.anchorIndex],
+              clientTestAction.anchorOffset,
+              'text',
+            );
 
-          if (testCriterion[clientIndex].removeText === true) {
-            selection.removeText();
-          }
+            selection.focus.set(
+              root.getChildrenKeys()[clientTestAction.focusIndex],
+              clientTestAction.focusOffset,
+              'text',
+            );
+
+            if (clientTestAction.testAction === 'RemoveText') {
+              selection.removeText();
+            }
+          });
         });
-      });
+      }
 
-      // Remove paragraph 2.
-      clientIndex = 1;
-      await waitForReact(() => {
-        clients[clientIndex].update(() => {
-          const root = $getRoot();
-          const paragraph = root.getFirstChild();
-          paragraph.remove();
-        });
-      });
-
+      // Collect merges from all clients.
       await waitForReact(() => {
         connectClients(clients);
       });

@@ -374,6 +374,8 @@ export function useLexicalHistory(
           redo();
           return true;
         case 'clearEditor':
+          clearHistory();
+          return false;
         case 'clearHistory':
           clearHistory();
           return true;

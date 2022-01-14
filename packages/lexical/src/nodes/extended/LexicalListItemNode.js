@@ -227,7 +227,10 @@ export class ListItemNode extends ElementNode {
 }
 
 function getListItemValue(listItem: ListItemNode): number {
-  let value = 1;
+  const list = listItem.getParent();
+
+  let value = list != null && $isListNode(list) ? list.__start : 1;
+
   const siblings = listItem.getPreviousSiblings();
   for (let i = 0; i < siblings.length; i++) {
     const sibling = siblings[i];

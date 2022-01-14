@@ -43,7 +43,7 @@ export class ListItemNode extends ElementNode {
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement('li');
-    element.value = getStartNumberForListItem(this);
+    element.value = getListItemValue(this);
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
@@ -54,7 +54,7 @@ export class ListItemNode extends ElementNode {
     config: EditorConfig<EditorContext>,
   ): boolean {
     //$FlowFixMe - this is always HTMLListItemElement
-    dom.value = getStartNumberForListItem(this);
+    dom.value = getListItemValue(this);
     $setListItemThemeClassNames(dom, config.theme, this);
     return false;
   }
@@ -226,9 +226,20 @@ export class ListItemNode extends ElementNode {
   }
 }
 
-function getStartNumberForListItem(listItem: ListItemNode): number {
-  const list = listItem.getParentOrThrow();
-  let value = $isListNode(list) ? list.__start : 1;
+function getListItemValue(listItem: ListItemNode): number {
+  const list = listItem.getParent();
+
+  let value = 1;
+  if (list != null) {
+    value = $isListNode(list) ? list.__start : -1;
+    if (value === -1) {
+      invariant(
+        false,
+        'Expected list item node parent %s to be a list.',
+        list.__key,
+      );
+    }
+  }
 
   const siblings = listItem.getPreviousSiblings();
   for (let i = 0; i < siblings.length; i++) {

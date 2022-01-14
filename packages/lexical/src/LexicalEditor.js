@@ -561,6 +561,13 @@ class BaseLexicalEditor {
       );
     }
   }
+
+  blur(): void {
+    const rootElement = this._rootElement;
+    if (rootElement !== null) {
+      rootElement.blur();
+    }
+  }
 }
 
 // We export this to make the addListener types work properly.
@@ -618,4 +625,5 @@ declare export class LexicalEditor {
   parseEditorState(stringifiedEditorState: string): EditorState;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
+  blur(): void;
 }

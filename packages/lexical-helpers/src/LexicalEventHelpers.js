@@ -284,6 +284,10 @@ function isBackspace(keyCode: number): boolean {
   return keyCode === 8;
 }
 
+function isEscape(keyCode: number): boolean {
+  return keyCode === 27;
+}
+
 function isDelete(keyCode: number): boolean {
   return keyCode === 46;
 }
@@ -499,6 +503,8 @@ export function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       } else {
         editor.execCommand('deleteCharacter', true);
       }
+    } else if (isEscape(keyCode)) {
+      editor.execCommand('keyEscape', event);
     } else if (isDeleteForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
       if (isDelete(keyCode)) {
         editor.execCommand('keyDelete', event);

@@ -295,7 +295,7 @@ function isDelete(keyCode: number): boolean {
 function isTab(keyCode: number, altKey, ctrlKey, metaKey): boolean {
   return keyCode === 9 && !altKey && !ctrlKey && !metaKey;
 }
-
+// xxx
 function isBold(keyCode: number, metaKey: boolean, ctrlKey: boolean): boolean {
   return keyCode === 66 && controlOrMeta(metaKey, ctrlKey);
 }

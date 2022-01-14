@@ -562,7 +562,7 @@ class BaseLexicalEditor {
     }
   }
 
-  blur(callbackFn?: () => void): void {
+  blur(): void {
     const rootElement = this._rootElement;
     if (rootElement !== null) {
       rootElement.blur();
@@ -625,5 +625,5 @@ declare export class LexicalEditor {
   parseEditorState(stringifiedEditorState: string): EditorState;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
-  blur(callbackFn?: () => void): void;
+  blur(): void;
 }

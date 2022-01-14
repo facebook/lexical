@@ -11,6 +11,28 @@ import {createTestConnection, waitForReact} from './utils';
 import {$getRoot, $createTextNode, $getSelection} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 
+type TestAction = 'RemoveText';
+
+type ClientTestAction = {
+  anchorIndex: number,
+  anchorOffset: number,
+  focusIndex: number,
+  focusOffset: number,
+  testAction: TestAction,
+};
+
+type ClientTestActionArray = Array<ClientTestAction>;
+
+type ClientTestArray = {
+  testActions: Array<ClientTestActionArray>,
+  paragraphDetailsArray: ParagraphDetailsArray,
+};
+
+type CollabTests = {
+  clientTestArray: ClientTestArray,
+  paragraphCount: number,
+};
+
 function createAndStartClients(
   connector: TestConnection,
   aContainer: any,
@@ -79,6 +101,32 @@ function testClientsForEquality(clients: Array<Client>) {
     expect(clients[0].getHTML()).toEqual(clients[i].getHTML());
     expect(clients[0].getDocJSON()).toEqual(clients[i].getDocJSON());
   }
+}
+
+function getCollabTests(): CollabTests {
+  const collabTests: CollabTests = {
+    clientTestArray: [
+      [
+        {
+          anchorIndex: 0,
+          anchorOffset: 5,
+          focusIndex: 1,
+          focusOffset: 6,
+          testAction: 'RemoveText',
+        },
+        {
+          anchorIndex: 0,
+          anchorOffset: 5,
+          focusIndex: 1,
+          focusOffset: 6,
+          testAction: 'RemoveText',
+        },
+      ],
+    ],
+    paragraphCount: 2,
+  };
+
+  return collabTests;
 }
 
 describe('CollaborationWithCollisions', () => {
@@ -154,47 +202,7 @@ describe('CollaborationWithCollisions', () => {
   });
 
   it('General text deletion collision testing.', async () => {
-    type TestAction = 'RemoveText';
-
-    type ClientTestAction = {
-      anchorIndex: number,
-      anchorOffset: number,
-      focusIndex: number,
-      focusOffset: number,
-      testAction: TestAction,
-    };
-
-    type ClientTestActionArray = Array<ClientTestAction>;
-
-    type ClientTestArray = Array<ClientTestActionArray>;
-
-    type CollabTests = {
-      clientTestArray: ClientTestArray,
-      paragraphCount: number,
-    };
-
-    const collabTests: CollabTests = {
-      clientTestArray: [
-        [
-          {
-            anchorIndex: 0,
-            anchorOffset: 5,
-            focusIndex: 1,
-            focusOffset: 6,
-            testAction: 'RemoveText',
-          },
-          {
-            anchorIndex: 0,
-            anchorOffset: 5,
-            focusIndex: 1,
-            focusOffset: 6,
-            testAction: 'RemoveText',
-          },
-        ],
-      ],
-      paragraphCount: 2,
-    };
-
+    const collabTests = getCollabTests();
     for (
       let testIndex = 0;
       testIndex < collabTests.clientTestArray.length;

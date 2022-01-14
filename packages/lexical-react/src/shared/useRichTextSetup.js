@@ -257,6 +257,10 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
                 event.shiftKey ? 'outdentContent' : 'indentContent',
               );
             }
+            case 'keyEscape': {
+              editor.blur();
+              return true;
+            }
             case 'clearEditor': {
               clearEditor(editor);
               return false;

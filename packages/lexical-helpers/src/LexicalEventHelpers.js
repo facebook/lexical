@@ -94,6 +94,20 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     return {node: null, format: 'italic'};
   },
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
+  div: (domNode: Node) => {
+    return {
+      node: null,
+      childConversion: (
+        domChild: Node,
+        lexicalNode: LexicalNode,
+        domParent: Node,
+      ) => {
+        if (domChild !== domParent.lastChild) {
+          lexicalNode.insertAfter($createLineBreakNode());
+        }
+      },
+    };
+  },
 };
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
@@ -132,6 +146,7 @@ export function $createNodesFromDOM(
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const transformFunction =
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
+  const childConversions = [];
 
   const transformOutput = transformFunction ? transformFunction(node) : null;
 
@@ -150,6 +165,14 @@ export function $createNodesFromDOM(
         currentLexicalNode.setFormat(currentTextFormat);
       }
       lexicalNodes.push(currentLexicalNode);
+      childConversions.forEach((childConversion) => {
+        //$FlowFixMe
+        childConversion(node, currentLexicalNode, node.parentNode);
+      });
+    }
+
+    if (transformOutput.childConversion !== null) {
+      childConversions.push(transformOutput.childConversion);
     }
   }
 

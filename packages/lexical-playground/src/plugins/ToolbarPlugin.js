@@ -723,6 +723,14 @@ export default function ToolbarPlugin(): React$Node {
             )}
           <button
             onClick={() => {
+              activeEditor.execCommand('insertHorizontalRule');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Horizontal Rule">
+            <i className="format horizontal-rule" />
+          </button>
+          <button
+            onClick={() => {
               activeEditor.execCommand('insertImage');
             }}
             className="toolbar-item spaced"

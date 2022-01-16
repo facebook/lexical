@@ -77,6 +77,7 @@ export type EditorThemeClasses = {
   root?: EditorThemeClassName,
   text?: TextNodeThemeClasses,
   paragraph?: EditorThemeClassName,
+  horizontalRule?: EditorThemeClassName,
   image?: EditorThemeClassName,
   list?: {
     ul?: EditorThemeClassName,

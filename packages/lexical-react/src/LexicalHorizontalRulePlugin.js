@@ -36,7 +36,6 @@ export default function HorizontalRulePlugin(): React$Node {
           const focusNode = selection.focus.getNode();
           if (focusNode !== null) {
             const horizontalRuleNode = $createHorizontalRuleNode();
-
             if (
               selection.focus.getNode().getNextSibling() === null &&
               $isAtNodeEnd(selection.focus)

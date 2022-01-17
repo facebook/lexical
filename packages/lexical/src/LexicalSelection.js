@@ -29,6 +29,7 @@ import {
   $createTextNode,
   $isLeafNode,
   $createLineBreakNode,
+  $isHorizontalRuleNode,
 } from '.';
 import {
   $getCompositionKey,
@@ -313,7 +314,9 @@ export class Selection {
           }
           textContent += text;
         } else if (
-          ($isDecoratorNode(node) || $isLineBreakNode(node)) &&
+          ($isDecoratorNode(node) ||
+            $isLineBreakNode(node) ||
+            $isHorizontalRuleNode(node)) &&
           (node !== lastNode || !this.isCollapsed())
         ) {
           textContent += node.getTextContent();

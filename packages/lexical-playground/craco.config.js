@@ -11,7 +11,6 @@ module.exports = {
       'lexical/TableNode': 'lexical/dist/LexicalTableNode',
       'lexical/TableRowNode': 'lexical/dist/LexicalTableRowNode',
       'lexical/TableCellNode': 'lexical/dist/LexicalTableCellNode',
-      'lexical/HorizontalRuleNode': 'lexical/dist/LexicalHorizontalRuleNode',
       'lexical/QuoteNode': 'lexical/dist/LexicalQuoteNode',
       'lexical/ParagraphNode': 'lexical/dist/LexicalParagraphNode',
       'lexical/CodeNode': 'lexical/dist/LexicalCodeNode',

@@ -7,11 +7,11 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode} from 'lexical';
+import type {NodeKey} from '../../LexicalNode';
 
-import {ElementNode} from 'lexical';
+import {LexicalNode} from '../../LexicalNode';
 
-export class HorizontalRuleNode extends ElementNode {
+export class HorizontalRuleNode extends LexicalNode {
   static getType(): string {
     return 'horizontal-rule';
   }
@@ -20,7 +20,11 @@ export class HorizontalRuleNode extends ElementNode {
     return new HorizontalRuleNode(node.__key);
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  constructor(key?: NodeKey): void {
+    super(key);
+  }
+
+  createDOM(): HTMLElement {
     return document.createElement('hr');
   }
 

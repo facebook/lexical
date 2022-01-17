@@ -12,10 +12,9 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {$log, $getSelection} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {
-  $createHorizontalRuleNode,
-  HorizontalRuleNode,
-} from 'lexical/HorizontalRuleNode';
+import {$createHorizontalRuleNode} from 'lexical';
+import {$isAtNodeEnd} from '../../lexical-helpers/src/LexicalSelectionHelpers';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -30,28 +29,41 @@ export default function HorizontalRulePlugin(): React$Node {
           $log('insertHorizontalRule');
 
           const selection = $getSelection();
+          if (selection === null) {
+            return true;
+          }
 
-          if (selection !== null) {
+          const focusNode = selection.focus.getNode();
+          if (focusNode !== null) {
             const horizontalRuleNode = $createHorizontalRuleNode();
 
-            const focusNode = selection.focus.getNode();
-
-            focusNode.insertAfter(horizontalRuleNode);
+            if (
+              selection.focus.getNode().getNextSibling() === null &&
+              $isAtNodeEnd(selection.focus)
+            ) {
+              selection.focus
+                .getNode()
+                .getTopLevelElementOrThrow()
+                .insertAfter(horizontalRuleNode);
+              horizontalRuleNode.insertAfter($createParagraphNode());
+            } else {
+              selection.insertParagraph();
+              selection.focus
+                .getNode()
+                .getTopLevelElementOrThrow()
+                .insertBefore(horizontalRuleNode);
+            }
           }
 
           return true;
         }
-
         return false;
       },
       EditorPriority,
     );
 
-    const removeHorizontalRuleNode = editor.registerNodes([HorizontalRuleNode]);
-
     return () => {
       removeCommandListener();
-      removeHorizontalRuleNode();
     };
   }, [editor]);
 

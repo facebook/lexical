@@ -543,7 +543,11 @@ export class Selection {
         for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
           const lastNodeChild = lastNodeChildren[i];
 
-          if (lastNodeChild.is(firstNode)) {
+          if (
+            lastNodeChild.is(firstNode) ||
+            ($isElementNode(lastNodeChild) &&
+              lastNodeChild.isParentOf(firstNode))
+          ) {
             break;
           }
 

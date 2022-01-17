@@ -23,6 +23,10 @@ describe('Regression test #1083', () => {
       if (!isRichText) {
         return;
       }
+      if (process.env.E2E_EVENTS_MODE === 'legacy-events') {
+        // TODO #1099
+        return;
+      }
       await focusEditor(page);
 
       await page.keyboard.type('Hello');
@@ -50,6 +54,10 @@ describe('Regression test #1083', () => {
     it(`Backspace with ElementNode at the front of the selection`, async () => {
       const {isRichText, page} = e2e;
       if (!isRichText) {
+        return;
+      }
+      if (process.env.E2E_EVENTS_MODE === 'legacy-events') {
+        // TODO #1099
         return;
       }
       await focusEditor(page);

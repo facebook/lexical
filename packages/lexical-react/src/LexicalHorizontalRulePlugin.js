@@ -13,8 +13,6 @@ import {$log, $getSelection} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$createHorizontalRuleNode} from 'lexical';
-import {$isAtNodeEnd} from '../../lexical-helpers/src/LexicalSelectionHelpers';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -36,22 +34,11 @@ export default function HorizontalRulePlugin(): React$Node {
           const focusNode = selection.focus.getNode();
           if (focusNode !== null) {
             const horizontalRuleNode = $createHorizontalRuleNode();
-            if (
-              selection.focus.getNode().getNextSibling() === null &&
-              $isAtNodeEnd(selection.focus)
-            ) {
-              selection.focus
-                .getNode()
-                .getTopLevelElementOrThrow()
-                .insertAfter(horizontalRuleNode);
-              horizontalRuleNode.insertAfter($createParagraphNode());
-            } else {
-              selection.insertParagraph();
-              selection.focus
-                .getNode()
-                .getTopLevelElementOrThrow()
-                .insertBefore(horizontalRuleNode);
-            }
+            selection.insertParagraph();
+            selection.focus
+              .getNode()
+              .getTopLevelElementOrThrow()
+              .insertBefore(horizontalRuleNode);
           }
 
           return true;

@@ -124,32 +124,6 @@ describe('LexicalListItemNode tests', () => {
         );
       });
 
-      test('', async () => {
-        const {editor} = testEnv;
-        let listItemNode;
-        await editor.update(() => {
-          listNode.remove();
-        });
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"></div>',
-        );
-        await editor.update(() => {
-          const root = $getRoot();
-          listItemNode = new ListItemNode();
-          root.append(listItemNode);
-        });
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><li value="1"><br></li></div>',
-        );
-        await editor.update(() => {
-          const textNode = new TextNode('foo');
-          listItemNode.replace(textNode);
-        });
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" data-lexical-editor="true"><li value="1"><br></li></div>',
-        );
-      });
-
       test('another list item node', async () => {
         const {editor} = testEnv;
         await editor.update(() => {

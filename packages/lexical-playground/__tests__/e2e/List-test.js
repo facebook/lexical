@@ -20,6 +20,7 @@ import {
   focusEditor,
   waitForSelector,
   click,
+  IS_COLLAB,
 } from '../utils';
 
 async function toggleBulletList(page) {
@@ -763,6 +764,10 @@ describe('Nested List', () => {
         '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span data-lexical-text="true">321. </span></p>';
 
       await assertHTML(page, forwardHTML);
+      if (IS_COLLAB) {
+        // Collab uses its own undo/redo
+        return;
+      }
       await undo(page);
       await assertHTML(page, undoHTML);
       await redo(page);

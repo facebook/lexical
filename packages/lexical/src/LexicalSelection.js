@@ -1804,18 +1804,30 @@ export function moveSelectionPointToSibling(
 ): void {
   let siblingKey = null;
   let offset = 0;
+  let type = null;
   const prevSibling = node.getPreviousSibling();
-  if ($isTextNode(prevSibling)) {
+  if (prevSibling !== null) {
     siblingKey = prevSibling.__key;
-    offset = prevSibling.getTextContentSize();
+    if ($isTextNode(prevSibling)) {
+      offset = prevSibling.getTextContentSize();
+      type = 'text';
+    } else if ($isElementNode(prevSibling)) {
+      offset = 1;
+      type = 'element';
+    }
   } else {
     const nextSibling = node.getNextSibling();
-    if ($isTextNode(nextSibling)) {
+    if (nextSibling !== null) {
       siblingKey = nextSibling.__key;
+      if ($isTextNode(nextSibling)) {
+        type = 'text';
+      } else if ($isElementNode(nextSibling)) {
+        type = 'element';
+      }
     }
   }
-  if (siblingKey !== null) {
-    point.set(siblingKey, offset, 'text');
+  if (siblingKey !== null && type !== null) {
+    point.set(siblingKey, offset, type);
   } else {
     offset = node.getIndexWithinParent();
     point.set(parent.__key, offset, 'element');

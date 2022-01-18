@@ -91,7 +91,8 @@ export function initializeE2E(runTests, config: Config = {}) {
     const url = `http://localhost:${E2E_PORT}/${
       IS_COLLAB ? 'split/' : ''
     }?${urlParams.toString()}`;
-    const page = await e2e.browser.newPage();
+    const context = await e2e.browser.newContext({acceptDownloads: true});
+    const page = await context.newPage();
     await page.goto(url);
     e2e.page = page;
   });
@@ -130,7 +131,10 @@ export function initializeE2E(runTests, config: Config = {}) {
               const url = `http://localhost:${E2E_PORT}/${
                 IS_COLLAB ? 'split/' : ''
               }?${urlParams.toString()}`;
-              const page = await e2e.browser.newPage();
+              const context = await e2e.browser.newContext({
+                acceptDownloads: true,
+              });
+              const page = await context.newPage();
               await page.goto(url);
               e2e.page = page;
               // retry

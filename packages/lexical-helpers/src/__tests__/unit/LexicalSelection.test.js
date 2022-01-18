@@ -1466,7 +1466,7 @@ describe('LexicalSelection tests', () => {
       );
   });
 
-  describe('Selection resolves correctly when a node is removed', () => {
+  describe('Selection correctly resolves to a sibling ElementNode when a node is removed', () => {
     test('', async () => {
       await editor.update(() => {
         const root = $getRoot();

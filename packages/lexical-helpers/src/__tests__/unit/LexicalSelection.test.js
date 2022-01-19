@@ -25,6 +25,10 @@ import {
   createTestEditor,
 } from '../../../../lexical/src/__tests__/utils';
 
+import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createListNode} from 'lexical/ListNode';
+import {$createListItemNode} from 'lexical/ListItemNode';
+
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
 
@@ -1460,6 +1464,25 @@ describe('LexicalSelection tests', () => {
           });
         },
       );
+  });
+
+  describe('Selection correctly resolves to a sibling ElementNode when a node is removed', () => {
+    test('', async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const listNode = $createListNode();
+        const listItemNode = $createListItemNode();
+        const paragraph = $createParagraphNode();
+        root.append(listNode);
+        listNode.append(listItemNode);
+        listItemNode.select();
+        listNode.insertAfter(paragraph);
+        listItemNode.remove();
+        const selection = $getSelection();
+        expect(selection.anchor.getNode().__type).toBe('paragraph');
+        expect(selection.focus.getNode().__type).toBe('paragraph');
+      });
+    });
   });
 
   test('isBackward', async () => {

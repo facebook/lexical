@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {ElementNode, LexicalNode, Selection} from 'lexical';
+import type {LexicalNode, Selection, ElementNode} from 'lexical';
 
 import {LinkNode} from 'lexical/LinkNode';
 

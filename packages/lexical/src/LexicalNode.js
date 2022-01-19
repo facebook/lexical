@@ -578,6 +578,9 @@ export class LexicalNode {
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
+    const selection = $getSelection();
+    let elementAnchorSelectionOnNode = false;
+    let elementFocusSelectionOnNode = false;
     if (oldParent !== null) {
       const writableParent = oldParent.getWritable();
       const children = writableParent.__children;
@@ -586,6 +589,21 @@ export class LexicalNode {
         invariant(false, 'Node is not a child of its parent');
       }
       $internallyMarkSiblingsAsDirty(writableNodeToInsert);
+
+      if (selection !== null) {
+        const oldParentKey = oldParent.getKey();
+        const oldIndex = nodeToInsert.getIndexWithinParent();
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        elementAnchorSelectionOnNode =
+          anchor.type === 'element' &&
+          anchor.key === oldParentKey &&
+          anchor.offset === oldIndex + 1;
+        elementFocusSelectionOnNode =
+          focus.type === 'element' &&
+          focus.key === oldParentKey &&
+          focus.offset === oldIndex + 1;
+      }
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -598,13 +616,19 @@ export class LexicalNode {
     }
     children.splice(index + 1, 0, insertKey);
     $internallyMarkSiblingsAsDirty(writableNodeToInsert);
-    const selection = $getSelection();
     if (selection !== null) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
         index + 1,
       );
+      const writableParentKey = writableParent.getKey();
+      if (elementAnchorSelectionOnNode) {
+        selection.anchor.set(writableParentKey, index + 2, 'element');
+      }
+      if (elementFocusSelectionOnNode) {
+        selection.focus.set(writableParentKey, index + 2, 'element');
+      }
     }
     return nodeToInsert;
   }

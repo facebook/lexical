@@ -430,7 +430,9 @@ export function triggerListeners(
     | 'textmutation'
     | 'root'
     | 'decorator'
-    | 'textcontent',
+    | 'textcontent'
+    | 'decoratorstate',
+
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   // $FlowFixMe: needs refining

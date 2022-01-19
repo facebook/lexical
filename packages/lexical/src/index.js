@@ -29,7 +29,11 @@ export type {
   ElementPointType as ElementPoint,
   TextPointType as TextPoint,
 } from './LexicalSelection';
-export type {LexicalRef, EditorStateRef} from './LexicalReference';
+export type {
+  DecoratorMap,
+  DecoratorEditor,
+  DecoratorStateValue,
+} from './nodes/base/LexicalDecoratorNode';
 export type {TextFormatType} from './nodes/base/LexicalTextNode';
 export type {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 export type {RootNode} from './nodes/base/LexicalRootNode';
@@ -51,6 +55,10 @@ import {
 import {
   DecoratorNode,
   $isDecoratorNode,
+  createDecoratorMap,
+  createDecoratorEditor,
+  isDecoratorMap,
+  isDecoratorEditor,
 } from './nodes/base/LexicalDecoratorNode';
 import {
   $isLeafNode,
@@ -69,7 +77,6 @@ import {
   $getPreviousSelection,
 } from './LexicalSelection';
 import {$createNodeFromParse} from './LexicalParsing';
-import {createEditorStateRef, isEditorStateRef} from './LexicalReference';
 
 export {
   VERSION,
@@ -77,9 +84,11 @@ export {
   ElementNode,
   DecoratorNode,
   TextNode,
-  // Ref
-  createEditorStateRef,
-  isEditorStateRef,
+  // Decorator state
+  createDecoratorMap,
+  createDecoratorEditor,
+  isDecoratorMap,
+  isDecoratorEditor,
   // Node validation
   $isLeafNode,
   $isElementNode,

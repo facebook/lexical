@@ -57,10 +57,14 @@ module.exports = {
         '@lexical/react/dist/useLexicalCharacterLimit',
       '@lexical/react/useLexicalHistory':
         '@lexical/react/dist/useLexicalHistory',
+      '@lexical/react/useLexicalDecoratorMap':
+        '@lexical/react/dist/useLexicalDecoratorMap',
       '@lexical/react/withSubscriptions':
         '@lexical/react/dist/withSubscriptions',
       '@lexical/react/LexicalContentEditable':
         '@lexical/react/dist/LexicalContentEditable',
+      '@lexical/react/LexicalNestedComposer':
+        '@lexical/react/dist/LexicalNestedComposer',
 
       // Composer and it's plugins
       '@lexical/react/LexicalComposer': '@lexical/react/dist/LexicalComposer',
@@ -77,6 +81,7 @@ module.exports = {
         'LexicalTablePlugin',
         'LexicalLinkPlugin',
         'LexicalListPlugin',
+        'LexicalOnChangePlugin',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

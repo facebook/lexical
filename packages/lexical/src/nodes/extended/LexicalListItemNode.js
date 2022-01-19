@@ -18,7 +18,7 @@ import type {ParagraphNode} from 'lexical/ParagraphNode';
 
 import {$isElementNode, ElementNode} from 'lexical';
 import {$createParagraphNode, $isParagraphNode} from 'lexical/ParagraphNode';
-import {ListNode, $createListNode, $isListNode} from 'lexical/ListNode';
+import {$createListNode, $isListNode} from 'lexical/ListNode';
 import invariant from 'shared/invariant';
 import {$getTopListNode, $isLastItemInList} from '@lexical/helpers/nodes';
 import {
@@ -181,10 +181,7 @@ export class ListItemNode extends ElementNode {
         const parent = emptyListPtr.getParent();
         if (
           parent == null ||
-          !(
-            emptyListPtr instanceof ListItemNode ||
-            emptyListPtr instanceof ListNode
-          )
+          !($isListItemNode(emptyListPtr) || $isListNode(emptyListPtr))
         ) {
           break;
         }

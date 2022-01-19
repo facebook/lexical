@@ -7,79 +7,92 @@
  * @flow
  */
 
-import {createTestConnection, waitForReact} from './utils';
-import {$getRoot, $createTextNode, $getSelection} from 'lexical';
+import {
+  createTestConnection,
+  waitForReact,
+  createAndStartClients,
+  testClientsForEquality,
+  connectClients,
+  disconnectClients,
+  stopClients,
+} from './utils';
+import {
+  $getRoot,
+  $createTextNode,
+  $setSelection,
+  $createSelection,
+  $isTextNode,
+  Selection,
+  LexicalNode,
+} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 
-function createAndStartClients(
-  connector: TestConnection,
-  aContainer: any,
-  count: number,
-): Array<Client> {
-  const result = [];
-  for (let i = 0; i < count; ++i) {
-    const id = `${i}`;
-    const client = connector.createClient(id);
-    client.start(aContainer);
-    result.push(client);
-  }
-  return result;
-}
-
-function disconnectClients(clients: Array<Client>) {
-  for (let i = 0; i < clients.length; ++i) {
-    clients[i].disconnect();
-  }
-}
-
-function connectClients(clients: Array<Client>) {
-  for (let i = 0; i < clients.length; ++i) {
-    clients[i].connect();
-  }
-}
-
-function stopClients(clients: Array<Client>) {
-  for (let i = 0; i < clients.length; ++i) {
-    clients[i].stop();
-  }
-}
-
-function removeInitialParagraph() {
+const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();
-  const paragraph = root.getFirstChild();
-  paragraph.remove();
-}
+  const paragraph = $createParagraphNode();
+  const nodes = children.map((child) => {
+    return typeof child === 'string' ? $createTextNode(child) : child;
+  });
+  paragraph.append(...nodes);
+  root.append(paragraph);
+};
 
-function createSampleParagraphsWithClient(client: Client, count: number) {
+const $createSelectionByPath = ({
+  anchorPath,
+  anchorOffset,
+  focusPath,
+  focusOffset,
+}: {
+  anchorPath: Array<number>,
+  anchorOffset: number,
+  focusPath: Array<number>,
+  focusOffset: number,
+}): Selection => {
+  const selection = $createSelection();
   const root = $getRoot();
-  for (let i = 0; i < count; ++i) {
-    const paragraph = $createParagraphNode();
-    const text = `Hello world ${i + 1}.`;
+  const anchorNode = anchorPath.reduce(
+    (node, index) => node.getChildAtIndex(index),
+    root,
+  );
+  const focusNode = focusPath.reduce(
+    (node, index) => node.getChildAtIndex(index),
+    root,
+  );
+  selection.anchor.set(
+    anchorNode.getKey(),
+    anchorOffset,
+    $isTextNode(anchorNode) ? 'text' : 'element',
+  );
+  selection.focus.set(
+    focusNode.getKey(),
+    focusOffset,
+    $isTextNode(focusNode) ? 'text' : 'element',
+  );
+  $setSelection(selection);
+  return selection;
+};
 
-    paragraph.append($createTextNode(text));
-    root.append(paragraph);
-  }
-}
-
-function verifySampleParagraphsWithClient(client: Client, count: number) {
-  let expectedText = '';
-
-  for (let i = 0; i < count; ++i) {
-    const text = `Hello world ${i + 1}.`;
-    expectedText += '<p dir="ltr"><span data-lexical-text="true">';
-    expectedText += text;
-    expectedText += '</span></p>';
-  }
-
-  expect(expectedText).toEqual(client.getHTML());
-}
-
-function testClientsForEquality(clients: Array<Client>) {
-  for (let i = 1; i < clients.length; ++i) {
-    expect(clients[0].getHTML()).toEqual(clients[i].getHTML());
-    expect(clients[0].getDocJSON()).toEqual(clients[i].getDocJSON());
-  }
-}
+const $replaceTextByPath = ({
+  anchorPath,
+  anchorOffset,
+  focusPath,
+  focusOffset,
+  text = '',
+}: {
+  anchorPath: Array<number>,
+  anchorOffset: number,
+  focusPath: Array<number>,
+  focusOffset: number,
+  text: ?string,
+}) => {
+  const selection = $createSelectionByPath({
+    anchorPath,
+    anchorOffset,
+    focusPath,
+    focusOffset,
+  });
+  selection.insertText(text);
+};
 
 describe('CollaborationWithCollisions', () => {
   let container = null;
@@ -94,61 +107,126 @@ describe('CollaborationWithCollisions', () => {
     container = null;
   });
 
-  it('Remove text at within the first of multiple paragraphs colliding with removing first paragraph.', async () => {
-    const clientCount = 2;
-    const connector = createTestConnection();
-    const clients: Array<Client> = createAndStartClients(
-      connector,
-      container,
-      clientCount,
-    );
+  const SIMPLE_TEXT_COLLISION_TESTS: Array<{
+    name: String,
+    init: () => void,
+    clients: Array<() => void>,
+    expectedHTML: ?String,
+  }> = [
+    {
+      name: 'Remove text at within the first of multiple paragraphs colliding with removing first paragraph',
+      init: () => {
+        $insertParagraph('Hello world 1');
+        $insertParagraph('Hello world 2');
+        $insertParagraph('Hello world 3');
+      },
+      clients: [
+        () => {
+          // First client deletes text from first and second paragraphs
+          $replaceTextByPath({
+            anchorPath: [0, 0],
+            anchorOffset: 5,
+            focusPath: [1, 0],
+            focusOffset: 6,
+          });
+        },
+        () => {
+          // Second client deletes first paragraph
+          $getRoot().getFirstChild().remove();
+        },
+      ],
+    },
+    {
+      name: 'Remove first two paragraphs colliding with removing first paragraph',
+      init: () => {
+        $insertParagraph('Hello world 1');
+        $insertParagraph('Hello world 2');
+        $insertParagraph('Hello world 3');
+      },
+      clients: [
+        () => {
+          // First client deletes first two paragraphs
+          const paragraphs = $getRoot().getChildren();
+          paragraphs[0].remove();
+          paragraphs[1].remove();
+        },
+        () => {
+          // Second client deletes first paragraph
+          $getRoot().getFirstChild().remove();
+        },
+      ],
+    },
+    {
+      name: 'Editing first and second paragraphs colliding with editing second and third paragraphs (with overlapping edit)',
+      init: () => {
+        $insertParagraph('Hello world 1');
+        $insertParagraph('Hello world 2');
+        $insertParagraph('Hello world 3');
+      },
+      clients: [
+        () => {
+          $replaceTextByPath({
+            anchorPath: [0, 0],
+            anchorOffset: 0,
+            focusPath: [1, 0],
+            focusOffset: 7,
+            text: 'Hello client 1',
+          });
+        },
+        () => {
+          $replaceTextByPath({
+            anchorPath: [1, 0],
+            anchorOffset: 5,
+            focusPath: [2, 0],
+            focusOffset: 5,
+            text: 'Hello client 2',
+          });
+        },
+      ],
+    },
+  ];
 
-    const client = clients[0];
-    expect(client != null).toBe(true);
+  SIMPLE_TEXT_COLLISION_TESTS.forEach((testCase) => {
+    it(testCase.name, async () => {
+      const connection = createTestConnection();
+      const clients = createAndStartClients(
+        connection,
+        container,
+        testCase.clients.length,
+      );
 
-    // Setup document for collision tests.
-    await waitForReact(() => {
-      clients[0].update(() => {
-        removeInitialParagraph();
-        createSampleParagraphsWithClient(clients[0], clientCount);
+      // Set initial content (into first editor only, the rest will be sync'd)
+      const clientA = clients[0];
+
+      await waitForReact(() => {
+        clientA.update(() => {
+          $getRoot().clear();
+          testCase.init();
+        });
       });
-    });
 
-    verifySampleParagraphsWithClient(clients[0], clientCount);
+      testClientsForEquality(clients);
 
-    disconnectClients(clients);
+      // Disconnect clients and apply client-specific actions, reconnect them back and
+      // verify that they're sync'd and have the same content
+      disconnectClients(clients);
 
-    // Client 1:remove text within paragraph 1 and 2.
-    let clientIndex = 0;
-    await waitForReact(() => {
-      clients[clientIndex].update(() => {
-        const root = $getRoot();
-        const paragraph1 = root.getFirstChild();
-        const paragraph2 = paragraph1.getNextSibling();
-        const textNode = paragraph1.getFirstChild();
-        textNode.select(0, 0);
-        const selection = $getSelection();
-        selection.anchor.set(paragraph1.getFirstChild().getKey(), 5, 'text');
-        selection.focus.set(paragraph2.getFirstChild().getKey(), 6, 'text');
-        selection.removeText();
+      for (let i = 0; i < clients.length; i++) {
+        await waitForReact(() => {
+          clients[i].update(testCase.clients[i]);
+        });
+      }
+
+      await waitForReact(() => {
+        connectClients(clients);
       });
-    });
 
-    // Remove paragraph 2.
-    clientIndex = 1;
-    await waitForReact(() => {
-      clients[clientIndex].update(() => {
-        const root = $getRoot();
-        const paragraph = root.getFirstChild();
-        paragraph.remove();
-      });
-    });
+      if (testCase.expectedHTML) {
+        expect(clientA.getHTML()).toEqual(testCase.expectedHTML);
+      }
 
-    await waitForReact(() => {
-      connectClients(clients);
+      testClientsForEquality(clients);
+      stopClients(clients);
     });
-
-    testClientsForEquality(clients);
-    stopClients(clients);
   });
 });

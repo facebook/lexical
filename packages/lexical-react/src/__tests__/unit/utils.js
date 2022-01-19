@@ -178,6 +178,19 @@ class Client {
     return this._editor.getEditorState();
   }
 
+  getEditor() {
+    return this._editor;
+  }
+
+  getContainer() {
+    return this._container;
+  }
+
+  async focus() {
+    this._container.focus();
+    await Promise.resolve().then();
+  }
+
   update(cb) {
     this._editor.update(cb);
   }
@@ -204,4 +217,44 @@ export async function waitForReact(cb) {
     cb();
     await Promise.resolve().then();
   });
+}
+
+export function createAndStartClients(
+  connector: TestConnection,
+  aContainer: any,
+  count: number,
+): Array<Client> {
+  const result = [];
+  for (let i = 0; i < count; ++i) {
+    const id = `${i}`;
+    const client = connector.createClient(id);
+    client.start(aContainer);
+    result.push(client);
+  }
+  return result;
+}
+
+export function disconnectClients(clients: Array<Client>) {
+  for (let i = 0; i < clients.length; ++i) {
+    clients[i].disconnect();
+  }
+}
+
+export function connectClients(clients: Array<Client>) {
+  for (let i = 0; i < clients.length; ++i) {
+    clients[i].connect();
+  }
+}
+
+export function stopClients(clients: Array<Client>) {
+  for (let i = 0; i < clients.length; ++i) {
+    clients[i].stop();
+  }
+}
+
+export function testClientsForEquality(clients: Array<Client>) {
+  for (let i = 1; i < clients.length; ++i) {
+    expect(clients[0].getHTML()).toEqual(clients[i].getHTML());
+    expect(clients[0].getDocJSON()).toEqual(clients[i].getDocJSON());
+  }
 }

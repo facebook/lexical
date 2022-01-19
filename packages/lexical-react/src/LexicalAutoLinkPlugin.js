@@ -25,6 +25,8 @@ import {
   $isAutoLinkNode,
 } from 'lexical/AutoLinkNode';
 
+type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
+
 type LinkMatcherResult = {
   text: string,
   url: string,
@@ -74,6 +76,7 @@ function isNextNodeValid(node: LexicalNode): boolean {
 function handleLinkCreation(
   node: TextNode,
   matchers: Array<LinkMatcher>,
+  onChange: ChangeHandler,
 ): void {
   const nodeText = node.getTextContent();
   const nodeTextLength = nodeText.length;
@@ -124,6 +127,7 @@ function handleLinkCreation(
       linkNode.append($createTextNode(match.text));
       middleNode.replace(linkNode);
       lastNodeOffset = lastNodeMatchOffset + matchLength;
+      onChange(match.url, null);
     }
 
     const iterationOffset = matchOffset + matchLength;
@@ -135,6 +139,7 @@ function handleLinkCreation(
 function handleLinkEdit(
   linkNode: AutoLinkNode,
   matchers: Array<LinkMatcher>,
+  onChange: ChangeHandler,
 ): void {
   // Check children are simple text
   const children = linkNode.getChildren();
@@ -143,6 +148,7 @@ function handleLinkEdit(
     const child = children[i];
     if (!$isTextNode(child) || !child.isSimpleText()) {
       replaceWithChildren(linkNode);
+      onChange(null, linkNode.getURL());
       return;
     }
   }
@@ -150,34 +156,39 @@ function handleLinkEdit(
   // Check text content fully matches
   const text = linkNode.getTextContent();
   const match = findFirstMatch(text, matchers);
-  if (match === null || (match !== null && match.text !== text)) {
+  if (match === null || match.text !== text) {
     replaceWithChildren(linkNode);
+    onChange(null, linkNode.getURL());
     return;
   }
 
   // Check neighbors
   if (!isPreviousNodeValid(linkNode) || !isNextNodeValid(linkNode)) {
     replaceWithChildren(linkNode);
+    onChange(null, linkNode.getURL());
     return;
   }
 
   const url = linkNode.getURL();
   if (match !== null && url !== match.url) {
     linkNode.setURL(match.url);
+    onChange(match.url, url);
   }
 }
 
 // Bad neighbours are edits in neighbor nodes that make AutoLinks incompatible.
 // Given the creation preconditions, these can only be simple text nodes.
-function handleBadNeighbors(textNode: TextNode): void {
+function handleBadNeighbors(textNode: TextNode, onChange: ChangeHandler): void {
   const previousSibling = textNode.getPreviousSibling();
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
   if ($isAutoLinkNode(previousSibling) && !text.startsWith(' ')) {
     replaceWithChildren(previousSibling);
+    onChange(null, previousSibling.getURL());
   }
   if ($isAutoLinkNode(nextSibling) && !text.endsWith(' ')) {
     replaceWithChildren(nextSibling);
+    onChange(null, nextSibling.getURL());
   }
 }
 
@@ -194,34 +205,43 @@ function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
 function useAutoLink(
   editor: LexicalEditor,
   matchers: Array<LinkMatcher>,
+  onChange?: ChangeHandler,
 ): void {
   useEffect(() => {
+    const onChangeWrapped = (...args) => {
+      if (onChange) {
+        onChange(...args);
+      }
+    };
+
     return withSubscriptions(
       editor.registerNodes([AutoLinkNode]),
       editor.addTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
         if ($isAutoLinkNode(parent)) {
-          handleLinkEdit(parent, matchers);
+          handleLinkEdit(parent, matchers, onChangeWrapped);
         } else {
           if (textNode.isSimpleText()) {
-            handleLinkCreation(textNode, matchers);
+            handleLinkCreation(textNode, matchers, onChangeWrapped);
           }
-          handleBadNeighbors(textNode);
+          handleBadNeighbors(textNode, onChangeWrapped);
         }
       }),
       editor.addTransform(AutoLinkNode, (linkNode: AutoLinkNode) => {
-        handleLinkEdit(linkNode, matchers);
+        handleLinkEdit(linkNode, matchers, onChangeWrapped);
       }),
     );
-  }, [editor, matchers]);
+  }, [editor, matchers, onChange]);
 }
 
 export default function AutoLinkPlugin({
   matchers,
+  onChange,
 }: {
   matchers: Array<LinkMatcher>,
+  onChange?: ChangeHandler,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
-  useAutoLink(editor, matchers);
+  useAutoLink(editor, matchers, onChange);
   return null;
 }

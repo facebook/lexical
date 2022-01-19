@@ -35,6 +35,8 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalTableCellNode.js',
         '^lexical/LinkNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalLinkNode.js',
+        '^lexical/AutoLinkNode$':
+          '<rootDir>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js',
         '^lexical/QuoteNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalQuoteNode.js',
         '^lexical/CodeNode$':
@@ -57,6 +59,8 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.js',
         '^@lexical/react/LexicalLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.js',
+        '^@lexical/react/LexicalAutoLinkPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.js',
         '^@lexical/react/LexicalListPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalListPlugin.js',
         '^@lexical/react/LexicalComposerContext$':

@@ -7,17 +7,22 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, LexicalNode, ElementNode} from 'lexical';
 
-import {TextNode, $createTextNode, $getSelection} from 'lexical';
+import {
+  TextNode,
+  $createTextNode,
+  $isElementNode,
+  $isLineBreakNode,
+  $isTextNode,
+} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {useEffect} from 'react';
-import {$isLinkNode} from 'lexical/LinkNode';
 import {
+  AutoLinkNode,
   $createAutoLinkNode,
   $isAutoLinkNode,
-  AutoLinkNode,
 } from '../nodes/AutoLinkNode';
 
 type LinkMatcherResult = {
@@ -40,79 +45,6 @@ function findFirstMatch(
     }
   }
   return null;
-}
-
-function textNodeTransform(node: TextNode, matchers: Array<LinkMatcher>): void {
-  if (!node.isSimpleText()) {
-    return;
-  }
-
-  const selection = $getSelection();
-  if (selection === null || !selection.isCollapsed()) {
-    return;
-  }
-
-  const parent = node.getParent();
-  if (parent === null) {
-    return;
-  }
-
-  if ($isAutoLinkNode(parent)) {
-    // If it's already auto link see if we can expand more
-    // (if matching pattern) or should escape
-    const text = node.getTextContent();
-    const match = findFirstMatch(text, matchers);
-
-    // If content no longer matches pattern then remove auto link
-    if (match === null) {
-      parent.replace(node);
-      return;
-    }
-
-    // If content matches the pattern, but some of the trailing text
-    // does not, then move that text outside of auto link. This allows
-    // escaping continious typing within the link
-    if (text.length > match.length) {
-      const endOffset = match.index + match.length;
-      const partials = node.splitText(endOffset);
-      parent.insertAfter(partials[1]);
-    }
-
-    // Update auto link url to reflect latest match
-    parent.setURL(match.url);
-  } else if ($isLinkNode(parent)) {
-    // If it's already a regular link leave it as is, to allow
-    // manual link even for matched patterns
-    return;
-  } else {
-    // If it's a plain text then check pattern match (could have mulitple entries per node)
-    // and wrap those matches into auto link
-    let currentNode = node;
-    while (currentNode) {
-      const match = findFirstMatch(currentNode.getTextContent(), matchers);
-      if (match === null) {
-        break;
-      }
-
-      const startOffset = match.index;
-      const endOffset = startOffset + match.length;
-      let targetNode;
-
-      if (startOffset === 0) {
-        [targetNode, currentNode] = currentNode.splitText(endOffset);
-      } else {
-        [, targetNode, currentNode] = currentNode.splitText(
-          startOffset,
-          endOffset,
-        );
-      }
-
-      const textNode = $createTextNode(match.text);
-      const linkNode = $createAutoLinkNode(match.url);
-      linkNode.append(textNode);
-      targetNode.replace(linkNode);
-    }
-  }
 }
 
 const URL_MATCHER =
@@ -150,13 +82,169 @@ const Matchers: $ReadOnly<{
   },
 };
 
+function isPreviousNodeValid(node: LexicalNode): boolean {
+  let previousNode = node.getPreviousSibling();
+  if ($isElementNode(previousNode)) {
+    previousNode = previousNode.getLastDescendant();
+  }
+  return (
+    previousNode === null ||
+    $isLineBreakNode(previousNode) ||
+    ($isTextNode(previousNode) && previousNode.getTextContent().endsWith(' '))
+  );
+}
+
+function isNextNodeValid(node: LexicalNode): boolean {
+  let nextNode = node.getNextSibling();
+  if ($isElementNode(nextNode)) {
+    nextNode = nextNode.getFirstDescendant();
+  }
+  return (
+    nextNode === null ||
+    $isLineBreakNode(nextNode) ||
+    ($isTextNode(nextNode) && nextNode.getTextContent().startsWith(' '))
+  );
+}
+
+function handleLinkCreation(
+  node: TextNode,
+  matchers: Array<LinkMatcher>,
+): void {
+  const nodeText = node.getTextContent();
+  const nodeTextLength = nodeText.length;
+  let text = nodeText;
+  let textOffset = 0;
+  let lastNode = node;
+  let lastNodeOffset = 0;
+  let match;
+  while ((match = findFirstMatch(text, matchers)) && match !== null) {
+    const matchOffset = match.index;
+    const offset = textOffset + matchOffset;
+    const matchLength = match.length;
+
+    // Previous node is valid if any of:
+    // 1. Space before same node
+    // 2. Space in previous simple text node
+    // 3. Previous node is LineBreakNode
+    let contentBeforeMatchIsValid;
+    if (offset > 0) {
+      contentBeforeMatchIsValid = nodeText[offset - 1] === ' ';
+    } else {
+      contentBeforeMatchIsValid = isPreviousNodeValid(node);
+    }
+
+    // Next node is valid if any of:
+    // 1. Space after same node
+    // 2. Space in next simple text node
+    // 3. Next node is LineBreakNode
+    let contentAfterMatchIsValid;
+    if (offset + matchLength < nodeTextLength) {
+      contentAfterMatchIsValid = nodeText[offset + matchLength] === ' ';
+    } else {
+      contentAfterMatchIsValid = isNextNodeValid(node);
+    }
+
+    if (contentBeforeMatchIsValid && contentAfterMatchIsValid) {
+      let middleNode;
+      const lastNodeMatchOffset = offset - lastNodeOffset;
+      if (lastNodeMatchOffset === 0) {
+        [middleNode, lastNode] = lastNode.splitText(matchLength);
+      } else {
+        [, middleNode, lastNode] = lastNode.splitText(
+          lastNodeMatchOffset,
+          lastNodeMatchOffset + matchLength,
+        );
+      }
+      const linkNode = $createAutoLinkNode(match.url);
+      linkNode.append($createTextNode(match.text));
+      middleNode.replace(linkNode);
+      lastNodeOffset = lastNodeMatchOffset + matchLength;
+    }
+
+    const iterationOffset = matchOffset + matchLength;
+    text = text.substring(iterationOffset);
+    textOffset += iterationOffset;
+  }
+}
+
+function handleLinkEdit(
+  linkNode: AutoLinkNode,
+  matchers: Array<LinkMatcher>,
+): void {
+  // Check children are simple text
+  const children = linkNode.getChildren();
+  const childrenLength = children.length;
+  for (let i = 0; i < childrenLength; i++) {
+    const child = children[i];
+    if (!$isTextNode(child) || !child.isSimpleText()) {
+      replaceWithChildren(linkNode);
+      return;
+    }
+  }
+
+  // Check text content fully matches
+  const text = linkNode.getTextContent();
+  const match = findFirstMatch(text, matchers);
+  if (match === null || (match !== null && match.text !== text)) {
+    replaceWithChildren(linkNode);
+    return;
+  }
+
+  // Check neighbors
+  if (!isPreviousNodeValid(linkNode) || !isNextNodeValid(linkNode)) {
+    replaceWithChildren(linkNode);
+    return;
+  }
+
+  const url = linkNode.getURL();
+  if (match !== null && url !== match.url) {
+    linkNode.setURL(match.url);
+  }
+}
+
+// Bad neighbours are edits in neighbor nodes that make AutoLinks incompatible.
+// Given the creation preconditions, these can only be simple text nodes.
+function handleBadNeighbors(textNode: TextNode): void {
+  const previousSibling = textNode.getPreviousSibling();
+  const nextSibling = textNode.getNextSibling();
+  const text = textNode.getTextContent();
+  if ($isAutoLinkNode(previousSibling) && !text.startsWith(' ')) {
+    replaceWithChildren(previousSibling);
+  }
+  if ($isAutoLinkNode(nextSibling) && !text.endsWith(' ')) {
+    replaceWithChildren(nextSibling);
+  }
+}
+
+// TODO Move to Helper
+function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
+  const children = node.getChildren();
+  const childrenLength = children.length;
+  for (let j = childrenLength - 1; j >= 0; j--) {
+    node.insertAfter(children[j]);
+  }
+  node.remove();
+  return children.map((child) => child.getLatest());
+}
+
 function useAutoLink(editor: LexicalEditor): void {
   useEffect(() => {
     return withSubscriptions(
       editor.registerNodes([AutoLinkNode]),
-      editor.addTransform(TextNode, (node) =>
-        textNodeTransform(node, [Matchers.url, Matchers.email]),
-      ),
+      editor.addTransform(TextNode, (textNode: TextNode) => {
+        const parent = textNode.getParentOrThrow();
+        if ($isAutoLinkNode(parent)) {
+          handleLinkEdit(parent, [Matchers.url, Matchers.email]);
+        } else {
+          if (textNode.isSimpleText()) {
+            handleLinkCreation(textNode, [Matchers.url, Matchers.email]);
+          }
+          handleBadNeighbors(textNode);
+        }
+      }),
+      editor.addTransform(AutoLinkNode, (linkNode: AutoLinkNode) => {
+        handleLinkEdit(linkNode, [Matchers.url, Matchers.email]);
+      }),
     );
   }, [editor]);
 }

@@ -16,7 +16,10 @@ import {
 describe('Regression test #1113', () => {
   initializeE2E((e2e) => {
     it(`Selects new line when inserting a new line at the end of a link`, async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+      if (isRichText) {
+        return;
+      }
       await focusEditor(page);
 
       await page.keyboard.type('https://www.example.com');

@@ -13,6 +13,7 @@ import type {
   NodeKey,
   LexicalNode,
   Selection,
+  TextNode,
 } from 'lexical';
 
 import {
@@ -227,7 +228,7 @@ export class OverflowNode extends ElementNode {
     return false;
   }
 
-  insertNewAfter(selection: Selection): null | ElementNode {
+  insertNewAfter(selection: Selection): null | ElementNode | TextNode {
     const parent = this.getParentOrThrow();
     return parent.insertNewAfter(selection);
   }

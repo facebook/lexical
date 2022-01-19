@@ -9,10 +9,12 @@
 
 import type {NodeKey, EditorConfig, Selection, LexicalNode} from 'lexical';
 import type {ParagraphNode} from 'lexical/ParagraphNode';
+import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from 'lexical';
+import {ElementNode, $createLineBreakNode} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createCodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 export class CodeNode extends ElementNode {
   __language: string | void;
@@ -42,7 +44,9 @@ export class CodeNode extends ElementNode {
   }
 
   // Mutation
-  insertNewAfter(selection: Selection): null | ParagraphNode {
+  insertNewAfter(
+    selection: Selection,
+  ): null | ParagraphNode | CodeHighlightNode {
     const children = this.getChildren();
     const childrenLength = children.length;
 
@@ -59,6 +63,31 @@ export class CodeNode extends ElementNode {
       const newElement = $createParagraphNode();
       this.insertAfter(newElement);
       return newElement;
+    }
+
+    // If the selection is within the codeblock, find all leading tabs and
+    // spaces of the current line. Create a new line that has all those
+    // tabs and spaces, such that leading indentation is preserved.
+    const selectedChild = children.find(
+      (child) => child.__key === selection.anchor.key,
+    );
+    if (selectedChild != null) {
+      const selectedChildText = selectedChild.getTextContent();
+      let leadingWhitespace = 0;
+      while (
+        leadingWhitespace < selectedChildText.length &&
+        /[\t ]/.test(selectedChildText[leadingWhitespace])
+      ) {
+        leadingWhitespace += 1;
+      }
+      if (leadingWhitespace > 0) {
+        const whitespace = selectedChildText.substring(0, leadingWhitespace);
+        const indentedChild = $createCodeHighlightNode(whitespace);
+        selectedChild.insertAfter(indentedChild);
+        selection.insertNodes([$createLineBreakNode()]);
+        indentedChild.select();
+        return indentedChild;
+      }
     }
 
     return null;

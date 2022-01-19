@@ -162,15 +162,32 @@ export class ListItemNode extends ElementNode {
       if (nextSibling === null) {
         newElement = $createParagraphNode();
         list.insertAfter(newElement);
-        this.remove();
       } else {
         newElement = $createParagraphNode();
         list.insertBefore(newElement);
-        this.remove();
       }
-      if (list.isEmpty()) {
-        list.remove();
+      // The naive approach would be to remove this list item and then the list, if it's empty.
+      // However, nodes may be repeatedly indented, to create deeply nested lists that each
+      // contain just one bullet.
+      // Our goal is to remove these (now-empty) deeply nested lists. The easiest way to do that
+      // is crawl back up the tree until we find a node that has siblings (e.g. is actually part
+      // of the list contents) and delete that, or delete the root of the list (if no list nodes
+      // have siblings.)
+      let emptyListPtr = this;
+      while (
+        emptyListPtr.getNextSibling() == null &&
+        emptyListPtr.getPreviousSibling() == null
+      ) {
+        const parent = emptyListPtr.getParent();
+        if (
+          parent == null ||
+          !($isListItemNode(emptyListPtr) || $isListNode(emptyListPtr))
+        ) {
+          break;
+        }
+        emptyListPtr = parent;
       }
+      emptyListPtr.remove();
     } else {
       newElement = $createListItemNode();
       this.insertAfter(newElement);

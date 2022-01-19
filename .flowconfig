@@ -27,6 +27,7 @@ module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical/src/
 module.name_mapper='^lexical/ParagraphNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalParagraphNode.js'
 module.name_mapper='^lexical/CodeNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeNode.js'
 module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalLinkNode.js'
+module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js'
 module.name_mapper='^lexical/HashtagNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js'
 module.name_mapper='^lexical/CodeHighlightNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js'
 
@@ -69,6 +70,7 @@ module.name_mapper='^@lexical/react/LexicalHistoryPlugin' -> '<PROJECT_ROOT>/pac
 module.name_mapper='^@lexical/react/LexicalCollaborationPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalCollaborationPlugin.js'
 module.name_mapper='^@lexical/react/LexicalTablePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalTablePlugin.js'
 module.name_mapper='^@lexical/react/LexicalLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalLinkPlugin.js'
+module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoLinkPlugin.js'
 module.name_mapper='^@lexical/react/LexicalListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalListPlugin.js'
 
 module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/src/index.js'

@@ -77,6 +77,9 @@ describe('Markdown', () => {
   ];
 
   initializeE2E((e2e) => {
+    // forward case is the normal case.
+    // undo case is when the user presses undo.
+
     const count = triggersAndExpectations.length;
     for (let i = 0; i < count; ++i) {
       const trigger = triggersAndExpectations[i].trigger;

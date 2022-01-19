@@ -757,6 +757,9 @@ describe('Nested List', () => {
       // Trigger markdown using 321 digits followed by "." and a trigger of " ".
       await page.keyboard.type('321. ');
 
+      // forward case is the normal case.
+      // undo case is when the user presses undo.
+
       const forwardHTML =
         '<ol start="321" class="PlaygroundEditorTheme__ol1 srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="321" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ol>';
 

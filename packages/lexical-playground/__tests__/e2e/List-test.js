@@ -11,6 +11,8 @@ import {
   moveLeft,
   selectCharacters,
   moveToParagraphEnd,
+  undo,
+  redo,
 } from '../keyboardShortcuts';
 import {
   initializeE2E,
@@ -18,6 +20,7 @@ import {
   focusEditor,
   waitForSelector,
   click,
+  IS_COLLAB,
 } from '../utils';
 
 async function toggleBulletList(page) {
@@ -754,10 +757,24 @@ describe('Nested List', () => {
       // Trigger markdown using 321 digits followed by "." and a trigger of " ".
       await page.keyboard.type('321. ');
 
-      await assertHTML(
-        page,
-        '<ol start="321" class="PlaygroundEditorTheme__ol1 srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="321" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ol>',
-      );
+      // forward case is the normal case.
+      // undo case is when the user presses undo.
+
+      const forwardHTML =
+        '<ol start="321" class="PlaygroundEditorTheme__ol1 srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="321" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ol>';
+
+      const undoHTML =
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span data-lexical-text="true">321. </span></p>';
+
+      await assertHTML(page, forwardHTML);
+      if (IS_COLLAB) {
+        // Collab uses its own undo/redo
+        return;
+      }
+      await undo(page);
+      await assertHTML(page, undoHTML);
+      await redo(page);
+      await assertHTML(page, forwardHTML);
     });
   });
 });

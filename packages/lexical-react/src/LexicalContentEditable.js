@@ -51,7 +51,7 @@ export default function LexicalContentEditable({
   className,
   readOnly = false,
   role = 'textbox',
-  spellCheck = false,
+  spellCheck = true,
   tabIndex,
   testid,
 }: Props): React.MixedElement {

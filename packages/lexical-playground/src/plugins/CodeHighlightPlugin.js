@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, ElementNode} from 'lexical';
+import type {LexicalEditor, ElementNode, Selection} from 'lexical';
 
 import {CodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {
@@ -63,6 +63,16 @@ export default function CodeHighlightPlugin(): React$Node {
       editor.addTransform(TextNode, (node) => textNodeTransform(node, editor)),
       editor.addTransform(CodeHighlightNode, (node) =>
         textNodeTransform(node, editor),
+      ),
+      editor.addListener(
+        'command',
+        (type, payload): boolean => {
+          if (type === 'indentContent' || type === 'outdentContent') {
+            return handleMultilineIndent(type);
+          }
+          return false;
+        },
+        1,
       ),
     );
   }, [editor]);
@@ -316,4 +326,77 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   }
 
   return false;
+}
+
+function handleMultilineIndent(
+  type: 'indentContent' | 'outdentContent',
+): boolean {
+  const selection = $getSelection();
+
+  if (selection === null || selection.isCollapsed()) {
+    return false;
+  }
+
+  // Only run multiline indent logic on selections exclusively composed of code highlights and linebreaks
+  const nodes = selection.getNodes();
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (!$isCodeHighlightNode(node) && !$isLineBreakNode(node)) {
+      return false;
+    }
+  }
+
+  let startOfLine = nodes[0];
+  let previousSiblings = startOfLine.getPreviousSiblings();
+  let prev = previousSiblings.pop();
+  while (prev != null && !$isLineBreakNode(prev)) {
+    startOfLine = prev;
+    prev = previousSiblings.pop();
+  }
+
+  if ($isCodeHighlightNode(startOfLine)) {
+    doIndent(startOfLine, type);
+  }
+
+  for (let i = 1; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (
+      (i === 0 || $isLineBreakNode(nodes[i - 1])) &&
+      $isCodeHighlightNode(node)
+    ) {
+      doIndent(node, type);
+    }
+  }
+
+  return true;
+}
+
+function doIndent(
+  node: CodeHighlightNode,
+  type: 'indentContent' | 'outdentContent',
+) {
+  const text = node.getTextContent();
+  if (type === 'indentContent') {
+    // If the codeblock node doesn't start with whitespace, we don't want to
+    // naively prepend a '\t'; Prism will then mangle all of our nodes when
+    // it separates the whitespace from the first non-whitespace node. This
+    // will lead to selection bugs when indenting lines that previously
+    // didn't start with a whitespace character
+    if (text.length > 0 && /\s/.test(text[0])) {
+      node.setTextContent('\t' + text);
+    } else {
+      const indentNode = $createCodeHighlightNode('\t');
+      node.insertBefore(indentNode);
+    }
+  } else {
+    if (text.indexOf('\t') === 0) {
+      // Same as above - if we leave empty text nodes lying around, the resulting
+      // selection will be mangled
+      if (text.length === 1) {
+        node.remove();
+      } else {
+        node.setTextContent(text.substring(1));
+      }
+    }
+  }
 }

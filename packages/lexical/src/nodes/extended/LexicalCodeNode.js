@@ -12,9 +12,12 @@ import type {ParagraphNode} from 'lexical/ParagraphNode';
 import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode, $createLineBreakNode} from 'lexical';
+import {ElementNode, $createLineBreakNode, $isLineBreakNode} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
-import {$createCodeHighlightNode} from 'lexical/CodeHighlightNode';
+import {
+  $createCodeHighlightNode,
+  $isCodeHighlightNode,
+} from 'lexical/CodeHighlightNode';
 
 export class CodeNode extends ElementNode {
   __language: string | void;
@@ -72,7 +75,21 @@ export class CodeNode extends ElementNode {
       (child) => child.__key === selection.anchor.key,
     );
     if (selectedChild != null) {
-      const selectedChildText = selectedChild.getTextContent();
+      let selectedChildText = selectedChild.getTextContent();
+      // Accumulate all children before the selection on this line
+      // Consider the code: `  alert(1);`
+      //   alert, (, 1, ), and ; will all be different CodeHighlight nodes.
+      // We need to accumulate all these nodes to finding the leading whitespace
+      const previousSiblings = selectedChild.getPreviousSiblings();
+      while (previousSiblings.length > 0) {
+        const node = previousSiblings.pop();
+        if ($isCodeHighlightNode(node)) {
+          selectedChildText = node.getTextContent() + selectedChildText;
+        }
+        if ($isLineBreakNode(node)) {
+          break;
+        }
+      }
       let leadingWhitespace = 0;
       while (
         leadingWhitespace < selectedChildText.length &&

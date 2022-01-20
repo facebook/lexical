@@ -12,14 +12,14 @@ By design, the core of Lexical doesn't do anything else, such as listen for keyb
 this logic can be wired up manually, or via a preshipped package. This ensures tight extensibilty and keeps code-sizes
 to a minimal – ensuring apps only pay the cost for what they actually import.
 
-For React apps, Lexical has tight intergration with React 18+ via the optional `lexical-react` package. This package provides
+For React apps, Lexical has tight intergration with React 18+ via the optional `@lexical/react` package. This package provides
 production-ready utility functions, helpers and React hooks that make it seemless to create text editors within React.
 
 ## Getting started with React
 
 You can create a new react project using [create-react-app](https://reactjs.org/docs/create-a-new-react-app.html)
 
-Install `lexical` and `lexical-react`:
+Install `lexical` and `@lexical/react`:
 
 ```
 npm install --save lexical @lexical/react

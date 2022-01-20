@@ -11,19 +11,12 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {$log, $getSelection, createEditorStateRef} from 'lexical';
+import {$log, $getSelection} from 'lexical';
 import {ImageNode, $createImageNode} from '../nodes/ImageNode';
 
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
-
-function createUID(): string {
-  return Math.random()
-    .toString(36)
-    .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
-}
 
 export default function ImagesPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -36,12 +29,10 @@ export default function ImagesPlugin(): React$Node {
           $log('insertImage');
           const selection = $getSelection();
           if (selection !== null) {
-            const ref = createEditorStateRef(createUID(), null);
             const imageNode = $createImageNode(
               yellowFlowerImage,
               'Yellow flower in tilt shift lens',
               500,
-              ref,
             );
             selection.insertNodes([imageNode]);
           }

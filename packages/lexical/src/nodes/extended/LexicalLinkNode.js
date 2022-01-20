@@ -72,7 +72,7 @@ export class LinkNode extends ElementNode {
     return false;
   }
 
-  canInsertTextAfter(): false {
+  canInsertTextAfter(): boolean {
     return false;
   }
 

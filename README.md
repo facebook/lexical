@@ -12,66 +12,50 @@ By design, the core of Lexical doesn't do anything else, such as listen for keyb
 this logic can be wired up manually, or via a preshipped package. This ensures tight extensibilty and keeps code-sizes
 to a minimal – ensuring apps only pay the cost for what they actually import.
 
-For React apps, Lexical has tight intergration with React 18+ via the optional `lexical-react` package. This package provides
+For React apps, Lexical has tight intergration with React 18+ via the optional `@lexical/react` package. This package provides
 production-ready utility functions, helpers and React hooks that make it seemless to create text editors within React.
 
 ## Getting started with React
 
 You can create a new react project using [create-react-app](https://reactjs.org/docs/create-a-new-react-app.html)
 
-Install `lexical` and `lexical-react`:
+Install `lexical` and `@lexical/react`:
 
 ```
 npm install --save lexical @lexical/react
 ```
 
-Below is an example of a basic plain text editor using `lexical` and `lexical-react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
+Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
 
 
 ```jsx
-import {useCallback} from 'react';
-import useLexical from '@lexical/react/useLexical';
-import useLexicalPlainText from '@lexical/react/useLexicalPlainText';
+import LexicalComposer from '@lexical/react/LexicalComposer';
+import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import LexicalHistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 
-const editorConfig = {
-  // When Lexical encounters an error, this is where
-  // we can report/handle it.
-  onError(error) {
-    throw error;
-  }
-};
+const theme = {
+  // Theme styling goes here
+  ...
+}
+
+function onChange(editorState) {
+  // When the editor changes, you can get notified via the
+  // LexicalOnChangePlugin!
+  console.log(editorState);
+}
 
 function Editor() {
-  // Create an Lexical editor instance and also a ref
-  // that we need to pass to our content editable.
-  const [editor, contentEditableRef, showPlaceholder] = useLexical(
-    editorConfig,
-  );
-
-  // Setup plain text entry event handlers.
-  useLexicalPlainText(editor);
-
-  // Our <div> content editable element with some basic styling.
   return (
-    <div>
-      <div
-        ref={contentEditableRef}
-        contentEditable={true}
-        role="textbox"
-        spellCheck={true}
-        style={{
-          lexical: 0,
-          overflowWrap: 'break-word',
-          padding: '10px',
-          userSelect: 'text',
-          whiteSpace: 'pre-wrap',
-        }}
-        tabIndex={0}
+    <LexicalComposer theme={theme}>
+      <LexicalPlainTextPlugin
+        contentEditable={<LexicalContentEditable />}
+        placeholder={<div>Enter some text...</div>}
       />
-      {showPlaceholder && (
-        <div className="placeholder">Enter some plain text...</div>
-      )}
-    </div>
+      <LexicalOnChangePlugin onChange={onChange} />
+      <LexicalHistoryPlugin />
+    </LexicalComposer>
   );
 }
 ```

@@ -35,7 +35,7 @@ const excludedProperties: Set<string> = new Set([
   '__parent',
   '__cachedText',
   '__text',
-  '__ref',
+  '__state',
 ]);
 
 export function getIndexOfYjsNode(

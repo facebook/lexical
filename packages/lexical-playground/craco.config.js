@@ -15,6 +15,7 @@ module.exports = {
       'lexical/ParagraphNode': 'lexical/dist/LexicalParagraphNode',
       'lexical/CodeNode': 'lexical/dist/LexicalCodeNode',
       'lexical/LinkNode': 'lexical/dist/LexicalLinkNode',
+      'lexical/AutoLinkNode': 'lexical/dist/LexicalAutoLinkNode',
       'lexical/HashtagNode': 'lexical/dist/LexicalHashtagNode',
       'lexical/CodeHighlightNode': 'lexical/dist/LexicalCodeHighlightNode',
       // Lexical Helpers
@@ -57,10 +58,14 @@ module.exports = {
         '@lexical/react/dist/useLexicalCharacterLimit',
       '@lexical/react/useLexicalHistory':
         '@lexical/react/dist/useLexicalHistory',
+      '@lexical/react/useLexicalDecoratorMap':
+        '@lexical/react/dist/useLexicalDecoratorMap',
       '@lexical/react/withSubscriptions':
         '@lexical/react/dist/withSubscriptions',
       '@lexical/react/LexicalContentEditable':
         '@lexical/react/dist/LexicalContentEditable',
+      '@lexical/react/LexicalNestedComposer':
+        '@lexical/react/dist/LexicalNestedComposer',
 
       // Composer and it's plugins
       '@lexical/react/LexicalComposer': '@lexical/react/dist/LexicalComposer',
@@ -76,7 +81,9 @@ module.exports = {
         'LexicalHistoryPlugin',
         'LexicalTablePlugin',
         'LexicalLinkPlugin',
+        'LexicalAutoLinkPlugin',
         'LexicalListPlugin',
+        'LexicalOnChangePlugin',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

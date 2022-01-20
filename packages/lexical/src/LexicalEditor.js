@@ -11,6 +11,7 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
+import type {DecoratorMap} from './nodes/base/LexicalDecoratorNode';
 
 import {
   commitPendingUpdates,
@@ -141,6 +142,10 @@ export type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
+export type DecoratorStateListener = (
+  decoratorState: DecoratorMap,
+  key: string,
+) => void;
 
 export type CommandListenerEditorPriority = 0;
 export type CommandListenerLowPriority = 1;
@@ -173,6 +178,7 @@ type Listeners = {
   root: Set<RootListener>,
   update: Set<UpdateListener>,
   command: Array<Set<CommandListener>>,
+  decoratorstate: Set<DecoratorStateListener>,
 };
 
 export type ListenerType =
@@ -182,7 +188,8 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent'
-  | 'command';
+  | 'command'
+  | 'decoratorstate';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -347,6 +354,7 @@ class BaseLexicalEditor {
       root: new Set(),
       update: new Set(),
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
+      decoratorstate: new Set(),
     };
     // Editor configuration for theme/context.
     this._config = config;
@@ -395,7 +403,8 @@ class BaseLexicalEditor {
       | RootListener
       | TextMutationListener
       | TextContentListener
-      | CommandListener,
+      | CommandListener
+      | DecoratorStateListener,
     priority?: CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];

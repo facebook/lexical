@@ -11,14 +11,19 @@ import type {
   EditorConfig,
   LexicalNode,
   LexicalEditor,
-  EditorStateRef,
+  DecoratorMap,
+  DecoratorEditor,
   NodeKey,
 } from 'lexical';
 
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {DecoratorNode, $getNodeByKey, $setSelection} from 'lexical';
-import InlineSimpleEditor from '../ui/InlineSimpleEditor';
+import {useCallback, useEffect, useRef} from 'react';
+import {
+  DecoratorNode,
+  $getNodeByKey,
+  $setSelection,
+  createDecoratorEditor,
+} from 'lexical';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -32,8 +37,10 @@ import StickyEditorTheme from '../themes/StickyEditorTheme';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
 import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import stylex from 'stylex';
 
 const styles = stylex.create({
@@ -83,16 +90,15 @@ function StickyComponent({
   y,
   nodeKey,
   color,
-  editorStateRef,
+  decoratorStateMap,
 }: {
   x: number,
   y: number,
   nodeKey: NodeKey,
   color: 'pink' | 'yellow',
-  editorStateRef: EditorStateRef,
+  decoratorStateMap: DecoratorMap,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
-  const [inlineEditor, setInlineEditor] = useState<null | LexicalEditor>(null);
   const stickyContainerRef = useRef<null | HTMLElement>(null);
   const positioningRef = useRef<{
     x: number,
@@ -111,17 +117,11 @@ function StickyComponent({
   });
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
-
-  useEffect(() => {
-    if (!editorStateRef.isEmpty() && inlineEditor !== null) {
-      const editorState = editorStateRef.get(inlineEditor);
-      if (editorState !== null) {
-        inlineEditor.setEditorState(editorState, {
-          tag: 'without-history',
-        });
-      }
-    }
-  }, [editorStateRef, inlineEditor]);
+  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditor>(
+    decoratorStateMap,
+    'caption',
+    () => createDecoratorEditor(),
+  );
 
   useEffect(() => {
     const position = positioningRef.current;
@@ -244,16 +244,6 @@ function StickyComponent({
     });
   }, [editor, nodeKey]);
 
-  const onChange = useCallback(
-    (editorState, inlineEditor) => {
-      setInlineEditor(inlineEditor);
-      if (!editorState.isEmpty()) {
-        editorStateRef.set(inlineEditor, editorState);
-      }
-    },
-    [editorStateRef],
-  );
-
   const {historyState} = useSharedHistoryContext();
 
   return (
@@ -284,13 +274,12 @@ function StickyComponent({
       <button onClick={handleColorChange} className="color">
         <i className="bucket" />
       </button>
-      <InlineSimpleEditor
-        onChange={onChange}
-        initialEditorStateRef={editorStateRef}
-        theme={StickyEditorTheme}>
+      <LexicalNestedComposer
+        theme={StickyEditorTheme}
+        initialDecoratorEditor={decoratorEditor}>
         {isCollab ? (
           <CollaborationPlugin
-            id={editorStateRef.id}
+            id={decoratorEditor.id}
             providerFactory={createWebsocketProvider}
             initEditorState={false}
           />
@@ -308,7 +297,7 @@ function StickyComponent({
           }
           skipInit={isCollab}
         />
-      </InlineSimpleEditor>
+      </LexicalNestedComposer>
     </div>
   );
 }
@@ -317,8 +306,6 @@ export class StickyNode extends DecoratorNode {
   __x: number;
   __y: number;
   __color: 'pink' | 'yellow';
-  // $FlowFixMe: __ref is never null
-  __ref: EditorStateRef;
 
   static getType(): string {
     return 'sticky';
@@ -329,7 +316,7 @@ export class StickyNode extends DecoratorNode {
       node.__x,
       node.__y,
       node.__color,
-      node.__ref,
+      node.__state,
       node.__key,
     );
   }
@@ -338,10 +325,10 @@ export class StickyNode extends DecoratorNode {
     x: number,
     y: number,
     color: 'pink' | 'yellow',
-    ref: EditorStateRef,
+    state?: DecoratorMap,
     key?: NodeKey,
   ) {
-    super(ref, key);
+    super(state, key);
     this.__x = x;
     this.__y = y;
     this.__color = color;
@@ -376,7 +363,7 @@ export class StickyNode extends DecoratorNode {
         x={this.__x}
         y={this.__y}
         nodeKey={this.getKey()}
-        editorStateRef={this.__ref}
+        decoratorStateMap={this.__state}
       />,
       document.body,
     );
@@ -390,7 +377,6 @@ export function $isStickyNode(node: ?LexicalNode): boolean %checks {
 export function $createStickyNode(
   xOffset: number,
   yOffset: number,
-  ref: EditorStateRef,
 ): StickyNode {
-  return new StickyNode(xOffset, yOffset, 'yellow', ref);
+  return new StickyNode(xOffset, yOffset, 'yellow');
 }

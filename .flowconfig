@@ -55,10 +55,13 @@ module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty' -> '<PROJECT_R
 module.name_mapper='^@lexical/react/useLexicalCanShowPlaceholder' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalCanShowPlaceholder.js'
 module.name_mapper='^@lexical/react/useLexicalCharacterLimit' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalCharacterLimit.js'
 module.name_mapper='^@lexical/react/useLexicalHistory' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalHistory.js'
+module.name_mapper='^@lexical/react/useLexicalDecoratorMap' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalDecoratorMap.js'
 module.name_mapper='^@lexical/react/LexicalComposer' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalComposer.js'
 module.name_mapper='^@lexical/react/LexicalComposerContext' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalComposerContext.js'
+module.name_mapper='^@lexical/react/LexicalNestedComposer' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalNestedComposer.js'
 module.name_mapper='^@lexical/react/withSubscriptions' -> '<PROJECT_ROOT>/packages/lexical-react/src/withSubscriptions.js'
 module.name_mapper='^@lexical/react/LexicalContentEditable' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalContentEditable.js'
+module.name_mapper='^@lexical/react/LexicalNestedComposer' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalNestedComposer.js'
 
 # Composer Plugins
 module.name_mapper='^@lexical/react/LexicalAutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoFormatterPlugin.js'
@@ -72,6 +75,7 @@ module.name_mapper='^@lexical/react/LexicalTablePlugin' -> '<PROJECT_ROOT>/packa
 module.name_mapper='^@lexical/react/LexicalLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalLinkPlugin.js'
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoLinkPlugin.js'
 module.name_mapper='^@lexical/react/LexicalListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalListPlugin.js'
+module.name_mapper='^@lexical/react/LexicalOnChangePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalOnChangePlugin.js'
 
 module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/src/index.js'
 

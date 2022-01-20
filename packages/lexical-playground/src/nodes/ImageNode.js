@@ -12,24 +12,39 @@ import type {
   NodeKey,
   LexicalNode,
   LexicalEditor,
-  EditorStateRef,
+  DecoratorMap,
+  DecoratorEditor,
 } from 'lexical';
 
 import * as React from 'react';
-import {DecoratorNode, $log, $getNodeByKey} from 'lexical';
+import {
+  DecoratorNode,
+  $log,
+  $getNodeByKey,
+  createDecoratorEditor,
+} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   useCollaborationContext,
   CollaborationPlugin,
 } from '@lexical/react/LexicalCollaborationPlugin';
-import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
-import ControlledEditor from '../ui/ControlledEditor';
+import {Suspense, useCallback, useRef, useState} from 'react';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
 import {createWebsocketProvider} from '../collaboration';
 import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
+import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
+import MentionsPlugin from '../plugins/MentionsPlugin';
+import EmojisPlugin from '../plugins/EmojisPlugin';
+import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
+import KeywordsPlugin from '../plugins/KeywordsPlugin';
+import TablesPlugin from '@lexical/react/LexicalTablePlugin';
+import TableCellActionMenuPlugin from '../plugins/TableActionMenuPlugin';
+import ImagesPlugin from '../plugins/ImagesPlugin';
+import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import stylex from 'stylex';
 
 const styles = stylex.create({
@@ -304,7 +319,7 @@ function ImageComponent({
   maxWidth,
   resizable,
   showCaption,
-  editorStateRef,
+  state,
 }: {
   src: string,
   altText: string,
@@ -314,26 +329,19 @@ function ImageComponent({
   maxWidth: number,
   resizable: boolean,
   showCaption: boolean,
-  editorStateRef: EditorStateRef,
+  state: DecoratorMap,
 }): React.Node {
   const ref = useRef(null);
   const [hasFocus, setHasFocus] = useState<boolean>(false);
   const [isResizing, setIsResizing] = useState<boolean>(false);
-  const [inlineEditor, setInlineEditor] = useState<null | LexicalEditor>(null);
   const {yjsDocMap} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
-
-  useEffect(() => {
-    if (showCaption && !editorStateRef.isEmpty() && inlineEditor !== null) {
-      const editorState = editorStateRef.get(inlineEditor);
-      if (editorState !== null) {
-        inlineEditor.setEditorState(editorState, {
-          tag: 'without-history',
-        });
-      }
-    }
-  }, [editorStateRef, inlineEditor, showCaption]);
+  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditor>(
+    state,
+    'caption',
+    () => createDecoratorEditor(),
+  );
 
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
@@ -348,16 +356,6 @@ function ImageComponent({
       });
     }
   };
-
-  const onChange = useCallback(
-    (editorState, inlineEditor) => {
-      setInlineEditor(inlineEditor);
-      if (!editorState.isEmpty()) {
-        editorStateRef.set(inlineEditor, editorState);
-      }
-    },
-    [editorStateRef],
-  );
 
   const setShowCaption = useCallback(() => {
     editor.update(() => {
@@ -416,12 +414,18 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <ControlledEditor
-              onChange={onChange}
-              initialEditorStateRef={editorStateRef}>
+            <LexicalNestedComposer initialDecoratorEditor={decoratorEditor}>
+              <MentionsPlugin />
+              <TablesPlugin />
+              <TableCellActionMenuPlugin />
+              <ImagesPlugin />
+              <LinkPlugin />
+              <EmojisPlugin />
+              <HashtagsPlugin />
+              <KeywordsPlugin />
               {isCollab ? (
                 <CollaborationPlugin
-                  id={editorStateRef.id}
+                  id={decoratorEditor.id}
                   providerFactory={createWebsocketProvider}
                   initEditorState={false}
                 />
@@ -439,7 +443,7 @@ function ImageComponent({
                 }
                 skipInit={isCollab}
               />
-            </ControlledEditor>
+            </LexicalNestedComposer>
           </div>
         )}
         {resizable && (hasFocus || isResizing) && (
@@ -463,8 +467,6 @@ export class ImageNode extends DecoratorNode {
   __width: 'inherit' | number;
   __height: 'inherit' | number;
   __maxWidth: number;
-  // $FlowFixMe: __ref is never null
-  __ref: EditorStateRef;
   __caption: boolean;
 
   static getType(): string {
@@ -476,7 +478,7 @@ export class ImageNode extends DecoratorNode {
       node.__src,
       node.__altText,
       node.__maxWidth,
-      node.__ref,
+      node.__state,
       node.__width,
       node.__height,
       node.__caption,
@@ -488,13 +490,13 @@ export class ImageNode extends DecoratorNode {
     src: string,
     altText: string,
     maxWidth: number,
-    ref: EditorStateRef,
+    state?: DecoratorMap,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     caption?: boolean,
     key?: NodeKey,
   ) {
-    super(ref, key);
+    super(state, key);
     this.__src = src;
     this.__altText = altText;
     this.__maxWidth = maxWidth;
@@ -542,7 +544,7 @@ export class ImageNode extends DecoratorNode {
         height={this.__height}
         maxWidth={this.__maxWidth}
         nodeKey={this.getKey()}
-        editorStateRef={this.__ref}
+        state={this.__state}
         showCaption={this.__caption}
         resizable={true}
       />
@@ -554,9 +556,8 @@ export function $createImageNode(
   src: string,
   altText: string,
   maxWidth: number,
-  ref: EditorStateRef,
 ): ImageNode {
-  return new ImageNode(src, altText, maxWidth, ref);
+  return new ImageNode(src, altText, maxWidth);
 }
 
 export function $isImageNode(node: ?LexicalNode): boolean %checks {

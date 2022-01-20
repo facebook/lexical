@@ -10,17 +10,139 @@
 import type {LexicalEditor} from '../../LexicalEditor';
 import type {NodeKey} from '../../LexicalNode';
 import type {Node as ReactNode} from 'react';
-import type {LexicalRef} from '../../LexicalReference';
+import type {EditorState} from '../../LexicalEditorState';
 
 import {LexicalNode} from '../../LexicalNode';
 import invariant from 'shared/invariant';
+import {createUID} from '../../LexicalUtils';
+import {getActiveEditor, triggerListeners} from '../../LexicalUpdates';
+
+export type DecoratorStateValue =
+  | DecoratorMap
+  | DecoratorEditor
+  | null
+  | boolean
+  | number
+  | string;
+
+function isStringified(
+  editorState: null | EditorState | string,
+): boolean %checks {
+  return typeof editorState === 'string';
+}
+
+export class DecoratorEditor {
+  id: string;
+  editorState: null | EditorState | string;
+  editor: null | LexicalEditor;
+
+  constructor(id?: string, editorState?: string | EditorState) {
+    this.id = id || createUID();
+    this.editorState = editorState || null;
+    this.editor = null;
+  }
+
+  init(editor: LexicalEditor): void {
+    let editorState = this.editorState;
+    if (isStringified(editorState)) {
+      editorState = editor.parseEditorState(editorState);
+      this.editorState = editorState;
+      if (editorState !== null) {
+        editor.setEditorState(editorState, {
+          tag: 'without-history',
+        });
+      }
+    }
+  }
+
+  set(editor: LexicalEditor): void {
+    this.editor = editor;
+    this.editorState = editor.getEditorState();
+  }
+
+  toJSON(): $ReadOnly<{
+    id: string,
+    type: 'editor',
+    editorState: null | string,
+  }> {
+    const editorState = this.editorState;
+    return {
+      id: this.id,
+      type: 'editor',
+      editorState:
+        editorState === null || isStringified(editorState)
+          ? editorState
+          : JSON.stringify(editorState.toJSON()),
+    };
+  }
+
+  isEmpty(): boolean {
+    return this.editorState === null;
+  }
+}
+
+export function createDecoratorEditor(
+  id?: string,
+  editorState?: string | EditorState,
+): DecoratorEditor {
+  return new DecoratorEditor(id, editorState);
+}
+
+export function isDecoratorEditor(x?: mixed): boolean %checks {
+  return x instanceof DecoratorEditor;
+}
+
+export class DecoratorMap {
+  _editor: LexicalEditor;
+  _map: Map<string, DecoratorStateValue>;
+
+  constructor(editor: LexicalEditor, map?: Map<string, DecoratorStateValue>) {
+    this._editor = editor;
+    this._map = map || new Map();
+  }
+
+  get(key: string): void | DecoratorStateValue {
+    return this._map.get(key);
+  }
+
+  has(key: string): boolean {
+    return this._map.has(key);
+  }
+
+  set(key: string, value: DecoratorStateValue): void {
+    this._map.set(key, value);
+    triggerListeners('decoratorstate', this._editor, false, this, key);
+  }
+
+  toJSON(): $ReadOnly<{
+    type: 'map',
+    map: Array<[string, DecoratorStateValue]>,
+  }> {
+    return {
+      type: 'map',
+      map: Array.from(this._map.entries()),
+    };
+  }
+}
+
+export function createDecoratorMap(
+  editor: LexicalEditor,
+  map?: Map<string, DecoratorStateValue>,
+): DecoratorMap {
+  return new DecoratorMap(editor, map);
+}
+
+export function isDecoratorMap(x?: mixed): boolean %checks {
+  return x instanceof DecoratorMap;
+}
 
 export class DecoratorNode extends LexicalNode {
-  __ref: null | LexicalRef;
+  __state: DecoratorMap;
 
-  constructor(ref?: null | LexicalRef, key?: NodeKey): void {
+  constructor(state?: DecoratorMap, key?: NodeKey): void {
     super(key);
-    this.__ref = ref || null;
+    const editor = getActiveEditor();
+    this.__state = state || createDecoratorMap(editor);
 
     // ensure custom nodes implement required methods
     if (__DEV__) {

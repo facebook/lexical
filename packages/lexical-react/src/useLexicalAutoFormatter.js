@@ -168,10 +168,14 @@ function getMatchResultContextForCriteria(
   };
 
   let shouldFormat = false;
+
+  const parentNode = textNodeWithOffset.node.getParent();
   const paragraphStartConditionPasses =
     autoFormatCriteria.requiresParagraphStart !== null &&
     autoFormatCriteria.requiresParagraphStart === true &&
-    textNodeWithOffset.node.getPreviousSibling() === null;
+    textNodeWithOffset.node.getPreviousSibling() === null &&
+    parentNode !== null &&
+    $isParagraphNode(parentNode);
 
   if (paragraphStartConditionPasses) {
     const text = textNodeWithOffset.node.getTextContent();

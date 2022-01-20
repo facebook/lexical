@@ -795,5 +795,22 @@ describe('Nested List', () => {
       await redo(page);
       await assertHTML(page, forwardHTML);
     });
+
+    it(`Should not process paragraph markdown inside list.`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await toggleBulletList(page);
+      await page.keyboard.type('# ');
+      await assertHTML(
+        page,
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true"># </span></li></ul>',
+      );
+    });
   });
 });

@@ -25,7 +25,7 @@ Install `lexical` and `lexical-react`:
 npm install --save lexical @lexical/react
 ```
 
-Below is an example of a basic plain text editor using `lexical` and `lexical-react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
+Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
 
 
 ```jsx

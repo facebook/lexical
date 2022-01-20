@@ -1673,10 +1673,6 @@ export function $updateElementSelectionOnCreateDeleteNode(
   if (!parentNode.is(anchorNode) && !parentNode.is(focusNode)) {
     return;
   }
-  // Flow
-  if (!$isElementNode(anchorNode)) {
-    return;
-  }
   const parentKey = parentNode.getKey();
   // Single node. We shift selection but never redimension it
   if (selection.isCollapsed()) {

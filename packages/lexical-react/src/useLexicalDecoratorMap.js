@@ -9,7 +9,7 @@
 
 import type {DecoratorMap, DecoratorStateValue} from 'lexical';
 
-import {useCallback, useState} from 'react';
+import {useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 function getInitialMapValue<V: DecoratorStateValue>(
@@ -33,10 +33,6 @@ export default function useLexicalDecoratorMap<V: DecoratorStateValue>(
   const value: V = getInitialMapValue<V>(decoratorMap, key, initialValue);
   const [latestValue, setReactValue] = useState<DecoratorStateValue>(value);
 
-  const setter = useCallback((nextValue: DecoratorStateValue) => {
-    setReactValue(nextValue);
-  }, []);
-
   useLayoutEffect(() => {
     const prevValue = decoratorMap.get(key);
     if (prevValue !== latestValue) {
@@ -44,5 +40,5 @@ export default function useLexicalDecoratorMap<V: DecoratorStateValue>(
     }
   }, [key, latestValue, decoratorMap]);
 
-  return [value, setter];
+  return [value, setReactValue];
 }

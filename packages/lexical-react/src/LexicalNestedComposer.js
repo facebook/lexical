@@ -33,7 +33,7 @@ export default function LexicalNestedComposer({
 
   const onChange = useCallback(
     (editorState, nextNestedEditor) => {
-      if (!initialDecoratorEditor.isEmpty()) {
+      if (!editorState.isEmpty()) {
         initialDecoratorEditor.set(nextNestedEditor);
       } else {
         setNestedEditor(nextNestedEditor);

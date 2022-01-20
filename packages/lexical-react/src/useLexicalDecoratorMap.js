@@ -12,17 +12,25 @@ import type {DecoratorMap, DecoratorStateValue} from 'lexical';
 import {useCallback, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
+function getInitialMapValue<V: DecoratorStateValue>(
+  decoratorMap: DecoratorMap,
+  key: string,
+  initialValue: () => V | V,
+): V {
+  // $FlowFixMe: Flow struggles with the generic
+  const value: V | void = decoratorMap.get(key);
+  if (value !== undefined) {
+    return value;
+  }
+  return typeof initialValue === 'function' ? initialValue() : initialValue;
+}
+
 export default function useLexicalDecoratorMap<V: DecoratorStateValue>(
   decoratorMap: DecoratorMap,
   key: string,
   initialValue: () => V | V,
 ): [V, (DecoratorStateValue) => void] {
-  const value: V = decoratorMap.has(key)
-    ? // $FlowFixMe: Flow isn't intelligent enough to understand the has check above
-      ((decoratorMap.get(key): any): DecoratorStateValue)
-    : typeof initialValue === 'function'
-    ? initialValue()
-    : initialValue;
+  const value: V = getInitialMapValue<V>(decoratorMap, key, initialValue);
   const [latestValue, setReactValue] = useState<DecoratorStateValue>(value);
 
   const setter = useCallback((nextValue: DecoratorStateValue) => {

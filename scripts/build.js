@@ -123,7 +123,13 @@ async function build(name, inputFile, outputFile) {
     onwarn(warning) {
       if (warning.code === 'CIRCULAR_DEPENDENCY') {
         // Ignored
+      } else if (warning.code === 'UNUSED_EXTERNAL_IMPORT') {
+        // Important, but not enough to stop the build
+        console.error();
+        console.error(warning.message || warning);
+        console.error();
       } else if (typeof warning.code === 'string') {
+        console.error(warning);
         // This is a warning coming from Rollup itself.
         // These tend to be important (e.g. clashes in namespaced exports)
         // so we'll fail the build on any of them.

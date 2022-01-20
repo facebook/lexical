@@ -71,20 +71,18 @@ export class CodeNode extends ElementNode {
     // If the selection is within the codeblock, find all leading tabs and
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
-    const selectedChild = children.find(
-      (child) => child.__key === selection.anchor.key,
-    );
-    if (selectedChild != null) {
-      let selectedChildText = selectedChild.getTextContent();
-      // Accumulate all children before the selection on this line
+    const anchor = selection.anchor.getNode();
+    if ($isCodeHighlightNode(anchor)) {
+      let selectedChildText = anchor.getTextContent();
+      // Find the first code highlight node on this line
       // Consider the code: `  alert(1);`
       //   alert, (, 1, ), and ; will all be different CodeHighlight nodes.
-      // We need to accumulate all these nodes to finding the leading whitespace
-      const previousSiblings = selectedChild.getPreviousSiblings();
+      // Regardless of our selection point, we need to find the first node to see the leading whitespace
+      const previousSiblings = anchor.getPreviousSiblings();
       while (previousSiblings.length > 0) {
         const node = previousSiblings.pop();
         if ($isCodeHighlightNode(node)) {
-          selectedChildText = node.getTextContent() + selectedChildText;
+          selectedChildText = node.getTextContent();
         }
         if ($isLineBreakNode(node)) {
           break;
@@ -100,7 +98,7 @@ export class CodeNode extends ElementNode {
       if (leadingWhitespace > 0) {
         const whitespace = selectedChildText.substring(0, leadingWhitespace);
         const indentedChild = $createCodeHighlightNode(whitespace);
-        selectedChild.insertAfter(indentedChild);
+        anchor.insertAfter(indentedChild);
         selection.insertNodes([$createLineBreakNode()]);
         indentedChild.select();
         return indentedChild;

@@ -9,19 +9,18 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {NodeKey, LexicalNode} from './LexicalNode';
+import type {DecoratorMap} from './nodes/base/LexicalDecoratorNode';
 
 import {
   getActiveEditorState,
   getActiveEditor,
   errorOnReadOnly,
 } from './LexicalUpdates';
+import {$isRootNode, $isElementNode, $isTextNode, $isDecoratorNode} from '.';
 import {
-  $isRootNode,
-  $isElementNode,
-  $isTextNode,
-  $isDecoratorNode,
-  createEditorStateRef,
-} from '.';
+  createDecoratorEditor,
+  createDecoratorMap,
+} from './nodes/base/LexicalDecoratorNode';
 import invariant from 'shared/invariant';
 
 export type NodeParserState = {
@@ -73,6 +72,38 @@ export function $createNodeFromParse(
   errorOnReadOnly();
   const editor = getActiveEditor();
   return $internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
+}
+
+function createDecoratorMapFromParse(
+  editor,
+  parsedDecoratorState,
+): DecoratorMap {
+  const parsedMap = parsedDecoratorState.map;
+  const map = new Map();
+  for (let i = 0; i < parsedMap.length; i++) {
+    const [key, parsedValue] = parsedMap[i];
+    let value;
+
+    if (
+      typeof parsedValue === 'string' ||
+      typeof parsedValue === 'number' ||
+      typeof parsedValue === 'boolean' ||
+      parsedValue === null
+    ) {
+      value = parsedValue;
+    } else if (typeof parsedValue === 'object') {
+      const bindingType = parsedValue.type;
+      if (bindingType === 'editor') {
+        value = createDecoratorEditor(parsedValue.id, parsedValue.editorState);
+      } else {
+        value = createDecoratorMapFromParse(editor, parsedValue);
+      }
+    } else {
+      invariant(false, 'Should never happen');
+    }
+    map.set(key, value);
+  }
+  return createDecoratorMap(editor, map);
 }
 
 export function $internalCreateNodeFromParse(
@@ -128,15 +159,8 @@ export function $internalCreateNodeFromParse(
     node.__mode = parsedNode.__mode;
     node.__detail = parsedNode.__detail;
   } else if ($isDecoratorNode(node)) {
-    const parsedRef = parsedNode.__ref;
-    let ref = null;
-    if (parsedRef !== null) {
-      const refType = parsedRef.type;
-      if (refType === 'editorstate') {
-        ref = createEditorStateRef(parsedRef.id, parsedRef.editorState);
-      }
-    }
-    node.__ref = ref;
+    const parsedDecoratorState = parsedNode.__state;
+    node.__state = createDecoratorMapFromParse(editor, parsedDecoratorState);
   }
   // The selection might refer to an old node whose key has changed. Produce a
   // new selection record with the old keys mapped to the new ones.

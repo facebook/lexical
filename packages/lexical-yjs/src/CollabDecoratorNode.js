@@ -7,14 +7,18 @@
  * @flow strict
  */
 
-import type {DecoratorNode, NodeKey, LexicalRef, NodeMap} from 'lexical';
+import type {DecoratorNode, NodeKey, DecoratorMap, NodeMap} from 'lexical';
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {XmlElement} from 'yjs';
 
-import {createEditorStateRef, $isDecoratorNode, $getNodeByKey} from 'lexical';
+import {$isDecoratorNode, $getNodeByKey} from 'lexical';
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
-import {Doc} from 'yjs';
+import {Map as YMap} from 'yjs';
+import {
+  syncLexicalDecoratorMapToYjs,
+  syncYjsDecoratorMapToLexical,
+} from './SyncDecoratorStates';
 
 export class CollabDecoratorNode {
   _xmlElem: XmlElement;
@@ -70,9 +74,9 @@ export class CollabDecoratorNode {
   ): void {
     const prevLexicalNode = this.getPrevNode(prevNodeMap);
     const xmlElem = this._xmlElem;
-    const prevRef: LexicalRef | null =
-      prevLexicalNode === null ? null : prevLexicalNode.__ref;
-    const nextRef: LexicalRef | null = nextLexicalNode.__ref;
+    const prevDecoratorMap: DecoratorMap | null =
+      prevLexicalNode === null ? null : prevLexicalNode.__state;
+    const nextDecoratorMap: DecoratorMap = nextLexicalNode.__state;
 
     syncPropertiesFromLexical(
       binding,
@@ -81,26 +85,13 @@ export class CollabDecoratorNode {
       nextLexicalNode,
     );
 
-    // Handle refs
-    if (prevRef !== nextRef) {
-      if (nextRef === null) {
-        xmlElem.removeAttribute('__ref');
-        // Delete the subdocument
-        if (xmlElem.firstChild !== null) {
-          xmlElem.delete(0, 1);
-        }
-      } else {
-        const {id, _type} = nextRef;
-        xmlElem.setAttribute('__ref', {
-          id,
-          type: _type,
-        });
-        const yjsDocMap = binding.docMap;
-        // Create a subdocument
-        const doc = new Doc();
-        xmlElem.insert(0, [doc]);
-        yjsDocMap.set(id, doc);
-      }
+    // Handle bindings
+    if (prevDecoratorMap !== nextDecoratorMap) {
+      const map = new YMap();
+      xmlElem.insert(0, [map]);
+      // $FlowFixMe: internal field
+      map._lexicalValue = nextDecoratorMap;
+      syncLexicalDecoratorMapToYjs(binding, nextDecoratorMap, map);
     }
   }
 
@@ -113,40 +104,12 @@ export class CollabDecoratorNode {
       throw new Error('Should never happen');
     }
     const xmlElem = this._xmlElem;
-    const collabRef = xmlElem.getAttribute('__ref');
-    const lexicalRef: null | LexicalRef = lexicalNode.__ref;
+    // $FlowFixMe: should always be true
+    const map: YMap = xmlElem.firstChild;
+    const decoratorMap = lexicalNode.__state;
 
     syncPropertiesFromYjs(binding, xmlElem, lexicalNode, keysChanged);
-
-    // Handle refs
-    if (collabRef === undefined) {
-      if (lexicalRef !== null) {
-        // Remove doc
-        const writable = lexicalNode.getWritable();
-        const yjsDocMap = binding.docMap;
-        const {id} = lexicalRef;
-        yjsDocMap.delete(id);
-        writable.__ref = null;
-      }
-    } else if (typeof collabRef !== 'string') {
-      if (
-        lexicalRef === null ||
-        lexicalRef.id !== collabRef.id ||
-        lexicalRef._type !== collabRef.type
-      ) {
-        const writable = lexicalNode.getWritable();
-        const {id, type} = collabRef;
-        if (type === 'editorstate') {
-          const ref = createEditorStateRef(id, null);
-          const doc = xmlElem.firstChild;
-          if (doc !== null) {
-            const yjsDocMap = binding.docMap;
-            yjsDocMap.set(id, doc);
-          }
-          writable.__ref = ref;
-        }
-      }
-    }
+    syncYjsDecoratorMapToLexical(binding, map, decoratorMap, null);
   }
 
   destroy(binding: Binding): void {

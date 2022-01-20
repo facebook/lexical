@@ -483,7 +483,7 @@ export class LexicalNode {
       mutableNode.__mode = latestNode.__mode;
       mutableNode.__detail = latestNode.__detail;
     } else if ($isDecoratorNode(latestNode) && $isDecoratorNode(mutableNode)) {
-      mutableNode.__ref = latestNode.__ref;
+      mutableNode.__state = latestNode.__state;
     }
     cloneNotNeeded.add(key);
     mutableNode.__key = key;

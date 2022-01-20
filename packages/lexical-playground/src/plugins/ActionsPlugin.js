@@ -14,18 +14,11 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
-import {$log, $getRoot, createEditorStateRef} from 'lexical';
+import {$log, $getRoot} from 'lexical';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
 import {importFile, exportFile} from '@lexical/helpers/file';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
-
-function createUID(): string {
-  return Math.random()
-    .toString(36)
-    .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
-}
 
 export default function ActionsPlugins({
   isRichText,
@@ -60,9 +53,8 @@ export default function ActionsPlugins({
     editor.update(() => {
       $log('insertSticky');
       const root = $getRoot();
-      const ref = createEditorStateRef(createUID(), null);
-      const imageNode = $createStickyNode(0, 0, ref);
-      root.append(imageNode);
+      const stickyNode = $createStickyNode(0, 0);
+      root.append(stickyNode);
     });
   }, [editor]);
 

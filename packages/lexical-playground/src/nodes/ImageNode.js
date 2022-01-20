@@ -490,13 +490,13 @@ export class ImageNode extends DecoratorNode {
     src: string,
     altText: string,
     maxWidth: number,
-    binding?: DecoratorMap,
+    state?: DecoratorMap,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     caption?: boolean,
     key?: NodeKey,
   ) {
-    super(binding, key);
+    super(state, key);
     this.__src = src;
     this.__altText = altText;
     this.__maxWidth = maxWidth;

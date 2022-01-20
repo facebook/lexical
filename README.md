@@ -29,49 +29,33 @@ Below is an example of a basic plain text editor using `lexical` and `lexical-re
 
 
 ```jsx
-import {useCallback} from 'react';
-import useLexical from '@lexical/react/useLexical';
-import useLexicalPlainText from '@lexical/react/useLexicalPlainText';
+import LexicalComposer from '@lexical/react/LexicalComposer';
+import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import LexicalHistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 
-const editorConfig = {
-  // When Lexical encounters an error, this is where
-  // we can report/handle it.
-  onError(error) {
-    throw error;
-  }
-};
+const theme = {
+  // Theme styling goes here
+  ...
+}
+
+function onChange(editorState) {
+  // When the editor changes, you can get notified via the
+  // LexicalOnChangePlugin!
+  console.log(editorState);
+}
 
 function Editor() {
-  // Create an Lexical editor instance and also a ref
-  // that we need to pass to our content editable.
-  const [editor, contentEditableRef, showPlaceholder] = useLexical(
-    editorConfig,
-  );
-
-  // Setup plain text entry event handlers.
-  useLexicalPlainText(editor);
-
-  // Our <div> content editable element with some basic styling.
   return (
-    <div>
-      <div
-        ref={contentEditableRef}
-        contentEditable={true}
-        role="textbox"
-        spellCheck={true}
-        style={{
-          lexical: 0,
-          overflowWrap: 'break-word',
-          padding: '10px',
-          userSelect: 'text',
-          whiteSpace: 'pre-wrap',
-        }}
-        tabIndex={0}
+    <LexicalComposer theme={theme}>
+      <LexicalPlainTextPlugin
+        contentEditable={<LexicalContentEditable />}
+        placeholder={<div>Enter some text...</div>}
       />
-      {showPlaceholder && (
-        <div className="placeholder">Enter some plain text...</div>
-      )}
-    </div>
+      <LexicalOnChangePlugin onChange={onChange} />
+      <LexicalHistoryPlugin />
+    </LexicalComposer>
   );
 }
 ```

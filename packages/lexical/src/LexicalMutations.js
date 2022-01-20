@@ -135,6 +135,8 @@ export function $flushMutations(
                     nextSiblingDOM.parentNode !== null
                   ) {
                     placementDOM = nextSiblingDOM;
+                  } else if (nextSibling.getNextSibling() === null) {
+                    placementDOM = null;
                   }
                 }
               }

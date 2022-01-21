@@ -111,5 +111,49 @@ describe('CodeBlock', () => {
         '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty hteo0ag1" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty hteo0ag1" data-lexical-text="true">2</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span></code>',
       );
     });
+
+    it('Can (un)indent multiple lines at once', async () => {
+      const {page, isRichText} = e2e;
+      if (!isRichText) {
+        return;
+      }
+      await focusEditor(page);
+      await page.keyboard.type('``` if (x) {');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Tab');
+      await page.keyboard.type('x();');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Backspace');
+      await page.keyboard.type('}');
+      await assertHTML(
+        page,
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr f7xs5s0g" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">{</span><br><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">}</span></code>',
+      );
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.up('Shift');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Tab');
+      await assertHTML(
+        page,
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span data-lexical-text="true">		</span><span class="PlaygroundEditorTheme__tokenAttr f7xs5s0g" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">{</span><br><span data-lexical-text="true">			</span><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span data-lexical-text="true">		</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">}</span></code>',
+      );
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('Tab');
+      await page.keyboard.up('Shift');
+      await assertHTML(
+        page,
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenAttr f7xs5s0g" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">{</span><br><span data-lexical-text="true">		</span><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">}</span></code>',
+      );
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Tab');
+      await page.keyboard.up('Shift');
+      await assertHTML(
+        page,
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr f7xs5s0g" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">{</span><br><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">}</span></code>',
+      );
+    });
   });
 });

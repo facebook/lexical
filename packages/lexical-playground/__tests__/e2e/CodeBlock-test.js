@@ -117,6 +117,11 @@ describe('CodeBlock', () => {
         expectedHTML: EXPECTED_HTML,
       },
       {
+        name: 'Quip',
+        pastedHTML: `<meta charset='utf-8'><pre>function run() {<br>  return [null, undefined, 2, ""];<br>}</pre>`,
+        expectedHTML: EXPECTED_HTML,
+      },
+      {
         name: 'WebStorm / Idea',
         pastedHTML: `<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"></head><body><pre style="background-color:#2b2b2b;color:#a9b7c6;font-family:'JetBrains Mono',monospace;font-size:9.8pt;"><span style="color:#cc7832;">function&#32;</span><span style="color:#ffc66d;">run</span>()&#32;{<br>&#32;&#32;<span style="color:#cc7832;">return&#32;</span>[<span style="color:#cc7832;">null,&#32;undefined,&#32;</span><span style="color:#6897bb;">2</span><span style="color:#cc7832;">,&#32;</span><span style="color:#6a8759;">""</span>]<span style="color:#cc7832;">;<br></span>}</pre></body></html>`,
         expectedHTML: EXPECTED_HTML,

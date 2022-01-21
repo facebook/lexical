@@ -10,6 +10,7 @@
 import type {LexicalNode, Selection, ElementNode} from 'lexical';
 
 import {LinkNode} from 'lexical/LinkNode';
+import {$isElementNode} from 'lexical';
 
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
@@ -25,7 +26,7 @@ export class AutoLinkNode extends LinkNode {
 
   insertNewAfter(selection: Selection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
-    if (element !== null) {
+    if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url);
       element.append(linkNode);
       return linkNode;

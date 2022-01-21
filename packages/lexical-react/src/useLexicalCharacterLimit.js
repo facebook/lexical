@@ -227,7 +227,7 @@ export class OverflowNode extends ElementNode {
     return false;
   }
 
-  insertNewAfter(selection: Selection): null | ElementNode {
+  insertNewAfter(selection: Selection): null | LexicalNode {
     const parent = this.getParentOrThrow();
     return parent.insertNewAfter(selection);
   }

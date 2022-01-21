@@ -302,7 +302,7 @@ export class ElementNode extends LexicalNode {
   }
 
   // These are intended to be extends for specific element heuristics.
-  insertNewAfter(selection: Selection): null | ElementNode {
+  insertNewAfter(selection: Selection): null | LexicalNode {
     return null;
   }
   canInsertTab(): boolean {

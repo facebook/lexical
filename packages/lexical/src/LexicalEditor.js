@@ -33,18 +33,17 @@ export type DOMConversion = (
   element: Node,
   parent?: Node,
 ) => DOMConversionOutput;
-export type DOMChildConversion = (
-  domNode: Node,
-  lexicalNode: LexicalNode,
-  domParent: Node,
-) => void;
 export type DOMConversionMap = {
   [string]: DOMConversion,
 };
 type DOMConversionOutput = {
   node: LexicalNode | null,
   format?: TextFormatType,
-  childConversion?: DOMChildConversion,
+  after?: (
+    lexicalChildren: Array<LexicalNode>,
+    domNode: Node,
+    lexicalNode: ?LexicalNode,
+  ) => Array<LexicalNode>,
 };
 
 export type EditorThemeClassName = string;

@@ -14,6 +14,7 @@ import type {
   ParsedNodeMap,
   NodeKey,
   DOMConversionMap,
+  DOMChildConversion,
 } from 'lexical';
 
 import {$cloneContents} from '@lexical/helpers/selection';
@@ -35,8 +36,9 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 import {$createCodeNode} from 'lexical/CodeNode';
 
-// TODO we shouldn't really be importing from core here.
-import {TEXT_TYPE_TO_FORMAT} from 'lexical/src/LexicalConstants';
+const NO_BREAK_SPACE_CHAR = '\u00A0';
+
+let lastKeyWasMaybeAndroidSoftKey = false;
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -70,23 +72,58 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     return {node};
   },
   u: (domNode: Node) => {
-    return {node: null, format: 'underline'};
+    return {
+      node: null,
+      childConversion: (dom, lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('underline');
+        }
+      },
+    };
   },
   b: (domNode: Node) => {
     // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
     const b: HTMLElement = domNode;
     // Google Docs wraps all copied HTML in a <b> with font-weight normal
     const hasNormalFontWeight = b.style.fontWeight === 'normal';
-    return {node: null, format: hasNormalFontWeight ? null : 'bold'};
+    return {
+      node: null,
+      childConversion: (dom, lexicalNode) => {
+        if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
+          lexicalNode.toggleFormat('bold');
+        }
+      },
+    };
   },
   strong: (domNode: Node) => {
-    return {node: null, format: 'bold'};
+    return {
+      node: null,
+      childConversion: (dom, lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('bold');
+        }
+      },
+    };
   },
   i: (domNode: Node) => {
-    return {node: null, format: 'italic'};
+    return {
+      node: null,
+      childConversion: (dom, lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('italic');
+        }
+      },
+    };
   },
   em: (domNode: Node) => {
-    return {node: null, format: 'italic'};
+    return {
+      node: null,
+      childConversion: (dom, lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('underline');
+        }
+      },
+    };
   },
   td: (domNode: Node) => {
     // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
@@ -167,11 +204,10 @@ export function $createNodesFromDOM(
   node: Node,
   conversionMap: DOMConversionMap,
   editor: LexicalEditor,
-  textFormat?: number,
+  childConversions: Map<string, DOMChildConversion> = new Map(),
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   let currentLexicalNode = null;
-  let currentTextFormat = textFormat;
   const nodeName = node.nodeName.toLowerCase();
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const transformFunction =
@@ -183,19 +219,16 @@ export function $createNodesFromDOM(
   if (transformOutput !== null) {
     postTransform = transformOutput.after;
     currentLexicalNode = transformOutput.node;
-    if (transformOutput.format) {
-      const nextTextFormat = TEXT_TYPE_TO_FORMAT[transformOutput.format];
-      currentTextFormat = currentTextFormat
-        ? currentTextFormat ^ nextTextFormat
-        : nextTextFormat;
+    if (currentLexicalNode !== null) {
+      lexicalNodes.push(currentLexicalNode);
+      const childConversionFunctions = Array.from(childConversions.values());
+      for (let i = 0; i < childConversionFunctions.length; i++) {
+        childConversionFunctions[i](node, currentLexicalNode);
+      }
     }
 
-    if (currentLexicalNode !== null) {
-      // If the transformed node is a a TextNode, apply text formatting
-      if ($isTextNode(currentLexicalNode) && currentTextFormat !== undefined) {
-        currentLexicalNode.setFormat(currentTextFormat);
-      }
-      lexicalNodes.push(currentLexicalNode);
+    if (transformOutput.childConversion != null) {
+      childConversions.set(nodeName, transformOutput.childConversion);
     }
   }
 
@@ -207,7 +240,7 @@ export function $createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
-      currentTextFormat,
+      childConversions,
     );
     if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after transformation,

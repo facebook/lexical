@@ -10,7 +10,7 @@
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
-import type {TextFormatType} from './nodes/base/LexicalTextNode';
+import type {DecoratorMap} from './nodes/base/LexicalDecoratorNode';
 
 import {
   commitPendingUpdates,
@@ -37,6 +37,10 @@ export type DOMConversion = (
   element: Node,
   parent?: Node,
 ) => DOMConversionOutput;
+export type DOMChildConversion = (
+  domNode: Node,
+  lexicalNode: LexicalNode,
+) => void;
 export type DOMConversionMap = {
   [string]: DOMConversion,
 };
@@ -47,6 +51,7 @@ type DOMConversionOutput = {
     lexicalChildren: Array<LexicalNode>,
     lexicalNode: ?LexicalNode,
   ) => Array<LexicalNode>,
+  childConversion?: DOMChildConversion,
 };
 
 export type EditorThemeClassName = string;

@@ -18,6 +18,7 @@ export type {
   CommandListenerHighPriority,
   CommandListenerCriticalPriority,
   DOMConversionMap,
+  DOMChildConversion,
 } from './LexicalEditor';
 export type {EditorState, ParsedEditorState} from './LexicalEditorState';
 export type {NodeKey, LexicalNode, NodeMap} from './LexicalNode';

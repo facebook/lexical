@@ -43,6 +43,7 @@ import {$createListItemNode} from 'lexical/ListItemNode';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
+import {$createCodeNode} from 'lexical/CodeNode';
 
 // TODO we shouldn't really be importing from core here.
 import {TEXT_TYPE_TO_FORMAT} from '../../lexical/src/LexicalConstants';
@@ -57,6 +58,10 @@ export type EventHandler = (
   event: Object,
   editor: LexicalEditor,
 ) => void;
+
+const isCodeElement = (div: HTMLDivElement): boolean => {
+  return div.style.fontFamily.match('monospace') !== null;
+};
 
 const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   ul: () => ({node: $createListNode('ul')}),
@@ -95,9 +100,11 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   },
   span: (domNode: Node) => ({node: null}),
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
+  pre: (domNode: Node) => ({node: $createCodeNode()}),
   div: (domNode: Node) => {
     return {
-      node: null,
+      // $FlowFixMe[incompatible-cast] domNode is a div since we matched it by nodeName
+      node: isCodeElement((domNode: HTMLDivElement)) ? $createCodeNode() : null,
       after: (lexicalNodes, dom) => {
         const domParent = dom.parentNode;
         if (domParent != null && dom !== domParent.lastChild) {

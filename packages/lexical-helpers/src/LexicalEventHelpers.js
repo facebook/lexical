@@ -14,7 +14,6 @@ import type {
   ParsedNodeMap,
   NodeKey,
   DOMConversionMap,
-  DOMChildConversion,
 } from 'lexical';
 
 import {$cloneContents} from '@lexical/helpers/selection';
@@ -215,7 +214,6 @@ export function $createNodesFromDOM(
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const transformFunction =
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
-  const currentChildConversions: Array<DOMChildConversion> = childConversions;
 
   const transformOutput = transformFunction ? transformFunction(node) : null;
   let postTransform = null;

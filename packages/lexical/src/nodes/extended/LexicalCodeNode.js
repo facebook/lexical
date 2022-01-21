@@ -9,10 +9,15 @@
 
 import type {NodeKey, EditorConfig, Selection, LexicalNode} from 'lexical';
 import type {ParagraphNode} from 'lexical/ParagraphNode';
+import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from 'lexical';
+import {ElementNode, $createLineBreakNode, $isLineBreakNode} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {
+  $createCodeHighlightNode,
+  $isCodeHighlightNode,
+} from 'lexical/CodeHighlightNode';
 
 export class CodeNode extends ElementNode {
   __language: string | void;
@@ -42,7 +47,9 @@ export class CodeNode extends ElementNode {
   }
 
   // Mutation
-  insertNewAfter(selection: Selection): null | ParagraphNode {
+  insertNewAfter(
+    selection: Selection,
+  ): null | ParagraphNode | CodeHighlightNode {
     const children = this.getChildren();
     const childrenLength = children.length;
 
@@ -59,6 +66,30 @@ export class CodeNode extends ElementNode {
       const newElement = $createParagraphNode();
       this.insertAfter(newElement);
       return newElement;
+    }
+
+    // If the selection is within the codeblock, find all leading tabs and
+    // spaces of the current line. Create a new line that has all those
+    // tabs and spaces, such that leading indentation is preserved.
+    const anchor = selection.anchor.getNode();
+    const firstNode = seekToFirstCodeHighlightNode(anchor);
+    if (firstNode != null) {
+      let leadingWhitespace = 0;
+      const firstNodeText = firstNode.getTextContent();
+      while (
+        leadingWhitespace < firstNodeText.length &&
+        /[\t ]/.test(firstNodeText[leadingWhitespace])
+      ) {
+        leadingWhitespace += 1;
+      }
+      if (leadingWhitespace > 0) {
+        const whitespace = firstNodeText.substring(0, leadingWhitespace);
+        const indentedChild = $createCodeHighlightNode(whitespace);
+        anchor.insertAfter(indentedChild);
+        selection.insertNodes([$createLineBreakNode()]);
+        indentedChild.select();
+        return indentedChild;
+      }
     }
 
     return null;
@@ -92,4 +123,21 @@ export function $createCodeNode(language?: string): CodeNode {
 
 export function $isCodeNode(node: ?LexicalNode): boolean %checks {
   return node instanceof CodeNode;
+}
+
+function seekToFirstCodeHighlightNode(anchor: LexicalNode): ?CodeHighlightNode {
+  let currentNode = null;
+  const previousSiblings = anchor.getPreviousSiblings();
+  previousSiblings.push(anchor);
+  while (previousSiblings.length > 0) {
+    const node = previousSiblings.pop();
+    if ($isCodeHighlightNode(node)) {
+      currentNode = node;
+    }
+    if ($isLineBreakNode(node)) {
+      break;
+    }
+  }
+
+  return currentNode;
 }

@@ -10,7 +10,7 @@
 import type {NodeKey, EditorConfig, LexicalNode, Selection} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from 'lexical';
+import {ElementNode, $isElementNode} from 'lexical';
 
 export class LinkNode extends ElementNode {
   __url: string;
@@ -60,7 +60,7 @@ export class LinkNode extends ElementNode {
 
   insertNewAfter(selection: Selection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
-    if (element !== null) {
+    if ($isElementNode(element)) {
       const linkNode = $createLinkNode(this.__url);
       element.append(linkNode);
       return linkNode;

@@ -94,5 +94,22 @@ describe('CodeBlock', () => {
         );
       }
     });
+
+    it('Can maintain indent when creating new lines', async () => {
+      const {page, isRichText} = e2e;
+      if (!isRichText) {
+        return;
+      }
+      await focusEditor(page);
+      await page.keyboard.type('``` alert(1);');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Tab');
+      await page.keyboard.type('alert(2);');
+      await page.keyboard.press('Enter');
+      await assertHTML(
+        page,
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty hteo0ag1" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty hteo0ag1" data-lexical-text="true">2</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span></code>',
+      );
+    });
   });
 });

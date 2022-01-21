@@ -173,10 +173,10 @@ describe('LexicalEventHelpers', () => {
           '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">A thousand times</span></p></div>',
       },
       {
-        name: 'onPasteForRichText should produce the correct editor state from a pasted HTML b element',
+        name: 'onPasteForRichText should ignore pasted HTML b elements',
         inputs: [pasteHTML(`<meta charset='utf-8'><b>Bold</b>`)],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Bold</strong></p></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Bold</span></p></div>',
       },
       {
         name: 'onPasteForRichText should produce the correct editor state from a pasted HTML i element',
@@ -264,31 +264,31 @@ describe('LexicalEventHelpers', () => {
         name: 'onPasteForRichText should preserve formatting from HTML tags on deeply nested text nodes.',
         inputs: [
           pasteHTML(
-            `<meta charset='utf-8'>Welcome to<b><a href="https://facebook.com">Facebook!</a></b>We hope you like it here.`,
+            `<meta charset='utf-8'>Welcome to<i><a href="https://facebook.com">Facebook!</a></i>We hope you like it here.`,
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Facebook!</strong></a><span data-lexical-text="true">We hope you like it here.</span></p></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Facebook!</em></a><span data-lexical-text="true">We hope you like it here.</span></p></div>',
       },
       {
         name: 'onPasteForRichText should preserve formatting from HTML tags on deeply nested and top level text nodes.',
         inputs: [
           pasteHTML(
-            `<meta charset='utf-8'>Welcome to<b><a href="https://facebook.com">Facebook!</a>We hope you like it here.</b>`,
+            `<meta charset='utf-8'>Welcome to<i><a href="https://facebook.com">Facebook!</a>We hope you like it here.</i>`,
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Facebook!</strong></a><strong class="editor-text-bold" data-lexical-text="true">We hope you like it here.</strong></p></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Facebook!</em></a><em class="editor-text-italic" data-lexical-text="true">We hope you like it here.</em></p></div>',
       },
       {
         name: 'onPasteForRichText should preserve multiple types of formatting on deeply nested text nodes and top level text nodes',
         inputs: [
           pasteHTML(
-            `<meta charset='utf-8'>Welcome to<b><i><a href="https://facebook.com">Facebook!</a>We hope you like it here.</i></b>`,
+            `<meta charset='utf-8'>Welcome to<u><i><a href="https://facebook.com">Facebook!</a>We hope you like it here.</i></u>`,
           ),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">Facebook!</strong></a><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">We hope you like it here.</strong></p></div>',
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><em class="editor-text-underline editor-text-italic" data-lexical-text="true">Facebook!</em></a><em class="editor-text-underline editor-text-italic" data-lexical-text="true">We hope you like it here.</em></p></div>',
       },
     ];
     suite.forEach((testUnit, i) => {

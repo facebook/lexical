@@ -81,9 +81,6 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   u: (domNode: Node) => {
     return {node: null, format: 'underline'};
   },
-  b: (domNode: Node) => {
-    return {node: null, format: 'bold'};
-  },
   strong: (domNode: Node) => {
     return {node: null, format: 'bold'};
   },

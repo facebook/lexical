@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, ElementNode, Selection} from 'lexical';
+import type {LexicalEditor, ElementNode} from 'lexical';
 
 import {
   CodeNode,

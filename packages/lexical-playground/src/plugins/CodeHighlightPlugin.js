@@ -9,7 +9,11 @@
 
 import type {LexicalEditor, ElementNode, Selection} from 'lexical';
 
-import {CodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {
+  CodeNode,
+  $isCodeNode,
+  seekToFirstCodeHighlightNode,
+} from 'lexical/CodeNode';
 import {
   $createLineBreakNode,
   $createTextNode,
@@ -66,12 +70,10 @@ export default function CodeHighlightPlugin(): React$Node {
       ),
       editor.addListener(
         'command',
-        (type, payload): boolean => {
-          if (type === 'indentContent' || type === 'outdentContent') {
-            return handleMultilineIndent(type);
-          }
-          return false;
-        },
+        (type, payload): boolean =>
+          type === 'indentContent' || type === 'outdentContent'
+            ? handleMultilineIndent(type)
+            : false,
         1,
       ),
     );
@@ -346,15 +348,9 @@ function handleMultilineIndent(
     }
   }
 
-  let startOfLine = nodes[0];
-  let previousSiblings = startOfLine.getPreviousSiblings();
-  let prev = previousSiblings.pop();
-  while (prev != null && !$isLineBreakNode(prev)) {
-    startOfLine = prev;
-    prev = previousSiblings.pop();
-  }
+  const startOfLine = seekToFirstCodeHighlightNode(nodes[0]);
 
-  if ($isCodeHighlightNode(startOfLine)) {
+  if (startOfLine != null) {
     doIndent(startOfLine, type);
   }
 

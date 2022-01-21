@@ -125,7 +125,9 @@ export function $isCodeNode(node: ?LexicalNode): boolean %checks {
   return node instanceof CodeNode;
 }
 
-function seekToFirstCodeHighlightNode(anchor: LexicalNode): ?CodeHighlightNode {
+export function seekToFirstCodeHighlightNode(
+  anchor: LexicalNode,
+): ?CodeHighlightNode {
   let currentNode = null;
   const previousSiblings = anchor.getPreviousSiblings();
   previousSiblings.push(anchor);

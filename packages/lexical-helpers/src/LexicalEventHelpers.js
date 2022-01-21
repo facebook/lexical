@@ -17,7 +17,6 @@ import type {
   ElementNode,
   TextMutation,
   DOMConversionMap,
-  DOMChildConversion,
 } from 'lexical';
 
 import isTokenOrInert from 'shared/isTokenOrInert';
@@ -94,18 +93,17 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   em: (domNode: Node) => {
     return {node: null, format: 'italic'};
   },
+  span: (domNode: Node) => ({node: null}),
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   div: (domNode: Node) => {
     return {
       node: null,
-      childConversion: (
-        domChild: Node,
-        lexicalNode: LexicalNode,
-        domParent: Node,
-      ) => {
-        if (domChild !== domParent.lastChild) {
-          lexicalNode.insertAfter($createLineBreakNode());
+      after: (lexicalNodes, dom) => {
+        const domParent = dom.parentNode;
+        if (domParent != null && dom !== domParent.lastChild) {
+          lexicalNodes.push($createLineBreakNode());
         }
+        return lexicalNodes;
       },
     };
   },
@@ -138,7 +136,6 @@ export function $createNodesFromDOM(
   node: Node,
   conversionMap: DOMConversionMap,
   editor: LexicalEditor,
-  childConversions: Array<DOMChildConversion> = [],
   textFormat?: number,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
@@ -148,11 +145,12 @@ export function $createNodesFromDOM(
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const transformFunction =
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
-  const currentChildConversions: Array<DOMChildConversion> = childConversions;
 
   const transformOutput = transformFunction ? transformFunction(node) : null;
+  let postTransform = null;
 
   if (transformOutput !== null) {
+    postTransform = transformOutput.after;
     currentLexicalNode = transformOutput.node;
     if (transformOutput.format) {
       const nextTextFormat = TEXT_TYPE_TO_FORMAT[transformOutput.format];
@@ -167,15 +165,6 @@ export function $createNodesFromDOM(
         currentLexicalNode.setFormat(currentTextFormat);
       }
       lexicalNodes.push(currentLexicalNode);
-      currentChildConversions.forEach((childConversion) => {
-        if (currentLexicalNode !== null && node.parentNode != null) {
-          childConversion(node, currentLexicalNode, node.parentNode);
-        }
-      });
-    }
-
-    if (transformOutput.childConversion != null) {
-      currentChildConversions.push(transformOutput.childConversion);
     }
   }
 
@@ -187,7 +176,6 @@ export function $createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
-      currentChildConversions,
       currentTextFormat,
     );
     if ($isElementNode(currentLexicalNode)) {
@@ -199,6 +187,9 @@ export function $createNodesFromDOM(
       // up to the same level as it.
       lexicalNodes = lexicalNodes.concat(childLexicalNodes);
     }
+  }
+  if (postTransform != null) {
+    lexicalNodes = postTransform(lexicalNodes, node, currentLexicalNode);
   }
   return lexicalNodes;
 }

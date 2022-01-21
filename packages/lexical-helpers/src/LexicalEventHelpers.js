@@ -215,7 +215,7 @@ export function $createNodesFromDOM(
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const transformFunction =
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
-  const childConversions = [];
+  const currentChildConversions: Array<DOMChildConversion> = childConversions;
 
   const transformOutput = transformFunction ? transformFunction(node) : null;
   let postTransform = null;

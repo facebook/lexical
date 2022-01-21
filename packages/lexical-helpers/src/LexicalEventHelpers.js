@@ -17,6 +17,7 @@ import type {
   ElementNode,
   TextMutation,
   DOMConversionMap,
+  DOMChildConversion,
 } from 'lexical';
 
 import isTokenOrInert from 'shared/isTokenOrInert';
@@ -137,6 +138,7 @@ export function $createNodesFromDOM(
   node: Node,
   conversionMap: DOMConversionMap,
   editor: LexicalEditor,
+  childConversions: Array<DOMChildConversion> = [],
   textFormat?: number,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
@@ -146,7 +148,7 @@ export function $createNodesFromDOM(
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const transformFunction =
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
-  const childConversions = [];
+  const currentChildConversions: Array<DOMChildConversion> = childConversions;
 
   const transformOutput = transformFunction ? transformFunction(node) : null;
 
@@ -165,14 +167,15 @@ export function $createNodesFromDOM(
         currentLexicalNode.setFormat(currentTextFormat);
       }
       lexicalNodes.push(currentLexicalNode);
-      childConversions.forEach((childConversion) => {
-        //$FlowFixMe
-        childConversion(node, currentLexicalNode, node.parentNode);
+      currentChildConversions.forEach((childConversion) => {
+        if (currentLexicalNode !== null && node.parentNode != null) {
+          childConversion(node, currentLexicalNode, node.parentNode);
+        }
       });
     }
 
-    if (transformOutput.childConversion !== null) {
-      childConversions.push(transformOutput.childConversion);
+    if (transformOutput.childConversion != null) {
+      currentChildConversions.push(transformOutput.childConversion);
     }
   }
 
@@ -184,6 +187,7 @@ export function $createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
+      currentChildConversions,
       currentTextFormat,
     );
     if ($isElementNode(currentLexicalNode)) {

@@ -47,6 +47,12 @@ async function prepareLexicalCorePackage() {
   await exec(
     `mv ./packages/lexical/npm/LexicalHeadingNode.js ./packages/lexical/npm/HeadingNode.js`,
   );
+  await exec(
+    `mv ./packages/lexical/npm/LexicalAutoLinkNode.js ./packages/lexical/npm/AutoLinkNode.js`,
+  );
+  await exec(
+    `mv ./packages/lexical/npm/LexicalCodeHighlightNode.js ./packages/lexical/npm/CodeHighlightNode.js`,
+  );
   // Other bits
   await exec(`cp -R ./packages/lexical/package.json ./packages/lexical/npm`);
   await exec(`cp -R LICENSE ./packages/lexical/npm`);

@@ -98,13 +98,46 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   em: (domNode: Node) => {
     return {node: null, format: 'italic'};
   },
+  td: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    const cell: HTMLTableCellElement = domNode;
+    const isGitHubCodeCell = cell.classList.contains('js-file-line');
+
+    return {
+      node: null,
+      after: (lexicalNodes) => {
+        if (
+          isGitHubCodeCell &&
+          cell.parentNode &&
+          cell.parentNode.nextSibling
+        ) {
+          // Append newline between code lines
+          lexicalNodes.push($createLineBreakNode());
+        }
+        return lexicalNodes;
+      },
+    };
+  },
+  table: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    const table: HTMLTableElement = domNode;
+    const isGitHubCodeTable = table.classList.contains(
+      'js-file-line-container',
+    );
+
+    return {
+      node: isGitHubCodeTable ? $createCodeNode() : null,
+    };
+  },
   span: (domNode: Node) => ({node: null}),
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   pre: (domNode: Node) => ({node: $createCodeNode()}),
   div: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    const div: HTMLDivElement = domNode;
+
     return {
-      // $FlowFixMe[incompatible-cast] domNode is a div since we matched it by nodeName
-      node: isCodeElement((domNode: HTMLDivElement)) ? $createCodeNode() : null,
+      node: isCodeElement(div) ? $createCodeNode() : null,
       after: (lexicalNodes, dom) => {
         const domParent = dom.parentNode;
         if (domParent != null && dom !== domParent.lastChild) {

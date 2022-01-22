@@ -41,7 +41,6 @@ type DOMConversionOutput = {
   format?: TextFormatType,
   after?: (
     lexicalChildren: Array<LexicalNode>,
-    domNode: Node,
     lexicalNode: ?LexicalNode,
   ) => Array<LexicalNode>,
 };

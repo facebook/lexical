@@ -138,9 +138,9 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
 
     return {
       node: isCodeElement(div) ? $createCodeNode() : null,
-      after: (lexicalNodes, dom) => {
-        const domParent = dom.parentNode;
-        if (domParent != null && dom !== domParent.lastChild) {
+      after: (lexicalNodes) => {
+        const domParent = div.parentNode;
+        if (domParent != null && div !== domParent.lastChild) {
           lexicalNodes.push($createLineBreakNode());
         }
         return lexicalNodes;
@@ -229,7 +229,7 @@ export function $createNodesFromDOM(
     }
   }
   if (postTransform != null) {
-    lexicalNodes = postTransform(lexicalNodes, node, currentLexicalNode);
+    lexicalNodes = postTransform(lexicalNodes, currentLexicalNode);
   }
   return lexicalNodes;
 }

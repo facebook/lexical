@@ -179,5 +179,6 @@ describe('CodeBlock', () => {
         });
         await assertHTML(page, testCase.expectedHTML);
       });
+    });
   });
 });

@@ -29,13 +29,20 @@ import {RootNode} from './nodes/base/LexicalRootNode';
 import {generateRandomKey, markAllNodesAsDirty} from './LexicalUtils';
 import invariant from 'shared/invariant';
 
-export type DOMConversion = (element: Node) => DOMConversionOutput;
+export type DOMConversion = (
+  element: Node,
+  parent?: Node,
+) => DOMConversionOutput;
 export type DOMConversionMap = {
   [string]: DOMConversion,
 };
 type DOMConversionOutput = {
   node: LexicalNode | null,
   format?: TextFormatType,
+  after?: (
+    lexicalChildren: Array<LexicalNode>,
+    lexicalNode: ?LexicalNode,
+  ) => Array<LexicalNode>,
 };
 
 export type EditorThemeClassName = string;

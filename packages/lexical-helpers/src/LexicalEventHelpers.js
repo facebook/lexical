@@ -43,6 +43,7 @@ import {$createListItemNode} from 'lexical/ListItemNode';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
+import {$createCodeNode} from 'lexical/CodeNode';
 
 // TODO we shouldn't really be importing from core here.
 import {TEXT_TYPE_TO_FORMAT} from '../../lexical/src/LexicalConstants';
@@ -57,6 +58,10 @@ export type EventHandler = (
   event: Object,
   editor: LexicalEditor,
 ) => void;
+
+const isCodeElement = (div: HTMLDivElement): boolean => {
+  return div.style.fontFamily.match('monospace') !== null;
+};
 
 const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   ul: () => ({node: $createListNode('ul')}),
@@ -93,7 +98,55 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   em: (domNode: Node) => {
     return {node: null, format: 'italic'};
   },
+  td: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    const cell: HTMLTableCellElement = domNode;
+    const isGitHubCodeCell = cell.classList.contains('js-file-line');
+
+    return {
+      node: null,
+      after: (lexicalNodes) => {
+        if (
+          isGitHubCodeCell &&
+          cell.parentNode &&
+          cell.parentNode.nextSibling
+        ) {
+          // Append newline between code lines
+          lexicalNodes.push($createLineBreakNode());
+        }
+        return lexicalNodes;
+      },
+    };
+  },
+  table: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    const table: HTMLTableElement = domNode;
+    const isGitHubCodeTable = table.classList.contains(
+      'js-file-line-container',
+    );
+
+    return {
+      node: isGitHubCodeTable ? $createCodeNode() : null,
+    };
+  },
+  span: (domNode: Node) => ({node: null}),
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
+  pre: (domNode: Node) => ({node: $createCodeNode()}),
+  div: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    const div: HTMLDivElement = domNode;
+
+    return {
+      node: isCodeElement(div) ? $createCodeNode() : null,
+      after: (lexicalNodes) => {
+        const domParent = div.parentNode;
+        if (domParent != null && div !== domParent.lastChild) {
+          lexicalNodes.push($createLineBreakNode());
+        }
+        return lexicalNodes;
+      },
+    };
+  },
 };
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
@@ -134,8 +187,10 @@ export function $createNodesFromDOM(
     customHtmlTransforms[nodeName] || conversionMap[nodeName];
 
   const transformOutput = transformFunction ? transformFunction(node) : null;
+  let postTransform = null;
 
   if (transformOutput !== null) {
+    postTransform = transformOutput.after;
     currentLexicalNode = transformOutput.node;
     if (transformOutput.format) {
       const nextTextFormat = TEXT_TYPE_TO_FORMAT[transformOutput.format];
@@ -172,6 +227,9 @@ export function $createNodesFromDOM(
       // up to the same level as it.
       lexicalNodes = lexicalNodes.concat(childLexicalNodes);
     }
+  }
+  if (postTransform != null) {
+    lexicalNodes = postTransform(lexicalNodes, currentLexicalNode);
   }
   return lexicalNodes;
 }

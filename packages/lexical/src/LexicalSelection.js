@@ -1407,6 +1407,9 @@ function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
 
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+    } else if ($isHorizontalRuleNode(resolvedNode)) {
+      resolvedOffset = 0;
+      return $createPoint(resolvedNode.__key, resolvedOffset, 'element');
     } else {
       let resolvedElement = getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.

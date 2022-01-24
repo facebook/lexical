@@ -336,12 +336,8 @@ function handleShiftLines(
   event: KeyboardEvent,
 ): boolean {
   // We only care about the alt+arrow keys
-  if (!event.altKey) {
-    return false;
-  }
-
   const selection = $getSelection();
-  if (selection == null) {
+  if (!event.altKey || selection == null) {
     return false;
   }
 
@@ -377,24 +373,25 @@ function handleShiftLines(
   event.preventDefault();
   event.stopPropagation(); // required to stop cursor movement under Firefox
 
-  const linebreak =
-    type === 'keyArrowUp' ? start.getPreviousSibling() : end.getNextSibling();
+  const arrowIsUp = type === 'keyArrowUp';
+  const linebreak = arrowIsUp
+    ? start.getPreviousSibling()
+    : end.getNextSibling();
   if (!$isLineBreakNode(linebreak)) {
     return true;
   }
-  const sibling =
-    type === 'keyArrowUp'
-      ? linebreak.getPreviousSibling()
-      : linebreak.getNextSibling();
+  const sibling = arrowIsUp
+    ? linebreak.getPreviousSibling()
+    : linebreak.getNextSibling();
   if (sibling == null) {
     return true;
   }
 
-  const maybeInsertionPoint =
-    type === 'keyArrowUp'
-      ? getFirstCodeHighlightNodeOfLine(sibling)
-      : getLastCodeHighlightNodeOfLine(sibling);
-  let insertionPoint = maybeInsertionPoint ?? sibling;
+  const maybeInsertionPoint = arrowIsUp
+    ? getFirstCodeHighlightNodeOfLine(sibling)
+    : getLastCodeHighlightNodeOfLine(sibling);
+  let insertionPoint =
+    maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
   linebreak.remove();
   range.forEach((node) => node.remove());
   if (type === 'keyArrowUp') {

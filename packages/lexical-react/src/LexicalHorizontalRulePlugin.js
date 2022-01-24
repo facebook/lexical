@@ -20,7 +20,7 @@ export default function HorizontalRulePlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    return editor.addListener(
       'command',
       (type) => {
         if (type === 'insertHorizontalRule') {
@@ -28,7 +28,7 @@ export default function HorizontalRulePlugin(): React$Node {
 
           const selection = $getSelection();
           if (selection === null) {
-            return true;
+            return false;
           }
 
           const focusNode = selection.focus.getNode();
@@ -47,10 +47,6 @@ export default function HorizontalRulePlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    return () => {
-      removeCommandListener();
-    };
   }, [editor]);
 
   return null;

@@ -87,7 +87,11 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     return {node: null, format: 'underline'};
   },
   b: (domNode: Node) => {
-    return {node: null, format: 'bold'};
+    // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
+    const b: HTMLElement = domNode;
+    // Google Docs wraps all copied HTML in a <b> with font-weight normal
+    const hasNormalFontWeight = b.style.fontWeight === 'normal';
+    return {node: null, format: hasNormalFontWeight ? null : 'bold'};
   },
   strong: (domNode: Node) => {
     return {node: null, format: 'bold'};
@@ -129,7 +133,13 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
       node: isGitHubCodeTable ? $createCodeNode() : null,
     };
   },
-  span: (domNode: Node) => ({node: null}),
+  span: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
+    const span: HTMLSpanElement = domNode;
+    // Google Docs uses span tags + font-weight for bold text
+    const hasBoldFontWeight = span.style.fontWeight === '700';
+    return {node: null, format: hasBoldFontWeight ? 'bold' : null};
+  },
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   pre: (domNode: Node) => ({node: $createCodeNode()}),
   div: (domNode: Node) => {

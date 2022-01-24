@@ -37,10 +37,7 @@ export type DOMConversion = (
   element: Node,
   parent?: Node,
 ) => DOMConversionOutput;
-export type DOMChildConversion = (
-  domNode: Node,
-  lexicalNode: LexicalNode,
-) => void;
+export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
 export type DOMConversionMap = {
   [string]: DOMConversion,
 };

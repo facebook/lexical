@@ -74,7 +74,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   u: (domNode: Node) => {
     return {
       node: null,
-      forChild: (dom, lexicalNode) => {
+      forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('underline');
         }
@@ -88,7 +88,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     const hasNormalFontWeight = b.style.fontWeight === 'normal';
     return {
       node: null,
-      forChild: (dom, lexicalNode) => {
+      forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
           lexicalNode.toggleFormat('bold');
         }
@@ -98,7 +98,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   strong: (domNode: Node) => {
     return {
       node: null,
-      forChild: (dom, lexicalNode) => {
+      forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('bold');
         }
@@ -108,7 +108,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   i: (domNode: Node) => {
     return {
       node: null,
-      forChild: (dom, lexicalNode) => {
+      forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('italic');
         }
@@ -118,7 +118,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   em: (domNode: Node) => {
     return {
       node: null,
-      forChild: (dom, lexicalNode) => {
+      forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('underline');
         }
@@ -163,7 +163,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     const hasBoldFontWeight = span.style.fontWeight === '700';
     return {
       node: null,
-      forChild: (dom, lexicalNode) => {
+      forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
           lexicalNode.toggleFormat('bold');
         }
@@ -230,7 +230,7 @@ export function $createNodesFromDOM(
       lexicalNodes.push(currentLexicalNode);
       const forChildFunctions = Array.from(forChildMap.values());
       for (let i = 0; i < forChildFunctions.length; i++) {
-        forChildFunctions[i](node, currentLexicalNode);
+        forChildFunctions[i](currentLexicalNode);
       }
     }
 

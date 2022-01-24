@@ -4,7 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import useLexicalRichText from '@lexical/react/useLexicalRichText';
+import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {$createTextNode} from 'lexical';
 import {LinkNode} from 'lexical/LinkNode';
 

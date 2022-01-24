@@ -17,7 +17,7 @@ import {
   mergePrevious,
   isOverflowNode,
   OverflowNode,
-} from '../../useLexicalCharacterLimit';
+} from '../../DEPRECATED_useLexicalCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {

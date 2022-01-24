@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {InputEvents} from '@lexical/react/useLexicalEditorEvents';
+import type {InputEvents} from './useEditorEvents';
 import type {
   LexicalEditor,
   RootNode,
@@ -15,7 +15,7 @@ import type {
 } from 'lexical';
 
 import {$log, $getRoot, $getSelection} from 'lexical';
-import useLexicalEditorEvents from '../useLexicalEditorEvents';
+import useEditorEvents from './useEditorEvents';
 import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
 import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
@@ -210,6 +210,6 @@ export default function usePlainTextSetup(
     return removeSubscriptions;
   }, [editor, init]);
 
-  useLexicalEditorEvents(events, editor);
+  useEditorEvents(events, editor);
   useLexicalDragonSupport(editor);
 }

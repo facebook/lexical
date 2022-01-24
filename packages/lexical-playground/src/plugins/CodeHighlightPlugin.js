@@ -375,6 +375,7 @@ function handleShiftLines(
   // actually move the lines around, but we want to return true either way to prevent
   // the event's default behavior
   event.preventDefault();
+  event.stopPropagation(); // required to stop cursor movement under Firefox
 
   const linebreak =
     type === 'keyArrowUp' ? start.getPreviousSibling() : end.getNextSibling();

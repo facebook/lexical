@@ -16,7 +16,7 @@ import * as React from 'react';
 import {useMemo, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export default function useLexicalDecorators(
+export default function useDecorators(
   editor: LexicalEditor,
 ): Array<React.Node> {
   const [decorators, setDecorators] = useState<{[string]: React.Node}>(() =>

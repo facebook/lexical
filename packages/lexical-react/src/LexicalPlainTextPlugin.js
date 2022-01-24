@@ -11,8 +11,8 @@ import * as React from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import usePlainTextSetup from './shared/usePlainTextSetup';
-import useLexicalDecorators from './useLexicalDecorators';
-import useLexicalCanShowPlaceholder from './useLexicalCanShowPlaceholder';
+import useDecorators from './shared/useDecorators';
+import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 function onErrorDefault(e: Error): void {
@@ -31,9 +31,9 @@ export default function PlainTextPlugin({
   onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
-  const showPlaceholder = useLexicalCanShowPlaceholder(editor);
+  const showPlaceholder = useCanShowPlaceholder(editor);
   usePlainTextSetup(editor, !skipInit);
-  const decorators = useLexicalDecorators(editor);
+  const decorators = useDecorators(editor);
 
   useLayoutEffect(() => {
     return editor.addListener('error', onError || onErrorDefault);

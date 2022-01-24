@@ -14,10 +14,10 @@ import type {
   TextFormatType,
   ElementFormatType,
 } from 'lexical';
-import type {InputEvents} from '@lexical/react/useLexicalEditorEvents';
+import type {InputEvents} from './useEditorEvents';
 
 import {$log, $getSelection, $getRoot, $isElementNode} from 'lexical';
-import useLexicalEditorEvents from '../useLexicalEditorEvents';
+import useEditorEvents from './useEditorEvents';
 import {HeadingNode} from 'lexical/HeadingNode';
 import {ListNode} from 'lexical/ListNode';
 import {QuoteNode} from 'lexical/QuoteNode';
@@ -279,6 +279,6 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
     return removeSubscriptions;
   }, [editor, init]);
 
-  useLexicalEditorEvents(events, editor);
+  useEditorEvents(events, editor);
   useLexicalDragonSupport(editor);
 }

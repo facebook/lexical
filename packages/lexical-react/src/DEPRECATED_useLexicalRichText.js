@@ -8,10 +8,10 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {HistoryState} from './useLexicalHistory';
+import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 
 import {useRichTextSetup} from './shared/useRichTextSetup';
-import {useLexicalHistory} from './useLexicalHistory';
+import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
 
 export default function useLexicalRichText(
   editor: LexicalEditor,

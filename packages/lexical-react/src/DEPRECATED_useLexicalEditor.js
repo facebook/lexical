@@ -11,7 +11,7 @@ import type {LexicalEditor} from 'lexical';
 
 import {useCallback} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
-import useLexicalCanShowPlaceholder from '@lexical/react/useLexicalCanShowPlaceholder';
+import useLexicalCanShowPlaceholder from '@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder';
 
 export default function useLexicalEditor(
   editor: LexicalEditor,

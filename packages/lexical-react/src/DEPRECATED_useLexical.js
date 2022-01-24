@@ -16,7 +16,7 @@ import type {
 
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
-import useLexicalEditor from './useLexicalEditor';
+import useLexicalEditor from './DEPRECATED_useLexicalEditor';
 
 function defaultOnErrorHandler(e: Error): void {
   throw e;

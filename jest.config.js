@@ -45,8 +45,8 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js',
         '^lexical/CodeHighlightNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js',
-        '^@lexical/react/useLexicalRichText$':
-          '<rootDir>/packages/lexical-react/src/useLexicalRichText.js',
+        '^@lexical/react/DEPRECATED_useLexicalRichText$':
+          '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
         '^@lexical/react/useLexicalCanShowPlaceholder$':
           '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.js',
         '^@lexical/react/withSubscriptions$':

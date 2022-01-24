@@ -8,11 +8,11 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import useLexicalList from '@lexical/react/useLexicalList';
+import useList from './shared/useList';
 
 export default function ListPlugin(): null {
   const [editor] = useLexicalComposerContext();
-  useLexicalList(editor);
+  useList(editor);
 
   return null;
 }

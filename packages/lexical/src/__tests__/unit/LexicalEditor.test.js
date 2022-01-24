@@ -23,7 +23,7 @@ import {
   $isTextNode,
 } from 'lexical';
 import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
-import useLexicalRichText from '@lexical/react/useLexicalRichText';
+import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {getEditorStateTextContent} from '../../LexicalUtils';
 import {
   $createTestElementNode,

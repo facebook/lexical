@@ -256,7 +256,7 @@ function createMergeActionGetter(
   };
 }
 
-export function useLexicalHistory(
+export function useHistory(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
   delay?: number = 1000,

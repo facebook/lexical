@@ -28,7 +28,7 @@ function isRootEditable(editor: LexicalEditor): boolean {
   return rootElement !== null && rootElement.contentEditable === 'true';
 }
 
-export default function useLexicalEditorEvents(
+export default function useEditorEvents(
   events: InputEvents,
   editor: LexicalEditor,
 ): void {

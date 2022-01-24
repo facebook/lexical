@@ -38,7 +38,7 @@ export type DOMConversionMap = {
 };
 type DOMConversionOutput = {
   node: LexicalNode | null,
-  format?: TextFormatType,
+  format?: ?TextFormatType,
   after?: (
     lexicalChildren: Array<LexicalNode>,
     lexicalNode: ?LexicalNode,

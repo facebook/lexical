@@ -261,7 +261,7 @@ function $generateNodesFromDOM(
   return lexicalNodes;
 }
 
-function $insertDataTransferForRichText(
+export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: Selection,
   editor: LexicalEditor,
@@ -316,7 +316,7 @@ function $insertDataTransferForRichText(
   $insertDataTransferForPlainText(dataTransfer, selection);
 }
 
-function $insertDataTransferForPlainText(
+export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: Selection,
 ): void {
@@ -642,21 +642,24 @@ export function onPasteForRichText(
   });
 }
 
-export function onDropPolyfill(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void {
-  // This should only occur without beforeInput. Block it as it's too much
-  // hassle to make work at this point.
-  event.preventDefault();
+export function onDrag(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('drag', event);
 }
 
-export function onDragStartPolyfill(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void {
-  // Block dragging.
-  event.preventDefault();
+export function onDrop(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('drop', event);
+}
+
+export function onCut(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('cut', event);
+}
+
+export function onCopy(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('copy', event);
+}
+
+export function onPaste(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('paste', event);
 }
 
 export function onCutForPlainText(
@@ -1068,12 +1071,16 @@ export function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     event.preventDefault();
 
     switch (inputType) {
+      case 'insertFromYank':
+      case 'insertFromDrop':
+      case 'insertReplacementText': {
+        editor.execCommand('insertText', event);
+        break;
+      }
       case 'insertFromComposition': {
-        if (data) {
-          // This is the end of composition
-          $setCompositionKey(null);
-          editor.execCommand('insertText', data);
-        }
+        // This is the end of composition
+        $setCompositionKey(null);
+        editor.execCommand('insertText', event);
         break;
       }
       case 'insertLineBreak': {
@@ -1088,18 +1095,9 @@ export function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         editor.execCommand('insertParagraph');
         break;
       }
-      case 'insertFromYank':
-      case 'insertFromDrop':
-      case 'insertReplacementText':
-      case 'insertFromPaste': {
-        const dataTransfer = event.dataTransfer;
-        if (dataTransfer != null) {
-          $insertDataTransferForPlainText(dataTransfer, selection);
-        } else {
-          if (data) {
-            editor.execCommand('insertText', data);
-          }
-        }
+      case 'insertFromPaste':
+      case 'insertFromPasteAsQuotation': {
+        editor.execCommand('paste', event);
         break;
       }
       case 'deleteByComposition': {

@@ -33,7 +33,7 @@ import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
 import {createWebsocketProvider} from '../collaboration';
-import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';

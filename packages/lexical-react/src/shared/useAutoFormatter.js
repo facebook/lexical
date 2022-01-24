@@ -133,7 +133,7 @@ function getTriggerState(
   return criteria;
 }
 
-export default function useLexicalAutoFormatter(editor: LexicalEditor): void {
+export default function useAutoFormatter(editor: LexicalEditor): void {
   useEffect(() => {
     // The priorTriggerState is compared against the currentTriggerState to determine
     // if the user has performed some typing event that warrants an auto format.

@@ -346,7 +346,7 @@ function handleOutdent(listItemNodes: Array<ListItemNode>): void {
   });
 }
 
-export default function useLexicalList(editor: LexicalEditor): void {
+export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
     return editor.addListener(
       'command',

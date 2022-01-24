@@ -36,7 +36,7 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
-import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';

@@ -74,7 +74,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   u: (domNode: Node) => {
     return {
       node: null,
-      childConversion: (dom, lexicalNode) => {
+      forChild: (dom, lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('underline');
         }
@@ -88,7 +88,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     const hasNormalFontWeight = b.style.fontWeight === 'normal';
     return {
       node: null,
-      childConversion: (dom, lexicalNode) => {
+      forChild: (dom, lexicalNode) => {
         if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
           lexicalNode.toggleFormat('bold');
         }
@@ -98,7 +98,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   strong: (domNode: Node) => {
     return {
       node: null,
-      childConversion: (dom, lexicalNode) => {
+      forChild: (dom, lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('bold');
         }
@@ -108,7 +108,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   i: (domNode: Node) => {
     return {
       node: null,
-      childConversion: (dom, lexicalNode) => {
+      forChild: (dom, lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('italic');
         }
@@ -118,7 +118,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   em: (domNode: Node) => {
     return {
       node: null,
-      childConversion: (dom, lexicalNode) => {
+      forChild: (dom, lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('underline');
         }
@@ -161,7 +161,14 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     const span: HTMLSpanElement = domNode;
     // Google Docs uses span tags + font-weight for bold text
     const hasBoldFontWeight = span.style.fontWeight === '700';
-    return {node: null, format: hasBoldFontWeight ? 'bold' : null};
+    return {
+      node: null,
+      forChild: (dom, lexicalNode) => {
+        if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+          lexicalNode.toggleFormat('bold');
+        }
+      },
+    };
   },
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   pre: (domNode: Node) => ({node: $createCodeNode()}),
@@ -204,7 +211,7 @@ export function $createNodesFromDOM(
   node: Node,
   conversionMap: DOMConversionMap,
   editor: LexicalEditor,
-  childConversions: Map<string, DOMChildConversion> = new Map(),
+  forChildMap: Map<string, DOMChildConversion> = new Map(),
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   let currentLexicalNode = null;
@@ -221,14 +228,14 @@ export function $createNodesFromDOM(
     currentLexicalNode = transformOutput.node;
     if (currentLexicalNode !== null) {
       lexicalNodes.push(currentLexicalNode);
-      const childConversionFunctions = Array.from(childConversions.values());
-      for (let i = 0; i < childConversionFunctions.length; i++) {
-        childConversionFunctions[i](node, currentLexicalNode);
+      const forChildFunctions = Array.from(forChildMap.values());
+      for (let i = 0; i < forChildFunctions.length; i++) {
+        forChildFunctions[i](node, currentLexicalNode);
       }
     }
 
-    if (transformOutput.childConversion != null) {
-      childConversions.set(nodeName, transformOutput.childConversion);
+    if (transformOutput.forChild != null) {
+      forChildMap.set(nodeName, transformOutput.forChild);
     }
   }
 
@@ -240,7 +247,7 @@ export function $createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
-      childConversions,
+      forChildMap,
     );
     if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after transformation,

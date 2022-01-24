@@ -46,12 +46,11 @@ export type DOMConversionMap = {
 };
 type DOMConversionOutput = {
   node: LexicalNode | null,
-  format?: ?TextFormatType,
   after?: (
     lexicalChildren: Array<LexicalNode>,
     lexicalNode: ?LexicalNode,
   ) => Array<LexicalNode>,
-  childConversion?: DOMChildConversion,
+  forChild?: DOMChildConversion,
 };
 
 export type EditorThemeClassName = string;

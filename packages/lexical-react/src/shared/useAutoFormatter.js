@@ -14,7 +14,8 @@ import type {
   AutoFormatTriggerState,
   AutoFormatCriteriaWithMatchResultContext,
   TextNodeWithOffset,
-} from './shared/LexicalAutoFormatterUtils.js';
+} from './AutoFormatterUtils.js';
+
 import {$isCodeNode} from 'lexical/CodeNode';
 import {$isParagraphNode} from 'lexical/ParagraphNode';
 import {$isTextNode, $getSelection} from 'lexical';
@@ -23,7 +24,7 @@ import {
   getAllAutoFormatCriteria,
   getMatchResultContextForCriteria,
   transformTextNodeForAutoFormatCriteria,
-} from './shared/LexicalAutoFormatterUtils.js';
+} from './AutoFormatterUtils.js';
 
 function getCriteriaWithMatchResultContext(
   textNodeWithOffset: TextNodeWithOffset,

@@ -7,10 +7,11 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey, EditorConfig} from 'lexical';
+import type {LexicalNode, NodeKey, EditorConfig, Selection} from 'lexical';
 import type {ParagraphNode} from 'lexical/ParagraphNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {$isAtDescendantEnd} from '@lexical/helpers/selection';
 import {ElementNode} from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 
@@ -57,7 +58,17 @@ export class HeadingNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(): ParagraphNode {
+  insertNewAfter(selection: Selection): HeadingNode | ParagraphNode {
+    // Only when selection is at the end we follow with a paragraph (GDoc, Word, Pages).
+    if (
+      selection !== null &&
+      selection.isCollapsed() &&
+      !$isAtDescendantEnd(this, selection.anchor)
+    ) {
+      const headingNode = $createHeadingNode(this.__tag);
+      this.insertAfter(headingNode);
+      return headingNode;
+    }
     const newElement = $createParagraphNode();
     const direction = this.getDirection();
     newElement.setDirection(direction);

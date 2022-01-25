@@ -616,3 +616,23 @@ export function $isAtNodeEnd(point: Point): boolean {
   }
   return point.offset === point.getNode().getChildrenSize();
 }
+
+export function $isAtDescendantEnd(parent: ElementNode, point: Point): boolean {
+  if (!$isAtNodeEnd(point)) {
+    return false;
+  }
+  // Check node is always lastChild until parent is found
+  let node = point.getNode();
+  while (node !== null) {
+    if (node === parent) {
+      return true;
+    }
+    const currentParent = node.getParent();
+    if (currentParent === null || !node.is(currentParent.getLastChild())) {
+      return false;
+    }
+    node = currentParent;
+  }
+
+  return false;
+}

@@ -25,6 +25,7 @@ import {
 import {$createTableNode} from 'lexical/TableNode';
 import {$createTableRowNode} from 'lexical/TableRowNode';
 import {$createTableCellNode} from 'lexical/TableCellNode';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 export function $dfs__DEPRECATED(
   startingNode: LexicalNode,
@@ -171,15 +172,18 @@ export function $createTableNodeWithDimensions(
   const tableNode = $createTableNode();
 
   for (let iRow = 0; iRow < rowCount; iRow++) {
-    const tableRow = $createTableRowNode();
+    const tableRowNode = $createTableRowNode();
 
     for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const tableCell = $createTableCellNode(iRow === 0 && includeHeader);
-      tableCell.append($createTextNode());
-      tableRow.append(tableCell);
+      const tableCellNode = $createTableCellNode(iRow === 0 && includeHeader);
+      const paragraphNode = $createParagraphNode();
+      paragraphNode.append($createTextNode());
+
+      tableCellNode.append(paragraphNode);
+      tableRowNode.append(tableCellNode);
     }
 
-    tableNode.append(tableRow);
+    tableNode.append(tableRowNode);
   }
 
   return tableNode;

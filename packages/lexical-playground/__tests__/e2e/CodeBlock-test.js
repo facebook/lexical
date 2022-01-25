@@ -140,8 +140,12 @@ describe('CodeBlock', () => {
       await assertSelection(page, endOfLastLine);
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
+      // Workaround for #1173: just insert and remove a space to fix Firefox losing the selection
+      await page.keyboard.type(' ');
+      await page.keyboard.press('Backspace');
       await assertSelection(page, endOfFirstLine);
-      // Can't move a line up and out of codeblock
+      // End workaround
+      // Ensure attempting to move a line up at the top of a codeblock no-ops
       await page.keyboard.down('Alt');
       await page.keyboard.press('ArrowUp');
       await assertSelection(page, endOfFirstLine);

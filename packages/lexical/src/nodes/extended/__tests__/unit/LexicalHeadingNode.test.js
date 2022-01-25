@@ -13,7 +13,7 @@ import {
 } from 'lexical/HeadingNode';
 import {ParagraphNode} from 'lexical/ParagraphNode';
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
-import {$createTextNode, $getRoot} from 'lexical';
+import {$createTextNode, $getRoot, $getSelection} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -79,7 +79,8 @@ describe('LexicalHeadingNode tests', () => {
         '<div contenteditable="true" data-lexical-editor="true"><h1><br></h1></div>',
       );
       await editor.update(() => {
-        const result = headingNode.insertNewAfter();
+        const selection = $getSelection();
+        const result = headingNode.insertNewAfter(selection);
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
@@ -130,7 +131,8 @@ describe('LexicalHeadingNode tests', () => {
         `<div contenteditable=\"true\" data-lexical-editor=\"true\"><h2 dir=\"ltr\"><span data-lexical-text=\"true\">${text}</span></h2></div>`,
       );
       await editor.update(() => {
-        const result = headingNode.insertNewAfter();
+        const selection = $getSelection();
+        const result = headingNode.insertNewAfter(selection);
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });

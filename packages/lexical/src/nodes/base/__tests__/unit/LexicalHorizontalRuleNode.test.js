@@ -24,7 +24,7 @@ describe('LexicalHorizontalRuleNode tests', () => {
       await editor.update(() => {
         const horizontalRuleNode = $createHorizontalRuleNode();
         const element = horizontalRuleNode.createDOM({});
-        expect(element.outerHTML).toBe('<hr>');
+        expect(element.outerHTML).toBe('<hr contenteditable="false">');
       });
     });
 

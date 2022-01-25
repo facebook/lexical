@@ -170,34 +170,41 @@ export async function repeat(times, cb) {
   }
 }
 
-async function assertHTMLOnPageOrFrame(pageOrFrame, expectedHtml) {
+async function assertHTMLOnPageOrFrame(pageOrFrame, expectedHtmlOrRegEx) {
   // Assert HTML of the editor matches the given html
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
-  if (expectedHtml === '') {
-    console.log('Output HTML:\n\n' + actualHtml);
-    throw new Error('Empty HTML assertion!');
+
+  if (expectedHtmlOrRegEx instanceof RegExp) {
+    expect(actualHtml).toEqual(expect.stringMatching(expectedHtmlOrRegEx));
+  } else {
+    if (expectedHtmlOrRegEx === '') {
+      console.log('Output HTML:\n\n' + actualHtml);
+      throw new Error('Empty HTML assertion!');
+    }
+
+    // HTML might differ between browsers, so we use attach
+    // outputs to an element using JSDOM to normalize and prettify
+    // the output.
+    const actual = document.createElement('div');
+    actual.innerHTML = actualHtml;
+
+    const expected = document.createElement('div');
+    expected.innerHTML = expectedHtmlOrRegEx;
+    expect(actual).toEqual(expected);
   }
-  // HTML might differ between browsers, so we use attach
-  // outputs to an element using JSDOM to normalize and prettify
-  // the output.
-  const actual = document.createElement('div');
-  actual.innerHTML = actualHtml;
-  const expected = document.createElement('div');
-  expected.innerHTML = expectedHtml;
-  expect(actual).toEqual(expected);
 }
 
-export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
+export async function assertHTML(page, expectedHtmlOrRegEx, ignoreSecondFrame) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
-    await assertHTMLOnPageOrFrame(leftFrame, expectedHtml);
+    await assertHTMLOnPageOrFrame(leftFrame, expectedHtmlOrRegEx);
     if (!ignoreSecondFrame) {
       let attempts = 0;
       while (attempts < 4) {
         const rightFrame = await page.frame('right');
         let failed = false;
         try {
-          await assertHTMLOnPageOrFrame(rightFrame, expectedHtml);
+          await assertHTMLOnPageOrFrame(rightFrame, expectedHtmlOrRegEx);
         } catch (e) {
           if (attempts === 5) {
             throw e;
@@ -212,7 +219,7 @@ export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
       }
     }
   } else {
-    await assertHTMLOnPageOrFrame(page, expectedHtml);
+    await assertHTMLOnPageOrFrame(page, expectedHtmlOrRegEx);
   }
 }
 

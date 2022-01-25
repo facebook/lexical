@@ -13,34 +13,46 @@ import type {
   AutoFormatCriteriaArray,
   AutoFormatTriggerState,
   AutoFormatCriteriaWithMatchResultContext,
+  ScanningContext,
   TextNodeWithOffset,
 } from './AutoFormatterUtils.js';
-
 import {$isCodeNode} from 'lexical/CodeNode';
-import {$isParagraphNode} from 'lexical/ParagraphNode';
-import {$isTextNode, $getSelection} from 'lexical';
+import {$isListItemNode} from 'lexical/ListItemNode';
+import {$isElementNode, $isTextNode, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 import {
   getAllAutoFormatCriteria,
+  getAllAutoFormatCriteriaForTextNodes,
   getMatchResultContextForCriteria,
   transformTextNodeForAutoFormatCriteria,
+  TRIGGER_STRING,
 } from './AutoFormatterUtils.js';
 
 function getCriteriaWithMatchResultContext(
-  textNodeWithOffset: TextNodeWithOffset,
   autoFormatCriteriaArray: AutoFormatCriteriaArray,
+  currentTriggerState: AutoFormatTriggerState,
+  scanningContext: ScanningContext,
 ): AutoFormatCriteriaWithMatchResultContext {
   const count = autoFormatCriteriaArray.length;
   for (let i = 0; i < count; ++i) {
-    const matchResultContext = getMatchResultContextForCriteria(
-      autoFormatCriteriaArray[i],
-      textNodeWithOffset,
-    );
-    if (matchResultContext != null) {
-      return {
-        autoFormatCriteria: autoFormatCriteriaArray[i],
-        matchResultContext,
-      };
+    const autoFormatCriteria = autoFormatCriteriaArray[i];
+
+    // Skip code block nodes, unless the nodeTransformationKind calls for toggling the code block.
+    if (
+      currentTriggerState.isCodeBlock === false ||
+      autoFormatCriteria.nodeTransformationKind === 'paragraphCodeBlock'
+    ) {
+      const matchResultContext = getMatchResultContextForCriteria(
+        autoFormatCriteria,
+        scanningContext,
+      );
+      if (matchResultContext != null) {
+        matchResultContext.triggerState = currentTriggerState;
+        return {
+          autoFormatCriteria: autoFormatCriteria,
+          matchResultContext,
+        };
+      }
     }
   }
   return {autoFormatCriteria: null, matchResultContext: null};
@@ -61,7 +73,10 @@ function getTextNodeForAutoFormatting(
   return {node, offset: selection.anchor.offset};
 }
 
-function updateAutoFormatting(editor: LexicalEditor): void {
+function updateAutoFormatting(
+  editor: LexicalEditor,
+  currentTriggerState: AutoFormatTriggerState,
+): void {
   editor.update(() => {
     const textNodeWithOffset = getTextNodeForAutoFormatting($getSelection());
 
@@ -69,9 +84,18 @@ function updateAutoFormatting(editor: LexicalEditor): void {
       return;
     }
 
-    const criteriaWithMatchResultContext = getCriteriaWithMatchResultContext(
+    // Please see the declaration of ScanningContext for a detailed explanation.
+    const scanningContext: ScanningContext = {
       textNodeWithOffset,
-      getAllAutoFormatCriteria(),
+      trimmedParagraphText: null,
+    };
+    const criteriaWithMatchResultContext = getCriteriaWithMatchResultContext(
+      // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.
+      currentTriggerState.isParentAListItemNode === false
+        ? getAllAutoFormatCriteria()
+        : getAllAutoFormatCriteriaForTextNodes(),
+      currentTriggerState,
+      scanningContext,
     );
 
     if (
@@ -82,7 +106,7 @@ function updateAutoFormatting(editor: LexicalEditor): void {
     }
 
     transformTextNodeForAutoFormatCriteria(
-      textNodeWithOffset,
+      scanningContext,
       criteriaWithMatchResultContext.autoFormatCriteria,
       criteriaWithMatchResultContext.matchResultContext,
     );
@@ -97,12 +121,25 @@ function shouldAttemptToAutoFormat(
     return false;
   }
 
+  // The below checks needs to execute relativey quickly, so perform the light-weight ones first.
+  // The substr check is a quick way to avoid autoformat parsing in that it looks for the autoformat
+  // trigger which is the trigger string (" ").
+  const triggerStringLength = TRIGGER_STRING.length;
+  const currentTextContentLength = currentTriggerState.textContent.length;
+  const triggerOffset = currentTriggerState.anchorOffset - triggerStringLength;
+
   return (
-    currentTriggerState.isCodeBlock === false &&
+    currentTriggerState.isParentAnElementNode === true &&
     currentTriggerState.isSimpleText &&
     currentTriggerState.isSelectionCollapsed &&
     currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
     currentTriggerState.anchorOffset !== priorTriggerState.anchorOffset &&
+    triggerOffset >= 0 &&
+    triggerOffset + triggerStringLength <= currentTextContentLength &&
+    currentTriggerState.textContent.substr(
+      triggerOffset,
+      triggerStringLength,
+    ) === TRIGGER_STRING &&
     currentTriggerState.textContent !== priorTriggerState.textContent
   );
 }
@@ -119,13 +156,20 @@ function getTriggerState(
     }
     const node = selection.anchor.getNode();
     const parentNode = node.getParent();
+
+    const isParentAListItemNode =
+      parentNode !== null && $isListItemNode(parentNode);
+
+    const isParentAnElementNode =
+      parentNode !== null && $isElementNode(parentNode);
+
     criteria = {
       anchorOffset: selection.anchor.offset,
       isCodeBlock: $isCodeNode(node),
       isSelectionCollapsed: selection.isCollapsed(),
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
-      isParentAParagraphNode:
-        parentNode !== null && $isParagraphNode(parentNode),
+      isParentAnElementNode,
+      isParentAListItemNode,
       nodeKey: node.getKey(),
       textContent: node.getTextContent(),
     };
@@ -147,8 +191,11 @@ export default function useAutoFormatter(editor: LexicalEditor): void {
       if (tags.has('historic') === false) {
         const currentTriggerState = getTriggerState(editor.getEditorState());
 
-        if (shouldAttemptToAutoFormat(currentTriggerState, priorTriggerState)) {
-          updateAutoFormatting(editor);
+        if (
+          shouldAttemptToAutoFormat(currentTriggerState, priorTriggerState) &&
+          currentTriggerState != null
+        ) {
+          updateAutoFormatting(editor, currentTriggerState);
         }
         priorTriggerState = currentTriggerState;
       } else {

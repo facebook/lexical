@@ -132,6 +132,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       selection !== null &&
       !nativeSelection.isCollapsed &&
       rootElement !== null &&
+      rootElement !== nativeSelection.anchorNode &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);

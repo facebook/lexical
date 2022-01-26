@@ -39,6 +39,13 @@ type Grid = {
   cells: Cells,
 };
 
+type SelectionShape = {
+  fromX: number,
+  toX: number,
+  fromY: number,
+  toY: number,
+};
+
 const LowPriority: CommandListenerLowPriority = 1;
 
 const removeHighlightStyle = document.createElement('style');
@@ -251,6 +258,16 @@ function applyCellSelection(
           const toX = Math.max(startX, currentX);
           const fromY = Math.min(startY, currentY);
           const toY = Math.max(startY, currentY);
+
+          editor.update(() => {
+            tableNode.updateSelectionState({
+              fromX,
+              toX,
+              fromY,
+              toY,
+            });
+          });
+
           highlightedCells = updateCells(fromX, toX, fromY, toY, grid.cells);
         }
       }
@@ -264,7 +281,13 @@ function applyCellSelection(
     startY = -1;
     currentX = -1;
     currentY = -1;
+
     updateCells(-1, -1, -1, -1, grid.cells);
+
+    editor.update(() => {
+      tableNode.updateSelectionState(null);
+    });
+
     highlightedCells = [];
     if (deleteCharacterListener !== null) {
       deleteCharacterListener();
@@ -349,6 +372,8 @@ function applyCellSelection(
 }
 
 export class TableNode extends ElementNode {
+  __selectionShape: ?SelectionShape;
+
   static getType(): 'table' {
     return 'table';
   }
@@ -359,6 +384,8 @@ export class TableNode extends ElementNode {
 
   constructor(key?: NodeKey): void {
     super(key);
+
+    this.__selectionShape = null;
   }
 
   createDOM<EditorContext>(
@@ -384,6 +411,15 @@ export class TableNode extends ElementNode {
 
   canBeEmpty(): false {
     return false;
+  }
+
+  updateSelectionState(selectionShape: ?SelectionShape) {
+    const self = this.getWritable();
+    self.__selectionShape = selectionShape;
+  }
+
+  getSelectionState(): ?SelectionShape {
+    return this.__selectionShape;
   }
 }
 

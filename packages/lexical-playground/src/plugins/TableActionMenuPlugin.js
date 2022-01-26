@@ -102,6 +102,7 @@ function insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
   shouldInsertAfter?: boolean = true,
+  rowCount: number,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
@@ -111,25 +112,27 @@ function insertTableRow(
 
   const targetRow = tableRows[targetIndex];
 
-  if (targetRow instanceof TableRowNode) {
-    const tableColumnCount = targetRow.getChildren().length;
+  for (let i = 0; i < rowCount; i++) {
+    if (targetRow instanceof TableRowNode) {
+      const tableColumnCount = targetRow.getChildren().length;
 
-    const newTableRow = $createTableRowNode();
+      const newTableRow = $createTableRowNode();
 
-    for (let i = 0; i < tableColumnCount; i++) {
-      const tableCell = $createTableCellNode(false);
+      for (let i = 0; i < tableColumnCount; i++) {
+        const tableCell = $createTableCellNode(false);
 
-      tableCell.append($createTextNode());
-      newTableRow.append(tableCell);
-    }
+        tableCell.append($createTextNode());
+        newTableRow.append(tableCell);
+      }
 
-    if (shouldInsertAfter) {
-      targetRow.insertAfter(newTableRow);
+      if (shouldInsertAfter) {
+        targetRow.insertAfter(newTableRow);
+      } else {
+        targetRow.insertBefore(newTableRow);
+      }
     } else {
-      targetRow.insertBefore(newTableRow);
+      throw new Error('Row before insertion index does not exist.');
     }
-  } else {
-    throw new Error('Row before insertion index does not exist.');
   }
 
   return tableNode;
@@ -139,29 +142,32 @@ function insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
   shouldInsertAfter?: boolean = true,
+  columnCount: number,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
   for (let i = 0; i < tableRows.length; i++) {
     const currentTableRow = tableRows[i];
 
-    if (currentTableRow instanceof TableRowNode) {
-      const newTableCell = $createTableCellNode(i === 0);
+    for (let j = 0; j < columnCount; j++) {
+      if (currentTableRow instanceof TableRowNode) {
+        const newTableCell = $createTableCellNode(i === 0);
 
-      newTableCell.append($createTextNode());
+        newTableCell.append($createTextNode());
 
-      const tableRowChildren = currentTableRow.getChildren();
+        const tableRowChildren = currentTableRow.getChildren();
 
-      if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
-        throw new Error('Table column target index out of range');
-      }
+        if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
+          throw new Error('Table column target index out of range');
+        }
 
-      const targetCell = tableRowChildren[targetIndex];
+        const targetCell = tableRowChildren[targetIndex];
 
-      if (shouldInsertAfter) {
-        targetCell.insertAfter(newTableCell);
-      } else {
-        targetCell.insertBefore(newTableCell);
+        if (shouldInsertAfter) {
+          targetCell.insertAfter(newTableCell);
+        } else {
+          targetCell.insertBefore(newTableCell);
+        }
       }
     }
   }
@@ -208,6 +214,29 @@ function TableActionMenu({
   const [editor] = useLexicalComposerContext();
   const dropDownRef = useRef();
 
+  const [selectionCounts, updateSelectionCounts] = useState({
+    rows: 1,
+    columns: 1,
+  });
+
+  useEffect(() => {
+    editor.update(() => {
+      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const selectionState = tableNode.getSelectionState();
+
+      updateSelectionCounts({
+        rows:
+          selectionState == null
+            ? 1
+            : selectionState.toY - selectionState.fromY + 1,
+        columns:
+          selectionState == null
+            ? 1
+            : selectionState.toX - selectionState.fromX + 1,
+      });
+    });
+  }, [editor, tableCellNode]);
+
   useEffect(() => {
     const menuButtonElement = contextRef.current;
     const dropDownElement = dropDownRef.current;
@@ -248,39 +277,48 @@ function TableActionMenu({
     (shouldInsertAfter) => {
       editor.update(() => {
         const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        console.log('tableNode.selectionShape', tableNode.getSelectionState());
 
         const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
 
-        insertTableRow(tableNode, tableRowIndex, shouldInsertAfter);
+        insertTableRow(
+          tableNode,
+          tableRowIndex,
+          shouldInsertAfter,
+          selectionCounts.rows,
+        );
 
         $setSelection(null);
 
         onClose();
       });
     },
-    [editor, onClose, tableCellNode],
+    [editor, onClose, selectionCounts, tableCellNode],
   );
 
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
+      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
       editor.update(() => {
-        const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
         const tableColumnIndex =
           getTableColumnIndexFromTableCellNode(tableCellNode);
 
-        insertTableColumn(tableNode, tableColumnIndex, shouldInsertAfter);
+        insertTableColumn(
+          tableNode,
+          tableColumnIndex,
+          shouldInsertAfter,
+          selectionCounts.columns,
+        );
 
         onClose();
       });
     },
-    [editor, onClose, tableCellNode],
+    [editor, onClose, selectionCounts, tableCellNode],
   );
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update(() => {
       const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
       const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
 
       removeTableRowAtIndex(tableNode, tableRowIndex);
@@ -294,7 +332,6 @@ function TableActionMenu({
   const deleteTableAtSelection = useCallback(() => {
     editor.update(() => {
       const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
       tableNode.remove();
 
       $setSelection(null);
@@ -324,22 +361,44 @@ function TableActionMenu({
         <button
           className="item"
           onClick={() => insertTableRowAtSelection(false)}>
-          <span className="text">Insert row above</span>
+          <span className="text">
+            Insert{' '}
+            {selectionCounts.rows === 1
+              ? 'row'
+              : `${selectionCounts.rows} rows`}{' '}
+            above
+          </span>
         </button>
       )}
       <button className="item" onClick={() => insertTableRowAtSelection(true)}>
-        <span className="text">Insert row below</span>
+        <span className="text">
+          Insert{' '}
+          {selectionCounts.rows === 1 ? 'row' : `${selectionCounts.rows} rows`}{' '}
+          below
+        </span>
       </button>
       <hr />
       <button
         className="item"
         onClick={() => insertTableColumnAtSelection(false)}>
-        <span className="text">Insert column left</span>
+        <span className="text">
+          Insert{' '}
+          {selectionCounts.columns === 1
+            ? 'column'
+            : `${selectionCounts.columns} columns`}{' '}
+          left
+        </span>
       </button>
       <button
         className="item"
         onClick={() => insertTableColumnAtSelection(true)}>
-        <span className="text">Insert column right</span>
+        <span className="text">
+          Insert{' '}
+          {selectionCounts.columns === 1
+            ? 'column'
+            : `${selectionCounts.columns} columns`}{' '}
+          right
+        </span>
       </button>
       <hr />
       <button className="item" onClick={() => deleteTableColumnAtSelection()}>

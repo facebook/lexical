@@ -61,7 +61,7 @@ export default function ContentEditable({
   return (
     <LexicalContentEditable
       className={className || stylex(styles.root)}
-      isReadOnly={isReadOnly}
+      readOnly={isReadOnly}
     />
   );
 }

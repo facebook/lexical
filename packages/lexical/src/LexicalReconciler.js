@@ -153,11 +153,14 @@ function createNode(
   } else {
     if ($isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
+      const text = node.getTextContent();
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
       // Decorators are always non editable
       dom.contentEditable = 'false';
+      subTreeTextContent += text;
+      editorTextContent += text;
     } else {
       const text = node.getTextContent();
       if ($isTextNode(node)) {

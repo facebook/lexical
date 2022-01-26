@@ -15,7 +15,8 @@ export type SettingName =
   | 'isCharLimit'
   | 'isCharLimitUtf8'
   | 'isAutocomplete'
-  | 'showTreeView';
+  | 'showTreeView'
+  | 'showNestedEditorTreeView';
 
 export type Settings = {[SettingName]: boolean};
 
@@ -28,4 +29,5 @@ export const DEFAULT_SETTINGS: Settings = {
   isCharLimitUtf8: false,
   isAutocomplete: false,
   showTreeView: true,
+  showNestedEditorTreeView: false,
 };

@@ -17,7 +17,7 @@ import {
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
-  namespace: string,
+  namespace?: string,
   children: React$Node,
   theme?: EditorThemeClasses,
   initialDecoratorEditor?: DecoratorEditor,
@@ -61,7 +61,10 @@ export default function LexicalComposer({
           context,
         });
       } else {
+        const previousConfig = editor._config;
+        // $FlowFixMe: Flow doesn't understand this spread correctly
         editor._config = {
+          ...previousConfig,
           ...config,
           context,
         };

@@ -20,7 +20,7 @@ export default function LexicalNestedComposer({
   initialDecoratorEditor,
   theme,
 }: {
-  namespace: string,
+  namespace?: string,
   children?: React$Node,
   initialDecoratorEditor: DecoratorEditor,
   theme?: EditorThemeClasses,

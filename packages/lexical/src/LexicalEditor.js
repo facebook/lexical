@@ -26,7 +26,11 @@ import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './LexicalConstants';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {RootNode} from './nodes/base/LexicalRootNode';
-import {generateRandomKey, markAllNodesAsDirty} from './LexicalUtils';
+import {
+  createUID,
+  generateRandomKey,
+  markAllNodesAsDirty,
+} from './LexicalUtils';
 import invariant from 'shared/invariant';
 
 export type DOMConversion = (
@@ -238,7 +242,7 @@ export function resetEditor(
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
-  namespace: string,
+  namespace?: string,
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
@@ -246,7 +250,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   parentEditor?: LexicalEditor,
 }): LexicalEditor {
   const config = editorConfig || {};
-  const namespace = config.namespace;
+  const namespace = config.namespace || createUID();
   const theme = config.theme || {};
   const context = config.context || {};
   const parentEditor = config.parentEditor || null;
@@ -481,9 +485,6 @@ class BaseLexicalEditor {
   getRootElement(): null | HTMLElement {
     return this._rootElement;
   }
-  getNamespace(): string {
-    return this._config.namespace;
-  }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {
@@ -640,7 +641,6 @@ declare export class LexicalEditor {
   ): () => void;
   execCommand(type: string, payload: CommandPayload): boolean;
   getDecorators(): {[NodeKey]: ReactNode};
-  getNamespace(): string;
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
   getElementByKey(key: NodeKey): null | HTMLElement;

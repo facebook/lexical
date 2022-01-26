@@ -7,15 +7,41 @@
  * @flow strict
  */
 
- import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
- import {useEffect} from 'react';
- import {PollNode} from '../nodes/PollNode';
- 
- export default function PollPlugin(): React$Node {
-   const [editor] = useLexicalComposerContext();
-   useEffect(() => {
-     return editor.registerNodes([PollNode]);
-   }, [editor]);
-   return null;
- }
- 
+import type {CommandListenerEditorPriority} from 'lexical';
+
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useEffect} from 'react';
+import {$log, $getSelection} from 'lexical';
+import {PollNode, $createPollNode} from '../nodes/PollNode';
+
+const EditorPriority: CommandListenerEditorPriority = 0;
+
+export default function PollPlugin(): React$Node {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    const removeCommandListener = editor.addListener(
+      'command',
+      (type) => {
+        if (type === 'insertPoll') {
+          $log('insertImage');
+          const selection = $getSelection();
+          if (selection !== null) {
+            const pollNode = $createPollNode();
+            selection.insertNodes([pollNode]);
+          }
+          return true;
+        }
+        return false;
+      },
+      EditorPriority,
+    );
+
+    const removePollNode = editor.registerNodes([PollNode]);
+
+    return () => {
+      removeCommandListener();
+      removePollNode();
+    };
+  }, [editor]);
+  return null;
+}

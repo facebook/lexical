@@ -12,4 +12,5 @@ export {
   mergePrevious,
   isOverflowNode,
   OverflowNode,
+  useCharacterLimit,
 } from './shared/useCharacterLimit';

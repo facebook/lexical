@@ -727,6 +727,14 @@ export default function ToolbarPlugin(): React$Node {
             aria-label="Insert Table">
             <i className="format table" />
           </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('insertPoll');
+            }}
+            className="toolbar-item"
+            aria-label="Insert Poll">
+            <i className="format poll" />
+          </button>
         </>
       )}
 

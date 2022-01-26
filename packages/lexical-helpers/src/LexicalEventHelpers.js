@@ -267,7 +267,7 @@ function $insertDataTransferForRichText(
   editor: LexicalEditor,
 ): void {
   const lexicalNodesString = dataTransfer.getData(
-    'application/x-lexical-nodes',
+    `application/x-lexical-${editor._config.namespace}`,
   );
 
   if (lexicalNodesString) {
@@ -741,7 +741,7 @@ export function onCopyForRichText(
         }
         clipboardData.setData('text/plain', selection.getTextContent());
         clipboardData.setData(
-          'application/x-lexical-nodes',
+          `application/x-lexical-${editor._config.namespace}`,
           JSON.stringify($cloneContents(selection)),
         );
       }

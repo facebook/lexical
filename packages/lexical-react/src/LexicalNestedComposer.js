@@ -44,6 +44,7 @@ export default function LexicalNestedComposer({
 
   return (
     <LexicalComposer
+      namespace="PlaygroundNestedEditor"
       initialEditor={initialDecoratorEditor.editor}
       theme={theme}>
       <LexicalOnChangePlugin onChange={onChange} />

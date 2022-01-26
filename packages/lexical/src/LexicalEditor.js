@@ -114,6 +114,7 @@ export type EditorThemeClasses = {
 };
 
 export type EditorConfig<EditorContext> = {
+  namespace: string,
   theme: EditorThemeClasses,
   context: EditorContext,
   htmlTransforms?: DOMConversionMap,
@@ -237,6 +238,7 @@ export function resetEditor(
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
+  namespace: string,
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
@@ -244,6 +246,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   parentEditor?: LexicalEditor,
 }): LexicalEditor {
   const config = editorConfig || {};
+  const namespace = config.namespace;
   const theme = config.theme || {};
   const context = config.context || {};
   const parentEditor = config.parentEditor || null;
@@ -254,6 +257,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   const editor: editor = new BaseLexicalEditor(editorState, parentEditor, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
+    namespace,
     theme,
     htmlTransforms,
   });
@@ -477,6 +481,9 @@ class BaseLexicalEditor {
   getRootElement(): null | HTMLElement {
     return this._rootElement;
   }
+  getNamespace(): string {
+    return this._config.namespace;
+  }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {
@@ -633,6 +640,7 @@ declare export class LexicalEditor {
   ): () => void;
   execCommand(type: string, payload: CommandPayload): boolean;
   getDecorators(): {[NodeKey]: ReactNode};
+  getNamespace(): string;
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
   getElementByKey(key: NodeKey): null | HTMLElement;

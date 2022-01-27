@@ -33,7 +33,7 @@ import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
 import {createWebsocketProvider} from '../collaboration';
-import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
@@ -414,7 +414,9 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalNestedComposer initialDecoratorEditor={decoratorEditor}>
+            <LexicalNestedComposer
+              namespace="PlaygroundImageEditor"
+              initialDecoratorEditor={decoratorEditor}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />
@@ -535,7 +537,7 @@ export class ImageNode extends DecoratorNode {
     return false;
   }
 
-  decorate(editor: LexicalEditor): React$Node {
+  decorate(): React$Node {
     return (
       <ImageComponent
         src={this.__src}

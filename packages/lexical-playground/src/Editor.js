@@ -32,10 +32,11 @@ import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
 import {createWebsocketProvider} from './collaboration';
-import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
+import PollPlugin from './plugins/PollPlugin';
 
 type Props = {
   isCollab: boolean,
@@ -74,10 +75,6 @@ export default function Editor({
         }`}>
         <StickyPlugin />
         <MentionsPlugin />
-        <TablesPlugin />
-        <TableCellActionMenuPlugin />
-        <ImagesPlugin />
-        <LinkPlugin />
         <EmojisPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
@@ -102,6 +99,11 @@ export default function Editor({
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
+            <TablesPlugin />
+            <TableCellActionMenuPlugin />
+            <ImagesPlugin />
+            <LinkPlugin />
+            <PollPlugin />
           </>
         ) : (
           <>

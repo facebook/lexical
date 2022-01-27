@@ -87,7 +87,11 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     return {node: null, format: 'underline'};
   },
   b: (domNode: Node) => {
-    return {node: null, format: 'bold'};
+    // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
+    const b: HTMLElement = domNode;
+    // Google Docs wraps all copied HTML in a <b> with font-weight normal
+    const hasNormalFontWeight = b.style.fontWeight === 'normal';
+    return {node: null, format: hasNormalFontWeight ? null : 'bold'};
   },
   strong: (domNode: Node) => {
     return {node: null, format: 'bold'};
@@ -129,7 +133,13 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
       node: isGitHubCodeTable ? $createCodeNode() : null,
     };
   },
-  span: (domNode: Node) => ({node: null}),
+  span: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
+    const span: HTMLSpanElement = domNode;
+    // Google Docs uses span tags + font-weight for bold text
+    const hasBoldFontWeight = span.style.fontWeight === '700';
+    return {node: null, format: hasBoldFontWeight ? 'bold' : null};
+  },
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   pre: (domNode: Node) => ({node: $createCodeNode()}),
   div: (domNode: Node) => {
@@ -251,21 +261,25 @@ function $generateNodesFromDOM(
   return lexicalNodes;
 }
 
-function $insertDataTransferForRichText(
+export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: Selection,
   editor: LexicalEditor,
 ): void {
   const lexicalNodesString = dataTransfer.getData(
-    'application/x-lexical-nodes',
+    'application/x-lexical-editor',
   );
 
   if (lexicalNodesString) {
+    const namespace = editor._config.namespace;
     try {
-      const nodeRange = JSON.parse(lexicalNodesString);
-      const nodes = $generateNodes(nodeRange);
-      selection.insertNodes(nodes);
-      return;
+      const lexicalClipboardData = JSON.parse(lexicalNodesString);
+      if (lexicalClipboardData.namespace === namespace) {
+        const nodeRange = lexicalClipboardData.state;
+        const nodes = $generateNodes(nodeRange);
+        selection.insertNodes(nodes);
+        return;
+      }
     } catch (e) {
       // Malformed, missing nodes..
     }
@@ -306,7 +320,7 @@ function $insertDataTransferForRichText(
   $insertDataTransferForPlainText(dataTransfer, selection);
 }
 
-function $insertDataTransferForPlainText(
+export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: Selection,
 ): void {
@@ -632,21 +646,24 @@ export function onPasteForRichText(
   });
 }
 
-export function onDropPolyfill(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void {
-  // This should only occur without beforeInput. Block it as it's too much
-  // hassle to make work at this point.
-  event.preventDefault();
+export function onDrag(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('drag', event);
 }
 
-export function onDragStartPolyfill(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void {
-  // Block dragging.
-  event.preventDefault();
+export function onDrop(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('drop', event);
+}
+
+export function onCut(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('cut', event);
+}
+
+export function onCopy(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('copy', event);
+}
+
+export function onPaste(event: ClipboardEvent, editor: LexicalEditor): void {
+  editor.execCommand('paste', event);
 }
 
 export function onCutForPlainText(
@@ -730,9 +747,10 @@ export function onCopyForRichText(
           clipboardData.setData('text/html', container.innerHTML);
         }
         clipboardData.setData('text/plain', selection.getTextContent());
+        const namespace = editor._config.namespace;
         clipboardData.setData(
-          'application/x-lexical-nodes',
-          JSON.stringify($cloneContents(selection)),
+          'application/x-lexical-editor',
+          JSON.stringify({namespace, state: $cloneContents(selection)}),
         );
       }
     }
@@ -1058,12 +1076,16 @@ export function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     event.preventDefault();
 
     switch (inputType) {
+      case 'insertFromYank':
+      case 'insertFromDrop':
+      case 'insertReplacementText': {
+        editor.execCommand('insertText', event);
+        break;
+      }
       case 'insertFromComposition': {
-        if (data) {
-          // This is the end of composition
-          $setCompositionKey(null);
-          editor.execCommand('insertText', data);
-        }
+        // This is the end of composition
+        $setCompositionKey(null);
+        editor.execCommand('insertText', event);
         break;
       }
       case 'insertLineBreak': {
@@ -1078,18 +1100,9 @@ export function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         editor.execCommand('insertParagraph');
         break;
       }
-      case 'insertFromYank':
-      case 'insertFromDrop':
-      case 'insertReplacementText':
-      case 'insertFromPaste': {
-        const dataTransfer = event.dataTransfer;
-        if (dataTransfer != null) {
-          $insertDataTransferForPlainText(dataTransfer, selection);
-        } else {
-          if (data) {
-            editor.execCommand('insertText', data);
-          }
-        }
+      case 'insertFromPaste':
+      case 'insertFromPasteAsQuotation': {
+        editor.execCommand('paste', event);
         break;
       }
       case 'deleteByComposition': {

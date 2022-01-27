@@ -33,31 +33,28 @@ module.exports = {
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',
       '@lexical/react/useLexicalEditor': '@lexical/react/dist/useLexicalEditor',
-      '@lexical/react/useLexicalRichText':
-        '@lexical/react/dist/useLexicalRichText',
-      '@lexical/react/useLexicalPlainText':
-        '@lexical/react/dist/useLexicalPlainText',
-      '@lexical/react/useLexicalRichTextWithCollab':
-        '@lexical/react/dist/useLexicalRichTextWithCollab',
-      '@lexical/react/useLexicalPlainTextWithCollab':
-        '@lexical/react/dist/useLexicalPlainTextWithCollab',
-      '@lexical/react/useLexicalEditorEvents':
-        '@lexical/react/dist/useLexicalEditorEvents',
-      '@lexical/react/useLexicalAutoFormatter':
-        '@lexical/react/dist/useLexicalAutoFormatter',
-      '@lexical/react/useLexicalDecorators':
-        '@lexical/react/dist/useLexicalDecorators',
-      '@lexical/react/useLexicalList': '@lexical/react/dist/useLexicalList',
+      '@lexical/react/DEPRECATED_useLexicalRichText':
+        '@lexical/react/dist/DEPRECATED_useLexicalRichText',
+      '@lexical/react/DEPRECATED_useLexicalPlainText':
+        '@lexical/react/dist/DEPRECATED_useLexicalPlainText',
+      '@lexical/react/DEPRECATED_useLexicalEditorEvents':
+        '@lexical/react/dist/DEPRECATED_useLexicalEditorEvents',
+      '@lexical/react/DEPRECATED_useLexicalAutoFormatter':
+        '@lexical/react/dist/DEPRECATED_useLexicalAutoFormatter',
+      '@lexical/react/DEPRECATED_useLexicalDecorators':
+        '@lexical/react/dist/DEPRECATED_useLexicalDecorators',
+      '@lexical/react/DEPRECATED_useLexicalList':
+        '@lexical/react/dist/DEPRECATED_useLexicalList',
       '@lexical/react/useLexicalIsBlank':
         '@lexical/react/dist/useLexicalIsBlank',
       '@lexical/react/useLexicalIsTextContentEmpty':
         '@lexical/react/dist/useLexicalIsTextContentEmpty',
-      '@lexical/react/useLexicalCanShowPlaceholder':
-        '@lexical/react/dist/useLexicalCanShowPlaceholder',
-      '@lexical/react/useLexicalCharacterLimit':
-        '@lexical/react/dist/useLexicalCharacterLimit',
-      '@lexical/react/useLexicalHistory':
-        '@lexical/react/dist/useLexicalHistory',
+      '@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder':
+        '@lexical/react/dist/DEPRECATED_useLexicalCanShowPlaceholder',
+      '@lexical/react/DEPRECATED_useLexicalCharacterLimit':
+        '@lexical/react/dist/DEPRECATED_useLexicalCharacterLimit',
+      '@lexical/react/DEPRECATED_useLexicalHistory':
+        '@lexical/react/dist/DEPRECATED_useLexicalHistory',
       '@lexical/react/useLexicalDecoratorMap':
         '@lexical/react/dist/useLexicalDecoratorMap',
       '@lexical/react/withSubscriptions':

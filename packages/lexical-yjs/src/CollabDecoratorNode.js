@@ -16,6 +16,7 @@ import {$isDecoratorNode, $getNodeByKey} from 'lexical';
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 import {Map as YMap} from 'yjs';
 import {
+  observeDecoratorMap,
   syncLexicalDecoratorMapToYjs,
   syncYjsDecoratorMapToLexical,
 } from './SyncDecoratorStates';
@@ -25,12 +26,14 @@ export class CollabDecoratorNode {
   _key: NodeKey;
   _parent: CollabElementNode;
   _type: string;
+  _unobservers: Set<() => void>;
 
   constructor(xmlElem: XmlElement, parent: CollabElementNode, type: string) {
     this._key = '';
     this._xmlElem = xmlElem;
     this._parent = parent;
     this._type = type;
+    this._unobservers = new Set();
   }
 
   getPrevNode(nodeMap: null | NodeMap): null | DecoratorNode {
@@ -87,11 +90,14 @@ export class CollabDecoratorNode {
 
     // Handle bindings
     if (prevDecoratorMap !== nextDecoratorMap) {
-      const map = new YMap();
-      xmlElem.insert(0, [map]);
+      const yjsMap = new YMap();
+      xmlElem.insert(0, [yjsMap]);
       // $FlowFixMe: internal field
-      map._lexicalValue = nextDecoratorMap;
-      syncLexicalDecoratorMapToYjs(binding, nextDecoratorMap, map);
+      yjsMap._lexicalValue = nextDecoratorMap;
+      // $FlowFixMe: internal field
+      yjsMap._collabNode = this;
+      syncLexicalDecoratorMapToYjs(binding, this, nextDecoratorMap, yjsMap);
+      observeDecoratorMap(binding, this, nextDecoratorMap, yjsMap);
     }
   }
 
@@ -105,16 +111,23 @@ export class CollabDecoratorNode {
     }
     const xmlElem = this._xmlElem;
     // $FlowFixMe: should always be true
-    const map: YMap = xmlElem.firstChild;
+    const yjsMap: YMap = xmlElem.firstChild;
     const decoratorMap = lexicalNode.__state;
+    // $FlowFixMe: internal field
+    yjsMap._lexicalValue = decoratorMap;
+    // $FlowFixMe: internal field
+    yjsMap._collabNode = this;
 
     syncPropertiesFromYjs(binding, xmlElem, lexicalNode, keysChanged);
-    syncYjsDecoratorMapToLexical(binding, map, decoratorMap, null);
+    syncYjsDecoratorMapToLexical(binding, this, yjsMap, decoratorMap, null);
+    observeDecoratorMap(binding, this, decoratorMap, yjsMap);
   }
 
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
     collabNodeMap.delete(this._key);
+    this._unobservers.forEach((unobserver) => unobserver());
+    this._unobservers.clear();
   }
 }
 

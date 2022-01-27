@@ -8,7 +8,7 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, DecoratorEditor} from 'lexical';
+import type {EditorThemeClasses, LexicalEditor} from 'lexical';
 import {createEditor} from 'lexical';
 import {
   LexicalComposerContext,
@@ -17,14 +17,16 @@ import {
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
+  namespace?: string,
   children: React$Node,
   theme?: EditorThemeClasses,
-  initialDecoratorEditor?: DecoratorEditor,
+  initialEditor?: LexicalEditor | null,
 };
 
 export default function LexicalComposer({
+  namespace,
   children,
-  initialDecoratorEditor,
+  initialEditor,
   theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(LexicalComposerContext);
@@ -43,15 +45,12 @@ export default function LexicalComposer({
         }
       }
 
-      const config = {theme: composerTheme || {}, parentEditor};
+      const config = {theme: composerTheme || {}, namespace, parentEditor};
       const context: LexicalComposerContextType = createLexicalComposerContext(
         parentContext,
         composerTheme,
       );
-      let editor =
-        initialDecoratorEditor !== undefined
-          ? initialDecoratorEditor.editor
-          : null;
+      let editor = initialEditor || null;
 
       if (editor === null) {
         editor = createEditor<LexicalComposerContextType>({
@@ -59,7 +58,10 @@ export default function LexicalComposer({
           context,
         });
       } else {
+        const previousConfig = editor._config;
+        // $FlowFixMe: Flow doesn't understand this spread correctly
         editor._config = {
+          ...previousConfig,
           ...config,
           context,
         };

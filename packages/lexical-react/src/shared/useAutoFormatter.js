@@ -14,7 +14,8 @@ import type {
   AutoFormatTriggerState,
   AutoFormatCriteriaWithMatchResultContext,
   TextNodeWithOffset,
-} from './shared/LexicalAutoFormatterUtils.js';
+} from './AutoFormatterUtils.js';
+
 import {$isCodeNode} from 'lexical/CodeNode';
 import {$isParagraphNode} from 'lexical/ParagraphNode';
 import {$isTextNode, $getSelection} from 'lexical';
@@ -23,7 +24,7 @@ import {
   getAllAutoFormatCriteria,
   getMatchResultContextForCriteria,
   transformTextNodeForAutoFormatCriteria,
-} from './shared/LexicalAutoFormatterUtils.js';
+} from './AutoFormatterUtils.js';
 
 function getCriteriaWithMatchResultContext(
   textNodeWithOffset: TextNodeWithOffset,
@@ -133,7 +134,7 @@ function getTriggerState(
   return criteria;
 }
 
-export default function useLexicalAutoFormatter(editor: LexicalEditor): void {
+export default function useAutoFormatter(editor: LexicalEditor): void {
   useEffect(() => {
     // The priorTriggerState is compared against the currentTriggerState to determine
     // if the user has performed some typing event that warrants an auto format.

@@ -11,7 +11,6 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
-import type {DecoratorMap} from './nodes/base/LexicalDecoratorNode';
 
 import {
   commitPendingUpdates,
@@ -26,7 +25,11 @@ import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './LexicalConstants';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {RootNode} from './nodes/base/LexicalRootNode';
-import {generateRandomKey, markAllNodesAsDirty} from './LexicalUtils';
+import {
+  createUID,
+  generateRandomKey,
+  markAllNodesAsDirty,
+} from './LexicalUtils';
 import invariant from 'shared/invariant';
 
 export type DOMConversion = (
@@ -38,7 +41,7 @@ export type DOMConversionMap = {
 };
 type DOMConversionOutput = {
   node: LexicalNode | null,
-  format?: TextFormatType,
+  format?: ?TextFormatType,
   after?: (
     lexicalChildren: Array<LexicalNode>,
     lexicalNode: ?LexicalNode,
@@ -114,6 +117,7 @@ export type EditorThemeClasses = {
 };
 
 export type EditorConfig<EditorContext> = {
+  namespace: string,
   theme: EditorThemeClasses,
   context: EditorContext,
   htmlTransforms?: DOMConversionMap,
@@ -149,10 +153,6 @@ export type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
-export type DecoratorStateListener = (
-  decoratorState: DecoratorMap,
-  key: string,
-) => void;
 
 export type CommandListenerEditorPriority = 0;
 export type CommandListenerLowPriority = 1;
@@ -185,7 +185,6 @@ type Listeners = {
   root: Set<RootListener>,
   update: Set<UpdateListener>,
   command: Array<Set<CommandListener>>,
-  decoratorstate: Set<DecoratorStateListener>,
 };
 
 export type ListenerType =
@@ -195,8 +194,7 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent'
-  | 'command'
-  | 'decoratorstate';
+  | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -237,6 +235,7 @@ export function resetEditor(
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
+  namespace?: string,
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
@@ -244,6 +243,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   parentEditor?: LexicalEditor,
 }): LexicalEditor {
   const config = editorConfig || {};
+  const namespace = config.namespace || createUID();
   const theme = config.theme || {};
   const context = config.context || {};
   const parentEditor = config.parentEditor || null;
@@ -254,6 +254,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   const editor: editor = new BaseLexicalEditor(editorState, parentEditor, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
+    namespace,
     theme,
     htmlTransforms,
   });
@@ -361,7 +362,6 @@ class BaseLexicalEditor {
       root: new Set(),
       update: new Set(),
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
-      decoratorstate: new Set(),
     };
     // Editor configuration for theme/context.
     this._config = config;
@@ -410,8 +410,7 @@ class BaseLexicalEditor {
       | RootListener
       | TextMutationListener
       | TextContentListener
-      | CommandListener
-      | DecoratorStateListener,
+      | CommandListener,
     priority?: CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];

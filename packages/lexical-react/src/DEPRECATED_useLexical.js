@@ -16,13 +16,14 @@ import type {
 
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
-import useLexicalEditor from './useLexicalEditor';
+import useLexicalEditor from './DEPRECATED_useLexicalEditor';
 
 function defaultOnErrorHandler(e: Error): void {
   throw e;
 }
 
 export default function useLexical<EditorContext>(editorConfig?: {
+  namespace?: string,
   onError?: (error: Error, log: Array<string>) => void,
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,

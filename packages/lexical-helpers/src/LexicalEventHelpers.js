@@ -267,15 +267,19 @@ function $insertDataTransferForRichText(
   editor: LexicalEditor,
 ): void {
   const lexicalNodesString = dataTransfer.getData(
-    'application/x-lexical-nodes',
+    'application/x-lexical-editor',
   );
 
   if (lexicalNodesString) {
+    const namespace = editor._config.namespace;
     try {
-      const nodeRange = JSON.parse(lexicalNodesString);
-      const nodes = $generateNodes(nodeRange);
-      selection.insertNodes(nodes);
-      return;
+      const lexicalClipboardData = JSON.parse(lexicalNodesString);
+      if (lexicalClipboardData.namespace === namespace) {
+        const nodeRange = lexicalClipboardData.state;
+        const nodes = $generateNodes(nodeRange);
+        selection.insertNodes(nodes);
+        return;
+      }
     } catch (e) {
       // Malformed, missing nodes..
     }
@@ -740,9 +744,10 @@ export function onCopyForRichText(
           clipboardData.setData('text/html', container.innerHTML);
         }
         clipboardData.setData('text/plain', selection.getTextContent());
+        const namespace = editor._config.namespace;
         clipboardData.setData(
-          'application/x-lexical-nodes',
-          JSON.stringify($cloneContents(selection)),
+          'application/x-lexical-editor',
+          JSON.stringify({namespace, state: $cloneContents(selection)}),
         );
       }
     }

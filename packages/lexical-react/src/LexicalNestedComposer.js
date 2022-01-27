@@ -15,10 +15,12 @@ import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 
 export default function LexicalNestedComposer({
+  namespace,
   children,
   initialDecoratorEditor,
   theme,
 }: {
+  namespace?: string,
   children?: React$Node,
   initialDecoratorEditor: DecoratorEditor,
   theme?: EditorThemeClasses,
@@ -44,6 +46,7 @@ export default function LexicalNestedComposer({
 
   return (
     <LexicalComposer
+      namespace={namespace}
       initialEditor={initialDecoratorEditor.editor}
       theme={theme}>
       <LexicalOnChangePlugin onChange={onChange} />

@@ -131,11 +131,17 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       selection !== null &&
       !nativeSelection.isCollapsed &&
       rootElement !== null &&
-      rootElement.contains(nativeSelection.anchorNode) &&
-      nativeSelection.anchorNode !== rootElement
+      rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);
-      const rect = domRange.getBoundingClientRect();
+      let rect;
+      if (nativeSelection.anchorNode === rootElement) {
+        // $FlowFixMe: always exists
+        rect = rootElement.firstChild.getBoundingClientRect();
+      } else {
+        rect = domRange.getBoundingClientRect();
+      }
+  
       if (!mouseDownRef.current) {
         positionEditorElement(editorElem, rect);
       }

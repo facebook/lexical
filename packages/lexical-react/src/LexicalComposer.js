@@ -8,7 +8,7 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, DecoratorEditor} from 'lexical';
+import type {EditorThemeClasses, LexicalEditor} from 'lexical';
 import {createEditor} from 'lexical';
 import {
   LexicalComposerContext,
@@ -20,13 +20,13 @@ type Props = {
   namespace?: string,
   children: React$Node,
   theme?: EditorThemeClasses,
-  initialDecoratorEditor?: DecoratorEditor,
+  initialEditor?: LexicalEditor | null,
 };
 
 export default function LexicalComposer({
   namespace,
   children,
-  initialDecoratorEditor,
+  initialEditor,
   theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(LexicalComposerContext);
@@ -50,10 +50,7 @@ export default function LexicalComposer({
         parentContext,
         composerTheme,
       );
-      let editor =
-        initialDecoratorEditor !== undefined
-          ? initialDecoratorEditor.editor
-          : null;
+      let editor = initialEditor || null;
 
       if (editor === null) {
         editor = createEditor<LexicalComposerContextType>({

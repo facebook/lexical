@@ -37,28 +37,23 @@ import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
-
-type Props = {
-  isCollab: boolean,
-  isCharLimit: boolean,
-  isCharLimitUtf8: boolean,
-  isAutocomplete: boolean,
-  isRichText: boolean,
-  showTreeView: boolean,
-};
+import {useSettings} from './context/SettingsContext';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
 
-export default function Editor({
-  isCollab,
-  isAutocomplete,
-  isCharLimit,
-  isCharLimitUtf8,
-  isRichText,
-  showTreeView,
-}: Props): React$Node {
+export default function Editor(): React$Node {
   const {historyState} = useSharedHistoryContext();
+  const {
+    settings: {
+      isCollab,
+      isAutocomplete,
+      isCharLimit,
+      isCharLimitUtf8,
+      isRichText,
+      showTreeView,
+    },
+  } = useSettings();
   const text = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText

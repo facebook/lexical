@@ -63,7 +63,7 @@ function App(): React$Node {
   } = settings;
 
   return (
-    <LexicalComposer theme={PlaygroundEditorTheme}>
+    <LexicalComposer namespace="PlaygroundEditor" theme={PlaygroundEditorTheme}>
       <SharedHistoryContext>
         <header>
           <img src="logo.svg" alt="Lexical Logo" />

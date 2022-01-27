@@ -414,7 +414,9 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalNestedComposer initialDecoratorEditor={decoratorEditor}>
+            <LexicalNestedComposer
+              namespace="PlaygroundImageEditor"
+              initialDecoratorEditor={decoratorEditor}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

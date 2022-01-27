@@ -26,7 +26,11 @@ import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './LexicalConstants';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {RootNode} from './nodes/base/LexicalRootNode';
-import {generateRandomKey, markAllNodesAsDirty} from './LexicalUtils';
+import {
+  createUID,
+  generateRandomKey,
+  markAllNodesAsDirty,
+} from './LexicalUtils';
 import invariant from 'shared/invariant';
 
 export type DOMConversion = (
@@ -114,6 +118,7 @@ export type EditorThemeClasses = {
 };
 
 export type EditorConfig<EditorContext> = {
+  namespace: string,
   theme: EditorThemeClasses,
   context: EditorContext,
   htmlTransforms?: DOMConversionMap,
@@ -237,6 +242,7 @@ export function resetEditor(
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
+  namespace?: string,
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
@@ -244,6 +250,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   parentEditor?: LexicalEditor,
 }): LexicalEditor {
   const config = editorConfig || {};
+  const namespace = config.namespace || createUID();
   const theme = config.theme || {};
   const context = config.context || {};
   const parentEditor = config.parentEditor || null;
@@ -254,6 +261,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   const editor: editor = new BaseLexicalEditor(editorState, parentEditor, {
     // $FlowFixMe: we use our internal type to simpify the generics
     context,
+    namespace,
     theme,
     htmlTransforms,
   });

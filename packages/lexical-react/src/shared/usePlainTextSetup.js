@@ -28,12 +28,16 @@ import {
   onCopyForPlainText,
   onBeforeInput,
   onPasteForPlainText,
-  onDropPolyfill,
-  onDragStartPolyfill,
   $onTextMutation,
   onInput,
   onClick,
+  onCut,
+  onCopy,
+  onPaste,
+  onDrag,
+  onDrop,
   $shouldOverrideDefaultCharacterSelection,
+  $insertDataTransferForPlainText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -46,10 +50,10 @@ const events: InputEvents = [
   ['keydown', onKeyDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
-  ['cut', onCutForPlainText],
-  ['copy', onCopyForPlainText],
-  ['dragstart', onDragStartPolyfill],
-  ['paste', onPasteForPlainText],
+  ['cut', onCut],
+  ['copy', onCopy],
+  ['dragstart', onDrag],
+  ['paste', onPaste],
   ['input', onInput],
   ['click', onClick],
 ];
@@ -57,7 +61,7 @@ const events: InputEvents = [
 if (CAN_USE_BEFORE_INPUT) {
   events.push(['beforeinput', onBeforeInput]);
 } else {
-  events.push(['drop', onDropPolyfill]);
+  events.push(['drop', onDrop]);
 }
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {
@@ -135,10 +139,23 @@ export default function usePlainTextSetup(
               selection.deleteLine(isBackward);
               return true;
             }
-            case 'insertText':
-              const text: string = payload;
-              selection.insertText(text);
+            case 'insertText': {
+              const eventOrText: InputEvent | string = payload;
+              if (typeof eventOrText === 'string') {
+                selection.insertText(eventOrText);
+              } else {
+                const dataTransfer = eventOrText.dataTransfer;
+                if (dataTransfer != null) {
+                  $insertDataTransferForPlainText(dataTransfer, selection);
+                } else {
+                  const data = eventOrText.data;
+                  if (data) {
+                    selection.insertText(data);
+                  }
+                }
+              }
               return true;
+            }
             case 'removeText':
               selection.removeText();
               return true;
@@ -195,6 +212,28 @@ export default function usePlainTextSetup(
             case 'clearEditor': {
               clearEditor(editor);
               return false;
+            }
+            case 'copy': {
+              const event: ClipboardEvent = payload;
+              onCopyForPlainText(event, editor);
+              return true;
+            }
+            case 'cut': {
+              const event: ClipboardEvent = payload;
+              onCutForPlainText(event, editor);
+              return true;
+            }
+            case 'paste': {
+              const event: ClipboardEvent = payload;
+              onPasteForPlainText(event, editor);
+              return true;
+            }
+            case 'drop':
+            case 'drag': {
+              // TODO: Make drag and drop work at some point.
+              const event: DragEvent = payload;
+              event.preventDefault();
+              return true;
             }
           }
           return false;

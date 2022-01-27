@@ -36,12 +36,16 @@ import {
   onCopyForRichText,
   onBeforeInput,
   onPasteForRichText,
-  onDropPolyfill,
-  onDragStartPolyfill,
   $onTextMutation,
   onInput,
   onClick,
+  onCut,
+  onCopy,
+  onPaste,
+  onDrag,
+  onDrop,
   $shouldOverrideDefaultCharacterSelection,
+  $insertDataTransferForRichText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -54,10 +58,10 @@ const events: InputEvents = [
   ['keydown', onKeyDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
-  ['cut', onCutForRichText],
-  ['copy', onCopyForRichText],
-  ['dragstart', onDragStartPolyfill],
-  ['paste', onPasteForRichText],
+  ['cut', onCut],
+  ['copy', onCopy],
+  ['dragstart', onDrag],
+  ['paste', onPaste],
   ['input', onInput],
   ['click', onClick],
 ];
@@ -65,7 +69,7 @@ const events: InputEvents = [
 if (CAN_USE_BEFORE_INPUT) {
   events.push(['beforeinput', onBeforeInput]);
 } else {
-  events.push(['drop', onDropPolyfill]);
+  events.push(['drop', onDrop]);
 }
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {
@@ -147,10 +151,27 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
               selection.deleteLine(isBackward);
               return true;
             }
-            case 'insertText':
-              const text: string = payload;
-              selection.insertText(text);
+            case 'insertText': {
+              const eventOrText: InputEvent | string = payload;
+              if (typeof eventOrText === 'string') {
+                selection.insertText(eventOrText);
+              } else {
+                const dataTransfer = eventOrText.dataTransfer;
+                if (dataTransfer != null) {
+                  $insertDataTransferForRichText(
+                    dataTransfer,
+                    selection,
+                    editor,
+                  );
+                } else {
+                  const data = eventOrText.data;
+                  if (data) {
+                    selection.insertText(data);
+                  }
+                }
+              }
               return true;
+            }
             case 'removeText':
               selection.removeText();
               return true;
@@ -264,6 +285,28 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
             case 'clearEditor': {
               clearEditor(editor);
               return false;
+            }
+            case 'copy': {
+              const event: ClipboardEvent = payload;
+              onCopyForRichText(event, editor);
+              return true;
+            }
+            case 'cut': {
+              const event: ClipboardEvent = payload;
+              onCutForRichText(event, editor);
+              return true;
+            }
+            case 'paste': {
+              const event: ClipboardEvent = payload;
+              onPasteForRichText(event, editor);
+              return true;
+            }
+            case 'drop':
+            case 'drag': {
+              // TODO: Make drag and drop work at some point.
+              const event: DragEvent = payload;
+              event.preventDefault();
+              return true;
             }
           }
           return false;

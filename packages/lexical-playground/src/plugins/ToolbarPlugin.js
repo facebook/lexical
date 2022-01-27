@@ -136,8 +136,11 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       const domRange = nativeSelection.getRangeAt(0);
       let rect;
       if (nativeSelection.anchorNode === rootElement) {
-        // $FlowFixMe: always exists
-        rect = rootElement.firstChild.getBoundingClientRect();
+        let inner = rootElement;
+        while (inner.firstElementChild != null) {
+          inner = inner.firstElementChild;
+        }
+        rect = inner.getBoundingClientRect();
       } else {
         rect = domRange.getBoundingClientRect();
       }

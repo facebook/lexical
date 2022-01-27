@@ -537,7 +537,7 @@ export class ImageNode extends DecoratorNode {
     return false;
   }
 
-  decorate(editor: LexicalEditor): React$Node {
+  decorate(): React$Node {
     return (
       <ImageComponent
         src={this.__src}

@@ -56,8 +56,6 @@ describe('Links', () => {
         focusOffset: 5,
       });
 
-      // This is needed for FF
-      await focusEditor(page);
       await selectAll(page);
 
       // set url

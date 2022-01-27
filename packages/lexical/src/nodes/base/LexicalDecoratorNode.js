@@ -15,7 +15,7 @@ import type {EditorState} from '../../LexicalEditorState';
 import {LexicalNode} from '../../LexicalNode';
 import invariant from 'shared/invariant';
 import {createUID} from '../../LexicalUtils';
-import {getActiveEditor, triggerListeners} from '../../LexicalUpdates';
+import {getActiveEditor} from '../../LexicalUpdates';
 
 export type DecoratorStateValue =
   | DecoratorMap
@@ -24,6 +24,11 @@ export type DecoratorStateValue =
   | boolean
   | number
   | string;
+
+export type DecoratorMapObserver = (
+  key: string,
+  value: DecoratorStateValue,
+) => void;
 
 function isStringified(
   editorState: null | EditorState | string,
@@ -94,10 +99,12 @@ export function isDecoratorEditor(x?: mixed): boolean %checks {
 
 export class DecoratorMap {
   _editor: LexicalEditor;
+  _observers: Set<DecoratorMapObserver>;
   _map: Map<string, DecoratorStateValue>;
 
   constructor(editor: LexicalEditor, map?: Map<string, DecoratorStateValue>) {
     this._editor = editor;
+    this._observers = new Set();
     this._map = map || new Map();
   }
 
@@ -111,7 +118,22 @@ export class DecoratorMap {
 
   set(key: string, value: DecoratorStateValue): void {
     this._map.set(key, value);
-    triggerListeners('decoratorstate', this._editor, false, this, key);
+    const observers = Array.from(this._observers);
+    for (let i = 0; i < observers.length; i++) {
+      observers[i](key, value);
+    }
+  }
+
+  observe(observer: DecoratorMapObserver): () => void {
+    const observers = this._observers;
+    observers.add(observer);
+    return () => {
+      observers.delete(observer);
+    };
+  }
+
+  destroy(): void {
+    this._observers.clear();
   }
 
   toJSON(): $ReadOnly<{

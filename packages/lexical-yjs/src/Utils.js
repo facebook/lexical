@@ -353,3 +353,7 @@ export function doesSelectionNeedRecovering(selection: Selection): boolean {
   }
   return recoveryNeeded;
 }
+
+export function syncWithTransaction(binding: Binding, fn: () => void): void {
+  binding.doc.transact(fn, binding);
+}

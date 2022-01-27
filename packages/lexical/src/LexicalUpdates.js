@@ -430,8 +430,7 @@ export function triggerListeners(
     | 'textmutation'
     | 'root'
     | 'decorator'
-    | 'textcontent'
-    | 'decoratorstate',
+    | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,

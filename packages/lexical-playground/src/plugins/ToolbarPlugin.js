@@ -134,7 +134,17 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);
-      const rect = domRange.getBoundingClientRect();
+      let rect;
+      if (nativeSelection.anchorNode === rootElement) {
+        let inner = rootElement;
+        while (inner.firstElementChild != null) {
+          inner = inner.firstElementChild;
+        }
+        rect = inner.getBoundingClientRect();
+      } else {
+        rect = domRange.getBoundingClientRect();
+      }
+  
       if (!mouseDownRef.current) {
         positionEditorElement(editorElem, rect);
       }
@@ -726,6 +736,14 @@ export default function ToolbarPlugin(): React$Node {
             className="toolbar-item"
             aria-label="Insert Table">
             <i className="format table" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('insertPoll');
+            }}
+            className="toolbar-item"
+            aria-label="Insert Poll">
+            <i className="format poll" />
           </button>
         </>
       )}

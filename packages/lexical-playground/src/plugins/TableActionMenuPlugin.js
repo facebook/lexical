@@ -273,11 +273,20 @@ function TableActionMenu({
     return () => window.removeEventListener('click', handleClickOutside);
   }, [setIsMenuOpen, contextRef]);
 
+  const refreshTable = useCallback(() => {
+    editor.update(() => {
+      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+
+      tableNode.setSelectionState(null);
+      tableNode.markDirty();
+      $setSelection(null);
+    });
+  }, [editor, tableCellNode]);
+
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update(() => {
         const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-        console.log('tableNode.selectionShape', tableNode.getSelectionState());
 
         const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
 
@@ -288,18 +297,18 @@ function TableActionMenu({
           selectionCounts.rows,
         );
 
-        $setSelection(null);
+        refreshTable();
 
         onClose();
       });
     },
-    [editor, onClose, selectionCounts, tableCellNode],
+    [editor, onClose, refreshTable, selectionCounts.rows, tableCellNode],
   );
 
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
-      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
       editor.update(() => {
+        const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
         const tableColumnIndex =
           getTableColumnIndexFromTableCellNode(tableCellNode);
 
@@ -310,10 +319,12 @@ function TableActionMenu({
           selectionCounts.columns,
         );
 
+        refreshTable();
+
         onClose();
       });
     },
-    [editor, onClose, selectionCounts, tableCellNode],
+    [editor, onClose, refreshTable, selectionCounts.columns, tableCellNode],
   );
 
   const deleteTableRowAtSelection = useCallback(() => {
@@ -323,22 +334,21 @@ function TableActionMenu({
 
       removeTableRowAtIndex(tableNode, tableRowIndex);
 
-      $setSelection(null);
+      refreshTable();
 
       onClose();
     });
-  }, [editor, onClose, tableCellNode]);
+  }, [editor, onClose, refreshTable, tableCellNode]);
 
   const deleteTableAtSelection = useCallback(() => {
     editor.update(() => {
       const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
       tableNode.remove();
 
-      $setSelection(null);
-
+      refreshTable();
       onClose();
     });
-  }, [editor, onClose, tableCellNode]);
+  }, [editor, onClose, refreshTable, tableCellNode]);
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update(() => {
@@ -349,14 +359,18 @@ function TableActionMenu({
 
       deleteTableColumn(tableNode, tableColumnIndex);
 
-      $setSelection(null);
-
+      refreshTable();
       onClose();
     });
-  }, [editor, onClose, tableCellNode]);
+  }, [editor, onClose, refreshTable, tableCellNode]);
 
   return createPortal(
-    <div className="dropdown" ref={dropDownRef}>
+    <div
+      className="dropdown"
+      ref={dropDownRef}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}>
       {!tableCellNode.__isHeader && (
         <button
           className="item"
@@ -521,7 +535,8 @@ function TableCellActionMenuContainer(): React.MixedElement {
         <>
           <button
             className="table-cell-action-button chevron-down"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}
             ref={menuRootRef}>

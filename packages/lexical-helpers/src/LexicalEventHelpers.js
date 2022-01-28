@@ -527,7 +527,7 @@ function isMoveUp(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowUp(keyCode) && !ctrlKey && !metaKey && !altKey;
+  return isArrowUp(keyCode) && !ctrlKey && !metaKey;
 }
 
 function isMoveDown(
@@ -537,7 +537,7 @@ function isMoveDown(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowDown(keyCode) && !ctrlKey && !metaKey && !altKey;
+  return isArrowDown(keyCode) && !ctrlKey && !metaKey;
 }
 
 export function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {

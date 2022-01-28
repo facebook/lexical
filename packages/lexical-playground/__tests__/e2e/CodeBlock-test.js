@@ -113,6 +113,53 @@ describe('CodeBlock', () => {
       );
     });
 
+    it('Can move around lines with option+arrow keys', async () => {
+      const abcHTML =
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">a</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">b</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">c</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span></code>';
+      const bcaHTML =
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp PlaygroundEditorTheme__ltr gkum2dnh" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">b</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">c</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction jloxbjlh" data-lexical-text="true">a</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation mudd945w" data-lexical-text="true">;</span></code>';
+      const endOfFirstLine = {
+        anchorPath: [0, 3, 0],
+        anchorOffset: 1,
+        focusPath: [0, 3, 0],
+        focusOffset: 1,
+      };
+      const endOfLastLine = {
+        anchorPath: [0, 13, 0],
+        anchorOffset: 1,
+        focusPath: [0, 13, 0],
+        focusOffset: 1,
+      };
+      const {page, isRichText} = e2e;
+      if (!isRichText) {
+        return;
+      }
+      await focusEditor(page);
+      await page.keyboard.type('``` a();\nb();\nc();');
+      await assertHTML(page, abcHTML);
+      await assertSelection(page, endOfLastLine);
+      await page.keyboard.press('ArrowUp');
+      await page.keyboard.press('ArrowUp');
+      // Workaround for #1173: just insert and remove a space to fix Firefox losing the selection
+      await page.keyboard.type(' ');
+      await page.keyboard.press('Backspace');
+      await assertSelection(page, endOfFirstLine);
+      // End workaround
+      // Ensure attempting to move a line up at the top of a codeblock no-ops
+      await page.keyboard.down('Alt');
+      await page.keyboard.press('ArrowUp');
+      await assertSelection(page, endOfFirstLine);
+      await assertHTML(page, abcHTML);
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('ArrowDown');
+      await assertSelection(page, endOfLastLine);
+      // Can't move a line down and out of codeblock
+      await assertHTML(page, bcaHTML);
+      await page.keyboard.press('ArrowDown');
+      await assertSelection(page, endOfLastLine);
+      await assertHTML(page, bcaHTML);
+    });
+
     /**
      * Code example for tests:
      *

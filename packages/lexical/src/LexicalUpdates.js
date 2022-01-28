@@ -424,13 +424,7 @@ function triggerTextContentListeners(
 }
 
 export function triggerListeners(
-  type:
-    | 'update'
-    | 'error'
-    | 'textmutation'
-    | 'root'
-    | 'decorator'
-    | 'textcontent',
+  type: 'update' | 'error' | 'root' | 'decorator' | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,

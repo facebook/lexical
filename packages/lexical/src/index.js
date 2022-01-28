@@ -11,7 +11,6 @@ export type {
   LexicalEditor,
   EditorConfig,
   EditorThemeClasses,
-  TextMutation,
   IntentionallyMarkedAsDirtyElement,
   CommandListenerEditorPriority,
   CommandListenerLowPriority,
@@ -66,7 +65,6 @@ import {
   $getRoot,
   $getNodeByKey,
   $getNearestNodeFromDOMNode,
-  $flushMutations,
   $setSelection,
   $setCompositionKey,
   $getCompositionKey,
@@ -109,6 +107,5 @@ export {
   $setCompositionKey,
   $getCompositionKey,
   $getNearestNodeFromDOMNode,
-  $flushMutations,
   $log,
 };

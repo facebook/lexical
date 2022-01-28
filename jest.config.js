@@ -89,14 +89,13 @@ module.exports = {
           '<rootDir>/packages/lexical-helpers/src/LexicalRootHelpers.js',
         '^shared/getDOMTextNodeFromElement$':
           '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
-        '^shared/isTokenOrInert$':
-          '<rootDir>/packages/shared/src/isTokenOrInert.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getPossibleDecoratorNode$':
           '<rootDir>/packages/shared/src/getPossibleDecoratorNode.js',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.js',
+        '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
         '^./dist/(.+)': './src/$1',
         formatProdErrorMessage:

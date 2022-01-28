@@ -7,14 +7,18 @@
  * @flow strict
  */
 
-import type {LexicalEditor, Selection} from 'lexical';
+import type {
+  LexicalEditor,
+  Selection,
+  CommandListenerLowPriority,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {$log, $getSelection} from 'lexical';
-import React, {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
+import React, {useCallback, useLayoutEffect, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {MentionNode, $createMentionNode} from '../nodes/MentionNode';
 
@@ -92,6 +96,8 @@ const AtSignMentionsRegexAliasRegex = new RegExp(
     '})' +
     ')$',
 );
+
+const LowPriority: CommandListenerLowPriority = 1;
 
 // At most, 5 suggestions are shown in the popup.
 const SUGGESTION_LIST_LENGTH_LIMIT = 5;
@@ -593,12 +599,10 @@ function MentionsTypeahead({
   close,
   editor,
   resolution,
-  registerKeys,
 }: {
   close: () => void,
   editor: LexicalEditor,
   resolution: Resolution,
-  registerKeys: (keys: {...}) => () => void,
 }): React$Node {
   const divRef = useRef(null);
   const match = resolution.match;
@@ -667,57 +671,75 @@ function MentionsTypeahead({
   }, [results, selectedIndex, updateSelectedIndex]);
 
   useEffect(() => {
-    return registerKeys({
-      ArrowDown(event) {
-        if (results !== null && selectedIndex !== null) {
-          if (
-            selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
-            selectedIndex !== results.length - 1
-          ) {
-            updateSelectedIndex(selectedIndex + 1);
+    return editor.addListener(
+      'command',
+      (type, payload) => {
+        switch (type) {
+          case 'keyArrowDown': {
+            const event: KeyboardEvent = payload;
+            if (results !== null && selectedIndex !== null) {
+              if (
+                selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
+                selectedIndex !== results.length - 1
+              ) {
+                updateSelectedIndex(selectedIndex + 1);
+              }
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+            return true;
           }
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-      },
-      ArrowUp(event) {
-        if (results !== null && selectedIndex !== null) {
-          if (selectedIndex !== 0) {
-            updateSelectedIndex(selectedIndex - 1);
+          case 'keyArrowUp': {
+            const event: KeyboardEvent = payload;
+            if (results !== null && selectedIndex !== null) {
+              if (selectedIndex !== 0) {
+                updateSelectedIndex(selectedIndex - 1);
+              }
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+            return true;
           }
-          event.preventDefault();
-          event.stopImmediatePropagation();
+          case 'keyEscape': {
+            const event: KeyboardEvent = payload;
+            if (results === null || selectedIndex === null) {
+              return false;
+            }
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            close();
+            return true;
+          }
+          case 'keyTab': {
+            const event: KeyboardEvent = payload;
+            if (results === null || selectedIndex === null) {
+              return false;
+            }
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            applyCurrentSelected();
+            return true;
+          }
+          case 'keyEnter': {
+            const event: KeyboardEvent = payload;
+            if (results === null || selectedIndex === null) {
+              return false;
+            }
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            applyCurrentSelected();
+            return true;
+          }
+          default:
+            return false;
         }
       },
-      Escape(event) {
-        if (results === null || selectedIndex === null) {
-          return;
-        }
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        close();
-      },
-      Tab(event) {
-        if (results === null || selectedIndex === null) {
-          return;
-        }
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        applyCurrentSelected();
-      },
-      Enter(event) {
-        if (results === null || selectedIndex === null) {
-          return;
-        }
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        applyCurrentSelected();
-      },
-    });
+      LowPriority,
+    );
   }, [
     applyCurrentSelected,
     close,
-    registerKeys,
+    editor,
     results,
     selectedIndex,
     updateSelectedIndex,
@@ -934,16 +956,6 @@ function createMentionNodeFromSearchResult(
 
 function useMentions(editor: LexicalEditor): React$Node {
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const registeredKeys: Set<{...}> = useMemo(() => new Set(), []);
-  const registerKeys = useMemo(
-    () => (keys) => {
-      registeredKeys.add(keys);
-      return () => {
-        registeredKeys.delete(keys);
-      };
-    },
-    [registeredKeys],
-  );
 
   useEffect(() => {
     return editor.registerNodes([MentionNode]);
@@ -989,50 +1001,9 @@ function useMentions(editor: LexicalEditor): React$Node {
     };
   }, [editor]);
 
-  const onKeyDown = useCallback(
-    (event, state) => {
-      if (editor.isComposing()) {
-        return;
-      }
-      const key = event.key;
-      registeredKeys.forEach((registeredKeyMap) => {
-        const controlFunction = registeredKeyMap[key];
-        if (key === 'Enter' && event.keyCode !== 13) {
-          return;
-        }
-        if (typeof controlFunction === 'function') {
-          controlFunction(event, state);
-        }
-      });
-    },
-    [editor, registeredKeys],
-  );
-
   const closeTypeahead = useCallback(() => {
     setResolution(null);
   }, []);
-
-  useLayoutEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      editor.update(() => {
-        onKeyDown(event);
-      });
-    };
-    return editor.addListener(
-      'root',
-      (
-        rootElement: null | HTMLElement,
-        prevRootElement: null | HTMLElement,
-      ) => {
-        if (prevRootElement !== null) {
-          prevRootElement.removeEventListener('keydown', handleKeyDown);
-        }
-        if (rootElement !== null) {
-          rootElement.addEventListener('keydown', handleKeyDown);
-        }
-      },
-    );
-  }, [editor, onKeyDown]);
 
   return resolution === null || editor === null
     ? null
@@ -1041,7 +1012,6 @@ function useMentions(editor: LexicalEditor): React$Node {
           close={closeTypeahead}
           resolution={resolution}
           editor={editor}
-          registerKeys={registerKeys}
         />,
         document.body,
       );

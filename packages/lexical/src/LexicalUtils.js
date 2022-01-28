@@ -24,12 +24,15 @@ import {
   LTR_REGEX,
   TEXT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
+  NO_BREAK_SPACE_CHAR,
 } from './LexicalConstants';
 import {
   $isTextNode,
   $isElementNode,
   $isLineBreakNode,
   $isDecoratorNode,
+  $getSelection,
+  $createTextNode,
 } from '.';
 import {
   errorOnInfiniteTransforms,
@@ -40,6 +43,7 @@ import {
 } from './LexicalUpdates';
 import {flushRootMutations} from './LexicalMutations';
 import invariant from 'shared/invariant';
+import {IS_APPLE} from 'shared/environment';
 
 export const emptyFunction = () => {};
 
@@ -105,7 +109,11 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
 }
 
 export function $isTokenOrInertOrSegmented(node: TextNode): boolean {
-  return node.isToken() || node.isInert() || node.isSegmented();
+  return $isTokenOrInert(node) || node.isSegmented();
+}
+
+export function $isTokenOrInert(node: TextNode): boolean {
+  return node.isToken() || node.isInert();
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {
@@ -400,4 +408,343 @@ export function createUID(): string {
     .toString(36)
     .replace(/[^a-z]+/g, '')
     .substr(0, 5);
+}
+
+export function $updateSelectedTextFromDOM(
+  editor: LexicalEditor,
+  compositionEnd: boolean,
+): void {
+  // Update the text content with the latest composition text
+  const domSelection = window.getSelection();
+  if (domSelection === null) {
+    return;
+  }
+  const {anchorNode, anchorOffset, focusOffset} = domSelection;
+  if (anchorNode !== null && anchorNode.nodeType === 3) {
+    const node = $getNearestNodeFromDOMNode(anchorNode);
+    if ($isTextNode(node)) {
+      $updateTextNodeFromDOMContent(
+        node,
+        anchorNode.nodeValue,
+        anchorOffset,
+        focusOffset,
+        compositionEnd,
+      );
+    }
+  }
+}
+
+export function $updateTextNodeFromDOMContent(
+  textNode: TextNode,
+  textContent: string,
+  anchorOffset: null | number,
+  focusOffset: null | number,
+  compositionEnd: boolean,
+): void {
+  let node = textNode;
+  if (node.isAttached() && (compositionEnd || !node.isDirty())) {
+    const isComposing = node.isComposing();
+    let normalizedTextContent = textContent;
+
+    if (
+      (isComposing || compositionEnd) &&
+      textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
+    ) {
+      normalizedTextContent = textContent.slice(0, -1);
+    }
+
+    if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
+      if (normalizedTextContent === '') {
+        if (isComposing) {
+          $setCompositionKey(null);
+        }
+        node.remove();
+        return;
+      }
+      if (
+        $isTokenOrInert(node) ||
+        ($getCompositionKey() !== null && !isComposing)
+      ) {
+        node.markDirty();
+        return;
+      }
+      const selection = $getSelection();
+
+      if (selection === null || anchorOffset === null || focusOffset === null) {
+        node.setTextContent(normalizedTextContent);
+        return;
+      }
+      selection.setTextNodeRange(node, anchorOffset, node, focusOffset);
+
+      if (node.isSegmented()) {
+        const originalTextContent = node.getTextContent();
+        const replacement = $createTextNode(originalTextContent);
+        node.replace(replacement);
+        node = replacement;
+      }
+      node = node.setTextContent(normalizedTextContent);
+    }
+  }
+}
+
+function $shouldInsertTextAfterOrBeforeTextNode(
+  selection: Selection,
+  node: TextNode,
+): boolean {
+  if (node.isSegmented()) {
+    return true;
+  }
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const offset = selection.anchor.offset;
+  const parent = node.getParentOrThrow();
+  const isToken = node.isToken();
+  const shouldInsertTextBefore =
+    offset === 0 &&
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
+  const shouldInsertTextAfter =
+    node.getTextContentSize() === offset &&
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
+  return shouldInsertTextBefore || shouldInsertTextAfter;
+}
+
+export function $shouldPreventDefaultAndInsertText(
+  selection: Selection,
+  text: string,
+  isBeforeInput: boolean,
+): boolean {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  return (
+    anchor.key !== focus.key ||
+    // If we're working with a range that is not during composition.
+    (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
+    // If the text length is more than a single character and we're either
+    // dealing with this in "beforeinput" or where the node has already recently
+    // been changed (thus is dirty).
+    ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
+    // If we're working with a non-text node.
+    !$isTextNode(anchorNode) ||
+    // Check if we're changing from bold to italics, or some other format.
+    anchorNode.getFormat() !== selection.format ||
+    // One last set of heuristics to check against.
+    $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
+  );
+}
+
+export function isTab(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return keyCode === 9 && !altKey && !ctrlKey && !metaKey;
+}
+
+export function isBold(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 66 && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isItalic(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 73 && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isUnderline(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 85 && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isParagraph(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && !shiftKey;
+}
+
+export function isLineBreak(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && shiftKey;
+}
+
+// Inserts a new line after the selection
+export function isOpenLineBreak(keyCode: number, ctrlKey: boolean): boolean {
+  // 79 = KeyO
+  return IS_APPLE && ctrlKey && keyCode === 79;
+}
+
+export function isDeleteWordBackward(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return isBackspace(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+}
+
+export function isDeleteWordForward(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return isDelete(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+}
+
+export function isDeleteLineBackward(
+  keyCode: number,
+  metaKey: boolean,
+): boolean {
+  return IS_APPLE && metaKey && isBackspace(keyCode);
+}
+
+export function isDeleteLineForward(
+  keyCode: number,
+  metaKey: boolean,
+): boolean {
+  return IS_APPLE && metaKey && isDelete(keyCode);
+}
+
+export function isDeleteBackward(
+  keyCode: number,
+  altKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    if (altKey || metaKey) {
+      return false;
+    }
+    return isBackspace(keyCode) || (keyCode === 72 && ctrlKey);
+  }
+  if (ctrlKey || altKey || metaKey) {
+    return false;
+  }
+  return isBackspace(keyCode);
+}
+
+export function isDeleteForward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    if (shiftKey || altKey || metaKey) {
+      return false;
+    }
+    return isDelete(keyCode) || (keyCode === 68 && ctrlKey);
+  }
+  if (ctrlKey || altKey || metaKey) {
+    return false;
+  }
+  return isDelete(keyCode);
+}
+
+export function isUndo(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 90 && !shiftKey && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isRedo(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    return keyCode === 90 && metaKey && shiftKey;
+  }
+  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
+}
+
+function isArrowLeft(keyCode: number): boolean {
+  return keyCode === 37;
+}
+
+function isArrowRight(keyCode: number): boolean {
+  return keyCode === 39;
+}
+
+function isArrowUp(keyCode: number): boolean {
+  return keyCode === 38;
+}
+
+function isArrowDown(keyCode: number): boolean {
+  return keyCode === 40;
+}
+
+export function isMoveBackward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowLeft(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+export function isMoveForward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowRight(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+export function isMoveUp(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowUp(keyCode) && !ctrlKey && !metaKey;
+}
+
+export function isMoveDown(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowDown(keyCode) && !ctrlKey && !metaKey;
+}
+
+export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
+  if (IS_APPLE) {
+    return metaKey;
+  }
+  return ctrlKey;
+}
+
+export function isReturn(keyCode: number): boolean {
+  return keyCode === 13;
+}
+
+export function isBackspace(keyCode: number): boolean {
+  return keyCode === 8;
+}
+
+export function isEscape(keyCode: number): boolean {
+  return keyCode === 27;
+}
+
+export function isDelete(keyCode: number): boolean {
+  return keyCode === 46;
 }

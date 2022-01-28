@@ -147,7 +147,7 @@ export function $flushMutations(
             const removedDOMsLength = removedDOMs.length;
 
             if (removedDOMsLength > 0) {
-              let diff = 0;
+              let unremovedBRs = 0;
               for (let s = 0; s < removedDOMsLength; s++) {
                 const removedDOM = removedDOMs[s];
 
@@ -156,10 +156,10 @@ export function $flushMutations(
                   isManagedLineBreak(removedDOM, targetDOM, editor)
                 ) {
                   targetDOM.appendChild(removedDOM);
-                  diff++;
+                  unremovedBRs++;
                 }
               }
-              if (removedDOMsLength - diff !== 0) {
+              if (removedDOMsLength !== unremovedBRs) {
                 if (targetDOM === rootElement) {
                   targetNode = $getRoot(currentEditorState);
                 }
@@ -169,6 +169,10 @@ export function $flushMutations(
           }
         }
 
+        // Now we process each of the unique target nodes, attempting
+        // to restore their contents back to the source of truth, which
+        // is Lexical's "current" editor state. This is basically like
+        // an internal revert on the DOM.
         if (badDOMTargets.size > 0) {
           const entries = Array.from(badDOMTargets.entries());
           for (let i = 0; i < entries.length; i++) {

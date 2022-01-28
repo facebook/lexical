@@ -1,5 +1,7 @@
 # Lexical's Design
 
+> Note: this document is still a work-in-progress and things are likely still in flux.
+
 Lexical was built from the ground up to be lean and extensible.
 
 You can think of Lexical as more of a text editing engine, rather than a monolithic text
@@ -24,11 +26,6 @@ Additionally, Lexical uses DOM mutation observers to ensure that any outside cha
 the editor DOM element are either reverted back to Lexical's current editor state, or are
 communicated as intents that cause further updates to the editor state (text changes).
 
-Lexical doesn't handle:
-
-- Browser event handling
-- Undo/redo
-
 This separation was done to ensure developers have a way of applying custom logic with the
 implementation and framework of their choice. This makes it possible to use Lexical with
 React, or any other JavaScript web framework/library. This also makes it easier to tackle
@@ -37,54 +34,5 @@ Instead of hoping for the text editor to support what you want, you can work wit
 to make what you want.
 
 This design can make getting started a bit more complex in certain cases, but as we've been
-able to demonstrate with our `lexical-react` helpers and hooks – you can get started, in the
+able to demonstrate with our `@lexical/react` plugins and hooks – you can get started, in the
 form of an out-of-the-box experience.
-
-## Event handling
-
-As mentioned above, Lexical doesn't come with any event handlers. This means you'll need to use
-an existing implementation (such as from `lexical-react`) or create your own. Below is an example,
-of how you might listen to text input and update Lexical. You can see that we're leveraging some
-helper selection functions provided by the Lexical pacakge:
-
-```js
-import type {State, LexicalEditor, Selection} from 'lexical';
-
-import {insertText} from 'lexical/SelectionHlpers'
-import {$getSelection} from 'lexical';
-
-function listenToTextInsertion(editor: LexicalEditor) {
-
-  // The "input" event fires when a user types in some text
-  const onInput = (event: InputEvent) => {
-    editor.update(() => {
-      // Note: this is not a browser selection, but rather an Lexical
-      // selection. Lexical always tries to ensure selection matches up
-      // with an Lexical TextNode, to simplify its usage and avoid common
-      // edge-cases.
-      const selection: Selection = $getSelection();
-      // Get the text from this input event.
-      const text = event.data;
-
-      if (selection !== null && text != null) {
-        selection.insertText(text);
-      }
-    });
-  }
-
-  // We want to listen for when Lexical gets a root element
-  editor.addListener('root', (
-    rootElement: null | HTMLElement,
-    prevRootElement: null | HTMLElement,
-  ) => {
-    // Clear our old listener if the root element changes
-    if (prevRootElement !== null) {
-      prevRootElement.removeEventListener('input', onInput)
-    }
-    // If we have an root element, listen to the "input" event
-    if (rootElement !== null) {
-      rootElement.addEventListener('input', onInput);
-    }
-  });
-}
-```

@@ -33,6 +33,7 @@ import {
   $isDecoratorNode,
   $getSelection,
   $createTextNode,
+  $getPreviousSelection,
 } from '.';
 import {
   errorOnInfiniteTransforms,
@@ -249,8 +250,11 @@ export function $getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
-export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null {
-  const editorState = getActiveEditorState();
+export function $getNodeByKey<N: LexicalNode>(
+  key: NodeKey,
+  _editorState?: EditorState,
+): N | null {
+  const editorState = _editorState || getActiveEditorState();
   const node = editorState._nodeMap.get(key);
   if (node === undefined) {
     return null;
@@ -258,22 +262,26 @@ export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null {
   return (node: $FlowFixMe);
 }
 
-export function getNodeFromDOMNode(dom: Node): LexicalNode | null {
+export function getNodeFromDOMNode(
+  dom: Node,
+  editorState?: EditorState,
+): LexicalNode | null {
   const editor = getActiveEditor();
   // $FlowFixMe: internal field
   const key: NodeKey | undefined = dom['__lexicalKey_' + editor._key];
   if (key !== undefined) {
-    return $getNodeByKey(key);
+    return $getNodeByKey(key, editorState);
   }
   return null;
 }
 
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
+  editorState?: EditorState,
 ): LexicalNode | null {
   let dom = startingDOM;
   while (dom != null) {
-    const node = getNodeFromDOMNode(dom);
+    const node = getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
       return node;
     }
@@ -329,9 +337,11 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
   );
 }
 
-export function $getRoot(): RootNode {
+export function $getRoot(editorState?: EditorState): RootNode {
+  return (((editorState || getActiveEditorState())._nodeMap.get(
+    'root',
   // $FlowFixMe: root is always in our Map
-  return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
+  ): any): RootNode);
 }
 
 export function $setSelection(selection: null | Selection): void {
@@ -452,8 +462,9 @@ export function $updateTextNodeFromDOMContent(
     ) {
       normalizedTextContent = textContent.slice(0, -1);
     }
+    const prevTextContent = node.getTextContent();
 
-    if (compositionEnd || normalizedTextContent !== node.getTextContent()) {
+    if (compositionEnd || normalizedTextContent !== prevTextContent) {
       if (normalizedTextContent === '') {
         if (isComposing) {
           $setCompositionKey(null);
@@ -461,9 +472,19 @@ export function $updateTextNodeFromDOMContent(
         node.remove();
         return;
       }
+      const parent = node.getParent();
+      const prevSelection = $getPreviousSelection();
+
       if (
         $isTokenOrInert(node) ||
-        ($getCompositionKey() !== null && !isComposing)
+        ($getCompositionKey() !== null && !isComposing) ||
+        // Check if character was added at the start, and we need
+        // to clear this input from occuring as that action wasn't
+        // permitted.
+        (parent !== null &&
+          prevSelection !== null &&
+          !parent.canInsertTextBefore() &&
+          prevSelection.anchor.offset === 0)
       ) {
         node.markDirty();
         return;

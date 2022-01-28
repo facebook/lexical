@@ -6,6 +6,7 @@
  *
  */
 
+import {moveToLineBeginning} from '../keyboardShortcuts';
 import {
   initializeE2E,
   assertHTML,
@@ -165,9 +166,18 @@ describe('TextFormatting', () => {
       await page.keyboard.press('Enter');
       await page.keyboard.type('hello world');
 
-      await click(page, 'div[contenteditable="true"] > p', {clickCount: 1, delay: 100});
-      await click(page, 'div[contenteditable="true"] > p', {clickCount: 2, delay: 100});
-      await click(page, 'div[contenteditable="true"] > p', {clickCount: 3, delay: 100});
+      await click(page, 'div[contenteditable="true"] > p', {
+        clickCount: 1,
+        delay: 100,
+      });
+      await click(page, 'div[contenteditable="true"] > p', {
+        clickCount: 2,
+        delay: 100,
+      });
+      await click(page, 'div[contenteditable="true"] > p', {
+        clickCount: 3,
+        delay: 100,
+      });
 
       await keyDownCtrlOrMeta(page);
       await page.keyboard.type('b');
@@ -561,6 +571,86 @@ describe('TextFormatting', () => {
         anchorOffset: 6,
         focusPath: [0, 0, 0],
         focusOffset: 11,
+      });
+    });
+
+    it(`Can insert range of formatted text and select part and replace with character`, async () => {
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+      await page.keyboard.type('123');
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('b');
+      await keyUpCtrlOrMeta(page);
+
+      await page.keyboard.type('456');
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('b');
+      await keyUpCtrlOrMeta(page);
+
+      await page.keyboard.type('789');
+
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('Enter');
+      await page.keyboard.up('Shift');
+
+      await page.keyboard.type('abc');
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('b');
+      await keyUpCtrlOrMeta(page);
+
+      await page.keyboard.type('def');
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('b');
+      await keyUpCtrlOrMeta(page);
+
+      await page.keyboard.type('ghi');
+
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">123</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">456</strong><span data-lexical-text="true">789</span><br><span data-lexical-text="true">abc</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">def</strong><span data-lexical-text="true">ghi</span></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 6, 0],
+        anchorOffset: 3,
+        focusPath: [0, 6, 0],
+        focusOffset: 3,
+      });
+
+      await page.keyboard.press('ArrowUp');
+      await moveToLineBeginning(page);
+
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowRight');
+
+      await page.keyboard.down('Shift');
+      await page.keyboard.press('ArrowDown');
+      await repeat(8, async () => {
+        await page.keyboard.press('ArrowRight');
+      });
+      await page.keyboard.down('Shift');
+
+      await page.keyboard.type('c');
+
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">12c</span></p>',
+      );
+
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 3,
+        focusPath: [0, 0, 0],
+        focusOffset: 3,
       });
     });
   });

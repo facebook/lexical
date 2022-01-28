@@ -131,13 +131,6 @@ describe('Links', () => {
       if (!isRichText) {
         return;
       }
-      // TODO Needs fixing #893
-      if (
-        process.env.E2E_EVENTS_MODE === 'legacy-events' &&
-        ['webkit', 'firefox'].includes(E2E_BROWSER)
-      ) {
-        return;
-      }
 
       await focusEditor(page);
       await page.keyboard.type('An Awesome Website');

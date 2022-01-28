@@ -37,13 +37,12 @@ import {
   $setCompositionKey,
   toggleTextFormatType,
   getNodeFromDOM,
-  domIsElement,
   getTextNodeOffset,
   doesContainGrapheme,
   $isTokenOrInert,
 } from './LexicalUtils';
 import invariant from 'shared/invariant';
-import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {TEXT_TYPE_TO_FORMAT, DOM_ELEMENT_TYPE} from './LexicalConstants';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 export type TextPointType = {
@@ -1386,7 +1385,7 @@ function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (domIsElement(dom)) {
+  if (dom.nodeType === DOM_ELEMENT_TYPE) {
     // Resolve element to a ElementNode, or TextNode, or null
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is

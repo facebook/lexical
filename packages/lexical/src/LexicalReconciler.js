@@ -30,6 +30,7 @@ import {
   IS_ALIGN_CENTER,
   IS_ALIGN_RIGHT,
   IS_ALIGN_JUSTIFY,
+  DOM_TEXT_TYPE,
 } from './LexicalConstants';
 import {
   $isDecoratorNode,
@@ -699,8 +700,9 @@ export function updateEditorState(
 }
 
 function scrollIntoViewIfNeeded(node: Node): void {
-  // $FlowFixMe: this is valid, as we are checking the nodeType
-  const element: Element = node.nodeType === 3 ? node.parentNode : node;
+  const element: Element =
+    // $FlowFixMe: this is valid, as we are checking the nodeType
+    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node;
   if (element !== null) {
     const rect = element.getBoundingClientRect();
 

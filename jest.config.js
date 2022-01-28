@@ -87,8 +87,6 @@ module.exports = {
           '<rootDir>/packages/lexical-helpers/src/LexicalOffsetHelpers.js',
         '^@lexical/helpers/root$':
           '<rootDir>/packages/lexical-helpers/src/LexicalRootHelpers.js',
-        '^shared/getDOMTextNodeFromElement$':
-          '<rootDir>/packages/shared/src/getDOMTextNodeFromElement.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getPossibleDecoratorNode$':

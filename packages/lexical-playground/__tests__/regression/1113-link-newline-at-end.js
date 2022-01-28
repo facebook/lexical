@@ -17,7 +17,7 @@ describe('Regression test #1113', () => {
   initializeE2E((e2e) => {
     it(`Selects new line when inserting a new line at the end of a link`, async () => {
       const {isRichText, page} = e2e;
-      if (isRichText || process.env.E2E_EVENTS_MODE === 'legacy-events') {
+      if (isRichText) {
         // Legacy events are so broken..
         return;
       }

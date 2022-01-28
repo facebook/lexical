@@ -91,6 +91,7 @@ module.exports = {
       //Shared
       'shared/environment': 'shared/dist/environment',
       'shared/useLayoutEffect': 'shared/dist/useLayoutEffect',
+      'shared/canUseDOM': 'shared/dist/canUseDOM',
     },
   },
 };

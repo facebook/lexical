@@ -82,6 +82,7 @@ module.name_mapper='^shared/getDOMTextNodeFromElement' -> '<PROJECT_ROOT>/packag
 module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/environment.js'
 module.name_mapper='^shared/getPossibleDecoratorNode' -> '<PROJECT_ROOT>/packages/shared/src/getPossibleDecoratorNode.js'
 module.name_mapper='^shared/useLayoutEffect' -> '<PROJECT_ROOT>/packages/shared/src/useLayoutEffect.js'
+module.name_mapper='^shared/canUseDOM' -> '<PROJECT_ROOT>/packages/shared/src/canUseDOM.js'
 
 munge_underscores=false
 

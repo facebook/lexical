@@ -95,6 +95,7 @@ module.exports = {
           '<rootDir>/packages/shared/src/getPossibleDecoratorNode.js',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.js',
+        '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
         '^./dist/(.+)': './src/$1',
         formatProdErrorMessage:

@@ -45,5 +45,8 @@
   "43": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "44": "reconcileNode: parentDOM is null",
   "45": "Reconciliation: could not find DOM element for node key \"${key}\"",
-  "46": "rootNode.append: Only element or decorator nodes can be appended to the root node"
+  "46": "rootNode.append: Only element or decorator nodes can be appended to the root node",
+  "47": "getListItemValue: list node is not parent of list item node",
+  "48": "Should never happen",
+  "49": "append: attemtping to append self"
 }

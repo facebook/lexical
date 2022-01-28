@@ -260,6 +260,9 @@ export class ElementNode extends LexicalNode {
     }
     for (let i = 0; i < nodesToAppendLength; i++) {
       const nodeToAppend = nodesToAppend[i];
+      if (nodeToAppend.__key === writableSelfKey) {
+        invariant(false, 'append: attemtping to append self');
+      }
       const writableNodeToAppend = nodeToAppend.getWritable();
 
       // Remove node from previous parent

@@ -17,12 +17,10 @@ import type {
 } from 'lexical';
 
 import {
-  $createLineBreakNode,
   $isDecoratorNode,
   $isLeafNode,
   $isTextNode,
   $isElementNode,
-  $createTextNode,
   $isRootNode,
 } from 'lexical';
 
@@ -415,26 +413,6 @@ export function $moveCharacter(
     isBackward ? !isRTL : isRTL,
     'character',
   );
-}
-
-export function $insertRichText(selection: Selection, text: string): void {
-  const parts = text.split(/\r?\n/);
-  if (parts.length === 1) {
-    selection.insertText(text);
-  } else {
-    const nodes = [];
-    const length = parts.length;
-    for (let i = 0; i < length; i++) {
-      const part = parts[i];
-      if (part !== '') {
-        nodes.push($createTextNode(part));
-      }
-      if (i !== length - 1) {
-        nodes.push($createLineBreakNode());
-      }
-    }
-    selection.insertNodes(nodes);
-  }
 }
 
 export function $selectAll(selection: Selection): void {

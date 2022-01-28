@@ -12,11 +12,12 @@ import type {Selection} from './LexicalSelection';
 import type {TextNode} from '.';
 
 import {$isTextNode, $isDecoratorNode, $getSelection, $setSelection} from '.';
-import {triggerListeners, updateEditor} from './LexicalUpdates';
+import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
   getNodeFromDOMNode,
   $pushLogEntry,
+  $updateTextNodeFromDOMContent,
 } from './LexicalUtils';
 
 // The time between a text entry event and the mutation observer firing.
@@ -65,10 +66,8 @@ function handleTextMutation(
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
   }
-
   const text = target.nodeValue;
-  const textMutation = {node, anchorOffset, focusOffset, text};
-  triggerListeners('textmutation', editor, false, textMutation);
+  $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
 }
 
 export function $flushMutations(

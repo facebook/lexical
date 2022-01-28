@@ -40,10 +40,10 @@ import {
   domIsElement,
   getTextNodeOffset,
   doesContainGrapheme,
+  $isTokenOrInert,
 } from './LexicalUtils';
 import invariant from 'shared/invariant';
 import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
-import isTokenOrInert from 'shared/isTokenOrInert';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 export type TextPointType = {
@@ -371,6 +371,26 @@ export class Selection {
     return (this.format & formatFlag) !== 0;
   }
 
+  insertRawText(text: string): void {
+    const parts = text.split(/\r?\n/);
+    if (parts.length === 1) {
+      this.insertText(text);
+    } else {
+      const nodes = [];
+      const length = parts.length;
+      for (let i = 0; i < length; i++) {
+        const part = parts[i];
+        if (part !== '') {
+          nodes.push($createTextNode(part));
+        }
+        if (i !== length - 1) {
+          nodes.push($createLineBreakNode());
+        }
+      }
+      this.insertNodes(nodes);
+    }
+  }
+
   insertText(text: string): void {
     const anchor = this.anchor;
     const focus = this.focus;
@@ -408,7 +428,7 @@ export class Selection {
       let nextSibling = firstNode.getNextSibling();
       if (
         !$isTextNode(nextSibling) ||
-        isTokenOrInert(nextSibling) ||
+        $isTokenOrInert(nextSibling) ||
         nextSibling.isSegmented()
       ) {
         nextSibling = $createTextNode();
@@ -435,7 +455,7 @@ export class Selection {
       let prevSibling = firstNode.getPreviousSibling();
       if (
         !$isTextNode(prevSibling) ||
-        isTokenOrInert(prevSibling) ||
+        $isTokenOrInert(prevSibling) ||
         prevSibling.isSegmented()
       ) {
         prevSibling = $createTextNode();
@@ -458,7 +478,7 @@ export class Selection {
     }
 
     if (selectedNodesLength === 1) {
-      if (isTokenOrInert(firstNode)) {
+      if ($isTokenOrInert(firstNode)) {
         firstNode.remove();
         return;
       }
@@ -511,7 +531,7 @@ export class Selection {
       ) {
         if (
           $isTextNode(lastNode) &&
-          !isTokenOrInert(lastNode) &&
+          !$isTokenOrInert(lastNode) &&
           endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
@@ -589,7 +609,7 @@ export class Selection {
 
       // Ensure we do splicing after moving of nodes, as splicing
       // can have side-effects (in the case of hashtags).
-      if (!isTokenOrInert(firstNode)) {
+      if (!$isTokenOrInert(firstNode)) {
         firstNode = firstNode.spliceText(
           startOffset,
           firstNodeTextLength - startOffset,
@@ -788,7 +808,7 @@ export class Selection {
         siblings.push(anchorNode);
       } else if (anchorOffset === textContentLength) {
         target = anchorNode;
-      } else if (isTokenOrInert(anchorNode)) {
+      } else if ($isTokenOrInert(anchorNode)) {
         // Do nothing if we're inside an immutable/inert node
         return false;
       } else {

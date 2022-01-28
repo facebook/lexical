@@ -7,8 +7,7 @@
  * @flow strict
  */
 
-import type {TextNode} from 'lexical';
-
-export default function isTokenOrInert(node: TextNode): boolean {
-  return node.isToken() || node.isInert();
-}
+export const CAN_USE_DOM: boolean =
+  typeof window !== 'undefined' &&
+  typeof window.document !== 'undefined' &&
+  typeof window.document.createElement !== 'undefined';

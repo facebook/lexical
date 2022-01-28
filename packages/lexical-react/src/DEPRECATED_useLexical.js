@@ -30,6 +30,7 @@ export default function useLexical<EditorContext>(editorConfig?: {
   context?: EditorContext,
   htmlTransforms?: DOMConversionMap,
   parentEditor?: LexicalEditor,
+  disableEvents?: boolean,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {
   const onError =
     (editorConfig !== undefined && editorConfig.onError) ||

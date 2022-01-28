@@ -14,10 +14,8 @@ import type {
   TextFormatType,
   ElementFormatType,
 } from 'lexical';
-import type {InputEvents} from './useEditorEvents';
 
 import {$log, $getSelection, $getRoot, $isElementNode} from 'lexical';
-import useEditorEvents from './useEditorEvents';
 import {HeadingNode} from 'lexical/HeadingNode';
 import {ListNode} from 'lexical/ListNode';
 import {QuoteNode} from 'lexical/QuoteNode';
@@ -25,25 +23,11 @@ import {CodeNode} from 'lexical/CodeNode';
 import {ParagraphNode} from 'lexical/ParagraphNode';
 import {ListItemNode} from 'lexical/ListItemNode';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
-import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
-  onSelectionChange,
-  onKeyDown,
-  onCompositionStart,
-  onCompositionEnd,
   onCutForRichText,
   onCopyForRichText,
-  onBeforeInput,
   onPasteForRichText,
-  $onTextMutation,
-  onInput,
-  onClick,
-  onCut,
-  onCopy,
-  onPaste,
-  onDrag,
-  onDrop,
   $shouldOverrideDefaultCharacterSelection,
   $insertDataTransferForRichText,
 } from '@lexical/helpers/events';
@@ -52,25 +36,6 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
-
-const events: InputEvents = [
-  ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDown],
-  ['compositionstart', onCompositionStart],
-  ['compositionend', onCompositionEnd],
-  ['cut', onCut],
-  ['copy', onCopy],
-  ['dragstart', onDrag],
-  ['paste', onPaste],
-  ['input', onInput],
-  ['click', onClick],
-];
-
-if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onBeforeInput]);
-} else {
-  events.push(['drop', onDrop]);
-}
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {
   const activeElement = document.activeElement;
@@ -127,7 +92,6 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
         ParagraphNode,
         ListItemNode,
       ]),
-      editor.addListener('textmutation', $onTextMutation),
       editor.addListener(
         'command',
         (type, payload): boolean => {
@@ -302,7 +266,7 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
               return true;
             }
             case 'drop':
-            case 'drag': {
+            case 'dragstart': {
               // TODO: Make drag and drop work at some point.
               const event: DragEvent = payload;
               event.preventDefault();
@@ -322,6 +286,5 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
     return removeSubscriptions;
   }, [editor, init]);
 
-  useEditorEvents(events, editor);
   useLexicalDragonSupport(editor);
 }

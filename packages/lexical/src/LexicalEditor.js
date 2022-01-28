@@ -31,6 +31,7 @@ import {
   markAllNodesAsDirty,
 } from './LexicalUtils';
 import invariant from 'shared/invariant';
+import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 
 export type DOMConversion = (
   element: Node,
@@ -146,7 +147,6 @@ export type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
 ) => void;
-export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;
 export type CommandListener = (
   type: string,
@@ -170,18 +170,10 @@ export type CommandListenerPriority =
 // $FlowFixMe: intentional
 export type CommandPayload = any;
 
-export type TextMutation = {
-  node: TextNode,
-  anchorOffset: null | number,
-  focusOffset: null | number,
-  text: string,
-};
-
 type Listeners = {
   decorator: Set<DecoratorListener>,
   error: Set<ErrorListener>,
   textcontent: Set<TextContentListener>,
-  textmutation: Set<TextMutationListener>,
   root: Set<RootListener>,
   update: Set<UpdateListener>,
   command: Array<Set<CommandListener>>,
@@ -190,7 +182,6 @@ type Listeners = {
 export type ListenerType =
   | 'update'
   | 'error'
-  | 'textmutation'
   | 'root'
   | 'decorator'
   | 'textcontent'
@@ -408,7 +399,6 @@ class BaseLexicalEditor {
       | UpdateListener
       | DecoratorListener
       | RootListener
-      | TextMutationListener
       | TextContentListener
       | CommandListener,
     priority?: CommandListenerPriority,
@@ -491,6 +481,7 @@ class BaseLexicalEditor {
       if (prevRootElement !== null) {
         // $FlowFixMe: internal field
         prevRootElement.__lexicalEditor = null;
+        removeRootElementEvents(prevRootElement);
       }
       if (nextRootElement !== null) {
         nextRootElement.setAttribute('data-lexical-editor', 'true');
@@ -500,6 +491,7 @@ class BaseLexicalEditor {
         commitPendingUpdates(getSelf(this));
         // $FlowFixMe: internal field
         nextRootElement.__lexicalEditor = this;
+        addRootElementEvents(nextRootElement, getSelf(this));
       }
       triggerListeners(
         'root',
@@ -619,7 +611,6 @@ declare export class LexicalEditor {
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
-  addListener(type: 'textmutation', listener: TextMutationListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
   addListener(
     type: 'command',

@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {RootNode, TextNode} from 'lexical';
-
+import type {ElementNode, RootNode, TextNode} from 'lexical';
+import invariant from 'shared/invariant';
 import {$isTextNode, $isElementNode} from 'lexical';
 
 export function $findTextIntersectionFromCharacters(
@@ -50,4 +50,40 @@ export function $findTextIntersectionFromCharacters(
     break;
   }
   return null;
+}
+
+// Return text content for child text nodes.  Each non-text node is separated by input string.
+// Caution, this function creates a string and should not be used within a tight loop.
+export function $joinTextNodesFromElementNode(
+  elementNode: ElementNode,
+  separator: string,
+  stopAtNode: TextNode,
+  stopAtNodeOffset: number,
+): string {
+  let textContent = '';
+  const children = elementNode.getChildren();
+  const length = children.length;
+  for (let i = 0; i < length; ++i) {
+    const child = children[i];
+    if ($isTextNode(child)) {
+      const childTextContent = child.getTextContent();
+
+      if (child.is(stopAtNode)) {
+        if (stopAtNodeOffset > childTextContent.length) {
+          invariant(
+            false,
+            'Node %s and selection point do not match.',
+            child.__key,
+          );
+        }
+        textContent += child.getTextContent().substr(0, stopAtNodeOffset);
+        break;
+      } else {
+        textContent += childTextContent;
+      }
+    } else {
+      textContent += separator;
+    }
+  }
+  return textContent;
 }

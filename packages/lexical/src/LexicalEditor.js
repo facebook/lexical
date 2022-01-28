@@ -143,8 +143,8 @@ export type UpdateListener = ({
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (
-  element: null | HTMLElement,
-  element: null | HTMLElement,
+  rootElement: null | HTMLElement,
+  prevRootElement: null | HTMLElement,
 ) => void;
 export type TextMutationListener = (mutation: TextMutation) => void;
 export type TextContentListener = (text: string) => void;

@@ -122,6 +122,7 @@ export type EditorConfig<EditorContext> = {
   theme: EditorThemeClasses,
   context: EditorContext,
   htmlTransforms?: DOMConversionMap,
+  disableEvents?: boolean,
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -231,6 +232,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   theme?: EditorThemeClasses,
   context?: EditorContext,
   htmlTransforms?: DOMConversionMap,
+  disableEvents?: boolean,
   parentEditor?: LexicalEditor,
 }): LexicalEditor {
   const config = editorConfig || {};
@@ -239,6 +241,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   const context = config.context || {};
   const parentEditor = config.parentEditor || null;
   const htmlTransforms = config.htmlTransforms || {};
+  const disableEvents = config.disableEvents || false;
   const editorState = createEmptyEditorState();
   const initialEditorState = config.initialEditorState;
   // $FlowFixMe: use our declared type instead
@@ -248,6 +251,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     namespace,
     theme,
     htmlTransforms,
+    disableEvents,
   });
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -481,7 +485,10 @@ class BaseLexicalEditor {
       if (prevRootElement !== null) {
         // $FlowFixMe: internal field
         prevRootElement.__lexicalEditor = null;
-        removeRootElementEvents(prevRootElement);
+        // TODO: remove this flag once we no longer use UEv2 internally
+        if (!this._config.disableEvents) {
+          removeRootElementEvents(prevRootElement);
+        }
       }
       if (nextRootElement !== null) {
         nextRootElement.setAttribute('data-lexical-editor', 'true');
@@ -491,7 +498,10 @@ class BaseLexicalEditor {
         commitPendingUpdates(getSelf(this));
         // $FlowFixMe: internal field
         nextRootElement.__lexicalEditor = this;
-        addRootElementEvents(nextRootElement, getSelf(this));
+        // TODO: remove this flag once we no longer use UEv2 internally
+        if (!this._config.disableEvents) {
+          addRootElementEvents(nextRootElement, getSelf(this));
+        }
       }
       triggerListeners(
         'root',

@@ -9,7 +9,12 @@
 
 import type {LexicalEditor, ElementNode} from 'lexical';
 
-import {CodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {
+  CodeNode,
+  $isCodeNode,
+  getFirstCodeHighlightNodeOfLine,
+  getLastCodeHighlightNodeOfLine,
+} from 'lexical/CodeNode';
 import {
   $createLineBreakNode,
   $createTextNode,
@@ -63,6 +68,14 @@ export default function CodeHighlightPlugin(): React$Node {
       editor.addTransform(TextNode, (node) => textNodeTransform(node, editor)),
       editor.addTransform(CodeHighlightNode, (node) =>
         textNodeTransform(node, editor),
+      ),
+      editor.addListener(
+        'command',
+        (type, payload): boolean =>
+          type === 'keyArrowUp' || type === 'keyArrowDown'
+            ? handleShiftLines(type, payload)
+            : false,
+        1,
       ),
     );
   }, [editor]);
@@ -316,4 +329,84 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   }
 
   return false;
+}
+
+function handleShiftLines(
+  type: 'keyArrowUp' | 'keyArrowDown',
+  event: KeyboardEvent,
+): boolean {
+  // We only care about the alt+arrow keys
+  const selection = $getSelection();
+  if (!event.altKey || selection == null) {
+    return false;
+  }
+
+  // I'm not quite sure why, but it seems like calling anchor.getNode() collapses the selection here
+  // So first, get the anchor and the focus, then get their nodes
+  const {anchor, focus} = selection;
+  const anchorOffset = anchor.offset;
+  const focusOffset = focus.offset;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+
+  // Ensure the selection is within the codeblock
+  if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
+    return false;
+  }
+  const start = getFirstCodeHighlightNodeOfLine(anchorNode);
+  const end = getLastCodeHighlightNodeOfLine(focusNode);
+  if (start == null || end == null) {
+    return false;
+  }
+
+  const range = start.getNodesBetween(end);
+  for (let i = 0; i < range.length; i++) {
+    const node = range[i];
+    if (!$isCodeHighlightNode(node) && !$isLineBreakNode(node)) {
+      return false;
+    }
+  }
+
+  // After this point, we know the selection is within the codeblock. We may not be able to
+  // actually move the lines around, but we want to return true either way to prevent
+  // the event's default behavior
+  event.preventDefault();
+  event.stopPropagation(); // required to stop cursor movement under Firefox
+
+  const arrowIsUp = type === 'keyArrowUp';
+  const linebreak = arrowIsUp
+    ? start.getPreviousSibling()
+    : end.getNextSibling();
+  if (!$isLineBreakNode(linebreak)) {
+    return true;
+  }
+  const sibling = arrowIsUp
+    ? linebreak.getPreviousSibling()
+    : linebreak.getNextSibling();
+  if (sibling == null) {
+    return true;
+  }
+
+  const maybeInsertionPoint = arrowIsUp
+    ? getFirstCodeHighlightNodeOfLine(sibling)
+    : getLastCodeHighlightNodeOfLine(sibling);
+  let insertionPoint =
+    maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
+  linebreak.remove();
+  range.forEach((node) => node.remove());
+  if (type === 'keyArrowUp') {
+    range.forEach((node) => insertionPoint.insertBefore(node));
+    insertionPoint.insertBefore(linebreak);
+  } else {
+    insertionPoint.insertAfter(linebreak);
+    insertionPoint = linebreak;
+    range.forEach((node) => {
+      insertionPoint.insertAfter(node);
+      insertionPoint = node;
+    });
+  }
+
+  selection.setTextNodeRange(anchorNode, anchorOffset, focusNode, focusOffset);
+
+  return true;
 }

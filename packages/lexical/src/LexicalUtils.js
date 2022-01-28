@@ -713,7 +713,7 @@ export function isMoveUp(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowUp(keyCode) && !ctrlKey && !metaKey && !altKey;
+  return isArrowUp(keyCode) && !ctrlKey && !metaKey;
 }
 
 export function isMoveDown(
@@ -723,7 +723,7 @@ export function isMoveDown(
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowDown(keyCode) && !ctrlKey && !metaKey && !altKey;
+  return isArrowDown(keyCode) && !ctrlKey && !metaKey;
 }
 
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {

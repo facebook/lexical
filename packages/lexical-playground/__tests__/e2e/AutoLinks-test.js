@@ -12,7 +12,6 @@ import {
   assertHTML,
   focusEditor,
   pasteFromClipboard,
-  E2E_BROWSER,
 } from '../utils';
 
 describe('Auto Links', () => {
@@ -20,14 +19,6 @@ describe('Auto Links', () => {
     it('Can convert url-like text into links', async () => {
       const {isRichText, page} = e2e;
       if (!isRichText) {
-        return;
-      }
-
-      // TODO Needs fixing #893
-      if (
-        process.env.E2E_EVENTS_MODE === 'legacy-events' &&
-        ['webkit', 'firefox'].includes(E2E_BROWSER)
-      ) {
         return;
       }
 
@@ -44,14 +35,6 @@ describe('Auto Links', () => {
     it('Can destruct links if add non-spacing text in front or right after it', async () => {
       const {isRichText, page} = e2e;
       if (!isRichText) {
-        return;
-      }
-
-      // TODO Needs fixing #893
-      if (
-        process.env.E2E_EVENTS_MODE === 'legacy-events' &&
-        ['webkit', 'firefox'].includes(E2E_BROWSER)
-      ) {
         return;
       }
 
@@ -96,14 +79,6 @@ describe('Auto Links', () => {
     it('Can create link when pasting text with urls', async () => {
       const {isRichText, page} = e2e;
       if (!isRichText) {
-        return;
-      }
-
-      // TODO Needs fixing #893
-      if (
-        process.env.E2E_EVENTS_MODE === 'legacy-events' &&
-        ['webkit', 'firefox'].includes(E2E_BROWSER)
-      ) {
         return;
       }
 

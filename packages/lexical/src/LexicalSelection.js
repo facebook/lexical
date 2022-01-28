@@ -1828,7 +1828,7 @@ export function moveSelectionPointToSibling(
       offset = prevSibling.getTextContentSize();
       type = 'text';
     } else if ($isElementNode(prevSibling)) {
-      offset = 1;
+      offset = prevSibling.getChildrenSize();
       type = 'element';
     }
   } else {

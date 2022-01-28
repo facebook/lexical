@@ -25,6 +25,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
   NO_BREAK_SPACE_CHAR,
+  DOM_TEXT_TYPE,
 } from './LexicalConstants';
 import {
   $isTextNode,
@@ -120,7 +121,7 @@ export function $isTokenOrInert(node: TextNode): boolean {
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
-    if (node.nodeType === 3) {
+    if (node.nodeType === DOM_TEXT_TYPE) {
       // $FlowFixMe: this is a Text
       return node;
     }
@@ -340,7 +341,7 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
 export function $getRoot(editorState?: EditorState): RootNode {
   return (((editorState || getActiveEditorState())._nodeMap.get(
     'root',
-  // $FlowFixMe: root is always in our Map
+    // $FlowFixMe: root is always in our Map
   ): any): RootNode);
 }
 
@@ -366,10 +367,6 @@ export function getNodeFromDOM(dom: Node): null | LexicalNode {
     return null;
   }
   return $getNodeByKey(nodeKey);
-}
-
-export function domIsElement(dom: Node): boolean {
-  return dom.nodeType === 1;
 }
 
 export function getTextNodeOffset(
@@ -430,7 +427,7 @@ export function $updateSelectedTextFromDOM(
     return;
   }
   const {anchorNode, anchorOffset, focusOffset} = domSelection;
-  if (anchorNode !== null && anchorNode.nodeType === 3) {
+  if (anchorNode !== null && anchorNode.nodeType === DOM_TEXT_TYPE) {
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if ($isTextNode(node)) {
       $updateTextNodeFromDOMContent(

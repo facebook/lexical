@@ -26,6 +26,7 @@ import {
   $pushLogEntry,
   $updateTextNodeFromDOMContent,
 } from './LexicalUtils';
+import {DOM_TEXT_TYPE} from './LexicalConstants';
 
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;
@@ -107,7 +108,10 @@ export function $flushMutations(
           const mutation = mutations[i];
           const type = mutation.type;
           const targetDOM = mutation.target;
-          let targetNode = $getNearestNodeFromDOMNode(targetDOM, currentEditorState);
+          let targetNode = $getNearestNodeFromDOMNode(
+            targetDOM,
+            currentEditorState,
+          );
 
           if ($isDecoratorNode(targetNode)) {
             continue;
@@ -117,12 +121,12 @@ export function $flushMutations(
             // processed outside of the Lexical engine.
             if (
               shouldFlushTextMutations &&
-              targetDOM.nodeType === 3 &&
+              targetDOM.nodeType === DOM_TEXT_TYPE &&
               $isTextNode(targetNode) &&
               targetNode.isAttached()
             ) {
               handleTextMutation(
-                // $FlowFixMe: nodeType === 3 is a Text DOM node
+                // $FlowFixMe: nodeType === DOM_TEXT_TYPE is a Text DOM node
                 ((targetDOM: any): Text),
                 targetNode,
                 editor,

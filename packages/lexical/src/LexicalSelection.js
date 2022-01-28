@@ -557,7 +557,7 @@ export class Selection {
 
       // If the last element is an "inline" element, don't move it's text nodes to the first node.
       // Instead, preserve the "inline" element's children and append to the first element.
-      if (!lastElement.canBeEmpty()) {
+      if (!lastElement.canBeEmpty() && firstElement !== lastElement) {
         firstElement.append(lastElement);
       } else {
         for (let i = lastNodeChildren.length - 1; i >= 0; i--) {

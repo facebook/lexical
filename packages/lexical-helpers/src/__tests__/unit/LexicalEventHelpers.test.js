@@ -186,6 +186,12 @@ describe('LexicalEventHelpers', () => {
             '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Italic</em></p></div>',
         },
         {
+          name: 'should produce the correct editor state from a pasted HTML em element',
+          inputs: [pasteHTML(`<meta charset='utf-8'><em>Italic</em>`)],
+          expectedHTML:
+            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Italic</em></p></div>',
+        },
+        {
           name: 'should produce the correct editor state from a pasted HTML u element',
           inputs: [pasteHTML(`<meta charset='utf-8'><u>Underline</u>`)],
           expectedHTML:

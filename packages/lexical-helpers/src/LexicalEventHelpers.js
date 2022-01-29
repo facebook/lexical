@@ -14,6 +14,7 @@ import type {
   ParsedNodeMap,
   NodeKey,
   DOMConversionMap,
+  DOMChildConversion,
 } from 'lexical';
 
 import {$cloneContents} from '@lexical/helpers/selection';
@@ -34,9 +35,6 @@ import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 import {$createCodeNode} from 'lexical/CodeNode';
-
-// TODO we shouldn't really be importing from core here.
-import {TEXT_TYPE_TO_FORMAT} from 'lexical/src/LexicalConstants';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -70,23 +68,58 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     return {node};
   },
   u: (domNode: Node) => {
-    return {node: null, format: 'underline'};
+    return {
+      node: null,
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('underline');
+        }
+      },
+    };
   },
   b: (domNode: Node) => {
     // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
     const b: HTMLElement = domNode;
     // Google Docs wraps all copied HTML in a <b> with font-weight normal
     const hasNormalFontWeight = b.style.fontWeight === 'normal';
-    return {node: null, format: hasNormalFontWeight ? null : 'bold'};
+    return {
+      node: null,
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
+          lexicalNode.toggleFormat('bold');
+        }
+      },
+    };
   },
   strong: (domNode: Node) => {
-    return {node: null, format: 'bold'};
+    return {
+      node: null,
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('bold');
+        }
+      },
+    };
   },
   i: (domNode: Node) => {
-    return {node: null, format: 'italic'};
+    return {
+      node: null,
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('italic');
+        }
+      },
+    };
   },
   em: (domNode: Node) => {
-    return {node: null, format: 'italic'};
+    return {
+      node: null,
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('italic');
+        }
+      },
+    };
   },
   td: (domNode: Node) => {
     // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
@@ -124,7 +157,14 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     const span: HTMLSpanElement = domNode;
     // Google Docs uses span tags + font-weight for bold text
     const hasBoldFontWeight = span.style.fontWeight === '700';
-    return {node: null, format: hasBoldFontWeight ? 'bold' : null};
+    return {
+      node: null,
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+          lexicalNode.toggleFormat('bold');
+        }
+      },
+    };
   },
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   pre: (domNode: Node) => ({node: $createCodeNode()}),
@@ -167,11 +207,10 @@ export function $createNodesFromDOM(
   node: Node,
   conversionMap: DOMConversionMap,
   editor: LexicalEditor,
-  textFormat?: number,
+  forChildMap: Map<string, DOMChildConversion> = new Map(),
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   let currentLexicalNode = null;
-  let currentTextFormat = textFormat;
   const nodeName = node.nodeName.toLowerCase();
   const customHtmlTransforms = editor._config.htmlTransforms || {};
   const transformFunction =
@@ -183,19 +222,16 @@ export function $createNodesFromDOM(
   if (transformOutput !== null) {
     postTransform = transformOutput.after;
     currentLexicalNode = transformOutput.node;
-    if (transformOutput.format) {
-      const nextTextFormat = TEXT_TYPE_TO_FORMAT[transformOutput.format];
-      currentTextFormat = currentTextFormat
-        ? currentTextFormat ^ nextTextFormat
-        : nextTextFormat;
+    if (currentLexicalNode !== null) {
+      lexicalNodes.push(currentLexicalNode);
+      const forChildFunctions = Array.from(forChildMap.values());
+      for (let i = 0; i < forChildFunctions.length; i++) {
+        forChildFunctions[i](currentLexicalNode);
+      }
     }
 
-    if (currentLexicalNode !== null) {
-      // If the transformed node is a a TextNode, apply text formatting
-      if ($isTextNode(currentLexicalNode) && currentTextFormat !== undefined) {
-        currentLexicalNode.setFormat(currentTextFormat);
-      }
-      lexicalNodes.push(currentLexicalNode);
+    if (transformOutput.forChild != null) {
+      forChildMap.set(nodeName, transformOutput.forChild);
     }
   }
 
@@ -207,7 +243,7 @@ export function $createNodesFromDOM(
       children[i],
       conversionMap,
       editor,
-      currentTextFormat,
+      forChildMap,
     );
     if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after transformation,

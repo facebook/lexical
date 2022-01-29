@@ -22,6 +22,9 @@ const styles = stylex.create({
     margin: 0,
     marginBottom: 8,
     position: 'relative',
+    ':last-child': {
+      marginBottom: 0,
+    },
   },
   quote: {
     margin: 0,
@@ -103,7 +106,6 @@ const styles = stylex.create({
     border: '1px solid black',
     height: 40,
     minWidth: 75,
-    padding: 0,
     paddingStart: 10,
     paddingEnd: 10,
   },

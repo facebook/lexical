@@ -36,10 +36,6 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 import {$createCodeNode} from 'lexical/CodeNode';
 
-const NO_BREAK_SPACE_CHAR = '\u00A0';
-
-let lastKeyWasMaybeAndroidSoftKey = false;
-
 // TODO the Flow types here needs fixing
 export type EventHandler = (
   // $FlowFixMe: not sure how to handle this generic properly
@@ -120,7 +116,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
       node: null,
       forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('underline');
+          lexicalNode.toggleFormat('italic');
         }
       },
     };

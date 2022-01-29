@@ -483,8 +483,6 @@ class BaseLexicalEditor {
         pendingEditorState,
       );
       if (prevRootElement !== null) {
-        // $FlowFixMe: internal field
-        prevRootElement.__lexicalEditor = null;
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
           removeRootElementEvents(prevRootElement);
@@ -496,8 +494,6 @@ class BaseLexicalEditor {
         initMutationObserver(getSelf(this));
         this._updateTags.add('without-history');
         commitPendingUpdates(getSelf(this));
-        // $FlowFixMe: internal field
-        nextRootElement.__lexicalEditor = this;
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
           addRootElementEvents(nextRootElement, getSelf(this));

@@ -15,10 +15,10 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "LexicalYjs.js",
   "dependencies": {
-    "lexical": "0.1.2",
+    "lexical": "0.1.3",
     "yjs": ">=13.5.22"
   },
   "repository": {

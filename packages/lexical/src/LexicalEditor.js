@@ -10,7 +10,6 @@
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
-import type {DecoratorMap} from './nodes/base/LexicalDecoratorNode';
 
 import {
   commitPendingUpdates,

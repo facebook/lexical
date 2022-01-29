@@ -92,7 +92,7 @@ describe('Markdown', () => {
 
         const forwardHTML = triggersAndExpectations[i].expectation;
 
-        const undoHTML = `<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span data-lexical-text="true">${trigger}</span></p>`;
+        const undoHTML = `<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">${trigger}</span></p>`;
 
         await checkHTMLExpectationsIncludingUndoRedo(
           page,

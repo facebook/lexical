@@ -34,6 +34,7 @@ import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 import {$createCodeNode} from 'lexical/CodeNode';
+import type {DOMChildConversion} from '../../lexical/src/LexicalEditor';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -240,12 +241,7 @@ export function $createNodesFromDOM(
   let childLexicalNodes = [];
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
-      ...$createNodesFromDOM(
-        children[i],
-        conversionMap,
-        editor,
-        forChildMap,
-      ),
+      ...$createNodesFromDOM(children[i], conversionMap, editor, forChildMap),
     );
   }
   if (postTransform != null) {
@@ -256,11 +252,7 @@ export function $createNodesFromDOM(
     // up to the same level as it.
     lexicalNodes = lexicalNodes.concat(childLexicalNodes);
   } else {
-    lexicalNodes.push(currentLexicalNode);
-    // If the converted node is a a TextNode, apply text formatting
-    if ($isTextNode(currentLexicalNode) && currentTextFormat !== undefined) {
-      currentLexicalNode.setFormat(currentTextFormat);
-    } else if ($isElementNode(currentLexicalNode)) {
+    if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after conversion,
       // we can append all the children to it.
       currentLexicalNode.append(...childLexicalNodes);

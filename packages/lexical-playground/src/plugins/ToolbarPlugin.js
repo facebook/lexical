@@ -132,7 +132,6 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       selection !== null &&
       !nativeSelection.isCollapsed &&
       rootElement !== null &&
-      rootElement !== nativeSelection.anchorNode &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);
@@ -146,7 +145,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       } else {
         rect = domRange.getBoundingClientRect();
       }
-  
+
       if (!mouseDownRef.current) {
         positionEditorElement(editorElem, rect);
       }

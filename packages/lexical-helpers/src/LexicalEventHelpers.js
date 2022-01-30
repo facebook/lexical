@@ -127,7 +127,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
 
     return {
       node: null,
-      after: (currentLexicalNode, childLexicalNodes) => {
+      after: (childLexicalNodes) => {
         if (
           isGitHubCodeCell &&
           cell.parentNode &&
@@ -136,7 +136,7 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
           // Append newline between code lines
           childLexicalNodes.push($createLineBreakNode());
         }
-        return [currentLexicalNode, childLexicalNodes];
+        return childLexicalNodes;
       },
     };
   },
@@ -173,12 +173,12 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
 
     return {
       node: isCodeElement(div) ? $createCodeNode() : null,
-      after: (currentLexicalNode, childLexicalNodes) => {
+      after: (childLexicalNodes) => {
         const domParent = domNode.parentNode;
         if (domParent != null && domNode !== domParent.lastChild) {
           childLexicalNodes.push($createLineBreakNode());
         }
-        return [currentLexicalNode, childLexicalNodes];
+        return childLexicalNodes;
       },
     };
   },
@@ -249,10 +249,7 @@ export function $createNodesFromDOM(
     );
   }
   if (postTransform != null) {
-    [currentLexicalNode, childLexicalNodes] = postTransform(
-      currentLexicalNode,
-      childLexicalNodes,
-    );
+    childLexicalNodes = postTransform(childLexicalNodes);
   }
   if (currentLexicalNode == null) {
     // If it hasn't been converted to a LexicalNode, we hoist its children

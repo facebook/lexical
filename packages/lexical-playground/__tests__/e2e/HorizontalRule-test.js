@@ -18,7 +18,11 @@ import {
 describe('HorizontalRule', () => {
   initializeE2E((e2e) => {
     it('Can create a horizontal rule and move selection around it', async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await focusEditor(page);
 
@@ -30,7 +34,7 @@ describe('HorizontalRule', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br /></p><hr contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br /></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br /></p><hr contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br /></p>',
       );
 
       await assertSelection(page, {
@@ -51,7 +55,11 @@ describe('HorizontalRule', () => {
     });
 
     it('Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.', async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await focusEditor(page);
 
@@ -66,7 +74,7 @@ describe('HorizontalRule', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p>',
       );
 
       await waitForSelector(page, 'button .horizontal-rule');
@@ -77,7 +85,7 @@ describe('HorizontalRule', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p><hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p><hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
       );
 
       await assertSelection(page, {
@@ -89,7 +97,11 @@ describe('HorizontalRule', () => {
     });
 
     it('Will add a horizontal rule and split a TextNode across 2 paragraphs if the carat is in the middle of the TextNode, moving selection to the start of the new ParagraphNode.', async () => {
-      const {page} = e2e;
+      const {isRichText, page} = e2e;
+
+      if (!isRichText) {
+        return;
+      }
 
       await focusEditor(page);
 
@@ -104,7 +116,7 @@ describe('HorizontalRule', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p>',
       );
 
       await page.keyboard.press('ArrowLeft');
@@ -125,7 +137,7 @@ describe('HorizontalRule', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Te</span></p><hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">st</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Te</span></p><hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">st</span></p>',
       );
 
       await assertSelection(page, {

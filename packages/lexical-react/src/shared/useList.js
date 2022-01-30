@@ -95,11 +95,7 @@ function createListOrMerge(node: ElementNode, listType: 'ul' | 'ol'): ListNode {
     return previousSibling;
   } else if ($isListNode(nextSibling) && listType === nextSibling.getTag()) {
     listItem.append(node);
-    // Rebuild the list so ordered list values update correctly.
-    const newList = $createListNode(listType);
-    const children = nextSibling.getChildren();
-    newList.append(listItem, ...children);
-    nextSibling.replace(newList);
+    nextSibling.getFirstChildOrThrow().insertBefore(listItem);
     return nextSibling;
   } else {
     const list = $createListNode(listType);

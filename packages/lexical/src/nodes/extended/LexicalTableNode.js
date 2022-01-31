@@ -32,11 +32,20 @@ type Cell = {
   x: number,
   y: number,
 };
+
 type Cells = Array<Array<Cell>>;
+
 type Grid = {
   rows: number,
   columns: number,
   cells: Cells,
+};
+
+type SelectionShape = {
+  fromX: number,
+  toX: number,
+  fromY: number,
+  toY: number,
 };
 
 const LowPriority: CommandListenerLowPriority = 1;
@@ -63,7 +72,11 @@ function getCellFromTarget(node: Node): Cell | null {
   return null;
 }
 
-function trackTableChanges(tableElement: HTMLElement): Grid {
+export function trackTableGrid(
+  tableNode: TableNode,
+  tableElement: HTMLElement,
+  editor: LexicalEditor,
+): Grid {
   const cells: Cells = [];
   const grid = {
     rows: 0,
@@ -71,74 +84,80 @@ function trackTableChanges(tableElement: HTMLElement): Grid {
     cells,
   };
   const observer = new MutationObserver((records) => {
-    let currentNode = tableElement.firstChild;
-    let x = 0;
-    let y = 0;
+    editor.update(() => {
+      let currentNode = tableElement.firstChild;
+      let x = 0;
+      let y = 0;
 
-    let gridNeedsRedraw = false;
-    for (let i = 0; i < records.length; i++) {
-      const record = records[i];
-      const target = record.target;
-      const nodeName = target.nodeName;
-      if (nodeName === 'TABLE' || nodeName === 'TR') {
-        gridNeedsRedraw = true;
-        break;
-      }
-    }
-    if (!gridNeedsRedraw) {
-      return;
-    }
-    cells.length = 0;
-
-    while (currentNode != null) {
-      const nodeMame = currentNode.nodeName;
-      if (nodeMame === 'TD' || nodeMame === 'TH') {
-        // $FlowFixMe: TD is always an HTMLElement
-        const elem: HTMLElement = currentNode;
-        const cell = {
-          elem,
-          highlighted: false,
-          x,
-          y,
-        };
-        // $FlowFixMe: internal field
-        currentNode._cell = cell;
-        if (cells[y] === undefined) {
-          cells[y] = [];
-        }
-        cells[y][x] = cell;
-      } else {
-        const child = currentNode.firstChild;
-        if (child != null) {
-          currentNode = child;
-          continue;
-        }
-      }
-      const sibling = currentNode.nextSibling;
-      if (sibling != null) {
-        x++;
-        currentNode = sibling;
-        continue;
-      }
-      const parent = currentNode.parentNode;
-      if (parent != null) {
-        const parentSibling = parent.nextSibling;
-        if (parentSibling == null) {
+      let gridNeedsRedraw = false;
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        const target = record.target;
+        const nodeName = target.nodeName;
+        if (nodeName === 'TABLE' || nodeName === 'TR') {
+          gridNeedsRedraw = true;
           break;
         }
-        y++;
-        x = 0;
-        currentNode = parentSibling;
       }
-    }
-    grid.columns = x + 1;
-    grid.rows = y + 1;
+      if (!gridNeedsRedraw) {
+        return;
+      }
+      cells.length = 0;
+
+      while (currentNode != null) {
+        const nodeMame = currentNode.nodeName;
+        if (nodeMame === 'TD' || nodeMame === 'TH') {
+          // $FlowFixMe: TD is always an HTMLElement
+          const elem: HTMLElement = currentNode;
+          const cell = {
+            elem,
+            highlighted: false,
+            x,
+            y,
+          };
+          // $FlowFixMe: internal field
+          currentNode._cell = cell;
+          if (cells[y] === undefined) {
+            cells[y] = [];
+          }
+          cells[y][x] = cell;
+        } else {
+          const child = currentNode.firstChild;
+          if (child != null) {
+            currentNode = child;
+            continue;
+          }
+        }
+        const sibling = currentNode.nextSibling;
+        if (sibling != null) {
+          x++;
+          currentNode = sibling;
+          continue;
+        }
+        const parent = currentNode.parentNode;
+        if (parent != null) {
+          const parentSibling = parent.nextSibling;
+          if (parentSibling == null) {
+            break;
+          }
+          y++;
+          x = 0;
+          currentNode = parentSibling;
+        }
+      }
+      grid.columns = x + 1;
+      grid.rows = y + 1;
+
+      tableNode.setGrid(grid);
+    });
   });
 
   observer.observe(tableElement, {
     childList: true,
     subtree: true,
   });
+
+  tableNode.setGrid(grid);
 
   return grid;
 }
@@ -178,7 +197,8 @@ function applyCellSelection(
   tableElement: HTMLElement,
   editor: LexicalEditor,
 ): void {
-  const grid = trackTableChanges(tableElement);
+  const grid = tableNode.getGrid();
+
   const rootElement = editor.getRootElement();
   if (rootElement === null) {
     return;
@@ -190,6 +210,10 @@ function applyCellSelection(
   let currentX = -1;
   let currentY = -1;
   let highlightedCells = [];
+
+  if (grid == null) {
+    throw new Error('Table grid not found.');
+  }
 
   tableElement.addEventListener('mousemove', (event: MouseEvent) => {
     if (isSelected) {
@@ -234,6 +258,9 @@ function applyCellSelection(
                 } else if (type === 'formatText') {
                   formatCells(payload);
                   return true;
+                } else if (type === 'insertText') {
+                  clearHighlight();
+                  return false;
                 }
                 return false;
               },
@@ -251,29 +278,43 @@ function applyCellSelection(
           const toX = Math.max(startX, currentX);
           const fromY = Math.min(startY, currentY);
           const toY = Math.max(startY, currentY);
-          highlightedCells = updateCells(fromX, toX, fromY, toY, grid.cells);
+
+          editor.update(() => {
+            highlightedCells = tableNode.setSelectionState({
+              fromX,
+              toX,
+              fromY,
+              toY,
+            });
+          });
         }
       }
     }
   });
 
   const clearHighlight = () => {
-    isHighlightingCells = false;
-    isSelected = false;
-    startX = -1;
-    startY = -1;
-    currentX = -1;
-    currentY = -1;
-    updateCells(-1, -1, -1, -1, grid.cells);
-    highlightedCells = [];
-    if (deleteCharacterListener !== null) {
-      deleteCharacterListener();
-      deleteCharacterListener = null;
-    }
-    const parent = removeHighlightStyle.parentNode;
-    if (parent != null) {
-      parent.removeChild(removeHighlightStyle);
-    }
+    editor.update(() => {
+      isHighlightingCells = false;
+      isSelected = false;
+      startX = -1;
+      startY = -1;
+      currentX = -1;
+      currentY = -1;
+
+      editor.update(() => {
+        tableNode.setSelectionState(null);
+      });
+
+      highlightedCells = [];
+      if (deleteCharacterListener !== null) {
+        deleteCharacterListener();
+        deleteCharacterListener = null;
+      }
+      const parent = removeHighlightStyle.parentNode;
+      if (parent != null) {
+        parent.removeChild(removeHighlightStyle);
+      }
+    });
   };
 
   tableElement.addEventListener('mouseleave', (event: MouseEvent) => {
@@ -346,19 +387,41 @@ function applyCellSelection(
       }
     }, 0);
   });
+
+  window.addEventListener('click', (e) => {
+    if (highlightedCells.length > 0 && !tableElement.contains(e.target)) {
+      editor.update(() => {
+        tableNode.setSelectionState(null);
+      });
+    }
+  });
 }
 
 export class TableNode extends ElementNode {
+  __selectionShape: ?SelectionShape;
+  __grid: ?Grid;
+
   static getType(): 'table' {
     return 'table';
   }
 
-  static clone(node: TableNode): TableNode {
-    return new TableNode(node.__key);
+  static clone(
+    node: TableNode,
+    selectionShape: ?SelectionShape,
+    grid: ?Grid,
+  ): TableNode {
+    return new TableNode(node.__key, node.__selectionShape, node.__grid);
   }
 
-  constructor(key?: NodeKey): void {
+  constructor(
+    key?: NodeKey,
+    selectionShape: ?SelectionShape,
+    grid: ?Grid,
+  ): void {
     super(key);
+
+    this.__selectionShape = selectionShape;
+    this.__grid = grid;
   }
 
   createDOM<EditorContext>(
@@ -369,6 +432,7 @@ export class TableNode extends ElementNode {
 
     addClassNamesToElement(element, config.theme.table);
 
+    trackTableGrid(this, element, editor);
     applyCellSelection(this, element, editor);
 
     return element;
@@ -384,6 +448,39 @@ export class TableNode extends ElementNode {
 
   canBeEmpty(): false {
     return false;
+  }
+
+  setSelectionState(selectionShape: ?SelectionShape): Array<Cell> {
+    const self = this.getWritable();
+
+    self.__selectionShape = selectionShape;
+
+    if (this.__grid == null) return [];
+
+    if (!selectionShape) {
+      return updateCells(-1, -1, -1, -1, this.__grid.cells);
+    }
+
+    return updateCells(
+      selectionShape.fromX,
+      selectionShape.toX,
+      selectionShape.fromY,
+      selectionShape.toY,
+      this.__grid.cells,
+    );
+  }
+
+  getSelectionState(): ?SelectionShape {
+    return this.__selectionShape;
+  }
+
+  setGrid(grid: ?Grid) {
+    const self = this.getWritable();
+    self.__grid = grid;
+  }
+
+  getGrid(): ?Grid {
+    return this.__grid;
   }
 }
 

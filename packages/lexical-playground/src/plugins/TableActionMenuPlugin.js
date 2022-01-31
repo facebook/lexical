@@ -16,20 +16,21 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createTextNode, $getSelection, $setSelection} from 'lexical';
-import {TableRowNode, $createTableRowNode} from 'lexical/TableRowNode';
-import {$createTableCellNode} from 'lexical/TableCellNode';
-import {TableNode} from 'lexical/TableNode';
+import {
+  TableRowNode,
+  $isTableRowNode,
+  $createTableRowNode,
+} from 'lexical/TableRowNode';
+import {$createTableCellNode, $isTableCellNode} from 'lexical/TableCellNode';
+import {TableNode, $isTableNode} from 'lexical/TableNode';
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 
 function getTableCellNodeFromLexicalNode(
   startingNode: LexicalNode,
 ): TableCellNode | null {
-  const node = $findMatchingParent(
-    startingNode,
-    (n) => n instanceof TableCellNode,
-  );
+  const node = $findMatchingParent(startingNode, (n) => $isTableCellNode(n));
 
-  if (node instanceof TableCellNode) {
+  if ($isTableCellNode(node)) {
     return node;
   }
 
@@ -39,12 +40,9 @@ function getTableCellNodeFromLexicalNode(
 function getTableRowNodeFromTableCellNodeOrThrow(
   startingNode: LexicalNode,
 ): TableRowNode {
-  const node = $findMatchingParent(
-    startingNode,
-    (n) => n instanceof TableRowNode,
-  );
+  const node = $findMatchingParent(startingNode, (n) => $isTableRowNode(n));
 
-  if (node instanceof TableRowNode) {
+  if ($isTableRowNode(node)) {
     return node;
   }
 
@@ -54,9 +52,9 @@ function getTableRowNodeFromTableCellNodeOrThrow(
 function getTableNodeFromLexicalNodeOrThrow(
   startingNode: LexicalNode,
 ): TableNode {
-  const node = $findMatchingParent(startingNode, (n) => n instanceof TableNode);
+  const node = $findMatchingParent(startingNode, (n) => $isTableNode(n));
 
-  if (node instanceof TableNode) {
+  if ($isTableNode(node)) {
     return node;
   }
 
@@ -91,9 +89,9 @@ function removeTableRowAtIndex(
     throw new Error('Expected table cell to be inside of table row.');
   }
 
-  const targetRow = tableRows[indexToDelete];
+  const targetRowNode = tableRows[indexToDelete];
 
-  targetRow.remove();
+  targetRowNode.remove();
 
   return tableNode;
 }
@@ -102,6 +100,7 @@ function insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
   shouldInsertAfter?: boolean = true,
+  rowCount: number,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
@@ -109,24 +108,25 @@ function insertTableRow(
     throw new Error('Table row target index out of range');
   }
 
-  const targetRow = tableRows[targetIndex];
+  const targetRowNode = tableRows[targetIndex];
+  if ($isTableRowNode(targetRowNode)) {
+    for (let i = 0; i < rowCount; i++) {
+      const tableColumnCount = targetRowNode.getChildren().length;
 
-  if (targetRow instanceof TableRowNode) {
-    const tableColumnCount = targetRow.getChildren().length;
+      const newTableRowNode = $createTableRowNode();
 
-    const newTableRow = $createTableRowNode();
+      for (let i = 0; i < tableColumnCount; i++) {
+        const tableCellNode = $createTableCellNode(false);
 
-    for (let i = 0; i < tableColumnCount; i++) {
-      const tableCell = $createTableCellNode(false);
+        tableCellNode.append($createTextNode());
+        newTableRowNode.append(tableCellNode);
+      }
 
-      tableCell.append($createTextNode());
-      newTableRow.append(tableCell);
-    }
-
-    if (shouldInsertAfter) {
-      targetRow.insertAfter(newTableRow);
-    } else {
-      targetRow.insertBefore(newTableRow);
+      if (shouldInsertAfter) {
+        targetRowNode.insertAfter(newTableRowNode);
+      } else {
+        targetRowNode.insertBefore(newTableRowNode);
+      }
     }
   } else {
     throw new Error('Row before insertion index does not exist.');
@@ -139,29 +139,31 @@ function insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
   shouldInsertAfter?: boolean = true,
+  columnCount: number,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
   for (let i = 0; i < tableRows.length; i++) {
-    const currentTableRow = tableRows[i];
+    const currentTableRowNode = tableRows[i];
+    if ($isTableRowNode(currentTableRowNode)) {
+      for (let j = 0; j < columnCount; j++) {
+        const newTableCell = $createTableCellNode(i === 0);
 
-    if (currentTableRow instanceof TableRowNode) {
-      const newTableCell = $createTableCellNode(i === 0);
+        newTableCell.append($createTextNode());
 
-      newTableCell.append($createTextNode());
+        const tableRowChildren = currentTableRowNode.getChildren();
 
-      const tableRowChildren = currentTableRow.getChildren();
+        if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
+          throw new Error('Table column target index out of range');
+        }
 
-      if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
-        throw new Error('Table column target index out of range');
-      }
+        const targetCell = tableRowChildren[targetIndex];
 
-      const targetCell = tableRowChildren[targetIndex];
-
-      if (shouldInsertAfter) {
-        targetCell.insertAfter(newTableCell);
-      } else {
-        targetCell.insertBefore(newTableCell);
+        if (shouldInsertAfter) {
+          targetCell.insertAfter(newTableCell);
+        } else {
+          targetCell.insertBefore(newTableCell);
+        }
       }
     }
   }
@@ -176,10 +178,10 @@ function deleteTableColumn(
   const tableRows = tableNode.getChildren();
 
   for (let i = 0; i < tableRows.length; i++) {
-    const currentTableRow = tableRows[i];
+    const currentTableRowNode = tableRows[i];
 
-    if (currentTableRow instanceof TableRowNode) {
-      const tableRowChildren = currentTableRow.getChildren();
+    if ($isTableRowNode(currentTableRowNode)) {
+      const tableRowChildren = currentTableRowNode.getChildren();
 
       if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
         throw new Error('Table column target index out of range');
@@ -207,6 +209,29 @@ function TableActionMenu({
 }: TableCellActionMenuProps) {
   const [editor] = useLexicalComposerContext();
   const dropDownRef = useRef();
+
+  const [selectionCounts, updateSelectionCounts] = useState({
+    rows: 1,
+    columns: 1,
+  });
+
+  useEffect(() => {
+    editor.update(() => {
+      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const selectionState = tableNode.getSelectionState();
+
+      updateSelectionCounts({
+        rows:
+          selectionState == null
+            ? 1
+            : selectionState.toY - selectionState.fromY + 1,
+        columns:
+          selectionState == null
+            ? 1
+            : selectionState.toX - selectionState.fromX + 1,
+      });
+    });
+  }, [editor, tableCellNode]);
 
   useEffect(() => {
     const menuButtonElement = contextRef.current;
@@ -244,6 +269,16 @@ function TableActionMenu({
     return () => window.removeEventListener('click', handleClickOutside);
   }, [setIsMenuOpen, contextRef]);
 
+  const clearTableSelection = useCallback(() => {
+    editor.update(() => {
+      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+
+      tableNode.setSelectionState(null);
+      tableNode.markDirty();
+      $setSelection(null);
+    });
+  }, [editor, tableCellNode]);
+
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update(() => {
@@ -251,57 +286,71 @@ function TableActionMenu({
 
         const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
 
-        insertTableRow(tableNode, tableRowIndex, shouldInsertAfter);
+        insertTableRow(
+          tableNode,
+          tableRowIndex,
+          shouldInsertAfter,
+          selectionCounts.rows,
+        );
 
-        $setSelection(null);
+        clearTableSelection();
 
         onClose();
       });
     },
-    [editor, onClose, tableCellNode],
+    [editor, onClose, clearTableSelection, selectionCounts.rows, tableCellNode],
   );
 
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update(() => {
         const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
         const tableColumnIndex =
           getTableColumnIndexFromTableCellNode(tableCellNode);
 
-        insertTableColumn(tableNode, tableColumnIndex, shouldInsertAfter);
+        insertTableColumn(
+          tableNode,
+          tableColumnIndex,
+          shouldInsertAfter,
+          selectionCounts.columns,
+        );
+
+        clearTableSelection();
 
         onClose();
       });
     },
-    [editor, onClose, tableCellNode],
+    [
+      editor,
+      onClose,
+      clearTableSelection,
+      selectionCounts.columns,
+      tableCellNode,
+    ],
   );
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update(() => {
       const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
       const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
 
       removeTableRowAtIndex(tableNode, tableRowIndex);
 
-      $setSelection(null);
+      clearTableSelection();
 
       onClose();
     });
-  }, [editor, onClose, tableCellNode]);
+  }, [editor, onClose, clearTableSelection, tableCellNode]);
 
   const deleteTableAtSelection = useCallback(() => {
     editor.update(() => {
       const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
       tableNode.remove();
 
-      $setSelection(null);
-
+      clearTableSelection();
       onClose();
     });
-  }, [editor, onClose, tableCellNode]);
+  }, [editor, onClose, clearTableSelection, tableCellNode]);
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update(() => {
@@ -312,34 +361,60 @@ function TableActionMenu({
 
       deleteTableColumn(tableNode, tableColumnIndex);
 
-      $setSelection(null);
-
+      clearTableSelection();
       onClose();
     });
-  }, [editor, onClose, tableCellNode]);
+  }, [editor, onClose, clearTableSelection, tableCellNode]);
 
   return createPortal(
-    <div className="dropdown" ref={dropDownRef}>
+    <div
+      className="dropdown"
+      ref={dropDownRef}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}>
       {!tableCellNode.__isHeader && (
         <button
           className="item"
           onClick={() => insertTableRowAtSelection(false)}>
-          <span className="text">Insert row above</span>
+          <span className="text">
+            Insert{' '}
+            {selectionCounts.rows === 1
+              ? 'row'
+              : `${selectionCounts.rows} rows`}{' '}
+            above
+          </span>
         </button>
       )}
       <button className="item" onClick={() => insertTableRowAtSelection(true)}>
-        <span className="text">Insert row below</span>
+        <span className="text">
+          Insert{' '}
+          {selectionCounts.rows === 1 ? 'row' : `${selectionCounts.rows} rows`}{' '}
+          below
+        </span>
       </button>
       <hr />
       <button
         className="item"
         onClick={() => insertTableColumnAtSelection(false)}>
-        <span className="text">Insert column left</span>
+        <span className="text">
+          Insert{' '}
+          {selectionCounts.columns === 1
+            ? 'column'
+            : `${selectionCounts.columns} columns`}{' '}
+          left
+        </span>
       </button>
       <button
         className="item"
         onClick={() => insertTableColumnAtSelection(true)}>
-        <span className="text">Insert column right</span>
+        <span className="text">
+          Insert{' '}
+          {selectionCounts.columns === 1
+            ? 'column'
+            : `${selectionCounts.columns} columns`}{' '}
+          right
+        </span>
       </button>
       <hr />
       <button className="item" onClick={() => deleteTableColumnAtSelection()}>
@@ -462,7 +537,8 @@ function TableCellActionMenuContainer(): React.MixedElement {
         <>
           <button
             className="table-cell-action-button chevron-down"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}
             ref={menuRootRef}>

@@ -28,7 +28,7 @@ const styles = stylex.create({
   },
   quote: {
     margin: 0,
-    marginLeft: 20,
+    marginStart: 20,
     fontSize: 15,
     color: 'rgb(101, 103, 107)',
     borderLeftColor: 'rgb(206, 208, 212)',
@@ -120,36 +120,36 @@ const styles = stylex.create({
   ol1: {
     padding: 0,
     margin: 0,
-    marginLeft: 16,
+    marginStart: 16,
   },
   ol2: {
     padding: 0,
     margin: 0,
-    marginLeft: 16,
+    marginStart: 16,
     listStyleType: 'upper-alpha',
   },
   ol3: {
     padding: 0,
     margin: 0,
-    marginLeft: 16,
+    marginStart: 16,
     listStyleType: 'lower-alpha',
   },
   ol4: {
     padding: 0,
     margin: 0,
-    marginLeft: 16,
+    marginStart: 16,
     listStyleType: 'upper-roman',
   },
   ol5: {
     padding: 0,
     margin: 0,
-    marginLeft: 16,
+    marginStart: 16,
     listStyleType: 'lower-roman',
   },
   ul: {
     padding: 0,
     margin: 0,
-    marginLeft: 16,
+    marginStart: 16,
   },
   listItem: {
     margin: '8px 32px 8px 32px',

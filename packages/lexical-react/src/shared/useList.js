@@ -84,16 +84,16 @@ function createListOrMerge(node: ElementNode, listType: 'ul' | 'ol'): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
-  if ($isListNode(previousSibling)) {
+  if ($isListNode(previousSibling) && listType === previousSibling.getTag()) {
     listItem.append(node);
     previousSibling.append(listItem);
-    // if there are lists on both sides, merge them.
-    if ($isListNode(nextSibling)) {
+    // if the same type of list is on both sides, merge them.
+    if ($isListNode(nextSibling) && listType === nextSibling.getTag()) {
       previousSibling.append(...nextSibling.getChildren());
       nextSibling.remove();
     }
     return previousSibling;
-  } else if ($isListNode(nextSibling)) {
+  } else if ($isListNode(nextSibling) && listType === nextSibling.getTag()) {
     listItem.append(node);
     nextSibling.getFirstChildOrThrow().insertBefore(listItem);
     return nextSibling;

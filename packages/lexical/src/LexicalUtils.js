@@ -35,6 +35,7 @@ import {
   $getSelection,
   $createTextNode,
   $getPreviousSelection,
+  $isHorizontalRuleNode,
 } from '.';
 import {
   errorOnInfiniteTransforms,
@@ -153,7 +154,12 @@ export function toggleTextFormatType(
 }
 
 export function $isLeafNode(node: ?LexicalNode): boolean %checks {
-  return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
+  return (
+    $isTextNode(node) ||
+    $isLineBreakNode(node) ||
+    $isDecoratorNode(node) ||
+    $isHorizontalRuleNode(node)
+  );
 }
 
 export function $generateKey(node: LexicalNode): NodeKey {

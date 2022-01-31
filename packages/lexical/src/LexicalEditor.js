@@ -21,6 +21,7 @@ import {
 import {TextNode, $getSelection, $getRoot} from '.';
 import {createEmptyEditorState} from './LexicalEditorState';
 import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
+import {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
 import {NO_DIRTY_NODES, FULL_RECONCILE} from './LexicalConstants';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {RootNode} from './nodes/base/LexicalRootNode';
@@ -74,6 +75,7 @@ export type EditorThemeClasses = {
   root?: EditorThemeClassName,
   text?: TextNodeThemeClasses,
   paragraph?: EditorThemeClassName,
+  horizontalRule?: EditorThemeClassName,
   image?: EditorThemeClassName,
   list?: {
     ul?: EditorThemeClassName,
@@ -359,7 +361,7 @@ class BaseLexicalEditor {
     this._config = config;
     // Mapping of types to their nodes
     this._registeredNodes = new Map();
-    this.registerNodes([RootNode, TextNode, LineBreakNode]);
+    this.registerNodes([RootNode, TextNode, HorizontalRuleNode, LineBreakNode]);
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;

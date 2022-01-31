@@ -72,6 +72,7 @@ module.name_mapper='^@lexical/react/LexicalCollaborationPlugin' -> '<PROJECT_ROO
 module.name_mapper='^@lexical/react/LexicalTablePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalTablePlugin.js'
 module.name_mapper='^@lexical/react/LexicalLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalLinkPlugin.js'
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoLinkPlugin.js'
+module.name_mapper='^@lexical/react/LexicalHorizontalRulePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalHorizontalRulePlugin.js'
 module.name_mapper='^@lexical/react/LexicalListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalListPlugin.js'
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalOnChangePlugin.js'
 

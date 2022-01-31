@@ -258,6 +258,9 @@ function applyCellSelection(
                 } else if (type === 'formatText') {
                   formatCells(payload);
                   return true;
+                } else if (type === 'insertText') {
+                  clearHighlight();
+                  return false;
                 }
                 return false;
               },

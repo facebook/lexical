@@ -14,7 +14,6 @@ import type {
   ParsedNodeMap,
   NodeKey,
   DOMConversionMap,
-  DOMChildConversion,
 } from 'lexical';
 
 import {$cloneContents} from '@lexical/helpers/selection';
@@ -35,6 +34,7 @@ import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 import {$createCodeNode} from 'lexical/CodeNode';
+import type {DOMChildConversion} from '../../lexical/src/LexicalEditor';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -128,16 +128,16 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
 
     return {
       node: null,
-      after: (lexicalNodes) => {
+      after: (childLexicalNodes) => {
         if (
           isGitHubCodeCell &&
           cell.parentNode &&
           cell.parentNode.nextSibling
         ) {
           // Append newline between code lines
-          lexicalNodes.push($createLineBreakNode());
+          childLexicalNodes.push($createLineBreakNode());
         }
-        return lexicalNodes;
+        return childLexicalNodes;
       },
     };
   },
@@ -169,17 +169,17 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
   '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   pre: (domNode: Node) => ({node: $createCodeNode()}),
   div: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    // $FlowFixMe[incompatible-type] domNode is a <div> since we matched it by nodeName
     const div: HTMLDivElement = domNode;
 
     return {
       node: isCodeElement(div) ? $createCodeNode() : null,
-      after: (lexicalNodes) => {
-        const domParent = div.parentNode;
-        if (domParent != null && div !== domParent.lastChild) {
-          lexicalNodes.push($createLineBreakNode());
+      after: (childLexicalNodes) => {
+        const domParent = domNode.parentNode;
+        if (domParent != null && domNode !== domParent.lastChild) {
+          childLexicalNodes.push($createLineBreakNode());
         }
-        return lexicalNodes;
+        return childLexicalNodes;
       },
     };
   },
@@ -238,25 +238,25 @@ export function $createNodesFromDOM(
   // If the DOM node doesn't have a transformer, we don't know what
   // to do with it but we still need to process any childNodes.
   const children = node.childNodes;
+  let childLexicalNodes = [];
   for (let i = 0; i < children.length; i++) {
-    const childLexicalNodes = $createNodesFromDOM(
-      children[i],
-      conversionMap,
-      editor,
-      forChildMap,
+    childLexicalNodes.push(
+      ...$createNodesFromDOM(children[i], conversionMap, editor, forChildMap),
     );
-    if ($isElementNode(currentLexicalNode)) {
-      // If the current node is a ElementNode after transformation,
-      // we can append all the children to it.
-      currentLexicalNode.append(...childLexicalNodes);
-    } else if (currentLexicalNode === null) {
-      // If it doesn't have a transformer, we hoist its children
-      // up to the same level as it.
-      lexicalNodes = lexicalNodes.concat(childLexicalNodes);
-    }
   }
   if (postTransform != null) {
-    lexicalNodes = postTransform(lexicalNodes, currentLexicalNode);
+    childLexicalNodes = postTransform(childLexicalNodes);
+  }
+  if (currentLexicalNode == null) {
+    // If it hasn't been converted to a LexicalNode, we hoist its children
+    // up to the same level as it.
+    lexicalNodes = lexicalNodes.concat(childLexicalNodes);
+  } else {
+    if ($isElementNode(currentLexicalNode)) {
+      // If the current node is a ElementNode after conversion,
+      // we can append all the children to it.
+      currentLexicalNode.append(...childLexicalNodes);
+    }
   }
   return lexicalNodes;
 }

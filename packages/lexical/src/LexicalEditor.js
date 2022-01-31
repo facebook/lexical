@@ -42,10 +42,7 @@ export type DOMConversionMap = {
 };
 type DOMConversionOutput = {
   node: LexicalNode | null,
-  after?: (
-    lexicalChildren: Array<LexicalNode>,
-    lexicalNode: ?LexicalNode,
-  ) => Array<LexicalNode>,
+  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
   forChild?: DOMChildConversion,
 };
 

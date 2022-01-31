@@ -885,7 +885,10 @@ export class Selection {
 
           const firstDescendant = node.getFirstDescendant();
           if ($isLeafNode(firstDescendant)) {
-            const element = firstDescendant.getParentOrThrow();
+            let element = firstDescendant.getParentOrThrow();
+            while (element.isInline()) {
+              element = element.getParentOrThrow();
+            }
             const children = element.getChildren();
             const childrenLength = children.length;
             if ($isElementNode(target)) {

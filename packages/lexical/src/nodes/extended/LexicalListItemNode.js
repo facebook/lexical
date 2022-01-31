@@ -110,7 +110,7 @@ export class ListItemNode extends ElementNode {
   insertAfter(node: LexicalNode): LexicalNode {
     const siblings = this.getNextSiblings();
     if ($isListItemNode(node)) {
-      // mark subsequent list items dirty to we update their value attribute.
+      // mark subsequent list items dirty so we update their value attribute.
       siblings.forEach((sibling) => sibling.markDirty());
       return super.insertAfter(node);
     }
@@ -228,6 +228,15 @@ export class ListItemNode extends ElementNode {
       this.remove();
     }
     return true;
+  }
+
+  insertBefore(nodeToInsert: LexicalNode): LexicalNode {
+    const siblings = this.getNextSiblings();
+    if ($isListItemNode(nodeToInsert)) {
+      // mark subsequent list items dirty so we update their value attribute.
+      siblings.forEach((sibling) => sibling.markDirty());
+    }
+    return super.insertBefore(nodeToInsert);
   }
 
   canInsertAfter(node: LexicalNode): boolean {

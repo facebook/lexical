@@ -11,6 +11,7 @@ import type {Settings as AppSettings} from '../../src/appSettings';
 import {chromium, firefox, webkit} from 'playwright';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
+import {selectAll} from '../keyboardShortcuts';
 
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
@@ -470,4 +471,10 @@ export async function evaluate(page, fn, args) {
   } else {
     return await page.evaluate(fn, args);
   }
+}
+
+export async function clearEditor(page) {
+  await selectAll(page);
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Backspace');
 }

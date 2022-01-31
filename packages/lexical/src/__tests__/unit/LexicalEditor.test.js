@@ -30,6 +30,7 @@ import {
   $createTestDecoratorNode,
   createTestEditor,
 } from '../utils';
+import {HorizontalRuleNode} from '../../nodes/base/LexicalHorizontalRuleNode';
 import {LineBreakNode} from '../../nodes/base/LexicalLineBreakNode';
 import {RootNode} from '../../nodes/base/LexicalRootNode';
 
@@ -1317,6 +1318,7 @@ describe('LexicalEditor tests', () => {
 
     const pairs = [
       ['text', TextNode],
+      ['horizontal-rule', HorizontalRuleNode],
       ['linebreak', LineBreakNode],
       ['root', RootNode],
     ];

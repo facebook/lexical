@@ -27,6 +27,7 @@ import ListPlugin from '@lexical/react/LexicalListPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
+import HorizontalRulePlugin from '@lexical/react/LexicalHorizontalRulePlugin';
 import StickyPlugin from './plugins/StickyPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
@@ -73,6 +74,7 @@ export default function Editor(): React$Node {
         <EmojisPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
+        <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         {isRichText ? (

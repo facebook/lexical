@@ -25,6 +25,7 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from 'lexical/ListNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {$isHorizontalRuleNode} from 'lexical';
 import {$log, $getNodeByKey, $getSelection} from 'lexical';
 import {$isLinkNode} from 'lexical/LinkNode';
 import {
@@ -144,7 +145,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       } else {
         rect = domRange.getBoundingClientRect();
       }
-  
+
       if (!mouseDownRef.current) {
         positionEditorElement(editorElem, rect);
       }
@@ -446,7 +447,7 @@ export default function ToolbarPlugin(): React$Node {
     if (selection !== null) {
       const anchorNode = selection.anchor.getNode();
       const element =
-        anchorNode.getKey() === 'root'
+        anchorNode.getKey() === 'root' || $isHorizontalRuleNode(anchorNode)
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
@@ -721,6 +722,14 @@ export default function ToolbarPlugin(): React$Node {
               <FloatingLinkEditor editor={activeEditor} />,
               document.body,
             )}
+          <button
+            onClick={() => {
+              activeEditor.execCommand('insertHorizontalRule');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Horizontal Rule">
+            <i className="format horizontal-rule" />
+          </button>
           <button
             onClick={() => {
               activeEditor.execCommand('insertImage');

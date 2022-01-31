@@ -320,6 +320,10 @@ i.link {
   background-image: url(images/icons/link.svg);
 }
 
+i.horizontal-rule {
+  background-image: url(images/icons/horizontal-rule.svg);
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }

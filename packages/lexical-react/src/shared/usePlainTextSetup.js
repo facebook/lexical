@@ -132,6 +132,7 @@ export default function usePlainTextSetup(
               return true;
             case 'indentContent':
             case 'outdentContent':
+            case 'insertHorizontalRule':
             case 'insertImage':
             case 'insertTable':
             case 'formatElement':

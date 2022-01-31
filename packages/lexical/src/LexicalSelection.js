@@ -29,6 +29,7 @@ import {
   $createTextNode,
   $isLeafNode,
   $createLineBreakNode,
+  $isHorizontalRuleNode,
 } from '.';
 import {
   $getCompositionKey,
@@ -313,7 +314,9 @@ export class Selection {
           }
           textContent += text;
         } else if (
-          ($isDecoratorNode(node) || $isLineBreakNode(node)) &&
+          ($isDecoratorNode(node) ||
+            $isLineBreakNode(node) ||
+            $isHorizontalRuleNode(node)) &&
           (node !== lastNode || !this.isCollapsed())
         ) {
           textContent += node.getTextContent();
@@ -1404,6 +1407,9 @@ function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
 
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+    } else if ($isHorizontalRuleNode(resolvedNode)) {
+      resolvedOffset = 0;
+      return $createPoint(resolvedNode.__key, resolvedOffset, 'element');
     } else {
       let resolvedElement = getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.

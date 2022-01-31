@@ -46,6 +46,8 @@ import TableCellActionMenuPlugin from '../plugins/TableActionMenuPlugin';
 import ImagesPlugin from '../plugins/ImagesPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import stylex from 'stylex';
+import TreeViewPlugin from '../plugins/TreeViewPlugin';
+import {useSettings} from '../context/SettingsContext';
 
 const styles = stylex.create({
   contentEditable: {
@@ -393,6 +395,9 @@ function ImageComponent({
   }, [editor]);
 
   const {historyState} = useSharedHistoryContext();
+  const {
+    settings: {showNestedEditorTreeView},
+  } = useSettings();
 
   return (
     <Suspense fallback={null}>
@@ -414,7 +419,9 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalNestedComposer initialDecoratorEditor={decoratorEditor}>
+            <LexicalNestedComposer
+              namespace="PlaygroundImageEditor"
+              initialDecoratorEditor={decoratorEditor}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />
@@ -443,6 +450,7 @@ function ImageComponent({
                 }
                 skipInit={isCollab}
               />
+              {showNestedEditorTreeView && <TreeViewPlugin />}
             </LexicalNestedComposer>
           </div>
         )}
@@ -535,7 +543,7 @@ export class ImageNode extends DecoratorNode {
     return false;
   }
 
-  decorate(editor: LexicalEditor): React$Node {
+  decorate(): React$Node {
     return (
       <ImageComponent
         src={this.__src}

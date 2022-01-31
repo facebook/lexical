@@ -121,7 +121,7 @@ describe('LexicalNodeHelpers tests', () => {
     });
 
     test('getListDepth should return the 1-based depth of a list with one levels', async () => {
-      const editor: OutlineEditor = testEnv.editor;
+      const editor: LexicalEditor = testEnv.editor;
       await editor.update((state: State) => {
         // Root
         //   |- ListNode
@@ -134,7 +134,7 @@ describe('LexicalNodeHelpers tests', () => {
     });
 
     test('getListDepth should return the 1-based depth of a list with two levels', async () => {
-      const editor: OutlineEditor = testEnv.editor;
+      const editor: LexicalEditor = testEnv.editor;
       await editor.update((state: State) => {
         // Root
         //   |- ListNode
@@ -159,7 +159,7 @@ describe('LexicalNodeHelpers tests', () => {
     });
 
     test('getListDepth should return the 1-based depth of a list with five levels', async () => {
-      const editor: OutlineEditor = testEnv.editor;
+      const editor: LexicalEditor = testEnv.editor;
       await editor.update((state: State) => {
         // Root
         //   |- ListNode

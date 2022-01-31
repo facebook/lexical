@@ -29,6 +29,7 @@ import {
   $createTextNode,
   $isLeafNode,
   $createLineBreakNode,
+  $isHorizontalRuleNode,
 } from '.';
 import {
   $getCompositionKey,
@@ -37,13 +38,12 @@ import {
   $setCompositionKey,
   toggleTextFormatType,
   getNodeFromDOM,
-  domIsElement,
   getTextNodeOffset,
   doesContainGrapheme,
+  $isTokenOrInert,
 } from './LexicalUtils';
 import invariant from 'shared/invariant';
-import {TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
-import isTokenOrInert from 'shared/isTokenOrInert';
+import {TEXT_TYPE_TO_FORMAT, DOM_ELEMENT_TYPE} from './LexicalConstants';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 export type TextPointType = {
@@ -314,7 +314,9 @@ export class Selection {
           }
           textContent += text;
         } else if (
-          ($isDecoratorNode(node) || $isLineBreakNode(node)) &&
+          ($isDecoratorNode(node) ||
+            $isLineBreakNode(node) ||
+            $isHorizontalRuleNode(node)) &&
           (node !== lastNode || !this.isCollapsed())
         ) {
           textContent += node.getTextContent();
@@ -371,6 +373,26 @@ export class Selection {
     return (this.format & formatFlag) !== 0;
   }
 
+  insertRawText(text: string): void {
+    const parts = text.split(/\r?\n/);
+    if (parts.length === 1) {
+      this.insertText(text);
+    } else {
+      const nodes = [];
+      const length = parts.length;
+      for (let i = 0; i < length; i++) {
+        const part = parts[i];
+        if (part !== '') {
+          nodes.push($createTextNode(part));
+        }
+        if (i !== length - 1) {
+          nodes.push($createLineBreakNode());
+        }
+      }
+      this.insertNodes(nodes);
+    }
+  }
+
   insertText(text: string): void {
     const anchor = this.anchor;
     const focus = this.focus;
@@ -408,7 +430,7 @@ export class Selection {
       let nextSibling = firstNode.getNextSibling();
       if (
         !$isTextNode(nextSibling) ||
-        isTokenOrInert(nextSibling) ||
+        $isTokenOrInert(nextSibling) ||
         nextSibling.isSegmented()
       ) {
         nextSibling = $createTextNode();
@@ -435,7 +457,7 @@ export class Selection {
       let prevSibling = firstNode.getPreviousSibling();
       if (
         !$isTextNode(prevSibling) ||
-        isTokenOrInert(prevSibling) ||
+        $isTokenOrInert(prevSibling) ||
         prevSibling.isSegmented()
       ) {
         prevSibling = $createTextNode();
@@ -458,7 +480,7 @@ export class Selection {
     }
 
     if (selectedNodesLength === 1) {
-      if (isTokenOrInert(firstNode)) {
+      if ($isTokenOrInert(firstNode)) {
         firstNode.remove();
         return;
       }
@@ -511,7 +533,7 @@ export class Selection {
       ) {
         if (
           $isTextNode(lastNode) &&
-          !isTokenOrInert(lastNode) &&
+          !$isTokenOrInert(lastNode) &&
           endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
@@ -537,7 +559,7 @@ export class Selection {
 
       // If the last element is an "inline" element, don't move it's text nodes to the first node.
       // Instead, preserve the "inline" element's children and append to the first element.
-      if (!lastElement.canBeEmpty()) {
+      if (!lastElement.canBeEmpty() && firstElement !== lastElement) {
         firstElement.append(lastElement);
       } else {
         for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
@@ -589,7 +611,7 @@ export class Selection {
 
       // Ensure we do splicing after moving of nodes, as splicing
       // can have side-effects (in the case of hashtags).
-      if (!isTokenOrInert(firstNode)) {
+      if (!$isTokenOrInert(firstNode)) {
         firstNode = firstNode.spliceText(
           startOffset,
           firstNodeTextLength - startOffset,
@@ -788,7 +810,7 @@ export class Selection {
         siblings.push(anchorNode);
       } else if (anchorOffset === textContentLength) {
         target = anchorNode;
-      } else if (isTokenOrInert(anchorNode)) {
+      } else if ($isTokenOrInert(anchorNode)) {
         // Do nothing if we're inside an immutable/inert node
         return false;
       } else {
@@ -1366,7 +1388,7 @@ function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
   // need to figure out (using the offset) what text
   // node should be selected.
 
-  if (domIsElement(dom)) {
+  if (dom.nodeType === DOM_ELEMENT_TYPE) {
     // Resolve element to a ElementNode, or TextNode, or null
     let moveSelectionToEnd = false;
     // Given we're moving selection to another node, selection is
@@ -1385,6 +1407,9 @@ function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
 
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+    } else if ($isHorizontalRuleNode(resolvedNode)) {
+      resolvedOffset = 0;
+      return $createPoint(resolvedNode.__key, resolvedOffset, 'element');
     } else {
       let resolvedElement = getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.
@@ -1808,7 +1833,7 @@ export function moveSelectionPointToSibling(
       offset = prevSibling.getTextContentSize();
       type = 'text';
     } else if ($isElementNode(prevSibling)) {
-      offset = 1;
+      offset = prevSibling.getChildrenSize();
       type = 'element';
     }
   } else {

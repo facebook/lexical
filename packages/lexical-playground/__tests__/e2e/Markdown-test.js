@@ -40,11 +40,6 @@ describe('Markdown', () => {
       trigger: '## ', // H2.
     },
     {
-      expectation: '<h3><br></h3>',
-
-      trigger: '### ', // H3.
-    },
-    {
       expectation:
         '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp" spellcheck="false"><br></code>',
 
@@ -97,7 +92,7 @@ describe('Markdown', () => {
 
         const forwardHTML = triggersAndExpectations[i].expectation;
 
-        const undoHTML = `<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1"><span data-lexical-text="true">${trigger}</span></p>`;
+        const undoHTML = `<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">${trigger}</span></p>`;
 
         await checkHTMLExpectationsIncludingUndoRedo(
           page,

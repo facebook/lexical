@@ -35,7 +35,7 @@ header h1 {
 .editor-shell {
   margin: 20px auto 20px auto;
   border-radius: 2px;
-  width: 900px;
+  width: 940px;
   color: #000;
   position: relative;
   line-height: 20px;
@@ -62,7 +62,7 @@ header h1 {
 
 .test-recorder-output {
   margin: 20px auto 20px auto;
-  width: 900px;
+  width: 940px;
 }
 
 pre {
@@ -86,7 +86,6 @@ pre {
   white-space: pre-wrap;
   margin: 1px auto 10px auto;
   max-height: 250px;
-  width: 900px;
   position: relative;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -321,12 +320,20 @@ i.link {
   background-image: url(images/icons/link.svg);
 }
 
+i.horizontal-rule {
+  background-image: url(images/icons/horizontal-rule.svg);
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }
 
 i.table {
   background-image: url(images/icons/table.svg);
+}
+
+i.poll {
+  background-image: url(images/icons/card-checklist.svg);
 }
 
 i.left-align {
@@ -711,6 +718,11 @@ i.export {
   user-select: none;
 }
 
+.editor-shell .editor-image .image-caption-container .tree-view-output {
+  margin: 0;
+  border-radius: 0;
+}
+
 .editor-shell .editor-image .image-caption-container {
   display: block;
   position: absolute;
@@ -718,7 +730,6 @@ i.export {
   left: 0;
   right: 0;
   padding: 0;
-  height: 40px;
   margin: 0;
   border-top: 1px solid #fff;
   background-color: rgba(255,255,255,0.9);
@@ -953,7 +964,6 @@ i.chevron-down {
   overflow: hidden;
   padding: 0 0 10px 0;
   margin: auto;
-  width: 900px;
   display: flex;
 }
 

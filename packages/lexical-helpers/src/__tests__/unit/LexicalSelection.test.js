@@ -28,6 +28,7 @@ import {
 import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createListNode} from 'lexical/ListNode';
 import {$createListItemNode} from 'lexical/ListItemNode';
+import {$createLinkNode} from 'lexical/LinkNode';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -1481,6 +1482,48 @@ describe('LexicalSelection tests', () => {
         const selection = $getSelection();
         expect(selection.anchor.getNode().__type).toBe('paragraph');
         expect(selection.focus.getNode().__type).toBe('paragraph');
+      });
+    });
+  });
+
+  describe('Selection correctly resolves to a sibling ElementNode that has multiple children with the correct offset when a node is removed', () => {
+    test('', async () => {
+      await editor.update(() => {
+        // Arrange
+
+        // Root
+        //  |- Paragraph
+        //    |- Link
+        //      |- Text
+        //      |- LineBreak
+        //      |- Text
+        //    |- Text
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const link = $createLinkNode();
+        const textOne = $createTextNode('Hello');
+        const br = $createLineBreakNode();
+        const textTwo = $createTextNode('world');
+        const textThree = $createTextNode(' ');
+        root.append(paragraph);
+        link.append(textOne);
+        link.append(br);
+        link.append(textTwo);
+        paragraph.append(link);
+        paragraph.append(textThree);
+        textThree.select();
+
+        // Act
+        textThree.remove();
+
+        // Assert
+        const selection = $getSelection();
+        const expectedKey = link.getKey();
+        const {anchor, focus} = selection;
+        expect(anchor.getNode().getKey()).toBe(expectedKey);
+        expect(focus.getNode().getKey()).toBe(expectedKey);
+        expect(anchor.offset).toBe(3);
+        expect(focus.offset).toBe(3);
       });
     });
   });

@@ -25,6 +25,7 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from 'lexical/ListNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {$isHorizontalRuleNode} from 'lexical';
 import {$log, $getNodeByKey, $getSelection} from 'lexical';
 import {$isLinkNode} from 'lexical/LinkNode';
 import {
@@ -134,7 +135,17 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);
-      const rect = domRange.getBoundingClientRect();
+      let rect;
+      if (nativeSelection.anchorNode === rootElement) {
+        let inner = rootElement;
+        while (inner.firstElementChild != null) {
+          inner = inner.firstElementChild;
+        }
+        rect = inner.getBoundingClientRect();
+      } else {
+        rect = domRange.getBoundingClientRect();
+      }
+
       if (!mouseDownRef.current) {
         positionEditorElement(editorElem, rect);
       }
@@ -436,7 +447,7 @@ export default function ToolbarPlugin(): React$Node {
     if (selection !== null) {
       const anchorNode = selection.anchor.getNode();
       const element =
-        anchorNode.getKey() === 'root'
+        anchorNode.getKey() === 'root' || $isHorizontalRuleNode(anchorNode)
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
@@ -713,6 +724,14 @@ export default function ToolbarPlugin(): React$Node {
             )}
           <button
             onClick={() => {
+              activeEditor.execCommand('insertHorizontalRule');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Horizontal Rule">
+            <i className="format horizontal-rule" />
+          </button>
+          <button
+            onClick={() => {
               activeEditor.execCommand('insertImage');
             }}
             className="toolbar-item spaced"
@@ -726,6 +745,14 @@ export default function ToolbarPlugin(): React$Node {
             className="toolbar-item"
             aria-label="Insert Table">
             <i className="format table" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('insertPoll');
+            }}
+            className="toolbar-item"
+            aria-label="Insert Poll">
+            <i className="format poll" />
           </button>
         </>
       )}

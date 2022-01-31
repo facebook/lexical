@@ -126,5 +126,8 @@
     "start-server-and-test": "^1.13.0",
     "tmp": "^0.2.1",
     "uuid": "^8.3.2"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "latest"
   }
 }

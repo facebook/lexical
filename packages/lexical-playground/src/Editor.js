@@ -26,6 +26,7 @@ import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import ListPlugin from '@lexical/react/LexicalListPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
+import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import StickyPlugin from './plugins/StickyPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
@@ -77,6 +78,7 @@ export default function Editor({
         <TablesPlugin />
         <TableCellActionMenuPlugin />
         <ImagesPlugin />
+        <ExcalidrawPlugin />
         <LinkPlugin />
         <EmojisPlugin />
         <HashtagsPlugin />

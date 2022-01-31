@@ -721,6 +721,14 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
+              activeEditor.execCommand('insertExcalidraw');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Excalidraw">
+            <i className="format image" />
+          </button>
+          <button
+            onClick={() => {
               activeEditor.execCommand('insertTable');
             }}
             className="toolbar-item"

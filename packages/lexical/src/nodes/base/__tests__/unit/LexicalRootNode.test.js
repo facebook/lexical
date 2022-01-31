@@ -5,9 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isRootNode} from 'lexical';
+import {$isRootNode, $getRoot} from 'lexical';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createRootNode} from '../../LexicalRootNode';
-import {initializeUnitTest} from '../../../../__tests__/utils';
+import {
+  $createTestDecoratorNode,
+  initializeUnitTest,
+} from '../../../../__tests__/utils';
 
 describe('LexicalRootNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -49,6 +53,21 @@ describe('LexicalRootNode tests', () => {
 
     test('RootNode.isRootNode()', () => {
       expect($isRootNode(rootNode)).toBe(true);
+    });
+
+    test('Cached getTextContent with decorators', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.append($createTestDecoratorNode());
+      });
+      expect(
+        editor.getEditorState().read(() => {
+          return $getRoot().getTextContent();
+        }),
+      ).toBe('Hello world');
     });
   });
 });

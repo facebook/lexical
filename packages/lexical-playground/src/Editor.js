@@ -28,6 +28,7 @@ import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
+import HorizontalRulePlugin from '@lexical/react/LexicalHorizontalRulePlugin';
 import StickyPlugin from './plugins/StickyPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
@@ -37,28 +38,24 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
-
-type Props = {
-  isCollab: boolean,
-  isCharLimit: boolean,
-  isCharLimitUtf8: boolean,
-  isAutocomplete: boolean,
-  isRichText: boolean,
-  showTreeView: boolean,
-};
+import PollPlugin from './plugins/PollPlugin';
+import {useSettings} from './context/SettingsContext';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
 
-export default function Editor({
-  isCollab,
-  isAutocomplete,
-  isCharLimit,
-  isCharLimitUtf8,
-  isRichText,
-  showTreeView,
-}: Props): React$Node {
+export default function Editor(): React$Node {
   const {historyState} = useSharedHistoryContext();
+  const {
+    settings: {
+      isCollab,
+      isAutocomplete,
+      isCharLimit,
+      isCharLimitUtf8,
+      isRichText,
+      showTreeView,
+    },
+  } = useSettings();
   const text = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
@@ -75,14 +72,11 @@ export default function Editor({
         }`}>
         <StickyPlugin />
         <MentionsPlugin />
-        <TablesPlugin />
-        <TableCellActionMenuPlugin />
-        <ImagesPlugin />
-        <ExcalidrawPlugin />
-        <LinkPlugin />
         <EmojisPlugin />
+        <ExcalidrawPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
+        <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         {isRichText ? (
@@ -104,6 +98,11 @@ export default function Editor({
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
+            <TablesPlugin />
+            <TableCellActionMenuPlugin />
+            <ImagesPlugin />
+            <LinkPlugin />
+            <PollPlugin />
           </>
         ) : (
           <>

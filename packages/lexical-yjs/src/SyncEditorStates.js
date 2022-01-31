@@ -15,7 +15,7 @@ import type {
 import type {Binding, Provider, YjsEvent} from '.';
 
 // $FlowFixMe: need Flow typings for yjs
-import {YTextEvent, YMapEvent, YXmlEvent} from 'yjs';
+import {YTextEvent, YMapEvent, YXmlEvent, Map as YMap} from 'yjs';
 import {
   $isTextNode,
   $getSelection,
@@ -28,6 +28,7 @@ import {CollabTextNode} from './CollabTextNode';
 import {
   getOrInitCollabNodeFromSharedType,
   doesSelectionNeedRecovering,
+  syncWithTransaction,
 } from './Utils';
 import {
   syncLexicalSelectionToYjs,
@@ -37,10 +38,30 @@ import {
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {$createOffsetView} from '@lexical/helpers/offsets';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {syncYjsDecoratorMapToLexical} from './SyncDecoratorStates';
 
 function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
+  // $FlowFixMe: internal field
+  const decoratorStateValue = target._lexicalValue;
+
+  // Check if this event relates to a decorator state change.
+  if (
+    decoratorStateValue !== undefined &&
+    target instanceof YMap &&
+    collabNode instanceof CollabDecoratorNode
+  ) {
+    // Sync decorator state value
+    syncYjsDecoratorMapToLexical(
+      binding,
+      collabNode,
+      target,
+      decoratorStateValue,
+      event.keysChanged,
+    );
+    return;
+  }
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     const {keysChanged, childListChanged, delta} = event;
@@ -202,8 +223,7 @@ export function syncLexicalUpdateToYjs(
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void {
-  window.foo = binding.doc;
-  binding.doc.transact(() => {
+  syncWithTransaction(binding, () => {
     currEditorState.read(() => {
       // We check if the update has come from a origin where the origin
       // was the collaboration binding previously. This can help us
@@ -239,5 +259,5 @@ export function syncLexicalUpdateToYjs(
       const prevSelection = prevEditorState._selection;
       syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
     });
-  }, binding);
+  });
 }

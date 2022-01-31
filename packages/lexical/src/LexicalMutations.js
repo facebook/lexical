@@ -11,13 +11,22 @@ import type {LexicalEditor} from './LexicalEditor';
 import type {Selection} from './LexicalSelection';
 import type {TextNode} from '.';
 
-import {$isTextNode, $isDecoratorNode, $getSelection, $setSelection} from '.';
-import {triggerListeners, updateEditor} from './LexicalUpdates';
+import {
+  $isTextNode,
+  $isDecoratorNode,
+  $getSelection,
+  $setSelection,
+  $isElementNode,
+  $getRoot,
+} from '.';
+import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
   getNodeFromDOMNode,
   $pushLogEntry,
+  $updateTextNodeFromDOMContent,
 } from './LexicalUtils';
+import {DOM_TEXT_TYPE} from './LexicalConstants';
 
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;
@@ -39,10 +48,16 @@ function initTextEntryListener(): void {
   }
 }
 
-function isManagedLineBreak(dom: Node, target: Node): boolean {
+function isManagedLineBreak(
+  dom: Node,
+  target: Node,
+  editor: LexicalEditor,
+): boolean {
   return (
     // $FlowFixMe: internal field
-    target.__lexicalLineBreak === dom || dom.__lexicalInternalRef !== undefined
+    target.__lexicalLineBreak === dom ||
+    // $FlowFixMe: internal field
+    dom['__lexicalKey_' + editor._key] !== undefined
   );
 }
 
@@ -65,10 +80,8 @@ function handleTextMutation(
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
   }
-
   const text = target.nodeValue;
-  const textMutation = {node, anchorOffset, focusOffset, text};
-  triggerListeners('textmutation', editor, false, textMutation);
+  $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
 }
 
 export function $flushMutations(
@@ -84,13 +97,21 @@ export function $flushMutations(
       editor,
       () => {
         $pushLogEntry('onMutation');
+        const badDOMTargets = new Map();
+        const rootElement = editor.getRootElement();
+        // We use the current edtior state, as that reflects what is
+        // actually "on screen".
+        const currentEditorState = editor._editorState;
         let shouldRevertSelection = false;
 
         for (let i = 0; i < mutations.length; i++) {
           const mutation = mutations[i];
           const type = mutation.type;
-          const target = mutation.target;
-          const targetNode = $getNearestNodeFromDOMNode(target);
+          const targetDOM = mutation.target;
+          let targetNode = $getNearestNodeFromDOMNode(
+            targetDOM,
+            currentEditorState,
+          );
 
           if ($isDecoratorNode(targetNode)) {
             continue;
@@ -100,13 +121,13 @@ export function $flushMutations(
             // processed outside of the Lexical engine.
             if (
               shouldFlushTextMutations &&
-              target.nodeType === 3 &&
+              targetDOM.nodeType === DOM_TEXT_TYPE &&
               $isTextNode(targetNode) &&
               targetNode.isAttached()
             ) {
               handleTextMutation(
-                // $FlowFixMe: nodeType === 3 is a Text DOM node
-                ((target: any): Text),
+                // $FlowFixMe: nodeType === DOM_TEXT_TYPE is a Text DOM node
+                ((targetDOM: any): Text),
                 targetNode,
                 editor,
               );
@@ -117,42 +138,7 @@ export function $flushMutations(
             // of Lexical. We want Lexical's editor state to be source of truth.
             // To the user, these will look like no-ops.
             const addedDOMs = mutation.addedNodes;
-            const removedDOMs = mutation.removedNodes;
-            const siblingDOM = mutation.nextSibling;
 
-            for (let s = 0; s < removedDOMs.length; s++) {
-              const removedDOM = removedDOMs[s];
-              const node = getNodeFromDOMNode(removedDOM);
-              let placementDOM = siblingDOM;
-
-              if (node !== null && node.isAttached()) {
-                const nextSibling = node.getNextSibling();
-                if (nextSibling !== null) {
-                  const key = nextSibling.getKey();
-                  const nextSiblingDOM = editor.getElementByKey(key);
-                  if (
-                    nextSiblingDOM !== null &&
-                    nextSiblingDOM.parentNode !== null
-                  ) {
-                    placementDOM = nextSiblingDOM;
-                  } else if (nextSibling.getNextSibling() === null) {
-                    placementDOM = null;
-                  }
-                }
-              }
-              if (placementDOM != null) {
-                while (placementDOM != null) {
-                  const parentDOM = placementDOM.parentNode;
-                  if (parentDOM === target) {
-                    target.insertBefore(removedDOM, placementDOM);
-                    break;
-                  }
-                  placementDOM = parentDOM;
-                }
-              } else {
-                target.appendChild(removedDOM);
-              }
-            }
             for (let s = 0; s < addedDOMs.length; s++) {
               const addedDOM = addedDOMs[s];
               const node = getNodeFromDOMNode(addedDOM);
@@ -160,6 +146,63 @@ export function $flushMutations(
               if (parentDOM != null && node === null) {
                 parentDOM.removeChild(addedDOM);
               }
+            }
+            const removedDOMs = mutation.removedNodes;
+            const removedDOMsLength = removedDOMs.length;
+
+            if (removedDOMsLength > 0) {
+              let unremovedBRs = 0;
+              for (let s = 0; s < removedDOMsLength; s++) {
+                const removedDOM = removedDOMs[s];
+
+                if (
+                  removedDOM.nodeName === 'BR' &&
+                  isManagedLineBreak(removedDOM, targetDOM, editor)
+                ) {
+                  targetDOM.appendChild(removedDOM);
+                  unremovedBRs++;
+                }
+              }
+              if (removedDOMsLength !== unremovedBRs) {
+                if (targetDOM === rootElement) {
+                  targetNode = $getRoot(currentEditorState);
+                }
+                badDOMTargets.set(targetDOM, targetNode);
+              }
+            }
+          }
+        }
+
+        // Now we process each of the unique target nodes, attempting
+        // to restore their contents back to the source of truth, which
+        // is Lexical's "current" editor state. This is basically like
+        // an internal revert on the DOM.
+        if (badDOMTargets.size > 0) {
+          const entries = Array.from(badDOMTargets.entries());
+          for (let i = 0; i < entries.length; i++) {
+            const [targetDOM, targetNode] = entries[i];
+
+            if ($isElementNode(targetNode)) {
+              const childKeys = targetNode.__children;
+              let currentDOM = targetDOM.firstChild;
+
+              for (let s = 0; s < childKeys.length; s++) {
+                const key = childKeys[s];
+                const correctDOM = editor.getElementByKey(key);
+                if (correctDOM === null) {
+                  continue;
+                }
+                if (currentDOM == null) {
+                  targetDOM.appendChild(correctDOM);
+                  currentDOM = correctDOM;
+                } else if (currentDOM !== correctDOM) {
+                  targetDOM.replaceChild(correctDOM, currentDOM);
+                }
+
+                currentDOM = currentDOM.nextSibling;
+              }
+            } else if ($isTextNode(targetNode)) {
+              targetNode.markDirty();
             }
           }
         }
@@ -184,7 +227,7 @@ export function $flushMutations(
               if (
                 parentDOM != null &&
                 addedDOM.nodeName === 'BR' &&
-                !isManagedLineBreak(addedDOM, target)
+                !isManagedLineBreak(addedDOM, target, editor)
               ) {
                 parentDOM.removeChild(addedDOM);
               }

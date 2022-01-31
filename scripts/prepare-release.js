@@ -88,7 +88,7 @@ async function prepareLexicalHelpersPackage() {
     `mv ./packages/lexical-helpers/npm/LexicalElementHelpers.js ./packages/lexical-helpers/npm/elements.js`,
   );
   await exec(
-    `mv ./packages/lexical-helpers/npm/LexicalRootHelpers.js ./packages/lexical-helpers/npm/validation.js`,
+    `mv ./packages/lexical-helpers/npm/LexicalRootHelpers.js ./packages/lexical-helpers/npm/root.js`,
   );
   // Other bits
   await exec(

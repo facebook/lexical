@@ -424,14 +424,7 @@ function triggerTextContentListeners(
 }
 
 export function triggerListeners(
-  type:
-    | 'update'
-    | 'error'
-    | 'textmutation'
-    | 'root'
-    | 'decorator'
-    | 'textcontent'
-    | 'decoratorstate',
+  type: 'update' | 'error' | 'root' | 'decorator' | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
@@ -567,7 +560,7 @@ function beginUpdate(
     processNestedUpdates(editor, deferred);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
-      if (pendingEditorState.isEmpty()) {
+      if (!skipEmptyCheck && pendingEditorState.isEmpty()) {
         invariant(
           false,
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',

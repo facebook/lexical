@@ -7,7 +7,6 @@
  * @flow strict
  */
 
-import type {InputEvents} from './useEditorEvents';
 import type {
   LexicalEditor,
   RootNode,
@@ -15,50 +14,20 @@ import type {
 } from 'lexical';
 
 import {$log, $getRoot, $getSelection} from 'lexical';
-import useEditorEvents from './useEditorEvents';
 import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
-import {CAN_USE_BEFORE_INPUT} from 'shared/environment';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
-  onSelectionChange,
-  onKeyDown,
-  onCompositionStart,
-  onCompositionEnd,
   onCutForPlainText,
   onCopyForPlainText,
-  onBeforeInput,
   onPasteForPlainText,
-  onDropPolyfill,
-  onDragStartPolyfill,
-  $onTextMutation,
-  onInput,
-  onClick,
   $shouldOverrideDefaultCharacterSelection,
+  $insertDataTransferForPlainText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
-
-const events: InputEvents = [
-  ['selectionchange', onSelectionChange],
-  ['keydown', onKeyDown],
-  ['compositionstart', onCompositionStart],
-  ['compositionend', onCompositionEnd],
-  ['cut', onCutForPlainText],
-  ['copy', onCopyForPlainText],
-  ['dragstart', onDragStartPolyfill],
-  ['paste', onPasteForPlainText],
-  ['input', onInput],
-  ['click', onClick],
-];
-
-if (CAN_USE_BEFORE_INPUT) {
-  events.push(['beforeinput', onBeforeInput]);
-} else {
-  events.push(['drop', onDropPolyfill]);
-}
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {
   const activeElement = document.activeElement;
@@ -111,7 +80,6 @@ export default function usePlainTextSetup(
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
       editor.registerNodes([ParagraphNode]),
-      editor.addListener('textmutation', $onTextMutation),
       editor.addListener(
         'command',
         (type, payload): boolean => {
@@ -135,10 +103,23 @@ export default function usePlainTextSetup(
               selection.deleteLine(isBackward);
               return true;
             }
-            case 'insertText':
-              const text: string = payload;
-              selection.insertText(text);
+            case 'insertText': {
+              const eventOrText: InputEvent | string = payload;
+              if (typeof eventOrText === 'string') {
+                selection.insertText(eventOrText);
+              } else {
+                const dataTransfer = eventOrText.dataTransfer;
+                if (dataTransfer != null) {
+                  $insertDataTransferForPlainText(dataTransfer, selection);
+                } else {
+                  const data = eventOrText.data;
+                  if (data) {
+                    selection.insertText(data);
+                  }
+                }
+              }
               return true;
+            }
             case 'removeText':
               selection.removeText();
               return true;
@@ -151,6 +132,7 @@ export default function usePlainTextSetup(
               return true;
             case 'indentContent':
             case 'outdentContent':
+            case 'insertHorizontalRule':
             case 'insertImage':
             case 'insertTable':
             case 'formatElement':
@@ -196,6 +178,28 @@ export default function usePlainTextSetup(
               clearEditor(editor);
               return false;
             }
+            case 'copy': {
+              const event: ClipboardEvent = payload;
+              onCopyForPlainText(event, editor);
+              return true;
+            }
+            case 'cut': {
+              const event: ClipboardEvent = payload;
+              onCutForPlainText(event, editor);
+              return true;
+            }
+            case 'paste': {
+              const event: ClipboardEvent = payload;
+              onPasteForPlainText(event, editor);
+              return true;
+            }
+            case 'drop':
+            case 'dragstart': {
+              // TODO: Make drag and drop work at some point.
+              const event: DragEvent = payload;
+              event.preventDefault();
+              return true;
+            }
           }
           return false;
         },
@@ -210,6 +214,5 @@ export default function usePlainTextSetup(
     return removeSubscriptions;
   }, [editor, init]);
 
-  useEditorEvents(events, editor);
   useLexicalDragonSupport(editor);
 }

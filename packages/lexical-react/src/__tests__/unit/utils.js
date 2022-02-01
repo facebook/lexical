@@ -58,17 +58,17 @@ class Client {
       getLocalState() {
         return this._awarenessState;
       },
-      setLocalState(state) {
-        this._awarenessState = state;
-      },
       getStates() {
         return [[0, this._awarenessState]];
+      },
+      off() {
+        // TODO
       },
       on() {
         // TODO
       },
-      off() {
-        // TODO
+      setLocalState(state) {
+        this._awarenessState = state;
       },
     };
   }

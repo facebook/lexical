@@ -118,8 +118,8 @@ function $copyLeafNodeBranchToRoot(
 }
 
 export function $cloneContents(selection: Selection): {
-  range: Array<NodeKey>,
   nodeMap: Array<[NodeKey, LexicalNode]>,
+  range: Array<NodeKey>,
 } {
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -143,11 +143,11 @@ export function $cloneContents(selection: Selection): {
       endOffset,
     );
     const key = clonedFirstNode.getKey();
-    return {range: [key], nodeMap: [[key, clonedFirstNode]]};
+    return {nodeMap: [[key, clonedFirstNode]], range: [key]};
   }
   const nodes = selection.getNodes();
   if (nodes.length === 0) {
-    return {range: [], nodeMap: []};
+    return {nodeMap: [], range: []};
   }
   // Check if we can use the parent of the nodes, if the
   // parent can't be empty, then it's important that we
@@ -208,7 +208,7 @@ export function $cloneContents(selection: Selection): {
     range,
     nodeMap,
   );
-  return {range, nodeMap: Array.from(nodeMap.entries())};
+  return {nodeMap: Array.from(nodeMap.entries()), range};
 }
 
 export function getStyleObjectFromCSS(css: string): {[string]: string} | null {

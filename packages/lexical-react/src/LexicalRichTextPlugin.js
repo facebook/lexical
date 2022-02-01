@@ -26,9 +26,9 @@ export default function RichTextPlugin({
   onError,
 }: {
   contentEditable: React$Node,
+  onError?: (error: Error, log: Array<string>) => void,
   placeholder: React$Node,
   skipInit?: boolean,
-  onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);

@@ -23,14 +23,14 @@ function defaultOnErrorHandler(e: Error): void {
 }
 
 export default function useLexical<EditorContext>(editorConfig?: {
+  context?: EditorContext,
+  disableEvents?: boolean,
+  htmlTransforms?: DOMConversionMap,
+  initialEditorState?: EditorState,
   namespace?: string,
   onError?: (error: Error, log: Array<string>) => void,
-  initialEditorState?: EditorState,
-  theme?: EditorThemeClasses,
-  context?: EditorContext,
-  htmlTransforms?: DOMConversionMap,
   parentEditor?: LexicalEditor,
-  disableEvents?: boolean,
+  theme?: EditorThemeClasses,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {
   const onError =
     (editorConfig !== undefined && editorConfig.onError) ||

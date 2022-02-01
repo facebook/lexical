@@ -17,10 +17,10 @@ import {
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
-  namespace?: string,
   children: React$Node,
-  theme?: EditorThemeClasses,
   initialEditor?: LexicalEditor | null,
+  namespace?: string,
+  theme?: EditorThemeClasses,
 };
 
 export default function LexicalComposer({
@@ -45,7 +45,7 @@ export default function LexicalComposer({
         }
       }
 
-      const config = {theme: composerTheme || {}, namespace, parentEditor};
+      const config = {namespace, parentEditor, theme: composerTheme || {}};
       const context: LexicalComposerContextType = createLexicalComposerContext(
         parentContext,
         composerTheme,

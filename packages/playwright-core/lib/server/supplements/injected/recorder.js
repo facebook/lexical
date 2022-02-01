@@ -1,11 +1,11 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.default = exports.Recorder = void 0;
 
-var _selectorGenerator = require("../../injected/selectorGenerator");
+var _selectorGenerator = require('../../injected/selectorGenerator');
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -63,9 +63,8 @@ class Recorder {
 
     this._innerGlassPaneElement.appendChild(this._tooltipElement); // Use a closed shadow root to prevent selectors matching our internal previews.
 
-
     this._glassPaneShadow = this._outerGlassPaneElement.attachShadow({
-      mode: this._params.isUnderTest ? 'open' : 'closed'
+      mode: this._params.isUnderTest ? 'open' : 'closed',
     });
 
     this._glassPaneShadow.appendChild(this._innerGlassPaneElement);
@@ -116,11 +115,12 @@ class Recorder {
 
     this._refreshListenersIfNeeded();
 
-    injectedScript.onGlobalListenersRemoved.add(() => this._refreshListenersIfNeeded());
+    injectedScript.onGlobalListenersRemoved.add(() =>
+      this._refreshListenersIfNeeded(),
+    );
 
     globalThis._playwrightRefreshOverlay = () => {
-      this._pollRecorderMode().catch(e => console.log(e)); // eslint-disable-line no-console
-
+      this._pollRecorderMode().catch((e) => console.log(e)); // eslint-disable-line no-console
     };
 
     globalThis._playwrightRefreshOverlay();
@@ -130,14 +130,80 @@ class Recorder {
 
   _refreshListenersIfNeeded() {
     // Ensure we are attached to the current document, and we are on top (last element);
-    if (this._outerGlassPaneElement.parentElement === document.documentElement && !this._outerGlassPaneElement.nextElementSibling) return;
+    if (
+      this._outerGlassPaneElement.parentElement === document.documentElement &&
+      !this._outerGlassPaneElement.nextElementSibling
+    )
+      return;
     removeEventListeners(this._listeners);
-    this._listeners = [addEventListener(document, 'click', event => this._onClick(event), true), addEventListener(document, 'auxclick', event => this._onClick(event), true), addEventListener(document, 'input', event => this._onInput(event), true), addEventListener(document, 'keydown', event => this._onKeyDown(event), true), addEventListener(document, 'keyup', event => this._onKeyUp(event), true), addEventListener(document, 'mousedown', event => this._onMouseDown(event), true), addEventListener(document, 'mouseup', event => this._onMouseUp(event), true), addEventListener(document, 'mousemove', event => this._onMouseMove(event), true), addEventListener(document, 'mouseleave', event => this._onMouseLeave(event), true), addEventListener(document, 'focus', () => this._onFocus(), true), addEventListener(document, 'scroll', () => {
-      this._hoveredModel = null;
-      this._actionPointElement.hidden = true;
+    this._listeners = [
+      addEventListener(
+        document,
+        'click',
+        (event) => this._onClick(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'auxclick',
+        (event) => this._onClick(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'input',
+        (event) => this._onInput(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'keydown',
+        (event) => this._onKeyDown(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'keyup',
+        (event) => this._onKeyUp(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'mousedown',
+        (event) => this._onMouseDown(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'mouseup',
+        (event) => this._onMouseUp(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'mousemove',
+        (event) => this._onMouseMove(event),
+        true,
+      ),
+      addEventListener(
+        document,
+        'mouseleave',
+        (event) => this._onMouseLeave(event),
+        true,
+      ),
+      addEventListener(document, 'focus', () => this._onFocus(), true),
+      addEventListener(
+        document,
+        'scroll',
+        () => {
+          this._hoveredModel = null;
+          this._actionPointElement.hidden = true;
 
-      this._updateHighlight();
-    }, true)];
+          this._updateHighlight();
+        },
+        true,
+      ),
+    ];
     document.documentElement.appendChild(this._outerGlassPaneElement);
   }
 
@@ -146,18 +212,19 @@ class Recorder {
 
     const pollPeriod = 1000;
     if (this._pollRecorderModeTimer) clearTimeout(this._pollRecorderModeTimer);
-    const state = await globalThis._playwrightRecorderState().catch(e => null);
+    const state = await globalThis
+      ._playwrightRecorderState()
+      .catch((e) => null);
 
     if (!state) {
-      this._pollRecorderModeTimer = setTimeout(() => this._pollRecorderMode(), pollPeriod);
+      this._pollRecorderModeTimer = setTimeout(
+        () => this._pollRecorderMode(),
+        pollPeriod,
+      );
       return;
     }
 
-    const {
-      mode,
-      actionPoint,
-      actionSelector
-    } = state;
+    const {mode, actionPoint, actionSelector} = state;
 
     if (mode !== this._mode) {
       this._mode = mode;
@@ -165,8 +232,15 @@ class Recorder {
       this._clearHighlight();
     }
 
-    if (actionPoint && this._actionPoint && actionPoint.x === this._actionPoint.x && actionPoint.y === this._actionPoint.y) {// All good.
-    } else if (!actionPoint && !this._actionPoint) {// All good.
+    if (
+      actionPoint &&
+      this._actionPoint &&
+      actionPoint.x === this._actionPoint.x &&
+      actionPoint.y === this._actionPoint.y
+    ) {
+      // All good.
+    } else if (!actionPoint && !this._actionPoint) {
+      // All good.
     } else {
       if (actionPoint) {
         this._actionPointElement.style.top = actionPoint.y + 'px';
@@ -179,18 +253,34 @@ class Recorder {
       this._actionPoint = actionPoint;
     } // Race or scroll.
 
-
-    if (this._actionSelector && !((_this$_hoveredModel = this._hoveredModel) !== null && _this$_hoveredModel !== void 0 && _this$_hoveredModel.elements.length)) this._actionSelector = undefined;
+    if (
+      this._actionSelector &&
+      !(
+        (_this$_hoveredModel = this._hoveredModel) !== null &&
+        _this$_hoveredModel !== void 0 &&
+        _this$_hoveredModel.elements.length
+      )
+    )
+      this._actionSelector = undefined;
 
     if (actionSelector !== this._actionSelector) {
-      this._hoveredModel = actionSelector ? (0, _selectorGenerator.querySelector)(this._injectedScript, actionSelector, document) : null;
+      this._hoveredModel = actionSelector
+        ? (0, _selectorGenerator.querySelector)(
+            this._injectedScript,
+            actionSelector,
+            document,
+          )
+        : null;
 
       this._updateHighlight();
 
       this._actionSelector = actionSelector;
     }
 
-    this._pollRecorderModeTimer = setTimeout(() => this._pollRecorderMode(), pollPeriod);
+    this._pollRecorderModeTimer = setTimeout(
+      () => this._pollRecorderMode(),
+      pollPeriod,
+    );
   }
 
   _clearHighlight() {
@@ -215,13 +305,20 @@ class Recorder {
   }
 
   _consumedDueWrongTarget(event) {
-    if (this._activeModel && this._activeModel.elements[0] === this._deepEventTarget(event)) return false;
+    if (
+      this._activeModel &&
+      this._activeModel.elements[0] === this._deepEventTarget(event)
+    )
+      return false;
     consumeEvent(event);
     return true;
   }
 
   _onClick(event) {
-    if (this._mode === 'inspecting') globalThis._playwrightRecorderSetSelector(this._hoveredModel ? this._hoveredModel.selector : '');
+    if (this._mode === 'inspecting')
+      globalThis._playwrightRecorderSetSelector(
+        this._hoveredModel ? this._hoveredModel.selector : '',
+      );
     if (this._shouldIgnoreMouseEvent(event)) return;
     if (this._actionInProgress(event)) return;
     if (this._consumedDueToNoModel(event, this._hoveredModel)) return;
@@ -232,7 +329,7 @@ class Recorder {
       this._performAction({
         name: checkbox.checked ? 'check' : 'uncheck',
         selector: this._hoveredModel.selector,
-        signals: []
+        signals: [],
       });
 
       return;
@@ -245,7 +342,7 @@ class Recorder {
       signals: [],
       button: buttonForEvent(event),
       modifiers: modifiersForEvent(event),
-      clickCount: event.detail
+      clickCount: event.detail,
     });
   }
 
@@ -299,9 +396,17 @@ class Recorder {
   _onFocus() {
     const activeElement = this._deepActiveElement(document);
 
-    const result = activeElement ? (0, _selectorGenerator.generateSelector)(this._injectedScript, activeElement) : null;
+    const result = activeElement
+      ? (0, _selectorGenerator.generateSelector)(
+          this._injectedScript,
+          activeElement,
+        )
+      : null;
     this._activeModel = result && result.selector ? result : null;
-    if (this._params.isUnderTest) console.error('Highlight updated for test: ' + (result ? result.selector : null));
+    if (this._params.isUnderTest)
+      console.error(
+        'Highlight updated for test: ' + (result ? result.selector : null),
+      );
   }
 
   _updateModelForHoveredElement() {
@@ -314,19 +419,26 @@ class Recorder {
     }
 
     const hoveredElement = this._hoveredElement;
-    const {
-      selector,
-      elements
-    } = (0, _selectorGenerator.generateSelector)(this._injectedScript, hoveredElement);
-    if (this._hoveredModel && this._hoveredModel.selector === selector || this._hoveredElement !== hoveredElement) return;
-    this._hoveredModel = selector ? {
-      selector,
-      elements
-    } : null;
+    const {selector, elements} = (0, _selectorGenerator.generateSelector)(
+      this._injectedScript,
+      hoveredElement,
+    );
+    if (
+      (this._hoveredModel && this._hoveredModel.selector === selector) ||
+      this._hoveredElement !== hoveredElement
+    )
+      return;
+    this._hoveredModel = selector
+      ? {
+          selector,
+          elements,
+        }
+      : null;
 
     this._updateHighlight();
 
-    if (this._params.isUnderTest) console.error('Highlight updated for test: ' + selector);
+    if (this._params.isUnderTest)
+      console.error('Highlight updated for test: ' + selector);
   }
 
   _updateHighlight() {
@@ -334,12 +446,14 @@ class Recorder {
     // destroyed layout.
     // Destroy the layout
 
-    this._tooltipElement.textContent = this._hoveredModel ? this._hoveredModel.selector : '';
+    this._tooltipElement.textContent = this._hoveredModel
+      ? this._hoveredModel.selector
+      : '';
     this._tooltipElement.style.top = '0';
     this._tooltipElement.style.left = '0';
     this._tooltipElement.style.display = 'flex'; // Trigger layout.
 
-    const boxes = elements.map(e => e.getBoundingClientRect());
+    const boxes = elements.map((e) => e.getBoundingClientRect());
     const tooltipWidth = this._tooltipElement.offsetWidth;
     const tooltipHeight = this._tooltipElement.offsetHeight;
     const totalWidth = this._innerGlassPaneElement.offsetWidth;
@@ -348,7 +462,8 @@ class Recorder {
     if (boxes.length) {
       const primaryBox = boxes[0];
       let anchorLeft = primaryBox.left;
-      if (anchorLeft + tooltipWidth > totalWidth - 5) anchorLeft = totalWidth - tooltipWidth - 5;
+      if (anchorLeft + tooltipWidth > totalWidth - 5)
+        anchorLeft = totalWidth - tooltipWidth - 5;
       let anchorTop = primaryBox.bottom + 5;
 
       if (anchorTop + tooltipHeight > totalHeight - 5) {
@@ -371,9 +486,13 @@ class Recorder {
     this._highlightElements = [];
 
     for (const box of boxes) {
-      const highlightElement = pool.length ? pool.shift() : this._createHighlightElement();
+      const highlightElement = pool.length
+        ? pool.shift()
+        : this._createHighlightElement();
       const color = this._mode === 'recording' ? '#dc6f6f7f' : '#6fa8dc7f';
-      highlightElement.style.backgroundColor = this._highlightElements.length ? '#f6b26b7f' : color;
+      highlightElement.style.backgroundColor = this._highlightElements.length
+        ? '#f6b26b7f'
+        : color;
       highlightElement.style.left = box.x + 'px';
       highlightElement.style.top = box.y + 'px';
       highlightElement.style.width = box.width + 'px';
@@ -423,12 +542,11 @@ class Recorder {
           name: 'setInputFiles',
           selector: this._activeModel.selector,
           signals: [],
-          files: [...(inputElement.files || [])].map(file => file.name)
+          files: [...(inputElement.files || [])].map((file) => file.name),
         });
 
         return;
       } // Non-navigating actions are simply recorded by Playwright.
-
 
       if (this._consumedDueWrongTarget(event)) return;
 
@@ -436,7 +554,7 @@ class Recorder {
         name: 'fill',
         selector: this._activeModel.selector,
         signals: [],
-        text: inputElement.value
+        text: inputElement.value,
       });
     }
 
@@ -447,8 +565,10 @@ class Recorder {
       this._performAction({
         name: 'select',
         selector: this._hoveredModel.selector,
-        options: [...selectElement.selectedOptions].map(option => option.value),
-        signals: []
+        options: [...selectElement.selectedOptions].map(
+          (option) => option.value,
+        ),
+        signals: [],
       });
     }
   }
@@ -468,7 +588,8 @@ class Recorder {
 
     if (['Shift', 'Control', 'Meta', 'Alt'].includes(event.key)) return false;
     const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
-    if (event.key.length === 1 && !hasModifier) return !!asCheckbox(this._deepEventTarget(event));
+    if (event.key.length === 1 && !hasModifier)
+      return !!asCheckbox(this._deepEventTarget(event));
     return true;
   }
 
@@ -495,7 +616,7 @@ class Recorder {
         this._performAction({
           name: checkbox.checked ? 'uncheck' : 'check',
           selector: this._activeModel.selector,
-          signals: []
+          signals: [],
         });
 
         return;
@@ -507,7 +628,7 @@ class Recorder {
       selector: this._activeModel.selector,
       signals: [],
       key: event.key,
-      modifiers: modifiersForEvent(event)
+      modifiers: modifiersForEvent(event),
     });
   }
 
@@ -529,16 +650,18 @@ class Recorder {
 
     this._updateModelForHoveredElement(); // If that was a keyboard action, it similarly requires new selectors for active model.
 
-
     this._onFocus();
 
     if (this._params.isUnderTest) {
       // Serialize all to string as we cannot attribute console message to isolated world
       // in Firefox.
-      console.error('Action performed for test: ' + JSON.stringify({
-        hovered: this._hoveredModel ? this._hoveredModel.selector : null,
-        active: this._activeModel ? this._activeModel.selector : null
-      }));
+      console.error(
+        'Action performed for test: ' +
+          JSON.stringify({
+            hovered: this._hoveredModel ? this._hoveredModel.selector : null,
+            active: this._activeModel ? this._activeModel.selector : null,
+          }),
+      );
     }
   }
 
@@ -549,17 +672,26 @@ class Recorder {
   _deepActiveElement(document) {
     let activeElement = document.activeElement;
 
-    while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement) activeElement = activeElement.shadowRoot.activeElement;
+    while (
+      activeElement &&
+      activeElement.shadowRoot &&
+      activeElement.shadowRoot.activeElement
+    )
+      activeElement = activeElement.shadowRoot.activeElement;
 
     return activeElement;
   }
-
 }
 
 exports.Recorder = Recorder;
 
 function modifiersForEvent(event) {
-  return (event.altKey ? 1 : 0) | (event.ctrlKey ? 2 : 0) | (event.metaKey ? 4 : 0) | (event.shiftKey ? 8 : 0);
+  return (
+    (event.altKey ? 1 : 0) |
+    (event.ctrlKey ? 2 : 0) |
+    (event.metaKey ? 4 : 0) |
+    (event.shiftKey ? 8 : 0)
+  );
 }
 
 function buttonForEvent(event) {
@@ -582,7 +714,7 @@ function positionForEvent(event) {
   if (targetElement.nodeName !== 'CANVAS') return;
   return {
     x: event.offsetX,
-    y: event.offsetY
+    y: event.offsetY,
   };
 }
 

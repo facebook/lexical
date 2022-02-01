@@ -101,10 +101,10 @@ export const TRIGGER_STRING = '\u0020'; // The space key triggers markdown.
 const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused unicode character to separate text and non-text nodes.
 
 const autoFormatBase: AutoFormatCriteria = {
-  requiresParagraphStart: false,
   nodeTransformationKind: null,
   regEx: /(?:)/,
   regExExpectedCaptureGroupCount: 0,
+  requiresParagraphStart: false,
 };
 
 const paragraphStartBase: AutoFormatCriteria = {
@@ -114,44 +114,44 @@ const paragraphStartBase: AutoFormatCriteria = {
 
 const markdownHeader1: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:# )/,
   nodeTransformationKind: 'paragraphH1',
+  regEx: /(?:# )/,
 };
 
 const markdownHeader2: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:## )/,
   nodeTransformationKind: 'paragraphH2',
+  regEx: /(?:## )/,
 };
 
 const markdownHeader3: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:### )/,
   nodeTransformationKind: 'paragraphH2',
+  regEx: /(?:### )/,
 };
 
 const markdownBlockQuote: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:> )/,
   nodeTransformationKind: 'paragraphBlockQuote',
+  regEx: /(?:> )/,
 };
 
 const markdownUnorderedListDash: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:- )/,
   nodeTransformationKind: 'paragraphUnorderedList',
+  regEx: /(?:- )/,
 };
 
 const markdownUnorderedListAsterisk: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:\* )/,
   nodeTransformationKind: 'paragraphUnorderedList',
+  regEx: /(?:\* )/,
 };
 
 const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:``` )/,
   nodeTransformationKind: 'paragraphCodeBlock',
+  regEx: /(?:``` )/,
 };
 
 const markdownOrderedList: AutoFormatCriteria = {

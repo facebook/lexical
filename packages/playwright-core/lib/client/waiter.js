@@ -1,15 +1,15 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.Waiter = void 0;
 
-var _stackTrace = require("../utils/stackTrace");
+var _stackTrace = require('../utils/stackTrace');
 
-var _errors = require("../utils/errors");
+var _errors = require('../utils/errors');
 
-var _utils = require("../utils/utils");
+var _utils = require('../utils/utils');
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -39,21 +39,28 @@ class Waiter {
     this._waitId = (0, _utils.createGuid)();
     this._channel = channel;
 
-    this._channel.waitForEventInfo({
-      info: {
-        waitId: this._waitId,
-        phase: 'before',
-        event
-      }
-    }).catch(() => {});
+    this._channel
+      .waitForEventInfo({
+        info: {
+          waitId: this._waitId,
+          phase: 'before',
+          event,
+        },
+      })
+      .catch(() => {});
 
-    this._dispose = [() => this._channel.waitForEventInfo({
-      info: {
-        waitId: this._waitId,
-        phase: 'after',
-        error: this._error
-      }
-    }).catch(() => {})];
+    this._dispose = [
+      () =>
+        this._channel
+          .waitForEventInfo({
+            info: {
+              waitId: this._waitId,
+              phase: 'after',
+              error: this._error,
+            },
+          })
+          .catch(() => {}),
+    ];
   }
 
   static createForEvent(channel, event) {
@@ -61,34 +68,31 @@ class Waiter {
   }
 
   async waitForEvent(emitter, event, predicate) {
-    const {
-      promise,
-      dispose
-    } = waitForEvent(emitter, event, predicate);
+    const {promise, dispose} = waitForEvent(emitter, event, predicate);
     return this.waitForPromise(promise, dispose);
   }
 
   rejectOnEvent(emitter, event, error, predicate) {
-    const {
-      promise,
-      dispose
-    } = waitForEvent(emitter, event, predicate);
+    const {promise, dispose} = waitForEvent(emitter, event, predicate);
 
-    this._rejectOn(promise.then(() => {
-      throw error;
-    }), dispose);
+    this._rejectOn(
+      promise.then(() => {
+        throw error;
+      }),
+      dispose,
+    );
   }
 
   rejectOnTimeout(timeout, message) {
     if (!timeout) return;
-    const {
-      promise,
-      dispose
-    } = waitForTimeout(timeout);
+    const {promise, dispose} = waitForTimeout(timeout);
 
-    this._rejectOn(promise.then(() => {
-      throw new _errors.TimeoutError(message);
-    }), dispose);
+    this._rejectOn(
+      promise.then(() => {
+        throw new _errors.TimeoutError(message);
+      }),
+      dispose,
+    );
   }
 
   rejectImmediately(error) {
@@ -109,7 +113,10 @@ class Waiter {
       if (dispose) dispose();
       this._error = e.message;
       this.dispose();
-      (0, _stackTrace.rewriteErrorMessage)(e, e.message + formatLogRecording(this._logs));
+      (0, _stackTrace.rewriteErrorMessage)(
+        e,
+        e.message + formatLogRecording(this._logs),
+      );
       throw e;
     }
   }
@@ -117,13 +124,15 @@ class Waiter {
   log(s) {
     this._logs.push(s);
 
-    this._channel.waitForEventInfo({
-      info: {
-        waitId: this._waitId,
-        phase: 'log',
-        message: s
-      }
-    }).catch(() => {});
+    this._channel
+      .waitForEventInfo({
+        info: {
+          waitId: this._waitId,
+          phase: 'log',
+          message: s,
+        },
+      })
+      .catch(() => {});
   }
 
   _rejectOn(promise, dispose) {
@@ -131,7 +140,6 @@ class Waiter {
 
     if (dispose) this._dispose.push(dispose);
   }
-
 }
 
 exports.Waiter = Waiter;
@@ -139,7 +147,7 @@ exports.Waiter = Waiter;
 function waitForEvent(emitter, event, predicate) {
   let listener;
   const promise = new Promise((resolve, reject) => {
-    listener = async eventArg => {
+    listener = async (eventArg) => {
       try {
         if (predicate && !(await predicate(eventArg))) return;
         emitter.removeListener(event, listener);
@@ -157,19 +165,21 @@ function waitForEvent(emitter, event, predicate) {
 
   return {
     promise,
-    dispose
+    dispose,
   };
 }
 
 function waitForTimeout(timeout) {
   let timeoutId;
-  const promise = new Promise(resolve => timeoutId = setTimeout(resolve, timeout));
+  const promise = new Promise(
+    (resolve) => (timeoutId = setTimeout(resolve, timeout)),
+  );
 
   const dispose = () => clearTimeout(timeoutId);
 
   return {
     promise,
-    dispose
+    dispose,
   };
 }
 
@@ -179,5 +189,7 @@ function formatLogRecording(log) {
   const headerLength = 60;
   const leftLength = (headerLength - header.length) / 2;
   const rightLength = headerLength - header.length - leftLength;
-  return `\n${'='.repeat(leftLength)}${header}${'='.repeat(rightLength)}\n${log.join('\n')}\n${'='.repeat(headerLength)}`;
+  return `\n${'='.repeat(leftLength)}${header}${'='.repeat(
+    rightLength,
+  )}\n${log.join('\n')}\n${'='.repeat(headerLength)}`;
 }

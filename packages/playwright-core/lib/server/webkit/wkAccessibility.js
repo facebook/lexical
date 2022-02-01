@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.getAccessibilityTree = getAccessibilityTree;
 
@@ -22,40 +22,42 @@ exports.getAccessibilityTree = getAccessibilityTree;
  */
 async function getAccessibilityTree(session, needle) {
   const objectId = needle ? needle._objectId : undefined;
-  const {
-    axNode
-  } = await session.send('Page.accessibilitySnapshot', {
-    objectId
+  const {axNode} = await session.send('Page.accessibilitySnapshot', {
+    objectId,
   });
   const tree = new WKAXNode(axNode);
   return {
     tree,
-    needle: needle ? tree._findNeedle() : null
+    needle: needle ? tree._findNeedle() : null,
   };
 }
 
-const WKRoleToARIARole = new Map(Object.entries({
-  'TextField': 'textbox'
-})); // WebKit localizes role descriptions on mac, but the english versions only add noise.
+const WKRoleToARIARole = new Map(
+  Object.entries({
+    TextField: 'textbox',
+  }),
+); // WebKit localizes role descriptions on mac, but the english versions only add noise.
 
-const WKUnhelpfulRoleDescriptions = new Map(Object.entries({
-  'WebArea': 'HTML content',
-  'Summary': 'summary',
-  'DescriptionList': 'description list',
-  'ImageMap': 'image map',
-  'ListMarker': 'list marker',
-  'Video': 'video playback',
-  'Mark': 'highlighted',
-  'contentinfo': 'content information',
-  'Details': 'details',
-  'DescriptionListDetail': 'description',
-  'DescriptionListTerm': 'term',
-  'alertdialog': 'web alert dialog',
-  'dialog': 'web dialog',
-  'status': 'application status',
-  'tabpanel': 'tab panel',
-  'application': 'web application'
-}));
+const WKUnhelpfulRoleDescriptions = new Map(
+  Object.entries({
+    WebArea: 'HTML content',
+    Summary: 'summary',
+    DescriptionList: 'description list',
+    ImageMap: 'image map',
+    ListMarker: 'list marker',
+    Video: 'video playback',
+    Mark: 'highlighted',
+    contentinfo: 'content information',
+    Details: 'details',
+    DescriptionListDetail: 'description',
+    DescriptionListTerm: 'term',
+    alertdialog: 'web alert dialog',
+    dialog: 'web dialog',
+    status: 'application status',
+    tabpanel: 'tab panel',
+    application: 'web application',
+  }),
+);
 
 class WKAXNode {
   constructor(payload) {
@@ -64,7 +66,8 @@ class WKAXNode {
     this._payload = payload;
     this._children = [];
 
-    for (const payload of this._payload.children || []) this._children.push(new WKAXNode(payload));
+    for (const payload of this._payload.children || [])
+      this._children.push(new WKAXNode(payload));
   }
 
   children() {
@@ -131,10 +134,7 @@ class WKAXNode {
   }
 
   isInteresting(insideControl) {
-    const {
-      role,
-      focusable
-    } = this._payload;
+    const {role, focusable} = this._payload;
 
     const name = this._name();
 
@@ -151,7 +151,10 @@ class WKAXNode {
   _hasRendundantTextChild() {
     if (this._children.length !== 1) return false;
     const child = this._children[0];
-    return child._payload.role === 'text' && this._payload.name === child._payload.value;
+    return (
+      child._payload.role === 'text' &&
+      this._payload.name === child._payload.value
+    );
   }
 
   isLeafNode() {
@@ -166,21 +169,44 @@ class WKAXNode {
   serialize() {
     const node = {
       role: WKRoleToARIARole.get(this._payload.role) || this._payload.role,
-      name: this._name()
+      name: this._name(),
     };
-    if ('description' in this._payload && this._payload.description !== node.name) node.description = this._payload.description;
+    if (
+      'description' in this._payload &&
+      this._payload.description !== node.name
+    )
+      node.description = this._payload.description;
 
     if ('roledescription' in this._payload) {
       const roledescription = this._payload.roledescription;
-      if (roledescription !== this._payload.role && WKUnhelpfulRoleDescriptions.get(this._payload.role) !== roledescription) node.roledescription = roledescription;
+      if (
+        roledescription !== this._payload.role &&
+        WKUnhelpfulRoleDescriptions.get(this._payload.role) !== roledescription
+      )
+        node.roledescription = roledescription;
     }
 
     if ('value' in this._payload && this._payload.role !== 'text') {
-      if (typeof this._payload.value === 'string') node.valueString = this._payload.value;else if (typeof this._payload.value === 'number') node.valueNumber = this._payload.value;
+      if (typeof this._payload.value === 'string')
+        node.valueString = this._payload.value;
+      else if (typeof this._payload.value === 'number')
+        node.valueNumber = this._payload.value;
     }
 
-    if ('checked' in this._payload) node.checked = this._payload.checked === 'true' ? 'checked' : this._payload.checked === 'false' ? 'unchecked' : 'mixed';
-    if ('pressed' in this._payload) node.pressed = this._payload.pressed === 'true' ? 'pressed' : this._payload.pressed === 'false' ? 'released' : 'mixed';
+    if ('checked' in this._payload)
+      node.checked =
+        this._payload.checked === 'true'
+          ? 'checked'
+          : this._payload.checked === 'false'
+          ? 'unchecked'
+          : 'mixed';
+    if ('pressed' in this._payload)
+      node.pressed =
+        this._payload.pressed === 'true'
+          ? 'pressed'
+          : this._payload.pressed === 'false'
+          ? 'released'
+          : 'mixed';
     const userStringProperties = ['keyshortcuts', 'valuetext'];
 
     for (const userStringProperty of userStringProperties) {
@@ -188,12 +214,27 @@ class WKAXNode {
       node[userStringProperty] = this._payload[userStringProperty];
     }
 
-    const booleanProperties = ['disabled', 'expanded', 'focused', 'modal', 'multiline', 'multiselectable', 'readonly', 'required', 'selected'];
+    const booleanProperties = [
+      'disabled',
+      'expanded',
+      'focused',
+      'modal',
+      'multiline',
+      'multiselectable',
+      'readonly',
+      'required',
+      'selected',
+    ];
 
     for (const booleanProperty of booleanProperties) {
       // WebArea and ScorllArea treat focus differently than other nodes. They report whether their frame  has focus,
       // not whether focus is specifically on the root node.
-      if (booleanProperty === 'focused' && (this._payload.role === 'WebArea' || this._payload.role === 'ScrollArea')) continue;
+      if (
+        booleanProperty === 'focused' &&
+        (this._payload.role === 'WebArea' ||
+          this._payload.role === 'ScrollArea')
+      )
+        continue;
       const value = this._payload[booleanProperty];
       if (!value) continue;
       node[booleanProperty] = value;
@@ -214,9 +255,23 @@ class WKAXNode {
       node[tokenProperty] = value;
     }
 
-    const orientationIsApplicable = new Set(['ScrollArea', 'scrollbar', 'listbox', 'combobox', 'menu', 'tree', 'separator', 'slider', 'tablist', 'toolbar']);
-    if (this._payload.orientation && orientationIsApplicable.has(this._payload.role)) node.orientation = this._payload.orientation;
+    const orientationIsApplicable = new Set([
+      'ScrollArea',
+      'scrollbar',
+      'listbox',
+      'combobox',
+      'menu',
+      'tree',
+      'separator',
+      'slider',
+      'tablist',
+      'toolbar',
+    ]);
+    if (
+      this._payload.orientation &&
+      orientationIsApplicable.has(this._payload.role)
+    )
+      node.orientation = this._payload.orientation;
     return node;
   }
-
 }

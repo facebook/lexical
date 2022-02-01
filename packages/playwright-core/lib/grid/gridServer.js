@@ -1,23 +1,25 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.GridServer = void 0;
 
-var _debug = _interopRequireDefault(require("debug"));
+var _debug = _interopRequireDefault(require('debug'));
 
-var _assert = _interopRequireDefault(require("assert"));
+var _assert = _interopRequireDefault(require('assert'));
 
-var _events = require("events");
+var _events = require('events');
 
-var _url = require("url");
+var _url = require('url');
 
-var _httpServer = require("../utils/httpServer");
+var _httpServer = require('../utils/httpServer');
 
-var _utils = require("../utils/utils");
+var _utils = require('../utils/utils');
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) {
+  return obj && obj.__esModule ? obj : {default: obj};
+}
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -37,56 +39,56 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const WSErrors = {
   NO_ERROR: {
     code: 1000,
-    reason: ''
+    reason: '',
   },
   AUTH_FAILED: {
     code: 1008,
-    reason: 'Grid authentication failed'
+    reason: 'Grid authentication failed',
   },
   AGENT_CREATION_FAILED: {
     code: 1013,
-    reason: 'Grid agent creation failed'
+    reason: 'Grid agent creation failed',
   },
   AGENT_NOT_FOUND: {
     code: 1013,
-    reason: 'Grid agent registration failed - agent with given ID not found'
+    reason: 'Grid agent registration failed - agent with given ID not found',
   },
   AGENT_NOT_CONNECTED: {
     code: 1013,
-    reason: 'Grid worker registration failed - agent has unsupported status'
+    reason: 'Grid worker registration failed - agent has unsupported status',
   },
   AGENT_CREATION_TIMED_OUT: {
     code: 1013,
-    reason: 'Grid agent creation timed out'
+    reason: 'Grid agent creation timed out',
   },
   AGENT_RETIRED: {
     code: 1000,
-    reason: 'Grid agent was retired'
+    reason: 'Grid agent was retired',
   },
   CLIENT_SOCKET_ERROR: {
     code: 1011,
-    reason: 'Grid client socket error'
+    reason: 'Grid client socket error',
   },
   WORKER_SOCKET_ERROR: {
     code: 1011,
-    reason: 'Grid worker socket error'
+    reason: 'Grid worker socket error',
   },
   CLIENT_PLAYWRIGHT_VERSION_MISMATCH: {
     code: 1013,
-    reason: 'Grid Playwright and grid client versions are different'
+    reason: 'Grid Playwright and grid client versions are different',
   },
   AGENT_PLAYWRIGHT_VERSION_MISMATCH: {
     code: 1013,
-    reason: 'Grid Playwright and grid agent versions are different'
+    reason: 'Grid Playwright and grid agent versions are different',
   },
   GRID_SHUTDOWN: {
     code: 1000,
-    reason: 'Grid was shutdown'
+    reason: 'Grid was shutdown',
   },
   AGENT_MANUALLY_STOPPED: {
     code: 1000,
-    reason: 'Grid agent was manually stopped'
-  }
+    reason: 'Grid agent was manually stopped',
+  },
 };
 
 class GridWorker extends _events.EventEmitter {
@@ -98,20 +100,28 @@ class GridWorker extends _events.EventEmitter {
     this._log = void 0;
     this._log = (0, _debug.default)(`[worker ${this.workerId}]`);
     this._clientSocket = clientSocket;
-    clientSocket.on('close', (code, reason) => this.closeWorker(WSErrors.NO_ERROR));
-    clientSocket.on('error', error => this.closeWorker(WSErrors.CLIENT_SOCKET_ERROR));
+    clientSocket.on('close', (code, reason) =>
+      this.closeWorker(WSErrors.NO_ERROR),
+    );
+    clientSocket.on('error', (error) =>
+      this.closeWorker(WSErrors.CLIENT_SOCKET_ERROR),
+    );
   }
 
   workerConnected(workerSocket) {
     this._log('connected');
 
     this._workerSocket = workerSocket;
-    workerSocket.on('close', (code, reason) => this.closeWorker(WSErrors.NO_ERROR));
-    workerSocket.on('error', error => this.closeWorker(WSErrors.WORKER_SOCKET_ERROR));
+    workerSocket.on('close', (code, reason) =>
+      this.closeWorker(WSErrors.NO_ERROR),
+    );
+    workerSocket.on('error', (error) =>
+      this.closeWorker(WSErrors.WORKER_SOCKET_ERROR),
+    );
 
-    this._clientSocket.on('message', data => workerSocket.send(data));
+    this._clientSocket.on('message', (data) => workerSocket.send(data));
 
-    workerSocket.on('message', data => this._clientSocket.send(data));
+    workerSocket.on('message', (data) => this._clientSocket.send(data));
 
     this._clientSocket.send('run');
   }
@@ -121,7 +131,10 @@ class GridWorker extends _events.EventEmitter {
 
     this._log('close');
 
-    (_this$_workerSocket = this._workerSocket) === null || _this$_workerSocket === void 0 ? void 0 : _this$_workerSocket.close(errorCode.code, errorCode.reason);
+    (_this$_workerSocket = this._workerSocket) === null ||
+    _this$_workerSocket === void 0
+      ? void 0
+      : _this$_workerSocket.close(errorCode.code, errorCode.reason);
 
     this._clientSocket.close(errorCode.code, errorCode.reason);
 
@@ -131,14 +144,17 @@ class GridWorker extends _events.EventEmitter {
   debugInfo() {
     return {
       worker: !!this._workerSocket,
-      client: !!this._clientSocket
+      client: !!this._clientSocket,
     };
   }
-
 }
 
 class GridAgent extends _events.EventEmitter {
-  constructor(capacity = Infinity, creationTimeout = 5 * 60000, retireTimeout = 30000) {
+  constructor(
+    capacity = Infinity,
+    creationTimeout = 5 * 60000,
+    retireTimeout = 30000,
+  ) {
     super();
     this._capacity = void 0;
     this.agentId = (0, _utils.createGuid)();
@@ -204,7 +220,11 @@ class GridAgent extends _events.EventEmitter {
       if (!this._workers.size) {
         this.setStatus('retiring');
         if (this._retireTimeoutId) clearTimeout(this._retireTimeoutId);
-        if (this._retireTimeout && isFinite(this._retireTimeout)) this._retireTimeoutId = setTimeout(() => this.closeAgent(WSErrors.AGENT_RETIRED), this._retireTimeout);
+        if (this._retireTimeout && isFinite(this._retireTimeout))
+          this._retireTimeoutId = setTimeout(
+            () => this.closeAgent(WSErrors.AGENT_RETIRED),
+            this._retireTimeout,
+          );
       }
     });
 
@@ -228,16 +248,18 @@ class GridAgent extends _events.EventEmitter {
   closeAgent(errorCode) {
     var _this$_ws;
 
-    for (const worker of this._workersWaitingForAgentConnected) worker.closeWorker(errorCode);
+    for (const worker of this._workersWaitingForAgentConnected)
+      worker.closeWorker(errorCode);
 
     for (const worker of this._workers.values()) worker.closeWorker(errorCode);
 
     this._log('close');
 
-    (_this$_ws = this._ws) === null || _this$_ws === void 0 ? void 0 : _this$_ws.close(errorCode.code, errorCode.reason);
+    (_this$_ws = this._ws) === null || _this$_ws === void 0
+      ? void 0
+      : _this$_ws.close(errorCode.code, errorCode.reason);
     this.emit('close');
   }
-
 }
 
 class GridServer {
@@ -253,8 +275,9 @@ class GridServer {
     this._authToken = authToken || '';
     this._server = new _httpServer.HttpServer();
     this._factory = factory;
-    this._pwVersion = (0, _utils.getPlaywrightVersion)(true
-    /* majorMinorOnly */
+    this._pwVersion = (0, _utils.getPlaywrightVersion)(
+      true,
+      /* majorMinorOnly */
     );
 
     this._server.routePath(this._securePath('/'), (request, response) => {
@@ -264,18 +287,22 @@ class GridServer {
       return true;
     });
 
-    this._server.routePath(this._securePath('/stopAll'), (request, response) => {
-      for (const agent of this._agents.values()) agent.closeAgent(WSErrors.AGENT_MANUALLY_STOPPED);
+    this._server.routePath(
+      this._securePath('/stopAll'),
+      (request, response) => {
+        for (const agent of this._agents.values())
+          agent.closeAgent(WSErrors.AGENT_MANUALLY_STOPPED);
 
-      response.statusCode = 302;
-      response.setHeader('Location', this._securePath('/'));
-      response.end();
-      return true;
-    });
+        response.statusCode = 302;
+        response.setHeader('Location', this._securePath('/'));
+        response.end();
+        return true;
+      },
+    );
 
     this._wsServer = this._server.createWebSocketServer();
 
-    this._wsServer.shouldHandle = request => {
+    this._wsServer.shouldHandle = (request) => {
       this._log(request.url);
 
       if (request.url.startsWith(this._securePath('/claimWorker'))) {
@@ -283,8 +310,12 @@ class GridServer {
         return true;
       }
 
-      if (request.url.startsWith('/registerAgent') || request.url.startsWith('/registerWorker')) {
-        const params = new _url.URL('http://localhost/' + request.url).searchParams;
+      if (
+        request.url.startsWith('/registerAgent') ||
+        request.url.startsWith('/registerWorker')
+      ) {
+        const params = new _url.URL('http://localhost/' + request.url)
+          .searchParams;
         const agentId = params.get('agentId');
         return !!agentId && this._agents.has(agentId);
       }
@@ -295,20 +326,39 @@ class GridServer {
     this._wsServer.on('connection', async (ws, request) => {
       var _request$url, _request$url2, _request$url3;
 
-      if ((_request$url = request.url) !== null && _request$url !== void 0 && _request$url.startsWith(this._securePath('/claimWorker'))) {
+      if (
+        (_request$url = request.url) !== null &&
+        _request$url !== void 0 &&
+        _request$url.startsWith(this._securePath('/claimWorker'))
+      ) {
         var _this$_createAgent;
 
-        const params = new _url.URL('http://localhost/' + request.url).searchParams;
+        const params = new _url.URL('http://localhost/' + request.url)
+          .searchParams;
 
-        if (params.get('pwVersion') !== this._pwVersion && !process.env.PWTEST_UNSAFE_GRID_VERSION) {
-          ws.close(WSErrors.CLIENT_PLAYWRIGHT_VERSION_MISMATCH.code, WSErrors.CLIENT_PLAYWRIGHT_VERSION_MISMATCH.reason);
+        if (
+          params.get('pwVersion') !== this._pwVersion &&
+          !process.env.PWTEST_UNSAFE_GRID_VERSION
+        ) {
+          ws.close(
+            WSErrors.CLIENT_PLAYWRIGHT_VERSION_MISMATCH.code,
+            WSErrors.CLIENT_PLAYWRIGHT_VERSION_MISMATCH.reason,
+          );
           return;
         }
 
-        const agent = [...this._agents.values()].find(w => w.canCreateWorker()) || ((_this$_createAgent = this._createAgent()) === null || _this$_createAgent === void 0 ? void 0 : _this$_createAgent.agent);
+        const agent =
+          [...this._agents.values()].find((w) => w.canCreateWorker()) ||
+          ((_this$_createAgent = this._createAgent()) === null ||
+          _this$_createAgent === void 0
+            ? void 0
+            : _this$_createAgent.agent);
 
         if (!agent) {
-          ws.close(WSErrors.AGENT_CREATION_FAILED.code, WSErrors.AGENT_CREATION_FAILED.reason);
+          ws.close(
+            WSErrors.AGENT_CREATION_FAILED.code,
+            WSErrors.AGENT_CREATION_FAILED.reason,
+          );
           return;
         }
 
@@ -316,11 +366,19 @@ class GridServer {
         return;
       }
 
-      if ((_request$url2 = request.url) !== null && _request$url2 !== void 0 && _request$url2.startsWith('/registerAgent')) {
-        const params = new _url.URL('http://localhost/' + request.url).searchParams;
+      if (
+        (_request$url2 = request.url) !== null &&
+        _request$url2 !== void 0 &&
+        _request$url2.startsWith('/registerAgent')
+      ) {
+        const params = new _url.URL('http://localhost/' + request.url)
+          .searchParams;
 
         if (params.get('pwVersion') !== this._pwVersion) {
-          ws.close(WSErrors.AGENT_PLAYWRIGHT_VERSION_MISMATCH.code, WSErrors.AGENT_PLAYWRIGHT_VERSION_MISMATCH.reason);
+          ws.close(
+            WSErrors.AGENT_PLAYWRIGHT_VERSION_MISMATCH.code,
+            WSErrors.AGENT_PLAYWRIGHT_VERSION_MISMATCH.reason,
+          );
           return;
         }
 
@@ -329,7 +387,10 @@ class GridServer {
         const agent = this._agents.get(agentId);
 
         if (!agent) {
-          ws.close(WSErrors.AGENT_NOT_FOUND.code, WSErrors.AGENT_NOT_FOUND.reason);
+          ws.close(
+            WSErrors.AGENT_NOT_FOUND.code,
+            WSErrors.AGENT_NOT_FOUND.reason,
+          );
           return;
         }
 
@@ -337,57 +398,79 @@ class GridServer {
         return;
       }
 
-      if ((_request$url3 = request.url) !== null && _request$url3 !== void 0 && _request$url3.startsWith('/registerWorker')) {
-        const params = new _url.URL('http://localhost/' + request.url).searchParams;
+      if (
+        (_request$url3 = request.url) !== null &&
+        _request$url3 !== void 0 &&
+        _request$url3.startsWith('/registerWorker')
+      ) {
+        const params = new _url.URL('http://localhost/' + request.url)
+          .searchParams;
         const agentId = params.get('agentId');
         const workerId = params.get('workerId');
 
         const agent = this._agents.get(agentId);
 
-        if (!agent) ws.close(WSErrors.AGENT_NOT_FOUND.code, WSErrors.AGENT_NOT_FOUND.reason);else if (agent.status() !== 'connected') ws.close(WSErrors.AGENT_NOT_CONNECTED.code, WSErrors.AGENT_NOT_CONNECTED.reason);else agent.workerConnected(workerId, ws);
+        if (!agent)
+          ws.close(
+            WSErrors.AGENT_NOT_FOUND.code,
+            WSErrors.AGENT_NOT_FOUND.reason,
+          );
+        else if (agent.status() !== 'connected')
+          ws.close(
+            WSErrors.AGENT_NOT_CONNECTED.code,
+            WSErrors.AGENT_NOT_CONNECTED.reason,
+          );
+        else agent.workerConnected(workerId, ws);
         return;
       }
     });
   }
 
   async createAgent() {
-    const {
-      initPromise
-    } = this._createAgent();
+    const {initPromise} = this._createAgent();
 
     return await initPromise;
   }
 
   _createAgent() {
-    const agent = new GridAgent(this._factory.capacity, this._factory.launchTimeout, this._factory.retireTimeout);
+    const agent = new GridAgent(
+      this._factory.capacity,
+      this._factory.launchTimeout,
+      this._factory.retireTimeout,
+    );
 
     this._agents.set(agent.agentId, agent);
 
     agent.on('close', () => {
       this._agents.delete(agent.agentId);
     });
-    const initPromise = Promise.resolve().then(() => this._factory.launch({
-      agentId: agent.agentId,
-      gridURL: this._server.urlPrefix(),
-      playwrightVersion: (0, _utils.getPlaywrightVersion)()
-    })).then(() => {
-      this._log('created');
+    const initPromise = Promise.resolve()
+      .then(() =>
+        this._factory.launch({
+          agentId: agent.agentId,
+          gridURL: this._server.urlPrefix(),
+          playwrightVersion: (0, _utils.getPlaywrightVersion)(),
+        }),
+      )
+      .then(() => {
+        this._log('created');
 
-      return {
-        error: undefined
-      };
-    }).catch(error => {
-      this._log('failed to launch agent ' + agent.agentId);
+        return {
+          error: undefined,
+        };
+      })
+      .catch((error) => {
+        this._log('failed to launch agent ' + agent.agentId);
 
-      console.error(error);
-      agent.closeAgent(WSErrors.AGENT_CREATION_FAILED);
-      return {
-        error
-      };
-    });
+        console.error(error);
+        agent.closeAgent(WSErrors.AGENT_CREATION_FAILED);
+        return {
+          error,
+        };
+      });
     return {
       agent,
-      initPromise
+      initPromise,
     };
   }
 
@@ -411,17 +494,25 @@ class GridServer {
         </section>
         <hr/>
         <ul>
-          ${[...this._agents].map(([agentId, agent]) => `
+          ${[...this._agents].map(
+            ([agentId, agent]) => `
             <li>
-              <div>Agent <code>${mangle(agentId)}</code>: ${agent.status()}</div>
+              <div>Agent <code>${mangle(
+                agentId,
+              )}</code>: ${agent.status()}</div>
               <div>Workers: ${agent._workers.size}</div>
               <ul>
-                ${[...agent._workers].map(([workerId, worker]) => `
-                  <li>worker <code>${mangle(workerId)}</code> - ${JSON.stringify(worker.debugInfo())}</li>
-                `)}
+                ${[...agent._workers].map(
+                  ([workerId, worker]) => `
+                  <li>worker <code>${mangle(
+                    workerId,
+                  )}</code> - ${JSON.stringify(worker.debugInfo())}</li>
+                `,
+                )}
               </ul>
             </li>
-          `)}
+          `,
+          )}
         </ul>
     `;
   }
@@ -435,12 +526,12 @@ class GridServer {
   }
 
   async stop() {
-    for (const agent of this._agents.values()) agent.closeAgent(WSErrors.GRID_SHUTDOWN);
+    for (const agent of this._agents.values())
+      agent.closeAgent(WSErrors.GRID_SHUTDOWN);
 
     (0, _assert.default)(this._agents.size === 0);
     await this._server.stop();
   }
-
 }
 
 exports.GridServer = GridServer;

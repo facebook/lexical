@@ -166,10 +166,10 @@ function getTriggerState(
     criteria = {
       anchorOffset: selection.anchor.offset,
       isCodeBlock: $isCodeNode(node),
+      isParentAListItemNode,
+      isParentAnElementNode,
       isSelectionCollapsed: selection.isCollapsed(),
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
-      isParentAnElementNode,
-      isParentAListItemNode,
       nodeKey: node.getKey(),
       textContent: node.getTextContent(),
     };

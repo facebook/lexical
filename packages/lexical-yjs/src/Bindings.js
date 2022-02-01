@@ -29,14 +29,14 @@ export type Binding = {
     | CollabDecoratorNode
     | CollabLineBreakNode,
   >,
-  nodeProperties: Map<string, Array<string>>,
-  editor: LexicalEditor,
-  id: string,
   cursors: Map<ClientID, Cursor>,
   cursorsContainer: null | HTMLElement,
   doc: Doc,
-  root: CollabElementNode,
   docMap: Map<string, Doc>,
+  editor: LexicalEditor,
+  id: string,
+  nodeProperties: Map<string, Array<string>>,
+  root: CollabElementNode,
 };
 
 export function createBinding(
@@ -62,13 +62,13 @@ export function createBinding(
   // $FlowFixMe: our Flow bindings need fixing
   return {
     collabNodeMap: new Map(),
-    nodeProperties: new Map(),
-    editor,
-    id,
     cursors: new Map(),
     cursorsContainer: null,
     doc,
-    root,
     docMap,
+    editor,
+    id,
+    nodeProperties: new Map(),
+    root,
   };
 }

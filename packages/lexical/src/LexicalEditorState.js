@@ -16,6 +16,7 @@ import {$createRootNode} from './nodes/base/LexicalRootNode';
 import {readEditorState} from './LexicalUpdates';
 
 export type ParsedEditorState = {
+  _nodeMap: Array<[NodeKey, ParsedNode]>,
   _selection: null | {
     anchor: {
       key: string,
@@ -28,7 +29,6 @@ export type ParsedEditorState = {
       type: 'text' | 'element',
     },
   },
-  _nodeMap: Array<[NodeKey, ParsedNode]>,
 };
 
 export type JSONEditorState = {

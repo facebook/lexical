@@ -30,8 +30,8 @@ import {useEffect} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 
 type OptionalProps = {
-  strlen?: (input: string) => number,
   remainingCharacters?: (characters: number) => void,
+  strlen?: (input: string) => number,
 };
 
 export function useCharacterLimit(

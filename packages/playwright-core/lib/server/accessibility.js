@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.Accessibility = void 0;
 
@@ -28,14 +28,8 @@ class Accessibility {
   }
 
   async snapshot(options = {}) {
-    const {
-      interestingOnly = true,
-      root = null
-    } = options;
-    const {
-      tree,
-      needle
-    } = await this._getAXTree(root || undefined);
+    const {interestingOnly = true, root = null} = options;
+    const {tree, needle} = await this._getAXTree(root || undefined);
 
     if (!interestingOnly) {
       if (root) return needle && serializeTree(needle)[0];
@@ -47,7 +41,6 @@ class Accessibility {
     if (root && (!needle || !interestingNodes.has(needle))) return null;
     return serializeTree(needle || tree, interestingNodes)[0];
   }
-
 }
 
 exports.Accessibility = Accessibility;
@@ -57,13 +50,15 @@ function collectInterestingNodes(collection, node, insideControl) {
   if (node.isLeafNode()) return;
   insideControl = insideControl || node.isControl();
 
-  for (const child of node.children()) collectInterestingNodes(collection, child, insideControl);
+  for (const child of node.children())
+    collectInterestingNodes(collection, child, insideControl);
 }
 
 function serializeTree(node, whitelistedNodes) {
   const children = [];
 
-  for (const child of node.children()) children.push(...serializeTree(child, whitelistedNodes));
+  for (const child of node.children())
+    children.push(...serializeTree(child, whitelistedNodes));
 
   if (whitelistedNodes && !whitelistedNodes.has(node)) return children;
   const serializedNode = node.serialize();

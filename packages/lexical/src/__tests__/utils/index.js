@@ -23,8 +23,8 @@ import {CodeNode} from 'lexical/CodeNode';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
-  editor: LexicalEditor | null,
   container: HTMLDivElement | null,
+  editor: LexicalEditor | null,
   outerHTML: string,
 };
 
@@ -48,8 +48,8 @@ export function createTestEditor(config): LexicalEditor {
 
 export function initializeUnitTest(runTests: (testEnv: TestEnv) => void) {
   const testEnv: TestEnv = {
-    editor: null,
     container: null,
+    editor: null,
     get outerHTML() {
       return this.container.innerHTML;
     },

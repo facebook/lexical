@@ -1,17 +1,22 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
-exports.FetchRequestDispatcher = exports.WebSocketDispatcher = exports.RouteDispatcher = exports.ResponseDispatcher = exports.RequestDispatcher = void 0;
+exports.FetchRequestDispatcher =
+  exports.WebSocketDispatcher =
+  exports.RouteDispatcher =
+  exports.ResponseDispatcher =
+  exports.RequestDispatcher =
+    void 0;
 
-var _fetch = require("../server/fetch");
+var _fetch = require('../server/fetch');
 
-var _network = require("../server/network");
+var _network = require('../server/network');
 
-var _dispatcher = require("./dispatcher");
+var _dispatcher = require('./dispatcher');
 
-var _frameDispatcher = require("./frameDispatcher");
+var _frameDispatcher = require('./frameDispatcher');
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -48,22 +53,26 @@ class RequestDispatcher extends _dispatcher.Dispatcher {
       postData: postData === null ? undefined : postData.toString('base64'),
       headers: request.headers(),
       isNavigationRequest: request.isNavigationRequest(),
-      redirectedFrom: RequestDispatcher.fromNullable(scope, request.redirectedFrom())
+      redirectedFrom: RequestDispatcher.fromNullable(
+        scope,
+        request.redirectedFrom(),
+      ),
     });
   }
 
   async rawRequestHeaders(params) {
     return {
-      headers: await this._object.rawRequestHeaders()
+      headers: await this._object.rawRequestHeaders(),
     };
   }
 
   async response() {
     return {
-      response: (0, _dispatcher.lookupNullableDispatcher)(await this._object.response())
+      response: (0, _dispatcher.lookupNullableDispatcher)(
+        await this._object.response(),
+      ),
     };
   }
-
 }
 
 exports.RequestDispatcher = RequestDispatcher;
@@ -86,40 +95,39 @@ class ResponseDispatcher extends _dispatcher.Dispatcher {
       status: response.status(),
       statusText: response.statusText(),
       headers: response.headers(),
-      timing: response.timing()
+      timing: response.timing(),
     });
   }
 
   async body() {
     return {
-      binary: (await this._object.body()).toString('base64')
+      binary: (await this._object.body()).toString('base64'),
     };
   }
 
   async securityDetails() {
     return {
-      value: (await this._object.securityDetails()) || undefined
+      value: (await this._object.securityDetails()) || undefined,
     };
   }
 
   async serverAddr() {
     return {
-      value: (await this._object.serverAddr()) || undefined
+      value: (await this._object.serverAddr()) || undefined,
     };
   }
 
   async rawResponseHeaders(params) {
     return {
-      headers: await this._object.rawResponseHeaders()
+      headers: await this._object.rawResponseHeaders(),
     };
   }
 
   async sizes(params) {
     return {
-      sizes: await this._object.sizes()
+      sizes: await this._object.sizes(),
     };
   }
-
 }
 
 exports.ResponseDispatcher = ResponseDispatcher;
@@ -133,7 +141,7 @@ class RouteDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, route) {
     super(scope, route, 'Route', {
       // Context route can point to a non-reported request.
-      request: RequestDispatcher.from(scope, route.request())
+      request: RequestDispatcher.from(scope, route.request()),
     });
   }
 
@@ -142,7 +150,9 @@ class RouteDispatcher extends _dispatcher.Dispatcher {
       url: params.url,
       method: params.method,
       headers: params.headers,
-      postData: params.postData ? Buffer.from(params.postData, 'base64') : undefined
+      postData: params.postData
+        ? Buffer.from(params.postData, 'base64')
+        : undefined,
     });
   }
 
@@ -153,7 +163,6 @@ class RouteDispatcher extends _dispatcher.Dispatcher {
   async abort(params) {
     await this._object.abort(params.errorCode || 'failed');
   }
-
 }
 
 exports.RouteDispatcher = RouteDispatcher;
@@ -161,16 +170,23 @@ exports.RouteDispatcher = RouteDispatcher;
 class WebSocketDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, webSocket) {
     super(scope, webSocket, 'WebSocket', {
-      url: webSocket.url()
+      url: webSocket.url(),
     });
-    webSocket.on(_network.WebSocket.Events.FrameSent, event => this._dispatchEvent('frameSent', event));
-    webSocket.on(_network.WebSocket.Events.FrameReceived, event => this._dispatchEvent('frameReceived', event));
-    webSocket.on(_network.WebSocket.Events.SocketError, error => this._dispatchEvent('socketError', {
-      error
-    }));
-    webSocket.on(_network.WebSocket.Events.Close, () => this._dispatchEvent('close', {}));
+    webSocket.on(_network.WebSocket.Events.FrameSent, (event) =>
+      this._dispatchEvent('frameSent', event),
+    );
+    webSocket.on(_network.WebSocket.Events.FrameReceived, (event) =>
+      this._dispatchEvent('frameReceived', event),
+    );
+    webSocket.on(_network.WebSocket.Events.SocketError, (error) =>
+      this._dispatchEvent('socketError', {
+        error,
+      }),
+    );
+    webSocket.on(_network.WebSocket.Events.Close, () =>
+      this._dispatchEvent('close', {}),
+    );
   }
-
 }
 
 exports.WebSocketDispatcher = WebSocketDispatcher;
@@ -201,10 +217,7 @@ class FetchRequestDispatcher extends _dispatcher.Dispatcher {
   }
 
   async fetch(params, metadata) {
-    const {
-      fetchResponse,
-      error
-    } = await this._object.fetch(params);
+    const {fetchResponse, error} = await this._object.fetch(params);
     let response;
 
     if (fetchResponse) {
@@ -213,13 +226,13 @@ class FetchRequestDispatcher extends _dispatcher.Dispatcher {
         status: fetchResponse.status,
         statusText: fetchResponse.statusText,
         headers: fetchResponse.headers,
-        fetchUid: fetchResponse.fetchUid
+        fetchUid: fetchResponse.fetchUid,
       };
     }
 
     return {
       response,
-      error
+      error,
     };
   }
 
@@ -227,14 +240,13 @@ class FetchRequestDispatcher extends _dispatcher.Dispatcher {
     const buffer = this._object.fetchResponses.get(params.fetchUid);
 
     return {
-      binary: buffer ? buffer.toString('base64') : undefined
+      binary: buffer ? buffer.toString('base64') : undefined,
     };
   }
 
   async disposeFetchResponse(params, metadata) {
     this._object.fetchResponses.delete(params.fetchUid);
   }
-
 }
 
 exports.FetchRequestDispatcher = FetchRequestDispatcher;

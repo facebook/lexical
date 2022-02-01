@@ -678,9 +678,9 @@ export function updateEditorState(
       );
     } finally {
       observer.observe(rootElement, {
+        characterData: true,
         childList: true,
         subtree: true,
-        characterData: true,
       });
     }
   }

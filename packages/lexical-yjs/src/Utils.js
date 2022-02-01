@@ -284,6 +284,7 @@ export function getPositionFromElementAndOffset(
   offset: number,
   boundaryIsEdge: boolean,
 ): {
+  length: number,
   node:
     | CollabElementNode
     | CollabTextNode
@@ -292,7 +293,6 @@ export function getPositionFromElementAndOffset(
     | null,
   nodeIndex: number,
   offset: number,
-  length: number,
 } {
   let index = 0;
   let i = 0;
@@ -312,20 +312,20 @@ export function getPositionFromElementAndOffset(
       }
       const diffLength = size - textOffset;
       return {
+        length: diffLength,
         node: child,
         nodeIndex: i,
         offset: textOffset,
-        length: diffLength,
       };
     }
 
     if (index > offset) {
-      return {node: child, nodeIndex: i, offset: childOffset, length: 0};
+      return {length: 0, node: child, nodeIndex: i, offset: childOffset};
     } else if (i === childrenLength - 1) {
-      return {node: null, nodeIndex: i + 1, offset: childOffset + 1, length: 0};
+      return {length: 0, node: null, nodeIndex: i + 1, offset: childOffset + 1};
     }
   }
-  return {node: null, nodeIndex: 0, offset: 0, length: 0};
+  return {length: 0, node: null, nodeIndex: 0, offset: 0};
 }
 
 export function doesSelectionNeedRecovering(selection: Selection): boolean {

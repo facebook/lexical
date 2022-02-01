@@ -83,9 +83,7 @@ describe('LexicalSelection tests', () => {
       () =>
         createTestEditor({
           theme: {
-            placeholder: 'editor-placeholder',
-            paragraph: 'editor-paragraph',
-            quote: 'editor-quote',
+            code: 'editor-code',
             heading: {
               h1: 'editor-heading-h1',
               h2: 'editor-heading-h2',
@@ -93,23 +91,25 @@ describe('LexicalSelection tests', () => {
               h4: 'editor-heading-h4',
               h5: 'editor-heading-h5',
             },
+            image: 'editor-image',
             list: {
               ol: 'editor-list-ol',
               ul: 'editor-list-ul',
             },
             listitem: 'editor-listitem',
-            image: 'editor-image',
+            paragraph: 'editor-paragraph',
+            placeholder: 'editor-placeholder',
+            quote: 'editor-quote',
             text: {
               bold: 'editor-text-bold',
-              link: 'editor-text-link',
-              italic: 'editor-text-italic',
-              hashtag: 'editor-text-hashtag',
-              underline: 'editor-text-underline',
-              strikethrough: 'editor-text-strikethrough',
-              underlineStrikethrough: 'editor-text-underlineStrikethrough',
               code: 'editor-text-code',
+              hashtag: 'editor-text-hashtag',
+              italic: 'editor-text-italic',
+              link: 'editor-text-link',
+              strikethrough: 'editor-text-strikethrough',
+              underline: 'editor-text-underline',
+              underlineStrikethrough: 'editor-text-underlineStrikethrough',
             },
-            code: 'editor-code',
           },
         }),
       [],
@@ -206,45 +206,53 @@ describe('LexicalSelection tests', () => {
 
   const suite = [
     {
-      name: 'Simple typing',
-      inputs: [
-        insertText('H'),
-        insertText('e'),
-        insertText('l'),
-        insertText('l'),
-        insertText('o'),
-      ],
       expectedHTML:
         '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello</span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 5,
+        focusPath: [0, 0, 0],
       },
-    },
-    {
-      name: 'Simple typing in bold',
       inputs: [
-        formatBold(),
         insertText('H'),
         insertText('e'),
         insertText('l'),
         insertText('l'),
         insertText('o'),
       ],
+      name: 'Simple typing',
+    },
+    {
       expectedHTML:
         '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong></p></div>',
       expectedSelection: {
-        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 5,
+        focusPath: [0, 0, 0],
       },
+      inputs: [
+        formatBold(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      name: 'Simple typing in bold',
     },
     {
-      name: 'Simple typing in italic',
+      expectedHTML:
+        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<em class="editor-text-italic" data-lexical-text="true">Hello</em></p></div>',
+      expectedSelection: {
+        anchorOffset: 5,
+        anchorPath: [0, 0, 0],
+        focusOffset: 5,
+        focusPath: [0, 0, 0],
+      },
       inputs: [
         formatItalic(),
         insertText('H'),
@@ -253,18 +261,18 @@ describe('LexicalSelection tests', () => {
         insertText('l'),
         insertText('o'),
       ],
-      expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
-        '<em class="editor-text-italic" data-lexical-text="true">Hello</em></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      },
+      name: 'Simple typing in italic',
     },
     {
-      name: 'Simple typing in italic + bold',
+      expectedHTML:
+        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold editor-text-italic" data-lexical-text="true">Hello</strong></p></div>',
+      expectedSelection: {
+        anchorOffset: 5,
+        anchorPath: [0, 0, 0],
+        focusOffset: 5,
+        focusPath: [0, 0, 0],
+      },
       inputs: [
         formatItalic(),
         formatBold(),
@@ -274,38 +282,38 @@ describe('LexicalSelection tests', () => {
         insertText('l'),
         insertText('o'),
       ],
-      expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
-        '<strong class="editor-text-bold editor-text-italic" data-lexical-text="true">Hello</strong></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      },
+      name: 'Simple typing in italic + bold',
     },
     {
-      name: 'Simple typing in underline',
-      inputs: [
-        formatUnderline(),
-        insertText('H'),
-        insertText('e'),
-        insertText('l'),
-        insertText('l'),
-        insertText('o'),
-      ],
       expectedHTML:
         '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span class="editor-text-underline" data-lexical-text="true">Hello</span></p></div>',
       expectedSelection: {
-        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 5,
+        focusPath: [0, 0, 0],
       },
+      inputs: [
+        formatUnderline(),
+        insertText('H'),
+        insertText('e'),
+        insertText('l'),
+        insertText('l'),
+        insertText('o'),
+      ],
+      name: 'Simple typing in underline',
     },
     {
-      name: 'Simple typing in strikethrough',
+      expectedHTML:
+        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span class="editor-text-strikethrough" data-lexical-text="true">Hello</span></p></div>',
+      expectedSelection: {
+        anchorOffset: 5,
+        anchorPath: [0, 0, 0],
+        focusOffset: 5,
+        focusPath: [0, 0, 0],
+      },
       inputs: [
         formatStrikeThrough(),
         insertText('H'),
@@ -314,18 +322,18 @@ describe('LexicalSelection tests', () => {
         insertText('l'),
         insertText('o'),
       ],
-      expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
-        '<span class="editor-text-strikethrough" data-lexical-text="true">Hello</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      },
+      name: 'Simple typing in strikethrough',
     },
     {
-      name: 'Simple typing in underline + strikethrough',
+      expectedHTML:
+        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span class="editor-text-underlineStrikethrough" data-lexical-text="true">Hello</span></p></div>',
+      expectedSelection: {
+        anchorOffset: 5,
+        anchorPath: [0, 0, 0],
+        focusOffset: 5,
+        focusPath: [0, 0, 0],
+      },
       inputs: [
         formatUnderline(),
         formatStrikeThrough(),
@@ -335,18 +343,17 @@ describe('LexicalSelection tests', () => {
         insertText('l'),
         insertText('o'),
       ],
-      expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
-        '<span class="editor-text-underlineStrikethrough" data-lexical-text="true">Hello</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      },
+      name: 'Simple typing in underline + strikethrough',
     },
     {
-      name: 'Deletion',
+      expectedHTML:
+        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true">1246</span></p></div>',
+      expectedSelection: {
+        anchorOffset: 4,
+        anchorPath: [0, 0, 0],
+        focusOffset: 4,
+        focusPath: [0, 0, 0],
+      },
       inputs: [
         insertText('1'),
         insertText('2'),
@@ -357,78 +364,71 @@ describe('LexicalSelection tests', () => {
         deleteBackward(),
         insertText('6'),
       ],
-      expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true">1246</span></p></div>',
-      expectedSelection: {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 4,
-        focusPath: [0, 0, 0],
-        focusOffset: 4,
-      },
+      name: 'Deletion',
     },
     {
-      name: 'Creation of an immutable node',
-      inputs: [insertImmutableNode('Dominic Gannaway')],
       expectedHTML:
         '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
-        anchorPath: [0, 0, 0],
         anchorOffset: 16,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 16,
+        focusPath: [0, 0, 0],
       },
+      inputs: [insertImmutableNode('Dominic Gannaway')],
+      name: 'Creation of an immutable node',
     },
     {
-      name: 'Convert text to an immutable node',
+      expectedHTML:
+        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<span data-lexical-text="true">Dominic Gannaway</span>' +
+        '</p></div>',
+      expectedSelection: {
+        anchorOffset: 1,
+        anchorPath: [0],
+        focusOffset: 1,
+        focusPath: [0],
+      },
       inputs: [
         insertText('Dominic Gannaway'),
         moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
         convertToImmutableNode(),
       ],
+      name: 'Convert text to an immutable node',
+    },
+    {
       expectedHTML:
         '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
-        anchorPath: [0],
         anchorOffset: 1,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 1,
+        focusPath: [0],
       },
-    },
-    {
-      name: 'Creation of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway')],
+      name: 'Creation of a segmented node',
+    },
+    {
       expectedHTML:
         '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
-        anchorPath: [0],
         anchorOffset: 1,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 1,
+        focusPath: [0],
       },
-    },
-    {
-      name: 'Convert text to a segmented node',
       inputs: [
         insertText('Dominic Gannaway'),
         moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
         convertToSegmentedNode(),
       ],
-      expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
-        '<span data-lexical-text="true">Dominic Gannaway</span>' +
-        '</p></div>',
-      expectedSelection: {
-        anchorPath: [0],
-        anchorOffset: 1,
-        focusPath: [0],
-        focusOffset: 1,
-      },
+      name: 'Convert text to a segmented node',
     },
     // Tests need fixing:
 
@@ -742,118 +742,128 @@ describe('LexicalSelection tests', () => {
       {whitespaceCharacter: '\u200A', whitespaceName: 'hair space'},
     ].flatMap(({whitespaceCharacter, whitespaceName}) => [
       {
-        name: `Type two words separated by a ${whitespaceName}, delete word backward from end`,
-        inputs: [
-          insertText(`Hello${whitespaceCharacter}world`),
-          deleteWordBackward(),
-        ],
         expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello${printWhitespace(
           whitespaceCharacter,
         )}</span></p></div>`,
         expectedSelection: {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         },
+        inputs: [
+          insertText(`Hello${whitespaceCharacter}world`),
+          deleteWordBackward(),
+        ],
+        name: `Type two words separated by a ${whitespaceName}, delete word backward from end`,
       },
       {
-        name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning`,
+        expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">${printWhitespace(
+          whitespaceCharacter,
+        )}world</span></p></div>`,
+        expectedSelection: {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 0,
+          focusPath: [0, 0, 0],
+        },
         inputs: [
           insertText(`Hello${whitespaceCharacter}world`),
           moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
           deleteWordForward(),
         ],
-        expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">${printWhitespace(
-          whitespaceCharacter,
-        )}world</span></p></div>`,
-        expectedSelection: {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 0, 0],
-          focusOffset: 0,
-        },
+        name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning`,
       },
       {
-        name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning of preceding whitespace`,
+        expectedHTML:
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello</span></p></div>',
+        expectedSelection: {
+          anchorOffset: 5,
+          anchorPath: [0, 0, 0],
+          focusOffset: 5,
+          focusPath: [0, 0, 0],
+        },
         inputs: [
           insertText(`Hello${whitespaceCharacter}world`),
           moveNativeSelection([0, 0, 0], 5, [0, 0, 0], 5),
           deleteWordForward(),
         ],
-        expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello</span></p></div>',
-        expectedSelection: {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 5,
-          focusPath: [0, 0, 0],
-          focusOffset: 5,
-        },
+        name: `Type two words separated by a ${whitespaceName}, delete word forward from beginning of preceding whitespace`,
       },
       {
-        name: `Type two words separated by a ${whitespaceName}, delete word backward from end of trailing whitespace`,
+        expectedHTML:
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">world</span></p></div>',
+        expectedSelection: {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 0,
+          focusPath: [0, 0, 0],
+        },
         inputs: [
           insertText(`Hello${whitespaceCharacter}world`),
           moveNativeSelection([0, 0, 0], 6, [0, 0, 0], 6),
           deleteWordBackward(),
         ],
-        expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">world</span></p></div>',
-        expectedSelection: {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 0, 0],
-          focusOffset: 0,
-        },
+        name: `Type two words separated by a ${whitespaceName}, delete word backward from end of trailing whitespace`,
       },
       {
-        name: `Type a word, delete it and undo the deletion`,
-        inputs: [insertText('Hello world'), deleteWordBackward(), undo()],
         expectedHTML:
           '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
         expectedSelection: {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         },
+        inputs: [insertText('Hello world'), deleteWordBackward(), undo()],
+        name: `Type a word, delete it and undo the deletion`,
       },
       {
-        name: `Type a word, delete it and undo the deletion`,
+        expectedHTML:
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span></p></div>',
+        expectedSelection: {
+          anchorOffset: 6,
+          anchorPath: [0, 0, 0],
+          focusOffset: 6,
+          focusPath: [0, 0, 0],
+        },
         inputs: [
           insertText('Hello world'),
           deleteWordBackward(),
           undo(),
           redo(),
         ],
-        expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span></p></div>',
-        expectedSelection: {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 6,
-          focusPath: [0, 0, 0],
-          focusOffset: 6,
-        },
+        name: `Type a word, delete it and undo the deletion`,
       },
       {
-        name: 'Type a sentence, move the caret to the middle and move with the arrows to the start',
+        expectedHTML:
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+          '<span data-lexical-text="true">this is weird test</span></p></div>',
+        expectedSelection: {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 0,
+          focusPath: [0, 0, 0],
+        },
         inputs: [
           insertText('this is weird test'),
           moveNativeSelection([0, 0, 0], 14, [0, 0, 0], 14),
           moveBackward(14),
         ],
-        expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
-          '<span data-lexical-text="true">this is weird test</span></p></div>',
-        expectedSelection: {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 0, 0],
-          focusOffset: 0,
-        },
+        name: 'Type a sentence, move the caret to the middle and move with the arrows to the start',
       },
       {
-        name: 'Type a text and an immutable text, move the caret to the end of the first text',
+        expectedHTML:
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+          '<span data-lexical-text="true">Hello </span>' +
+          '<span data-lexical-text="true">Bob</span>' +
+          '</p></div>',
+        expectedSelection: {
+          anchorOffset: 3,
+          anchorPath: [0, 1, 0],
+          focusOffset: 3,
+          focusPath: [0, 1, 0],
+        },
         inputs: [
           insertText('Hello '),
           insertImmutableNode('Bob'),
@@ -861,20 +871,17 @@ describe('LexicalSelection tests', () => {
           moveBackward(),
           moveEnd(),
         ],
-        expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
-          '<span data-lexical-text="true">Hello </span>' +
-          '<span data-lexical-text="true">Bob</span>' +
-          '</p></div>',
-        expectedSelection: {
-          anchorPath: [0, 1, 0],
-          anchorOffset: 3,
-          focusPath: [0, 1, 0],
-          focusOffset: 3,
-        },
+        name: 'Type a text and an immutable text, move the caret to the end of the first text',
       },
       {
-        name: 'Paste text, move selection and delete word forward',
+        expectedHTML:
+          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">AB\tEFG</span></p></div>',
+        expectedSelection: {
+          anchorOffset: 2,
+          anchorPath: [0, 0, 0],
+          focusOffset: 2,
+          focusPath: [0, 0, 0],
+        },
         inputs: [
           pastePlain('ABD	EFG'),
           moveBackward(5),
@@ -882,14 +889,7 @@ describe('LexicalSelection tests', () => {
           moveBackward(),
           deleteWordForward(),
         ],
-        expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">AB\tEFG</span></p></div>',
-        expectedSelection: {
-          anchorPath: [0, 0, 0],
-          anchorOffset: 2,
-          focusPath: [0, 0, 0],
-          focusOffset: 2,
-        },
+        name: 'Paste text, move selection and delete word forward',
       },
     ]),
   ];
@@ -926,9 +926,7 @@ describe('LexicalSelection tests', () => {
     [
       // Collapsed selection on end; add/remove/replace beginning
       {
-        name: 'insertBefore - Collapsed selection on end; add beginning',
         anchorOffset: 2,
-        focusOffset: 2,
         fn: (paragraph, text) => {
           const newText = $createTextNode('2');
           text.insertBefore(newText);
@@ -940,11 +938,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
+        focusOffset: 2,
+        name: 'insertBefore - Collapsed selection on end; add beginning',
       },
       {
-        name: 'insertAfter - Collapsed selection on end; add beginning',
         anchorOffset: 2,
-        focusOffset: 2,
         fn: (paragraph, text) => {
           const newText = $createTextNode('2');
           text.insertAfter(newText);
@@ -956,11 +954,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
+        focusOffset: 2,
+        name: 'insertAfter - Collapsed selection on end; add beginning',
       },
       {
-        name: 'splitText - Collapsed selection on end; add beginning',
         anchorOffset: 2,
-        focusOffset: 2,
         fn: (paragraph, text) => {
           text.splitText(1);
 
@@ -971,11 +969,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
+        focusOffset: 2,
+        name: 'splitText - Collapsed selection on end; add beginning',
       },
       {
-        name: 'remove - Collapsed selection on end; add beginning',
         anchorOffset: 1,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           text.remove();
 
@@ -986,11 +984,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 0,
           };
         },
+        focusOffset: 1,
+        name: 'remove - Collapsed selection on end; add beginning',
       },
       {
-        name: 'replace - Collapsed selection on end; replace beginning',
         anchorOffset: 1,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = $createTextNode('replacement');
           text.replace(newText);
@@ -1002,12 +1000,12 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 1,
           };
         },
+        focusOffset: 1,
+        name: 'replace - Collapsed selection on end; replace beginning',
       },
       // All selected; add/remove/replace on beginning
       {
-        name: 'insertBefore - All selected; add on beginning',
         anchorOffset: 0,
-        focusOffset: 2,
         fn: (paragraph, text) => {
           const newText = $createTextNode('2');
           text.insertBefore(newText);
@@ -1019,11 +1017,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
+        focusOffset: 2,
+        name: 'insertBefore - All selected; add on beginning',
       },
       {
-        name: 'splitNodes - All selected; add on beginning',
         anchorOffset: 0,
-        focusOffset: 2,
         fn: (paragraph, originalText) => {
           const [, text] = originalText.splitText(1);
 
@@ -1034,11 +1032,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
+        focusOffset: 2,
+        name: 'splitNodes - All selected; add on beginning',
       },
       {
-        name: 'remove - All selected; remove on beginning',
         anchorOffset: 0,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           text.remove();
 
@@ -1049,11 +1047,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 0,
           };
         },
+        focusOffset: 1,
+        name: 'remove - All selected; remove on beginning',
       },
       {
-        name: 'replace - All selected; replace on beginning',
         anchorOffset: 0,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = $createTextNode('replacement');
           text.replace(newText);
@@ -1065,16 +1063,12 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 1,
           };
         },
+        focusOffset: 1,
+        name: 'replace - All selected; replace on beginning',
       },
       // Selection beginning; add/remove/replace on end
       {
-        name: 'insertBefore - Selection beginning; add on end',
         anchorOffset: 0,
-        focusOffset: 1,
-        fnBefore: (paragraph, originalText1) => {
-          const originalText2 = $createTextNode('bar');
-          originalText1.insertBefore(originalText2);
-        },
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           const lastChild = paragraph.getLastChild();
@@ -1088,11 +1082,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 0,
           };
         },
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = $createTextNode('bar');
+          originalText1.insertBefore(originalText2);
+        },
+        focusOffset: 1,
+        name: 'insertBefore - Selection beginning; add on end',
       },
       {
-        name: 'insertAfter - Selection beginning; add on end',
         anchorOffset: 0,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
           const newText = $createTextNode('2');
@@ -1105,15 +1103,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 1,
           };
         },
+        focusOffset: 1,
+        name: 'insertAfter - Selection beginning; add on end',
       },
       {
-        name: 'splitText - Selection beginning; add on end',
         anchorOffset: 0,
-        focusOffset: 1,
-        fnBefore: (paragraph, originalText1) => {
-          const originalText2 = $createTextNode('bar');
-          originalText1.insertBefore(originalText2);
-        },
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           const [, text] = originalText1.splitText(1);
@@ -1125,11 +1119,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 0,
           };
         },
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = $createTextNode('bar');
+          originalText1.insertBefore(originalText2);
+        },
+        focusOffset: 1,
+        name: 'splitText - Selection beginning; add on end',
       },
       {
-        name: 'remove - Selection beginning; remove on end',
         anchorOffset: 0,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
           lastChild.remove();
@@ -1141,11 +1139,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 0,
           };
         },
+        focusOffset: 1,
+        name: 'remove - Selection beginning; remove on end',
       },
       {
-        name: 'replace - Selection beginning; replace on end',
         anchorOffset: 0,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = $createTextNode('replacement');
           const lastChild = paragraph.getLastChild();
@@ -1158,12 +1156,12 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 1,
           };
         },
+        focusOffset: 1,
+        name: 'replace - Selection beginning; replace on end',
       },
       // All selected; add/remove/replace in end offset [1, 2] -> [1, N, 2]
       {
-        name: 'insertBefore - All selected; add in end offset',
         anchorOffset: 0,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           const lastChild = paragraph.getLastChild();
           const newText = $createTextNode('2');
@@ -1176,11 +1174,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 2,
           };
         },
+        focusOffset: 1,
+        name: 'insertBefore - All selected; add in end offset',
       },
       {
-        name: 'insertAfter - All selected; add in end offset',
         anchorOffset: 0,
-        focusOffset: 1,
         fn: (paragraph, text) => {
           const newText = $createTextNode('2');
           text.insertAfter(newText);
@@ -1192,15 +1190,11 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 2,
           };
         },
+        focusOffset: 1,
+        name: 'insertAfter - All selected; add in end offset',
       },
       {
-        name: 'splitText - All selected; add in end offset',
         anchorOffset: 0,
-        focusOffset: 1,
-        fnBefore: (paragraph, originalText1) => {
-          const originalText2 = $createTextNode('bar');
-          originalText1.insertBefore(originalText2);
-        },
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           const [, text] = originalText1.splitText(1);
@@ -1212,15 +1206,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 0,
           };
         },
-      },
-      {
-        name: 'remove - All selected; remove in end offset',
-        anchorOffset: 1,
-        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
+        focusOffset: 1,
+        name: 'splitText - All selected; add in end offset',
+      },
+      {
+        anchorOffset: 1,
         fn: (paragraph, originalText1) => {
           const lastChild = paragraph.getLastChild();
           lastChild.remove();
@@ -1232,15 +1226,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 0,
           };
         },
-      },
-      {
-        name: 'replace - All selected; replace in end offset',
-        anchorOffset: 1,
-        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
+        focusOffset: 2,
+        name: 'remove - All selected; remove in end offset',
+      },
+      {
+        anchorOffset: 1,
         fn: (paragraph, originalText1) => {
           const newText = $createTextNode('replacement');
           const lastChild = paragraph.getLastChild();
@@ -1253,16 +1247,16 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 2,
           };
         },
-      },
-      // All selected; add/remove/replace in middle [1, 2, 3] -> [1, 2, N, 3]
-      {
-        name: 'insertBefore - All selected; add in middle',
-        anchorOffset: 0,
-        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
+        focusOffset: 2,
+        name: 'replace - All selected; replace in end offset',
+      },
+      // All selected; add/remove/replace in middle [1, 2, 3] -> [1, 2, N, 3]
+      {
+        anchorOffset: 0,
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           const lastChild = paragraph.getLastChild();
@@ -1276,15 +1270,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
-      },
-      {
-        name: 'insertAfter - All selected; add in middle',
-        anchorOffset: 0,
-        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
+        focusOffset: 2,
+        name: 'insertBefore - All selected; add in middle',
+      },
+      {
+        anchorOffset: 0,
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           const newText = $createTextNode('2');
@@ -1297,15 +1291,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
-      },
-      {
-        name: 'splitText - All selected; add in middle',
-        anchorOffset: 0,
-        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
+        focusOffset: 2,
+        name: 'insertAfter - All selected; add in middle',
+      },
+      {
+        anchorOffset: 0,
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           originalText1.splitText(1);
@@ -1317,15 +1311,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 3,
           };
         },
-      },
-      {
-        name: 'remove - All selected; remove in middle',
-        anchorOffset: 0,
-        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
+        focusOffset: 2,
+        name: 'splitText - All selected; add in middle',
+      },
+      {
+        anchorOffset: 0,
         fn: (paragraph, originalText1) => {
           const originalText2 = originalText1.getPreviousSibling();
           originalText1.remove();
@@ -1337,15 +1331,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 1,
           };
         },
-      },
-      {
-        name: 'replace - All selected; replace in middle',
-        anchorOffset: 0,
-        focusOffset: 2,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           originalText1.insertBefore(originalText2);
         },
+        focusOffset: 2,
+        name: 'remove - All selected; remove in middle',
+      },
+      {
+        anchorOffset: 0,
         fn: (paragraph, originalText1) => {
           const newText = $createTextNode('replacement');
           originalText1.replace(newText);
@@ -1357,16 +1351,16 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 2,
           };
         },
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = $createTextNode('bar');
+          originalText1.insertBefore(originalText2);
+        },
+        focusOffset: 2,
+        name: 'replace - All selected; replace in middle',
       },
       // Edge cases
       {
-        name: "Selection resolves to the end of text node when it's at the end (1)",
         anchorOffset: 3,
-        focusOffset: 3,
-        fnBefore: (paragraph, originalText1) => {
-          const originalText2 = $createTextNode('bar');
-          paragraph.append(originalText2);
-        },
         fn: (paragraph, originalText1) => {
           const originalText2 = paragraph.getLastChild();
           const newText = $createTextNode('new');
@@ -1379,15 +1373,15 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 'bar'.length,
           };
         },
-      },
-      {
-        name: "Selection resolves to the end of text node when it's at the end (2)",
-        anchorOffset: 0,
-        focusOffset: 3,
         fnBefore: (paragraph, originalText1) => {
           const originalText2 = $createTextNode('bar');
           paragraph.append(originalText2);
         },
+        focusOffset: 3,
+        name: "Selection resolves to the end of text node when it's at the end (1)",
+      },
+      {
+        anchorOffset: 0,
         fn: (paragraph, originalText1) => {
           const originalText2 = paragraph.getLastChild();
           const newText = $createTextNode('new');
@@ -1400,16 +1394,22 @@ describe('LexicalSelection tests', () => {
             expectedFocusOffset: 'bar'.length,
           };
         },
+        fnBefore: (paragraph, originalText1) => {
+          const originalText2 = $createTextNode('bar');
+          paragraph.append(originalText2);
+        },
+        focusOffset: 3,
+        name: "Selection resolves to the end of text node when it's at the end (2)",
       },
     ]
       .reduce((testSuite, testCase) => {
         // Test inverse selection
         const inverse = {
           ...testCase,
-          name: testCase.name + ' (inverse selection)',
           anchorOffset: testCase.focusOffset,
           focusOffset: testCase.anchorOffset,
           invertSelection: true,
+          name: testCase.name + ' (inverse selection)',
         };
         return testSuite.concat(testCase, inverse);
       }, [])
@@ -1564,47 +1564,46 @@ describe('LexicalSelection tests', () => {
   describe('Decorator text content for selection', () => {
     [
       {
-        name: 'Not included if cursor right before it',
         fn: ({textNode1, anchor, focus}) => {
           anchor.set(textNode1.getKey(), 1, 'text');
           focus.set(textNode1.getKey(), 1, 'text');
           return '';
         },
+        name: 'Not included if cursor right before it',
       },
       {
-        name: 'Not included if cursor right after it',
         fn: ({textNode2, anchor, focus}) => {
           anchor.set(textNode2.getKey(), 0, 'text');
           focus.set(textNode2.getKey(), 0, 'text');
           return '';
         },
+        name: 'Not included if cursor right after it',
       },
       {
-        name: 'Included if decorator is selected within text',
         fn: ({textNode1, textNode2, decorator, anchor, focus}) => {
           anchor.set(textNode1.getKey(), 1, 'text');
           focus.set(textNode2.getKey(), 0, 'text');
           return decorator.getTextContent();
         },
+        name: 'Included if decorator is selected within text',
       },
       {
-        name: 'Included if decorator is selected with another node before it',
         fn: ({textNode1, textNode2, decorator, anchor, focus}) => {
           anchor.set(textNode1.getKey(), 0, 'text');
           focus.set(textNode2.getKey(), 0, 'text');
           return textNode1.getTextContent() + decorator.getTextContent();
         },
+        name: 'Included if decorator is selected with another node before it',
       },
       {
-        name: 'Included if decorator is selected with another node after it',
         fn: ({textNode1, textNode2, decorator, anchor, focus}) => {
           anchor.set(textNode1.getKey(), 1, 'text');
           focus.set(textNode2.getKey(), 1, 'text');
           return decorator.getTextContent() + textNode2.getTextContent();
         },
+        name: 'Included if decorator is selected with another node after it',
       },
       {
-        name: 'Included if decorator is selected as the only node',
         fn: ({paragraph, textNode1, textNode2, decorator, anchor, focus}) => {
           textNode1.remove();
           textNode2.remove();
@@ -1612,13 +1611,14 @@ describe('LexicalSelection tests', () => {
           focus.set(paragraph.getKey(), 1, 'block');
           return decorator.getTextContent();
         },
+        name: 'Included if decorator is selected as the only node',
       },
     ]
       .reduce((testSuite, testCase) => {
         const inverse = {
           ...testCase,
-          name: testCase.name + ' (inverse selection)',
           invertSelection: true,
+          name: testCase.name + ' (inverse selection)',
         };
         return testSuite.concat(testCase, inverse);
       }, [])
@@ -1633,10 +1633,10 @@ describe('LexicalSelection tests', () => {
             paragraph.append(textNode1, decorator, textNode2);
             const selection: Selection = $getSelection();
             const expectedTextContent = fn({
-              paragraph,
-              decorator,
               anchor: invertSelection ? selection.focus : selection.anchor,
+              decorator,
               focus: invertSelection ? selection.anchor : selection.focus,
+              paragraph,
               textNode1,
               textNode2,
             });

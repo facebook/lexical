@@ -1001,13 +1001,13 @@ describe('LexicalEditor tests', () => {
         __type: 'paragraph',
       });
       expect(parsedText).toEqual({
-        __mode: 0,
         __detail: 0,
-        __text: 'Hello world',
         __format: 0,
         __key: textKey,
+        __mode: 0,
         __parent: paragraphKey,
         __style: '',
+        __text: 'Hello world',
         __type: 'text',
       });
     });

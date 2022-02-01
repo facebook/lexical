@@ -11,16 +11,16 @@ import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils'
 
 const editorConfig = Object.freeze({
   theme: {
+    link: 'my-link-class',
     text: {
       bold: 'my-bold-class',
-      underline: 'my-underline-class',
-      strikethrough: 'my-strikethrough-class',
-      underlineStrikethrough: 'my-underline-strikethrough-class',
-      italic: 'my-italic-class',
       code: 'my-code-class',
       hashtag: 'my-hashtag-class',
+      italic: 'my-italic-class',
+      strikethrough: 'my-strikethrough-class',
+      underline: 'my-underline-class',
+      underlineStrikethrough: 'my-underline-strikethrough-class',
     },
-    link: 'my-link-class',
   },
 });
 

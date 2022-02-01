@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.domainMatches = domainMatches;
 exports.CookieStore = void 0;
@@ -31,7 +31,6 @@ class Cookie {
     return this._raw.name;
   } // https://datatracker.ietf.org/doc/html/rfc6265#section-5.4
 
-
   matches(url) {
     if (this._raw.secure && url.protocol !== 'https:') return false;
     if (!domainMatches(url.hostname, this._raw.domain)) return false;
@@ -40,7 +39,11 @@ class Cookie {
   }
 
   equals(other) {
-    return this._raw.name === other._raw.name && this._raw.domain === other._raw.domain && this._raw.path === other._raw.path;
+    return (
+      this._raw.name === other._raw.name &&
+      this._raw.domain === other._raw.domain &&
+      this._raw.path === other._raw.path
+    );
   }
 
   networkCookie() {
@@ -55,7 +58,6 @@ class Cookie {
     if (this._raw.expires === -1) return false;
     return this._raw.expires * 1000 < Date.now();
   }
-
 }
 
 class CookieStore {
@@ -80,7 +82,8 @@ class CookieStore {
   allCookies() {
     const result = [];
 
-    for (const cookie of this._cookiesIterator()) result.push(cookie.networkCookie());
+    for (const cookie of this._cookiesIterator())
+      result.push(cookie.networkCookie());
 
     return result;
   }
@@ -123,7 +126,6 @@ class CookieStore {
       if (cookie.expired()) cookies.delete(cookie);
     }
   }
-
 }
 
 exports.CookieStore = CookieStore;

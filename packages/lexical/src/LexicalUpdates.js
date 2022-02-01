@@ -399,13 +399,13 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
-    tags,
+    dirtyElements,
+    dirtyLeaves,
+    editorState: pendingEditorState,
+    log,
     normalizedNodes,
     prevEditorState: currentEditorState,
-    editorState: pendingEditorState,
-    dirtyLeaves,
-    dirtyElements,
-    log,
+    tags,
   });
   triggerDeferredUpdateCallbacks(editor);
   triggerEnqueuedUpdates(editor);

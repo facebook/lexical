@@ -66,18 +66,18 @@ export class DecoratorEditor {
   }
 
   toJSON(): $ReadOnly<{
+    editorState: null | string,
     id: string,
     type: 'editor',
-    editorState: null | string,
   }> {
     const editorState = this.editorState;
     return {
-      id: this.id,
-      type: 'editor',
       editorState:
         editorState === null || isStringified(editorState)
           ? editorState
           : JSON.stringify(editorState.toJSON()),
+      id: this.id,
+      type: 'editor',
     };
   }
 
@@ -137,12 +137,12 @@ export class DecoratorMap {
   }
 
   toJSON(): $ReadOnly<{
-    type: 'map',
     map: Array<[string, DecoratorStateValue]>,
+    type: 'map',
   }> {
     return {
-      type: 'map',
       map: Array.from(this._map.entries()),
+      type: 'map',
     };
   }
 }

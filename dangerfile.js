@@ -29,10 +29,10 @@ const CRITICAL_ARTIFACT_PATHS = new Set([
 ]);
 
 const kilobyteFormatter = new Intl.NumberFormat('en', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
   style: 'unit',
   unit: 'kilobyte',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
 });
 
 function kbs(bytes) {
@@ -40,10 +40,10 @@ function kbs(bytes) {
 }
 
 const percentFormatter = new Intl.NumberFormat('en', {
-  style: 'percent',
-  signDisplay: 'exceptZero',
-  minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+  signDisplay: 'exceptZero',
+  style: 'percent',
 });
 
 const header = `
@@ -82,13 +82,13 @@ function row(result) {
       const headSize = statSync(HEAD_DIR + '/' + artifactPath).size;
       const headSizeGzip = gzipSize.fileSync(HEAD_DIR + '/' + artifactPath);
       resultsMap.set(artifactPath, {
-        path: artifactPath,
-        headSize,
-        headSizeGzip,
         baseSize,
         baseSizeGzip,
         change: (headSize - baseSize) / baseSize,
         changeGzip: (headSizeGzip - baseSizeGzip) / baseSizeGzip,
+        headSize,
+        headSizeGzip,
+        path: artifactPath,
       });
     } catch {
       // There's no matching base artifact. This is a new file.
@@ -97,13 +97,13 @@ function row(result) {
       const headSize = statSync(HEAD_DIR + '/' + artifactPath).size;
       const headSizeGzip = gzipSize.fileSync(HEAD_DIR + '/' + artifactPath);
       resultsMap.set(artifactPath, {
-        path: artifactPath,
-        headSize,
-        headSizeGzip,
         baseSize,
         baseSizeGzip,
         change: Infinity,
         changeGzip: Infinity,
+        headSize,
+        headSizeGzip,
+        path: artifactPath,
       });
     }
   }
@@ -117,13 +117,13 @@ function row(result) {
       const headSize = 0;
       const headSizeGzip = 0;
       resultsMap.set(artifactPath, {
-        path: artifactPath,
-        headSize,
-        headSizeGzip,
         baseSize,
         baseSizeGzip,
         change: -1,
         changeGzip: -1,
+        headSize,
+        headSizeGzip,
+        path: artifactPath,
       });
     }
   }

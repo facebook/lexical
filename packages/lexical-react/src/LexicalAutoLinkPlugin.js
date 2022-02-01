@@ -28,10 +28,10 @@ import {
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 
 type LinkMatcherResult = {
+  index: number,
+  length: number,
   text: string,
   url: string,
-  length: number,
-  index: number,
 };
 
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;

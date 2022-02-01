@@ -1,15 +1,17 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.SocksConnection = void 0;
 
-var _net = _interopRequireDefault(require("net"));
+var _net = _interopRequireDefault(require('net'));
 
-var _utils = require("./utils");
+var _utils = require('./utils');
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) {
+  return obj && obj.__esModule ? obj : {default: obj};
+}
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -30,40 +32,43 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var SocksAuth;
 
 (function (SocksAuth) {
-  SocksAuth[SocksAuth["NO_AUTHENTICATION_REQUIRED"] = 0] = "NO_AUTHENTICATION_REQUIRED";
-  SocksAuth[SocksAuth["GSSAPI"] = 1] = "GSSAPI";
-  SocksAuth[SocksAuth["USERNAME_PASSWORD"] = 2] = "USERNAME_PASSWORD";
-  SocksAuth[SocksAuth["NO_ACCEPTABLE_METHODS"] = 255] = "NO_ACCEPTABLE_METHODS";
+  SocksAuth[(SocksAuth['NO_AUTHENTICATION_REQUIRED'] = 0)] =
+    'NO_AUTHENTICATION_REQUIRED';
+  SocksAuth[(SocksAuth['GSSAPI'] = 1)] = 'GSSAPI';
+  SocksAuth[(SocksAuth['USERNAME_PASSWORD'] = 2)] = 'USERNAME_PASSWORD';
+  SocksAuth[(SocksAuth['NO_ACCEPTABLE_METHODS'] = 255)] =
+    'NO_ACCEPTABLE_METHODS';
 })(SocksAuth || (SocksAuth = {}));
 
 var SocksAddressType;
 
 (function (SocksAddressType) {
-  SocksAddressType[SocksAddressType["IPv4"] = 1] = "IPv4";
-  SocksAddressType[SocksAddressType["FqName"] = 3] = "FqName";
-  SocksAddressType[SocksAddressType["IPv6"] = 4] = "IPv6";
+  SocksAddressType[(SocksAddressType['IPv4'] = 1)] = 'IPv4';
+  SocksAddressType[(SocksAddressType['FqName'] = 3)] = 'FqName';
+  SocksAddressType[(SocksAddressType['IPv6'] = 4)] = 'IPv6';
 })(SocksAddressType || (SocksAddressType = {}));
 
 var SocksCommand;
 
 (function (SocksCommand) {
-  SocksCommand[SocksCommand["CONNECT"] = 1] = "CONNECT";
-  SocksCommand[SocksCommand["BIND"] = 2] = "BIND";
-  SocksCommand[SocksCommand["UDP_ASSOCIATE"] = 3] = "UDP_ASSOCIATE";
+  SocksCommand[(SocksCommand['CONNECT'] = 1)] = 'CONNECT';
+  SocksCommand[(SocksCommand['BIND'] = 2)] = 'BIND';
+  SocksCommand[(SocksCommand['UDP_ASSOCIATE'] = 3)] = 'UDP_ASSOCIATE';
 })(SocksCommand || (SocksCommand = {}));
 
 var SocksReply;
 
 (function (SocksReply) {
-  SocksReply[SocksReply["Succeeded"] = 0] = "Succeeded";
-  SocksReply[SocksReply["GeneralServerFailure"] = 1] = "GeneralServerFailure";
-  SocksReply[SocksReply["NotAllowedByRuleSet"] = 2] = "NotAllowedByRuleSet";
-  SocksReply[SocksReply["NetworkUnreachable"] = 3] = "NetworkUnreachable";
-  SocksReply[SocksReply["HostUnreachable"] = 4] = "HostUnreachable";
-  SocksReply[SocksReply["ConnectionRefused"] = 5] = "ConnectionRefused";
-  SocksReply[SocksReply["TtlExpired"] = 6] = "TtlExpired";
-  SocksReply[SocksReply["CommandNotSupported"] = 7] = "CommandNotSupported";
-  SocksReply[SocksReply["AddressTypeNotSupported"] = 8] = "AddressTypeNotSupported";
+  SocksReply[(SocksReply['Succeeded'] = 0)] = 'Succeeded';
+  SocksReply[(SocksReply['GeneralServerFailure'] = 1)] = 'GeneralServerFailure';
+  SocksReply[(SocksReply['NotAllowedByRuleSet'] = 2)] = 'NotAllowedByRuleSet';
+  SocksReply[(SocksReply['NetworkUnreachable'] = 3)] = 'NetworkUnreachable';
+  SocksReply[(SocksReply['HostUnreachable'] = 4)] = 'HostUnreachable';
+  SocksReply[(SocksReply['ConnectionRefused'] = 5)] = 'ConnectionRefused';
+  SocksReply[(SocksReply['TtlExpired'] = 6)] = 'TtlExpired';
+  SocksReply[(SocksReply['CommandNotSupported'] = 7)] = 'CommandNotSupported';
+  SocksReply[(SocksReply['AddressTypeNotSupported'] = 8)] =
+    'AddressTypeNotSupported';
 })(SocksReply || (SocksReply = {}));
 
 class SocksConnection {
@@ -90,18 +95,23 @@ class SocksConnection {
 
   async _run() {
     (0, _utils.assert)(await this._authenticate());
-    const {
-      command,
-      host,
-      port
-    } = await this._parseRequest();
+    const {command, host, port} = await this._parseRequest();
 
     if (command !== SocksCommand.CONNECT) {
-      this._writeBytes(Buffer.from([0x05, SocksReply.CommandNotSupported, 0x00, // RSV
-      0x01, // IPv4
-      0x00, 0x00, 0x00, 0x00, // Address
-      0x00, 0x00 // Port
-      ]));
+      this._writeBytes(
+        Buffer.from([
+          0x05,
+          SocksReply.CommandNotSupported,
+          0x00, // RSV
+          0x01, // IPv4
+          0x00,
+          0x00,
+          0x00,
+          0x00, // Address
+          0x00,
+          0x00, // Port
+        ]),
+      );
 
       return;
     }
@@ -125,7 +135,11 @@ class SocksConnection {
     // | 1  |   1    |
     // +----+--------+
     const version = await this._readByte();
-    (0, _utils.assert)(version === 0x05, 'The VER field must be set to x05 for this version of the protocol, was ' + version);
+    (0, _utils.assert)(
+      version === 0x05,
+      'The VER field must be set to x05 for this version of the protocol, was ' +
+        version,
+    );
     const nMethods = await this._readByte();
     (0, _utils.assert)(nMethods, 'No authentication methods specified');
     const methods = await this._readBytes(nMethods);
@@ -157,7 +171,11 @@ class SocksConnection {
     // | 1  |  1  | X'00' |  1   | Variable |    2     |
     // +----+-----+-------+------+----------+----------+
     const version = await this._readByte();
-    (0, _utils.assert)(version === 0x05, 'The VER field must be set to x05 for this version of the protocol, was ' + version);
+    (0, _utils.assert)(
+      version === 0x05,
+      'The VER field must be set to x05 for this version of the protocol, was ' +
+        version,
+    );
     const command = await this._readByte();
     await this._readByte(); // skip reserved.
 
@@ -191,7 +209,7 @@ class SocksConnection {
     return {
       command,
       host,
-      port
+      port,
     };
   }
 
@@ -202,7 +220,8 @@ class SocksConnection {
 
   async _readBytes(length) {
     this._fence = this._offset + length;
-    if (!this._buffer || this._buffer.length < this._fence) await new Promise(f => this._fenceCallback = f);
+    if (!this._buffer || this._buffer.length < this._fence)
+      await new Promise((f) => (this._fenceCallback = f));
     this._offset += length;
     return this._buffer.slice(this._offset - length, this._offset);
   }
@@ -226,20 +245,32 @@ class SocksConnection {
   }
 
   socketConnected(host, port) {
-    this._writeBytes(Buffer.from([0x05, SocksReply.Succeeded, 0x00, // RSV
-    0x01, // IPv4
-    ...parseIP(host), // Address
-    port << 8, port & 0xFF // Port
-    ]));
+    this._writeBytes(
+      Buffer.from([
+        0x05,
+        SocksReply.Succeeded,
+        0x00, // RSV
+        0x01, // IPv4
+        ...parseIP(host), // Address
+        port << 8,
+        port & 0xff, // Port
+      ]),
+    );
 
-    this._socket.on('data', data => this._client.onSocketData(this._uid, data));
+    this._socket.on('data', (data) =>
+      this._client.onSocketData(this._uid, data),
+    );
   }
 
   socketFailed(errorCode) {
-    const buffer = Buffer.from([0x05, 0, 0x00, // RSV
-    0x01, // IPv4
-    ...parseIP('0.0.0.0'), // Address
-    0, 0 // Port
+    const buffer = Buffer.from([
+      0x05,
+      0,
+      0x00, // RSV
+      0x01, // IPv4
+      ...parseIP('0.0.0.0'), // Address
+      0,
+      0, // Port
     ]);
 
     switch (errorCode) {
@@ -275,12 +306,11 @@ class SocksConnection {
   error(error) {
     this._socket.destroy(new Error(error));
   }
-
 }
 
 exports.SocksConnection = SocksConnection;
 
 function parseIP(address) {
   if (!_net.default.isIPv4(address)) throw new Error('IPv6 is not supported');
-  return address.split('.', 4).map(t => +t);
+  return address.split('.', 4).map((t) => +t);
 }

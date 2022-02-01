@@ -1,19 +1,21 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.rewriteErrorMessage = rewriteErrorMessage;
 exports.captureStackTrace = captureStackTrace;
 exports.splitErrorMessage = splitErrorMessage;
 
-var _path = _interopRequireDefault(require("path"));
+var _path = _interopRequireDefault(require('path'));
 
-var _stackUtils = _interopRequireDefault(require("stack-utils"));
+var _stackUtils = _interopRequireDefault(require('stack-utils'));
 
-var _utils = require("./utils");
+var _utils = require('./utils');
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) {
+  return obj && obj.__esModule ? obj : {default: obj};
+}
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -35,7 +37,11 @@ const stackUtils = new _stackUtils.default();
 function rewriteErrorMessage(e, newMessage) {
   var _e$stack;
 
-  const lines = (((_e$stack = e.stack) === null || _e$stack === void 0 ? void 0 : _e$stack.split('\n')) || []).filter(l => l.startsWith('    at '));
+  const lines = (
+    ((_e$stack = e.stack) === null || _e$stack === void 0
+      ? void 0
+      : _e$stack.split('\n')) || []
+  ).filter((l) => l.startsWith('    at '));
   e.message = newMessage;
   const errorTitle = `${e.name}: ${e.message}`;
   if (lines.length) e.stack = `${errorTitle}\n${lines.join('\n')}`;
@@ -50,9 +56,17 @@ const CLIENT_SRC = _path.default.join(CORE_DIR, 'src', 'client');
 
 const TEST_DIR_SRC = _path.default.resolve(CORE_DIR, '..', 'playwright-test');
 
-const TEST_DIR_LIB = _path.default.resolve(CORE_DIR, '..', '@playwright', 'test');
+const TEST_DIR_LIB = _path.default.resolve(
+  CORE_DIR,
+  '..',
+  '@playwright',
+  'test',
+);
 
-const WS_LIB = _path.default.relative(process.cwd(), _path.default.dirname(require.resolve('ws')));
+const WS_LIB = _path.default.relative(
+  process.cwd(),
+  _path.default.dirname(require.resolve('ws')),
+);
 
 function captureStackTrace() {
   const stackTraceLimit = Error.stackTraceLimit;
@@ -61,35 +75,56 @@ function captureStackTrace() {
   const stack = error.stack;
   Error.stackTraceLimit = stackTraceLimit;
   const isTesting = (0, _utils.isUnderTest)();
-  let parsedFrames = stack.split('\n').map(line => {
-    var _frame$function;
+  let parsedFrames = stack
+    .split('\n')
+    .map((line) => {
+      var _frame$function;
 
-    const frame = stackUtils.parseLine(line);
-    if (!frame || !frame.file) return null; // Node 16+ has node:internal.
+      const frame = stackUtils.parseLine(line);
+      if (!frame || !frame.file) return null; // Node 16+ has node:internal.
 
-    if (frame.file.startsWith('internal') || frame.file.startsWith('node:')) return null; // EventEmitter.emit has 'events.js' file.
+      if (frame.file.startsWith('internal') || frame.file.startsWith('node:'))
+        return null; // EventEmitter.emit has 'events.js' file.
 
-    if (frame.file === 'events.js' && (_frame$function = frame.function) !== null && _frame$function !== void 0 && _frame$function.endsWith('.emit')) return null; // Node 12
+      if (
+        frame.file === 'events.js' &&
+        (_frame$function = frame.function) !== null &&
+        _frame$function !== void 0 &&
+        _frame$function.endsWith('.emit')
+      )
+        return null; // Node 12
 
-    if (frame.file === '_stream_readable.js' || frame.file === '_stream_writable.js') return null;
-    if (frame.file.startsWith(WS_LIB)) return null;
+      if (
+        frame.file === '_stream_readable.js' ||
+        frame.file === '_stream_writable.js'
+      )
+        return null;
+      if (frame.file.startsWith(WS_LIB)) return null;
 
-    const fileName = _path.default.resolve(process.cwd(), frame.file);
+      const fileName = _path.default.resolve(process.cwd(), frame.file);
 
-    if (isTesting && fileName.includes(_path.default.join('playwright', 'tests', 'config', 'coverage.js'))) return null;
-    const inClient = fileName.startsWith(CLIENT_LIB) || fileName.startsWith(CLIENT_SRC);
-    const parsed = {
-      frame: {
-        file: fileName,
-        line: frame.line,
-        column: frame.column,
-        function: frame.function
-      },
-      frameText: line,
-      inClient
-    };
-    return parsed;
-  }).filter(Boolean);
+      if (
+        isTesting &&
+        fileName.includes(
+          _path.default.join('playwright', 'tests', 'config', 'coverage.js'),
+        )
+      )
+        return null;
+      const inClient =
+        fileName.startsWith(CLIENT_LIB) || fileName.startsWith(CLIENT_SRC);
+      const parsed = {
+        frame: {
+          file: fileName,
+          line: frame.line,
+          column: frame.column,
+          function: frame.function,
+        },
+        frameText: line,
+        inClient,
+      };
+      return parsed;
+    })
+    .filter(Boolean);
   let apiName = '';
   const allFrames = parsedFrames; // expect matchers have the following stack structure:
   // at Object.__PWTRAP__[expect.toHaveText] (...)
@@ -97,7 +132,7 @@ function captureStackTrace() {
   // at Object.throwingMatcher [as toHaveText] (...)
 
   const TRAP = '__PWTRAP__[';
-  const expectIndex = parsedFrames.findIndex(f => f.frameText.includes(TRAP));
+  const expectIndex = parsedFrames.findIndex((f) => f.frameText.includes(TRAP));
 
   if (expectIndex !== -1) {
     const text = parsedFrames[expectIndex].frameText;
@@ -110,24 +145,29 @@ function captureStackTrace() {
     for (let i = 0; i < parsedFrames.length - 1; i++) {
       if (parsedFrames[i].inClient && !parsedFrames[i + 1].inClient) {
         const frame = parsedFrames[i].frame;
-        apiName = frame.function ? frame.function[0].toLowerCase() + frame.function.slice(1) : '';
+        apiName = frame.function
+          ? frame.function[0].toLowerCase() + frame.function.slice(1)
+          : '';
         parsedFrames = parsedFrames.slice(i + 1);
         break;
       }
     }
   } // Hide all test runner and library frames in the user stack (event handlers produce them).
 
-
   parsedFrames = parsedFrames.filter((f, i) => {
-    if (f.frame.file.startsWith(TEST_DIR_SRC) || f.frame.file.startsWith(TEST_DIR_LIB)) return false;
+    if (
+      f.frame.file.startsWith(TEST_DIR_SRC) ||
+      f.frame.file.startsWith(TEST_DIR_LIB)
+    )
+      return false;
     if (i && f.frame.file.startsWith(CORE_DIR)) return false;
     return true;
   });
   return {
-    allFrames: allFrames.map(p => p.frame),
-    frames: parsedFrames.map(p => p.frame),
-    frameTexts: parsedFrames.map(p => p.frameText),
-    apiName
+    allFrames: allFrames.map((p) => p.frame),
+    frames: parsedFrames.map((p) => p.frame),
+    frameTexts: parsedFrames.map((p) => p.frameText),
+    apiName,
   };
 }
 
@@ -135,6 +175,9 @@ function splitErrorMessage(message) {
   const separationIdx = message.indexOf(':');
   return {
     name: separationIdx !== -1 ? message.slice(0, separationIdx) : '',
-    message: separationIdx !== -1 && separationIdx + 2 <= message.length ? message.substring(separationIdx + 2) : message
+    message:
+      separationIdx !== -1 && separationIdx + 2 <= message.length
+        ? message.substring(separationIdx + 2)
+        : message,
   };
 }

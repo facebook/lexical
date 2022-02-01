@@ -10,27 +10,27 @@ const GITHUB_REPO_URL = 'https://github.com/facebook/outline'; // TODO: Update w
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: TITLE,
-  tagline: 'An extensible text editor library that does things differently',
-  url: 'https://outline.dev', // TODO: Update when URL updated
+  // TODO: Update when URL updated
   baseUrl: '/',
+
+  favicon: 'img/favicon.ico',
+
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'lexical', // Usually your repo name.
+  organizationName: 'facebook',
+  // Usually your repo name.
   presets: [
     [
       'classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
-        docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/docs/`, // TODO: Update when directory finalized
-        },
         blog: {
-          showReadingTime: true,
-          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/blog/`, // TODO: Update when directory finalized
+          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/blog/`,
+          showReadingTime: true, // TODO: Update when directory finalized
+        },
+        docs: {
+          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/docs/`,
+          sidebarPath: require.resolve('./sidebars.js'), // TODO: Update when directory finalized
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -39,76 +39,85 @@ const config = {
     ],
   ],
 
+  // Usually your GitHub org/user name.
+  projectName: 'lexical',
+
+  tagline: 'An extensible text editor library that does things differently',
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      navbar: {
-        logo: {
-          alt: 'Lexical',
-          src: 'img/logo.svg',
-          srcDark: 'img/logo-dark.svg',
-        },
-        items: [
-          {
-            type: 'doc',
-            docId: 'intro',
-            position: 'left',
-            label: 'Docs',
-          },
-          {to: '/blog', label: 'Blog', position: 'left'},
-          {
-            href: GITHUB_REPO_URL,
-            label: 'GitHub',
-            position: 'right',
-          },
-        ],
-      },
       footer: {
-        style: 'dark',
+        copyright: `Copyright © ${new Date().getFullYear()} Meta, Inc. Built with Docusaurus.`,
         links: [
           {
-            title: 'Docs',
             items: [
               {
                 label: 'Introduction',
                 to: '/docs/intro',
               },
             ],
+            title: 'Docs',
           },
           {
-            title: 'Community',
             items: [
               {
-                label: 'Stack Overflow',
                 href: 'https://stackoverflow.com/questions/tagged/lexical',
+                label: 'Stack Overflow',
               },
               {
-                label: 'Twitter',
-                href: 'https://twitter.com/docusaurus', // TODO: Update when created
+                href: 'https://twitter.com/docusaurus',
+                label: 'Twitter', // TODO: Update when created
               },
             ],
+            title: 'Community',
           },
           {
-            title: 'More',
             items: [
               {
                 label: 'Blog',
                 to: '/blog',
               },
               {
-                label: 'GitHub',
                 href: 'https://github.com/facebook/outline',
+                label: 'GitHub',
               },
             ],
+            title: 'More',
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Meta, Inc. Built with Docusaurus.`,
+        style: 'dark',
+      },
+      navbar: {
+        items: [
+          {
+            docId: 'intro',
+            label: 'Docs',
+            position: 'left',
+            type: 'doc',
+          },
+          {label: 'Blog', position: 'left', to: '/blog'},
+          {
+            href: GITHUB_REPO_URL,
+            label: 'GitHub',
+            position: 'right',
+          },
+        ],
+        logo: {
+          alt: 'Lexical',
+          src: 'img/logo.svg',
+          srcDark: 'img/logo-dark.svg',
+        },
       },
       prism: {
-        theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+        theme: lightCodeTheme,
       },
     }),
+
+  title: TITLE,
+
+  url: 'https://outline.dev',
 };
 
 module.exports = config;

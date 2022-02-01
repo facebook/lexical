@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.createEmptyContext = createEmptyContext;
 
@@ -30,13 +30,13 @@ function createEmptyContext() {
       isMobile: false,
       viewport: {
         width: 1280,
-        height: 800
-      }
+        height: 800,
+      },
     },
     pages: [],
     resources: [],
     actions: [],
     events: [],
-    objects: {}
+    objects: {},
   };
 }

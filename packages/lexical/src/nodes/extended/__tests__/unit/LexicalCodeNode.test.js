@@ -68,9 +68,9 @@ describe('LexicalCodeNode tests', () => {
         expect(selection).toEqual({
           anchorKey: '_2',
           anchorOffset: 0,
+          dirty: true,
           focusKey: '_2',
           focusOffset: 0,
-          dirty: true,
           needsSync: false,
         });
       });

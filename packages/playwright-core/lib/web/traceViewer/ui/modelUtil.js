@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.indexModel = indexModel;
 exports.context = context;
@@ -59,11 +59,14 @@ function stats(action) {
     if (event.metadata.method === 'console') {
       var _c$objects$guid;
 
-      const {
-        guid
-      } = event.metadata.params.message;
-      const type = (_c$objects$guid = c.objects[guid]) === null || _c$objects$guid === void 0 ? void 0 : _c$objects$guid.type;
-      if (type === 'warning') ++warnings;else if (type === 'error') ++errors;
+      const {guid} = event.metadata.params.message;
+      const type =
+        (_c$objects$guid = c.objects[guid]) === null ||
+        _c$objects$guid === void 0
+          ? void 0
+          : _c$objects$guid.type;
+      if (type === 'warning') ++warnings;
+      else if (type === 'error') ++errors;
     }
 
     if (event.metadata.method === 'pageError') ++errors;
@@ -71,7 +74,7 @@ function stats(action) {
 
   return {
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -79,8 +82,11 @@ function eventsForAction(action) {
   let result = action[eventsSymbol];
   if (result) return result;
   const nextAction = next(action);
-  result = context(action).events.filter(event => {
-    return event.metadata.startTime >= action.metadata.startTime && (!nextAction || event.metadata.startTime < nextAction.metadata.startTime);
+  result = context(action).events.filter((event) => {
+    return (
+      event.metadata.startTime >= action.metadata.startTime &&
+      (!nextAction || event.metadata.startTime < nextAction.metadata.startTime)
+    );
   });
   action[eventsSymbol] = result;
   return result;
@@ -90,8 +96,11 @@ function resourcesForAction(action) {
   let result = action[resourcesSymbol];
   if (result) return result;
   const nextAction = next(action);
-  result = context(action).resources.filter(resource => {
-    return resource._monotonicTime > action.metadata.startTime && (!nextAction || resource._monotonicTime < nextAction.metadata.startTime);
+  result = context(action).resources.filter((resource) => {
+    return (
+      resource._monotonicTime > action.metadata.startTime &&
+      (!nextAction || resource._monotonicTime < nextAction.metadata.startTime)
+    );
   });
   action[resourcesSymbol] = result;
   return result;

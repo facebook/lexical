@@ -1,19 +1,57 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+Object.defineProperty(exports, '__esModule', {
+  value: true,
 });
 exports.WKExecutionContext = void 0;
 
-var js = _interopRequireWildcard(require("../javascript"));
+var js = _interopRequireWildcard(require('../javascript'));
 
-var _utilityScriptSerializers = require("../common/utilityScriptSerializers");
+var _utilityScriptSerializers = require('../common/utilityScriptSerializers');
 
-var _protocolError = require("../common/protocolError");
+var _protocolError = require('../common/protocolError');
 
-function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+function _getRequireWildcardCache(nodeInterop) {
+  if (typeof WeakMap !== 'function') return null;
+  var cacheBabelInterop = new WeakMap();
+  var cacheNodeInterop = new WeakMap();
+  return (_getRequireWildcardCache = function (nodeInterop) {
+    return nodeInterop ? cacheNodeInterop : cacheBabelInterop;
+  })(nodeInterop);
+}
 
-function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+function _interopRequireWildcard(obj, nodeInterop) {
+  if (!nodeInterop && obj && obj.__esModule) {
+    return obj;
+  }
+  if (obj === null || (typeof obj !== 'object' && typeof obj !== 'function')) {
+    return {default: obj};
+  }
+  var cache = _getRequireWildcardCache(nodeInterop);
+  if (cache && cache.has(obj)) {
+    return cache.get(obj);
+  }
+  var newObj = {};
+  var hasPropertyDescriptor =
+    Object.defineProperty && Object.getOwnPropertyDescriptor;
+  for (var key in obj) {
+    if (key !== 'default' && Object.prototype.hasOwnProperty.call(obj, key)) {
+      var desc = hasPropertyDescriptor
+        ? Object.getOwnPropertyDescriptor(obj, key)
+        : null;
+      if (desc && (desc.get || desc.set)) {
+        Object.defineProperty(newObj, key, desc);
+      } else {
+        newObj[key] = obj[key];
+      }
+    }
+  }
+  newObj.default = obj;
+  if (cache) {
+    cache.set(obj, newObj);
+  }
+  return newObj;
+}
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -55,9 +93,10 @@ class WKExecutionContext {
       const response = await this._session.send('Runtime.evaluate', {
         expression,
         contextId: this._contextId,
-        returnByValue: true
+        returnByValue: true,
       });
-      if (response.wasThrown) throw new js.JavaScriptErrorInEvaluate(response.result.description);
+      if (response.wasThrown)
+        throw new js.JavaScriptErrorInEvaluate(response.result.description);
       return response.result.value;
     } catch (error) {
       throw rewriteError(error);
@@ -69,9 +108,10 @@ class WKExecutionContext {
       const response = await this._session.send('Runtime.evaluate', {
         expression,
         contextId: this._contextId,
-        returnByValue: false
+        returnByValue: false,
       });
-      if (response.wasThrown) throw new js.JavaScriptErrorInEvaluate(response.result.description);
+      if (response.wasThrown)
+        throw new js.JavaScriptErrorInEvaluate(response.result.description);
       return response.result.objectId;
     } catch (error) {
       throw rewriteError(error);
@@ -79,39 +119,62 @@ class WKExecutionContext {
   }
 
   rawCallFunctionNoReply(func, ...args) {
-    this._session.send('Runtime.callFunctionOn', {
-      functionDeclaration: func.toString(),
-      objectId: args.find(a => a instanceof js.JSHandle)._objectId,
-      arguments: args.map(a => a instanceof js.JSHandle ? {
-        objectId: a._objectId
-      } : {
-        value: a
-      }),
-      returnByValue: true,
-      emulateUserGesture: true
-    }).catch(() => {});
+    this._session
+      .send('Runtime.callFunctionOn', {
+        functionDeclaration: func.toString(),
+        objectId: args.find((a) => a instanceof js.JSHandle)._objectId,
+        arguments: args.map((a) =>
+          a instanceof js.JSHandle
+            ? {
+                objectId: a._objectId,
+              }
+            : {
+                value: a,
+              },
+        ),
+        returnByValue: true,
+        emulateUserGesture: true,
+      })
+      .catch(() => {});
   }
 
-  async evaluateWithArguments(expression, returnByValue, utilityScript, values, objectIds) {
+  async evaluateWithArguments(
+    expression,
+    returnByValue,
+    utilityScript,
+    values,
+    objectIds,
+  ) {
     try {
-      const response = await Promise.race([this._executionContextDestroyedPromise.then(() => {
-        throw new Error(contextDestroyedError);
-      }), this._session.send('Runtime.callFunctionOn', {
-        functionDeclaration: expression,
-        objectId: utilityScript._objectId,
-        arguments: [{
-          objectId: utilityScript._objectId
-        }, ...values.map(value => ({
-          value
-        })), ...objectIds.map(objectId => ({
-          objectId
-        }))],
-        returnByValue,
-        emulateUserGesture: true,
-        awaitPromise: true
-      })]);
-      if (response.wasThrown) throw new js.JavaScriptErrorInEvaluate(response.result.description);
-      if (returnByValue) return (0, _utilityScriptSerializers.parseEvaluationResultValue)(response.result.value);
+      const response = await Promise.race([
+        this._executionContextDestroyedPromise.then(() => {
+          throw new Error(contextDestroyedError);
+        }),
+        this._session.send('Runtime.callFunctionOn', {
+          functionDeclaration: expression,
+          objectId: utilityScript._objectId,
+          arguments: [
+            {
+              objectId: utilityScript._objectId,
+            },
+            ...values.map((value) => ({
+              value,
+            })),
+            ...objectIds.map((objectId) => ({
+              objectId,
+            })),
+          ],
+          returnByValue,
+          emulateUserGesture: true,
+          awaitPromise: true,
+        }),
+      ]);
+      if (response.wasThrown)
+        throw new js.JavaScriptErrorInEvaluate(response.result.description);
+      if (returnByValue)
+        return (0, _utilityScriptSerializers.parseEvaluationResultValue)(
+          response.result.value,
+        );
       return utilityScript._context.createHandle(response.result);
     } catch (error) {
       throw rewriteError(error);
@@ -121,7 +184,7 @@ class WKExecutionContext {
   async getProperties(context, objectId) {
     const response = await this._session.send('Runtime.getProperties', {
       objectId,
-      ownProperties: true
+      ownProperties: true,
     });
     const result = new Map();
 
@@ -135,15 +198,20 @@ class WKExecutionContext {
 
   createHandle(context, remoteObject) {
     const isPromise = remoteObject.className === 'Promise';
-    return new js.JSHandle(context, isPromise ? 'promise' : remoteObject.subtype || remoteObject.type, renderPreview(remoteObject), remoteObject.objectId, potentiallyUnserializableValue(remoteObject));
+    return new js.JSHandle(
+      context,
+      isPromise ? 'promise' : remoteObject.subtype || remoteObject.type,
+      renderPreview(remoteObject),
+      remoteObject.objectId,
+      potentiallyUnserializableValue(remoteObject),
+    );
   }
 
   async releaseHandle(objectId) {
     await this._session.send('Runtime.releaseObject', {
-      objectId
+      objectId,
     });
   }
-
 }
 
 exports.WKExecutionContext = WKExecutionContext;
@@ -151,12 +219,22 @@ const contextDestroyedError = 'Execution context was destroyed.';
 
 function potentiallyUnserializableValue(remoteObject) {
   const value = remoteObject.value;
-  const isUnserializable = remoteObject.type === 'number' && ['NaN', '-Infinity', 'Infinity', '-0'].includes(remoteObject.description);
-  return isUnserializable ? js.parseUnserializableValue(remoteObject.description) : value;
+  const isUnserializable =
+    remoteObject.type === 'number' &&
+    ['NaN', '-Infinity', 'Infinity', '-0'].includes(remoteObject.description);
+  return isUnserializable
+    ? js.parseUnserializableValue(remoteObject.description)
+    : value;
 }
 
 function rewriteError(error) {
-  if (!js.isJavaScriptErrorInEvaluate(error) && !(0, _protocolError.isSessionClosedError)(error)) return new Error('Execution context was destroyed, most likely because of a navigation.');
+  if (
+    !js.isJavaScriptErrorInEvaluate(error) &&
+    !(0, _protocolError.isSessionClosedError)(error)
+  )
+    return new Error(
+      'Execution context was destroyed, most likely because of a navigation.',
+    );
   return error;
 }
 
@@ -167,10 +245,8 @@ function renderPreview(object) {
   if (object.description === 'Object' && object.preview) {
     const tokens = [];
 
-    for (const {
-      name,
-      value
-    } of object.preview.properties) tokens.push(`${name}: ${value}`);
+    for (const {name, value} of object.preview.properties)
+      tokens.push(`${name}: ${value}`);
 
     return `{${tokens.join(', ')}}`;
   }
@@ -178,10 +254,8 @@ function renderPreview(object) {
   if (object.subtype === 'array' && object.preview) {
     const result = [];
 
-    for (const {
-      name,
-      value
-    } of object.preview.properties) result[+name] = value;
+    for (const {name, value} of object.preview.properties)
+      result[+name] = value;
 
     return '[' + String(result) + ']';
   }

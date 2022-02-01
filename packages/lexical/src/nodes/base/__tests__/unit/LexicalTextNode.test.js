@@ -37,11 +37,11 @@ const editorConfig = Object.freeze({
   theme: {
     text: {
       bold: 'my-bold-class',
-      underline: 'my-underline-class',
-      strikethrough: 'my-strikethrough-class',
-      underlineStrikethrough: 'my-underline-strikethrough-class',
-      italic: 'my-italic-class',
       code: 'my-code-class',
+      italic: 'my-italic-class',
+      strikethrough: 'my-strikethrough-class',
+      underline: 'my-underline-class',
+      underlineStrikethrough: 'my-underline-strikethrough-class',
     },
   },
 });
@@ -633,70 +633,70 @@ describe('LexicalTextNode tests', () => {
       [
         'different tags',
         {
-          text: 'My text node',
-          mode: 'normal',
           format: IS_BOLD,
-        },
-        {
-          text: 'My text node',
           mode: 'normal',
-          format: IS_ITALIC,
+          text: 'My text node',
         },
         {
-          result: true,
+          format: IS_ITALIC,
+          mode: 'normal',
+          text: 'My text node',
+        },
+        {
           expectedHTML: null,
+          result: true,
         },
       ],
       [
         'no change in tags',
         {
-          text: 'My text node',
-          mode: 'normal',
           format: IS_BOLD,
+          mode: 'normal',
+          text: 'My text node',
         },
         {
-          text: 'My text node',
-          mode: 'normal',
           format: IS_BOLD,
+          mode: 'normal',
+          text: 'My text node',
         },
         {
-          result: false,
           expectedHTML: '<strong class="my-bold-class">My text node</strong>',
+          result: false,
         },
       ],
       [
         'change in text',
         {
+          format: IS_BOLD,
+          mode: 'normal',
           text: 'My text node',
-          mode: 'normal',
-          format: IS_BOLD,
         },
         {
+          format: IS_BOLD,
+          mode: 'normal',
           text: 'My new text node',
-          mode: 'normal',
-          format: IS_BOLD,
         },
         {
-          result: false,
           expectedHTML:
             '<strong class="my-bold-class">My new text node</strong>',
+          result: false,
         },
       ],
       [
         'removing code block',
         {
-          text: 'My text node',
-          mode: 'normal',
           format: IS_CODE | IS_BOLD,
-        },
-        {
-          text: 'My new text node',
           mode: 'normal',
-          format: IS_BOLD,
+          text: 'My text node',
         },
         {
-          result: true,
+          format: IS_BOLD,
+          mode: 'normal',
+          text: 'My new text node',
+        },
+        {
           expectedHTML: null,
+          result: true,
         },
       ],
     ])(

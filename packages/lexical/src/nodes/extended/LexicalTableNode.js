@@ -36,15 +36,15 @@ type Cell = {
 type Cells = Array<Array<Cell>>;
 
 type Grid = {
-  rows: number,
-  columns: number,
   cells: Cells,
+  columns: number,
+  rows: number,
 };
 
 type SelectionShape = {
   fromX: number,
-  toX: number,
   fromY: number,
+  toX: number,
   toY: number,
 };
 
@@ -79,9 +79,9 @@ export function trackTableGrid(
 ): Grid {
   const cells: Cells = [];
   const grid = {
-    rows: 0,
-    columns: 0,
     cells,
+    columns: 0,
+    rows: 0,
   };
   const observer = new MutationObserver((records) => {
     editor.update(() => {
@@ -282,8 +282,8 @@ function applyCellSelection(
           editor.update(() => {
             highlightedCells = tableNode.setSelectionState({
               fromX,
-              toX,
               fromY,
+              toX,
               toY,
             });
           });

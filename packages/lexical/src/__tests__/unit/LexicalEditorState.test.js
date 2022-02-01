@@ -43,31 +43,31 @@ describe('LexicalEditorState tests', () => {
 
       expect(root).toEqual({
         __cachedText: 'foo',
-        __format: 0,
-        __indent: 0,
         __children: ['1'],
         __dir: 'ltr',
+        __format: 0,
+        __indent: 0,
         __key: 'root',
         __parent: null,
         __type: 'root',
       });
       expect(paragraph).toEqual({
         __children: ['2'],
+        __dir: 'ltr',
         __format: 0,
         __indent: 0,
-        __dir: 'ltr',
         __key: '1',
         __parent: 'root',
         __type: 'paragraph',
       });
       expect(text).toEqual({
         __detail: 0,
-        __mode: 0,
-        __text: 'foo',
         __format: 0,
         __key: '2',
+        __mode: 0,
         __parent: '1',
         __style: '',
+        __text: 'foo',
         __type: 'text',
       });
     });
@@ -106,8 +106,8 @@ describe('LexicalEditorState tests', () => {
             'root',
             {
               __cachedText: '',
-              __dir: null,
               __children: [],
+              __dir: null,
               __format: 0,
               __indent: 0,
               __key: 'root',

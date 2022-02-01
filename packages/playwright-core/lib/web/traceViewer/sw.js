@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
-var _snapshotServer = require("./snapshotServer");
+var _snapshotServer = require('./snapshotServer');
 
-var _traceModel = require("./traceModel");
+var _traceModel = require('./traceModel');
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -32,28 +32,33 @@ async function loadTrace(trace, clientId, progress) {
   const entry = loadedTraces.get(trace);
   if (entry) return entry.traceModel;
   const traceModel = new _traceModel.TraceModel();
-  let url = trace.startsWith('http') || trace.startsWith('blob') ? trace : `file?path=${trace}`; // Dropbox does not support cors.
+  let url =
+    trace.startsWith('http') || trace.startsWith('blob')
+      ? trace
+      : `file?path=${trace}`; // Dropbox does not support cors.
 
-  if (url.startsWith('https://www.dropbox.com/')) url = 'https://dl.dropboxusercontent.com/' + url.substring('https://www.dropbox.com/'.length);
+  if (url.startsWith('https://www.dropbox.com/'))
+    url =
+      'https://dl.dropboxusercontent.com/' +
+      url.substring('https://www.dropbox.com/'.length);
   await traceModel.load(url, progress);
-  const snapshotServer = new _snapshotServer.SnapshotServer(traceModel.storage());
+  const snapshotServer = new _snapshotServer.SnapshotServer(
+    traceModel.storage(),
+  );
   loadedTraces.set(trace, {
     traceModel,
     snapshotServer,
-    clientId
+    clientId,
   });
   return traceModel;
 } // @ts-ignore
-
 
 async function doFetch(event) {
   const request = event.request;
   const client = await self.clients.get(event.clientId);
   const snapshotUrl = request.mode === 'navigate' ? request.url : client.url;
   const traceUrl = new URL(snapshotUrl).searchParams.get('trace');
-  const {
-    snapshotServer
-  } = loadedTraces.get(traceUrl) || {};
+  const {snapshotServer} = loadedTraces.get(traceUrl) || {};
 
   if (request.url.startsWith(self.registration.scope)) {
     const url = new URL(request.url);
@@ -62,65 +67,76 @@ async function doFetch(event) {
     if (relativePath === '/ping') {
       await gc();
       return new Response(null, {
-        status: 200
+        status: 200,
       });
     }
 
     if (relativePath === '/context') {
-      const traceModel = await loadTrace(traceUrl, event.clientId, (done, total) => {
-        client.postMessage({
-          method: 'progress',
-          params: {
-            done,
-            total
-          }
-        });
-      });
+      const traceModel = await loadTrace(
+        traceUrl,
+        event.clientId,
+        (done, total) => {
+          client.postMessage({
+            method: 'progress',
+            params: {
+              done,
+              total,
+            },
+          });
+        },
+      );
       return new Response(JSON.stringify(traceModel.contextEntry), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
     }
 
     if (relativePath.startsWith('/snapshotInfo/')) {
-      if (!snapshotServer) return new Response(null, {
-        status: 404
-      });
+      if (!snapshotServer)
+        return new Response(null, {
+          status: 404,
+        });
       return snapshotServer.serveSnapshotInfo(relativePath, url.searchParams);
     }
 
     if (relativePath.startsWith('/snapshot/')) {
-      if (!snapshotServer) return new Response(null, {
-        status: 404
-      });
-      return snapshotServer.serveSnapshot(relativePath, url.searchParams, snapshotUrl);
+      if (!snapshotServer)
+        return new Response(null, {
+          status: 404,
+        });
+      return snapshotServer.serveSnapshot(
+        relativePath,
+        url.searchParams,
+        snapshotUrl,
+      );
     }
 
     if (relativePath.startsWith('/sha1/')) {
       // Sha1 is unique, load it from either of the models for simplicity.
-      for (const {
-        traceModel
-      } of loadedTraces.values()) {
-        const blob = await traceModel.resourceForSha1(relativePath.slice('/sha1/'.length));
-        if (blob) return new Response(blob, {
-          status: 200
-        });
+      for (const {traceModel} of loadedTraces.values()) {
+        const blob = await traceModel.resourceForSha1(
+          relativePath.slice('/sha1/'.length),
+        );
+        if (blob)
+          return new Response(blob, {
+            status: 200,
+          });
       }
 
       return new Response(null, {
-        status: 404
+        status: 404,
       });
     } // Fallback to network.
-
 
     return fetch(event.request);
   }
 
-  if (!snapshotServer) return new Response(null, {
-    status: 404
-  });
+  if (!snapshotServer)
+    return new Response(null, {
+      status: 404,
+    });
   return snapshotServer.serveResource(request.url, snapshotUrl);
 }
 
@@ -136,7 +152,6 @@ async function gc() {
     if (!usedTraces.has(traceUrl)) loadedTraces.delete(traceUrl);
   }
 } // @ts-ignore
-
 
 self.addEventListener('fetch', function (event) {
   event.respondWith(doFetch(event));

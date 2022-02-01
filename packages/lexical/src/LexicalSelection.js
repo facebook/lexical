@@ -47,27 +47,27 @@ import {TEXT_TYPE_TO_FORMAT, DOM_ELEMENT_TYPE} from './LexicalConstants';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 export type TextPointType = {
+  getCharacterOffset: () => number,
+  getNode: () => TextNode,
+  is: (PointType) => boolean,
+  isAtNodeEnd: () => boolean,
+  isBefore: (PointType) => boolean,
   key: NodeKey,
   offset: number,
-  type: 'text',
-  is: (PointType) => boolean,
-  isBefore: (PointType) => boolean,
-  getNode: () => TextNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
-  getCharacterOffset: () => number,
-  isAtNodeEnd: () => boolean,
+  type: 'text',
 };
 
 export type ElementPointType = {
+  getCharacterOffset: () => number,
+  getNode: () => ElementNode,
+  is: (PointType) => boolean,
+  isAtNodeEnd: () => boolean,
+  isBefore: (PointType) => boolean,
   key: NodeKey,
   offset: number,
-  type: 'element',
-  is: (PointType) => boolean,
-  isBefore: (PointType) => boolean,
-  getNode: () => ElementNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
-  getCharacterOffset: () => number,
-  isAtNodeEnd: () => boolean,
+  type: 'element',
 };
 
 export type PointType = TextPointType | ElementPointType;

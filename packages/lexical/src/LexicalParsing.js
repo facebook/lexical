@@ -30,24 +30,24 @@ export type NodeParserState = {
 
 export type ParsedNode = {
   __key: NodeKey,
-  __type: string,
   __parent: null | NodeKey,
+  __type: string,
   ...
 };
 
 export type ParsedElementNode = {
   ...ParsedNode,
   __children: Array<NodeKey>,
-  __format: number,
   __dir: number,
+  __format: number,
   __indent: number,
 };
 
 export type ParsedTextNode = {
   ...ParsedNode,
-  __text: string,
-  __mode: number,
   __format: number,
+  __mode: number,
+  __text: string,
 };
 
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;

@@ -283,7 +283,7 @@ export class Selection {
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if ($isElementNode(node)) {
+      if ($isElementNode(node) && !node.isInline()) {
         if (!prevWasElement) {
           textContent += '\n';
         }

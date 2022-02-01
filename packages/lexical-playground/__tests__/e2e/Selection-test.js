@@ -11,7 +11,6 @@ import {
   sleep,
   click,
   focusEditor,
-  waitForSelector,
   insertImage,
   evaluate,
 } from '../utils';
@@ -32,33 +31,6 @@ describe('Selection', () => {
       expect(await editorHasFocus()).toEqual(false);
     });
 
-    async function enableNestedEditorTreeView(page) {
-      await click(page, '#options-button');
-      await click(page, '.switch label:text("Nested Editors Tree View")');
-    }
-
-    async function assertSelectionInTreeView(
-      page,
-      expectSelectionToExist = true,
-      editorParentSelector = '.editor-shell',
-    ) {
-      if (expectSelectionToExist) {
-        await waitForSelector(
-          page,
-          `${editorParentSelector} .tree-view-output:has-text("selection")`,
-        );
-        await waitForSelector(
-          page,
-          `${editorParentSelector} .tree-view-output:has-text("anchor")`,
-        );
-      } else {
-        await waitForSelector(
-          page,
-          `${editorParentSelector} .tree-view-output:has-text("selection: null")`,
-        );
-      }
-    }
-
     it('keeps single active selection for nested editors', async () => {
       const {page, isRichText} = e2e;
 
@@ -66,31 +38,43 @@ describe('Selection', () => {
         return;
       }
 
+      const hasSelection = async (parentSelector) =>
+        await evaluate(
+          page,
+          (parentSelector) => {
+            return (
+              document
+                .querySelector(`${parentSelector} > .tree-view-output pre`)
+                .__lexicalEditor.getEditorState()._selection !== null
+            );
+          },
+          parentSelector,
+        );
+
       await focusEditor(page);
       await insertImage(page, 'Hello world');
-      await enableNestedEditorTreeView(page, '.image-caption-container');
-      await assertSelectionInTreeView(page, true, '.image-caption-container');
-      await assertSelectionInTreeView(page, false, '.editor-shell');
+      expect(await hasSelection('.image-caption-container')).toBe(true);
+      expect(await hasSelection('.editor-shell')).toBe(false);
 
       // Click outside of the editor and check that selection remains the same
       await click(page, 'header img');
-      await assertSelectionInTreeView(page, true, '.image-caption-container');
-      await assertSelectionInTreeView(page, false, '.editor-shell');
+      expect(await hasSelection('.image-caption-container')).toBe(true);
+      expect(await hasSelection('.editor-shell')).toBe(false);
 
       // Back to root editor
       await focusEditor(page, '.editor-shell');
-      await assertSelectionInTreeView(page, false, '.image-caption-container');
-      await assertSelectionInTreeView(page, true, '.editor-shell');
+      expect(await hasSelection('.image-caption-container')).toBe(false);
+      expect(await hasSelection('.editor-shell')).toBe(true);
 
       // // Click outside of the editor and check that selection remains the same
       await click(page, 'header img');
-      await assertSelectionInTreeView(page, false, '.image-caption-container');
-      await assertSelectionInTreeView(page, true, '.editor-shell');
+      expect(await hasSelection('.image-caption-container')).toBe(false);
+      expect(await hasSelection('.editor-shell')).toBe(true);
 
       // Back to nested editor editor
       await focusEditor(page, '.image-caption-container');
-      await assertSelectionInTreeView(page, true, '.image-caption-container');
-      await assertSelectionInTreeView(page, false, '.editor-shell');
+      expect(await hasSelection('.image-caption-container')).toBe(true);
+      expect(await hasSelection('.editor-shell')).toBe(false);
     });
   });
 });

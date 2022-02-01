@@ -52,6 +52,7 @@ export default function TreeView({
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
   const playingIndexRef = useRef(0);
+  const treeElementRef = useRef<HTMLPreElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
@@ -105,6 +106,13 @@ export default function TreeView({
     }
   }, [timeStampedEditorStates, isPlaying, editor, totalEditorStates]);
 
+  useEffect(() => {
+    if (treeElementRef.current) {
+      // $FlowExpectedError[prop-missing] Internal field
+      treeElementRef.current.__lexicalEditor = editor;
+    }
+  }, [editor]);
+
   return (
     <div className={viewClassName}>
       {!timeTravelEnabled && totalEditorStates > 2 && (
@@ -121,7 +129,7 @@ export default function TreeView({
           Time Travel
         </button>
       )}
-      <pre>{content}</pre>
+      <pre ref={treeElementRef}>{content}</pre>
       {timeTravelEnabled && (
         <div className={timeTravelPanelClassName}>
           <button

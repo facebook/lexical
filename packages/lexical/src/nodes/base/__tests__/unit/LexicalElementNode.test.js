@@ -230,16 +230,16 @@ describe('LexicalElementNode tests', () => {
 
     const BASE_INSERTIONS: Array<{
       name: string,
-      from: number,
-      to: number,
+      start: number,
+      deleteCount: number,
       expectedText: string,
       skipNodes: ?boolean,
     }> = [
       // Do nothing
       {
         name: 'Insert in the beginning',
-        from: 0,
-        to: 0,
+        start: 0,
+        deleteCount: 0,
         skipNodes: true,
         expectedText: 'FooBarBaz',
       },
@@ -247,49 +247,49 @@ describe('LexicalElementNode tests', () => {
       // Insert
       {
         name: 'Insert in the beginning',
-        from: 0,
-        to: 0,
+        start: 0,
+        deleteCount: 0,
         expectedText: 'QuxQuuzFooBarBaz',
       },
       {
         name: 'Insert in the middle',
-        from: 1,
-        to: 0,
+        start: 1,
+        deleteCount: 0,
         expectedText: 'FooQuxQuuzBarBaz',
       },
       {
         name: 'Insert in the end',
-        from: 3,
-        to: 0,
+        start: 3,
+        deleteCount: 0,
         expectedText: 'FooBarBazQuxQuuz',
       },
 
       // Delete
       {
         name: 'Delete in the beginning',
-        from: 0,
-        to: 1,
+        start: 0,
+        deleteCount: 1,
         skipNodes: true,
         expectedText: 'BarBaz',
       },
       {
         name: 'Delete in the middle',
-        from: 1,
-        to: 2,
+        start: 1,
+        deleteCount: 1,
         skipNodes: true,
         expectedText: 'FooBaz',
       },
       {
         name: 'Delete in the end',
-        from: 2,
-        to: 3,
+        start: 2,
+        deleteCount: 1,
         skipNodes: true,
         expectedText: 'FooBar',
       },
       {
         name: 'Delete all',
-        from: 0,
-        to: 3,
+        start: 0,
+        deleteCount: 3,
         skipNodes: true,
         expectedText: '',
       },
@@ -297,26 +297,26 @@ describe('LexicalElementNode tests', () => {
       // Replace
       {
         name: 'Replace in the beginning',
-        from: 0,
-        to: 1,
+        start: 0,
+        deleteCount: 1,
         expectedText: 'QuxQuuzBarBaz',
       },
       {
         name: 'Replace in the middle',
-        from: 1,
-        to: 2,
+        start: 1,
+        deleteCount: 1,
         expectedText: 'FooQuxQuuzBaz',
       },
       {
         name: 'Replace in the end',
-        from: 2,
-        to: 3,
+        start: 2,
+        deleteCount: 1,
         expectedText: 'FooBarQuxQuuz',
       },
       {
         name: 'Replace all',
-        from: 0,
-        to: 3,
+        start: 0,
+        deleteCount: 3,
         expectedText: 'QuxQuuz',
       },
     ];
@@ -325,8 +325,8 @@ describe('LexicalElementNode tests', () => {
       it(testCase.name, async () => {
         await update(() => {
           block.splice(
-            testCase.from,
-            testCase.to,
+            testCase.start,
+            testCase.deleteCount,
             testCase.skipNodes
               ? []
               : [$createTextNode('Qux'), $createTextNode('Quuz')],
@@ -371,7 +371,7 @@ describe('LexicalElementNode tests', () => {
       });
 
       await update(() => {
-        block.splice(1, 1, [$getRoot().getLastChild().getChildAtIndex(1)]);
+        block.splice(1, 0, [$getRoot().getLastChild().getChildAtIndex(1)]);
       });
 
       removeTransform();

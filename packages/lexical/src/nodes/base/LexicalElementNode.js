@@ -306,8 +306,8 @@ export class ElementNode extends LexicalNode {
     return this;
   }
   splice(
-    from: number,
-    to: number,
+    start: number,
+    deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): ElementNode {
     errorOnReadOnly();
@@ -330,7 +330,7 @@ export class ElementNode extends LexicalNode {
         if (index === -1) {
           invariant(false, 'Node is not a child of its parent');
         }
-        $internallyMarkSiblingsAsDirty(writableNodeToInsert);
+        $internallyMarkSiblingsAsDirty(nodeToInsert);
         children.splice(index, 1);
       }
       // Set child parent to self
@@ -339,10 +339,20 @@ export class ElementNode extends LexicalNode {
       nodesToInsertKeys.push(newKey);
     }
 
+    // Mark range edges siblings as dirty
+    const nodeBeforeRange = this.getChildAtIndex(start - 1);
+    if (nodeBeforeRange) {
+      $internallyMarkNodeAsDirty(nodeBeforeRange);
+    }
+    const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
+    if (nodeAfterRange) {
+      $internallyMarkNodeAsDirty(nodeAfterRange);
+    }
+
     // Remove defined range of children
     const removedNodesKeys = writableSelfChildren.splice(
-      from,
-      to - from,
+      start,
+      deleteCount,
       ...nodesToInsertKeys,
     );
 
@@ -354,16 +364,6 @@ export class ElementNode extends LexicalNode {
         const writableNodeToRemove = nodeToRemove.getWritable();
         writableNodeToRemove.__parent = null;
       }
-    }
-
-    // Mark range edges siblings as dirty
-    const nodeBeforeRange = this.getChildAtIndex(from);
-    const nodeAfterRange = this.getChildAtIndex(to);
-    if (nodeBeforeRange) {
-      $internallyMarkNodeAsDirty(nodeBeforeRange);
-    }
-    if (nodeAfterRange) {
-      $internallyMarkNodeAsDirty(nodeAfterRange);
     }
 
     // Cleanup if node can't be empty

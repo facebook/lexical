@@ -49,7 +49,7 @@ describe('CodeBlock', () => {
       }
     });
 
-    it('Can create code block with markdown and wrap existing text', async () => {
+    test('Can create code block with markdown and wrap existing text', async () => {
       const {page, isRichText} = e2e;
       await focusEditor(page);
       await page.keyboard.type('alert(1);');
@@ -72,6 +72,27 @@ describe('CodeBlock', () => {
           '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">``` alert(1);</span></p>',
         );
       }
+    });
+
+    test.only('Does not wrap code block text when it extends beyond the width of the code block', async () => {
+      const {page, isRichText} = e2e;
+      // This only applies to rich text
+      if (!isRichText) {
+        return;
+      }
+      await focusEditor(page);
+      await page.keyboard.type(
+        `\`\`\` alert("I started painting as a hobby when I was little. I didn't know I had any talent. I believe talent is just a pursued interest. Anybody can do what I do. Just go back and put one little more happy tree in there. Everybody's different. Trees are different. Let them all be individuals.")`,
+      );
+      await moveToEditorBeginning(page);
+      await assertSelection(page, {
+        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        focusPath: [0, 0, 0],
+        focusOffset: 0,
+      });
+      // TODO: This is hanging currently...
+      expect(await page.screenshot()).toMatchSnapshot();
     });
 
     it('Can switch highlighting language in a toolbar', async () => {

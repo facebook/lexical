@@ -6,12 +6,14 @@ const OFF = 0;
 const ERROR = 2;
 
 module.exports = {
-  extends: ['fbjs', 'prettier', 'plugin:react-hooks/recommended'],
+  // Prettier must be last so it can override other configs (https://github.com/prettier/eslint-config-prettier#installation)
+  extends: ['fbjs', 'plugin:react-hooks/recommended', 'prettier'],
 
   // Stop ESLint from looking for a configuration file in parent folders
   root: true,
 
   plugins: [
+    'sort-keys-fix',
     'jest',
     'no-for-of-loops',
     'no-function-declare-after-return',
@@ -39,6 +41,7 @@ module.exports = {
     'dot-notation': [ERROR, {allowPattern: '^(error|warn)$'}],
     'eol-last': ERROR,
     eqeqeq: [ERROR, 'allow-null'],
+    'flowtype/sort-keys': ERROR,
     indent: OFF,
     'jsx-quotes': [ERROR, 'prefer-double'],
     'keyword-spacing': [ERROR, {after: true, before: true}],
@@ -93,6 +96,8 @@ module.exports = {
       ERROR,
       {declaration: false, assignment: false},
     ],
+
+    'sort-keys-fix/sort-keys-fix': ERROR,
 
     // Prevent for...of loops because they require a Symbol polyfill.
     // You can disable this rule for code that isn't shipped (e.g. build scripts and tests).

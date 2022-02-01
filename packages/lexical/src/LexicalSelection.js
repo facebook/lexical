@@ -1822,11 +1822,12 @@ export function moveSelectionPointToSibling(
   point: PointType,
   node: LexicalNode,
   parent: ElementNode,
+  prevSibling: LexicalNode | null,
+  nextSibling: LexicalNode | null,
 ): void {
   let siblingKey = null;
   let offset = 0;
   let type = null;
-  const prevSibling = node.getPreviousSibling();
   if (prevSibling !== null) {
     siblingKey = prevSibling.__key;
     if ($isTextNode(prevSibling)) {
@@ -1837,7 +1838,6 @@ export function moveSelectionPointToSibling(
       type = 'element';
     }
   } else {
-    const nextSibling = node.getNextSibling();
     if (nextSibling !== null) {
       siblingKey = nextSibling.__key;
       if ($isTextNode(nextSibling)) {

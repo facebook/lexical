@@ -8,11 +8,15 @@
  */
 
 import type {NodeKey} from '../../LexicalNode';
-import type {Selection} from '../../LexicalSelection';
+import type {PointType, Selection} from '../../LexicalSelection';
 
 import {$isRootNode, $isTextNode, TextNode} from '../../';
 import {LexicalNode} from '../../LexicalNode';
-import {$makeSelection, $getSelection} from '../../LexicalSelection';
+import {
+  $makeSelection,
+  $getSelection,
+  moveSelectionPointToSibling,
+} from '../../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../../LexicalUpdates';
 import {ELEMENT_TYPE_TO_FORMAT} from '../../LexicalConstants';
 import {
@@ -321,7 +325,9 @@ export class ElementNode extends LexicalNode {
     for (let i = 0; i < nodesToInsertLength; i++) {
       const nodeToInsert = nodesToInsert[i];
       const writableNodeToInsert = nodeToInsert.getWritable();
-
+      if (nodeToInsert.__key === writableSelfKey) {
+        invariant(false, 'append: attemtping to append self');
+      }
       const oldParent = writableNodeToInsert.getParent();
       if (oldParent !== null) {
         const writableParent = oldParent.getWritable();
@@ -350,29 +356,75 @@ export class ElementNode extends LexicalNode {
     }
 
     // Remove defined range of children
-    const removedNodesKeys = writableSelfChildren.splice(
+    const nodesToRemoveKeys = writableSelfChildren.splice(
       start,
       deleteCount,
       ...nodesToInsertKeys,
     );
 
-    // Unlink removed nodes from current parent
-    const removedNodesKeysLength = removedNodesKeys.length;
-    for (let i = 0; i < removedNodesKeysLength; i++) {
-      const nodeToRemove = $getNodeByKey<LexicalNode>(removedNodesKeys[i]);
-      if (nodeToRemove != null) {
-        const writableNodeToRemove = nodeToRemove.getWritable();
-        writableNodeToRemove.__parent = null;
-      }
-    }
+    // In case of deletion we need to adjust selection, unlink removed nodes
+    // and clean up node itself if it becomes empty. None of these needed
+    // for insertion-only cases
+    if (deleteCount) {
+      // Adjusting selection, in case node that was anchor/focus will be deleted
+      const selection = $getSelection();
+      if (selection !== null) {
+        const nodesToRemoveKeySet = new Set(nodesToRemoveKeys);
+        const nodesToInsertKeySet = new Set(nodesToInsertKeys);
+        const isPointRemoved = (point: PointType): boolean => {
+          let node = point.getNode();
+          while (node) {
+            const nodeKey = node.__key;
+            if (
+              nodesToRemoveKeySet.has(nodeKey) &&
+              !nodesToInsertKeySet.has(nodeKey)
+            ) {
+              return true;
+            }
+            node = node.getParent();
+          }
+          return false;
+        };
 
-    // Cleanup if node can't be empty
-    if (
-      writableSelfChildren.length === 0 &&
-      !this.canBeEmpty() &&
-      !$isRootNode(this)
-    ) {
-      this.remove();
+        const {anchor, focus} = selection;
+        if (isPointRemoved(anchor)) {
+          moveSelectionPointToSibling(
+            anchor,
+            anchor.getNode(),
+            this,
+            nodeBeforeRange,
+            nodeAfterRange,
+          );
+        }
+        if (isPointRemoved(focus)) {
+          moveSelectionPointToSibling(
+            focus,
+            focus.getNode(),
+            this,
+            nodeBeforeRange,
+            nodeAfterRange,
+          );
+        }
+
+        // Unlink removed nodes from current parent
+        const nodesToRemoveKeysLength = nodesToRemoveKeys.length;
+        for (let i = 0; i < nodesToRemoveKeysLength; i++) {
+          const nodeToRemove = $getNodeByKey<LexicalNode>(nodesToRemoveKeys[i]);
+          if (nodeToRemove != null) {
+            const writableNodeToRemove = nodeToRemove.getWritable();
+            writableNodeToRemove.__parent = null;
+          }
+        }
+
+        // Cleanup if node can't be empty
+        if (
+          writableSelfChildren.length === 0 &&
+          !this.canBeEmpty() &&
+          !$isRootNode(this)
+        ) {
+          this.remove();
+        }
+      }
     }
 
     return writableSelf;

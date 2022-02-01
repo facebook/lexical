@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {$createTextNode, $getRoot, TextNode} from 'lexical';
+import {$createTextNode, $getRoot, $getSelection, TextNode} from 'lexical';
 import {
   $createTestElementNode,
   createTestEditor,
@@ -233,14 +233,14 @@ describe('LexicalElementNode tests', () => {
       start: number,
       deleteCount: number,
       expectedText: string,
-      skipNodes: ?boolean,
+      deleteOnly: ?boolean,
     }> = [
       // Do nothing
       {
-        name: 'Insert in the beginning',
+        name: 'Do nothing',
         start: 0,
         deleteCount: 0,
-        skipNodes: true,
+        deleteOnly: true,
         expectedText: 'FooBarBaz',
       },
 
@@ -269,28 +269,28 @@ describe('LexicalElementNode tests', () => {
         name: 'Delete in the beginning',
         start: 0,
         deleteCount: 1,
-        skipNodes: true,
+        deleteOnly: true,
         expectedText: 'BarBaz',
       },
       {
         name: 'Delete in the middle',
         start: 1,
         deleteCount: 1,
-        skipNodes: true,
+        deleteOnly: true,
         expectedText: 'FooBaz',
       },
       {
         name: 'Delete in the end',
         start: 2,
         deleteCount: 1,
-        skipNodes: true,
+        deleteOnly: true,
         expectedText: 'FooBar',
       },
       {
         name: 'Delete all',
         start: 0,
         deleteCount: 3,
-        skipNodes: true,
+        deleteOnly: true,
         expectedText: '',
       },
 
@@ -322,21 +322,153 @@ describe('LexicalElementNode tests', () => {
     ];
 
     BASE_INSERTIONS.forEach((testCase) => {
-      it(testCase.name, async () => {
+      it(`Plain text: ${testCase.name}`, async () => {
         await update(() => {
           block.splice(
             testCase.start,
             testCase.deleteCount,
-            testCase.skipNodes
+            testCase.deleteOnly
               ? []
               : [$createTextNode('Qux'), $createTextNode('Quuz')],
           );
 
-          // TODO:
-          // Manually update selection, since selected node might've been deleted
-          // Temp code till selection retention is added to splice
-          block.select();
           expect(block.getTextContent()).toEqual(testCase.expectedText);
+        });
+      });
+    });
+
+    let nodes = {};
+
+    const NESTED_ELEMENTS_TESTS: Array<{
+      name: string,
+      start: number,
+      deleteCount: number,
+      expectedText: string,
+      expectedSelection: () => {
+        anchor: {key: string, offset: number, type: string},
+        focus: {key: string, offset: number, type: string},
+      },
+      deleteOnly?: boolean,
+    }> = [
+      {
+        name: 'Do nothing',
+        start: 1,
+        deleteCount: 0,
+        deleteOnly: true,
+        expectedText: 'FooWiz\n\nFuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.nestedText1.__key, offset: 1, type: 'text'},
+            focus: {key: nodes.nestedText1.__key, offset: 1, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Delete selected element (selection moves to the previous)',
+        start: 1,
+        deleteCount: 1,
+        deleteOnly: true,
+        expectedText: 'FooFuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.text1.__key, offset: 3, type: 'text'},
+            focus: {key: nodes.text1.__key, offset: 3, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Replace selected element (selection moves to the previous)',
+        start: 1,
+        deleteCount: 1,
+        expectedText: 'FooQuxQuuzFuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.text1.__key, offset: 3, type: 'text'},
+            focus: {key: nodes.text1.__key, offset: 3, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Delete selected with previous element (selection moves to the next)',
+        start: 0,
+        deleteCount: 2,
+        deleteOnly: true,
+        expectedText: 'Fuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.nestedText2.__key, offset: 0, type: 'text'},
+            focus: {key: nodes.nestedText2.__key, offset: 0, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Delete selected with all siblings (selection moves up to the element)',
+        start: 0,
+        deleteCount: 4,
+        deleteOnly: true,
+        expectedText: '',
+        expectedSelection: () => {
+          return {
+            anchor: {key: block.__key, offset: 0, type: 'element'},
+            focus: {key: block.__key, offset: 0, type: 'element'},
+          };
+        },
+      },
+    ];
+
+    NESTED_ELEMENTS_TESTS.forEach((testCase) => {
+      it(`Nested elements: ${testCase.name}`, async () => {
+        await update(() => {
+          const text1 = $createTextNode('Foo');
+          const text2 = $createTextNode('Bar');
+
+          const nestedBlock1 = $createTestElementNode();
+          const nestedText1 = $createTextNode('Wiz');
+          nestedBlock1.append(nestedText1);
+
+          const nestedBlock2 = $createTestElementNode();
+          const nestedText2 = $createTextNode('Fuz');
+          nestedBlock2.append(nestedText2);
+
+          block.clear();
+          block.append(text1, nestedBlock1, nestedBlock2, text2);
+          nestedText1.select(1, 1);
+          expect(block.getTextContent()).toEqual('FooWiz\n\nFuz\n\nBar');
+
+          nodes = {
+            text1,
+            text2,
+            nestedBlock1,
+            nestedBlock2,
+            nestedText1,
+            nestedText2,
+          };
+        });
+
+        await update(() => {
+          block.splice(
+            testCase.start,
+            testCase.deleteCount,
+            testCase.deleteOnly
+              ? []
+              : [$createTextNode('Qux'), $createTextNode('Quuz')],
+          );
+        });
+
+        await update(() => {
+          expect(block.getTextContent()).toEqual(testCase.expectedText);
+          const selection = $getSelection();
+          const expectedSelection = testCase.expectedSelection();
+          expect({
+            key: selection.anchor.key,
+            offset: selection.anchor.offset,
+            type: selection.anchor.type,
+          }).toEqual(expectedSelection.anchor);
+          expect({
+            key: selection.focus.key,
+            offset: selection.focus.offset,
+            type: selection.focus.type,
+          }).toEqual(expectedSelection.focus);
         });
       });
     });
@@ -379,7 +511,7 @@ describe('LexicalElementNode tests', () => {
       await update(() => {
         expect(block.getTextContent()).toEqual('Foo2BarBaz');
         expectedTransforms.forEach((key) => {
-          expect(transforms.has(key)).toBe(true);
+          expect(transforms).toContain(key);
         });
       });
     });

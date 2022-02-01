@@ -227,16 +227,18 @@ function createMergeActionGetter(
       const selection = nextEditorState._selection;
       const prevSelection = prevEditorState._selection;
       const hasDirtyNodes = dirtyLeaves.size > 0 || dirtyElements.size > 0;
-      if (!hasDirtyNodes) {
-        if (prevSelection === null && selection !== null) {
-          return MERGE;
-        }
-        return DISCARD;
-      }
-
       const isSameEditor =
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
-
+      if (!hasDirtyNodes) {
+        if (isSameEditor) {
+          return prevSelection === null && selection !== null ? MERGE : DISCARD;
+        } else {
+          // Discard null-selection when switching between editors
+          return prevSelection !== null && selection === null
+            ? DISCARD
+            : NO_MERGE;
+        }
+      }
       if (
         changeType !== OTHER &&
         changeType === prevChangeType &&
@@ -306,7 +308,10 @@ export function useHistory(
         if (current !== null) {
           undoStack.push({
             ...current,
-            undoSelection: prevEditorState.read($getSelection),
+            undoSelection:
+              current.editor === editor
+                ? prevEditorState.read($getSelection)
+                : null,
           });
           editor.execCommand('canUndo', true);
         }

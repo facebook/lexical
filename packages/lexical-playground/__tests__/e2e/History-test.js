@@ -14,6 +14,8 @@ import {
   repeat,
   sleep,
   IS_COLLAB,
+  focusEditor,
+  insertImage,
 } from '../utils';
 
 describe('History', () => {
@@ -308,6 +310,39 @@ describe('History', () => {
           focusOffset: 22,
         });
       }
+    });
+
+    it('Can undo and redo with root and nested editors', async () => {
+      const {isRichText, page} = e2e;
+      if (IS_COLLAB || !isRichText) {
+        return;
+      }
+
+      await focusEditor(page);
+      await insertImage(page, 'Hello');
+
+      // Move to into root editor
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.type('world');
+      const htmlWithNestedEditorText =
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" tabindex="0" style="width: inherit; height: inherit; max-width: 500px;"><div class="image-caption-container"><div class="ImageNode__contentEditable dnr7xe2t n3hqoq4p r86q59rh b3qcqh3k fq87ekyn f3mgz9a2 awmj90u6 nxhhwgj7 b6ax4al1 om3e55n1 mn3blgpi blo597vh pvreidsc ejhi0i36 n68fow1o qbvjirod rhtn53u1 glosn74e i04st1bw n3t5jt4f l4uc2m3f" contenteditable="true" role="textbox" spellcheck="true" data-lexical-editor="true"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p></div></div></span><span data-lexical-text="true">world</span></p>';
+
+      await assertHTML(page, htmlWithNestedEditorText);
+
+      // Undo up to an empty editor and redo to latest state
+      await repeat(5, async () => {
+        await undo(page);
+      });
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+      );
+
+      // Redo back both nested and root level editor changes
+      await repeat(5, async () => {
+        await redo(page);
+      });
+      await assertHTML(page, htmlWithNestedEditorText);
     });
   });
 });

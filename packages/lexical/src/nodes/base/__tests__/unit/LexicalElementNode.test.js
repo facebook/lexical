@@ -219,7 +219,7 @@ describe('LexicalElementNode tests', () => {
     });
   });
 
-  describe('insertRange', () => {
+  describe('splice', () => {
     let block;
 
     beforeEach(async () => {
@@ -324,7 +324,7 @@ describe('LexicalElementNode tests', () => {
     BASE_INSERTIONS.forEach((testCase) => {
       it(testCase.name, async () => {
         await update(() => {
-          block.insertRange(
+          block.splice(
             testCase.from,
             testCase.to,
             testCase.skipNodes
@@ -334,7 +334,7 @@ describe('LexicalElementNode tests', () => {
 
           // TODO:
           // Manually update selection, since selected node might've been deleted
-          // Temp code till selection retention is added to insertRange
+          // Temp code till selection retention is added to splice
           block.select();
           expect(block.getTextContent()).toEqual(testCase.expectedText);
         });
@@ -371,7 +371,7 @@ describe('LexicalElementNode tests', () => {
       });
 
       await update(() => {
-        block.insertRange(1, 1, [$getRoot().getLastChild().getChildAtIndex(1)]);
+        block.splice(1, 1, [$getRoot().getLastChild().getChildAtIndex(1)]);
       });
 
       removeTransform();

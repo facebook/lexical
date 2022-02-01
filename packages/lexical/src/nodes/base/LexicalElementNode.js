@@ -305,7 +305,7 @@ export class ElementNode extends LexicalNode {
     self.__indent = indentLevel;
     return this;
   }
-  insertRange(
+  splice(
     from: number,
     to: number,
     nodesToInsert: Array<LexicalNode>,

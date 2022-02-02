@@ -13,6 +13,7 @@ import {
   focusEditor,
   insertImage,
   evaluate,
+  E2E_BROWSER,
 } from '../utils';
 
 describe('Selection', () => {
@@ -62,11 +63,19 @@ describe('Selection', () => {
       expect(await hasSelection('.editor-shell')).toBe(false);
 
       // Back to root editor
-      await focusEditor(page, '.editor-shell');
+      if (E2E_BROWSER === 'firefox') {
+        // TODO:
+        // In firefox .focus() on editor does not trigger selectionchange, while checking it
+        // explicitly clicking on an editor (passing position that is on the right side to
+        // prevent clicking on image and its nested editor)
+        await click(page, '.editor-shell', {position: {x: 600, y: 150}});
+      } else {
+        await focusEditor(page);
+      }
       expect(await hasSelection('.image-caption-container')).toBe(false);
       expect(await hasSelection('.editor-shell')).toBe(true);
 
-      // // Click outside of the editor and check that selection remains the same
+      // Click outside of the editor and check that selection remains the same
       await click(page, 'header img');
       expect(await hasSelection('.image-caption-container')).toBe(false);
       expect(await hasSelection('.editor-shell')).toBe(true);

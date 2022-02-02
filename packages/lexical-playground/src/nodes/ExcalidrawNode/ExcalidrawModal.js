@@ -89,7 +89,6 @@ export default function ExcalidrawModal({
   const [elemenets, setElements] = useState(initialElements);
 
   const save = () => {
-    console.log(elemenets);
     if (elemenets.filter((el) => !el.isDeleted).length > 0) {
       onSave(elemenets);
     } else {

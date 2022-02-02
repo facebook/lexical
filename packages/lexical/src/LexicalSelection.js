@@ -283,7 +283,7 @@ export class Selection {
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if ($isElementNode(node)) {
+      if ($isElementNode(node) && !node.isInline()) {
         if (!prevWasElement) {
           textContent += '\n';
         }
@@ -885,7 +885,10 @@ export class Selection {
 
           const firstDescendant = node.getFirstDescendant();
           if ($isLeafNode(firstDescendant)) {
-            const element = firstDescendant.getParentOrThrow();
+            let element = firstDescendant.getParentOrThrow();
+            while (element.isInline()) {
+              element = element.getParentOrThrow();
+            }
             const children = element.getChildren();
             const childrenLength = children.length;
             if ($isElementNode(target)) {

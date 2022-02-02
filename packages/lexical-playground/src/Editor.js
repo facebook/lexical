@@ -39,6 +39,7 @@ import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import {useSettings} from './context/SettingsContext';
+import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
@@ -69,6 +70,7 @@ export default function Editor(): React$Node {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
+        <AutoFocusPlugin />
         <StickyPlugin />
         <MentionsPlugin />
         <EmojisPlugin />

@@ -26,8 +26,9 @@ export default function TablePlugin(): React$Node {
   useEffect(() => {
     const removeCommandListener = editor.addListener(
       'command',
-      (type) => {
+      (type, payload) => {
         if (type === 'insertTable') {
+          const {columns, rows} = payload;
           $log('handleAddTable');
           const selection = $getSelection();
           if (selection === null) {
@@ -37,7 +38,7 @@ export default function TablePlugin(): React$Node {
 
           if (focusNode !== null) {
             const topLevelNode = focusNode.getTopLevelElementOrThrow();
-            const tableNode = $createTableNodeWithDimensions(3, 3);
+            const tableNode = $createTableNodeWithDimensions(rows, columns);
             topLevelNode.insertAfter(tableNode);
             tableNode.insertAfter($createParagraphNode());
             const firstCell = tableNode

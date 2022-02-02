@@ -40,6 +40,19 @@ import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
 import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+import useModal from '../hooks/useModal';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
+import stylex from 'stylex';
+
+const styles = stylex.create({
+  dialogActions: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'right',
+    marginTop: 20,
+  },
+});
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -218,6 +231,32 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
         </div>
       )}
     </div>
+  );
+}
+
+function InsertTableDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [rows, setRows] = useState('3');
+  const [columns, setColumns] = useState('3');
+
+  const onClick = () => {
+    activeEditor.execCommand('insertTable', {rows, columns});
+    onClose();
+  };
+
+  return (
+    <>
+      <Input label="No of rows" onChange={setRows} value={rows} />
+      <Input label="No of columns" onChange={setColumns} value={columns} />
+      <div className={stylex(styles.dialogActions)}>
+        <Button onClick={onClick}>Confirm</Button>
+      </div>
+    </>
   );
 }
 
@@ -438,6 +477,7 @@ export default function ToolbarPlugin(): React$Node {
   const [isCode, setIsCode] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [modal, showModal] = useModal();
   const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
     useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
@@ -740,7 +780,12 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.execCommand('insertTable');
+              showModal('Insert Table', (onClose) => (
+                <InsertTableDialog
+                  activeEditor={activeEditor}
+                  onClose={onClose}
+                />
+              ));
             }}
             className="toolbar-item"
             aria-label="Insert Table">
@@ -807,6 +852,7 @@ export default function ToolbarPlugin(): React$Node {
         aria-label="Indent">
         <i className="format indent" />
       </button>
+      {modal}
     </div>
   );
 }

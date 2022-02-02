@@ -17,6 +17,10 @@ describe('Selection', () => {
           return document.activeElement === editorElement;
         });
       const {page} = e2e;
+      await evaluate(page, () => {
+        const editorElement = document.querySelector('div[contenteditable="true"]');
+        return editorElement.blur();
+      });
       expect(await editorHasFocus()).toEqual(false);
       await sleep(500);
       expect(await editorHasFocus()).toEqual(false);

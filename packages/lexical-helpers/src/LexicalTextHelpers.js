@@ -11,6 +11,11 @@ import type {ElementNode, RootNode, TextNode} from 'lexical';
 import invariant from 'shared/invariant';
 import {$isTextNode, $isElementNode} from 'lexical';
 
+export type TextNodeWithOffset = {
+  node: TextNode,
+  offset: number,
+};
+
 export function $findTextIntersectionFromCharacters(
   root: RootNode,
   targetCharacters: number,
@@ -54,7 +59,9 @@ export function $findTextIntersectionFromCharacters(
 
 // Return text content for child text nodes.  Each non-text node is separated by input string.
 // Caution, this function creates a string and should not be used within a tight loop.
-export function $joinTextNodesFromElementNode(
+// Use $getNodeWithOffsetsFromJoinedTextNodesFromElementNode below to convert
+// indexes in the return string back into their corresponding node and offsets.
+export function $joinTextNodesInElementNode(
   elementNode: ElementNode,
   separator: string,
   stopAtNode: TextNode,
@@ -86,4 +93,52 @@ export function $joinTextNodesFromElementNode(
     }
   }
   return textContent;
+}
+
+// This function converts the offsetInJoinedTextContent to
+// an a node and offset result or null if not found.
+// This function is to be used in conjunction with joinTextNodesInElementNode above.
+// The joinedTextContent should be return value from joinTextNodesInElementNode.
+// The offsetInJoinedTextContent is relative to the entire string which
+// itself is relevant to the parent ElementNode.
+// Example:
+// Given a Paragraph with 2 TextNodes. The first is Hello, the second is World.
+// The joinedTextContent would be "HelloWorld"
+// The offsetInJoinedTextContent might be for the letter "e" = 1 or "r" = 7.
+// The return values would be {TextNode1, 1} or {TextNode2,2}, respectively.
+
+export function $getNodeWithOffsetFromJoinedTextNodesInElementNode(
+  elementNode: ElementNode,
+  joinedTextContent: string,
+  offsetInJoinedTextContent: number,
+  separatorLength: number,
+): ?TextNodeWithOffset {
+  const children = elementNode.getChildren();
+  const length = children.length;
+  let runningLength = 0;
+  const joinedTextContentLength = joinedTextContent.length;
+  for (let i = 0; i < length; ++i) {
+    if (runningLength >= joinedTextContentLength) {
+      break;
+    }
+
+    const child = children[i];
+    const childContentLength = $isTextNode(child)
+      ? child.getTextContent().length
+      : 0;
+
+    const newRunningLength = runningLength + childContentLength;
+    if (
+      runningLength <= offsetInJoinedTextContent &&
+      offsetInJoinedTextContent < newRunningLength &&
+      $isTextNode(child)
+    ) {
+      return {
+        node: child,
+        offset: offsetInJoinedTextContent - runningLength,
+      };
+    }
+    runningLength = newRunningLength;
+  }
+  return null;
 }

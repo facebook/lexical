@@ -14,8 +14,8 @@ import type {
   AutoFormatTriggerState,
   AutoFormatCriteriaWithMatchResultContext,
   ScanningContext,
-  TextNodeWithOffset,
 } from './AutoFormatterUtils.js';
+import type {TextNodeWithOffset} from '@lexical/helpers/text';
 import {$isCodeNode} from 'lexical/CodeNode';
 import {$isListItemNode} from 'lexical/ListItemNode';
 import {$isElementNode, $isTextNode, $getSelection} from 'lexical';

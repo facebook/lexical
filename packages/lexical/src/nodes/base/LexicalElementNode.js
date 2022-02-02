@@ -174,7 +174,11 @@ export class ElementNode extends LexicalNode {
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
       textContent += child.getTextContent(includeInert, includeDirectionless);
-      if ($isElementNode(child) && i !== childrenLength - 1) {
+      if (
+        $isElementNode(child) &&
+        i !== childrenLength - 1 &&
+        !child.isInline()
+      ) {
         textContent += '\n\n';
       }
     }

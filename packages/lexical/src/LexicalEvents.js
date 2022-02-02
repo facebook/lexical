@@ -25,6 +25,7 @@ import {
   $isTokenOrInert,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,
+  getEditorsToPropagate,
   isBackspace,
   isBold,
   isDelete,
@@ -44,6 +45,7 @@ import {
   isOpenLineBreak,
   isParagraph,
   isRedo,
+  isSelectionWithinEditor,
   isTab,
   isUnderline,
   isUndo,
@@ -81,10 +83,16 @@ let lastKeyWasMaybeAndroidSoftKey = false;
 
 function onSelectionChange(event: Event, editor: LexicalEditor): void {
   const domSelection = window.getSelection();
-  const rootElement = editor.getRootElement();
+  const parentEditors = getEditorsToPropagate(editor);
+  const topLevelEditor = parentEditors[parentEditors.length - 1];
+  const topLevelEditorElement = topLevelEditor.getRootElement();
+
   // This is a hot-path, so let's avoid doing an update when
-  // the anchorNode is not actually inside the editor.
-  if (rootElement && !rootElement.contains(domSelection.anchorNode)) {
+  // the anchorNode is not actually inside the editor (or its parent).
+  if (
+    topLevelEditorElement &&
+    !topLevelEditorElement.contains(domSelection.anchorNode)
+  ) {
     return;
   }
 
@@ -92,6 +100,18 @@ function onSelectionChange(event: Event, editor: LexicalEditor): void {
   // to a good selection.
   editor.update(() => {
     $log('onSelectionChange');
+
+    // Non-active editor don't need any extra logic for selection, it only needs update
+    // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
+    const isActiveEditor = isSelectionWithinEditor(
+      editor,
+      domSelection.anchorNode,
+      domSelection.focusNode,
+    );
+    if (!isActiveEditor) {
+      return;
+    }
+
     const selection = $getSelection();
     // Update the selection format
     if (selection !== null && selection.isCollapsed()) {

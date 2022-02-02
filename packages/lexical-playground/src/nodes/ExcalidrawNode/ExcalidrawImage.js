@@ -6,15 +6,10 @@
  * @format
  */
 
-
-
-import type {ExcalidrawElement} from '@excalidraw/excalidraw';
-
-import DOM from 'react';
-
-import {exportToCanvas, exportToSvg} from '@excalidraw/excalidraw';
+// $FlowFixMe: node modules are ignored by flow
+import {exportToSvg} from '@excalidraw/excalidraw';
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 type ImageType = 'svg' | 'canvas';
 
@@ -22,7 +17,7 @@ type Props = {
   /**
    * The Excalidraw elements to be rendered as an image
    */
-  elements: $ReadOnlyArray<ExcalidrawElement>,
+  elements: $ReadOnlyArray<{...}>,
   /**
    * The type of image to be rendered
    */
@@ -49,23 +44,14 @@ type Props = {
   rootClassName?: string | null,
 };
 
-function setAttributes(
-  imageElement: SVGElement | HTMLCanvasElement,
-  className: string,
-  height?: number | null,
-  width?: number | null,
-): SVGElement | HTMLCanvasElement {
-  // Set className
-  imageElement.setAttribute('class', className);
-  // Set height
-  if (height != null) {
-    imageElement.style.maxHeight = height.toString();
+// exportToSvg has fonts from excalidraw.com
+// We don't want them to be used in open source
+const removeStyleFromSvg_HACK = (svg) => {
+  const styleTag = svg?.firstElementChild?.firstElementChild;
+  if (styleTag && styleTag.tagName === 'style') {
+    styleTag.remove();
   }
-  if (width != null) {
-    imageElement.style.maxWidth = width.toString();
-  }
-  return imageElement;
-}
+};
 
 /**
  * @explorer-desc
@@ -79,24 +65,24 @@ export default function ExcalidrawImage({
   appState = null,
   rootClassName = null,
 }: Props): React.MixedElement {
-  const [Svg, setSvg] = useState('');
+  const [Svg, setSvg] = useState<Element | null>(null);
 
   useEffect(() => {
     const setContent = async () => {
-      const svg = await exportToSvg({
+      const svg: Element = await exportToSvg({
         elements,
         appState,
       });
+      removeStyleFromSvg_HACK(svg);
       setSvg(svg);
-      console.log(svg);
     };
     setContent();
-  }, [elements, className, height, width, appState]);
+  }, [elements, appState]);
 
   return (
     <div
       className={rootClassName}
-      dangerouslySetInnerHTML={{__html: Svg.outerHTML}}
+      dangerouslySetInnerHTML={{__html: Svg?.outerHTML}}
     />
   );
 }

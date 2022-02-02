@@ -6,43 +6,48 @@
  * @format
  */
 
-
-
-import type {ExcalidrawElement} from '@excalidraw/excalidraw';
-
+// $FlowFixMe: node modules are ignored by flow
 import Excalidraw from '@excalidraw/excalidraw';
 
 import * as React from 'react';
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import stylex from 'stylex';
+
+type ExcalidrawElementFragment = {
+  isDeleted?: boolean,
+};
 
 type Props = {
   /**
    * Callback when the save button is clicked
    */
-  onSave: ($ReadOnlyArray<ExcalidrawElement>) => mixed,
+  onSave: ($ReadOnlyArray<ExcalidrawElementFragment>) => mixed,
   /**
    * The initial set of elements to draw into the scene
    */
-  initialElements?: $ReadOnlyArray<ExcalidrawElement>,
+  initialElements?: $ReadOnlyArray<ExcalidrawElementFragment>,
   /**
    * Controls the visibility of the modal
    */
   isShown?: boolean,
   /**
-   * Handle when the modal is hidden. When this prop is not provided, the close icon is hidden.
+   * Handle modal closing
    */
   onHide: () => mixed,
+  /**
+   * Completely remove Excalidraw component
+   */
+  onDelete: () => boolean,
 };
 
 const DEFAULT_INITIAL_ELEMENTS = [];
 
 const styles = stylex.create({
-  close: {
+  actions: {
     textAlign: 'end',
     position: 'absolute',
-    right: 20,
-    top: 20,
+    right: 40,
+    top: 35,
     zIndex: 1,
   },
   row: {
@@ -63,7 +68,7 @@ const styles = stylex.create({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,.4)',
+    backgroundColor: '#eee',
   },
 });
 
@@ -77,19 +82,33 @@ export default function ExcalidrawModal({
   initialElements = DEFAULT_INITIAL_ELEMENTS,
   isShown = false,
   onHide,
+  onDelete,
 }: Props): React.MixedElement | null {
   const excalidrawRef = useRef(null);
-  const close = () => {
-    onSave(excalidrawRef?.current?.getSceneElements() ?? []);
+  const [elemenets, setElements] = useState(initialElements);
+
+  const save = () => {
+    console.log(elemenets);
+    if (elemenets.filter((el) => !el.isDeleted).length > 0) {
+      onSave(elemenets);
+    } else {
+      // delete node if the scene is clear
+      onDelete();
+    }
     onHide();
   };
+
+  useEffect(() => {
+    excalidrawRef?.current?.updateScene({elements: initialElements});
+  }, [initialElements]);
 
   if (isShown === false) {
     return null;
   }
 
   const onChange = (els) => {
-    console.log('onchange', els);
+    console.log('setting', els);
+    setElements(els);
   };
 
   return (
@@ -97,11 +116,18 @@ export default function ExcalidrawModal({
       <div className={stylex(styles.row)}>
         <Excalidraw
           onChange={onChange}
-          ref={excalidrawRef}
-          initialData={{elements: initialElements, appState: {}}}
+          initialData={{
+            elements: initialElements,
+            appState: {isLoading: false},
+          }}
         />
-        <div className={stylex(styles.close)}>
-          <button onClick={close}>Save</button>
+        <div className={stylex(styles.actions)}>
+          <button className="action-button" onClick={onHide}>
+            Discard
+          </button>
+          <button className="action-button" onClick={save}>
+            Save
+          </button>
         </div>
       </div>
     </div>

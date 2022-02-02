@@ -84,6 +84,7 @@ module.name_mapper='^shared/getPossibleDecoratorNode' -> '<PROJECT_ROOT>/package
 module.name_mapper='^shared/useLayoutEffect' -> '<PROJECT_ROOT>/packages/shared/src/useLayoutEffect.js'
 module.name_mapper='^shared/canUseDOM' -> '<PROJECT_ROOT>/packages/shared/src/canUseDOM.js'
 
+module.name_mapper='^@excalidraw/excalidraw' -> '<PROJECT_ROOT>/node_modules/@excalidraw/excalidraw/main.js'
 munge_underscores=false
 
 suppress_type=$FlowIssue

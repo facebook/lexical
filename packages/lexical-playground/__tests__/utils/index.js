@@ -60,9 +60,6 @@ export function initializeE2E(runTests, config: Config = {}) {
     appSettings.isCollab =
       process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
   }
-  if (appSettings.showNestedEditorTreeView === undefined) {
-    appSettings.showNestedEditorTreeView = true;
-  }
   const e2e = {
     isRichText: appSettings.isRichText,
     browser: null,

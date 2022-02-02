@@ -474,7 +474,7 @@ export class TableNode extends ElementNode {
     return this.__selectionShape;
   }
 
-  setGrid(grid: ?Grid) {
+  setGrid(grid: ?Grid): void {
     const self = this.getWritable();
     self.__grid = grid;
   }

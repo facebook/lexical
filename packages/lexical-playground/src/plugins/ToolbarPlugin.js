@@ -744,7 +744,7 @@ export default function ToolbarPlugin(): React$Node {
             }}
             className="toolbar-item spaced"
             aria-label="Insert Excalidraw">
-            <i className="format image" />
+            <i className="format diagram-2" />
           </button>
           <button
             onClick={() => {

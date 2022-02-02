@@ -16,7 +16,7 @@ import {$createHorizontalRuleNode} from 'lexical';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
-export default function HorizontalRulePlugin(): React$Node {
+export default function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

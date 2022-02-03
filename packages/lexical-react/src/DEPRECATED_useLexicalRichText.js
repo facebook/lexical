@@ -17,6 +17,6 @@ export default function useLexicalRichText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
 ): void {
-  useRichTextSetup(editor, true);
+  useRichTextSetup(editor);
   useLexicalHistory(editor, externalHistoryState);
 }

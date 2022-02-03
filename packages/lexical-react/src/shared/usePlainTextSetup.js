@@ -7,13 +7,9 @@
  * @flow strict
  */
 
-import type {
-  LexicalEditor,
-  RootNode,
-  CommandListenerEditorPriority,
-} from 'lexical';
+import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
 
-import {$log, $getRoot, $getSelection, $createParagraphNode} from 'lexical';
+import {$log, $getSelection} from 'lexical';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
   onCutForPlainText,
@@ -28,50 +24,25 @@ import withSubscriptions from '@lexical/react/withSubscriptions';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
-function shouldSelectParagraph(editor: LexicalEditor): boolean {
-  const activeElement = document.activeElement;
-  return (
-    $getSelection() !== null ||
-    (activeElement !== null && activeElement === editor.getRootElement())
-  );
-}
-
-function initParagraph(root: RootNode, editor: LexicalEditor): void {
-  const paragraph = $createParagraphNode();
-  root.append(paragraph);
-  if (shouldSelectParagraph(editor)) {
-    paragraph.select();
-  }
-}
-
 function initEditor(
   editor: LexicalEditor,
-  initialPayloadFn?: (LexicalEditor) => void,
+  initialPayloadFn: (LexicalEditor) => void,
 ): void {
   editor.update(() => {
     $log('initEditor');
-    if (initialPayloadFn != null) {
-      initialPayloadFn(editor);
-    } else {
-      const root = $getRoot();
-      const firstChild = root.getFirstChild();
-      if (firstChild === null) {
-        initParagraph(root, editor);
-      }
-    }
+    initialPayloadFn(editor);
   });
 }
 
 function clearEditor(
   editor: LexicalEditor,
+  clearEditorFn: (LexicalEditor) => void,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
   editor.update(
     () => {
       $log('clearEditor');
-      const root = $getRoot();
-      root.clear();
-      initParagraph(root, editor);
+      clearEditorFn(editor);
     },
     {
       onUpdate: callbackFn,
@@ -81,8 +52,8 @@ function clearEditor(
 
 export default function usePlainTextSetup(
   editor: LexicalEditor,
-  init: boolean,
   initialPayloadFn?: (LexicalEditor) => void,
+  clearEditorFn?: (LexicalEditor) => void,
 ): void {
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
@@ -181,7 +152,9 @@ export default function usePlainTextSetup(
               return editor.execCommand('insertLineBreak');
             }
             case 'clearEditor': {
-              clearEditor(editor);
+              if (clearEditorFn != null) {
+                clearEditor(editor, clearEditorFn);
+              }
               return false;
             }
             case 'copy': {
@@ -213,12 +186,12 @@ export default function usePlainTextSetup(
       ),
     );
 
-    if (init) {
+    if (initialPayloadFn != null) {
       initEditor(editor, initialPayloadFn);
     }
 
     return removeSubscriptions;
-  }, [editor, init, initialPayloadFn]);
+  }, [clearEditorFn, editor, initialPayloadFn]);
 
   useLexicalDragonSupport(editor);
 }

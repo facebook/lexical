@@ -23,19 +23,19 @@ function onErrorDefault(e: Error): void {
 export default function RichTextPlugin({
   contentEditable,
   placeholder,
-  skipInit,
   initialPayloadFn,
+  clearEditorFn,
   onError,
 }: {
   contentEditable: React$Node,
   placeholder: React$Node,
   initialPayloadFn?: (LexicalEditor) => void,
-  skipInit?: boolean,
+  clearEditorFn?: (LexicalEditor) => void,
   onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  useRichTextSetup(editor, !skipInit, initialPayloadFn);
+  useRichTextSetup(editor, initialPayloadFn, clearEditorFn);
   const decorators = useDecorators(editor);
 
   return (

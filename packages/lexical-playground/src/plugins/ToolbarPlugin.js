@@ -780,6 +780,15 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
+              activeEditor.execCommand('insertExcalidraw');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Excalidraw">
+            <i className="format diagram-2" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.execCommand('insertTable');
               showModal('Insert Table', (onClose) => (
                 <InsertTableDialog
                   activeEditor={activeEditor}

@@ -26,6 +26,7 @@ import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import ListPlugin from '@lexical/react/LexicalListPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
+import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import HorizontalRulePlugin from '@lexical/react/LexicalHorizontalRulePlugin';
 import StickyPlugin from './plugins/StickyPlugin';
@@ -74,6 +75,7 @@ export default function Editor(): React$Node {
         <StickyPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
+        <ExcalidrawPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
         <HorizontalRulePlugin />

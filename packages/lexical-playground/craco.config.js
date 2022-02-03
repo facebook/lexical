@@ -1,3 +1,5 @@
+const generateLinkPreview = require('link-preview-generator');
+
 module.exports = {
   babel: {
     plugins: [['babel-plugin-transform-stylex', {dev: true}]],
@@ -93,6 +95,15 @@ module.exports = {
       'shared/environment': 'shared/dist/environment',
       'shared/useLayoutEffect': 'shared/dist/useLayoutEffect',
       'shared/canUseDOM': 'shared/dist/canUseDOM',
+    },
+  },
+  devServer: {
+    setup: function (app, server) {
+      app.get('/api/link-preview', function (req, res) {
+        generateLinkPreview(req.query.url)
+          .then((preview) => res.json({preview}))
+          .catch(() => res.json({preview: null}));
+      });
     },
   },
 };

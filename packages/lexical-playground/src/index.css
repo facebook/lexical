@@ -34,7 +34,7 @@ header h1 {
 .editor-shell {
   margin: 20px auto 20px auto;
   border-radius: 2px;
-  width: 960px;
+  width: 1000px;
   color: #000;
   position: relative;
   line-height: 20px;
@@ -61,7 +61,7 @@ header h1 {
 
 .test-recorder-output {
   margin: 20px auto 20px auto;
-  width: 960px;
+  width: 1000px;
 }
 
 pre {

@@ -1236,3 +1236,7 @@ i.chevron-down {
   height: 12px;
   background-size: contain;
 }
+
+.PollNode__optionCheckboxChecked {
+  background-image: url(images/icons/check-lg.svg);
+}

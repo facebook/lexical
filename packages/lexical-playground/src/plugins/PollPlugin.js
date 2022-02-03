@@ -21,12 +21,13 @@ export default function PollPlugin(): React$Node {
   useEffect(() => {
     const removeCommandListener = editor.addListener(
       'command',
-      (type) => {
+      (type, payload) => {
         if (type === 'insertPoll') {
           $log('insertImage');
           const selection = $getSelection();
           if (selection !== null) {
-            const pollNode = $createPollNode();
+            const question: string = payload;
+            const pollNode = $createPollNode(question);
             selection.insertNodes([pollNode]);
           }
           return true;

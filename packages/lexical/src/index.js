@@ -30,6 +30,7 @@ export type {
 } from './LexicalSelection';
 export type {
   DecoratorMap,
+  DecoratorArray,
   DecoratorEditor,
   DecoratorStateValue,
 } from './nodes/base/LexicalDecoratorNode';
@@ -61,8 +62,10 @@ import {
   $isDecoratorNode,
   createDecoratorMap,
   createDecoratorEditor,
+  createDecoratorArray,
   isDecoratorMap,
   isDecoratorEditor,
+  isDecoratorArray,
 } from './nodes/base/LexicalDecoratorNode';
 import {
   $isLeafNode,
@@ -90,8 +93,10 @@ export {
   // Decorator state
   createDecoratorMap,
   createDecoratorEditor,
+  createDecoratorArray,
   isDecoratorMap,
   isDecoratorEditor,
+  isDecoratorArray,
   // Node validation
   $isLeafNode,
   $isElementNode,

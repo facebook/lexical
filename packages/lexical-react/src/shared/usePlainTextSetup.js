@@ -45,13 +45,20 @@ function initParagraph(root: RootNode, editor: LexicalEditor): void {
   }
 }
 
-function initEditor(editor: LexicalEditor): void {
+function initEditor(
+  editor: LexicalEditor,
+  initialPayloadFn?: (LexicalEditor) => void,
+): void {
   editor.update(() => {
     $log('initEditor');
-    const root = $getRoot();
-    const firstChild = root.getFirstChild();
-    if (firstChild === null) {
-      initParagraph(root, editor);
+    if (initialPayloadFn != null) {
+      initialPayloadFn(editor);
+    } else {
+      const root = $getRoot();
+      const firstChild = root.getFirstChild();
+      if (firstChild === null) {
+        initParagraph(root, editor);
+      }
     }
   });
 }
@@ -76,6 +83,7 @@ function clearEditor(
 export default function usePlainTextSetup(
   editor: LexicalEditor,
   init: boolean,
+  initialPayloadFn?: (LexicalEditor) => void,
 ): void {
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
@@ -208,11 +216,11 @@ export default function usePlainTextSetup(
     );
 
     if (init) {
-      initEditor(editor);
+      initEditor(editor, initialPayloadFn);
     }
 
     return removeSubscriptions;
-  }, [editor, init]);
+  }, [editor, init, initialPayloadFn]);
 
   useLexicalDragonSupport(editor);
 }

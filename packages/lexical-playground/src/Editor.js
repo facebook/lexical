@@ -66,7 +66,7 @@ function initParagraph(root: RootNode, editor: LexicalEditor): void {
   }
 }
 
-function richTextInitFn(editor: LexicalEditor): void {
+function textInitFn(editor: LexicalEditor): void {
   const root = $getRoot();
   const firstChild = root.getFirstChild();
   if (firstChild === null) {
@@ -130,7 +130,7 @@ export default function Editor(): React$Node {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              initialPayloadFn={richTextInitFn}
+              initialPayloadFn={textInitFn}
               clearEditorFn={clearEditor}
             />
             <AutoFormatterPlugin />
@@ -147,6 +147,8 @@ export default function Editor(): React$Node {
             <PlainTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
+              initialPayloadFn={textInitFn}
+              clearEditorFn={clearEditor}
             />
             <HistoryPlugin externalHistoryState={historyState} />
           </>

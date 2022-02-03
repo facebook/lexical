@@ -368,12 +368,10 @@ function onCompositionStart(
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
       $setCompositionKey(anchor.key);
-      const data = event.data;
       if (
-        data != null &&
-        (!lastKeyWasMaybeAndroidSoftKey ||
-          anchor.type === 'element' ||
-          !selection.isCollapsed())
+        !lastKeyWasMaybeAndroidSoftKey ||
+        anchor.type === 'element' ||
+        !selection.isCollapsed()
       ) {
         // We insert an empty space, ready for the composition
         // to get inserted into the new node we create. If

@@ -384,6 +384,10 @@ i.export {
   background-image: url(images/icons/download.svg);
 }
 
+i.diagram-2 {
+  background-image: url(images/icons/diagram-2.svg);
+}
+
 .link-editor .button.active, .toolbar .button.active {
   background-color: rgb(223, 232, 250);
 }

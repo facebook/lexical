@@ -799,7 +799,6 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.execCommand('insertTable');
               showModal('Insert Table', (onClose) => (
                 <InsertTableDialog
                   activeEditor={activeEditor}

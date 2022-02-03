@@ -36,6 +36,7 @@ import {
 } from '@lexical/helpers/selection';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
+import LinkPreview from '../components/LinkPreview';
 
 import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 // $FlowFixMe
@@ -102,9 +103,7 @@ function positionEditorElement(editor, rect) {
     editor.style.left = '-1000px';
   } else {
     editor.style.opacity = '1';
-    editor.style.top = `${
-      rect.top + window.pageYOffset - editor.offsetHeight
-    }px`;
+    editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
     editor.style.left = `${
       rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2
     }px`;
@@ -192,6 +191,12 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
     );
   }, [editor, updateLinkEditor]);
 
+  useEffect(() => {
+    if (isEditMode && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditMode]);
+
   return (
     <div ref={editorRef} className="link-editor">
       {isEditMode ? (
@@ -211,24 +216,30 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
                 }
                 setEditMode(false);
               }
+            } else if (event.key === 'Escape') {
+              event.preventDefault();
+              setEditMode(false);
             }
           }}
         />
       ) : (
-        <div className="link-input">
-          <a href={linkUrl} target="_blank" rel="noopener noreferrer">
-            {linkUrl}
-          </a>
-          <div
-            className="link-edit"
-            role="button"
-            tabIndex={0}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              setEditMode(true);
-            }}
-          />
-        </div>
+        <>
+          <div className="link-input">
+            <a href={linkUrl} target="_blank" rel="noopener noreferrer">
+              {linkUrl}
+            </a>
+            <div
+              className="link-edit"
+              role="button"
+              tabIndex={0}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                setEditMode(true);
+              }}
+            />
+          </div>
+          <LinkPreview url={linkUrl} />
+        </>
       )}
     </div>
   );
@@ -592,7 +603,7 @@ export default function ToolbarPlugin(): React$Node {
 
   const insertLink = useCallback(() => {
     if (!isLink) {
-      editor.execCommand('toggleLink', 'http://');
+      editor.execCommand('toggleLink', 'https://');
     } else {
       editor.execCommand('toggleLink', null);
     }

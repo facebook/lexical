@@ -75,7 +75,7 @@ describe('LexicalCodeNode tests', () => {
         });
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span>foo</span></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span>foo</span></p></div>',
       );
       await editor.update(() => {
         const codeNode = $createCodeNode();

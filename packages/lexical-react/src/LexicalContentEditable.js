@@ -29,6 +29,7 @@ export type Props = $ReadOnly<{
   className?: string,
   readOnly?: boolean,
   role?: string,
+  style?: StyleSheetList,
   spellCheck?: boolean,
   tabIndex?: number,
   testid?: string,
@@ -52,6 +53,7 @@ export default function LexicalContentEditable({
   readOnly = false,
   role = 'textbox',
   spellCheck = true,
+  style,
   tabIndex,
   testid,
 }: Props): React.MixedElement {
@@ -86,6 +88,7 @@ export default function LexicalContentEditable({
       ref={ref}
       role={readOnly ? null : role}
       spellCheck={spellCheck}
+      style={style}
       tabIndex={tabIndex}
     />
   );

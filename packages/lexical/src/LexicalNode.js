@@ -56,11 +56,23 @@ export function removeNode(
     const anchor = selection.anchor;
     const focus = selection.focus;
     if (anchor.key === key) {
-      moveSelectionPointToSibling(anchor, nodeToRemove, parent);
+      moveSelectionPointToSibling(
+        anchor,
+        nodeToRemove,
+        parent,
+        nodeToRemove.getPreviousSibling(),
+        nodeToRemove.getNextSibling(),
+      );
       selectionMoved = true;
     }
     if (focus.key === key) {
-      moveSelectionPointToSibling(focus, nodeToRemove, parent);
+      moveSelectionPointToSibling(
+        focus,
+        nodeToRemove,
+        parent,
+        nodeToRemove.getPreviousSibling(),
+        nodeToRemove.getNextSibling(),
+      );
       selectionMoved = true;
     }
   }

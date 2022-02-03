@@ -8,14 +8,22 @@
  */
 
 import type {NodeKey} from '../../LexicalNode';
-import type {Selection} from '../../LexicalSelection';
+import type {PointType, Selection} from '../../LexicalSelection';
 
-import {$isTextNode, TextNode} from '../../';
+import {$isRootNode, $isTextNode, TextNode} from '../../';
 import {LexicalNode} from '../../LexicalNode';
-import {$makeSelection, $getSelection} from '../../LexicalSelection';
+import {
+  $makeSelection,
+  $getSelection,
+  moveSelectionPointToSibling,
+} from '../../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../../LexicalUpdates';
 import {ELEMENT_TYPE_TO_FORMAT} from '../../LexicalConstants';
-import {$getNodeByKey, $internallyMarkNodeAsDirty} from '../../LexicalUtils';
+import {
+  $getNodeByKey,
+  $internallyMarkNodeAsDirty,
+  $internallyMarkSiblingsAsDirty,
+} from '../../LexicalUtils';
 import invariant from 'shared/invariant';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
@@ -268,7 +276,6 @@ export class ElementNode extends LexicalNode {
         invariant(false, 'append: attemtping to append self');
       }
       const writableNodeToAppend = nodeToAppend.getWritable();
-
       // Remove node from previous parent
       const oldParent = writableNodeToAppend.getParent();
       if (oldParent !== null) {
@@ -282,7 +289,6 @@ export class ElementNode extends LexicalNode {
       }
       // Set child parent to self
       writableNodeToAppend.__parent = writableSelfKey;
-      // Append children.
       const newKey = writableNodeToAppend.__key;
       writableSelfChildren.push(newKey);
     }
@@ -307,7 +313,126 @@ export class ElementNode extends LexicalNode {
     self.__indent = indentLevel;
     return this;
   }
+  splice(
+    start: number,
+    deleteCount: number,
+    nodesToInsert: Array<LexicalNode>,
+  ): ElementNode {
+    errorOnReadOnly();
+    const writableSelf = this.getWritable();
+    const writableSelfKey = writableSelf.__key;
+    const writableSelfChildren = writableSelf.__children;
+    const nodesToInsertLength = nodesToInsert.length;
+    const nodesToInsertKeys = [];
 
+    // Remove nodes to insert from their previous parent
+    for (let i = 0; i < nodesToInsertLength; i++) {
+      const nodeToInsert = nodesToInsert[i];
+      const writableNodeToInsert = nodeToInsert.getWritable();
+      if (nodeToInsert.__key === writableSelfKey) {
+        invariant(false, 'append: attemtping to append self');
+      }
+      const oldParent = writableNodeToInsert.getParent();
+      if (oldParent !== null) {
+        const writableParent = oldParent.getWritable();
+        const children = writableParent.__children;
+        const index = children.indexOf(writableNodeToInsert.__key);
+        if (index === -1) {
+          invariant(false, 'Node is not a child of its parent');
+        }
+        $internallyMarkSiblingsAsDirty(nodeToInsert);
+        children.splice(index, 1);
+      }
+      // Set child parent to self
+      writableNodeToInsert.__parent = writableSelfKey;
+      const newKey = writableNodeToInsert.__key;
+      nodesToInsertKeys.push(newKey);
+    }
+
+    // Mark range edges siblings as dirty
+    const nodeBeforeRange = this.getChildAtIndex(start - 1);
+    if (nodeBeforeRange) {
+      $internallyMarkNodeAsDirty(nodeBeforeRange);
+    }
+    const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
+    if (nodeAfterRange) {
+      $internallyMarkNodeAsDirty(nodeAfterRange);
+    }
+
+    // Remove defined range of children
+    const nodesToRemoveKeys = writableSelfChildren.splice(
+      start,
+      deleteCount,
+      ...nodesToInsertKeys,
+    );
+
+    // In case of deletion we need to adjust selection, unlink removed nodes
+    // and clean up node itself if it becomes empty. None of these needed
+    // for insertion-only cases
+    if (deleteCount) {
+      // Adjusting selection, in case node that was anchor/focus will be deleted
+      const selection = $getSelection();
+      if (selection !== null) {
+        const nodesToRemoveKeySet = new Set(nodesToRemoveKeys);
+        const nodesToInsertKeySet = new Set(nodesToInsertKeys);
+        const isPointRemoved = (point: PointType): boolean => {
+          let node = point.getNode();
+          while (node) {
+            const nodeKey = node.__key;
+            if (
+              nodesToRemoveKeySet.has(nodeKey) &&
+              !nodesToInsertKeySet.has(nodeKey)
+            ) {
+              return true;
+            }
+            node = node.getParent();
+          }
+          return false;
+        };
+
+        const {anchor, focus} = selection;
+        if (isPointRemoved(anchor)) {
+          moveSelectionPointToSibling(
+            anchor,
+            anchor.getNode(),
+            this,
+            nodeBeforeRange,
+            nodeAfterRange,
+          );
+        }
+        if (isPointRemoved(focus)) {
+          moveSelectionPointToSibling(
+            focus,
+            focus.getNode(),
+            this,
+            nodeBeforeRange,
+            nodeAfterRange,
+          );
+        }
+
+        // Unlink removed nodes from current parent
+        const nodesToRemoveKeysLength = nodesToRemoveKeys.length;
+        for (let i = 0; i < nodesToRemoveKeysLength; i++) {
+          const nodeToRemove = $getNodeByKey<LexicalNode>(nodesToRemoveKeys[i]);
+          if (nodeToRemove != null) {
+            const writableNodeToRemove = nodeToRemove.getWritable();
+            writableNodeToRemove.__parent = null;
+          }
+        }
+
+        // Cleanup if node can't be empty
+        if (
+          writableSelfChildren.length === 0 &&
+          !this.canBeEmpty() &&
+          !$isRootNode(this)
+        ) {
+          this.remove();
+        }
+      }
+    }
+
+    return writableSelf;
+  }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(selection: Selection): null | LexicalNode {
     return null;

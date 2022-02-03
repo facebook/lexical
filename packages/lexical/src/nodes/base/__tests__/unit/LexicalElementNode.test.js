@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {$createTextNode, $getRoot} from 'lexical';
+import {$createTextNode, $getRoot, $getSelection, TextNode} from 'lexical';
 import {
   $createTestElementNode,
   createTestEditor,
@@ -215,6 +215,304 @@ describe('LexicalElementNode tests', () => {
         expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
         expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
         $getRoot().append(block);
+      });
+    });
+  });
+
+  describe('splice', () => {
+    let block;
+
+    beforeEach(async () => {
+      await update(() => {
+        block = $getRoot().getFirstChildOrThrow();
+      });
+    });
+
+    const BASE_INSERTIONS: Array<{
+      name: string,
+      start: number,
+      deleteCount: number,
+      expectedText: string,
+      deleteOnly: ?boolean,
+    }> = [
+      // Do nothing
+      {
+        name: 'Do nothing',
+        start: 0,
+        deleteCount: 0,
+        deleteOnly: true,
+        expectedText: 'FooBarBaz',
+      },
+
+      // Insert
+      {
+        name: 'Insert in the beginning',
+        start: 0,
+        deleteCount: 0,
+        expectedText: 'QuxQuuzFooBarBaz',
+      },
+      {
+        name: 'Insert in the middle',
+        start: 1,
+        deleteCount: 0,
+        expectedText: 'FooQuxQuuzBarBaz',
+      },
+      {
+        name: 'Insert in the end',
+        start: 3,
+        deleteCount: 0,
+        expectedText: 'FooBarBazQuxQuuz',
+      },
+
+      // Delete
+      {
+        name: 'Delete in the beginning',
+        start: 0,
+        deleteCount: 1,
+        deleteOnly: true,
+        expectedText: 'BarBaz',
+      },
+      {
+        name: 'Delete in the middle',
+        start: 1,
+        deleteCount: 1,
+        deleteOnly: true,
+        expectedText: 'FooBaz',
+      },
+      {
+        name: 'Delete in the end',
+        start: 2,
+        deleteCount: 1,
+        deleteOnly: true,
+        expectedText: 'FooBar',
+      },
+      {
+        name: 'Delete all',
+        start: 0,
+        deleteCount: 3,
+        deleteOnly: true,
+        expectedText: '',
+      },
+
+      // Replace
+      {
+        name: 'Replace in the beginning',
+        start: 0,
+        deleteCount: 1,
+        expectedText: 'QuxQuuzBarBaz',
+      },
+      {
+        name: 'Replace in the middle',
+        start: 1,
+        deleteCount: 1,
+        expectedText: 'FooQuxQuuzBaz',
+      },
+      {
+        name: 'Replace in the end',
+        start: 2,
+        deleteCount: 1,
+        expectedText: 'FooBarQuxQuuz',
+      },
+      {
+        name: 'Replace all',
+        start: 0,
+        deleteCount: 3,
+        expectedText: 'QuxQuuz',
+      },
+    ];
+
+    BASE_INSERTIONS.forEach((testCase) => {
+      it(`Plain text: ${testCase.name}`, async () => {
+        await update(() => {
+          block.splice(
+            testCase.start,
+            testCase.deleteCount,
+            testCase.deleteOnly
+              ? []
+              : [$createTextNode('Qux'), $createTextNode('Quuz')],
+          );
+
+          expect(block.getTextContent()).toEqual(testCase.expectedText);
+        });
+      });
+    });
+
+    let nodes = {};
+
+    const NESTED_ELEMENTS_TESTS: Array<{
+      name: string,
+      start: number,
+      deleteCount: number,
+      expectedText: string,
+      expectedSelection: () => {
+        anchor: {key: string, offset: number, type: string},
+        focus: {key: string, offset: number, type: string},
+      },
+      deleteOnly?: boolean,
+    }> = [
+      {
+        name: 'Do nothing',
+        start: 1,
+        deleteCount: 0,
+        deleteOnly: true,
+        expectedText: 'FooWiz\n\nFuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.nestedText1.__key, offset: 1, type: 'text'},
+            focus: {key: nodes.nestedText1.__key, offset: 1, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Delete selected element (selection moves to the previous)',
+        start: 1,
+        deleteCount: 1,
+        deleteOnly: true,
+        expectedText: 'FooFuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.text1.__key, offset: 3, type: 'text'},
+            focus: {key: nodes.text1.__key, offset: 3, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Replace selected element (selection moves to the previous)',
+        start: 1,
+        deleteCount: 1,
+        expectedText: 'FooQuxQuuzFuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.text1.__key, offset: 3, type: 'text'},
+            focus: {key: nodes.text1.__key, offset: 3, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Delete selected with previous element (selection moves to the next)',
+        start: 0,
+        deleteCount: 2,
+        deleteOnly: true,
+        expectedText: 'Fuz\n\nBar',
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.nestedText2.__key, offset: 0, type: 'text'},
+            focus: {key: nodes.nestedText2.__key, offset: 0, type: 'text'},
+          };
+        },
+      },
+      {
+        name: 'Delete selected with all siblings (selection moves up to the element)',
+        start: 0,
+        deleteCount: 4,
+        deleteOnly: true,
+        expectedText: '',
+        expectedSelection: () => {
+          return {
+            anchor: {key: block.__key, offset: 0, type: 'element'},
+            focus: {key: block.__key, offset: 0, type: 'element'},
+          };
+        },
+      },
+    ];
+
+    NESTED_ELEMENTS_TESTS.forEach((testCase) => {
+      it(`Nested elements: ${testCase.name}`, async () => {
+        await update(() => {
+          const text1 = $createTextNode('Foo');
+          const text2 = $createTextNode('Bar');
+
+          const nestedBlock1 = $createTestElementNode();
+          const nestedText1 = $createTextNode('Wiz');
+          nestedBlock1.append(nestedText1);
+
+          const nestedBlock2 = $createTestElementNode();
+          const nestedText2 = $createTextNode('Fuz');
+          nestedBlock2.append(nestedText2);
+
+          block.clear();
+          block.append(text1, nestedBlock1, nestedBlock2, text2);
+          nestedText1.select(1, 1);
+          expect(block.getTextContent()).toEqual('FooWiz\n\nFuz\n\nBar');
+
+          nodes = {
+            text1,
+            text2,
+            nestedBlock1,
+            nestedBlock2,
+            nestedText1,
+            nestedText2,
+          };
+        });
+
+        await update(() => {
+          block.splice(
+            testCase.start,
+            testCase.deleteCount,
+            testCase.deleteOnly
+              ? []
+              : [$createTextNode('Qux'), $createTextNode('Quuz')],
+          );
+        });
+
+        await update(() => {
+          expect(block.getTextContent()).toEqual(testCase.expectedText);
+          const selection = $getSelection();
+          const expectedSelection = testCase.expectedSelection();
+          expect({
+            key: selection.anchor.key,
+            offset: selection.anchor.offset,
+            type: selection.anchor.type,
+          }).toEqual(expectedSelection.anchor);
+          expect({
+            key: selection.focus.key,
+            offset: selection.focus.offset,
+            type: selection.focus.type,
+          }).toEqual(expectedSelection.focus);
+        });
+      });
+    });
+
+    it('Running transforms for inserted nodes, their previous siblings and new siblings', async () => {
+      const transforms = new Set();
+      const expectedTransforms = [];
+
+      const removeTransform = editor.addTransform(TextNode, (node) => {
+        transforms.add(node.__key);
+      });
+
+      await update(() => {
+        const anotherBlock = $createTestElementNode();
+        const text1 = $createTextNode('1');
+        // Prevent text nodes from combining
+        const text2 = $createTextNode('2');
+        text2.setMode('segmented');
+        const text3 = $createTextNode('3');
+        anotherBlock.append(text1, text2, text3);
+        $getRoot().append(anotherBlock);
+
+        // Expect inserted node, its old siblings and new siblings to receive
+        // transformer calls
+        expectedTransforms.push(
+          text1.__key,
+          text2.__key,
+          text3.__key,
+          block.getChildAtIndex(0).__key,
+          block.getChildAtIndex(1).__key,
+        );
+      });
+
+      await update(() => {
+        block.splice(1, 0, [$getRoot().getLastChild().getChildAtIndex(1)]);
+      });
+
+      removeTransform();
+
+      await update(() => {
+        expect(block.getTextContent()).toEqual('Foo2BarBaz');
+        expectedTransforms.forEach((key) => {
+          expect(transforms).toContain(key);
+        });
       });
     });
   });

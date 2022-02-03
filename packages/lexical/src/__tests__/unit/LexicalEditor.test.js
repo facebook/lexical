@@ -122,13 +122,15 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
 
     const initialEditorState = initialEditor.getEditorState();
 
     initialEditor.setRootElement(null);
-    expect(container.innerHTML).toBe('<div data-lexical-editor="true"></div>');
+    expect(container.innerHTML).toBe(
+      '<div style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"></div>',
+    );
 
     editor = createTestEditor({
       initialEditorState: initialEditorState,
@@ -137,7 +139,7 @@ describe('LexicalEditor tests', () => {
 
     expect(editor.getEditorState()).toEqual(initialEditorState);
     expect(container.innerHTML).toBe(
-      '<div data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
@@ -347,7 +349,7 @@ describe('LexicalEditor tests', () => {
     underlineListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-underline editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-underline editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 
@@ -401,7 +403,7 @@ describe('LexicalEditor tests', () => {
     italicsListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 
@@ -456,7 +458,7 @@ describe('LexicalEditor tests', () => {
     boldFooListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Foo!!</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Foo!!</strong></p></div>',
     );
   });
 
@@ -661,7 +663,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
@@ -683,7 +685,7 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
 
     expect(errorListener).toHaveBeenCalledTimes(0);
@@ -700,7 +702,7 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(1);
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
@@ -722,7 +724,7 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
 
     expect(errorListener).toHaveBeenCalledTimes(0);
@@ -743,7 +745,7 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(1);
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Foo</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Foo</span></p></div>',
     );
   });
 
@@ -795,7 +797,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Not changed</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Not changed</span></p></div>',
     );
 
     await ReactTestUtils.act(() => {
@@ -805,7 +807,7 @@ describe('LexicalEditor tests', () => {
     expect(rootListener).toHaveBeenCalledTimes(3);
     expect(updateListener).toHaveBeenCalledTimes(3);
     expect(container.innerHTML).toBe(
-      '<span contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
+      '<span contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
     );
   });
 
@@ -872,7 +874,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p>' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p>' +
           '<span data-lexical-decorator="true"><span>Hello world</span></span><br></p></div>',
       );
     });
@@ -907,7 +909,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
 
       ReactTestUtils.act(() => {
@@ -915,7 +917,7 @@ describe('LexicalEditor tests', () => {
       });
       expect(listener).toHaveBeenCalledTimes(3);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
       // Wait for update to complete
       await Promise.resolve().then();
@@ -1145,7 +1147,7 @@ describe('LexicalEditor tests', () => {
           next.join(''),
         );
         expect(container.innerHTML.replace(/\sclass="*."/g, '')).toBe(
-          `<div contenteditable="true" data-lexical-editor="true"><p${
+          `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p${
             next.length > 0 ? ' dir="ltr"' : ''
           }>${
             next.length > 0
@@ -1223,7 +1225,7 @@ describe('LexicalEditor tests', () => {
       expect(editor._editorState._nodeMap.size).toBe(keys.length + 1); // + root
       expect(editor._keyToDOMMap.size).toBe(keys.length + 1); // + root
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">B</span></div></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">B</span></div></div></p></div>',
       );
     });
 
@@ -1254,7 +1256,7 @@ describe('LexicalEditor tests', () => {
         elementNode2.append(elementNode1);
       });
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">B</span><div dir="ltr"><span data-lexical-text="true">A</span></div></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">B</span><div dir="ltr"><span data-lexical-text="true">A</span></div></div></p></div>',
       );
     });
 
@@ -1291,7 +1293,7 @@ describe('LexicalEditor tests', () => {
         elementNode1.append(elementNode3);
       });
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">C</span></div></div><div dir="ltr"><span data-lexical-text="true">B</span></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">C</span></div></div><div dir="ltr"><span data-lexical-text="true">B</span></div></p></div>',
       );
     });
   });

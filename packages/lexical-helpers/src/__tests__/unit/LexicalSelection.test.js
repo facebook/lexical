@@ -155,7 +155,7 @@ describe('LexicalSelection tests', () => {
 
   test('Expect initial output to be a block with no text', () => {
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
     );
   });
 
@@ -215,7 +215,7 @@ describe('LexicalSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello</span></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 5,
@@ -234,7 +234,7 @@ describe('LexicalSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -254,7 +254,7 @@ describe('LexicalSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<em class="editor-text-italic" data-lexical-text="true">Hello</em></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -275,7 +275,7 @@ describe('LexicalSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<strong class="editor-text-bold editor-text-italic" data-lexical-text="true">Hello</strong></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -295,7 +295,7 @@ describe('LexicalSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span class="editor-text-underline" data-lexical-text="true">Hello</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -315,7 +315,7 @@ describe('LexicalSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span class="editor-text-strikethrough" data-lexical-text="true">Hello</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -336,7 +336,7 @@ describe('LexicalSelection tests', () => {
         insertText('o'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span class="editor-text-underlineStrikethrough" data-lexical-text="true">Hello</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
@@ -358,7 +358,7 @@ describe('LexicalSelection tests', () => {
         insertText('6'),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true">1246</span></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true">1246</span></p></div>',
       expectedSelection: {
         anchorPath: [0, 0, 0],
         anchorOffset: 4,
@@ -370,7 +370,7 @@ describe('LexicalSelection tests', () => {
       name: 'Creation of an immutable node',
       inputs: [insertImmutableNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
@@ -388,7 +388,7 @@ describe('LexicalSelection tests', () => {
         convertToImmutableNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
@@ -402,7 +402,7 @@ describe('LexicalSelection tests', () => {
       name: 'Creation of a segmented node',
       inputs: [insertSegmentedNode('Dominic Gannaway')],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
@@ -420,7 +420,7 @@ describe('LexicalSelection tests', () => {
         convertToSegmentedNode(),
       ],
       expectedHTML:
-        '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Dominic Gannaway</span>' +
         '</p></div>',
       expectedSelection: {
@@ -436,7 +436,7 @@ describe('LexicalSelection tests', () => {
     //   {
     //     name: `Delete backward eliminates entire ${description} (${grapheme})`,
     //     inputs: [insertText(grapheme + grapheme), deleteBackward()],
-    //     expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: grapheme.length,
@@ -452,7 +452,7 @@ describe('LexicalSelection tests', () => {
     //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
     //       deleteForward(),
     //     ],
-    //     expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: 0,
@@ -464,7 +464,7 @@ describe('LexicalSelection tests', () => {
     //   {
     //     name: `Move backward skips over grapheme cluster (${grapheme})`,
     //     inputs: [insertText(grapheme + grapheme), moveBackward()],
-    //     expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: grapheme.length,
@@ -480,7 +480,7 @@ describe('LexicalSelection tests', () => {
     //       moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
     //       moveForward(),
     //     ],
-    //     expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
+    //     expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir=\"ltr\"><span>${grapheme}${grapheme}</span></p></div>`,
     //     expectedSelection: {
     //       anchorPath: [0, 0, 0],
     //       anchorOffset: grapheme.length,
@@ -504,7 +504,7 @@ describe('LexicalSelection tests', () => {
     //     deleteForward(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">abc123</span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">abc123</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 3,
@@ -520,7 +520,7 @@ describe('LexicalSelection tests', () => {
     //     insertText('lexical'),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello lexical!</span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello lexical!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 13,
@@ -536,7 +536,7 @@ describe('LexicalSelection tests', () => {
     //     formatBold(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
     //     '<strong class="editor-text-bold" data-lexical-text="true">draft</strong><span data-lexical-text="true">!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 1, 0],
@@ -553,7 +553,7 @@ describe('LexicalSelection tests', () => {
     //     formatItalic(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
     //     '<em class="editor-text-italic" data-lexical-text="true">draft</em><span data-lexical-text="true">!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 1, 0],
@@ -571,7 +571,7 @@ describe('LexicalSelection tests', () => {
     //     formatItalic(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
     //     '<strong class="editor-text-bold editor-text-italic" data-lexical-text="true">draft</strong><span data-lexical-text="true">!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 1, 0],
@@ -588,7 +588,7 @@ describe('LexicalSelection tests', () => {
     //     formatUnderline(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
     //     '<span class="editor-text-underline" data-lexical-text="true">draft</span><span data-lexical-text="true">!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 1, 0],
@@ -605,7 +605,7 @@ describe('LexicalSelection tests', () => {
     //     formatStrikeThrough(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
     //     '<span class="editor-text-strikethrough" data-lexical-text="true">draft</span><span data-lexical-text="true">!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 1, 0],
@@ -623,7 +623,7 @@ describe('LexicalSelection tests', () => {
     //     formatStrikeThrough(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span>' +
     //     '<span class="editor-text-underlineStrikethrough" data-lexical-text="true">draft</span><span data-lexical-text="true">!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 1, 0],
@@ -640,7 +640,7 @@ describe('LexicalSelection tests', () => {
     //     insertText('This works!'),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 11,
@@ -658,7 +658,7 @@ describe('LexicalSelection tests', () => {
     //     moveNativeSelection([0, 0, 0], 2, [0, 0, 0], 6),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">A duck.</span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">A duck.</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 2,
@@ -670,7 +670,7 @@ describe('LexicalSelection tests', () => {
     //   name: 'Inserting a paragraph',
     //   inputs: [insertParagraph()],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p>' +
     //     '<p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [1, 0, 0],
@@ -683,7 +683,7 @@ describe('LexicalSelection tests', () => {
     //   name: 'Inserting a paragraph and then removing it',
     //   inputs: [insertParagraph(), deleteBackward()],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 0,
@@ -699,7 +699,7 @@ describe('LexicalSelection tests', () => {
     //     insertParagraph(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span></p>' +
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span></p>' +
     //     '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">world</span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [1, 0, 0],
@@ -718,7 +718,7 @@ describe('LexicalSelection tests', () => {
     //     deleteBackward(),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 0,
@@ -747,7 +747,7 @@ describe('LexicalSelection tests', () => {
           insertText(`Hello${whitespaceCharacter}world`),
           deleteWordBackward(),
         ],
-        expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello${printWhitespace(
+        expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello${printWhitespace(
           whitespaceCharacter,
         )}</span></p></div>`,
         expectedSelection: {
@@ -764,7 +764,7 @@ describe('LexicalSelection tests', () => {
           moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 0),
           deleteWordForward(),
         ],
-        expectedHTML: `<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">${printWhitespace(
+        expectedHTML: `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">${printWhitespace(
           whitespaceCharacter,
         )}world</span></p></div>`,
         expectedSelection: {
@@ -782,7 +782,7 @@ describe('LexicalSelection tests', () => {
           deleteWordForward(),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 5,
@@ -798,7 +798,7 @@ describe('LexicalSelection tests', () => {
           deleteWordBackward(),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">world</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">world</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 0,
@@ -810,7 +810,7 @@ describe('LexicalSelection tests', () => {
         name: `Type a word, delete it and undo the deletion`,
         inputs: [insertText('Hello world'), deleteWordBackward(), undo()],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello world</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 11,
@@ -827,7 +827,7 @@ describe('LexicalSelection tests', () => {
           redo(),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello </span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 6,
@@ -843,7 +843,7 @@ describe('LexicalSelection tests', () => {
           moveBackward(14),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
           '<span data-lexical-text="true">this is weird test</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
@@ -862,7 +862,7 @@ describe('LexicalSelection tests', () => {
           moveEnd(),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr">' +
           '<span data-lexical-text="true">Hello </span>' +
           '<span data-lexical-text="true">Bob</span>' +
           '</p></div>',
@@ -883,7 +883,7 @@ describe('LexicalSelection tests', () => {
           deleteWordForward(),
         ],
         expectedHTML:
-          '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">AB\tEFG</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">AB\tEFG</span></p></div>',
         expectedSelection: {
           anchorPath: [0, 0, 0],
           anchorOffset: 2,

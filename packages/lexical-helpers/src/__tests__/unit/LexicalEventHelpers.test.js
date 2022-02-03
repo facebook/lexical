@@ -122,7 +122,7 @@ describe('LexicalEventHelpers', () => {
 
   test('Expect initial output to be a block with no text', () => {
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
     );
   });
 
@@ -133,19 +133,19 @@ describe('LexicalEventHelpers', () => {
           name: 'should produce the correct editor state from a pasted HTML h1 element',
           inputs: [pasteHTML(`<meta charset='utf-8'><h1>Hello</h1>`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><h1 class="editor-heading-h1" dir="ltr"><span data-lexical-text="true">Hello</span></h1></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><h1 class="editor-heading-h1" dir="ltr"><span data-lexical-text="true">Hello</span></h1></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML h2 element',
           inputs: [pasteHTML(`<meta charset='utf-8'><h2>From</h2>`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><h2 class="editor-heading-h2" dir="ltr"><span data-lexical-text="true">From</span></h2></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><h2 class="editor-heading-h2" dir="ltr"><span data-lexical-text="true">From</span></h2></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML h3 element',
           inputs: [pasteHTML(`<meta charset='utf-8'><h3>The</h3>`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><h3 class="editor-heading-h3" dir="ltr"><span data-lexical-text="true">The</span></h3></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><h3 class="editor-heading-h3" dir="ltr"><span data-lexical-text="true">The</span></h3></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML ul element',
@@ -155,7 +155,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Other side</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">I must have called</span></li></ul></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Other side</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">I must have called</span></li></ul></div>',
         },
         {
           name: 'should produce the correct editor state from pasted HTML ol element',
@@ -165,37 +165,37 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><ol class="editor-list-ol"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">To tell you</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">I’m sorry</span></li></ol></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><ol class="editor-list-ol"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">To tell you</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">I’m sorry</span></li></ol></div>',
         },
         {
           name: 'should produce the correct editor state from pasted DOM Text Node',
           inputs: [pasteHTML(`<meta charset='utf-8'>A thousand times`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">A thousand times</span></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">A thousand times</span></p></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML b element',
           inputs: [pasteHTML(`<meta charset='utf-8'><b>Bold</b>`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Bold</strong></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Bold</strong></p></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML i element',
           inputs: [pasteHTML(`<meta charset='utf-8'><i>Italic</i>`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Italic</em></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Italic</em></p></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML em element',
           inputs: [pasteHTML(`<meta charset='utf-8'><em>Italic</em>`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Italic</em></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Italic</em></p></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML u element',
           inputs: [pasteHTML(`<meta charset='utf-8'><u>Underline</u>`)],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span class="editor-text-underline" data-lexical-text="true">Underline</span></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span class="editor-text-underline" data-lexical-text="true">Underline</span></p></div>',
         },
         {
           name: 'should produce the correct editor state from pasted heading node followed by a DOM Text Node',
@@ -205,7 +205,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><h1 class="editor-heading-h1" dir="ltr"><span data-lexical-text="true">Lyrics to Hello by Adele</span></h1><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">A thousand times</span></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><h1 class="editor-heading-h1" dir="ltr"><span data-lexical-text="true">Lyrics to Hello by Adele</span></h1><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">A thousand times</span></p></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted HTML anchor element',
@@ -215,7 +215,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph"><a href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook</span></a></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><a href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook</span></a></p></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted combination of an HTML text node followed by an anchor node',
@@ -225,7 +225,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook!</span></a></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook!</span></a></p></div>',
         },
         {
           name: 'should produce the correct editor state from a pasted combination of HTML anchor elements and text nodes',
@@ -235,7 +235,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook!</span></a><span data-lexical-text="true">We hope you like it here.</span></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook!</span></a><span data-lexical-text="true">We hope you like it here.</span></p></div>',
         },
         {
           name: 'should ignore DOM node types that do not have transformers, but still process their children.',
@@ -245,7 +245,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li value="3" class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li value="3" class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
         },
         {
           name: 'should ignore multiple levels of DOM node types that do not have transformers, but still process their children.',
@@ -255,7 +255,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li value="3" class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><ul class="editor-list-ul"><li value="1" class="editor-listitem" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="editor-listitem" dir="ltr"><span data-lexical-text="true">from the other</span></li><li value="3" class="editor-listitem" dir="ltr"><span data-lexical-text="true">side</span></li></ul></div>',
         },
         {
           name: 'should respect htmlTransforms passed in via the editor config.',
@@ -265,7 +265,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello world!</span></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello world!</span></p></div>',
         },
         {
           name: 'should preserve formatting from HTML tags on deeply nested text nodes.',
@@ -275,7 +275,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Facebook!</strong></a><span data-lexical-text="true">We hope you like it here.</span></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Facebook!</strong></a><span data-lexical-text="true">We hope you like it here.</span></p></div>',
         },
         {
           name: 'should preserve formatting from HTML tags on deeply nested and top level text nodes.',
@@ -285,7 +285,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Facebook!</strong></a><strong class="editor-text-bold" data-lexical-text="true">We hope you like it here.</strong></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Facebook!</strong></a><strong class="editor-text-bold" data-lexical-text="true">We hope you like it here.</strong></p></div>',
         },
         {
           name: 'should preserve multiple types of formatting on deeply nested text nodes and top level text nodes',
@@ -295,7 +295,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">Facebook!</strong></a><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">We hope you like it here.</strong></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Welcome to</span><a href="https://facebook.com/" dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">Facebook!</strong></a><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">We hope you like it here.</strong></p></div>',
         },
       ];
       suite.forEach((testUnit, i) => {
@@ -317,7 +317,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Get schwifty!</span></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Get schwifty!</span></p></div>',
         },
         {
           name: 'should produce the correct editor state from bold text',
@@ -327,7 +327,7 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           expectedHTML:
-            '<div contenteditable="true" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Get schwifty!</strong></p></div>',
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Get schwifty!</strong></p></div>',
         },
       ];
       suite.forEach((testUnit, i) => {

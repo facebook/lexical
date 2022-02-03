@@ -68,7 +68,7 @@ describe('LexicalQuoteNode tests', () => {
         root.append(quoteNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><blockquote><br></blockquote></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><blockquote><br></blockquote></div>',
       );
       await editor.update(() => {
         const result = quoteNode.insertNewAfter();
@@ -76,7 +76,7 @@ describe('LexicalQuoteNode tests', () => {
         expect(result.getDirection()).toEqual(quoteNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><blockquote><br></blockquote><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><blockquote><br></blockquote><p><br></p></div>',
       );
     });
 

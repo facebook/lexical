@@ -488,6 +488,10 @@ class BaseLexicalEditor {
         }
       }
       if (nextRootElement !== null) {
+        const style = nextRootElement.style;
+        style.userSelect = 'text';
+        style.whiteSpace = 'pre-wrap';
+        style.overflowWrap = 'break-word';
         nextRootElement.setAttribute('data-lexical-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));

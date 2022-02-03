@@ -55,6 +55,7 @@ function initParagraph(root: RootNode, editor: LexicalEditor): void {
 
 export function initEditor(editor: LexicalEditor): void {
   editor.update(() => {
+    throw new Error('');
     $log('initEditor');
     const root = $getRoot();
     const firstChild = root.getFirstChild();

@@ -33,10 +33,6 @@ export class HorizontalRuleNode extends LexicalNode {
   updateDOM(): false {
     return false;
   }
-
-  getChildrenSize(): number {
-    return 0;
-  }
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {

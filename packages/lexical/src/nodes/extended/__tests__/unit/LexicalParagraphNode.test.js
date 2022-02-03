@@ -65,7 +65,7 @@ describe('LexicalParagraphNode tests', () => {
         root.append(paragraphNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
       await editor.update(() => {
         const result = paragraphNode.insertNewAfter();
@@ -73,7 +73,7 @@ describe('LexicalParagraphNode tests', () => {
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><br></p><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><br></p><p><br></p></div>',
       );
     });
 

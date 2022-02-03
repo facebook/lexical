@@ -1,6 +1,6 @@
 # Lexical
 
-Lexical is a fast, light-weight, extensible library for building rich text editors on the web.
+Lexical is an extensible JavaScript text-editor that provides reliable, accessible and performant typing experiences for the web.
 
 The core of Lexical is a dependency-free text editor engine that allows for powerful, simple and complex,
 editor implementations to be built on top. Lexical's engine provides three main parts:
@@ -8,16 +8,15 @@ editor implementations to be built on top. Lexical's engine provides three main 
 - a set of editor states that represent the current and pending states of the editor at any given time.
 - a DOM reconciler that takes a set of editor states, diffs the changes, and updates the DOM according to their state.
 
-By design, the core of Lexical doesn't do anything else, such as listen for keyboard input or other events. Instead
-this logic can be wired up manually, or via a preshipped package. This ensures tight extensibilty and keeps code-sizes
+By design, the core of Lexical tries to be as minimal as possible.
+Lexical doesn't directly concern itself with things that monolithic editors tend to do – such as UI components, toolbars or rich-text features and markdown. Instead
+the logic for those features can be included via a plugin interface and used as and when they're needed. This ensures great extensibilty and keeps code-sizes
 to a minimal – ensuring apps only pay the cost for what they actually import.
 
 For React apps, Lexical has tight intergration with React 18+ via the optional `@lexical/react` package. This package provides
 production-ready utility functions, helpers and React hooks that make it seemless to create text editors within React.
 
 ## Getting started with React
-
-You can create a new react project using [create-react-app](https://reactjs.org/docs/create-a-new-react-app.html)
 
 Install `lexical` and `@lexical/react`:
 
@@ -27,23 +26,54 @@ npm install --save lexical @lexical/react
 
 Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
 
-
 ```jsx
+import {$getRoot, $getSelection} from 'lexical';
+import {useEffect} from 'react';
+
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import LexicalHistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 const theme = {
   // Theme styling goes here
   ...
 }
 
+// When the editor changes, you can get notified via the
+// LexicalOnChangePlugin!
 function onChange(editorState) {
-  // When the editor changes, you can get notified via the
-  // LexicalOnChangePlugin!
-  console.log(editorState);
+  editorState.read(() => {
+    // Read the contents of the EditorState here.
+    const root = $getRoot();
+    const selection = $getSelection();
+
+    console.log(root, selection);
+  });
+}
+
+// Lexical React plugins are React components, which makes them
+// highly composable. Furthermore, you can lazy load plugins if
+// desired, so you don't pay the cost for plugins until you
+// actually use them.
+function MyCustomAutoFocusPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    // Focus the editor when the effect fires!
+    editor.focus();
+  }, [editor]);
+
+  return null;
+}
+
+// Catch any errors that occur during Lexical updates and log them
+// or throw them as needed. If you don't throw them, Lexical will
+// try to recover gracefully without losing user data.
+function onError(error) {
+  throw error;
 }
 
 function Editor() {
@@ -52,9 +82,11 @@ function Editor() {
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}
+        onError={onError}
       />
       <LexicalOnChangePlugin onChange={onChange} />
       <LexicalHistoryPlugin />
+      <MyCustomAutoFocusPlugin />
     </LexicalComposer>
   );
 }
@@ -63,7 +95,7 @@ function Editor() {
 ## Working with Lexical
 
 This section covers how to use Lexical, independently of any framework or library. For those intending to use Lexical in their React applications,
-it's advisable to [check out the source-code for the hooks that are shipped in `lexical-react`](https://github.com/facebook/lexical/tree/main/packages/lexical-react/src).
+it's advisable to [check out the source-code for the hooks that are shipped in `@lexical/react`](https://github.com/facebook/lexical/tree/main/packages/lexical-react/src).
 
 ### Creating an editor instance and using it
 
@@ -74,13 +106,7 @@ an optional configuration object that allows for theming and the passing of cont
 import {createEditor} from 'lexical';
 
 const config = {
-  onError(error) {
-    throw error;
-  },
   theme: {
-    ...
-  },
-  context: {
     ...
   },
 };

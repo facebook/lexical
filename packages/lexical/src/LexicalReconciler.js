@@ -699,7 +699,7 @@ export function updateEditorState(
   }
 }
 
-function scrollIntoViewIfNeeded(node: Node): void {
+function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
   const element: Element =
     // $FlowFixMe: this is valid, as we are checking the nodeType
     node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node;
@@ -710,6 +710,13 @@ function scrollIntoViewIfNeeded(node: Node): void {
       element.scrollIntoView(false);
     } else if (rect.top < 0) {
       element.scrollIntoView();
+    } else if (rootElement) {
+      const rootRect = rootElement.getBoundingClientRect();
+      if (rect.top < rootRect.top) {
+        element.scrollIntoView();
+      } else if (rect.bottom > rootRect.bottom) {
+        element.scrollIntoView(false);
+      }
     }
   }
 }
@@ -805,7 +812,7 @@ function reconcileSelection(
       nextFocusOffset,
     );
     if (nextSelection.isCollapsed() && rootElement === activeElement) {
-      scrollIntoViewIfNeeded(nextAnchorNode);
+      scrollIntoViewIfNeeded(nextAnchorNode, rootElement);
     }
   } catch (error) {
     // If we encounter an error, continue. This can sometimes

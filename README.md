@@ -33,7 +33,7 @@ import {useEffect} from 'react';
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
-import LexicalHistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
@@ -85,7 +85,7 @@ function Editor() {
         onError={onError}
       />
       <LexicalOnChangePlugin onChange={onChange} />
-      <LexicalHistoryPlugin />
+      <HistoryPlugin />
       <MyCustomAutoFocusPlugin />
     </LexicalComposer>
   );

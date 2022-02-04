@@ -464,6 +464,9 @@ export class ElementNode extends LexicalNode {
   canInsertTextAfter(): boolean {
     return true;
   }
+  isIndented(): boolean {
+    return this.getIndent() > 0;
+  }
   isInline(): boolean {
     return false;
   }

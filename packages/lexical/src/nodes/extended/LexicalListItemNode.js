@@ -202,9 +202,9 @@ export class ListItemNode extends ElementNode {
     children.forEach((child) => paragraph.append(child));
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
-    const isNested = $isListItemNode(listNodeParent);
+    const isIndented = $isListItemNode(listNodeParent);
     if (listNode.getChildrenSize() === 1) {
-      if (isNested) {
+      if (isIndented) {
         // if the list node is nested, we just want to remove it,
         // effectively unindenting it.
         listNode.remove();
@@ -228,6 +228,12 @@ export class ListItemNode extends ElementNode {
       this.remove();
     }
     return true;
+  }
+
+  isIndented(): boolean {
+    const listNode = this.getParentOrThrow();
+    const listNodeParent = listNode.getParentOrThrow();
+    return $isListItemNode(listNodeParent);
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {

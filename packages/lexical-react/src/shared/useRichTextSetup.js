@@ -226,7 +226,7 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
                   anchor.type === 'element'
                     ? anchor.getNode()
                     : anchor.getNode().getParentOrThrow();
-                if (element.isIndented()) {
+                if (element.getIndent() > 0) {
                   return editor.execCommand('outdentContent');
                 }
               }

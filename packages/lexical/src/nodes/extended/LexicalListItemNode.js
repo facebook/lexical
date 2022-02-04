@@ -230,10 +230,21 @@ export class ListItemNode extends ElementNode {
     return true;
   }
 
-  isIndented(): boolean {
-    const listNode = this.getParentOrThrow();
-    const listNodeParent = listNode.getParentOrThrow();
-    return $isListItemNode(listNodeParent);
+  getIndent(): number {
+    // ListItemNode should always have a ListNode for a parent.
+    let listNodeParent = this.getParentOrThrow().getParentOrThrow();
+    let indentLevel = 0;
+    while ($isListItemNode(listNodeParent)) {
+      listNodeParent = listNodeParent.getParentOrThrow().getParentOrThrow();
+      indentLevel++;
+    }
+    return indentLevel;
+  }
+
+  setIndent(): this {
+    // TODO move indent/outdent logic to this file and use here.
+    invariant(true, 'setIndent is not implemented on ListItemNode');
+    return this;
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {

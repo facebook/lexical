@@ -712,10 +712,10 @@ function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
       element.scrollIntoView();
     } else if (rootElement) {
       const rootRect = rootElement.getBoundingClientRect();
-      if (rect.top < rootRect.top) {
-        element.scrollIntoView();
-      } else if (rect.bottom > rootRect.bottom) {
+      if (rect.bottom > rootRect.bottom) {
         element.scrollIntoView(false);
+      } else if (rect.top < rootRect.top) {
+        element.scrollIntoView();
       }
     }
   }

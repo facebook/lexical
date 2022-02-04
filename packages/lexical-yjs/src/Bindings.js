@@ -22,6 +22,7 @@ import {XmlText} from 'yjs';
 export type ClientID = string;
 
 export type Binding = {
+  clientID: number,
   collabNodeMap: Map<
     NodeKey,
     | CollabElementNode
@@ -61,6 +62,7 @@ export function createBinding(
 
   // $FlowFixMe: our Flow bindings need fixing
   return {
+    clientID: doc.clientID,
     collabNodeMap: new Map(),
     nodeProperties: new Map(),
     editor,

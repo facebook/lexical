@@ -49,6 +49,7 @@ export default function Input({
     <div className={stylex(styles.wrapper)}>
       <label className={stylex(styles.label)}>{label}</label>
       <input
+        type="text"
         className={stylex(styles.input)}
         value={value}
         onChange={(e) => {

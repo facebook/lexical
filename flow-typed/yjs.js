@@ -81,6 +81,7 @@ declare module 'yjs' {
     changes: {
       keys: YMapEventKeyChanges,
     };
+    delta: Array<TextOperation>;
   }
 
   declare export type TextOperation = {
@@ -91,6 +92,14 @@ declare module 'yjs' {
 
   declare export interface YTextEvent extends YEvent {
     keysChanged: Set<string>;
+    childListChanged: boolean;
+    target: XmlText;
+    delta: Array<TextOperation>;
+  }
+
+  declare export interface YXmlEvent extends YEvent {
+    keysChanged: Set<string>;
+    attributesChanged: Set<string>;
     childListChanged: boolean;
     target: XmlText;
     delta: Array<TextOperation>;

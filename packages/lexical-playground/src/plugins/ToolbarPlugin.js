@@ -271,6 +271,32 @@ function InsertTableDialog({
   );
 }
 
+function InsertPollDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [question, setQuestion] = useState('');
+
+  const onClick = () => {
+    activeEditor.execCommand('insertPoll', question);
+    onClose();
+  };
+
+  return (
+    <>
+      <Input label="Poll Question" onChange={setQuestion} value={question} />
+      <div className={stylex(styles.dialogActions)}>
+        <Button disabled={question.trim() === ''} onClick={onClick}>
+          Confirm
+        </Button>
+      </div>
+    </>
+  );
+}
+
 function BlockOptionsDropdownList({
   editor,
   blockType,
@@ -812,7 +838,12 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.execCommand('insertPoll');
+              showModal('Insert Poll', (onClose) => (
+                <InsertPollDialog
+                  activeEditor={activeEditor}
+                  onClose={onClose}
+                />
+              ));
             }}
             className="toolbar-item"
             aria-label="Insert Poll">

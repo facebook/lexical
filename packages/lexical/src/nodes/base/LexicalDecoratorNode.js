@@ -33,6 +33,7 @@ export type DecoratorMapObserver = (
 
 export type DecoratorArrayObserver = (
   index: number,
+  delCont: number,
   value: void | DecoratorStateValue,
 ) => void;
 
@@ -183,6 +184,10 @@ export class DecoratorArray {
     };
   }
 
+  get length(): number {
+    return this._array.length;
+  }
+
   map<V>(
     fn: (DecoratorStateValue, number, Array<DecoratorStateValue>) => V,
   ): Array<V> {
@@ -195,6 +200,19 @@ export class DecoratorArray {
     return res;
   }
 
+  reduce(
+    fn: (DecoratorStateValue, DecoratorStateValue) => DecoratorStateValue,
+    initial?: DecoratorStateValue,
+  ): DecoratorStateValue | void {
+    let accum = initial;
+    const arr = this._array;
+    for (let i = 0; i < arr.length; i++) {
+      const value = arr[i];
+      accum = accum !== undefined ? fn(accum, value) : value;
+    }
+    return accum;
+  }
+
   push(value: DecoratorStateValue): void {
     this.splice(this._array.length, 0, value);
   }
@@ -204,13 +222,14 @@ export class DecoratorArray {
     delCount: number,
     value?: DecoratorStateValue,
   ): void {
-    const arr = this._array;
-    const index = arr.length;
-    // $FlowFixMe: Flow doesn't understant how Array.proto.splice works :/
-    this._array.splice(insertIndex, delCount, value);
+    if (value === undefined) {
+      this._array.splice(insertIndex, delCount);
+    } else {
+      this._array.splice(insertIndex, delCount, value);
+    }
     const observers = Array.from(this._observers);
     for (let i = 0; i < observers.length; i++) {
-      observers[i](index, value);
+      observers[i](insertIndex, delCount, value);
     }
   }
 

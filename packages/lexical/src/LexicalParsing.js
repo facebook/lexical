@@ -9,7 +9,11 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {NodeKey, LexicalNode} from './LexicalNode';
-import type {DecoratorMap} from './nodes/base/LexicalDecoratorNode';
+import type {
+  DecoratorMap,
+  DecoratorArray,
+  DecoratorStateValue,
+} from './nodes/base/LexicalDecoratorNode';
 
 import {
   getActiveEditorState,
@@ -20,6 +24,7 @@ import {$isRootNode, $isElementNode, $isTextNode, $isDecoratorNode} from '.';
 import {
   createDecoratorEditor,
   createDecoratorMap,
+  createDecoratorArray,
 } from './nodes/base/LexicalDecoratorNode';
 import invariant from 'shared/invariant';
 
@@ -74,34 +79,56 @@ export function $createNodeFromParse(
   return $internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
 }
 
+function createDecoratorValueFromParse(
+  editor: LexicalEditor,
+  parsedValue,
+): DecoratorStateValue {
+  let value;
+
+  if (
+    typeof parsedValue === 'string' ||
+    typeof parsedValue === 'number' ||
+    typeof parsedValue === 'boolean' ||
+    parsedValue === null
+  ) {
+    value = parsedValue;
+  } else if (typeof parsedValue === 'object') {
+    const bindingType = parsedValue.type;
+    if (bindingType === 'editor') {
+      value = createDecoratorEditor(parsedValue.id, parsedValue.editorState);
+    } else if (bindingType === 'array') {
+      value = createDecoratorArrayFromParse(editor, parsedValue);
+    } else {
+      value = createDecoratorMapFromParse(editor, parsedValue);
+    }
+  } else {
+    invariant(false, 'Should never happen');
+  }
+  return value;
+}
+
+function createDecoratorArrayFromParse(
+  editor: LexicalEditor,
+  parsedDecoratorState,
+): DecoratorArray {
+  const parsedArray = parsedDecoratorState.array;
+  const array = [];
+  for (let i = 0; i < parsedArray.length; i++) {
+    const parsedValue = parsedArray[i];
+    array.push(createDecoratorValueFromParse(editor, parsedValue));
+  }
+  return createDecoratorArray(editor, array);
+}
+
 function createDecoratorMapFromParse(
-  editor,
+  editor: LexicalEditor,
   parsedDecoratorState,
 ): DecoratorMap {
   const parsedMap = parsedDecoratorState.map;
   const map = new Map();
   for (let i = 0; i < parsedMap.length; i++) {
     const [key, parsedValue] = parsedMap[i];
-    let value;
-
-    if (
-      typeof parsedValue === 'string' ||
-      typeof parsedValue === 'number' ||
-      typeof parsedValue === 'boolean' ||
-      parsedValue === null
-    ) {
-      value = parsedValue;
-    } else if (typeof parsedValue === 'object') {
-      const bindingType = parsedValue.type;
-      if (bindingType === 'editor') {
-        value = createDecoratorEditor(parsedValue.id, parsedValue.editorState);
-      } else {
-        value = createDecoratorMapFromParse(editor, parsedValue);
-      }
-    } else {
-      invariant(false, 'Should never happen');
-    }
-    map.set(key, value);
+    map.set(key, createDecoratorValueFromParse(editor, parsedValue));
   }
   return createDecoratorMap(editor, map);
 }

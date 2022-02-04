@@ -287,7 +287,7 @@ function InsertPollDialog({
 
   return (
     <>
-      <Input label="Poll Topic" onChange={setQuestion} value={question} />
+      <Input label="Poll Question" onChange={setQuestion} value={question} />
       <div className={stylex(styles.dialogActions)}>
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm

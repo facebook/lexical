@@ -23,6 +23,14 @@ const styles = stylex.create({
     ':hover': {
       backgroundColor: '#ddd',
     },
+    fontSize: 14,
+  },
+  small: {
+    paddingTop: 5,
+    paddingBottom: 5,
+    paddingLeft: 10,
+    paddingRight: 10,
+    fontSize: 13,
   },
   disabled: {
     cursor: 'not-allowed',
@@ -36,15 +44,21 @@ export default function Button({
   children,
   onClick,
   disabled,
+  small,
 }: {
   children: React$Node,
   onClick: () => void,
   disabled?: boolean,
+  small?: boolean,
 }): React$Node {
   return (
     <button
       disabled={disabled}
-      className={stylex(styles.root, disabled && styles.disabled)}
+      className={stylex(
+        styles.root,
+        disabled && styles.disabled,
+        small && styles.small,
+      )}
       onClick={onClick}>
       {children}
     </button>

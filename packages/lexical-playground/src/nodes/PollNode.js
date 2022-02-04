@@ -11,11 +11,13 @@ import type {LexicalNode, DecoratorMap, NodeKey, LexicalEditor} from 'lexical';
 
 import {DecoratorNode, createDecoratorArray, createDecoratorMap} from 'lexical';
 import * as React from 'react';
-import {useRef} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import stylex from 'stylex';
 import {useClientIDContext} from '../context/ClientIDContext';
+import Button from '../ui/Button';
+import type {DecoratorArray} from '../../../lexical/src/nodes/base/LexicalDecoratorNode';
 
 const styles = stylex.create({
   container: {
@@ -45,20 +47,38 @@ const styles = stylex.create({
     flex: 10,
     border: '1px solid rgb(61,135,245)',
     borderRadius: 5,
+    position: 'relative',
+    overflow: 'hidden',
   },
   optionInput: {
     display: 'flex',
     flex: 1,
     border: 0,
     padding: 7,
-    borderRadius: 5,
     color: 'rgb(61,135,245)',
+    backgroundColor: 'transparent',
     fontWeight: 'bold',
     outline: 0,
     '::placeholder': {
       fontWeight: 'normal',
       color: '#999',
     },
+    zIndex: 1,
+  },
+  optionInputVotes: {
+    backgroundColor: 'rgb(236, 243, 254)',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    transition: 'width 1s ease',
+  },
+  optionInputVotesCount: {
+    color: 'rgb(61,135,245)',
+    position: 'absolute',
+    right: 15,
+    fontSize: 12,
+    top: 5,
   },
   optionCheckboxWrapper: {
     position: 'relative',
@@ -69,6 +89,7 @@ const styles = stylex.create({
     marginRight: 10,
     borderRadius: 5,
     cursor: 'pointer',
+    zIndex: 2,
   },
   optionCheckboxChecked: {
     border: '1px solid rgb(61,135,245)',
@@ -83,6 +104,35 @@ const styles = stylex.create({
     width: 0,
     height: 0,
     opacity: 0,
+  },
+  optionDelete: {
+    display: 'flex',
+    width: 28,
+    height: 28,
+    marginLeft: 6,
+    border: 0,
+    backgroundColor: 'transparent',
+    backgroundPosition: '6px 6px',
+    backgroundRepeat: 'no-repeat',
+    zIndex: 2,
+    cursor: 'pointer',
+    borderRadius: 5,
+    opacity: 0.3,
+    ':hover': {
+      opacity: 1,
+      backgroundColor: '#eee',
+    },
+  },
+  optionDeleteDisabled: {
+    cursor: 'not-allowed',
+    ':hover': {
+      opacity: 0.3,
+      backgroundColor: 'transparent',
+    },
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'center',
   },
 });
 
@@ -107,23 +157,46 @@ function createPollOptionMap(
   );
 }
 
+function getTotalVotes(options: DecoratorArray): number {
+  // $FlowFixMe: need to revise type
+  const votes: number = options.reduce((totalVotes, next) => {
+    // $FlowFixMe: need to revise type
+    return totalVotes + next.get('votes').length;
+  }, 0);
+
+  return votes;
+}
+
 function PollOptionComponent({
   editor,
   decoratorMap,
   index,
+  options,
+  totalVotes,
+  updateTotalVotes,
 }: {
   editor: LexicalEditor,
   decoratorMap: DecoratorMap,
   index: number,
+  options: DecoratorArray,
+  totalVotes: number,
+  updateTotalVotes: () => void,
 }): React$Node {
   const clientID = useClientIDContext();
   const [text, setText] = useLexicalDecoratorMap(decoratorMap, 'text', '');
-  const [votes] = useLexicalDecoratorMap(decoratorMap, 'votes', () =>
+  const [votesArray] = useLexicalDecoratorMap(decoratorMap, 'votes', () =>
     createDecoratorArray(editor),
   );
   const checkboxRef = useRef(null);
-  const checkedIndex = votes.indexOf(clientID);
+  const checkedIndex = votesArray.indexOf(clientID);
   const checked = checkedIndex !== -1;
+  const votes = votesArray.length;
+
+  useEffect(() => {
+    return votesArray.observe(() => {
+      updateTotalVotes();
+    });
+  }, [updateTotalVotes, votesArray]);
 
   return (
     <div className={stylex(styles.optionContainer)}>
@@ -144,15 +217,22 @@ function PollOptionComponent({
           type="checkbox"
           onChange={(e) => {
             if (checked) {
-              votes.splice(checkedIndex, 1);
+              votesArray.splice(checkedIndex, 1);
             } else {
-              votes.push(clientID);
+              votesArray.push(clientID);
             }
           }}
           checked={checked}
         />
       </div>
       <div className={stylex(styles.optionInputWrapper)}>
+        <div
+          className={stylex(styles.optionInputVotes)}
+          style={{width: `${votes === 0 ? 0 : (votes / totalVotes) * 100}%`}}
+        />
+        <span className={stylex(styles.optionInputVotesCount)}>
+          {votes > 0 && (votes === 1 ? '1 vote' : `${votes} votes`)}
+        </span>
         <input
           className={stylex(styles.optionInput)}
           type="text"
@@ -161,6 +241,17 @@ function PollOptionComponent({
           placeholder={`Option ${index + 1}`}
         />
       </div>
+      <button
+        disabled={options.length < 3}
+        className={stylex(
+          styles.optionDelete,
+          options.length < 3 && styles.optionDeleteDisabled,
+        )}
+        arial-label="Remove"
+        onClick={() => {
+          options.splice(index, 1);
+        }}
+      />
     </div>
   );
 }
@@ -179,6 +270,11 @@ function PollComponent({
       createPollOptionMap(editor, ''),
     ]),
   );
+  const [totalVotes, setTotalVotes] = useState(() => getTotalVotes(options));
+
+  const updateTotalVotes = useCallback(() => {
+    setTotalVotes(getTotalVotes(options));
+  }, [options]);
 
   return (
     <div className={stylex(styles.container)}>
@@ -194,9 +290,21 @@ function PollComponent({
             key={key}
             decoratorMap={decoratorMap}
             index={index}
+            options={options}
+            totalVotes={totalVotes}
+            updateTotalVotes={updateTotalVotes}
           />
         );
       })}
+      <div className={stylex(styles.footer)}>
+        <Button
+          onClick={() => {
+            options.push(createPollOptionMap(editor, ''));
+          }}
+          small={true}>
+          Add Option
+        </Button>
+      </div>
     </div>
   );
 }

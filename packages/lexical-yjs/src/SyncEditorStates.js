@@ -15,13 +15,21 @@ import type {
 import type {Binding, Provider, YjsEvent} from '.';
 
 // $FlowFixMe: need Flow typings for yjs
-import {YTextEvent, YMapEvent, YXmlEvent, Map as YMap} from 'yjs';
+import {
+  YTextEvent,
+  YMapEvent,
+  YXmlEvent,
+  Map as YMap,
+  Array as YArray,
+} from 'yjs';
 import {
   $isTextNode,
   $getSelection,
   $getRoot,
   $setSelection,
   $getNodeByKey,
+  isDecoratorArray,
+  isDecoratorMap,
 } from 'lexical';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -38,9 +46,16 @@ import {
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {$createOffsetView} from '@lexical/helpers/offsets';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
-import {syncYjsDecoratorMapToLexical} from './SyncDecoratorStates';
+import {
+  mutationFromCollab,
+  syncYjsDecoratorMapToLexical,
+  syncYjsDecoratorArrayValueToLexical,
+} from './SyncDecoratorStates';
 
-function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
+function syncEvent(
+  binding: Binding,
+  event: YTextEvent | YMapEvent | YXmlEvent,
+): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
   // $FlowFixMe: internal field
@@ -49,17 +64,58 @@ function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
   // Check if this event relates to a decorator state change.
   if (
     decoratorStateValue !== undefined &&
-    target instanceof YMap &&
     collabNode instanceof CollabDecoratorNode
   ) {
-    // Sync decorator state value
-    syncYjsDecoratorMapToLexical(
-      binding,
-      collabNode,
-      target,
-      decoratorStateValue,
-      event.keysChanged,
-    );
+    if (target instanceof YMap) {
+      // Sync decorator state value
+      syncYjsDecoratorMapToLexical(
+        binding,
+        collabNode,
+        target,
+        decoratorStateValue,
+        event.keysChanged,
+      );
+    } else if (
+      target instanceof YArray &&
+      isDecoratorArray(decoratorStateValue)
+    ) {
+      // Sync decorator state value
+      const deltas = event.delta;
+      let offset = 0;
+      for (let i = 0; i < deltas.length; i++) {
+        const delta = deltas[i];
+        const retainOp = delta.retain;
+        const deleteOp = delta.delete;
+        const insertOp = delta.insert;
+
+        if (retainOp !== undefined) {
+          offset += retainOp;
+        } else if (deleteOp !== undefined) {
+          mutationFromCollab(() => {
+            const elements = decoratorStateValue._array.slice(
+              offset,
+              offset + deleteOp,
+            );
+            elements.forEach((element) => {
+              if (isDecoratorArray(element) || isDecoratorMap(element)) {
+                element.destroy();
+              }
+            });
+            decoratorStateValue.splice(offset, deleteOp);
+          });
+        } else if (insertOp !== undefined) {
+          syncYjsDecoratorArrayValueToLexical(
+            binding,
+            collabNode,
+            target,
+            decoratorStateValue,
+            offset,
+          );
+        } else {
+          throw new Error('Not supported');
+        }
+      }
+    }
     return;
   }
 

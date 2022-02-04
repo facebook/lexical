@@ -1240,3 +1240,7 @@ i.chevron-down {
 .PollNode__optionCheckboxChecked {
   background-image: url(images/icons/check-lg.svg);
 }
+
+.PollNode__optionDelete {
+  background-image: url(images/icons/x-lg.svg);
+}

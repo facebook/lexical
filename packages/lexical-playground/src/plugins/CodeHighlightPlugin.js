@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, ElementNode} from 'lexical';
+import type {LexicalEditor} from 'lexical';
 
 import {
   CodeNode,
@@ -111,9 +111,9 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
         );
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(node.getChildren(), highlightNodes);
-        if (diffRange !== null) {
-          const {from, to, nodesForReplacement} = diffRange;
-          replaceRange(node, from, to, nodesForReplacement);
+        const {from, to, nodesForReplacement} = diffRange;
+        if (from !== to || nodesForReplacement.length) {
+          node.splice(from, to - from, nodesForReplacement);
           return true;
         }
         return false;
@@ -228,39 +228,6 @@ function updateAndRetainSelection(
   });
 }
 
-// Inserts notes into specific range of node's children. Works for replacement (from != to && nodesToInsert not empty),
-// insertion (from == to && nodesToInsert not empty) and deletion (from != to && nodesToInsert is empty)
-function replaceRange(
-  node: ElementNode,
-  from: number,
-  to: number,
-  nodesToInsert: Array<LexicalNode>,
-): void {
-  let children = node.getChildren();
-  for (let i = from; i < to; i++) {
-    children[i].remove();
-  }
-
-  children = node.getChildren();
-  if (children.length === 0) {
-    node.append(...nodesToInsert);
-    return;
-  }
-
-  if (from === 0) {
-    const firstChild = children[0];
-    for (let i = 0; i < nodesToInsert.length; i++) {
-      firstChild.insertBefore(nodesToInsert[i]);
-    }
-  } else {
-    let currentNode = children[from - 1] || children[children.length - 1];
-    for (let i = 0; i < nodesToInsert.length; i++) {
-      currentNode.insertAfter(nodesToInsert[i]);
-      currentNode = nodesToInsert[i];
-    }
-  }
-}
-
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes
 // that needs to be replaced with `nodes` (subset of nextNodes) to make prevNodes equal to nextNodes.
 function getDiffRange(
@@ -270,7 +237,7 @@ function getDiffRange(
   from: number,
   to: number,
   nodesForReplacement: Array<LexicalNode>,
-} | null {
+} {
   let leadingMatch = 0;
   while (leadingMatch < prevNodes.length) {
     if (!isEqual(prevNodes[leadingMatch], nextNodes[leadingMatch])) {
@@ -304,14 +271,11 @@ function getDiffRange(
     leadingMatch,
     nextNodesLength - trailingMatch,
   );
-  const hasChanges = from !== to || nodesForReplacement.length > 0;
-  return hasChanges
-    ? {
-        from,
-        to,
-        nodesForReplacement,
-      }
-    : null;
+  return {
+    from,
+    to,
+    nodesForReplacement,
+  };
 }
 
 function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {

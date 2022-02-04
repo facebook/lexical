@@ -7,17 +7,16 @@
  * @flow strict
  */
 
-import type {LexicalNode, DecoratorMap, NodeKey, LexicalEditor} from 'lexical';
+import type {LexicalNode, DecoratorArray, DecoratorMap, NodeKey, LexicalEditor} from 'lexical';
 
 import {DecoratorNode, createDecoratorArray, createDecoratorMap} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import stylex from 'stylex';
-import {useClientIDContext} from '../context/ClientIDContext';
 import Button from '../ui/Button';
-import type {DecoratorArray} from '../../../lexical/src/nodes/base/LexicalDecoratorNode';
 
 const styles = stylex.create({
   container: {
@@ -182,7 +181,8 @@ function PollOptionComponent({
   totalVotes: number,
   updateTotalVotes: () => void,
 }): React$Node {
-  const clientID = useClientIDContext();
+  // TODO we should try and avoid pulling in collab here
+  const {clientID} = useCollaborationContext();
   const [text, setText] = useLexicalDecoratorMap(decoratorMap, 'text', '');
   const [votesArray] = useLexicalDecoratorMap(decoratorMap, 'votes', () =>
     createDecoratorArray(editor),

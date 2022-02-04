@@ -387,6 +387,8 @@ export function syncYjsDecoratorArrayValueToLexical(
         mutationFromCollab(() => decoratorArray.splice(index, 0, nextValue));
       }
       syncYjsDecoratorArrayToLexical(binding, collabNode, yjsValue, nextValue);
+    } else {
+      mutationFromCollab(() => decoratorArray.splice(index, 0, yjsValue));
     }
   }
 }

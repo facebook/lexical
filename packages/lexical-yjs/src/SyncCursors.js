@@ -397,7 +397,7 @@ export function syncCursorPositions(
   provider: Provider,
 ): void {
   const awarenessStates = Array.from(provider.awareness.getStates());
-  const localClientID = binding.doc.clientID;
+  const localClientID = binding.clientID;
   const cursors = binding.cursors;
   const editor = binding.editor;
   const nodeMap = editor._editorState._nodeMap;

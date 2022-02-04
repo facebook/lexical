@@ -64,8 +64,7 @@ export function $findTextIntersectionFromCharacters(
 export function $joinTextNodesInElementNode(
   elementNode: ElementNode,
   separator: string,
-  stopAtNode: TextNode,
-  stopAtNodeOffset: number,
+  stopAt: TextNodeWithOffset,
 ): string {
   let textContent = '';
   const children = elementNode.getChildren();
@@ -75,15 +74,15 @@ export function $joinTextNodesInElementNode(
     if ($isTextNode(child)) {
       const childTextContent = child.getTextContent();
 
-      if (child.is(stopAtNode)) {
-        if (stopAtNodeOffset > childTextContent.length) {
+      if (child.is(stopAt.node)) {
+        if (stopAt.offset > childTextContent.length) {
           invariant(
             false,
             'Node %s and selection point do not match.',
             child.__key,
           );
         }
-        textContent += child.getTextContent().substr(0, stopAtNodeOffset);
+        textContent += child.getTextContent().substr(0, stopAt.offset);
         break;
       } else {
         textContent += childTextContent;
@@ -95,47 +94,48 @@ export function $joinTextNodesInElementNode(
   return textContent;
 }
 
-// This function converts the offsetInJoinedTextContent to
-// an a node and offset result or null if not found.
+// This function converts the offsetInJoinedText to
+// a node and offset result or null if not found.
 // This function is to be used in conjunction with joinTextNodesInElementNode above.
 // The joinedTextContent should be return value from joinTextNodesInElementNode.
-// The offsetInJoinedTextContent is relative to the entire string which
+//
+// The offsetInJoinedText is relative to the entire string which
 // itself is relevant to the parent ElementNode.
+//
 // Example:
 // Given a Paragraph with 2 TextNodes. The first is Hello, the second is World.
 // The joinedTextContent would be "HelloWorld"
-// The offsetInJoinedTextContent might be for the letter "e" = 1 or "r" = 7.
+// The offsetInJoinedText might be for the letter "e" = 1 or "r" = 7.
 // The return values would be {TextNode1, 1} or {TextNode2,2}, respectively.
 
-export function $getNodeWithOffsetFromJoinedTextNodesInElementNode(
+export function $findNodeWithOffsetFromJoinedText(
   elementNode: ElementNode,
-  joinedTextContent: string,
-  offsetInJoinedTextContent: number,
+  joinedTextLength: number,
+  offsetInJoinedText: number,
   separatorLength: number,
 ): ?TextNodeWithOffset {
   const children = elementNode.getChildren();
   const length = children.length;
   let runningLength = 0;
-  const joinedTextContentLength = joinedTextContent.length;
   for (let i = 0; i < length; ++i) {
-    if (runningLength >= joinedTextContentLength) {
+    if (runningLength >= joinedTextLength) {
       break;
     }
 
     const child = children[i];
     const childContentLength = $isTextNode(child)
       ? child.getTextContent().length
-      : 0;
+      : separatorLength;
 
     const newRunningLength = runningLength + childContentLength;
     if (
-      runningLength <= offsetInJoinedTextContent &&
-      offsetInJoinedTextContent < newRunningLength &&
+      runningLength <= offsetInJoinedText &&
+      offsetInJoinedText < newRunningLength &&
       $isTextNode(child)
     ) {
       return {
         node: child,
-        offset: offsetInJoinedTextContent - runningLength,
+        offset: offsetInJoinedText - runningLength,
       };
     }
     runningLength = newRunningLength;

@@ -87,7 +87,7 @@ function updateAutoFormatting(
     // Please see the declaration of ScanningContext for a detailed explanation.
     const scanningContext: ScanningContext = {
       textNodeWithOffset,
-      trimmedParagraphText: null,
+      joinedText: null,
     };
     const criteriaWithMatchResultContext = getCriteriaWithMatchResultContext(
       // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.

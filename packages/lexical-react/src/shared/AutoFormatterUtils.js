@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {ElementNode, TextNode} from 'lexical';
+import type {ElementNode, TextFormatType, TextNode} from 'lexical';
 import type {LexicalNode, NodeKey} from 'lexical';
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
 
@@ -26,7 +26,7 @@ import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {
   $joinTextNodesInElementNode,
-  $getNodeWithOffsetFromJoinedTextNodesInElementNode,
+  $findNodeWithOffsetFromJoinedText,
 } from '@lexical/helpers/text';
 
 // The trigger state helps to capture EditorState information
@@ -87,7 +87,7 @@ export type AutoFormatCriteria = $ReadOnly<{
 // may be expensive. Rather, load this value lazily and store it for later use.
 export type ScanningContext = {
   textNodeWithOffset: TextNodeWithOffset,
-  trimmedParagraphText: ?string,
+  joinedText: ?string,
 };
 
 // RegEx returns the discovered pattern matches in an array of capture groups.
@@ -217,6 +217,8 @@ export function getAllAutoFormatCriteria(): AutoFormatCriteriaArray {
 
 function getMatchResultContextWithRegEx(
   textToSearch: string,
+  matchMustAppearAtStartOfString: boolean,
+  matchMustAppearAtEndOfString: boolean,
   regEx: RegExp,
   regExExpectedCaptureGroupCount: number,
   scanningContext: ScanningContext,
@@ -230,33 +232,41 @@ function getMatchResultContextWithRegEx(
   const regExMatches = textToSearch.match(regEx);
   if (
     regExMatches !== null &&
-    regExMatches.index === 0 &&
-    regExMatches.length === regExExpectedCaptureGroupCount
+    regExMatches.length > 0 &&
+    regExMatches.length === regExExpectedCaptureGroupCount &&
+    (matchMustAppearAtStartOfString === false || regExMatches.index === 0) &&
+    (matchMustAppearAtEndOfString === false ||
+      regExMatches.index + regExMatches[0].length === textToSearch.length)
   ) {
-    const text = regExMatches[0];
-    const textNodeWithOffset = scanningContext.textNodeWithOffset;
-
-    if (
-      matchResultContext != null &&
-      regExMatches.index === 0 &&
-      text.length === textNodeWithOffset.offset
+    const triggerStringLength = TRIGGER_STRING.length;
+    const captureGroupsCount = regExMatches.length;
+    let runningLength = regExMatches.index;
+    for (
+      let captureGroupIndex = 0;
+      captureGroupIndex < captureGroupsCount;
+      ++captureGroupIndex
     ) {
-      const regExMatchCount = regExMatches.length;
-      for (
-        let captureGroupIndex = 0;
-        captureGroupIndex < regExMatchCount;
-        ++captureGroupIndex
-      ) {
-        matchResultContext.regExCaptureGroups.push({
-          text: regExMatches[captureGroupIndex],
-          offsetInParent: -1, // Calculate lazily when needed.
-          textLength: -1, // Calculate lazily when needed.
-          anchorTextNodeWithOffset: null,
-          focusTextNodeWithOffset: null,
-        });
+      const textContent = regExMatches[captureGroupIndex];
+      matchResultContext.regExCaptureGroups.push({
+        text: textContent,
+        offsetInParent: runningLength,
+        textLength:
+          textContent.length -
+          (captureGroupIndex + 1 === captureGroupsCount
+            ? triggerStringLength
+            : 0),
+        anchorTextNodeWithOffset: null,
+        focusTextNodeWithOffset: null,
+      });
+
+      // The 0th capture group is special in that it's text contents is
+      // a join of all subsequent capture groups. So, skip this group
+      // when calculating the runningLength.
+      if (captureGroupIndex > 0) {
+        runningLength += textContent.length;
       }
-      return matchResultContext;
     }
+    return matchResultContext;
   }
 
   return null;
@@ -274,6 +284,8 @@ function getMatchResultContextForParagraphs(
       scanningContext.textNodeWithOffset.node.getTextContent();
     return getMatchResultContextWithRegEx(
       textToSearch,
+      true,
+      false,
       autoFormatCriteria.regEx,
       autoFormatCriteria.regExExpectedCaptureGroupCount,
       scanningContext,
@@ -287,21 +299,22 @@ function getMatchResultContextForText(
   autoFormatCriteria: AutoFormatCriteria,
   scanningContext: ScanningContext,
 ): null | MatchResultContext {
-  if (scanningContext.trimmedParagraphText == null) {
+  if (scanningContext.joinedText == null) {
     const parentNode =
       scanningContext.textNodeWithOffset.node.getParentOrThrow();
     if ($isElementNode(parentNode)) {
-      if (scanningContext.trimmedParagraphText == null) {
+      if (scanningContext.joinedText == null) {
         // Lazy calculate the text to search.
-        scanningContext.trimmedParagraphText = $joinTextNodesInElementNode(
+        scanningContext.joinedText = $joinTextNodesInElementNode(
           parentNode,
           SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES,
-          scanningContext.textNodeWithOffset.node,
-          scanningContext.textNodeWithOffset.offset,
+          scanningContext.textNodeWithOffset,
         );
       }
       return getMatchResultContextWithRegEx(
-        scanningContext.trimmedParagraphText,
+        scanningContext.joinedText,
+        false,
+        true,
         autoFormatCriteria.regEx,
         autoFormatCriteria.regExExpectedCaptureGroupCount,
         scanningContext,
@@ -475,6 +488,7 @@ function transformTextNodeForText(
             autoFormatCriteria.regExCaptureGroupsToDelete,
             matchResultContext,
           );
+          formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
         }
         break;
       }
@@ -495,13 +509,15 @@ function getCaptureGroupsByResolvingAllDetails(
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const regExCaptureGroups = matchResultContext.regExCaptureGroups;
   const captureGroupsCount = regExCaptureGroups.length;
-  let runningLength = 0;
   const parentElementNode = textNodeWithOffset.node.getParentOrThrow();
-  const joinedTextContent = regExCaptureGroups[0].text;
+
+  if (scanningContext.joinedText == null) {
+    invariant(false, 'joinedText was not calculated');
+  }
+  const joinedTextLength = scanningContext.joinedText.length;
+
   const triggerStringLength = TRIGGER_STRING.length;
 
-  // Skip the first capture group, because it is always the entire
-  // string discovered by regEx.
   for (
     let captureGroupIndex = 1;
     captureGroupIndex < captureGroupsCount;
@@ -509,23 +525,18 @@ function getCaptureGroupsByResolvingAllDetails(
   ) {
     const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
 
-    captureGroupDetail.offsetInParent = runningLength;
-    captureGroupDetail.textLength =
-      captureGroupDetail.text.length -
-      (captureGroupIndex + 1 === captureGroupsCount ? triggerStringLength : 0);
-
     captureGroupDetail.anchorTextNodeWithOffset =
-      $getNodeWithOffsetFromJoinedTextNodesInElementNode(
+      $findNodeWithOffsetFromJoinedText(
         parentElementNode,
-        joinedTextContent,
+        joinedTextLength,
         captureGroupDetail.offsetInParent,
         triggerStringLength,
       );
 
     captureGroupDetail.focusTextNodeWithOffset =
-      $getNodeWithOffsetFromJoinedTextNodesInElementNode(
+      $findNodeWithOffsetFromJoinedText(
         parentElementNode,
-        joinedTextContent,
+        joinedTextLength,
         captureGroupDetail.offsetInParent + captureGroupDetail.textLength,
         triggerStringLength,
       );
@@ -537,8 +548,6 @@ function getCaptureGroupsByResolvingAllDetails(
         autoFormatCriteria.nodeTransformationKind,
       );
     }
-    // Increase the running length by the text length.
-    runningLength += captureGroupDetail.text.length;
   }
 
   return regExCaptureGroups;
@@ -559,7 +568,11 @@ function removeTextInCaptureGroups(
         captureGroupDetail.anchorTextNodeWithOffset;
       const focusTextNodeWithOffset =
         captureGroupDetail.focusTextNodeWithOffset;
-      if (anchorTextNodeWithOffset != null && focusTextNodeWithOffset != null) {
+      if (
+        anchorTextNodeWithOffset != null &&
+        focusTextNodeWithOffset != null &&
+        captureGroupDetail.textLength > 0
+      ) {
         const newSelection = $createSelection();
 
         newSelection.anchor.set(
@@ -578,47 +591,122 @@ function removeTextInCaptureGroups(
         const currentSelection = $getSelection();
         if (currentSelection != null) {
           currentSelection.removeText();
+
+          // Shift offsets for capture groups which are within the same node
+          if (
+            anchorTextNodeWithOffset.node.getKey() ===
+            focusTextNodeWithOffset.node.getKey()
+          ) {
+            const delta =
+              focusTextNodeWithOffset.offset - anchorTextNodeWithOffset.offset;
+            invariant(
+              delta > 0,
+              'Expected anchor and focus offsets to have ascending character order.',
+            );
+            shiftCaptureGroupOffsets(
+              -delta,
+              focusTextNodeWithOffset.offset,
+              anchorTextNodeWithOffset.node,
+              captureGroupIndex,
+              matchResultContext,
+            );
+          } else {
+            const focusDelta = focusTextNodeWithOffset.offset;
+            if (focusDelta > 0) {
+              shiftCaptureGroupOffsets(
+                -focusDelta,
+                focusDelta,
+                focusTextNodeWithOffset.node,
+                captureGroupIndex,
+                matchResultContext,
+              );
+            }
+          }
         }
       }
     }
   }
-
-  // const textNodeWithOffset = scanningContext.textNodeWithOffset;
-
-  // const newSelection = $createSelection();
-  // const node = textNodeWithOffset.node;
-  // const offset = textNodeWithOffset.offset;
-  // // Collapse selection
-  // newSelection.anchor.set(node.getKey(), 0, node.getType());
 }
 
-// const textNodeWithOffset = scanningContext.textNodeWithOffset;
+function shiftCaptureGroupOffsets(
+  delta: number,
+  applyAtOrAfterOffset: number,
+  node: TextNode,
+  startingCaptureGroupIndex: number,
+  matchResultContext: MatchResultContext,
+) {
+  const regExCaptureGroups = matchResultContext.regExCaptureGroups;
+  const regExCaptureGroupsCount = regExCaptureGroups.length;
+  for (
+    let captureGroupIndex = startingCaptureGroupIndex + 1;
+    captureGroupIndex < regExCaptureGroupsCount;
+    ++captureGroupIndex
+  ) {
+    const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
 
-// const newSelection = $createSelection();
-// const node = textNodeWithOffset.node;
-// const offset = textNodeWithOffset.offset;
-// // Collapse selection
-// newSelection.anchor.set(node.getKey(), 0, node.getType());
+    if (
+      captureGroupDetail.anchorTextNodeWithOffset != null &&
+      captureGroupDetail.anchorTextNodeWithOffset.offset >=
+        applyAtOrAfterOffset &&
+      captureGroupDetail.anchorTextNodeWithOffset.node.getKey() ===
+        node.getKey()
+    ) {
+      captureGroupDetail.anchorTextNodeWithOffset.offset += delta;
+    }
 
-// const captureGroupsCount = matchResultContext.regExCaptureGroups;
-// for (
-//   let captureGroupIndex = 1;
-//   captureGroupIndex < captureGroupsCount;
-//   ++captureGroupIndex
-// ) {
-//   const string = matchResultContext.regExCaptureGroups[captureGroupIndex];
-//   let newNode = null;
+    if (
+      captureGroupDetail.focusTextNodeWithOffset != null &&
+      captureGroupDetail.focusTextNodeWithOffset.offset >=
+        applyAtOrAfterOffset &&
+      captureGroupDetail.focusTextNodeWithOffset.node.getKey() === node.getKey()
+    ) {
+      captureGroupDetail.focusTextNodeWithOffset.offset += delta;
+    }
+  }
+}
 
-//   if (autoFormatCriteria.nodeTransformationKind != null) {
-//     switch (autoFormatCriteria.nodeTransformationKind) {
-//       case 'textBold': {
-//         break;
-//       }
-//       default: break;
-//     }
-//   }
-// }
-// newSelection.focus.set(node.getKey(), offset, node.getType());
-// $setSelection(newSelection);
-// const currentSelection = $getSelection();
-// currentSelection.formatText('bold');
+function formatTextInCaptureGroupIndex(
+  formatType: TextFormatType,
+  captureGroupIndex: number,
+  matchResultContext: MatchResultContext,
+) {
+  const regExCaptureGroups = matchResultContext.regExCaptureGroups;
+  const regExCaptureGroupsCount = regExCaptureGroups.length;
+
+  invariant(
+    captureGroupIndex < regExCaptureGroupsCount,
+    'formatTextInCaptureGroupIndex has bad captureGroupIndex parameter.',
+  );
+
+  if (captureGroupIndex < regExCaptureGroupsCount) {
+    const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
+    const anchorTextNodeWithOffset =
+      captureGroupDetail.anchorTextNodeWithOffset;
+    const focusTextNodeWithOffset = captureGroupDetail.focusTextNodeWithOffset;
+    if (
+      anchorTextNodeWithOffset != null &&
+      focusTextNodeWithOffset != null &&
+      captureGroupDetail.textLength > 0
+    ) {
+      const newSelection = $createSelection();
+
+      newSelection.anchor.set(
+        anchorTextNodeWithOffset.node.getKey(),
+        anchorTextNodeWithOffset.offset,
+        'text',
+      );
+
+      newSelection.focus.set(
+        focusTextNodeWithOffset.node.getKey(),
+        focusTextNodeWithOffset.offset,
+        'text',
+      );
+
+      $setSelection(newSelection);
+      const currentSelection = $getSelection();
+      if (currentSelection != null) {
+        currentSelection.formatText(formatType);
+      }
+    }
+  }
+}

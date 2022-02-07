@@ -48,5 +48,8 @@
   "46": "rootNode.append: Only element or decorator nodes can be appended to the root node",
   "47": "getListItemValue: list node is not parent of list item node",
   "48": "Should never happen",
-  "49": "append: attemtping to append self"
+  "49": "append: attemtping to append self",
+  "50": "Node %s and selection point do not match.",
+  "51": "setIndent is not implemented on ListItemNode",
+  "52": "Expected node %s to to be a ElementNode."
 }

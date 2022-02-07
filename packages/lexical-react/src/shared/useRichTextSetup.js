@@ -220,6 +220,16 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
             case 'keyBackspace': {
               const event: KeyboardEvent = payload;
               event.preventDefault();
+              const {anchor} = selection;
+              if (selection.isCollapsed() && anchor.offset === 0) {
+                const element =
+                  anchor.type === 'element'
+                    ? anchor.getNode()
+                    : anchor.getNode().getParentOrThrow();
+                if (element.getIndent() > 0) {
+                  return editor.execCommand('outdentContent');
+                }
+              }
               return editor.execCommand('deleteCharacter', true);
             }
             case 'keyDelete': {

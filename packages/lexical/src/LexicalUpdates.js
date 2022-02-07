@@ -18,7 +18,10 @@ import type {LexicalNode} from './LexicalNode';
 import type {ParsedNode, NodeParserState} from './LexicalParsing';
 
 import {updateEditorState} from './LexicalReconciler';
-import {$createSelection, $createSelectionFromParse} from './LexicalSelection';
+import {
+  internalCreateSelection,
+  internalCreateSelectionFromParse,
+} from './LexicalSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {resetEditor} from './LexicalEditor';
 import {initMutationObserver} from './LexicalMutations';
@@ -38,7 +41,7 @@ import {
   $garbageCollectDetachedDecorators,
   $garbageCollectDetachedNodes,
 } from './LexicalGC';
-import {$internalCreateNodeFromParse} from './LexicalParsing';
+import {internalCreateNodeFromParse} from './LexicalParsing';
 import {applySelectionTransforms} from './LexicalSelection';
 import {$isTextNode} from '.';
 import {$normalizeTextNode} from './LexicalNormalization';
@@ -258,7 +261,7 @@ export function parseEditorState(
     const parsedNodeMap = new Map(parsedEditorState._nodeMap);
     // $FlowFixMe: root always exists in Map
     const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
-    $internalCreateNodeFromParse(
+    internalCreateNodeFromParse(
       parsedRoot,
       parsedNodeMap,
       editor,
@@ -270,7 +273,7 @@ export function parseEditorState(
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
-  editorState._selection = $createSelectionFromParse(
+  editorState._selection = internalCreateSelectionFromParse(
     nodeParserState.remappedSelection || nodeParserState.originalSelection,
   );
   return editorState;
@@ -553,7 +556,7 @@ function beginUpdate(
 
   try {
     if (editorStateWasCloned) {
-      pendingEditorState._selection = $createSelection(editor);
+      pendingEditorState._selection = internalCreateSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();

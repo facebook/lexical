@@ -14,7 +14,7 @@ import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
-  $makeSelection,
+  internalMakeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
 } from '../../LexicalSelection';
@@ -424,7 +424,7 @@ export class TextNode extends LexicalNode {
       focusOffset = 0;
     }
     if (selection === null) {
-      return $makeSelection(
+      return internalMakeSelection(
         key,
         anchorOffset,
         key,

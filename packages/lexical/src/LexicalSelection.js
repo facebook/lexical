@@ -328,7 +328,7 @@ export class Selection {
 
   applyDOMRange(range: StaticRange): void {
     const editor = getActiveEditor();
-    const resolvedSelectionPoints = $resolveSelectionPoints(
+    const resolvedSelectionPoints = internalResolveSelectionPoints(
       range.startContainer,
       range.startOffset,
       range.endContainer,
@@ -1384,7 +1384,10 @@ function $removeSegment(node: TextNode, isBackward: boolean): void {
   }
 }
 
-function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
+function internalResolveSelectionPoint(
+  dom: Node,
+  offset: number,
+): null | PointType {
   let resolvedOffset = offset;
   let resolvedNode: LexicalNode | null;
   // If we have selection on an element, we will
@@ -1462,7 +1465,7 @@ function $resolveSelectionPoint(dom: Node, offset: number): null | PointType {
   return $createPoint(resolvedNode.__key, resolvedOffset, 'text');
 }
 
-function $resolveSelectionPoints(
+function internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
   focusDOM: null | Node,
@@ -1476,11 +1479,17 @@ function $resolveSelectionPoints(
   ) {
     return null;
   }
-  const resolvedAnchorPoint = $resolveSelectionPoint(anchorDOM, anchorOffset);
+  const resolvedAnchorPoint = internalResolveSelectionPoint(
+    anchorDOM,
+    anchorOffset,
+  );
   if (resolvedAnchorPoint === null) {
     return null;
   }
-  const resolvedFocusPoint = $resolveSelectionPoint(focusDOM, focusOffset);
+  const resolvedFocusPoint = internalResolveSelectionPoint(
+    focusDOM,
+    focusOffset,
+  );
   if (resolvedFocusPoint === null) {
     return null;
   }
@@ -1550,7 +1559,7 @@ function $resolveSelectionPoints(
 // This is used to make a selection when the existing
 // selection is null, i.e. forcing selection on the editor
 // when it current exists outside the editor.
-export function $makeSelection(
+export function internalMakeSelection(
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
@@ -1580,7 +1589,9 @@ function getActiveEventType(): string | void {
   return event && event.type;
 }
 
-export function $createSelection(editor: LexicalEditor): null | Selection {
+export function internalCreateSelection(
+  editor: LexicalEditor,
+): null | Selection {
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection
@@ -1629,7 +1640,7 @@ export function $createSelection(editor: LexicalEditor): null | Selection {
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
   // native selection.
-  const resolvedSelectionPoints = $resolveSelectionPoints(
+  const resolvedSelectionPoints = internalResolveSelectionPoints(
     anchorDOM,
     anchorOffset,
     focusDOM,
@@ -1657,7 +1668,7 @@ export function $getPreviousSelection(): null | Selection {
   return editor._editorState._selection;
 }
 
-export function $createSelectionFromParse(
+export function internalCreateSelectionFromParse(
   parsedSelection: null | {
     anchor: {
       key: string,

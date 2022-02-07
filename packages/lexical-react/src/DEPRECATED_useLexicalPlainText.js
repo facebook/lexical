@@ -17,6 +17,6 @@ export default function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
 ): void {
-  usePlainTextSetup(editor, true);
+  usePlainTextSetup(editor);
   useLexicalHistory(editor, externalHistoryState);
 }

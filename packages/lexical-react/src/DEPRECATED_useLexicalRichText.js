@@ -39,10 +39,16 @@ function textInitFn(editor: LexicalEditor): void {
   }
 }
 
+function clearEditor(editor: LexicalEditor): void {
+  const root = $getRoot();
+  root.clear();
+  initParagraph(root, editor);
+}
+
 export default function useLexicalRichText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
 ): void {
-  useRichTextSetup(editor, textInitFn);
+  useRichTextSetup(editor, textInitFn, clearEditor);
   useLexicalHistory(editor, externalHistoryState);
 }

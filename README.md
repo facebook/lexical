@@ -285,21 +285,57 @@ export function $isVideoNode(node: ?LexicalNode): boolean %checks {
 }
 ```
 
-Then assuming we have a toolbar button component to insert a video into the editor:
+As any other custom Lexical node, decorator nodes need to be registered _before_ they are used by calling `editor.registerNodes([VideoNode])`. A common pattern is to register custom nodes as a part of a plugin that uses those nodes. It's also a great place to define commands that will insert those custom nodes into the editor:
 
 ```js
-function ToolbarEmbedVideoButton(): React$Node {
+function VideoPlugin(): React$Node {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    // Registering custom node, note that it returns unregister callback to cleanup registry on unmount
+    const unregisterNodes = editor.registerNodes([VideoNode]);
+
+    // Similar with command listener, which returns unlisten callback
+    const removeListener = editor.addListener('command', (type, payload) => {
+
+      // Adding custom command that will be handled by this plugin
+      if (type === 'insertVideo') {
+        editor.update(() => {
+          const selection = $getSelection();
+          if (selection !== null) {
+            const url: string = payload;
+            selection.insertNodes([$createVideoNode(url)]);
+          }
+        });
+
+        // Returning true indicates that command is handled and no further propagation is required
+        return true;
+      }
+
+      return false;
+    }, 0);
+
+    return () => {
+      unregisterNodes();
+      removeListener();
+    };
+  }, [editor]);
+  
+  return null;
+}
+```
+
+Then assuming we have a some UE insert a video into the editor:
+
+```js
+function ToolbarVideoButton(): React$Node {
   const [editor] = useLexicalComposerContext();
   const insertVideo = useCallback((url) => {
-    editor.update(() => {
-      const selection = $getSelection();
-      if (selection !== null) {
-        selection.insertNodes([$createVideoNode(url)]);
-      }
-    });
+    // Executing command defined in a plugin
+    editor.execCommand('insertVideo', url);
   }, [editor]);
-  const showDialog = useEmbedVideoDialog({ onSubmit: insertVideo });
-  return <button onClick={showDialog}>Embed video</button>
+  const showDialog = useVideoDialog({ onSubmit: insertVideo });
+  return <button onClick={showDialog}>Add video</button>
 }
 ```
 

@@ -7,11 +7,7 @@
  * @flow strict
  */
 
-import type {
-  LexicalEditor,
-  RootNode,
-  CommandListenerEditorPriority,
-} from 'lexical';
+import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
 import type {Provider, Binding} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
@@ -20,8 +16,6 @@ import * as React from 'react';
 import {createPortal} from 'react-dom';
 
 import {useCallback, useEffect, useMemo} from 'react';
-import {$getSelection, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
   createBinding,
   createUndoManager,
@@ -35,30 +29,6 @@ import {initEditor} from './useRichTextSetup';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
-function shouldSelectParagraph(editor: LexicalEditor): boolean {
-  const activeElement = document.activeElement;
-  return (
-    $getSelection() !== null ||
-    (activeElement !== null && activeElement === editor.getRootElement())
-  );
-}
-
-function initParagraph(root: RootNode, editor: LexicalEditor): void {
-  const paragraph = $createParagraphNode();
-  root.append(paragraph);
-  if (shouldSelectParagraph(editor)) {
-    paragraph.select();
-  }
-}
-
-function richTextInitFn(editor: LexicalEditor): void {
-  const root = $getRoot();
-  const firstChild = root.getFirstChild();
-  if (firstChild === null) {
-    initParagraph(root, editor);
-  }
-}
-
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
@@ -66,7 +36,7 @@ export function useYjsCollaboration(
   docMap: Map<string, Doc>,
   name: string,
   color: string,
-  skipInit?: boolean,
+  initialPayloadFn?: (LexicalEditor) => void,
 ): [React$Node, Binding] {
   const binding = useMemo(
     () => createBinding(editor, provider, id, docMap),
@@ -95,12 +65,12 @@ export function useYjsCollaboration(
 
     const onSync = (isSynced: boolean) => {
       if (
-        !skipInit &&
+        initialPayloadFn != null &&
         isSynced &&
         root.isEmpty() &&
         root._xmlText._length === 0
       ) {
-        initEditor(editor, richTextInitFn);
+        initEditor(editor, initialPayloadFn);
       }
     };
 
@@ -159,7 +129,16 @@ export function useYjsCollaboration(
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
-  }, [binding, color, connect, disconnect, editor, name, provider, skipInit]);
+  }, [
+    binding,
+    color,
+    connect,
+    disconnect,
+    editor,
+    initialPayloadFn,
+    name,
+    provider,
+  ]);
 
   const cursorsContainer = useMemo(() => {
     const ref = (element) => {

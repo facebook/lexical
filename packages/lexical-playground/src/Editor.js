@@ -122,7 +122,7 @@ export default function Editor(): React$Node {
               <CollaborationPlugin
                 id="main"
                 providerFactory={createWebsocketProvider}
-                skipInit={skipCollaborationInit}
+                initialPayloadFn={textInitFn}
               />
             ) : (
               <HistoryPlugin externalHistoryState={historyState} />
@@ -147,6 +147,7 @@ export default function Editor(): React$Node {
             <PlainTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
+              // initialPayloadFn={!isCollab ? textInitFn : undefined}
               initialPayloadFn={textInitFn}
               clearEditorFn={clearEditor}
             />

@@ -21,10 +21,6 @@ module.exports = {
         '^lexical$': '<rootDir>/packages/lexical/src/index.js',
         '^lexical/HeadingNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalHeadingNode.js',
-        '^lexical/ListNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalListNode.js',
-        '^lexical/ListItemNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalListItemNode.js',
         '^lexical/TableNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalTableNode.js',
         '^lexical/TableRowNode$':
@@ -43,6 +39,7 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js',
         '^lexical/CodeHighlightNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js',
+        '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
         '^@lexical/react/useLexicalCanShowPlaceholder$':

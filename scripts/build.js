@@ -41,6 +41,7 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical/dist'));
   fs.removeSync(path.resolve('./packages/lexical-react/dist'));
   fs.removeSync(path.resolve('./packages/lexical-helpers/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-list/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
@@ -305,6 +306,12 @@ build(
   'Lexical Core',
   path.resolve('./packages/lexical/src/index.js'),
   path.resolve(`./packages/lexical/dist/${getFileName('Lexical')}`),
+);
+
+build(
+  'Lexical List',
+  path.resolve('./packages/lexical-list/src/index.js'),
+  path.resolve(`./packages/lexical-list/dist/${getFileName('LexicalList')}`),
 );
 
 lexicalNodes.forEach((module) => {

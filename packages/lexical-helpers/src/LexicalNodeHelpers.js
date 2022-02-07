@@ -7,14 +7,9 @@
  * @flow strict
  */
 
-import type {ListItemNode} from 'lexical/ListItemNode';
 import type {LexicalNode} from 'lexical';
-import type {ListNode} from 'lexical/ListNode';
 import type {TableNode} from 'lexical/TableNode';
 
-import {$isListNode} from 'lexical/ListNode';
-import {$isListItemNode} from 'lexical/ListItemNode';
-import invariant from 'shared/invariant';
 import {
   $isElementNode,
   $createTextNode,
@@ -52,76 +47,6 @@ export function $dfs__DEPRECATED(
       node = nextNode(node);
     }
   }
-}
-
-export function $getListDepth(listNode: ListNode): number {
-  let depth = 1;
-  let parent = listNode.getParent();
-  while (parent != null) {
-    if ($isListItemNode(parent)) {
-      const parentList = parent.getParent();
-      if ($isListNode(parentList)) {
-        depth++;
-        parent = parentList.getParent();
-        continue;
-      }
-      invariant(false, 'A ListItemNode must have a ListNode for a parent.');
-    }
-    return depth;
-  }
-  return depth;
-}
-
-export function $getTopListNode(listItem: ListItemNode): ListNode {
-  let list = listItem.getParent();
-  if (!$isListNode(list)) {
-    invariant(false, 'A ListItemNode must have a ListNode for a parent.');
-  }
-  let parent = list;
-  while (parent !== null) {
-    parent = parent.getParent();
-    if ($isListNode(parent)) {
-      list = parent;
-    }
-  }
-  return list;
-}
-
-export function $isLastItemInList(listItem: ListItemNode): boolean {
-  let isLast = true;
-  const firstChild = listItem.getFirstChild();
-  if ($isListNode(firstChild)) {
-    return false;
-  }
-  let parent = listItem;
-  while (parent !== null) {
-    if ($isListItemNode(parent)) {
-      if (parent.getNextSiblings().length > 0) {
-        isLast = false;
-      }
-    }
-    parent = parent.getParent();
-  }
-  return isLast;
-}
-
-// This should probably be $getAllChildrenOfType
-export function $getAllListItems(node: ListNode): Array<ListItemNode> {
-  let listItemNodes: Array<ListItemNode> = [];
-  //$FlowFixMe - the result of this will always be an array of ListItemNodes.
-  const listChildren: Array<ListItemNode> = node
-    .getChildren()
-    .filter($isListItemNode);
-  for (let i = 0; i < listChildren.length; i++) {
-    const listItemNode = listChildren[i];
-    const firstChild = listItemNode.getFirstChild();
-    if ($isListNode(firstChild)) {
-      listItemNodes = listItemNodes.concat($getAllListItems(firstChild));
-    } else {
-      listItemNodes.push(listItemNode);
-    }
-  }
-  return listItemNodes;
 }
 
 export function $getNearestNodeOfType<T: LexicalNode>(

@@ -29,8 +29,7 @@ import {
   $createParagraphNode,
 } from 'lexical';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {$createListNode} from 'lexical/ListNode';
-import {$createListItemNode} from 'lexical/ListItemNode';
+import {$createListNode, $createListItemNode} from '@lexical/list';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 import {$createCodeNode} from 'lexical/CodeNode';

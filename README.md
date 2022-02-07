@@ -226,7 +226,82 @@ editor.addListener('update', ({editorState}) => {
 
 ### Creating custom Lexical nodes
 
-TODO
+#### Creating decorator nodes
+Decorator node is a way to embed non-text components into the editor. It can be media embeds like videos, tweets, instagram posts or more complex components with its own internal state.
+
+Here's an example of how you can create a decorator node for embedding a video:
+
+```js
+export class VideoNode extends DecoratorNode {
+  __url: string;
+
+  static getType(): string {
+    return 'video';
+  }
+
+  static clone(node: VideoNode): VideoNode {
+    return new VideoNode(
+      node.__url,
+      node.__state,
+      node.__key,
+    );
+  }
+
+  constructor(
+    url: string,
+    state?: DecoratorMap,
+    key?: NodeKey,
+  ) {
+    super(state, key);
+    this.__url = url;
+  }
+
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+    const div = document.createElement('div');
+    div.style.display = 'contents';
+    return div;
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+
+  setURL(url: string): void {
+    const writable = this.getWritable();
+    writable.__url = url;
+  }
+
+  decorate(editor: LexicalEditor): React$Node {
+    return <VideoPlayer url={this.__url} />;
+  }
+}
+
+export function $createVideoNode(url: string): VideoNode {
+  return new VideoNode(url);
+}
+
+export function $isVideoNode(node: ?LexicalNode): boolean %checks {
+  return node instanceof VideoNode;
+}
+```
+
+Then assuming we have a toolbar button component to insert a video into the editor:
+
+```js
+function ToolbarEmbedVideoButton(): React$Node {
+  const [editor] = useLexicalComposerContext();
+  const insertVideo = useCallback((url) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if (selection !== null) {
+        selection.insertNodes([$createVideoNode(url)]);
+      }
+    });
+  }, [editor]);
+  const showDialog = useEmbedVideoDialog({ onSubmit: insertVideo });
+  return <button onClick={showDialog}>Embed video</button>
+}
+```
 
 ## Contributing to Lexical
 

@@ -409,7 +409,7 @@ class BaseLexicalEditor {
     const listenerSetOrMap = this._listeners[type];
     if (type === 'command') {
       if (priority === undefined) {
-        throw new Error('Listener for type "command" requires a "priority".');
+        invariant(false, 'Listener for type "command" requires a "priority".');
       }
 
       // $FlowFixMe: unsure how to csae this

@@ -14,6 +14,7 @@ import type {
   DecoratorMap,
   DecoratorEditor,
   NodeKey,
+  RootNode,
 } from 'lexical';
 
 import * as React from 'react';
@@ -23,6 +24,8 @@ import {
   $getNodeByKey,
   $setSelection,
   createDecoratorEditor,
+  $getRoot,
+  $getSelection,
 } from 'lexical';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -31,6 +34,7 @@ import {
   useCollaborationContext,
   CollaborationPlugin,
 } from '@lexical/react/LexicalCollaborationPlugin';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
@@ -75,6 +79,30 @@ const styles = stylex.create({
     pointerEvents: 'none',
   },
 });
+
+function shouldSelectParagraph(editor: LexicalEditor): boolean {
+  const activeElement = document.activeElement;
+  return (
+    $getSelection() !== null ||
+    (activeElement !== null && activeElement === editor.getRootElement())
+  );
+}
+
+function initParagraph(root: RootNode, editor: LexicalEditor): void {
+  const paragraph = $createParagraphNode();
+  root.append(paragraph);
+  if (shouldSelectParagraph(editor)) {
+    paragraph.select();
+  }
+}
+
+function textInitFn(editor: LexicalEditor): void {
+  const root = $getRoot();
+  const firstChild = root.getFirstChild();
+  if (firstChild === null) {
+    initParagraph(root, editor);
+  }
+}
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -284,7 +312,7 @@ function StickyComponent({
           <CollaborationPlugin
             id={decoratorEditor.id}
             providerFactory={createWebsocketProvider}
-            skipInit={false}
+            initialPayloadFn={textInitFn}
           />
         ) : (
           <HistoryPlugin externalHistoryState={historyState} />

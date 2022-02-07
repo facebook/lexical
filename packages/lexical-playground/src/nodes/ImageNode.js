@@ -483,7 +483,7 @@ function ImageComponent({
                 <CollaborationPlugin
                   id={decoratorEditor.id}
                   providerFactory={createWebsocketProvider}
-                  skipInit={false}
+                  initialPayloadFn={textInitFn}
                 />
               ) : (
                 <HistoryPlugin externalHistoryState={historyState} />

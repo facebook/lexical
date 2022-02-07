@@ -76,7 +76,7 @@ export function $createNodeFromParse(
 ): LexicalNode {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  return $internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
+  return internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
 }
 
 function createDecoratorValueFromParse(
@@ -133,7 +133,7 @@ function createDecoratorMapFromParse(
   return createDecoratorMap(editor, map);
 }
 
-export function $internalCreateNodeFromParse(
+export function internalCreateNodeFromParse(
   parsedNode: $FlowFixMe,
   parsedNodeMap: ParsedNodeMap,
   editor: LexicalEditor,
@@ -166,7 +166,7 @@ export function $internalCreateNodeFromParse(
       const childKey = children[i];
       const parsedChild = parsedNodeMap.get(childKey);
       if (parsedChild !== undefined) {
-        const child = $internalCreateNodeFromParse(
+        const child = internalCreateNodeFromParse(
           parsedChild,
           parsedNodeMap,
           editor,

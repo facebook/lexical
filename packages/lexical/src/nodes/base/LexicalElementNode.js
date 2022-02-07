@@ -13,7 +13,7 @@ import type {PointType, Selection} from '../../LexicalSelection';
 import {$isRootNode, $isTextNode, TextNode} from '../../';
 import {LexicalNode} from '../../LexicalNode';
 import {
-  $makeSelection,
+  internalMakeSelection,
   $getSelection,
   moveSelectionPointToSibling,
 } from '../../LexicalSelection';
@@ -216,7 +216,7 @@ export class ElementNode extends LexicalNode {
     }
     const key = this.__key;
     if (selection === null) {
-      return $makeSelection(
+      return internalMakeSelection(
         key,
         anchorOffset,
         key,

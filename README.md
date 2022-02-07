@@ -239,6 +239,8 @@ editor.addListener('update', ({editorState}) => {
    - `npm run test`
      - The server needs to be running for the e2e tests
 
+Note: for collaboration, ensure you start the websocket server separately with `npm run collab`.
+
 ### Optional but recommended, use VSCode for development
 
 1.  Download and install VSCode

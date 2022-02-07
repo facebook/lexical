@@ -27,6 +27,8 @@ import {
   $setSelection,
 } from 'lexical';
 import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$findMatchingParent} from '@lexical/helpers/nodes';
+import {$isTableCellNode} from 'lexical/TableCellNode';
 
 type Cell = {
   elem: HTMLElement,
@@ -412,8 +414,22 @@ function applyCustomTableHandlers(
   editor.addListener(
     'command',
     (type, payload) => {
+      const selection = $getSelection();
+
+      if (selection == null) {
+        return false;
+      }
+
+      const tableCellNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isTableCellNode(n),
+      );
+
+      if (!$isTableCellNode(tableCellNode)) {
+        return false;
+      }
+
       if (type === 'deleteCharacter') {
-        const selection = $getSelection();
         if (
           highlightedCells.length === 0 &&
           selection != null &&

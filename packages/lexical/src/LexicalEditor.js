@@ -404,7 +404,7 @@ class BaseLexicalEditor {
       | RootListener
       | TextContentListener
       | CommandListener,
-    priority?: CommandListenerPriority,
+    priority: CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];
     if (type === 'command') {

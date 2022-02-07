@@ -253,7 +253,7 @@ function applyCellSelection(
                   highlightedCells.forEach(({elem}) => {
                     const cellNode = $getNearestNodeFromDOMNode(elem);
 
-                    if (cellNode != null && $isElementNode(cellNode)) {
+                    if ($isElementNode(cellNode)) {
                       cellNode.clear();
 
                       const paragraphNode = $createParagraphNode();

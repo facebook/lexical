@@ -528,13 +528,12 @@ function applyCustomTableHandlers(
             (n) => $isElementNode(n),
           );
 
-          const isFirstChild =
-            elementParentNode === tableCellNode.getFirstChild();
-
-          const isLastChild =
-            elementParentNode === tableCellNode.getLastChild();
-
-          if (isFirstChild || isLastChild) {
+          if (
+            (type === 'keyArrowUp' &&
+              elementParentNode === tableCellNode.getFirstChild()) ||
+            (type === 'keyArrowDown' &&
+              elementParentNode === tableCellNode.getLastChild())
+          ) {
             event.preventDefault();
             event.stopImmediatePropagation();
 

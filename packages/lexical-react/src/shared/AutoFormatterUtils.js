@@ -388,7 +388,7 @@ function getNewNodeForCriteria(
           matchResultContext.regExCaptureGroups.length > 1
             ? matchResultContext.regExCaptureGroups[
                 matchResultContext.regExCaptureGroups.length - 1
-              ]
+              ].text
             : '1';
         const start = parseInt(startAsString, 10);
         newNode = $createListNode('ol', start);

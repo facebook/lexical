@@ -9,20 +9,18 @@
 
 import type {
   LexicalEditor,
-  RootNode,
   CommandListenerEditorPriority,
   TextFormatType,
   ElementFormatType,
 } from 'lexical';
 
-import {$log, $getSelection, $getRoot, $isElementNode} from 'lexical';
+import {$log, $getSelection, $isElementNode} from 'lexical';
 import {HeadingNode} from 'lexical/HeadingNode';
 import {ListNode} from 'lexical/ListNode';
 import {QuoteNode} from 'lexical/QuoteNode';
 import {CodeNode} from 'lexical/CodeNode';
 import {ParagraphNode} from 'lexical/ParagraphNode';
 import {ListItemNode} from 'lexical/ListItemNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
   onCutForRichText,
@@ -37,43 +35,25 @@ import withSubscriptions from '@lexical/react/withSubscriptions';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
-function shouldSelectParagraph(editor: LexicalEditor): boolean {
-  const activeElement = document.activeElement;
-  return (
-    $getSelection() !== null ||
-    (activeElement !== null && activeElement === editor.getRootElement())
-  );
-}
-
-function initParagraph(root: RootNode, editor: LexicalEditor): void {
-  const paragraph = $createParagraphNode();
-  root.append(paragraph);
-  if (shouldSelectParagraph(editor)) {
-    paragraph.select();
-  }
-}
-
-export function initEditor(editor: LexicalEditor): void {
+export function initEditor(
+  editor: LexicalEditor,
+  initialPayloadFn: (LexicalEditor) => void,
+): void {
   editor.update(() => {
     $log('initEditor');
-    const root = $getRoot();
-    const firstChild = root.getFirstChild();
-    if (firstChild === null) {
-      initParagraph(root, editor);
-    }
+    initialPayloadFn(editor);
   });
 }
 
 function clearEditor(
   editor: LexicalEditor,
+  clearEditorFn: (LexicalEditor) => void,
   callbackFn?: (callbackFn?: () => void) => void,
 ): void {
   editor.update(
     () => {
       $log('clearEditor');
-      const root = $getRoot();
-      root.clear();
-      initParagraph(root, editor);
+      clearEditorFn(editor);
     },
     {
       onUpdate: callbackFn,
@@ -81,7 +61,11 @@ function clearEditor(
   );
 }
 
-export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
+export function useRichTextSetup(
+  editor: LexicalEditor,
+  initialPayloadFn?: (LexicalEditor) => void,
+  clearEditorFn?: (LexicalEditor) => void,
+): void {
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
       editor.registerNodes([
@@ -257,7 +241,9 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
               return true;
             }
             case 'clearEditor': {
-              clearEditor(editor);
+              if (clearEditorFn != null) {
+                clearEditor(editor, clearEditorFn);
+              }
               return false;
             }
             case 'copy': {
@@ -289,12 +275,12 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
       ),
     );
 
-    if (init) {
-      initEditor(editor);
+    if (initialPayloadFn != null) {
+      initEditor(editor, initialPayloadFn);
     }
 
     return removeSubscriptions;
-  }, [editor, init]);
+  }, [clearEditorFn, editor, initialPayloadFn]);
 
   useLexicalDragonSupport(editor);
 }

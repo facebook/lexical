@@ -47,6 +47,7 @@ if (isClean) {
 
 const wwwMappings = {
   lexical: 'Lexical',
+  'lexical-list': 'LexicalList',
   'react-dom': 'ReactDOMComet',
   '@lexical/yjs': 'LexicalYjs',
 };
@@ -91,6 +92,7 @@ const externals = [
   // modules that use Stylex to www (the babel plugin on www
   // is different to that of the OSS version).
   'lexical',
+  '@lexical/list',
   '@lexical/yjs',
   'react-dom',
   'react',

@@ -13,6 +13,7 @@
     ],
     "license": "MIT",
     "version": "0.1.5",
+    "main": "LexicalList.js",
     "peerDependencies": {
       "lexical": "0.1.5"
     },

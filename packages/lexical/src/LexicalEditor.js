@@ -404,10 +404,14 @@ class BaseLexicalEditor {
       | RootListener
       | TextContentListener
       | CommandListener,
-    priority?: CommandListenerPriority,
+    priority: CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];
-    if (type === 'command' && priority !== undefined) {
+    if (type === 'command') {
+      if (priority === undefined) {
+        invariant(false, 'Listener for type "command" requires a "priority".');
+      }
+
       // $FlowFixMe: unsure how to csae this
       const commands: Array<Set<CommandListener>> = listenerSetOrMap;
       const commandSet = commands[priority];

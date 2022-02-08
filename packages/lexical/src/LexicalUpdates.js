@@ -514,12 +514,12 @@ function processNestedUpdates(editor: LexicalEditor): boolean {
       if (options.skipTransforms) {
         skipTransforms = true;
       }
-    }
-    if (onUpdate) {
-      editor._deferred.push(onUpdate);
-    }
-    if (tag) {
-      editor._updateTags.add(tag);
+      if (onUpdate) {
+        editor._deferred.push(onUpdate);
+      }
+      if (tag) {
+        editor._updateTags.add(tag);
+      }
     }
     nextUpdateFn();
   }

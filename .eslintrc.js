@@ -17,7 +17,7 @@ module.exports = {
     'no-function-declare-after-return',
     'react',
     'no-only-tests',
-    'eslint-plugin-stylex'
+    'eslint-plugin-stylex',
   ],
 
   parser: 'babel-eslint',
@@ -118,6 +118,13 @@ module.exports = {
         'no-var': ERROR,
         'prefer-const': ERROR,
         strict: OFF,
+      },
+    },
+    {
+      // node scripts should be console logging so don't lint against that
+      files: ['scripts/**/*.js'],
+      rules: {
+        'no-console': OFF,
       },
     },
   ],

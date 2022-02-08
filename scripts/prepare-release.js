@@ -3,8 +3,6 @@
 'use strict';
 
 const {exec} = require('child-process-promise');
-const fs = require('fs');
-const path = require('path');
 
 async function prepareLexicalCorePackage() {
   await exec(`rm -rf ./packages/lexical/npm`);

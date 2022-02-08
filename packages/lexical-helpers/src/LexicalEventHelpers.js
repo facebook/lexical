@@ -26,11 +26,11 @@ import {
   $log,
   $getSelection,
   $createLineBreakNode,
+  $createParagraphNode,
 } from 'lexical';
 import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 import {$createListNode} from 'lexical/ListNode';
 import {$createListItemNode} from 'lexical/ListItemNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
 import {$createCodeNode} from 'lexical/CodeNode';

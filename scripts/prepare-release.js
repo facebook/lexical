@@ -16,9 +16,6 @@ async function prepareLexicalCorePackage() {
     `mv ./packages/lexical/npm/LexicalCodeNode.js ./packages/lexical/npm/CodeNode.js`,
   );
   await exec(
-    `mv ./packages/lexical/npm/LexicalParagraphNode.js ./packages/lexical/npm/ParagraphNode.js`,
-  );
-  await exec(
     `mv ./packages/lexical/npm/LexicalQuoteNode.js ./packages/lexical/npm/QuoteNode.js`,
   );
   await exec(

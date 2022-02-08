@@ -7,13 +7,22 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, Selection, LexicalNode} from 'lexical';
-import type {ParagraphNode} from 'lexical/ParagraphNode';
+import type {
+  NodeKey,
+  EditorConfig,
+  Selection,
+  LexicalNode,
+  ParagraphNode,
+} from 'lexical';
 import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode, $createLineBreakNode, $isLineBreakNode} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {
+  ElementNode,
+  $createLineBreakNode,
+  $isLineBreakNode,
+  $createParagraphNode,
+} from 'lexical';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,

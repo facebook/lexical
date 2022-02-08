@@ -9,13 +9,13 @@
 
 import type {ElementNode, TextNode} from 'lexical';
 import type {LexicalNode, NodeKey} from 'lexical';
+
 import invariant from 'shared/invariant';
-import {$isElementNode} from 'lexical';
+import {$isElementNode, $createParagraphNode} from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createListItemNode} from 'lexical/ListItemNode';
 import {$createListNode} from 'lexical/ListNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$joinTextNodesFromElementNode} from '@lexical/helpers/text';
 

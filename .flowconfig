@@ -24,7 +24,6 @@ module.name_mapper='^lexical/TableNode' -> '<PROJECT_ROOT>/packages/lexical/src/
 module.name_mapper='^lexical/TableRowNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableRowNode.js'
 module.name_mapper='^lexical/TableCellNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableCellNode.js'
 module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalQuoteNode.js'
-module.name_mapper='^lexical/ParagraphNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalParagraphNode.js'
 module.name_mapper='^lexical/CodeNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeNode.js'
 module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalLinkNode.js'
 module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js'

@@ -11,9 +11,8 @@ import {
   $createHeadingNode,
   $isHeadingNode,
 } from 'lexical/HeadingNode';
-import {ParagraphNode} from 'lexical/ParagraphNode';
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
-import {$createTextNode, $getRoot} from 'lexical';
+import {$createTextNode, $getRoot, ParagraphNode} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {

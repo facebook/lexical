@@ -58,6 +58,11 @@ import {
   $isHorizontalRuleNode,
 } from './nodes/base/LexicalHorizontalRuleNode';
 import {
+  ParagraphNode,
+  $createParagraphNode,
+  $isParagraphNode,
+} from './nodes/base/LexicalParagraphNode';
+import {
   DecoratorNode,
   $isDecoratorNode,
   createDecoratorMap,
@@ -90,6 +95,7 @@ export {
   ElementNode,
   DecoratorNode,
   TextNode,
+  ParagraphNode,
   // Decorator state
   createDecoratorMap,
   createDecoratorEditor,
@@ -105,11 +111,13 @@ export {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  $isParagraphNode,
   // Used during read/update/transform
   $createHorizontalRuleNode,
   $createLineBreakNode,
   $createTextNode,
   $createNodeFromParse,
+  $createParagraphNode,
   $createSelection,
   $getRoot,
   $getNodeByKey,

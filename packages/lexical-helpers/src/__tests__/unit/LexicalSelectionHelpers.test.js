@@ -14,8 +14,8 @@ import {
   $getSelection,
   $getRoot,
   $getNodeByKey,
+  $createParagraphNode,
 } from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$cloneContents} from '@lexical/helpers/selection';
 import {
   createTestEditor,

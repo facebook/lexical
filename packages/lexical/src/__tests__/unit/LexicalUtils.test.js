@@ -20,8 +20,7 @@ import {
 
 import {initializeUnitTest} from '../utils';
 import {$getNodeByKey} from '../../LexicalUtils';
-import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
-import {TextNode} from 'lexical';
+import {TextNode, $createParagraphNode, ParagraphNode} from 'lexical';
 
 describe('LexicalUtils tests', () => {
   initializeUnitTest((testEnv) => {

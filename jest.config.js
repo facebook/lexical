@@ -19,8 +19,6 @@ module.exports = {
       testMatch: ['**/__tests__/unit/**/*.test.js'],
       moduleNameMapper: {
         '^lexical$': '<rootDir>/packages/lexical/src/index.js',
-        '^lexical/ParagraphNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalParagraphNode.js',
         '^lexical/HeadingNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalHeadingNode.js',
         '^lexical/ListNode$':

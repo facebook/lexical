@@ -20,13 +20,17 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode} from 'lexical/HeadingNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from 'lexical/ListNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {$isHorizontalRuleNode} from 'lexical';
-import {$log, $getNodeByKey, $getSelection} from 'lexical';
+import {
+  $log,
+  $getNodeByKey,
+  $getSelection,
+  $createParagraphNode,
+} from 'lexical';
 import {$isLinkNode} from 'lexical/LinkNode';
 import {
   $wrapLeafNodesInElements,

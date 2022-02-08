@@ -9,8 +9,7 @@
 
 import type {State} from 'lexical';
 
-import {$createTextNode, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createTextNode, $getRoot, $createParagraphNode} from 'lexical';
 import {
   $isTextContentEmpty,
   $isTextContentEmptyCurry,

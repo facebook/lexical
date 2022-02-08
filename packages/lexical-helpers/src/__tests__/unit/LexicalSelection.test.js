@@ -12,20 +12,17 @@ import {
   Selection,
   $getSelection,
   $getRoot,
+  $createParagraphNode,
 } from 'lexical';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
-
 import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
   $createTestElementNode,
   $createTestDecoratorNode,
   createTestEditor,
 } from '../../../../lexical/src/__tests__/utils';
-
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createListNode} from 'lexical/ListNode';
 import {$createListItemNode} from 'lexical/ListItemNode';
 import {$createLinkNode} from 'lexical/LinkNode';

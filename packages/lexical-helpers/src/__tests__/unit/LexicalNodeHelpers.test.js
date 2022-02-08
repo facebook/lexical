@@ -21,8 +21,12 @@ import {
   $areSiblingsNullOrSpace,
   $getNearestNodeOfType,
 } from '@lexical/helpers/nodes';
-import {$createParagraphNode, $isParagraphNode} from 'lexical/ParagraphNode';
-import {$createTextNode, $getRoot} from 'lexical';
+import {
+  $createTextNode,
+  $getRoot,
+  $createParagraphNode,
+  $isParagraphNode,
+} from 'lexical';
 import {$createListNode, ListNode} from 'lexical/ListNode';
 import {$createListItemNode} from 'lexical/ListItemNode';
 

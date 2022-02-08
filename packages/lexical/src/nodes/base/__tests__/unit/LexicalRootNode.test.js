@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isRootNode, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$isRootNode, $getRoot, $createParagraphNode} from 'lexical';
 import {$createRootNode} from '../../LexicalRootNode';
 import {
   $createTestDecoratorNode,

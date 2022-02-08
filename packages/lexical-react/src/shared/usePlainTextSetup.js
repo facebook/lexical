@@ -13,8 +13,7 @@ import type {
   CommandListenerEditorPriority,
 } from 'lexical';
 
-import {$log, $getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
+import {$log, $getRoot, $getSelection, $createParagraphNode} from 'lexical';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
   onCutForPlainText,
@@ -79,7 +78,6 @@ export default function usePlainTextSetup(
 ): void {
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
-      editor.registerNodes([ParagraphNode]),
       editor.addListener(
         'command',
         (type, payload): boolean => {

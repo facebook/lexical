@@ -21,11 +21,11 @@ import {
   $getRoot,
   $isLineBreakNode,
   $isTextNode,
+  $createParagraphNode,
 } from 'lexical';
 import {$createTableNode} from 'lexical/TableNode';
 import {$createTableRowNode} from 'lexical/TableRowNode';
 import {$createTableCellNode} from 'lexical/TableCellNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 export function $dfs__DEPRECATED(
   startingNode: LexicalNode,

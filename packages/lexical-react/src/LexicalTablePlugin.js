@@ -11,12 +11,11 @@ import type {ElementNode, CommandListenerEditorPriority} from 'lexical';
 
 import {useEffect} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$log, $getSelection} from 'lexical';
+import {$log, $getSelection, $createParagraphNode} from 'lexical';
 import {TableNode} from 'lexical/TableNode';
 import {TableCellNode} from 'lexical/TableCellNode';
 import {TableRowNode} from 'lexical/TableRowNode';
 import {$createTableNodeWithDimensions} from '@lexical/helpers/nodes';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

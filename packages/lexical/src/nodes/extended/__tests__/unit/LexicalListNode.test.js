@@ -13,8 +13,7 @@ import {
   $isListItemNode,
   ListItemNode,
 } from 'lexical/ListItemNode';
-import {TextNode} from 'lexical';
-import {ParagraphNode} from '../../LexicalParagraphNode';
+import {TextNode, ParagraphNode} from 'lexical';
 import {ListNode} from '../../LexicalListNode';
 
 const editorConfig = Object.freeze({

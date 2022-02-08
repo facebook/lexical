@@ -6,7 +6,7 @@ module.exports = {
   },
   webpack: {
     alias: {
-      // Lexical Core Nodes
+      // Lexical Extended Nodes
       'lexical/HeadingNode': 'lexical/dist/LexicalHeadingNode',
       'lexical/ListNode': 'lexical/dist/LexicalListNode',
       'lexical/ListItemNode': 'lexical/dist/LexicalListItemNode',
@@ -14,7 +14,6 @@ module.exports = {
       'lexical/TableRowNode': 'lexical/dist/LexicalTableRowNode',
       'lexical/TableCellNode': 'lexical/dist/LexicalTableCellNode',
       'lexical/QuoteNode': 'lexical/dist/LexicalQuoteNode',
-      'lexical/ParagraphNode': 'lexical/dist/LexicalParagraphNode',
       'lexical/CodeNode': 'lexical/dist/LexicalCodeNode',
       'lexical/LinkNode': 'lexical/dist/LexicalLinkNode',
       'lexical/AutoLinkNode': 'lexical/dist/LexicalAutoLinkNode',

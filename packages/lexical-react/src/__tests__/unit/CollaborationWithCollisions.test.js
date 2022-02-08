@@ -24,8 +24,8 @@ import {
   $isTextNode,
   Selection,
   LexicalNode,
+  $createParagraphNode,
 } from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();

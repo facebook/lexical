@@ -23,6 +23,7 @@ import {
   $setCompositionKey,
   toggleTextFormatType,
   $internallyMarkSiblingsAsDirty,
+  getCachedClassNameArray,
 } from '../../LexicalUtils';
 import invariant from 'shared/invariant';
 import {errorOnReadOnly} from '../../LexicalUpdates';
@@ -70,24 +71,6 @@ function getElementInnerTag(node: TextNode, format: number): string {
   return 'span';
 }
 
-function getCachedTextClassNameArray(
-  textNodeClassNamesTheme: TextNodeThemeClasses,
-  textNodeClassNameThemeType: string,
-): Array<string> | void {
-  const classNames = textNodeClassNamesTheme[textNodeClassNameThemeType];
-  // As we're using classList, we need
-  // to handle className tokens that have spaces.
-  // The easiest way to do this to convert the
-  // className tokens to an array that can be
-  // applied to classList.add()/remove().
-  if (typeof classNames === 'string') {
-    const classNamesArr = classNames.split(' ');
-    textNodeClassNamesTheme[textNodeClassNameThemeType] = classNamesArr;
-    return classNamesArr;
-  }
-  return classNames;
-}
-
 function setTextThemeClassNames(
   tag: string,
   prevFormat: number,
@@ -97,7 +80,10 @@ function setTextThemeClassNames(
 ): void {
   const domClassList = dom.classList;
   // Firstly we handle the base theme.
-  let classNames = getCachedTextClassNameArray(textClassNames, 'base');
+  let classNames = getCachedClassNameArray<TextNodeThemeClasses>(
+    textClassNames,
+    'base',
+  );
   if (classNames !== undefined) {
     domClassList.add(...classNames);
   }
@@ -106,7 +92,7 @@ function setTextThemeClassNames(
   // the same CSS property will need to be used: text-decoration.
   // In an ideal world we shouldn't have to do this, but there's no
   // easy workaround for many atomic CSS systems today.
-  classNames = getCachedTextClassNameArray(
+  classNames = getCachedClassNameArray<TextNodeThemeClasses>(
     textClassNames,
     'underlineStrikethrough',
   );
@@ -131,7 +117,10 @@ function setTextThemeClassNames(
     // $FlowFixMe: expected cast here
     const format: TextFormatType = key;
     const flag = TEXT_TYPE_TO_FORMAT[format];
-    classNames = getCachedTextClassNameArray(textClassNames, key);
+    classNames = getCachedClassNameArray<TextNodeThemeClasses>(
+      textClassNames,
+      key,
+    );
     if (classNames !== undefined) {
       if (nextFormat & flag) {
         if (

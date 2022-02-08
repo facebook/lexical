@@ -8,9 +8,11 @@
  */
 
 import type {LexicalNode, NodeKey, EditorConfig} from 'lexical';
+import type {EditorThemeClasses} from '../../LexicalEditor';
 
-import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {$isElementNode, $isTextNode, ElementNode} from 'lexical';
+import {getCachedClassNameArray} from '../../LexicalUtils';
+import {$isElementNode, ElementNode} from './LexicalElementNode';
+import {$isTextNode} from './LexicalTextNode';
 
 export class ParagraphNode extends ElementNode {
   static getType(): string {
@@ -28,9 +30,16 @@ export class ParagraphNode extends ElementNode {
   // View
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
-    const element = document.createElement('p');
-    addClassNamesToElement(element, config.theme.paragraph);
-    return element;
+    const dom = document.createElement('p');
+    const classNames = getCachedClassNameArray<EditorThemeClasses>(
+      config.theme,
+      'paragraph',
+    );
+    if (classNames !== undefined) {
+      const domClassList = dom.classList;
+      domClassList.add(...classNames);
+    }
+    return dom;
   }
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean {
     return false;

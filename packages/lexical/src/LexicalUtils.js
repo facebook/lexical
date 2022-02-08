@@ -772,3 +772,21 @@ export function isEscape(keyCode: number): boolean {
 export function isDelete(keyCode: number): boolean {
   return keyCode === 46;
 }
+
+export function getCachedClassNameArray<Theme: {...}>(
+  classNamesTheme: Theme,
+  classNameThemeType: string,
+): Array<string> | void {
+  const classNames = classNamesTheme[classNameThemeType];
+  // As we're using classList, we need
+  // to handle className tokens that have spaces.
+  // The easiest way to do this to convert the
+  // className tokens to an array that can be
+  // applied to classList.add()/remove().
+  if (typeof classNames === 'string') {
+    const classNamesArr = classNames.split(' ');
+    classNamesTheme[classNameThemeType] = classNamesArr;
+    return classNamesArr;
+  }
+  return classNames;
+}

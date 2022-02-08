@@ -14,7 +14,8 @@ import {
   LexicalComposerContext,
   createLexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import React, {useContext, useMemo} from 'react';
+import withSubscriptions from '@lexical/react/withSubscriptions';
+import React, {useContext, useLayoutEffect, useMemo} from 'react';
 
 type Props = {
   initialConfig?: {
@@ -83,6 +84,7 @@ export default function LexicalComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
   return (
     <LexicalComposerContext.Provider value={composerContext}>
       {children}

@@ -31,7 +31,6 @@ import ImagesPlugin from './plugins/ImagesPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import HorizontalRulePlugin from '@lexical/react/LexicalHorizontalRulePlugin';
-import StickyPlugin from './plugins/StickyPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
@@ -107,7 +106,6 @@ export default function Editor(): React$Node {
           !isRichText ? 'plain-text' : ''
         }`}>
         <AutoFocusPlugin />
-        <StickyPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
         <ExcalidrawPlugin />

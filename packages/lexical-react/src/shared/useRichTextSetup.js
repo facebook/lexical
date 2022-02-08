@@ -14,13 +14,7 @@ import type {
   ElementFormatType,
 } from 'lexical';
 
-import {
-  $log,
-  $getSelection,
-  $getRoot,
-  $isElementNode,
-  $createParagraphNode,
-} from 'lexical';
+import {$log, $getSelection, $isElementNode} from 'lexical';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
   onCutForRichText,

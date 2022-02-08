@@ -37,7 +37,7 @@ type OptionalProps = {
 export function useCharacterLimit(
   editor: LexicalEditor,
   maxCharacters: number,
-  optional: OptionalProps = {},
+  optional: OptionalProps = Object.freeze({}),
 ): void {
   const {
     strlen = (input) => input.length, // UTF-16

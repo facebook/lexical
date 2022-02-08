@@ -649,10 +649,10 @@ function beginUpdate(
       });
     }
   } else {
-    updateTags.clear();
-    editor._deferred = [];
     pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
+      updateTags.clear();
+      editor._deferred = [];
       editor._pendingEditorState = null;
     }
   }

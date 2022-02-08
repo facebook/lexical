@@ -12,8 +12,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, ElementNode, TextNode, DecoratorNode} from 'lexical';
-import {ParagraphNode} from 'lexical/ParagraphNode';
+import {
+  createEditor,
+  ElementNode,
+  TextNode,
+  DecoratorNode,
+  ParagraphNode,
+} from 'lexical';
 import {HeadingNode} from 'lexical/HeadingNode';
 import {ListNode} from 'lexical/ListNode';
 import {ListItemNode} from 'lexical/ListItemNode';

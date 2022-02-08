@@ -20,9 +20,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {$createTextNode, $getRoot, $getNodeByKey, $getSelection} from 'lexical';
+import {
+  $createTextNode,
+  $getRoot,
+  $getNodeByKey,
+  $getSelection,
+  $createParagraphNode,
+} from 'lexical';
 
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
   $getCompositionKey,
   getEditorStateTextContent,

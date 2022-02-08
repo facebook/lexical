@@ -11,8 +11,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, $createTextNode, $getRoot} from 'lexical';
-import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
+import {
+  createEditor,
+  $createTextNode,
+  $getRoot,
+  $createParagraphNode,
+  ParagraphNode,
+} from 'lexical';
 import useLexicalIsTextContentEmpty from '../../useLexicalIsTextContentEmpty';
 
 describe('useLexicalIsTextContentEmpty', () => {

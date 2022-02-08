@@ -225,8 +225,7 @@ editor.addListener('update', ({editorState}) => {
 ```
 
 ### Creating custom Lexical nodes
-
-TODO
+- [Creating custom decorator nodes](https://github.com/facebook/lexical/blob/main/examples/decorators.md)
 
 ## Contributing to Lexical
 
@@ -239,6 +238,8 @@ TODO
    - `npm run start`
    - `npm run test`
      - The server needs to be running for the e2e tests
+
+Note: for collaboration, ensure you start the websocket server separately with `npm run collab`.
 
 ### Optional but recommended, use VSCode for development
 

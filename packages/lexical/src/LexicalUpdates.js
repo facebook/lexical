@@ -498,22 +498,32 @@ function triggerDeferredUpdateCallbacks(editor: LexicalEditor): void {
   }
 }
 
-function processNestedUpdates(
-  editor: LexicalEditor,
-  deferred: Array<() => void>,
-): void {
+function processNestedUpdates(editor: LexicalEditor): boolean {
   const queuedUpdates = editor._updates;
+  let skipTransforms = false;
   // Updates might grow as we process them, we so we'll need
   // to handle each update as we go until the updates array is
   // empty.
   while (queuedUpdates.length !== 0) {
     const [nextUpdateFn, options] = queuedUpdates.shift();
-    const onUpdate = options !== undefined && options.onUpdate;
-    if (onUpdate) {
-      deferred.push(onUpdate);
+    let onUpdate;
+    let tag;
+    if (options !== undefined) {
+      onUpdate = options.onUpdate;
+      tag = options.tag;
+      if (options.skipTransforms) {
+        skipTransforms = true;
+      }
+      if (onUpdate) {
+        editor._deferred.push(onUpdate);
+      }
+      if (tag) {
+        editor._updateTags.add(tag);
+      }
     }
     nextUpdateFn();
   }
+  return skipTransforms;
 }
 
 function beginUpdate(
@@ -522,7 +532,7 @@ function beginUpdate(
   skipEmptyCheck: boolean,
   options?: EditorUpdateOptions,
 ): void {
-  const deferred = editor._deferred;
+  const updateTags = editor._updateTags;
   let onUpdate;
   let tag;
   let skipTransforms = false;
@@ -530,10 +540,13 @@ function beginUpdate(
   if (options !== undefined) {
     onUpdate = options.onUpdate;
     tag = options.tag;
+    if (tag != null) {
+      updateTags.add(tag);
+    }
     skipTransforms = options.skipTransforms;
   }
   if (onUpdate) {
-    deferred.push(onUpdate);
+    editor._deferred.push(onUpdate);
   }
   const currentEditorState = editor._editorState;
   let pendingEditorState = editor._pendingEditorState;
@@ -560,7 +573,7 @@ function beginUpdate(
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();
-    processNestedUpdates(editor, deferred);
+    skipTransforms = processNestedUpdates(editor);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       if (!skipEmptyCheck && pendingEditorState.isEmpty()) {
@@ -574,7 +587,7 @@ function beginUpdate(
       } else {
         $applyAllTransforms(pendingEditorState, editor);
       }
-      processNestedUpdates(editor, deferred);
+      processNestedUpdates(editor);
       $garbageCollectDetachedNodes(
         currentEditorState,
         pendingEditorState,
@@ -627,9 +640,6 @@ function beginUpdate(
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
-    if (tag != null) {
-      editor._updateTags.add(tag);
-    }
     if (pendingEditorState._flushSync) {
       pendingEditorState._flushSync = false;
       commitPendingUpdates(editor);
@@ -639,10 +649,8 @@ function beginUpdate(
       });
     }
   } else {
-    if (onUpdate) {
-      const index = deferred.indexOf(onUpdate);
-      deferred.splice(index, 1);
-    }
+    updateTags.clear();
+    editor._deferred = [];
     pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
       editor._pendingEditorState = null;

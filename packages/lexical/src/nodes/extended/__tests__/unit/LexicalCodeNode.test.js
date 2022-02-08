@@ -7,8 +7,12 @@
  */
 
 import {$createCodeNode} from 'lexical/CodeNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
-import {$createTextNode, $getRoot, $getSelection} from 'lexical';
+import {
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $createParagraphNode,
+} from 'lexical';
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({

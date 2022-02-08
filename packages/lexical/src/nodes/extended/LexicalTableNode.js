@@ -19,12 +19,16 @@ import type {
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {
   ElementNode,
+  $createTextNode,
   $getNearestNodeFromDOMNode,
   $isElementNode,
   $createSelection,
+  $createParagraphNode,
   $getSelection,
   $setSelection,
 } from 'lexical';
+import {$findMatchingParent} from '@lexical/helpers/nodes';
+import {$isTableCellNode} from 'lexical/TableCellNode';
 
 type Cell = {
   elem: HTMLElement,
@@ -192,17 +196,20 @@ function updateCells(
   return highlighted;
 }
 
-function applyCellSelection(
+function applyCustomTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
 ): void {
-  const grid = tableNode.getGrid();
-
   const rootElement = editor.getRootElement();
   if (rootElement === null) {
     return;
   }
+
+  trackTableGrid(tableNode, tableElement, editor);
+
+  const grid = tableNode.getGrid();
+
   let isSelected = false;
   let isHighlightingCells = false;
   let startX = -1;
@@ -250,10 +257,18 @@ function applyCellSelection(
                   }
                   highlightedCells.forEach(({elem}) => {
                     const cellNode = $getNearestNodeFromDOMNode(elem);
+
                     if ($isElementNode(cellNode)) {
                       cellNode.clear();
+
+                      const paragraphNode = $createParagraphNode();
+                      const textNode = $createTextNode();
+                      paragraphNode.append(textNode);
+                      cellNode.append(paragraphNode);
                     }
                   });
+                  tableNode.setSelectionState(null);
+                  $setSelection(null);
                   return true;
                 } else if (type === 'formatText') {
                   formatCells(payload);
@@ -395,6 +410,40 @@ function applyCellSelection(
       });
     }
   });
+
+  editor.addListener(
+    'command',
+    (type, payload) => {
+      const selection = $getSelection();
+
+      if (selection == null) {
+        return false;
+      }
+
+      const tableCellNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isTableCellNode(n),
+      );
+
+      if (!$isTableCellNode(tableCellNode)) {
+        return false;
+      }
+
+      if (type === 'deleteCharacter') {
+        if (
+          highlightedCells.length === 0 &&
+          selection != null &&
+          selection.isCollapsed() &&
+          selection.anchor.offset === 0
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+    LowPriority,
+  );
 }
 
 export class TableNode extends ElementNode {
@@ -432,8 +481,7 @@ export class TableNode extends ElementNode {
 
     addClassNamesToElement(element, config.theme.table);
 
-    trackTableGrid(this, element, editor);
-    applyCellSelection(this, element, editor);
+    applyCustomTableHandlers(this, element, editor);
 
     return element;
   }

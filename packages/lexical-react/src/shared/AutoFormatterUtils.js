@@ -13,16 +13,17 @@ import type {TextNodeWithOffset} from '@lexical/helpers/text';
 
 import invariant from 'shared/invariant';
 import {
+  $createParagraphNode,
   $createSelection,
   $getSelection,
   $isElementNode,
   $setSelection,
 } from 'lexical';
+
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createListItemNode} from 'lexical/ListItemNode';
 import {$createListNode} from 'lexical/ListNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {
   $joinTextNodesInElementNode,

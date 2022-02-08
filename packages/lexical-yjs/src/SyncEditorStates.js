@@ -30,6 +30,7 @@ import {
   $getNodeByKey,
   isDecoratorArray,
   isDecoratorMap,
+  $createParagraphNode,
 } from 'lexical';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -45,7 +46,6 @@ import {
 } from './SyncCursors';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {$createOffsetView} from '@lexical/helpers/offsets';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
   mutationFromCollab,
   syncYjsDecoratorMapToLexical,

@@ -42,7 +42,7 @@ function readTextFileFromSystem(callback: (text: string) => void) {
 
 export function exportFile(
   editor: LexicalEditor,
-  config?: $ReadOnly<{source?: string, fileName?: string}> = {},
+  config?: $ReadOnly<{source?: string, fileName?: string}> = Object.freeze({}),
 ) {
   const now = new Date();
   const editorState = editor.getEditorState();

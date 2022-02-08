@@ -47,6 +47,7 @@ export type CursorSelection = {
     key: NodeKey,
     offset: number,
   },
+  name: HTMLSpanElement,
 };
 
 export type Cursor = {

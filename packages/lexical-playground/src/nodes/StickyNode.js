@@ -282,7 +282,7 @@ function StickyComponent({
           <CollaborationPlugin
             id={decoratorEditor.id}
             providerFactory={createWebsocketProvider}
-            initEditorState={false}
+            skipInit={false}
           />
         ) : (
           <HistoryPlugin externalHistoryState={historyState} />

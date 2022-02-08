@@ -18,8 +18,6 @@ server.max_workers=4
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/src/index.js'
 
 module.name_mapper='^lexical/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalHeadingNode.js'
-module.name_mapper='^lexical/ListNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalListNode.js'
-module.name_mapper='^lexical/ListItemNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalListItemNode.js'
 module.name_mapper='^lexical/TableNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableNode.js'
 module.name_mapper='^lexical/TableRowNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableRowNode.js'
 module.name_mapper='^lexical/TableCellNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableCellNode.js'
@@ -29,6 +27,8 @@ module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/n
 module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js'
 module.name_mapper='^lexical/HashtagNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js'
 module.name_mapper='^lexical/CodeHighlightNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js'
+
+module.name_mapper='^@lexical/list' -> '<PROJECT_ROOT>/packages/lexical-list/src/index.js'
 
 module.name_mapper='^@lexical/helpers/selection' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalSelectionHelpers.js'
 module.name_mapper='^@lexical/helpers/text' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalTextHelpers.js'

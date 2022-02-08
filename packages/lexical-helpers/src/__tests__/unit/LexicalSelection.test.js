@@ -23,8 +23,7 @@ import {
   $createTestDecoratorNode,
   createTestEditor,
 } from '../../../../lexical/src/__tests__/utils';
-import {$createListNode} from 'lexical/ListNode';
-import {$createListItemNode} from 'lexical/ListItemNode';
+import {$createListNode, $createListItemNode} from '@lexical/list';
 import {$createLinkNode} from 'lexical/LinkNode';
 
 jest.mock('shared/environment', () => {

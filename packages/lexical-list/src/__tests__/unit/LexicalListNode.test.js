@@ -15,7 +15,7 @@ import {
   ListItemNode,
 } from '@lexical/list';
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
-import {TextNode, ParagaphNode} from 'lexical';
+import {TextNode, ParagraphNode} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {

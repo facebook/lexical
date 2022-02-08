@@ -8,12 +8,8 @@
  */
 
 import type {LexicalNode} from 'lexical';
-import {
-  ListNode,
-  ListItemNode,
-  $isListNode,
-  $isListItemNode,
-} from '@lexical/list';
+import type {ListNode} from '@lexical/list';
+import {ListItemNode, $isListNode, $isListItemNode} from '@lexical/list';
 import invariant from 'shared/invariant';
 
 export function $getListDepth(listNode: ListNode): number {

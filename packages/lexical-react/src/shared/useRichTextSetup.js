@@ -23,10 +23,9 @@ import {
   $createParagraphNode,
 } from 'lexical';
 import {HeadingNode} from 'lexical/HeadingNode';
-import {ListNode} from 'lexical/ListNode';
+import {ListNode, ListItemNode} from '@lexical/list';
 import {QuoteNode} from 'lexical/QuoteNode';
 import {CodeNode} from 'lexical/CodeNode';
-import {ListItemNode} from 'lexical/ListItemNode';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
   onCutForRichText,

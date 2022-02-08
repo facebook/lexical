@@ -15,7 +15,8 @@
   "license": "MIT",
   "version": "0.1.6",
   "peerDependencies": {
-    "lexical": "0.1.6"
+    "lexical": "0.1.6",
+    "@lexical/list": "0.1.6"
   },
   "repository": {
     "type": "git",

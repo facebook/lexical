@@ -15,13 +15,13 @@ import type {
 } from 'lexical';
 
 import {$createTextNode, ElementNode} from 'lexical';
-import {$createListItemNode, $isListItemNode} from 'lexical/ListItemNode';
+import {$createListItemNode, $isListItemNode} from '@lexical/list';
 
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/helpers/elements';
-import {$getListDepth} from '@lexical/helpers/nodes';
+import {$getListDepth} from './utils';
 
 type ListNodeTagType = 'ul' | 'ol';
 

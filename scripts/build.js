@@ -41,11 +41,13 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical/dist'));
   fs.removeSync(path.resolve('./packages/lexical-react/dist'));
   fs.removeSync(path.resolve('./packages/lexical-helpers/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-list/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
   lexical: 'Lexical',
+  'lexical-list': 'LexicalList',
   'react-dom': 'ReactDOMComet',
   '@lexical/yjs': 'LexicalYjs',
 };
@@ -90,6 +92,7 @@ const externals = [
   // modules that use Stylex to www (the babel plugin on www
   // is different to that of the OSS version).
   'lexical',
+  '@lexical/list',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -305,6 +308,12 @@ build(
   'Lexical Core',
   path.resolve('./packages/lexical/src/index.js'),
   path.resolve(`./packages/lexical/dist/${getFileName('Lexical')}`),
+);
+
+build(
+  'Lexical List',
+  path.resolve('./packages/lexical-list/src/index.js'),
+  path.resolve(`./packages/lexical-list/dist/${getFileName('LexicalList')}`),
 );
 
 lexicalNodes.forEach((module) => {

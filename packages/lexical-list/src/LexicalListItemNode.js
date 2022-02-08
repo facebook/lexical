@@ -22,9 +22,9 @@ import {
   $createParagraphNode,
   $isParagraphNode,
 } from 'lexical';
-import {$createListNode, $isListNode} from 'lexical/ListNode';
+import {$createListNode, $isListNode} from '@lexical/list';
 import invariant from 'shared/invariant';
-import {$getTopListNode, $isLastItemInList} from '@lexical/helpers/nodes';
+import {$getTopListNode, $isLastItemInList} from './utils';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,

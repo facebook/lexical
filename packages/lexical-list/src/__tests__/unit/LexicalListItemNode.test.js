@@ -6,14 +6,14 @@
  *
  */
 
-import {ListNode} from 'lexical/ListNode';
 import {
+  ListNode,
   ListItemNode,
   $createListItemNode,
   $isListItemNode,
-} from 'lexical/ListItemNode';
+} from '@lexical/list';
 import {TextNode, $getRoot} from 'lexical';
-import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
+import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   theme: {

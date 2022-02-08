@@ -17,7 +17,7 @@ import type {
   TextNodeWithOffset,
 } from './AutoFormatterUtils.js';
 import {$isCodeNode} from 'lexical/CodeNode';
-import {$isListItemNode} from 'lexical/ListItemNode';
+import {$isListItemNode} from '@lexical/list';
 import {$isElementNode, $isTextNode, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 import {

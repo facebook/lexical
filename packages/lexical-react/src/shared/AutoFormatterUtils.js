@@ -7,15 +7,13 @@
  * @flow strict
  */
 
-import type {ElementNode, TextNode} from 'lexical';
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {ElementNode, TextNode, LexicalNode, NodeKey} from 'lexical';
 
 import invariant from 'shared/invariant';
 import {$isElementNode, $createParagraphNode} from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$createListItemNode} from 'lexical/ListItemNode';
-import {$createListNode} from 'lexical/ListNode';
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$joinTextNodesFromElementNode} from '@lexical/helpers/text';
 

@@ -20,8 +20,7 @@ import {
   ParagraphNode,
 } from 'lexical';
 import {HeadingNode} from 'lexical/HeadingNode';
-import {ListNode} from 'lexical/ListNode';
-import {ListItemNode} from 'lexical/ListItemNode';
+import {ListNode, ListItemNode} from '@lexical/list';
 import {LinkNode} from 'lexical/LinkNode';
 import {QuoteNode} from 'lexical/QuoteNode';
 import {CodeNode} from 'lexical/CodeNode';

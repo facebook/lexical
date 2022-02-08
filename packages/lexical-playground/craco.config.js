@@ -31,6 +31,9 @@ module.exports = {
       '@lexical/helpers/offsets': '@lexical/helpers/dist/LexicalOffsetHelpers',
       '@lexical/helpers/root': '@lexical/helpers/dist/LexicalRootHelpers',
 
+      // Lexical Features
+      '@lexical/list': '@lexical/list/dist/LexicalList.js',
+
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',
       '@lexical/react/useLexicalEditor': '@lexical/react/dist/useLexicalEditor',

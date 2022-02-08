@@ -21,7 +21,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode} from 'lexical/HeadingNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$isListNode, ListNode} from 'lexical/ListNode';
+import {$isListNode, ListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {$isHorizontalRuleNode} from 'lexical';

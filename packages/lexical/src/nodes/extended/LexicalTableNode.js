@@ -19,12 +19,14 @@ import type {
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {
   ElementNode,
+  $createTextNode,
   $getNearestNodeFromDOMNode,
   $isElementNode,
   $createSelection,
   $getSelection,
   $setSelection,
 } from 'lexical';
+import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 type Cell = {
   elem: HTMLElement,
@@ -250,10 +252,18 @@ function applyCellSelection(
                   }
                   highlightedCells.forEach(({elem}) => {
                     const cellNode = $getNearestNodeFromDOMNode(elem);
+
                     if ($isElementNode(cellNode)) {
                       cellNode.clear();
+
+                      const paragraphNode = $createParagraphNode();
+                      const textNode = $createTextNode();
+                      paragraphNode.append(textNode);
+                      cellNode.append(paragraphNode);
                     }
                   });
+                  tableNode.setSelectionState(null);
+                  $setSelection(null);
                   return true;
                 } else if (type === 'formatText') {
                   formatCells(payload);

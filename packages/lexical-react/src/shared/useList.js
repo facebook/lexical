@@ -21,6 +21,7 @@ import {
   $isLeafNode,
   $isRootNode,
   $isElementNode,
+  $createParagraphNode,
 } from 'lexical';
 import {
   $createListItemNode,
@@ -34,7 +35,6 @@ import {
   $getNearestNodeOfType,
   $getTopListNode,
 } from '@lexical/helpers/nodes';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 
 const LowPriority: CommandListenerLowPriority = 1;
 

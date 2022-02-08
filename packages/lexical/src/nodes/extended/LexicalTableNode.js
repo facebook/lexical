@@ -23,10 +23,10 @@ import {
   $getNearestNodeFromDOMNode,
   $isElementNode,
   $createSelection,
+  $createParagraphNode,
   $getSelection,
   $setSelection,
 } from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 import {$isTableCellNode} from 'lexical/TableCellNode';
 

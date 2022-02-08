@@ -6,8 +6,7 @@
  *
  */
 
-import {$createTextNode, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createTextNode, $getRoot, $createParagraphNode} from 'lexical';
 import {EditorState} from '../../LexicalEditorState';
 import {initializeUnitTest} from '../utils';
 import {$createRootNode} from '../../nodes/base/LexicalRootNode';

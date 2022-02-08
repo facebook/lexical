@@ -15,14 +15,18 @@ import type {
   ElementFormatType,
 } from 'lexical';
 
-import {$log, $getSelection, $getRoot, $isElementNode} from 'lexical';
+import {
+  $log,
+  $getSelection,
+  $getRoot,
+  $isElementNode,
+  $createParagraphNode,
+} from 'lexical';
 import {HeadingNode} from 'lexical/HeadingNode';
 import {ListNode} from 'lexical/ListNode';
 import {QuoteNode} from 'lexical/QuoteNode';
 import {CodeNode} from 'lexical/CodeNode';
-import {ParagraphNode} from 'lexical/ParagraphNode';
 import {ListItemNode} from 'lexical/ListItemNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
   onCutForRichText,
@@ -89,7 +93,6 @@ export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
         ListNode,
         QuoteNode,
         CodeNode,
-        ParagraphNode,
         ListItemNode,
       ]),
       editor.addListener(

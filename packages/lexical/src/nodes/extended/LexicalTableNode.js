@@ -14,7 +14,9 @@ import type {
   NodeKey,
   TextFormatType,
   CommandListenerLowPriority,
+  CommandListenerCriticalPriority,
 } from 'lexical';
+import type {TableCellNode} from 'lexical/TableCellNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {
@@ -22,11 +24,13 @@ import {
   $createTextNode,
   $getNearestNodeFromDOMNode,
   $isElementNode,
+  $isTextNode,
   $createSelection,
   $createParagraphNode,
   $getSelection,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 import {$isTableCellNode} from 'lexical/TableCellNode';
 
@@ -53,6 +57,7 @@ type SelectionShape = {
 };
 
 const LowPriority: CommandListenerLowPriority = 1;
+const CriticalPriority: CommandListenerCriticalPriority = 4;
 
 const removeHighlightStyle = document.createElement('style');
 removeHighlightStyle.appendChild(
@@ -411,6 +416,66 @@ function applyCustomTableHandlers(
     }
   });
 
+  const selectGridNodeInDirection = (
+    x: number,
+    y: number,
+    direction: 'backward' | 'forward' | 'up' | 'down',
+  ): boolean => {
+    let nodeToSelect;
+
+    switch (direction) {
+      case 'backward':
+      case 'forward': {
+        const isForward = direction === 'forward';
+
+        if (y !== (isForward ? grid.columns - 1 : 0)) {
+          nodeToSelect = tableNode.getCellNodeFromCords(
+            x,
+            y + (isForward ? 1 : -1),
+          );
+        } else {
+          if (x !== (isForward ? grid.rows - 1 : 0)) {
+            nodeToSelect = tableNode.getCellNodeFromCords(
+              x + (isForward ? 1 : -1),
+              isForward ? 0 : grid.columns - 1,
+            );
+          } else if (!isForward) {
+            nodeToSelect = tableNode.getPreviousSibling();
+          } else {
+            nodeToSelect = tableNode.getNextSibling();
+          }
+        }
+
+        break;
+      }
+
+      case 'up': {
+        nodeToSelect =
+          x !== 0
+            ? tableNode.getCellNodeFromCords(x - 1, y)
+            : tableNode.getPreviousSibling();
+
+        break;
+      }
+
+      case 'down': {
+        nodeToSelect =
+          x !== grid.rows - 1
+            ? tableNode.getCellNodeFromCords(x + 1, y)
+            : tableNode.getNextSibling();
+
+        break;
+      }
+    }
+
+    if ($isElementNode(nodeToSelect) || $isTextNode(nodeToSelect)) {
+      nodeToSelect.select();
+      return true;
+    }
+
+    return false;
+  };
+
   editor.addListener(
     'command',
     (type, payload) => {
@@ -432,7 +497,6 @@ function applyCustomTableHandlers(
       if (type === 'deleteCharacter') {
         if (
           highlightedCells.length === 0 &&
-          selection != null &&
           selection.isCollapsed() &&
           selection.anchor.offset === 0
         ) {
@@ -440,9 +504,53 @@ function applyCustomTableHandlers(
         }
       }
 
+      if (type === 'indentContent' || type === 'outdentContent') {
+        if (selection.isCollapsed() && highlightedCells.length === 0) {
+          const currentCords = tableNode.getCordsFromCellNode(tableCellNode);
+
+          selectGridNodeInDirection(
+            currentCords.x,
+            currentCords.y,
+            type === 'indentContent' ? 'forward' : 'backward',
+          );
+
+          return true;
+        }
+      }
+
+      if (type === 'keyArrowDown' || type === 'keyArrowUp') {
+        const event: KeyboardEvent = payload;
+
+        if (selection.isCollapsed() && highlightedCells.length === 0) {
+          const currentCords = tableNode.getCordsFromCellNode(tableCellNode);
+          const elementParentNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            (n) => $isElementNode(n),
+          );
+
+          if (
+            (type === 'keyArrowUp' &&
+              elementParentNode === tableCellNode.getFirstChild()) ||
+            (type === 'keyArrowDown' &&
+              elementParentNode === tableCellNode.getLastChild())
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            selectGridNodeInDirection(
+              currentCords.x,
+              currentCords.y,
+              type === 'keyArrowUp' ? 'up' : 'down',
+            );
+
+            return true;
+          }
+        }
+      }
+
       return false;
     },
-    LowPriority,
+    CriticalPriority,
   );
 }
 
@@ -520,6 +628,56 @@ export class TableNode extends ElementNode {
 
   getSelectionState(): ?SelectionShape {
     return this.__selectionShape;
+  }
+
+  getCordsFromCellNode(tableCellNode: TableCellNode): {x: number, y: number} {
+    invariant(this.__grid, 'Grid not found.');
+
+    const {rows, cells} = this.__grid;
+
+    for (let x = 0; x < rows; x++) {
+      const row = cells[x];
+      if (row == null) {
+        throw new Error(`Row not found at x:${x}`);
+      }
+
+      const y = row.findIndex(({elem}) => {
+        const cellNode = $getNearestNodeFromDOMNode(elem);
+        return cellNode === tableCellNode;
+      });
+
+      if (y !== -1) {
+        return {x, y};
+      }
+    }
+
+    throw new Error('Cell not found in table.');
+  }
+
+  getCellNodeFromCords(x: number, y: number): TableCellNode {
+    invariant(this.__grid, 'Grid not found.');
+
+    const {cells} = this.__grid;
+
+    const row = cells[x];
+
+    if (row == null) {
+      throw new Error(`Table row x:"${x}" not found.`);
+    }
+
+    const cell = row[y];
+
+    if (cell == null) {
+      throw new Error(`Table cell y:"${y}" in row x:"${x}" not found.`);
+    }
+
+    const node = $getNearestNodeFromDOMNode(cell.elem);
+
+    if ($isTableCellNode(node)) {
+      return node;
+    }
+
+    throw new Error('Node at cords not TableCellNode.');
   }
 
   setGrid(grid: ?Grid): void {

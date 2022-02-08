@@ -1,14 +1,14 @@
 {
   "name": "lexical-playground",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "dependencies": {
     "react": "^18.0.0-alpha-64931821a-20210808",
     "react-dom": "^18.0.0-alpha-64931821a-20210808",
     "react-scripts": "4.0.0",
-    "lexical": "0.1.5",
-    "@lexical/react": "0.1.5",
-    "@lexical/helpers": "0.1.5",
+    "lexical": "0.1.6",
+    "@lexical/react": "0.1.6",
+    "@lexical/helpers": "0.1.6",
     "link-preview-generator": "1.0.7",
     "@craco/craco": "6.1.2",
     "@excalidraw/excalidraw": "latest",

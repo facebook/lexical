@@ -9,7 +9,6 @@
 
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import * as React from 'react';
-import { useCallback } from "react";
 import Editor from './Editor';
 import Settings from './Settings';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
@@ -22,12 +21,8 @@ function App(): React$Node {
   const {settings} = useSettings();
   const {measureTypingPerf} = settings;
 
-  const onError = useCallback(() => {
-    debugger
-  }, [])
-
   return (
-    <LexicalComposer namespace="PlaygroundEditor" theme={PlaygroundEditorTheme} onError={onError}>
+    <LexicalComposer namespace="PlaygroundEditor" theme={PlaygroundEditorTheme}>
       <SharedHistoryContext>
         <header>
           <img src="logo.svg" alt="Lexical Logo" />

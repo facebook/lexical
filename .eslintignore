@@ -1,3 +1,5 @@
+# NOTE: In general this should be kept in sync with .eslintignore
+
 packages/**/dist/*.js
 packages/**/config/*.js
 packages/playwright

@@ -17,7 +17,7 @@ import type {
   CommandListenerEditorPriority,
 } from 'lexical';
 
-import {$isTextNode, $isElementNode, $isRootNode, $getSelection} from 'lexical';
+import {$isTextNode, $isRootNode, $getSelection} from 'lexical';
 import {useCallback, useEffect, useMemo} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 
@@ -116,27 +116,25 @@ function getChangeType(
     return OTHER;
   }
 
-  // Catching the case when inserting new text node into an element (e.g. first char in paragraph/list/etc),
-  // relying on selection change: anchor was within element, and after the change it'll be within newly
-  // created text node with 1 char offset.
+  // Catching the case when inserting new text node into an element (e.g. first char in paragraph/list),
+  // or after existing node.
   if (dirtyNodes.length > 1) {
     const nextNodeMap = nextEditorState._nodeMap;
-    const elementNode = nextNodeMap.get(prevSelection.anchor.key);
-    const textNode = nextNodeMap.get(nextSelection.anchor.key);
+    const nextAnchorNode = nextNodeMap.get(nextSelection.anchor.key);
+    const prevAnchorNode = nextNodeMap.get(prevSelection.anchor.key);
+
     if (
-      !$isTextNode(textNode) ||
-      !$isElementNode(elementNode) ||
-      prevEditorState._nodeMap.has(textNode.__key) ||
-      textNode.__text.length !== 1 ||
-      nextSelection.anchor.offset !== 1
+      nextAnchorNode &&
+      prevAnchorNode &&
+      !prevEditorState._nodeMap.has(nextAnchorNode.__key) &&
+      $isTextNode(nextAnchorNode) &&
+      nextAnchorNode.__text.length === 1 &&
+      nextSelection.anchor.offset === 1
     ) {
-      return OTHER;
+      return INSERT_CHARACTER_AFTER_SELECTION;
     }
 
-    const hasOnlyOneTextNode = dirtyNodes.every(
-      (node, index) => node === textNode || !$isTextNode(node),
-    );
-    return hasOnlyOneTextNode ? INSERT_CHARACTER_AFTER_SELECTION : OTHER;
+    return OTHER;
   }
 
   const nextDirtyNode = dirtyNodes[0];

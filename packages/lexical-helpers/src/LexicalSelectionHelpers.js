@@ -10,7 +10,7 @@
 import type {
   NodeKey,
   LexicalNode,
-  Selection,
+  RangeSelection,
   TextNode,
   ElementNode,
   Point,
@@ -117,7 +117,7 @@ function $copyLeafNodeBranchToRoot(
   }
 }
 
-export function $cloneContents(selection: Selection): {
+export function $cloneContents(selection: RangeSelection): {
   range: Array<NodeKey>,
   nodeMap: Array<[NodeKey, LexicalNode]>,
 } {
@@ -234,7 +234,7 @@ function $patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
 }
 
 export function $patchStyleText(
-  selection: Selection,
+  selection: RangeSelection,
   patch: {[string]: string},
 ): void {
   const selectedNodes = selection.getNodes();
@@ -335,7 +335,7 @@ export function $patchStyleText(
 }
 
 export function $getSelectionStyleValueForProperty(
-  selection: Selection,
+  selection: RangeSelection,
   styleProperty: string,
   defaultValue: string = '',
 ): string {
@@ -387,7 +387,7 @@ function $getNodeStyleValueForProperty(
 }
 
 export function $moveCaretSelection(
-  selection: Selection,
+  selection: RangeSelection,
   isHoldingShift: boolean,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
@@ -395,14 +395,14 @@ export function $moveCaretSelection(
   selection.modify(isHoldingShift ? 'extend' : 'move', isBackward, granularity);
 }
 
-function isParentElementRTL(selection: Selection): boolean {
+function isParentElementRTL(selection: RangeSelection): boolean {
   const anchorNode = selection.anchor.getNode();
   const parent = anchorNode.getParentOrThrow();
   return parent.getDirection() === 'rtl';
 }
 
 export function $moveCharacter(
-  selection: Selection,
+  selection: RangeSelection,
   isHoldingShift: boolean,
   isBackward: boolean,
 ): void {
@@ -415,7 +415,7 @@ export function $moveCharacter(
   );
 }
 
-export function $selectAll(selection: Selection): void {
+export function $selectAll(selection: RangeSelection): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
@@ -458,7 +458,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 }
 
 export function $wrapLeafNodesInElements(
-  selection: Selection,
+  selection: RangeSelection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
 ): void {

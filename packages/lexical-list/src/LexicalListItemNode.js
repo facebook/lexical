@@ -12,7 +12,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
-  Selection,
+  RangeSelection,
   ParagraphNode,
 } from 'lexical';
 
@@ -200,7 +200,7 @@ export class ListItemNode extends ElementNode {
     return newElement;
   }
 
-  collapseAtStart(selection: Selection): true {
+  collapseAtStart(selection: RangeSelection): true {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));

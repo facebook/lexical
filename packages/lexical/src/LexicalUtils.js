@@ -17,7 +17,7 @@ import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {TextNode, TextFormatType} from './nodes/base/LexicalTextNode';
 import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
-import type {Selection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
 
 import {
   RTL_REGEX,
@@ -351,7 +351,7 @@ export function $getRoot(editorState?: EditorState): RootNode {
   ): any): RootNode);
 }
 
-export function $setSelection(selection: null | Selection): void {
+export function $setSelection(selection: null | RangeSelection): void {
   const editorState = getActiveEditorState();
   editorState._selection = selection;
 }
@@ -512,7 +512,7 @@ export function $updateTextNodeFromDOMContent(
 }
 
 function $shouldInsertTextAfterOrBeforeTextNode(
-  selection: Selection,
+  selection: RangeSelection,
   node: TextNode,
 ): boolean {
   if (node.isSegmented()) {
@@ -534,7 +534,7 @@ function $shouldInsertTextAfterOrBeforeTextNode(
 }
 
 export function $shouldPreventDefaultAndInsertText(
-  selection: Selection,
+  selection: RangeSelection,
   text: string,
   isBeforeInput: boolean,
 ): boolean {

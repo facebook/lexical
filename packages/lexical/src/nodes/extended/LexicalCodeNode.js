@@ -10,7 +10,7 @@
 import type {
   NodeKey,
   EditorConfig,
-  Selection,
+  RangeSelection,
   LexicalNode,
   ParagraphNode,
 } from 'lexical';
@@ -57,7 +57,7 @@ export class CodeNode extends ElementNode {
 
   // Mutation
   insertNewAfter(
-    selection: Selection,
+    selection: RangeSelection,
   ): null | ParagraphNode | CodeHighlightNode {
     const children = this.getChildren();
     const childrenLength = children.length;

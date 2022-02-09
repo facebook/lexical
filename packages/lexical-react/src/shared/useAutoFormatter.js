@@ -8,7 +8,7 @@
  */
 
 import type {EditorState} from 'lexical';
-import type {LexicalEditor, Selection} from 'lexical';
+import type {LexicalEditor, RangeSelection} from 'lexical';
 import type {
   AutoFormatCriteriaArray,
   AutoFormatTriggerState,
@@ -59,7 +59,7 @@ function getCriteriaWithMatchResultContext(
 }
 
 function getTextNodeForAutoFormatting(
-  selection: null | Selection,
+  selection: null | RangeSelection,
 ): null | TextNodeWithOffset {
   if (selection == null) {
     return null;

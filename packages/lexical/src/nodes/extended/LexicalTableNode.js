@@ -25,7 +25,7 @@ import {
   $getNearestNodeFromDOMNode,
   $isElementNode,
   $isTextNode,
-  $createSelection,
+  $createRangeSelection,
   $createParagraphNode,
   $getSelection,
   $setSelection,
@@ -346,7 +346,7 @@ function applyCustomTableHandlers(
   const formatCells = (type: TextFormatType) => {
     let selection = $getSelection();
     if (selection === null) {
-      selection = $createSelection();
+      selection = $createRangeSelection();
     }
     // This is to make Flow play ball.
     const formatSelection = selection;

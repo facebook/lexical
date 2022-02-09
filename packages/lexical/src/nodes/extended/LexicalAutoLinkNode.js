@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalNode, Selection, ElementNode} from 'lexical';
+import type {LexicalNode, RangeSelection, ElementNode} from 'lexical';
 
 import {LinkNode} from 'lexical/LinkNode';
 import {$isElementNode} from 'lexical';
@@ -24,7 +24,7 @@ export class AutoLinkNode extends LinkNode {
     return new AutoLinkNode(node.__url, node.__key);
   }
 
-  insertNewAfter(selection: Selection): null | ElementNode {
+  insertNewAfter(selection: RangeSelection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url);

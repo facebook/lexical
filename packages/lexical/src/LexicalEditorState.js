@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {NodeKey, NodeMap, LexicalNode} from './LexicalNode';
-import type {Selection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
 import type {ParsedNode, ParsedSelection} from './LexicalParsing';
 
 import {$createRootNode} from './nodes/base/LexicalRootNode';
@@ -63,11 +63,11 @@ export function createEmptyEditorState(): EditorState {
 
 export class EditorState {
   _nodeMap: NodeMap;
-  _selection: null | Selection;
+  _selection: null | RangeSelection;
   _flushSync: boolean;
   _readOnly: boolean;
 
-  constructor(nodeMap: NodeMap, selection?: Selection | null) {
+  constructor(nodeMap: NodeMap, selection?: RangeSelection | null) {
     this._nodeMap = nodeMap;
     this._selection = selection || null;
     this._flushSync = false;
@@ -79,7 +79,7 @@ export class EditorState {
   read<V>(callbackFn: () => V): V {
     return readEditorState(this, callbackFn);
   }
-  clone(selection?: Selection | null): EditorState {
+  clone(selection?: RangeSelection | null): EditorState {
     const editorState = new EditorState(
       this._nodeMap,
       selection === undefined ? this._selection : selection,

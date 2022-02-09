@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, LexicalNode, Selection} from 'lexical';
+import type {NodeKey, EditorConfig, LexicalNode, RangeSelection} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {ElementNode, $isElementNode} from 'lexical';
@@ -58,7 +58,7 @@ export class LinkNode extends ElementNode {
     writable.__url = url;
   }
 
-  insertNewAfter(selection: Selection): null | ElementNode {
+  insertNewAfter(selection: RangeSelection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if ($isElementNode(element)) {
       const linkNode = $createLinkNode(this.__url);

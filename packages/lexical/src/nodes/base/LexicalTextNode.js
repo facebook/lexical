@@ -7,14 +7,14 @@
  * @flow strict
  */
 
-import type {Selection} from '../../LexicalSelection';
+import type {RangeSelection} from '../../LexicalSelection';
 import type {NodeKey} from '../../LexicalNode';
 import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
 
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
-  internalMakeSelection,
+  internalMakeRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
 } from '../../LexicalSelection';
@@ -352,8 +352,8 @@ export class TextNode extends LexicalNode {
 
   // Mutators
   selectionTransform(
-    prevSelection: null | Selection,
-    nextSelection: Selection,
+    prevSelection: null | RangeSelection,
+    nextSelection: RangeSelection,
   ): void {}
   setFormat(format: number): this {
     errorOnReadOnly();
@@ -393,7 +393,7 @@ export class TextNode extends LexicalNode {
     writableSelf.__text = text;
     return writableSelf;
   }
-  select(_anchorOffset?: number, _focusOffset?: number): Selection {
+  select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
@@ -413,7 +413,7 @@ export class TextNode extends LexicalNode {
       focusOffset = 0;
     }
     if (selection === null) {
-      return internalMakeSelection(
+      return internalMakeRangeSelection(
         key,
         anchorOffset,
         key,

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, LexicalNode, Selection} from 'lexical';
+import type {NodeKey, EditorConfig, LexicalNode, RangeSelection} from 'lexical';
 
 import {ElementNode} from 'lexical';
 
@@ -38,7 +38,7 @@ export class OverflowNode extends ElementNode {
     return false;
   }
 
-  insertNewAfter(selection: Selection): null | LexicalNode {
+  insertNewAfter(selection: RangeSelection): null | LexicalNode {
     const parent = this.getParentOrThrow();
     return parent.insertNewAfter(selection);
   }

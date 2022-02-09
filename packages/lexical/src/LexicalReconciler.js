@@ -13,7 +13,7 @@ import type {
   EditorConfig,
   IntentionallyMarkedAsDirtyElement,
 } from './LexicalEditor';
-import type {Selection as LexicalSelection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
 import type {Node as ReactNode} from 'react';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 
@@ -607,7 +607,7 @@ function reconcileRoot(
   prevEditorState: EditorState,
   nextEditorState: EditorState,
   editor: LexicalEditor,
-  selection: null | LexicalSelection,
+  selection: null | RangeSelection,
   dirtyType: 0 | 1 | 2,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
@@ -653,8 +653,8 @@ export function updateEditorState(
   rootElement: HTMLElement,
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
-  currentSelection: LexicalSelection | null,
-  pendingSelection: LexicalSelection | null,
+  currentSelection: RangeSelection | null,
+  pendingSelection: RangeSelection | null,
   needsUpdate: boolean,
   editor: LexicalEditor,
 ): void {
@@ -722,8 +722,8 @@ function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
 }
 
 function reconcileSelection(
-  prevSelection: LexicalSelection | null,
-  nextSelection: LexicalSelection | null,
+  prevSelection: RangeSelection | null,
+  nextSelection: RangeSelection | null,
   editor: LexicalEditor,
   domSelection: Selection,
 ): void {

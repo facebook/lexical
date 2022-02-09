@@ -8,7 +8,7 @@
  */
 
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
-import type {Selection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
 
 import {
   $isElementNode,
@@ -679,7 +679,7 @@ export class LexicalNode {
     }
     return nodeToInsert;
   }
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
+  selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const prevSibling = this.getPreviousSibling();
     const parent = this.getParentOrThrow();
@@ -694,7 +694,7 @@ export class LexicalNode {
     }
     return prevSibling.select(anchorOffset, focusOffset);
   }
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection {
+  selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();
     const parent = this.getParentOrThrow();

@@ -184,7 +184,7 @@ export class DecoratorArray {
     };
   }
 
-  get length(): number {
+  getLength(): number {
     return this._array.length;
   }
 

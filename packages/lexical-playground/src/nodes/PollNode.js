@@ -190,7 +190,7 @@ function PollOptionComponent({
   const checkboxRef = useRef(null);
   const checkedIndex = votesArray.indexOf(clientID);
   const checked = checkedIndex !== -1;
-  const votes = votesArray.length;
+  const votes = votesArray.getLength();
 
   useEffect(() => {
     return votesArray.observe(() => {
@@ -242,10 +242,10 @@ function PollOptionComponent({
         />
       </div>
       <button
-        disabled={options.length < 3}
+        disabled={options.getLength() < 3}
         className={stylex(
           styles.optionDelete,
-          options.length < 3 && styles.optionDeleteDisabled,
+          options.getLength() < 3 && styles.optionDeleteDisabled,
         )}
         arial-label="Remove"
         onClick={() => {

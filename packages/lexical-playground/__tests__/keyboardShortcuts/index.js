@@ -162,3 +162,9 @@ export async function selectCharacters(
   await moveFunction(page, numCharacters);
   await page.keyboard.up('Shift');
 }
+
+export async function toggleBold(page): Promise<void> {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('b');
+  await keyUpCtrlOrMeta(page);
+}

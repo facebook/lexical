@@ -23,7 +23,7 @@ export type {EditorState, ParsedEditorState} from './LexicalEditorState';
 export type {NodeKey, LexicalNode, NodeMap} from './LexicalNode';
 export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
 export type {
-  Selection,
+  RangeSelection,
   PointType as Point,
   ElementPointType as ElementPoint,
   TextPointType as TextPoint,
@@ -83,7 +83,7 @@ import {
   $getCompositionKey,
 } from './LexicalUtils';
 import {
-  $createEmptySelection as $createSelection,
+  $createEmptyRangeSelection as $createRangeSelection,
   $getSelection,
   $getPreviousSelection,
 } from './LexicalSelection';
@@ -118,7 +118,7 @@ export {
   $createTextNode,
   $createNodeFromParse,
   $createParagraphNode,
-  $createSelection,
+  $createRangeSelection,
   $getRoot,
   $getNodeByKey,
   $getSelection,

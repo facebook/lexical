@@ -11,7 +11,7 @@ import type {
   LexicalEditor,
   EditorState,
   LexicalNode,
-  Selection,
+  RangeSelection,
   NodeKey,
   IntentionallyMarkedAsDirtyElement,
   CommandListenerEditorPriority,
@@ -38,7 +38,7 @@ const EditorPriority: CommandListenerEditorPriority = 0;
 export type HistoryStateEntry = {
   editor: LexicalEditor,
   editorState: EditorState,
-  undoSelection?: Selection | null,
+  undoSelection?: RangeSelection | null,
 };
 
 export type HistoryState = {

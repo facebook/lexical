@@ -9,7 +9,7 @@
 
 import type {
   LexicalEditor,
-  Selection,
+  RangeSelection,
   LexicalNode,
   ParsedNodeMap,
   NodeKey,
@@ -279,7 +279,7 @@ function $generateNodesFromDOM(
 
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
-  selection: Selection,
+  selection: RangeSelection,
   editor: LexicalEditor,
 ): void {
   const lexicalNodesString = dataTransfer.getData(
@@ -338,7 +338,7 @@ export function $insertDataTransferForRichText(
 
 export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
-  selection: Selection,
+  selection: RangeSelection,
 ): void {
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
@@ -347,7 +347,7 @@ export function $insertDataTransferForPlainText(
 }
 
 export function $shouldOverrideDefaultCharacterSelection(
-  selection: Selection,
+  selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
   const possibleDecoratorNode = getPossibleDecoratorNode(

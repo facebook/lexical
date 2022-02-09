@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, LexicalNode, TextNode, Selection} from 'lexical';
+import type {NodeKey, LexicalNode, TextNode, RangeSelection} from 'lexical';
 import type {YjsNode, Binding} from '.';
 
 import {
@@ -328,7 +328,9 @@ export function getPositionFromElementAndOffset(
   return {node: null, nodeIndex: 0, offset: 0, length: 0};
 }
 
-export function doesSelectionNeedRecovering(selection: Selection): boolean {
+export function doesSelectionNeedRecovering(
+  selection: RangeSelection,
+): boolean {
   const anchor = selection.anchor;
   const focus = selection.focus;
   let recoveryNeeded = false;

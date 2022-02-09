@@ -207,7 +207,7 @@ function $setPointValues(
   point.type = type;
 }
 
-export class Selection {
+export class RangeSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
@@ -220,7 +220,7 @@ export class Selection {
     this.format = format;
   }
 
-  is(selection: null | Selection): boolean {
+  is(selection: null | RangeSelection): boolean {
     if (selection === null) {
       return false;
     }
@@ -353,10 +353,10 @@ export class Selection {
     );
   }
 
-  clone(): Selection {
+  clone(): RangeSelection {
     const anchor = this.anchor;
     const focus = this.focus;
-    return new Selection(
+    return new RangeSelection(
       $createPoint(anchor.key, anchor.offset, anchor.type),
       $createPoint(focus.key, focus.offset, focus.type),
       this.format,
@@ -1272,7 +1272,7 @@ export class Selection {
   }
 }
 
-function $swapPoints(selection: Selection): void {
+function $swapPoints(selection: RangeSelection): void {
   const focus = selection.focus;
   const anchor = selection.anchor;
   const anchorKey = anchor.key;
@@ -1292,7 +1292,9 @@ function $moveNativeSelection(
   domSelection.modify(alter, direction, granularity);
 }
 
-function $updateCaretSelectionForAdjacentHashtags(selection: Selection): void {
+function $updateCaretSelectionForAdjacentHashtags(
+  selection: RangeSelection,
+): void {
   const anchor = selection.anchor;
   if (anchor.type !== 'text') {
     return;
@@ -1324,7 +1326,7 @@ function $updateCaretSelectionForAdjacentHashtags(selection: Selection): void {
 }
 
 function $updateCaretSelectionForUnicodeCharacter(
-  selection: Selection,
+  selection: RangeSelection,
   isBackward: boolean,
 ): void {
   const anchor = selection.anchor;
@@ -1559,16 +1561,16 @@ function internalResolveSelectionPoints(
 // This is used to make a selection when the existing
 // selection is null, i.e. forcing selection on the editor
 // when it current exists outside the editor.
-export function internalMakeSelection(
+export function internalMakeRangeSelection(
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
   anchorType: 'text' | 'element',
   focusType: 'text' | 'element',
-): Selection {
+): RangeSelection {
   const editorState = getActiveEditorState();
-  const selection = new Selection(
+  const selection = new RangeSelection(
     $createPoint(anchorKey, anchorOffset, anchorType),
     $createPoint(focusKey, focusOffset, focusType),
     0,
@@ -1578,10 +1580,10 @@ export function internalMakeSelection(
   return selection;
 }
 
-export function $createEmptySelection(): Selection {
+export function $createEmptyRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
-  return new Selection(anchor, focus, 0);
+  return new RangeSelection(anchor, focus, 0);
 }
 
 function getActiveEventType(): string | void {
@@ -1589,9 +1591,9 @@ function getActiveEventType(): string | void {
   return event && event.type;
 }
 
-export function internalCreateSelection(
+export function internalCreateRangeSelection(
   editor: LexicalEditor,
-): null | Selection {
+): null | RangeSelection {
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection
@@ -1632,7 +1634,7 @@ export function internalCreateSelection(
   } else {
     const lastAnchor = lastSelection.anchor;
     const lastFocus = lastSelection.focus;
-    return new Selection(
+    return new RangeSelection(
       $createPoint(lastAnchor.key, lastAnchor.offset, lastAnchor.type),
       $createPoint(lastFocus.key, lastFocus.offset, lastFocus.type),
       lastSelection.format,
@@ -1651,19 +1653,19 @@ export function internalCreateSelection(
     return null;
   }
   const [resolvedAnchorPoint, resolvedFocusPoint] = resolvedSelectionPoints;
-  return new Selection(
+  return new RangeSelection(
     resolvedAnchorPoint,
     resolvedFocusPoint,
     lastSelection === null ? 0 : lastSelection.format,
   );
 }
 
-export function $getSelection(): null | Selection {
+export function $getSelection(): null | RangeSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
-export function $getPreviousSelection(): null | Selection {
+export function $getPreviousSelection(): null | RangeSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
 }
@@ -1681,10 +1683,10 @@ export function internalCreateSelectionFromParse(
       type: 'text' | 'element',
     },
   },
-): null | Selection {
+): null | RangeSelection {
   return parsedSelection === null
     ? null
-    : new Selection(
+    : new RangeSelection(
         $createPoint(
           parsedSelection.anchor.key,
           parsedSelection.anchor.offset,
@@ -1700,7 +1702,7 @@ export function internalCreateSelectionFromParse(
 }
 
 export function $updateElementSelectionOnCreateDeleteNode(
-  selection: Selection,
+  selection: RangeSelection,
   parentNode: LexicalNode,
   nodeOffset: number,
   times: number = 1,
@@ -1751,7 +1753,7 @@ export function $updateElementSelectionOnCreateDeleteNode(
   $updateSelectionResolveTextNodes(selection);
 }
 
-function $updateSelectionResolveTextNodes(selection: Selection): void {
+function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
   const anchor = selection.anchor;
   const anchorOffset = anchor.offset;
   const focus = selection.focus;

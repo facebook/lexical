@@ -14,8 +14,7 @@ import {
   LexicalComposerContext,
   createLexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
-import React, {useContext, useLayoutEffect, useMemo} from 'react';
+import React, {useContext, useMemo} from 'react';
 
 type Props = {
   initialConfig?: {

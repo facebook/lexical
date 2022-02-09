@@ -20,8 +20,7 @@ import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import LexicalComposer from '../../LexicalComposer';
-import {$getSelection, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$getSelection, $getRoot, $createParagraphNode} from 'lexical';
 import * as Y from 'yjs';
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {

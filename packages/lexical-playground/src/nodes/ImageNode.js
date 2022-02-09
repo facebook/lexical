@@ -25,8 +25,8 @@ import {
   createDecoratorEditor,
   $getRoot,
   $getSelection,
+  $createParagraphNode,
 } from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   useCollaborationContext,

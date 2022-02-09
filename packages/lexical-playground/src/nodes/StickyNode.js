@@ -26,6 +26,7 @@ import {
   createDecoratorEditor,
   $getRoot,
   $getSelection,
+  $createParagraphNode,
 } from 'lexical';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -34,7 +35,6 @@ import {
   useCollaborationContext,
   CollaborationPlugin,
 } from '@lexical/react/LexicalCollaborationPlugin';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
@@ -326,7 +326,7 @@ function StickyComponent({
               What's up?
             </Placeholder>
           }
-          skipInit={isCollab}
+          initialPayloadFn={textInitFn}
         />
       </LexicalNestedComposer>
     </div>

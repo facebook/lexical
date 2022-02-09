@@ -10,8 +10,7 @@
 import type {LexicalEditor, RootNode} from 'lexical';
 import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 
-import {$getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
 import usePlainTextSetup from './shared/usePlainTextSetup';
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
 

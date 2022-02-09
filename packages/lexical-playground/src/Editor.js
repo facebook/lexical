@@ -41,8 +41,7 @@ import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
 
-import {$getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
 import {useSettings} from './context/SettingsContext';
 import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 

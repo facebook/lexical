@@ -48,6 +48,11 @@ import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import stylex from 'stylex';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import {useSettings} from '../context/SettingsContext';
+import {MentionNode} from './MentionNode';
+import {EmojiNode} from './EmojiNode';
+import {TypeaheadNode} from './TypeaheadNode';
+import {KeywordNode} from './KeywordNode';
+import ExtendedNodes from 'lexical/ExtendedNodes';
 
 const styles = stylex.create({
   contentEditable: {
@@ -423,6 +428,14 @@ function ImageComponent({
               initialConfig={{
                 namespace: 'PlaygroundImageEditor',
                 decoratorEditor: decoratorEditor,
+                nodes: [
+                  ...ExtendedNodes,
+                  ImageNode,
+                  MentionNode,
+                  EmojiNode,
+                  TypeaheadNode,
+                  KeywordNode,
+                ]
               }}>
               <MentionsPlugin />
               <TablesPlugin />

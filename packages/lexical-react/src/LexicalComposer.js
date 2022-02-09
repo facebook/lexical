@@ -68,7 +68,7 @@ export default function LexicalComposer({
         editor = createEditor<LexicalComposerContextType>({
           namespace,
           nodes,
-          theme,
+          theme: composerTheme,
           parentEditor,
           context,
         });

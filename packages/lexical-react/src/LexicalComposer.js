@@ -8,7 +8,7 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, LexicalEditor} from 'lexical';
+import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 import {createEditor} from 'lexical';
 import {
   LexicalComposerContext,
@@ -17,23 +17,36 @@ import {
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
-  namespace?: string,
+  initialConfig?: {
+    editor?: LexicalEditor | null,
+    namespace?: string,
+    nodes?: Array<Class<LexicalNode>>,
+    theme?: EditorThemeClasses,
+    onError?: (Error) => void,
+  },
   children: React$Node,
-  theme?: EditorThemeClasses,
-  initialEditor?: LexicalEditor | null,
 };
 
+function defaultOnError(e: Error): void {
+  throw e;
+}
+
 export default function LexicalComposer({
-  namespace,
+  initialConfig = {},
   children,
-  initialEditor,
-  theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(LexicalComposerContext);
   const composerContext = useMemo(
     () => {
       let composerTheme: void | EditorThemeClasses;
       let parentEditor;
+      const {
+        theme,
+        namespace,
+        editor: initialEditor,
+        nodes,
+        onError,
+      } = initialConfig;
 
       if (theme != null) {
         composerTheme = theme;
@@ -45,7 +58,6 @@ export default function LexicalComposer({
         }
       }
 
-      const config = {theme: composerTheme || {}, namespace, parentEditor};
       const context: LexicalComposerContextType = createLexicalComposerContext(
         parentContext,
         composerTheme,
@@ -54,24 +66,22 @@ export default function LexicalComposer({
 
       if (editor === null) {
         editor = createEditor<LexicalComposerContextType>({
-          ...config,
+          namespace,
+          nodes,
+          theme: composerTheme,
+          parentEditor,
           context,
         });
-      } else {
-        const previousConfig = editor._config;
-        // $FlowFixMe: Flow doesn't understand this spread correctly
-        editor._config = {
-          ...previousConfig,
-          ...config,
-          context,
-        };
+
+        editor.addListener('error', onError || defaultOnError);
       }
 
       return [editor, context];
     },
 
+    // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [theme],
+    [],
   );
   return (
     <LexicalComposerContext.Provider value={composerContext}>

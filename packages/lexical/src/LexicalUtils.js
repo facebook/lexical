@@ -64,7 +64,7 @@ export function getRegisteredNodeOrThrow(
   editor: LexicalEditor,
   nodeType: string,
 ): RegisteredNode {
-  const registeredNode = editor._registeredNodes.get(nodeType);
+  const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'registeredNode: Type %s not found', nodeType);
   }

@@ -7,16 +7,9 @@
  * @flow strict
  */
 
-import type {
-  LexicalEditor,
-  EditorConfig,
-  NodeKey,
-  LexicalNode,
-  Selection,
-} from 'lexical';
+import type {LexicalEditor, LexicalNode} from 'lexical';
 
 import {
-  ElementNode,
   $isLeafNode,
   $isTextNode,
   $log,
@@ -28,6 +21,12 @@ import {$dfs__DEPRECATED} from '@lexical/helpers/nodes';
 import {$textContentCurry} from '@lexical/helpers/root';
 import {useEffect} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
+import invariant from 'shared/invariant';
+import {
+  OverflowNode,
+  $isOverflowNode,
+  $createOverflowNode,
+} from 'lexical/OverflowNode';
 
 type OptionalProps = {
   strlen?: (input: string) => number,
@@ -45,7 +44,12 @@ export function useCharacterLimit(
   } = optional;
 
   useEffect(() => {
-    return editor.registerNodes([OverflowNode]);
+    if (!editor.hasNodes([OverflowNode])) {
+      invariant(
+        false,
+        'useCharacterLimit: OverflowNode not registered on editor',
+      );
+    }
   }, [editor]);
 
   useEffect(() => {
@@ -129,7 +133,7 @@ function $wrapOverflowedNodes(offset: number): void {
 
   let previousNode = root;
   $dfs__DEPRECATED(root, (node: LexicalNode) => {
-    if (isOverflowNode(node)) {
+    if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
       const nextLength = accumulatedLength + node.getTextContentSize();
       if (nextLength <= offset) {
@@ -172,7 +176,7 @@ function $wrapOverflowedNodes(offset: number): void {
     } else if ($isLeafNode(node)) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();
-      if (accumulatedLength > offset && !isOverflowNode(node.getParent())) {
+      if (accumulatedLength > offset && !$isOverflowNode(node.getParent())) {
         const previousSelection = $getSelection();
         let overflowNode;
         // For simple text we can improve the limit accuracy by splitting the TextNode
@@ -200,51 +204,6 @@ function $wrapOverflowedNodes(offset: number): void {
   });
 }
 
-export class OverflowNode extends ElementNode {
-  static getType(): string {
-    return 'overflow';
-  }
-
-  static clone(node: OverflowNode): OverflowNode {
-    return new OverflowNode(node.__key);
-  }
-
-  constructor(key?: NodeKey): void {
-    super(key);
-    this.__type = 'overflow';
-  }
-
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
-    const div = document.createElement('div');
-    const className = config.theme.characterLimit;
-    if (typeof className === 'string') {
-      div.className = className;
-    }
-    return div;
-  }
-
-  updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean {
-    return false;
-  }
-
-  insertNewAfter(selection: Selection): null | LexicalNode {
-    const parent = this.getParentOrThrow();
-    return parent.insertNewAfter(selection);
-  }
-
-  excludeFromCopy(): boolean {
-    return true;
-  }
-}
-
-export function $createOverflowNode(): OverflowNode {
-  return new OverflowNode();
-}
-
-export function isOverflowNode(node: ?LexicalNode): boolean %checks {
-  return node instanceof OverflowNode;
-}
-
 function $wrapNode(node: LexicalNode): OverflowNode {
   const overflowNode = $createOverflowNode();
   node.insertBefore(overflowNode);
@@ -264,7 +223,7 @@ function $unwrapNode(node: OverflowNode): LexicalNode | null {
 
 export function mergePrevious(overflowNode: OverflowNode): void {
   const previousNode = overflowNode.getPreviousSibling();
-  if (!isOverflowNode(previousNode)) {
+  if (!$isOverflowNode(previousNode)) {
     return;
   }
 

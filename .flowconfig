@@ -28,6 +28,8 @@ module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/n
 module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js'
 module.name_mapper='^lexical/HashtagNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js'
 module.name_mapper='^lexical/CodeHighlightNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js'
+module.name_mapper='^lexical/OverflowNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalOverflowNode.js'
+module.name_mapper='^lexical/ExtendedNodes' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalExtendedNodes.js'
 
 module.name_mapper='^@lexical/list' -> '<PROJECT_ROOT>/packages/lexical-list/src/index.js'
 

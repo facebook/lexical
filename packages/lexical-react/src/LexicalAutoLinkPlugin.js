@@ -24,6 +24,7 @@ import {
   $createAutoLinkNode,
   $isAutoLinkNode,
 } from 'lexical/AutoLinkNode';
+import invariant from 'shared/invariant';
 
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 
@@ -208,6 +209,13 @@ function useAutoLink(
   onChange?: ChangeHandler,
 ): void {
   useEffect(() => {
+    if (!editor.hasNodes([AutoLinkNode])) {
+      invariant(
+        false,
+        'LexicalAutoLinkPlugin: AutoLinkNode, TableCellNode or TableRowNode not registered on editor',
+      );
+    }
+
     const onChangeWrapped = (...args) => {
       if (onChange) {
         onChange(...args);
@@ -215,7 +223,6 @@ function useAutoLink(
     };
 
     return withSubscriptions(
-      editor.registerNodes([AutoLinkNode]),
       editor.addTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
         if ($isAutoLinkNode(parent)) {

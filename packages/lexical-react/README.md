@@ -63,15 +63,19 @@ function onError(error) {
 }
 
 function Editor() {
+  const initialConfig = {
+    theme,
+    onError,
+  };
+
   return (
-    <LexicalComposer theme={theme}>
+    <LexicalComposer initialConfig={initialConfig}>
       <LexicalPlainTextPlugin
-        contentEditable={<LexicalContentEditable className="editor-input" />}
+        contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}
-        onError={onError}
       />
       <LexicalOnChangePlugin onChange={onChange} />
-      <LexicalHistoryPlugin />
+      <HistoryPlugin />
       <MyCustomAutoFocusPlugin />
     </LexicalComposer>
   );

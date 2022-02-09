@@ -38,7 +38,13 @@ describe('useLexicalIsTextContentEmpty', () => {
   });
 
   function useLexicalEditor(rootElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
+    const editor = React.useMemo(
+      () =>
+        createEditor({
+          nodes: [ParagraphNode],
+        }),
+      [],
+    );
 
     React.useEffect(() => {
       const rootElement = rootElementRef.current;
@@ -59,7 +65,6 @@ describe('useLexicalIsTextContentEmpty', () => {
       editor.addListener('error', (error) => {
         throw error;
       });
-      editor.registerNodes([ParagraphNode]);
       const isBlank = useLexicalIsTextContentEmpty(editor);
       expect(isBlank).toBe(!hasText);
       return <div ref={ref} contentEditable={true} />;

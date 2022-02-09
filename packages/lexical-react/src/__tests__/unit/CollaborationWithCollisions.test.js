@@ -20,7 +20,7 @@ import {
   $getRoot,
   $createTextNode,
   $setSelection,
-  $createSelection,
+  $createRangeSelection,
   $isTextNode,
   Selection,
   LexicalNode,
@@ -48,7 +48,7 @@ const $createSelectionByPath = ({
   focusPath: Array<number>,
   focusOffset: number,
 }): Selection => {
-  const selection = $createSelection();
+  const selection = $createRangeSelection();
   const root = $getRoot();
   const anchorNode = anchorPath.reduce(
     (node, index) => node.getChildAtIndex(index),

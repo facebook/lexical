@@ -9,3 +9,4 @@ packages/eslint-plugin-stylex
 packages/stylex
 packages/**/vite.config.js
 **/node_modules
+flow-typed

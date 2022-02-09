@@ -17,12 +17,12 @@ import {
   $getRoot,
   $createParagraphNode,
 } from 'lexical';
+import {mergePrevious} from '../../DEPRECATED_useLexicalCharacterLimit';
 import {
   $createOverflowNode,
-  mergePrevious,
-  isOverflowNode,
+  $isOverflowNode,
   OverflowNode,
-} from '../../DEPRECATED_useLexicalCharacterLimit';
+} from 'lexical/OverflowNode';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(
@@ -69,7 +69,7 @@ describe('LexicalNodeHelpers tests', () => {
             const overflowRight = $getNodeByKey(overflowRightKey);
             mergePrevious(overflowRight);
             expect(paragraph.getChildrenSize()).toBe(1);
-            expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
+            expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
             const selection = $getSelection();
             if (selection === null) {
               throw new Error('Lost selection');
@@ -106,7 +106,7 @@ describe('LexicalNodeHelpers tests', () => {
             const overflowRight = $getNodeByKey(overflowRightKey);
             mergePrevious(overflowRight);
             expect(paragraph.getChildrenSize()).toBe(1);
-            expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
+            expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
             const selection = $getSelection();
             if (selection === null) {
               throw new Error('Lost selection');
@@ -149,7 +149,7 @@ describe('LexicalNodeHelpers tests', () => {
             const overflowRight = $getNodeByKey(overflowRightKey);
             mergePrevious(overflowRight);
             expect(paragraph.getChildrenSize()).toBe(1);
-            expect(isOverflowNode(paragraph.getFirstChild())).toBe(true);
+            expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
             const selection = $getSelection();
             if (selection === null) {
               throw new Error('Lost selection');

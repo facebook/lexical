@@ -63,12 +63,11 @@ function textNodeTransform(node: TextNode): void {
 
 function useEmojis(editor: LexicalEditor): void {
   useEffect(() => {
-    const unregisterNodes = editor.registerNodes([EmojiNode]);
-    const removeTransform = editor.addTransform(TextNode, textNodeTransform);
-    return () => {
-      unregisterNodes();
-      removeTransform();
-    };
+    if (!editor.hasNodes([EmojiNode])) {
+      throw new Error('EmojisPlugin: EmojiNode not registered on editor');
+    }
+
+    return editor.addTransform(TextNode, textNodeTransform);
   }, [editor]);
 }
 

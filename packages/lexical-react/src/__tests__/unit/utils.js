@@ -120,7 +120,7 @@ class Client {
     rootContainer.appendChild(container);
     ReactTestUtils.act(() => {
       reactRoot.render(
-        <LexicalComposer>
+        <LexicalComposer initialConfig={{}}>
           <Editor
             provider={this}
             doc={this._doc}

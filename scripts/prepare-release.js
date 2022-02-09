@@ -19,12 +19,6 @@ async function prepareLexicalCorePackage() {
   await exec(
     `mv ./packages/lexical/npm/LexicalHashtagNode.js ./packages/lexical/npm/HashtagNode.js`,
   );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalListNode.js ./packages/lexical/npm/ListNode.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalListItemNode.js ./packages/lexical/npm/ListItemNode.js`,
-  );
 
   await exec(
     `mv ./packages/lexical/npm/LexicalTableNode.js ./packages/lexical/npm/TableNode.js`,
@@ -47,6 +41,9 @@ async function prepareLexicalCorePackage() {
   );
   await exec(
     `mv ./packages/lexical/npm/LexicalCodeHighlightNode.js ./packages/lexical/npm/CodeHighlightNode.js`,
+  );
+  await exec(
+    `mv ./packages/lexical/npm/LexicalExtendedNodes.js ./packages/lexical/npm/LexicalExtendedNode.js`,
   );
   // Other bits
   await exec(`cp -R ./packages/lexical/package.json ./packages/lexical/npm`);

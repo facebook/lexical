@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, NodeKey, EditorConfig} from 'lexical';
+import type {LexicalEditor, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
@@ -22,6 +22,7 @@ import {
 } from 'lexical';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {$textContentCurry} from '@lexical/helpers/root';
+import {$createTypeaheadNode, TypeaheadNode} from '../nodes/TypeaheadNode';
 
 function useTypeahead(editor: LexicalEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
@@ -45,14 +46,14 @@ function useTypeahead(editor: LexicalEditor): void {
 
   // Monitor entered text
   useEffect(() => {
-    const removeListener = editor.addListener('textcontent', (text) => {
+    if (!editor.hasNodes([TypeaheadNode])) {
+      throw new Error(
+        'AutocompletePlugin: TypeaheadNode not registered on editor',
+      );
+    }
+    return editor.addListener('textcontent', (text) => {
       setText(text);
     });
-    const unregisterNodes = editor.registerNodes([TypeaheadNode]);
-    return () => {
-      removeListener();
-      unregisterNodes();
-    };
   }, [editor]);
 
   const renderTypeahead = useCallback(() => {
@@ -112,7 +113,7 @@ function useTypeahead(editor: LexicalEditor): void {
           if ($isElementNode(lastParagraph)) {
             const lastTextNode = lastParagraph.getLastChild();
             if ($isTextNode(lastTextNode)) {
-              const newTypeaheadNode = createTypeaheadNode(suggestion ?? '');
+              const newTypeaheadNode = $createTypeaheadNode(suggestion ?? '');
               lastTextNode.insertAfter(newTypeaheadNode);
               typeaheadNodeKey.current = newTypeaheadNode.getKey();
             }
@@ -204,26 +205,6 @@ function useTypeahead(editor: LexicalEditor): void {
       document.removeEventListener('selectionchange', handleEvent);
     };
   }, []);
-}
-
-class TypeaheadNode extends TextNode {
-  static clone(node: TypeaheadNode) {
-    return new TypeaheadNode(node.__text, node.__key);
-  }
-
-  static getType(): 'typeahead' {
-    return 'typeahead';
-  }
-
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>) {
-    const dom = super.createDOM(config);
-    dom.style.cssText = 'color: #ccc;';
-    return dom;
-  }
-}
-
-function createTypeaheadNode(text: string): TextNode {
-  return new TypeaheadNode(text).setMode('inert');
 }
 
 function useTypeaheadSuggestion(

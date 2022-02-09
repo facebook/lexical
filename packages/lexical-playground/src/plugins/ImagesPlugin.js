@@ -22,7 +22,11 @@ export default function ImagesPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([ImageNode])) {
+      throw new Error('ImagesPlugin: ImageNode not registered on editor');
+    }
+
+    return editor.addListener(
       'command',
       (type) => {
         if (type === 'insertImage') {
@@ -42,13 +46,6 @@ export default function ImagesPlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removeImageNode = editor.registerNodes([ImageNode]);
-
-    return () => {
-      removeCommandListener();
-      removeImageNode();
-    };
   }, [editor]);
   return null;
 }

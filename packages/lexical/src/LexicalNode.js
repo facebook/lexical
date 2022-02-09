@@ -731,12 +731,12 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Class<LexicalNode>,
 ): void {
-  const registeredNode = getActiveEditor()._registeredNodes.get(type);
+  const registeredNode = getActiveEditor()._nodes.get(type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(
       false,
-      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes.',
+      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use register your custom nodes.',
       klass.name,
     );
   }

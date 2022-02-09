@@ -129,7 +129,9 @@ function $keywordToPlainTextTransform(keyword: KeywordNode): void {
 
 function useKeywords(editor: LexicalEditor): void {
   useEffect(() => {
-    const unregisterNodes = editor.registerNodes([KeywordNode]);
+    if (!editor.hasNodes([KeywordNode])) {
+      throw new Error('KeywordsPlugin: KeywordNode not registered on editor');
+    }
 
     const removePlainTextToKeywordTransform = editor.addTransform(
       TextNode,
@@ -141,7 +143,6 @@ function useKeywords(editor: LexicalEditor): void {
     );
 
     return () => {
-      unregisterNodes();
       removePlainTextToKeywordTransform();
       removeKeywordToPlainTextTransform();
     };

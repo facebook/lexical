@@ -12,6 +12,7 @@ import type {
   EditorThemeClasses,
   EditorState,
   DOMConversionMap,
+  LexicalNode,
 } from 'lexical';
 
 import {createEditor} from 'lexical';
@@ -25,9 +26,10 @@ function defaultOnErrorHandler(e: Error): void {
 export default function useLexical<EditorContext>(editorConfig?: {
   namespace?: string,
   onError?: (error: Error, log: Array<string>) => void,
-  initialEditorState?: EditorState,
+  editorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
+  nodes?: Array<Class<LexicalNode>>,
   htmlTransforms?: DOMConversionMap,
   parentEditor?: LexicalEditor,
   disableEvents?: boolean,

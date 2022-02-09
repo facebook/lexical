@@ -958,7 +958,9 @@ function useMentions(editor: LexicalEditor): React$Node {
   const [resolution, setResolution] = useState<Resolution | null>(null);
 
   useEffect(() => {
-    return editor.registerNodes([MentionNode]);
+    if (!editor.hasNodes([MentionNode])) {
+      throw new Error('MentionsPlugin: MentionNode not registered on editor');
+    }
   }, [editor]);
 
   useEffect(() => {

@@ -1,4 +1,5 @@
 # Creating decorator nodes
+
 Decorator node is a way to embed non-text components into the editor. It can be media embeds like videos, tweets, instagram posts or more complex components with its own internal state.
 
 Here's an example of how you can create a decorator node for embedding a video:
@@ -12,18 +13,10 @@ export class VideoNode extends DecoratorNode {
   }
 
   static clone(node: VideoNode): VideoNode {
-    return new VideoNode(
-      node.__url,
-      node.__state,
-      node.__key,
-    );
+    return new VideoNode(node.__url, node.__state, node.__key);
   }
 
-  constructor(
-    url: string,
-    state?: DecoratorMap,
-    key?: NodeKey,
-  ) {
+  constructor(url: string, state?: DecoratorMap, key?: NodeKey) {
     super(state, key);
     this.__url = url;
   }
@@ -57,42 +50,47 @@ export function $isVideoNode(node: ?LexicalNode): boolean %checks {
 }
 ```
 
-As any other custom Lexical node, decorator nodes need to be registered _before_ they are used by calling `editor.registerNodes([VideoNode])`. A common pattern is to register custom nodes as a part of a plugin that uses those nodes. It's also a great place to define commands that will insert those custom nodes into the editor:
+As any other custom Lexical node, decorator nodes need to be registered _before_ they are used by passing them in the editor config. A common pattern is to register custom nodes as a part of a plugin that uses those nodes. It's also a great place to define commands that will insert those custom nodes into the editor:
+
+```jsx
+<LexicalComposer initialConfig={{...restOfConfig, nodes: [VideoNode]}}>
+  ...
+</LexicalComposer>
+```
 
 ```js
 function VideoPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    // Registering custom node, note that it returns unregister callback to cleanup registry on unmount
-    const unregisterNodes = editor.registerNodes([VideoNode]);
-
     // Similar with command listener, which returns unlisten callback
-    const removeListener = editor.addListener('command', (type, payload) => {
+    const removeListener = editor.addListener(
+      'command',
+      (type, payload) => {
+        // Adding custom command that will be handled by this plugin
+        if (type === 'insertVideo') {
+          editor.update(() => {
+            const selection = $getSelection();
+            if (selection !== null) {
+              const url: string = payload;
+              selection.insertNodes([$createVideoNode(url)]);
+            }
+          });
 
-      // Adding custom command that will be handled by this plugin
-      if (type === 'insertVideo') {
-        editor.update(() => {
-          const selection = $getSelection();
-          if (selection !== null) {
-            const url: string = payload;
-            selection.insertNodes([$createVideoNode(url)]);
-          }
-        });
+          // Returning true indicates that command is handled and no further propagation is required
+          return true;
+        }
 
-        // Returning true indicates that command is handled and no further propagation is required
-        return true;
-      }
-
-      return false;
-    }, 0);
+        return false;
+      },
+      0,
+    );
 
     return () => {
-      unregisterNodes();
       removeListener();
     };
   }, [editor]);
-  
+
   return null;
 }
 ```
@@ -102,11 +100,14 @@ Then assuming we have a some UE insert a video into the editor:
 ```js
 function ToolbarVideoButton(): React$Node {
   const [editor] = useLexicalComposerContext();
-  const insertVideo = useCallback((url) => {
-    // Executing command defined in a plugin
-    editor.execCommand('insertVideo', url);
-  }, [editor]);
-  const showDialog = useVideoDialog({ onSubmit: insertVideo });
-  return <button onClick={showDialog}>Add video</button>
+  const insertVideo = useCallback(
+    (url) => {
+      // Executing command defined in a plugin
+      editor.execCommand('insertVideo', url);
+    },
+    [editor],
+  );
+  const showDialog = useVideoDialog({onSubmit: insertVideo});
+  return <button onClick={showDialog}>Add video</button>;
 }
 ```

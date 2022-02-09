@@ -7,10 +7,4 @@
  * @flow strict
  */
 
-export {
-  $createOverflowNode,
-  mergePrevious,
-  isOverflowNode,
-  OverflowNode,
-  useCharacterLimit,
-} from './shared/useCharacterLimit';
+export {mergePrevious, useCharacterLimit} from './shared/useCharacterLimit';

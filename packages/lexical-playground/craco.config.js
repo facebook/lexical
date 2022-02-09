@@ -19,6 +19,8 @@ module.exports = {
       'lexical/AutoLinkNode': 'lexical/dist/LexicalAutoLinkNode',
       'lexical/HashtagNode': 'lexical/dist/LexicalHashtagNode',
       'lexical/CodeHighlightNode': 'lexical/dist/LexicalCodeHighlightNode',
+      'lexical/OverflowNode': 'lexical/dist/LexicalOverflowNode',
+      'lexical/ExtendedNodes': 'lexical/dist/LexicalExtendedNodes',
       // Lexical Helpers
       '@lexical/helpers/selection':
         '@lexical/helpers/dist/LexicalSelectionHelpers',

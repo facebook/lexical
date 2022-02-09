@@ -207,7 +207,18 @@ function $setPointValues(
   point.type = type;
 }
 
-export class RangeSelection {
+interface Selection {
+  dirty: boolean;
+
+  getNodes(): Array<LexicalNode>;
+  is(selection: null | RangeSelection): boolean;
+  getTextContent(): string;
+  clone(): Selection;
+  extract(): Array<LexicalNode>;
+  insertRawText(text: string): void;
+}
+
+export class RangeSelection implements Selection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
@@ -363,7 +374,7 @@ export class RangeSelection {
     );
   }
 
-  toggleFormatType(format: TextFormatType): void {
+  toggleFormat(format: TextFormatType): void {
     this.format = toggleTextFormatType(this.format, format, null);
     this.dirty = true;
   }
@@ -656,7 +667,7 @@ export class RangeSelection {
     let lastNode = selectedNodes[lastIndex];
 
     if (this.isCollapsed()) {
-      this.toggleFormatType(formatType);
+      this.toggleFormat(formatType);
       return;
     }
     const anchor = this.anchor;

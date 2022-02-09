@@ -23,7 +23,6 @@ import {
 import {TypeaheadNode, $createTypeaheadNode} from '../nodes/TypeaheadNode';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {$textContentCurry} from '@lexical/helpers/root';
-import {$createTypeaheadNode, TypeaheadNode} from '../nodes/TypeaheadNode';
 
 function useTypeahead(editor: LexicalEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);

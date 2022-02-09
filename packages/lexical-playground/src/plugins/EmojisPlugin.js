@@ -9,7 +9,7 @@
 
 import type {LexicalEditor, RangeSelection} from 'lexical';
 
-import {$createEmojiNode} from '../nodes/EmojiNode';
+import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
 import {$getSelection, TextNode} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';

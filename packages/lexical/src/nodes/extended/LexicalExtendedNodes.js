@@ -19,6 +19,7 @@ import {HeadingNode} from 'lexical/HeadingNode';
 import {ListNode, ListItemNode} from '@lexical/list';
 import {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 import {AutoLinkNode} from 'lexical/AutoLinkNode';
+import {OverflowNode} from 'lexical/OverflowNode';
 import {LinkNode} from 'lexical/LinkNode';
 
 const LexicalExtendedNodes: Array<Class<LexicalNode>> = [
@@ -34,6 +35,7 @@ const LexicalExtendedNodes: Array<Class<LexicalNode>> = [
   CodeHighlightNode,
   AutoLinkNode,
   LinkNode,
+  OverflowNode,
 ];
 
 export default LexicalExtendedNodes;

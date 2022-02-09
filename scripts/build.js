@@ -47,9 +47,9 @@ if (isClean) {
 
 const wwwMappings = {
   lexical: 'Lexical',
-  'lexical-list': 'LexicalList',
   'react-dom': 'ReactDOMComet',
   '@lexical/yjs': 'LexicalYjs',
+  '@lexical/list': 'LexicalList',
 };
 
 const lexicalNodes = fs

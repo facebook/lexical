@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {ElementNode, EditorState, LexicalEditor, Selection} from 'lexical';
+import type {
+  ElementNode,
+  EditorState,
+  LexicalEditor,
+  RangeSelection,
+} from 'lexical';
 
 import {$isElementNode, $isTextNode, $getRoot, $getSelection} from 'lexical';
 
@@ -180,11 +185,11 @@ export default function TreeView({
   );
 }
 
-function printSelection(selection: Selection): string {
+function printRangeSelection(selection: RangeSelection): string {
   let res = '';
 
   const formatText = printFormatProperties(selection);
-  res += `${formatText !== '' ? ' - ' + formatText : ''}`;
+  res += `: range ${formatText !== '' ? `{ ${formatText} }` : ''}`;
 
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -226,7 +231,7 @@ function generateContent(editorState: EditorState): string {
       });
     });
 
-    return selection === null ? ': null' : printSelection(selection);
+    return selection === null ? ': null' : printRangeSelection(selection);
   });
 
   return res + '\n selection' + selectionString;
@@ -272,7 +277,7 @@ function printNode(node) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const properties = printAllProperties(node);
-    return [title, properties.length !== 0 ? `- ${properties}` : null]
+    return [title, properties.length !== 0 ? `{ ${properties} }` : null]
       .filter(Boolean)
       .join(' ')
       .trim();
@@ -289,25 +294,58 @@ const FORMAT_PREDICATES = [
   (node) => node.hasFormat('underline') && 'Underline',
 ];
 
-const TEXT_PREDICATES = [
-  (node) => node.isToken() && 'Token',
-  (node) => node.isSegmented() && 'Segmented',
-  (node) => node.isInert() && 'Inert',
+const DETAIL_PREDICATES = [
   (node) => node.isDirectionless() && 'Directionless',
   (node) => node.isUnmergeable() && 'Unmergeable',
 ];
 
+const MODE_PREDICATES = [
+  (node) => node.isToken() && 'Token',
+  (node) => node.isSegmented() && 'Segmented',
+  (node) => node.isInert() && 'Inert',
+];
+
 function printAllProperties(node) {
-  return [...FORMAT_PREDICATES, ...TEXT_PREDICATES]
-    .map((predicate) => predicate(node))
+  return [
+    printFormatProperties(node),
+    printDetailProperties(node),
+    printModeProperties(node),
+  ]
     .filter(Boolean)
     .join(', ');
 }
 
-function printFormatProperties(nodeOrSelection) {
-  return FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+function printDetailProperties(nodeOrSelection) {
+  let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
-    .join(', ');
+    .join(', ')
+    .toLocaleLowerCase();
+  if (str !== '') {
+    str = 'detail: ' + str;
+  }
+  return str;
+}
+
+function printModeProperties(nodeOrSelection) {
+  let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+    .filter(Boolean)
+    .join(', ')
+    .toLocaleLowerCase();
+  if (str !== '') {
+    str = 'mode: ' + str;
+  }
+  return str;
+}
+
+function printFormatProperties(nodeOrSelection) {
+  let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+    .filter(Boolean)
+    .join(', ')
+    .toLocaleLowerCase();
+  if (str !== '') {
+    str = 'format: ' + str;
+  }
+  return str;
 }
 
 function printSelectedCharsLine({

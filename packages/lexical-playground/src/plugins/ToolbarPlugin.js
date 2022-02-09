@@ -12,7 +12,7 @@ import type {
   CommandListenerLowPriority,
   ElementNode,
   TextNode,
-  Selection,
+  RangeSelection,
 } from 'lexical';
 
 import * as React from 'react';
@@ -84,7 +84,7 @@ const blockTypeToBlockName = {
   ol: 'Numbered List',
 };
 
-function getSelectedNode(selection: Selection): TextNode | ElementNode {
+function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = selection.anchor.getNode();

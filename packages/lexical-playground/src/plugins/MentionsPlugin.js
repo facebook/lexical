@@ -9,7 +9,7 @@
 
 import type {
   LexicalEditor,
-  Selection,
+  RangeSelection,
   CommandListenerLowPriority,
 } from 'lexical';
 
@@ -830,7 +830,7 @@ function getPossibleMentionMatch(text): MentionMatch | null {
   return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
 }
 
-function getTextUpToAnchor(selection: Selection): string | null {
+function getTextUpToAnchor(selection: RangeSelection): string | null {
   const anchor = selection.anchor;
   if (anchor.type !== 'text') {
     return null;

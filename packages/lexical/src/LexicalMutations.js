@@ -8,7 +8,7 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {Selection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
 import type {TextNode} from '.';
 
 import {
@@ -61,7 +61,7 @@ function isManagedLineBreak(
   );
 }
 
-function getLastSelection(editor: LexicalEditor): null | Selection {
+function getLastSelection(editor: LexicalEditor): null | RangeSelection {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
     return selection !== null ? selection.clone() : null;

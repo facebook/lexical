@@ -10,7 +10,7 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {TextNode} from './nodes/base/LexicalTextNode';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
-import type {Selection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import {
@@ -162,7 +162,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
   });
 }
 
-function $applyTargetRange(selection: Selection, event: InputEvent): void {
+function $applyTargetRange(selection: RangeSelection, event: InputEvent): void {
   if (event.getTargetRanges) {
     const targetRange = event.getTargetRanges()[0];
 

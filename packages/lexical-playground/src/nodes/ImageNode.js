@@ -420,8 +420,10 @@ function ImageComponent({
         {showCaption && (
           <div className="image-caption-container">
             <LexicalNestedComposer
-              namespace="PlaygroundImageEditor"
-              initialDecoratorEditor={decoratorEditor}>
+              initialConfig={{
+                namespace: 'PlaygroundImageEditor',
+                decoratorEditor: decoratorEditor,
+              }}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

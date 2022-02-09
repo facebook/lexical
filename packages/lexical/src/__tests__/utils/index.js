@@ -12,18 +12,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  createEditor,
-  ElementNode,
-  TextNode,
-  DecoratorNode,
-  ParagraphNode,
-} from 'lexical';
-import {HeadingNode} from 'lexical/HeadingNode';
-import {ListNode, ListItemNode} from '@lexical/list';
-import {LinkNode} from 'lexical/LinkNode';
-import {QuoteNode} from 'lexical/QuoteNode';
-import {CodeNode} from 'lexical/CodeNode';
+import {createEditor, ElementNode, TextNode, DecoratorNode} from 'lexical';
+import ExtendedNodes from 'lexical/ExtendedNodes';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
@@ -32,25 +22,28 @@ type TestEnv = {
   outerHTML: string,
 };
 
-export function createTestEditor(config): LexicalEditor {
-  const editor = createEditor(config);
-  editor.registerNodes([
-    ParagraphNode,
-    HeadingNode,
-    ListNode,
-    ListItemNode,
-    LinkNode,
-    QuoteNode,
-    CodeNode,
-    TestElementNode,
-    TestSegmentedNode,
-    TestExcludeFromCopyElementNode,
-    TestDecoratorNode,
-  ]);
+export function createTestEditor(config = {}): LexicalEditor {
+  const customNodes = config.nodes || [];
+  const editor = createEditor({
+    theme: config.theme,
+    editorState: config.editorState,
+    namespace: config.namespace,
+    nodes: [
+      ...ExtendedNodes,
+      TestElementNode,
+      TestSegmentedNode,
+      TestExcludeFromCopyElementNode,
+      TestDecoratorNode,
+      ...customNodes,
+    ],
+  });
   return editor;
 }
 
-export function initializeUnitTest(runTests: (testEnv: TestEnv) => void) {
+export function initializeUnitTest(
+  runTests: (testEnv: TestEnv) => void,
+  editorConfig,
+) {
   const testEnv: TestEnv = {
     editor: null,
     container: null,
@@ -68,7 +61,7 @@ export function initializeUnitTest(runTests: (testEnv: TestEnv) => void) {
 
     const useLexicalEditor = (rootElementRef) => {
       const lexicalEditor = React.useMemo(() => {
-        const lexical = createTestEditor();
+        const lexical = createTestEditor(editorConfig);
         lexical.addListener('error', (error) => {
           throw error;
         });

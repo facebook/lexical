@@ -4,6 +4,7 @@ Lexical is an extensible JavaScript text-editor that provides reliable, accessib
 
 The core of Lexical is a dependency-free text editor engine that allows for powerful, simple and complex,
 editor implementations to be built on top. Lexical's engine provides three main parts:
+
 - editor instances that each attach to a single content editable element.
 - a set of editor states that represent the current and pending states of the editor at any given time.
 - a DOM reconciler that takes a set of editor states, diffs the changes, and updates the DOM according to their state.
@@ -77,12 +78,16 @@ function onError(error) {
 }
 
 function Editor() {
+  const initialConfig = {
+    theme,
+    onError,
+  };
+
   return (
-    <LexicalComposer theme={theme}>
+    <LexicalComposer initialConfig={initialConfig}>
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}
-        onError={onError}
       />
       <LexicalOnChangePlugin onChange={onChange} />
       <HistoryPlugin />
@@ -136,9 +141,9 @@ editor state from an editor by calling `editor.getEditorState()`.
 Editor states have two phases:
 
 - During an update they can be thought of as "mutable". See "Updating an editor" below to
-mutate an editor state.
+  mutate an editor state.
 - After an update, the editor state is then locked and deemed immutable from there one. This
-editor state can therefore be thought of as a "snapshot".
+  editor state can therefore be thought of as a "snapshot".
 
 Editor states contain two core things:
 
@@ -149,9 +154,7 @@ Editor states are serializable to JSON, and the editor instance provides a usefu
 to deserialize stringified editor states.
 
 ```js
-const stringifiedEditorState = JSON.stringify(
-  editor.getEditorState().toJSON(),
-);
+const stringifiedEditorState = JSON.stringify(editor.getEditorState().toJSON());
 
 const newEditorState = editor.parseEditorState(stringifiedEditorState);
 ```
@@ -225,6 +228,7 @@ editor.addListener('update', ({editorState}) => {
 ```
 
 ### Creating custom Lexical nodes
+
 - [Creating custom decorator nodes](https://github.com/facebook/lexical/blob/main/examples/decorators.md)
 
 ## Contributing to Lexical
@@ -232,6 +236,7 @@ editor.addListener('update', ({editorState}) => {
 1. Clone this repository
 
 2. Install dependencies
+
    - `npm install`
 
 3. Start local server and run tests
@@ -244,15 +249,16 @@ Note: for collaboration, ensure you start the websocket server separately with `
 ### Optional but recommended, use VSCode for development
 
 1.  Download and install VSCode
+
     - Download from [here](https://code.visualstudio.com/download) (it’s recommended to use the unmodified version)
 
-2. Install extensions
-   - [Flow Language Support](https://marketplace.visualstudio.com/items?itemName=flowtype.flow-for-vscode)
-     - Make sure to follow the setup steps in the README
-   - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-     - Set prettier as the default formatter in `editor.defaultFormatter`
-     - Optional: set format on save `editor.formatOnSave`
-   - [ESlint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+2.  Install extensions
+    - [Flow Language Support](https://marketplace.visualstudio.com/items?itemName=flowtype.flow-for-vscode)
+      - Make sure to follow the setup steps in the README
+    - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+      - Set prettier as the default formatter in `editor.defaultFormatter`
+      - Optional: set format on save `editor.formatOnSave`
+    - [ESlint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 
 ## Documentation
 

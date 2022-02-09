@@ -31,9 +31,6 @@ import {
   $createTestDecoratorNode,
   createTestEditor,
 } from '../utils';
-import {HorizontalRuleNode} from '../../nodes/base/LexicalHorizontalRuleNode';
-import {LineBreakNode} from '../../nodes/base/LexicalLineBreakNode';
-import {RootNode} from '../../nodes/base/LexicalRootNode';
 
 describe('LexicalEditor tests', () => {
   let container = null;
@@ -134,7 +131,7 @@ describe('LexicalEditor tests', () => {
     );
 
     editor = createTestEditor({
-      initialEditorState: initialEditorState,
+      editorState: initialEditorState,
     });
     editor.setRootElement(rootElement);
 
@@ -1314,110 +1311,6 @@ describe('LexicalEditor tests', () => {
     });
     removeTextTransform();
     removeParagraphTransform();
-  });
-
-  it('registers node type', () => {
-    init();
-
-    const pairs = [
-      ['text', TextNode],
-      ['horizontal-rule', HorizontalRuleNode],
-      ['linebreak', LineBreakNode],
-      ['root', RootNode],
-    ];
-    for (let i = 0; i < pairs.length; i++) {
-      const currentPair = pairs[i];
-      expect(editor._registeredNodes.get(currentPair[0]).klass).toBe(
-        currentPair[1],
-      );
-    }
-    class CustomTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    expect(editor._registeredNodes.get('custom_text_node')).toBe(undefined);
-
-    const unregisterNodes = editor.registerNodes([CustomTextNode]);
-    expect(editor._registeredNodes.get('custom_text_node').klass).toBe(
-      CustomTextNode,
-    );
-    unregisterNodes();
-  });
-
-  it('throws when overriding existing node type', () => {
-    init();
-
-    class CustomFirstTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    class CustomSecondTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    editor.registerNodes([CustomFirstTextNode]);
-    expect(() => editor.registerNodes([CustomSecondTextNode])).toThrow();
-    editor.update(() => {
-      // eslint-disable-next-line no-new
-      new CustomFirstTextNode();
-      expect(() => new CustomSecondTextNode()).toThrow();
-    });
-  });
-
-  it('registers the same node three times, unregisters it, and registers a different node with the same type', () => {
-    init();
-
-    class CustomFirstTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    class CustomSecondTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    const unregisterFn1 = editor.registerNodes([CustomFirstTextNode]);
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(1);
-    const unregisterFn2 = editor.registerNodes([
-      CustomFirstTextNode,
-      CustomFirstTextNode,
-    ]);
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(3);
-    unregisterFn1();
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(2);
-    unregisterFn2();
-    expect(editor._registeredNodes.get('custom_text_node')).toBe(undefined);
-
-    editor.registerNodes([CustomSecondTextNode]);
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(1);
-    editor.update(() => {
-      // eslint-disable-next-line no-new
-      new CustomSecondTextNode();
-    });
   });
 
   it('textcontent listener', async () => {

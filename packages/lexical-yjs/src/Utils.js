@@ -135,7 +135,7 @@ export function getOrInitCollabNodeFromSharedType(
   // $FlowFixMe: internal field
   const collabNode = sharedType._collabNode;
   if (collabNode === undefined) {
-    const registeredNodes = binding.editor._registeredNodes;
+    const registeredNodes = binding.editor._nodes;
     const type = getNodeTypeFromSharedType(sharedType);
     const nodeInfo = registeredNodes.get(type);
     if (nodeInfo === undefined) {
@@ -177,7 +177,7 @@ export function createLexicalNodeFromCollabNode(
   parentKey: NodeKey,
 ): LexicalNode {
   const type = collabNode.getType();
-  const registeredNodes = binding.editor._registeredNodes;
+  const registeredNodes = binding.editor._nodes;
   const nodeInfo = registeredNodes.get(type);
   if (nodeInfo === undefined) {
     throw new Error('createLexicalNode failed');

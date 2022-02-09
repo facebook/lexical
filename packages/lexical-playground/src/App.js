@@ -16,13 +16,20 @@ import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import LexicalComposer from '@lexical/react/LexicalComposer';
+import PlaygroundNodes from './nodes/PlaygroundNodes';
 
 function App(): React$Node {
   const {settings} = useSettings();
   const {measureTypingPerf} = settings;
 
+  const initialConfig = {
+    namespace: 'PlaygroundEditor',
+    theme: PlaygroundEditorTheme,
+    nodes: [...PlaygroundNodes],
+  };
+
   return (
-    <LexicalComposer namespace="PlaygroundEditor" theme={PlaygroundEditorTheme}>
+    <LexicalComposer initialConfig={initialConfig}>
       <SharedHistoryContext>
         <header>
           <img src="logo.svg" alt="Lexical Logo" />

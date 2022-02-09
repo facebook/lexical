@@ -45,10 +45,6 @@ export function useCharacterLimit(
   } = optional;
 
   useEffect(() => {
-    return editor.registerNodes([OverflowNode]);
-  }, [editor]);
-
-  useEffect(() => {
     let text = editor.getEditorState().read($textContentCurry);
     let lastComputedTextLength = 0;
 

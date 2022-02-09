@@ -19,7 +19,11 @@ const EditorPriority: CommandListenerEditorPriority = 0;
 export default function PollPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([PollNode])) {
+      throw new Error('PollPlugin: PollNode not registered on editor');
+    }
+
+    return editor.addListener(
       'command',
       (type, payload) => {
         if (type === 'insertPoll') {
@@ -36,13 +40,6 @@ export default function PollPlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removePollNode = editor.registerNodes([PollNode]);
-
-    return () => {
-      removeCommandListener();
-      removePollNode();
-    };
   }, [editor]);
   return null;
 }

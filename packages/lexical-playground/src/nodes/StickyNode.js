@@ -275,9 +275,11 @@ function StickyComponent({
         <i className="bucket" />
       </button>
       <LexicalNestedComposer
-        namespace="PlaygroundStickyEditor"
-        theme={StickyEditorTheme}
-        initialDecoratorEditor={decoratorEditor}>
+        initialConfig={{
+          namespace: 'PlaygroundStickyEditor',
+          theme: StickyEditorTheme,
+          decoratorEditor: decoratorEditor,
+        }}>
         {isCollab ? (
           <CollaborationPlugin
             id={decoratorEditor.id}

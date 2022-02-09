@@ -22,10 +22,6 @@ import {
   $isElementNode,
   $createParagraphNode,
 } from 'lexical';
-import {HeadingNode} from 'lexical/HeadingNode';
-import {ListNode, ListItemNode} from '@lexical/list';
-import {QuoteNode} from 'lexical/QuoteNode';
-import {CodeNode} from 'lexical/CodeNode';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
   onCutForRichText,
@@ -87,13 +83,6 @@ function clearEditor(
 export function useRichTextSetup(editor: LexicalEditor, init: boolean): void {
   useLayoutEffect(() => {
     const removeSubscriptions = withSubscriptions(
-      editor.registerNodes([
-        HeadingNode,
-        ListNode,
-        QuoteNode,
-        CodeNode,
-        ListItemNode,
-      ]),
       editor.addListener(
         'command',
         (type, payload): boolean => {

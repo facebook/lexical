@@ -7,6 +7,7 @@ import ReactTestUtils from 'react-dom/test-utils';
 import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {$createTextNode} from 'lexical';
 import {LinkNode} from 'lexical/LinkNode';
+import ExtendedNodes from 'lexical/ExtendedNodes';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -73,6 +74,7 @@ describe('LexicalEventHelpers', () => {
           htmlTransforms: {
             testhtmltagname: () => ({node: $createTextNode('Hello world!')}),
           },
+          nodes: [LinkNode, ...ExtendedNodes],
         }),
       [],
     );
@@ -85,11 +87,6 @@ describe('LexicalEventHelpers', () => {
       });
 
       editor.setRootElement(rootElement);
-      const unregisterNodes = editor.registerNodes([LinkNode]);
-
-      return () => {
-        unregisterNodes();
-      };
     }, [rootElementRef, editor]);
 
     return editor;

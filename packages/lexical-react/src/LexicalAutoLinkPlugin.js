@@ -215,7 +215,6 @@ function useAutoLink(
     };
 
     return withSubscriptions(
-      editor.registerNodes([AutoLinkNode]),
       editor.addTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
         if ($isAutoLinkNode(parent)) {

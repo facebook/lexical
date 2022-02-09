@@ -20,7 +20,13 @@ export default function ExcalidrawPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([ExcalidrawNode])) {
+      throw new Error(
+        'ExcalidrawPlugin: ExcalidrawNode not registered on editor',
+      );
+    }
+
+    return editor.addListener(
       'command',
       (type) => {
         if (type === 'insertExcalidraw') {
@@ -36,13 +42,6 @@ export default function ExcalidrawPlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removeExcalidrawNode = editor.registerNodes([ExcalidrawNode]);
-
-    return () => {
-      removeCommandListener();
-      removeExcalidrawNode();
-    };
   }, [editor]);
   return null;
 }

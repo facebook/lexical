@@ -86,6 +86,7 @@ import {
   $createEmptyRangeSelection as $createRangeSelection,
   $getSelection,
   $getPreviousSelection,
+  $isRangeSelection,
 } from './LexicalSelection';
 import {$createNodeFromParse} from './LexicalParsing';
 
@@ -119,6 +120,7 @@ export {
   $createNodeFromParse,
   $createParagraphNode,
   $createRangeSelection,
+  $isRangeSelection,
   $getRoot,
   $getNodeByKey,
   $getSelection,

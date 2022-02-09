@@ -1887,3 +1887,7 @@ export function adjustPointOffsetForMergedSibling(
     point.offset -= 1;
   }
 }
+
+export function $isRangeSelection(x: ?mixed): boolean %checks {
+  return x instanceof RangeSelection;
+}

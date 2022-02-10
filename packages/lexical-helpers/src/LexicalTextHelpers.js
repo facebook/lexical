@@ -115,9 +115,9 @@ export function $findNodeWithOffsetFromJoinedText(
   separatorLength: number,
 ): ?TextNodeWithOffset {
   const children = elementNode.getChildren();
-  const length = children.length;
+  const childrenLength = children.length;
   let runningLength = 0;
-  for (let i = 0; i < length; ++i) {
+  for (let i = 0; i < childrenLength; ++i) {
     if (runningLength >= joinedTextLength) {
       break;
     }

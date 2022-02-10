@@ -37,7 +37,7 @@ export type AutoFormatTriggerState = $ReadOnly<{
   anchorOffset: number,
   isCodeBlock: boolean,
   isParentAListItemNode: boolean,
-  isParentAnElementNode: boolean,
+  hasParentNode: boolean,
   isSelectionCollapsed: boolean,
   isSimpleText: boolean,
   nodeKey: NodeKey,
@@ -119,6 +119,7 @@ export type AutoFormatCriteriaWithMatchResultContext = {
 export type AutoFormatCriteriaArray = Array<AutoFormatCriteria>;
 
 export const TRIGGER_STRING = '\u0020'; // The space key triggers markdown.
+const TRIGGER_STRING_LENGTH = TRIGGER_STRING.length;
 const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused unicode character to separate text and non-text nodes.
 
 const autoFormatBase: AutoFormatCriteria = {
@@ -239,13 +240,12 @@ function getMatchResultContextWithRegEx(
     (matchMustAppearAtEndOfString === false ||
       regExMatches.index + regExMatches[0].length === textToSearch.length)
   ) {
-    const triggerStringLength = TRIGGER_STRING.length;
     const captureGroupsCount = regExMatches.length;
     let runningLength = regExMatches.index;
     for (
       let captureGroupIndex = 0;
       captureGroupIndex < captureGroupsCount;
-      ++captureGroupIndex
+      captureGroupIndex++
     ) {
       const textContent = regExMatches[captureGroupIndex];
       matchResultContext.regExCaptureGroups.push({
@@ -254,7 +254,7 @@ function getMatchResultContextWithRegEx(
         textLength:
           textContent.length -
           (captureGroupIndex + 1 === captureGroupsCount
-            ? triggerStringLength
+            ? TRIGGER_STRING_LENGTH
             : 0),
         anchorTextNodeWithOffset: null,
         focusTextNodeWithOffset: null,
@@ -517,12 +517,10 @@ function getCaptureGroupsByResolvingAllDetails(
   }
   const joinedTextLength = scanningContext.joinedText.length;
 
-  const triggerStringLength = TRIGGER_STRING.length;
-
   for (
     let captureGroupIndex = 1;
     captureGroupIndex < captureGroupsCount;
-    ++captureGroupIndex
+    captureGroupIndex++
   ) {
     const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
 
@@ -531,7 +529,7 @@ function getCaptureGroupsByResolvingAllDetails(
         parentElementNode,
         joinedTextLength,
         captureGroupDetail.offsetInParent,
-        triggerStringLength,
+        TRIGGER_STRING_LENGTH,
       );
 
     captureGroupDetail.focusTextNodeWithOffset =
@@ -539,7 +537,7 @@ function getCaptureGroupsByResolvingAllDetails(
         parentElementNode,
         joinedTextLength,
         captureGroupDetail.offsetInParent + captureGroupDetail.textLength,
-        triggerStringLength,
+        TRIGGER_STRING_LENGTH,
       );
 
     if (captureGroupDetail.textLength < 0) {
@@ -560,8 +558,7 @@ function removeTextInCaptureGroups(
 ) {
   const regExCaptureGroups = matchResultContext.regExCaptureGroups;
   const regExCaptureGroupsCount = regExCaptureGroups.length;
-  const count = regExCaptureGroupsToDelete.length;
-  for (let i = count - 1; i >= 0; --i) {
+  for (let i = regExCaptureGroupsToDelete.length - 1; i >= 0; i--) {
     if (i < regExCaptureGroupsCount) {
       const captureGroupIndex = regExCaptureGroupsToDelete[i];
       const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
@@ -641,7 +638,7 @@ function shiftCaptureGroupOffsets(
   for (
     let captureGroupIndex = startingCaptureGroupIndex + 1;
     captureGroupIndex < regExCaptureGroupsCount;
-    ++captureGroupIndex
+    captureGroupIndex++
   ) {
     const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
 
@@ -649,8 +646,7 @@ function shiftCaptureGroupOffsets(
       captureGroupDetail.anchorTextNodeWithOffset != null &&
       captureGroupDetail.anchorTextNodeWithOffset.offset >=
         applyAtOrAfterOffset &&
-      captureGroupDetail.anchorTextNodeWithOffset.node.getKey() ===
-        node.getKey()
+      captureGroupDetail.anchorTextNodeWithOffset.node.is(node)
     ) {
       captureGroupDetail.anchorTextNodeWithOffset.offset += delta;
     }
@@ -659,7 +655,7 @@ function shiftCaptureGroupOffsets(
       captureGroupDetail.focusTextNodeWithOffset != null &&
       captureGroupDetail.focusTextNodeWithOffset.offset >=
         applyAtOrAfterOffset &&
-      captureGroupDetail.focusTextNodeWithOffset.node.getKey() === node.getKey()
+      captureGroupDetail.focusTextNodeWithOffset.node.is(node)
     ) {
       captureGroupDetail.focusTextNodeWithOffset.offset += delta;
     }
@@ -676,38 +672,35 @@ function formatTextInCaptureGroupIndex(
 
   invariant(
     captureGroupIndex < regExCaptureGroupsCount,
-    'formatTextInCaptureGroupIndex has bad captureGroupIndex parameter.',
+    'The capture group count in the RegEx does match the actual capture group count.',
   );
 
-  if (captureGroupIndex < regExCaptureGroupsCount) {
-    const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
-    const anchorTextNodeWithOffset =
-      captureGroupDetail.anchorTextNodeWithOffset;
-    const focusTextNodeWithOffset = captureGroupDetail.focusTextNodeWithOffset;
-    if (
-      anchorTextNodeWithOffset != null &&
-      focusTextNodeWithOffset != null &&
-      captureGroupDetail.textLength > 0
-    ) {
-      const newSelection = $createSelection();
+  const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
+  const anchorTextNodeWithOffset = captureGroupDetail.anchorTextNodeWithOffset;
+  const focusTextNodeWithOffset = captureGroupDetail.focusTextNodeWithOffset;
+  if (
+    anchorTextNodeWithOffset != null &&
+    focusTextNodeWithOffset != null &&
+    captureGroupDetail.textLength > 0
+  ) {
+    const newSelection = $createSelection();
 
-      newSelection.anchor.set(
-        anchorTextNodeWithOffset.node.getKey(),
-        anchorTextNodeWithOffset.offset,
-        'text',
-      );
+    newSelection.anchor.set(
+      anchorTextNodeWithOffset.node.getKey(),
+      anchorTextNodeWithOffset.offset,
+      'text',
+    );
 
-      newSelection.focus.set(
-        focusTextNodeWithOffset.node.getKey(),
-        focusTextNodeWithOffset.offset,
-        'text',
-      );
+    newSelection.focus.set(
+      focusTextNodeWithOffset.node.getKey(),
+      focusTextNodeWithOffset.offset,
+      'text',
+    );
 
-      $setSelection(newSelection);
-      const currentSelection = $getSelection();
-      if (currentSelection != null) {
-        currentSelection.formatText(formatType);
-      }
+    $setSelection(newSelection);
+    const currentSelection = $getSelection();
+    if (currentSelection != null) {
+      currentSelection.formatText(formatType);
     }
   }
 }

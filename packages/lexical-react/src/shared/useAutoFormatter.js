@@ -18,7 +18,7 @@ import type {
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
 import {$isCodeNode} from 'lexical/CodeNode';
 import {$isListItemNode} from 'lexical/ListItemNode';
-import {$isElementNode, $isTextNode, $getSelection} from 'lexical';
+import {$isTextNode, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 import {
   getAllAutoFormatCriteria,
@@ -34,7 +34,7 @@ function getCriteriaWithMatchResultContext(
   scanningContext: ScanningContext,
 ): AutoFormatCriteriaWithMatchResultContext {
   const count = autoFormatCriteriaArray.length;
-  for (let i = 0; i < count; ++i) {
+  for (let i = 0; i < count; i++) {
     const autoFormatCriteria = autoFormatCriteriaArray[i];
 
     // Skip code block nodes, unless the nodeTransformationKind calls for toggling the code block.
@@ -129,7 +129,7 @@ function shouldAttemptToAutoFormat(
   const triggerOffset = currentTriggerState.anchorOffset - triggerStringLength;
 
   return (
-    currentTriggerState.isParentAnElementNode === true &&
+    currentTriggerState.hasParentNode === true &&
     currentTriggerState.isSimpleText &&
     currentTriggerState.isSelectionCollapsed &&
     currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
@@ -160,15 +160,14 @@ function getTriggerState(
     const isParentAListItemNode =
       parentNode !== null && $isListItemNode(parentNode);
 
-    const isParentAnElementNode =
-      parentNode !== null && $isElementNode(parentNode);
+    const hasParentNode = parentNode !== null;
 
     criteria = {
       anchorOffset: selection.anchor.offset,
       isCodeBlock: $isCodeNode(node),
       isSelectionCollapsed: selection.isCollapsed(),
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
-      isParentAnElementNode,
+      hasParentNode,
       isParentAListItemNode,
       nodeKey: node.getKey(),
       textContent: node.getTextContent(),

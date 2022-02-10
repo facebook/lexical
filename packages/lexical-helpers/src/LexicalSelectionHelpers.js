@@ -395,7 +395,7 @@ export function $moveCaretSelection(
   selection.modify(isHoldingShift ? 'extend' : 'move', isBackward, granularity);
 }
 
-function isParentElementRTL(selection: RangeSelection): boolean {
+export function $isParentElementRTL(selection: RangeSelection): boolean {
   const anchorNode = selection.anchor.getNode();
   const parent = anchorNode.getParentOrThrow();
   return parent.getDirection() === 'rtl';
@@ -406,7 +406,7 @@ export function $moveCharacter(
   isHoldingShift: boolean,
   isBackward: boolean,
 ): void {
-  const isRTL = isParentElementRTL(selection);
+  const isRTL = $isParentElementRTL(selection);
   $moveCaretSelection(
     selection,
     isHoldingShift,

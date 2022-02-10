@@ -19,6 +19,7 @@ const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
 
 const isWatchMode = argv.watch;
 const isProduction = argv.prod;
+const isRelease = argv.release;
 const isWWW = argv.www;
 const isClean = argv.clean;
 const extractCodes = argv.codes;
@@ -116,7 +117,7 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
-async function build(name, inputFile, outputFile) {
+async function build(name, inputFile, outputFile, isProd) {
   const inputOptions = {
     input: inputFile,
     treeshake: 'smallest',
@@ -220,7 +221,7 @@ async function build(name, inputFile, outputFile) {
           '@babel/plugin-transform-flow-strip-types',
           [
             require('./error-codes/transform-error-messages'),
-            {noMinify: !isProduction},
+            {noMinify: !isProd},
           ],
         ],
       }),
@@ -239,26 +240,15 @@ async function build(name, inputFile, outputFile) {
           {
             delimiters: ['', ''],
             preventAssignment: true,
-            __DEV__: isProduction ? 'false' : 'true',
+            __DEV__: isProd ? 'false' : 'true',
           },
           isWWW && strictWWWMappings,
         ),
       ),
-      isProduction && closure(closureOptions),
-      isWWW && {
+      isProd && closure(closureOptions),
+      {
         renderChunk(source) {
-          return `/**
-${license}
-  *
-  * @noflow
-  * @nolint
-  * @preventMunge
-  * @preserve-invariant-messages
-  * @generated
-  * @preserve-whitespace
-  * @fullSyntaxTransform
-  */
-
+          return `${getComment()}
 ${source}`;
         },
       },
@@ -298,71 +288,156 @@ ${source}`;
   }
 }
 
-function getFileName(fileName) {
+function getComment() {
+  const lines = ['/**', license];
   if (isWWW) {
-    return `${fileName}.${isProduction ? 'prod' : 'dev'}.js`;
+    lines.push(
+      '*',
+      '* @noflow',
+      '* @nolint',
+      '* @preventMunge',
+      '* @preserve-invariant-messages',
+      '* @generated',
+      '* @preserve-whitespace',
+      '* @fullSyntaxTransform',
+    );
+  }
+  lines.push(' */');
+  return lines.join('\n');
+}
+
+function getFileName(fileName, isProd) {
+  if (isWWW || isRelease) {
+    return `${fileName}.${isProd ? 'prod' : 'dev'}.js`;
   }
   return `${fileName}.js`;
 }
 
-build(
-  'Lexical Core',
-  path.resolve('./packages/lexical/src/index.js'),
-  path.resolve(`./packages/lexical/dist/${getFileName('Lexical')}`),
-);
+const packages = [
+  {
+    name: 'Lexical Core',
+    sourcePath: './packages/lexical/src/',
+    outputPath: './packages/lexical/dist/',
+    modules: [
+      {
+        sourceFileName: 'index.js',
+        outputFileName: 'Lexical',
+      },
+    ],
+  },
+  {
+    name: 'Lexical List',
+    sourcePath: './packages/lexical-list/src/',
+    outputPath: './packages/lexical-list/dist/',
+    modules: [
+      {
+        sourceFileName: 'index.js',
+        outputFileName: 'LexicalList',
+      },
+    ],
+  },
+  {
+    name: 'Lexical Core Nodes',
+    sourcePath: './packages/lexical/src/nodes/extended/',
+    outputPath: './packages/lexical/dist/',
+    modules: lexicalNodes.map((module) => ({
+      name: module,
+      sourceFileName: module,
+      outputFileName: module,
+    })),
+  },
+  {
+    name: 'Lexical Helpers',
+    sourcePath: './packages/lexical-helpers/src/',
+    outputPath: './packages/lexical-helpers/dist/',
+    modules: lexicalHelpers.map((module) => ({
+      name: module,
+      sourceFileName: module,
+      outputFileName: module,
+    })),
+  },
+  {
+    name: 'Lexical Shared',
+    sourcePath: './packages/shared/src/',
+    outputPath: './packages/shared/dist/',
+    modules: lexicalShared.map((module) => ({
+      name: module,
+      sourceFileName: module,
+      outputFileName: module,
+    })),
+  },
+  {
+    name: 'Lexical React',
+    sourcePath: './packages/lexical-react/src/',
+    outputPath: './packages/lexical-react/dist/',
+    modules: lexicalReactModules
+      .filter((module) => {
+        // We don't want to sync these modules, as they're bundled in the other
+        // modules already.
+        const ignoredModules = [
+          'useLexicalDragonSupport',
+          'usePlainTextSetup',
+          'useRichTextSetup',
+          'useYjsCollaboration',
+        ];
+        return !ignoredModules.includes(module);
+      })
+      .map((module) => ({
+        name: module,
+        sourceFileName: module,
+        outputFileName: module,
+      })),
+  },
+  {
+    name: 'Lexical Yjs',
+    sourcePath: './packages/lexical-yjs/src/',
+    outputPath: './packages/lexical-yjs/dist/',
+    modules: [
+      {
+        sourceFileName: 'index.js',
+        outputFileName: 'LexicalYjs',
+      },
+    ],
+  },
+];
 
-build(
-  'Lexical List',
-  path.resolve('./packages/lexical-list/src/index.js'),
-  path.resolve(`./packages/lexical-list/dist/${getFileName('LexicalList')}`),
-);
-
-lexicalNodes.forEach((module) => {
-  build(
-    `Lexical Core Nodes - ${module}`,
-    path.resolve(`./packages/lexical/src/nodes/extended/${module}.js`),
-    path.resolve(`./packages/lexical/dist/${getFileName(module)}`),
-  );
+packages.forEach((pkg) => {
+  const {name, sourcePath, outputPath, modules} = pkg;
+  modules.forEach((module) => {
+    const {sourceFileName, outputFileName} = module;
+    const inputFile = path.resolve(path.join(`${sourcePath}${sourceFileName}`));
+    build(
+      `${name}${module.name ? '-' + module.name : ''}`,
+      inputFile,
+      path.resolve(
+        path.join(`${outputPath}${getFileName(outputFileName, isProduction)}`),
+      ),
+      isProduction,
+    );
+    if (isRelease) {
+      build(
+        name,
+        inputFile,
+        path.resolve(
+          path.join(`${outputPath}${getFileName(outputFileName, false)}`),
+        ),
+        false,
+      );
+      buildForkModule(outputPath, outputFileName);
+    }
+  });
 });
 
-lexicalHelpers.forEach((module) => {
-  build(
-    `Lexical Helpers - ${module}`,
-    path.resolve(`./packages/lexical-helpers/src/${module}.js`),
-    path.resolve(`./packages/lexical-helpers/dist/${getFileName(module)}`),
+function buildForkModule(outputPath, outputFileName) {
+  const lines = [
+    getComment(),
+    `'use strict'`,
+    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
+    `module.exports = ${outputFileName};`,
+  ];
+  const fileContent = lines.join('\n');
+  fs.outputFileSync(
+    path.resolve(path.join(`${outputPath}${outputFileName}.js`)),
+    fileContent,
   );
-});
-
-lexicalShared.forEach((module) => {
-  build(
-    `Lexical Shared - ${module}`,
-    path.resolve(`./packages/shared/src/${module}.js`),
-    path.resolve(`./packages/shared/dist/${getFileName(module)}`),
-  );
-});
-
-lexicalReactModules.forEach((lexicalReactModule) => {
-  // We don't want to sync these modules, as they're bundled in the other
-  // modules already.
-  if (
-    lexicalReactModule === 'useLexicalDragonSupport' ||
-    lexicalReactModule === 'usePlainTextSetup' ||
-    lexicalReactModule === 'useRichTextSetup' ||
-    lexicalReactModule === 'useYjsCollaboration'
-  ) {
-    return;
-  }
-  build(
-    `Lexical React - ${lexicalReactModule}`,
-    path.resolve(`./packages/lexical-react/src/${lexicalReactModule}.js`),
-    path.resolve(
-      `./packages/lexical-react/dist/${getFileName(lexicalReactModule)}`,
-    ),
-  );
-});
-
-build(
-  'Lexical Yjs',
-  path.resolve('./packages/lexical-yjs/src/index.js'),
-  path.resolve(`./packages/lexical-yjs/dist/${getFileName('LexicalYjs')}`),
-);
+}

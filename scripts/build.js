@@ -303,9 +303,6 @@ function getFileName(fileName, isProd) {
   if (isWWW || isRelease) {
     return `${fileName}.${isProd ? 'prod' : 'dev'}.js`;
   }
-  if (isRelease) {
-    return `${fileName}.${isProd ? 'js' : 'dev.js'}`;
-  }
   return `${fileName}.js`;
 }
 

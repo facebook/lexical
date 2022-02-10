@@ -12,7 +12,7 @@ import type {LexicalEditor} from 'lexical';
 import {TextNode} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {HashtagNode, $toggleHashtag} from 'lexical/HashtagNode';
+import {$toggleHashtag} from 'lexical/HashtagNode';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
   alpha: string,
@@ -280,12 +280,7 @@ function textNodeTransform(node: TextNode): void {
 
 function useHashtags(editor: LexicalEditor): void {
   useEffect(() => {
-    const unregisterNodes = editor.registerNodes([HashtagNode]);
-    const removeTransform = editor.addTransform(TextNode, textNodeTransform);
-    return () => {
-      unregisterNodes();
-      removeTransform();
-    };
+    return editor.addTransform(TextNode, textNodeTransform);
   }, [editor]);
 }
 

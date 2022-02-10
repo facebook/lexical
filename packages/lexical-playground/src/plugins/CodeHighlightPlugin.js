@@ -62,8 +62,13 @@ export const getCodeLanguages = (): Array<string> =>
 export default function CodeHighlightPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
+    if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
+      throw new Error(
+        'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
+      );
+    }
+
     return withSubscriptions(
-      editor.registerNodes([CodeNode, CodeHighlightNode]),
       editor.addTransform(CodeNode, (node) => codeNodeTransform(node, editor)),
       editor.addTransform(TextNode, (node) => textNodeTransform(node, editor)),
       editor.addTransform(CodeHighlightNode, (node) =>

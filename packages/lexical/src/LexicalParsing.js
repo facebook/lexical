@@ -138,10 +138,10 @@ export function internalCreateNodeFromParse(
   parsedNodeMap: ParsedNodeMap,
   editor: LexicalEditor,
   parentKey: null | NodeKey,
-  state: NodeParserState = {},
+  state: NodeParserState = {originalSelection: null},
 ): LexicalNode {
   const nodeType = parsedNode.__type;
-  const registeredNode = editor._registeredNodes.get(nodeType);
+  const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
   }

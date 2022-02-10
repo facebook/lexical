@@ -8,12 +8,12 @@
  */
 
 import type {NodeKey} from '../../LexicalNode';
-import type {PointType, Selection} from '../../LexicalSelection';
+import type {PointType, RangeSelection} from '../../LexicalSelection';
 
 import {$isRootNode, $isTextNode, TextNode} from '../../';
 import {LexicalNode} from '../../LexicalNode';
 import {
-  internalMakeSelection,
+  internalMakeRangeSelection,
   $getSelection,
   moveSelectionPointToSibling,
 } from '../../LexicalSelection';
@@ -202,7 +202,7 @@ export class ElementNode extends LexicalNode {
 
   // Mutators
 
-  select(_anchorOffset?: number, _focusOffset?: number): Selection {
+  select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const selection = $getSelection();
     let anchorOffset = _anchorOffset;
@@ -216,7 +216,7 @@ export class ElementNode extends LexicalNode {
     }
     const key = this.__key;
     if (selection === null) {
-      return internalMakeSelection(
+      return internalMakeRangeSelection(
         key,
         anchorOffset,
         key,
@@ -231,7 +231,7 @@ export class ElementNode extends LexicalNode {
     }
     return selection;
   }
-  selectStart(): Selection {
+  selectStart(): RangeSelection {
     const firstNode = this.getFirstDescendant();
     if ($isElementNode(firstNode) || $isTextNode(firstNode)) {
       return firstNode.select(0, 0);
@@ -242,7 +242,7 @@ export class ElementNode extends LexicalNode {
     }
     return this.select(0, 0);
   }
-  selectEnd(): Selection {
+  selectEnd(): RangeSelection {
     const lastNode = this.getLastDescendant();
     if ($isElementNode(lastNode) || $isTextNode(lastNode)) {
       return lastNode.select();
@@ -434,13 +434,13 @@ export class ElementNode extends LexicalNode {
     return writableSelf;
   }
   // These are intended to be extends for specific element heuristics.
-  insertNewAfter(selection: Selection): null | LexicalNode {
+  insertNewAfter(selection: RangeSelection): null | LexicalNode {
     return null;
   }
   canInsertTab(): boolean {
     return false;
   }
-  collapseAtStart(selection: Selection): boolean {
+  collapseAtStart(selection: RangeSelection): boolean {
     return false;
   }
   excludeFromCopy(): boolean {

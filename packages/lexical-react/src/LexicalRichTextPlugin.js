@@ -13,31 +13,18 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useRichTextSetup} from './shared/useRichTextSetup';
 import useDecorators from './shared/useDecorators';
 import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
-import useLayoutEffect from 'shared/useLayoutEffect';
-
-function onErrorDefault(e: Error): void {
-  throw e;
-}
 
 export default function RichTextPlugin({
   contentEditable,
   placeholder,
-  skipInit,
-  onError,
 }: {
   contentEditable: React$Node,
   placeholder: React$Node,
-  skipInit?: boolean,
-  onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  useRichTextSetup(editor, !skipInit);
+  useRichTextSetup(editor);
   const decorators = useDecorators(editor);
-
-  useLayoutEffect(() => {
-    return editor.addListener('error', onError || onErrorDefault);
-  }, [editor, onError]);
 
   return (
     <>

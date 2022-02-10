@@ -18,7 +18,10 @@ type SettingsContextShape = {
   setOption: (name: SettingName, value: boolean) => void,
 };
 
-const Context: React$Context<SettingsContextShape> = createContext({});
+const Context: React$Context<SettingsContextShape> = createContext({
+  settings: {},
+  setOption: (_, __) => {},
+});
 
 export const SettingsContext = ({
   children,

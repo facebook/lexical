@@ -19,6 +19,8 @@ module.exports = {
       'lexical/AutoLinkNode': 'lexical/dist/LexicalAutoLinkNode',
       'lexical/HashtagNode': 'lexical/dist/LexicalHashtagNode',
       'lexical/CodeHighlightNode': 'lexical/dist/LexicalCodeHighlightNode',
+      'lexical/OverflowNode': 'lexical/dist/LexicalOverflowNode',
+      'lexical/ExtendedNodes': 'lexical/dist/LexicalExtendedNodes',
       // Lexical Helpers
       '@lexical/helpers/selection':
         '@lexical/helpers/dist/LexicalSelectionHelpers',
@@ -30,6 +32,9 @@ module.exports = {
       '@lexical/helpers/file': '@lexical/helpers/dist/LexicalFileHelpers',
       '@lexical/helpers/offsets': '@lexical/helpers/dist/LexicalOffsetHelpers',
       '@lexical/helpers/root': '@lexical/helpers/dist/LexicalRootHelpers',
+
+      // Lexical Features
+      '@lexical/list': '@lexical/list/dist/LexicalList.js',
 
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',
@@ -76,6 +81,7 @@ module.exports = {
         'LexicalHorizontalRulePlugin',
         'LexicalPlainTextPlugin',
         'LexicalRichTextPlugin',
+        'LexicalBootstrapPlugin',
         'LexicalCollaborationPlugin',
         'LexicalHistoryPlugin',
         'LexicalTablePlugin',

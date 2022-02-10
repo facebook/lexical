@@ -3,8 +3,6 @@
 'use strict';
 
 const {exec} = require('child-process-promise');
-const fs = require('fs');
-const path = require('path');
 
 async function prepareLexicalCorePackage() {
   await exec(`rm -rf ./packages/lexical/npm`);
@@ -20,12 +18,6 @@ async function prepareLexicalCorePackage() {
   );
   await exec(
     `mv ./packages/lexical/npm/LexicalHashtagNode.js ./packages/lexical/npm/HashtagNode.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalListNode.js ./packages/lexical/npm/ListNode.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalListItemNode.js ./packages/lexical/npm/ListItemNode.js`,
   );
 
   await exec(
@@ -49,6 +41,9 @@ async function prepareLexicalCorePackage() {
   );
   await exec(
     `mv ./packages/lexical/npm/LexicalCodeHighlightNode.js ./packages/lexical/npm/CodeHighlightNode.js`,
+  );
+  await exec(
+    `mv ./packages/lexical/npm/LexicalExtendedNodes.js ./packages/lexical/npm/LexicalExtendedNode.js`,
   );
   // Other bits
   await exec(`cp -R ./packages/lexical/package.json ./packages/lexical/npm`);
@@ -127,7 +122,21 @@ async function prepareLexicalYjsPackage() {
   );
 }
 
+async function prepareLexicalListPackage() {
+  await exec(`rm -rf ./packages/lexical-list/npm`);
+  await exec(`mkdir ./packages/lexical-list/npm`);
+  await exec(`cp -R ./packages/lexical-list/dist/*.js ./packages/lexical-list/npm`);
+  await exec(
+    `cp -R ./packages/lexical-list/package.json ./packages/lexical-list/npm`,
+  );
+  await exec(`cp -R LICENSE ./packages/lexical-list/npm`);
+  await exec(
+    `cp -R ./packages/lexical-list/README.md ./packages/lexical-list/npm`,
+  );
+}
+
 prepareLexicalCorePackage();
 prepareLexicalHelpersPackage();
 prepareLexicalReactPackage();
 prepareLexicalYjsPackage();
+prepareLexicalListPackage();

@@ -19,7 +19,7 @@ import type {ParsedNode, NodeParserState} from './LexicalParsing';
 
 import {updateEditorState} from './LexicalReconciler';
 import {
-  internalCreateSelection,
+  internalCreateRangeSelection,
   internalCreateSelectionFromParse,
 } from './LexicalSelection';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
@@ -569,7 +569,7 @@ function beginUpdate(
 
   try {
     if (editorStateWasCloned) {
-      pendingEditorState._selection = internalCreateSelection(editor);
+      pendingEditorState._selection = internalCreateRangeSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();
@@ -649,10 +649,10 @@ function beginUpdate(
       });
     }
   } else {
-    updateTags.clear();
-    editor._deferred = [];
     pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
+      updateTags.clear();
+      editor._deferred = [];
       editor._pendingEditorState = null;
     }
   }

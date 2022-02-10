@@ -30,6 +30,7 @@ import {
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {Suspense, useCallback, useRef, useState} from 'react';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
 import {createWebsocketProvider} from '../collaboration';
@@ -48,6 +49,11 @@ import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import stylex from 'stylex';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import {useSettings} from '../context/SettingsContext';
+import {MentionNode} from './MentionNode';
+import {EmojiNode} from './EmojiNode';
+import {TypeaheadNode} from './TypeaheadNode';
+import {KeywordNode} from './KeywordNode';
+import ExtendedNodes from 'lexical/ExtendedNodes';
 
 const styles = stylex.create({
   contentEditable: {
@@ -420,8 +426,18 @@ function ImageComponent({
         {showCaption && (
           <div className="image-caption-container">
             <LexicalNestedComposer
-              namespace="PlaygroundImageEditor"
-              initialDecoratorEditor={decoratorEditor}>
+              initialConfig={{
+                namespace: 'PlaygroundImageEditor',
+                decoratorEditor: decoratorEditor,
+                nodes: [
+                  ...ExtendedNodes,
+                  ImageNode,
+                  MentionNode,
+                  EmojiNode,
+                  TypeaheadNode,
+                  KeywordNode,
+                ],
+              }}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />
@@ -434,11 +450,12 @@ function ImageComponent({
                 <CollaborationPlugin
                   id={decoratorEditor.id}
                   providerFactory={createWebsocketProvider}
-                  initEditorState={false}
+                  shouldBootstrap={true}
                 />
               ) : (
                 <HistoryPlugin externalHistoryState={historyState} />
               )}
+              <BootstrapPlugin />
               <RichTextPlugin
                 contentEditable={
                   <ContentEditable className={stylex(styles.contentEditable)} />
@@ -448,7 +465,6 @@ function ImageComponent({
                     Enter a caption...
                   </Placeholder>
                 }
-                skipInit={isCollab}
               />
               {showNestedEditorTreeView && <TreeViewPlugin />}
             </LexicalNestedComposer>

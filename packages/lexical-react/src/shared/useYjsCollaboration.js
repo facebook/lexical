@@ -7,11 +7,16 @@
  * @flow strict
  */
 
-import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
+import type {
+  LexicalEditor,
+  CommandListenerEditorPriority,
+  CommandListenerLowPriority,
+} from 'lexical';
 import type {Provider, Binding} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
 import * as React from 'react';
+import {useLayoutEffect, useRef} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
@@ -25,9 +30,9 @@ import {
   initLocalState,
   setLocalStateFocus,
 } from '@lexical/yjs';
-import {initEditor} from './useRichTextSetup';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
+const BootstrapPriority: CommandListenerLowPriority = 1;
 
 export function useYjsCollaboration(
   editor: LexicalEditor,
@@ -36,7 +41,7 @@ export function useYjsCollaboration(
   docMap: Map<string, Doc>,
   name: string,
   color: string,
-  skipInit?: boolean,
+  shouldBootstrap: boolean,
 ): [React$Node, Binding] {
   const binding = useMemo(
     () => createBinding(editor, provider, id, docMap),
@@ -55,6 +60,21 @@ export function useYjsCollaboration(
     }
   }, [provider]);
 
+  const isInitialized = useRef(false);
+
+  useLayoutEffect(() => {
+    return editor.addListener(
+      'command',
+      (type) => {
+        if (type === 'bootstrapEditor') {
+          return !isInitialized.current;
+        }
+        return false;
+      },
+      BootstrapPriority,
+    );
+  }, [editor]);
+
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
@@ -65,12 +85,13 @@ export function useYjsCollaboration(
 
     const onSync = (isSynced: boolean) => {
       if (
-        !skipInit &&
+        shouldBootstrap &&
         isSynced &&
         root.isEmpty() &&
         root._xmlText._length === 0
       ) {
-        initEditor(editor);
+        isInitialized.current = true;
+        editor.execCommand('bootstrapEditor');
       }
     };
 
@@ -129,7 +150,16 @@ export function useYjsCollaboration(
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
       removeListener();
     };
-  }, [binding, color, connect, disconnect, editor, name, provider, skipInit]);
+  }, [
+    binding,
+    color,
+    connect,
+    disconnect,
+    editor,
+    name,
+    provider,
+    shouldBootstrap,
+  ]);
 
   const cursorsContainer = useMemo(() => {
     const ref = (element) => {

@@ -12,10 +12,11 @@ import type {ElementNode, CommandListenerEditorPriority} from 'lexical';
 import {useEffect} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$log, $getSelection, $createParagraphNode} from 'lexical';
+import {$createTableNodeWithDimensions} from '@lexical/helpers/nodes';
 import {TableNode} from 'lexical/TableNode';
 import {TableCellNode} from 'lexical/TableCellNode';
 import {TableRowNode} from 'lexical/TableRowNode';
-import {$createTableNodeWithDimensions} from '@lexical/helpers/nodes';
+import invariant from 'shared/invariant';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -23,7 +24,13 @@ export default function TablePlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
+      invariant(
+        false,
+        'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
+      );
+    }
+    return editor.addListener(
       'command',
       (type, payload) => {
         if (type === 'insertTable') {
@@ -51,17 +58,6 @@ export default function TablePlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removeNodes = editor.registerNodes([
-      TableNode,
-      TableCellNode,
-      TableRowNode,
-    ]);
-
-    return () => {
-      removeCommandListener();
-      removeNodes();
-    };
   }, [editor]);
 
   return null;

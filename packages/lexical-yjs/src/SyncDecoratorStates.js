@@ -399,7 +399,7 @@ export function syncYjsDecoratorArrayToLexical(
   yjsArray: YArray<YDecoratorValue>,
   decoratorArray: DecoratorArray,
 ): void {
-  const length = Math.max(yjsArray.length, decoratorArray.length);
+  const length = Math.max(yjsArray.length, decoratorArray.getLength());
   for (let i = 0; i < length; i++) {
     syncYjsDecoratorArrayValueToLexical(
       binding,

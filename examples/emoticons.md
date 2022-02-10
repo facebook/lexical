@@ -124,10 +124,7 @@ export function $isEmoticonNode(node) {
   return node instanceof EmoticonNode;
 }
 
-export function $createEmoticonNode(
-  className,
-  emoticonText,
-) {
+export function $createEmoticonNode(className, emoticonText) {
   return new EmoticonNode(className, emoticonText).setMode('token');
 }
 ```
@@ -135,7 +132,6 @@ export function $createEmoticonNode(
 In $createEmoticonNode, you'll notice that we call setMode on he instance before returning it. Setting the mode to "token" changes the behavior of the node in response to events such as a backspace, where it ensures that the entire node is treated as a single entity and appropriately deleted.
 
 Now that we have our custom EmoticonNode, we'll learn how to listen for and respond to change in the editor via a transform.
-
 
 ### Register a Transform
 
@@ -153,22 +149,7 @@ export default function EmoticonPlugin() {
 Once we've done that, let's register our newly-created EmoticonNode so that Lexical knows how to handle it:
 
 ```jsx
-// EmoticonPlugin.js
-
-function useEmoticons(editor) {
-  useEffect(() => {
-    const unregisterNodes = editor.registerNodes([EmoticonNode]);
-    return () => {
-      unregisterNodes();
-    };
-  }, [editor]);
-}
-
-export default function EmoticonPlugin() {
-  const [editor] = useLexicalComposerContext();
-  useEmoticons(editor);
-  return null;
-}
+<LexicalComposer initialConfig={{nodes: [EmoticonNode]}}>...</LexicalComposer>
 ```
 
 Next, let's setup a transform to listen for changes. Transforms are special event listeners that only respond to changes in nodes of a certain type. In this case, we want to listen for changes in TextNodes, since that's what will be created as the user enters or changes text:
@@ -178,10 +159,10 @@ Next, let's setup a transform to listen for changes. Transforms are special even
 
 function useEmoticons(editor) {
   useEffect(() => {
-    const unregisterNodes = editor.registerNodes([EmoticonNode]);
-    const removeTransform = editor.addTransform(TextNode, () => { console.log('hello') });
+    const removeTransform = editor.addTransform(TextNode, () => {
+      console.log('hello');
+    });
     return () => {
-      unregisterNodes();
       removeTransform();
     };
   }, [editor]);
@@ -203,18 +184,16 @@ Since we already have our transform listener set up, all we need to do now is re
 ```jsx
 // EmoticonPlugin.js
 function emoticonTransform(node) {
-    const textContent = node.getTextContent();
-    if (textContent === ":)") {
-      node.replace($createEmoticonNode('', '🙂'));
-    }
+  const textContent = node.getTextContent();
+  if (textContent === ':)') {
+    node.replace($createEmoticonNode('', '🙂'));
+  }
 }
 
 function useEmoticons(editor) {
   useEffect(() => {
-    const unregisterNodes = editor.registerNodes([EmoticonNode]);
     const removeTransform = editor.addTransform(TextNode, emoticonTransform);
     return () => {
-      unregisterNodes();
       removeTransform();
     };
   }, [editor]);
@@ -244,10 +223,8 @@ function emoticonTransform(node) {
 
 function useEmoticons(editor) {
   useEffect(() => {
-    const unregisterNodes = editor.registerNodes([EmoticonNode]);
     const removeTransform = editor.addTransform(TextNode, emoticonTransform);
     return () => {
-      unregisterNodes();
       removeTransform();
     };
   }, [editor]);
@@ -276,6 +253,7 @@ export default function EmoticonPlugin() {
   background-image: url(images/emoticon/avocado_emo.jpeg);
 }
 ```
+
 Now, the text ":avo:" will be transformed into a custom avocado emoticon. Cool!
 
 Finally, we need to wire this plugin up to an Editor so we can actually use it.
@@ -286,7 +264,7 @@ Finally, we need to wire this plugin up to an Editor so we can actually use it.
 
 export default function Editor() {
   return (
-    <LexicalComposer theme={ExampleTheme}>
+    <LexicalComposer initialConifg={{theme={ExampleTheme}, nodes: [EmoticonNode]}}>
       <div className="editor-container">
         <PlainTextPlugin
           contentEditable={<ContentEditable className="editor-input" />}

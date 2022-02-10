@@ -246,20 +246,9 @@ async function build(name, inputFile, outputFile, isProd) {
         ),
       ),
       isProd && closure(closureOptions),
-      isWWW && {
+      {
         renderChunk(source) {
-          return `/**
-${license}
-  *
-  * @noflow
-  * @nolint
-  * @preventMunge
-  * @preserve-invariant-messages
-  * @generated
-  * @preserve-whitespace
-  * @fullSyntaxTransform
-  */
-
+          return `${getComment()}
 ${source}`;
         },
       },
@@ -297,6 +286,24 @@ ${source}`;
     const result = await rollup.rollup(inputOptions);
     await result.write(outputOptions);
   }
+}
+
+function getComment() {
+  const lines = ['/**', license];
+  if (isWWW) {
+    lines.push(
+      '*',
+      '* @noflow',
+      '* @nolint',
+      '* @preventMunge',
+      '* @preserve-invariant-messages',
+      '* @generated',
+      '* @preserve-whitespace',
+      '* @fullSyntaxTransform',
+    );
+  }
+  lines.push(' */');
+  return lines.join('\n');
 }
 
 function getFileName(fileName, isProd) {
@@ -423,6 +430,7 @@ packages.forEach((pkg) => {
 
 function buildForkModule(outputPath, outputFileName) {
   const lines = [
+    getComment(),
     `'use strict'`,
     `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
     `module.exports = ${outputFileName};`,

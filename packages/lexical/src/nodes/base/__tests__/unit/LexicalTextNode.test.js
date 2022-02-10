@@ -583,8 +583,7 @@ describe('LexicalTextNode tests', () => {
         'code + italic',
         IS_CODE | IS_ITALIC,
         'My text node',
-        '<code><em class="my-italic-class my-code-class">My text node' +
-          '</em></code>',
+        '<code><em class="my-code-class my-italic-class">My text node</em></code>',
       ],
       [
         'code + underline + strikethrough',
@@ -597,9 +596,7 @@ describe('LexicalTextNode tests', () => {
         'code + underline + strikethrough + bold + italic',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH | IS_BOLD | IS_ITALIC,
         'My text node',
-        '<code><strong class="my-underline-strikethrough-class my-bold-class ' +
-          'my-italic-class my-code-class">' +
-          'My text node</strong></code>',
+        '<code><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
       ],
     ])('%s text format type', async (_type, format, contents, expectedHTML) => {
       await update(() => {

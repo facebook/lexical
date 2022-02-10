@@ -347,7 +347,7 @@ describe('LexicalEditor tests', () => {
     underlineListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-underline editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic editor-text-underline" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 

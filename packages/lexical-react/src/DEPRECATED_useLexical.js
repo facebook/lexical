@@ -12,6 +12,7 @@ import type {
   EditorThemeClasses,
   EditorState,
   DOMConversionMap,
+  LexicalNode,
 } from 'lexical';
 
 import {createEditor} from 'lexical';
@@ -25,9 +26,10 @@ function defaultOnErrorHandler(e: Error): void {
 export default function useLexical<EditorContext>(editorConfig?: {
   namespace?: string,
   onError?: (error: Error, log: Array<string>) => void,
-  initialEditorState?: EditorState,
+  editorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
+  nodes?: Array<Class<LexicalNode>>,
   htmlTransforms?: DOMConversionMap,
   parentEditor?: LexicalEditor,
   disableEvents?: boolean,
@@ -35,7 +37,14 @@ export default function useLexical<EditorContext>(editorConfig?: {
   const onError =
     (editorConfig !== undefined && editorConfig.onError) ||
     defaultOnErrorHandler;
-  const editor = useMemo(() => createEditor(editorConfig), [editorConfig]);
+  const editor = useMemo(() => {
+    if (editorConfig !== undefined) {
+      // eslint-disable-next-line no-unused-vars
+      const {onError: _onError, ...config} = editorConfig;
+      return createEditor(config);
+    }
+    return createEditor(editorConfig);
+  }, [editorConfig]);
   const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
 
   return [editor, rootElementRef, showPlaceholder];

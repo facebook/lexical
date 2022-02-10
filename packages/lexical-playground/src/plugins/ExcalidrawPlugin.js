@@ -12,7 +12,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$log, $getSelection} from 'lexical';
-import {ExcalidrawNode, $createExcalidrawNode} from '../nodes/ExcalidrawNode';
+import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -20,7 +20,13 @@ export default function ExcalidrawPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([ExcalidrawNode])) {
+      throw new Error(
+        'ExcalidrawPlugin: ExcalidrawNode not registered on editor',
+      );
+    }
+
+    return editor.addListener(
       'command',
       (type) => {
         if (type === 'insertExcalidraw') {
@@ -36,13 +42,6 @@ export default function ExcalidrawPlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removeExcalidrawNode = editor.registerNodes([ExcalidrawNode]);
-
-    return () => {
-      removeCommandListener();
-      removeExcalidrawNode();
-    };
   }, [editor]);
   return null;
 }

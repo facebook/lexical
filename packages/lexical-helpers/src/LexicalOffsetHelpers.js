@@ -9,14 +9,14 @@
 
 import type {
   NodeKey,
-  Selection,
+  RangeSelection,
   LexicalEditor,
   NodeMap,
   EditorState,
 } from 'lexical';
 
 import {
-  $createSelection,
+  $createRangeSelection,
   $isElementNode,
   $isTextNode,
   $getNodeByKey,
@@ -79,7 +79,7 @@ export class OffsetView {
     originalStart: number,
     originalEnd: number,
     diffOffsetView?: OffsetView,
-  ): null | Selection {
+  ): null | RangeSelection {
     const firstNode = this._firstNode;
     if (firstNode === null) {
       return null;
@@ -168,7 +168,7 @@ export class OffsetView {
       endOffset =
         end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
     }
-    const selection = $createSelection();
+    const selection = $createRangeSelection();
     if (selection === null) {
       return null;
     }
@@ -177,7 +177,7 @@ export class OffsetView {
     return selection;
   }
 
-  getOffsetsFromSelection(selection: Selection): [number, number] {
+  getOffsetsFromSelection(selection: RangeSelection): [number, number] {
     const anchor = selection.anchor;
     const focus = selection.focus;
     const offsetMap = this._offsetMap;

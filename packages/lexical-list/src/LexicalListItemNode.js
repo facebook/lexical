@@ -12,7 +12,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
-  Selection,
+  RangeSelection,
   ParagraphNode,
 } from 'lexical';
 
@@ -22,9 +22,9 @@ import {
   $createParagraphNode,
   $isParagraphNode,
 } from 'lexical';
-import {$createListNode, $isListNode} from 'lexical/ListNode';
+import {$createListNode, $isListNode} from '@lexical/list';
 import invariant from 'shared/invariant';
-import {$getTopListNode, $isLastItemInList} from '@lexical/helpers/nodes';
+import {$getTopListNode, $isLastItemInList} from './utils';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -200,7 +200,7 @@ export class ListItemNode extends ElementNode {
     return newElement;
   }
 
-  collapseAtStart(selection: Selection): true {
+  collapseAtStart(selection: RangeSelection): true {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));

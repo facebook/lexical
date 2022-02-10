@@ -7,14 +7,19 @@
  * @flow strict
  */
 
-import type {ElementNode, TextFormatType, TextNode} from 'lexical';
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {
+  LexicalNode,
+  NodeKey,
+  ElementNode,
+  TextFormatType,
+  TextNode,
+} from 'lexical';
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
 
 import invariant from 'shared/invariant';
 import {
   $createParagraphNode,
-  $createSelection,
+  $createRangeSelection,
   $getSelection,
   $isElementNode,
   $setSelection,
@@ -22,8 +27,7 @@ import {
 
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$createListItemNode} from 'lexical/ListItemNode';
-import {$createListNode} from 'lexical/ListNode';
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {
   $joinTextNodesInElementNode,
@@ -227,7 +231,6 @@ function getMatchResultContextWithRegEx(
 ): null | MatchResultContext {
   const matchResultContext: MatchResultContext = {
     regExCaptureGroups: [],
-    text: '',
     triggerState: null,
   };
 
@@ -571,7 +574,7 @@ function removeTextInCaptureGroups(
         focusTextNodeWithOffset != null &&
         captureGroupDetail.textLength > 0
       ) {
-        const newSelection = $createSelection();
+        const newSelection = $createRangeSelection();
 
         newSelection.anchor.set(
           anchorTextNodeWithOffset.node.getKey(),
@@ -683,7 +686,7 @@ function formatTextInCaptureGroupIndex(
     focusTextNodeWithOffset != null &&
     captureGroupDetail.textLength > 0
   ) {
-    const newSelection = $createSelection();
+    const newSelection = $createRangeSelection();
 
     newSelection.anchor.set(
       anchorTextNodeWithOffset.node.getKey(),

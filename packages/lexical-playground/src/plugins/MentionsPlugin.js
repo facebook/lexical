@@ -9,7 +9,7 @@
 
 import type {
   LexicalEditor,
-  Selection,
+  RangeSelection,
   CommandListenerLowPriority,
 } from 'lexical';
 
@@ -20,7 +20,7 @@ import {createPortal} from 'react-dom';
 import {$log, $getSelection} from 'lexical';
 import React, {useCallback, useLayoutEffect, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
-import {MentionNode, $createMentionNode} from '../nodes/MentionNode';
+import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
 
 type MentionMatch = {
   leadOffset: number,
@@ -830,7 +830,7 @@ function getPossibleMentionMatch(text): MentionMatch | null {
   return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
 }
 
-function getTextUpToAnchor(selection: Selection): string | null {
+function getTextUpToAnchor(selection: RangeSelection): string | null {
   const anchor = selection.anchor;
   if (anchor.type !== 'text') {
     return null;
@@ -958,7 +958,9 @@ function useMentions(editor: LexicalEditor): React$Node {
   const [resolution, setResolution] = useState<Resolution | null>(null);
 
   useEffect(() => {
-    return editor.registerNodes([MentionNode]);
+    if (!editor.hasNodes([MentionNode])) {
+      throw new Error('MentionsPlugin: MentionNode not registered on editor');
+    }
   }, [editor]);
 
   useEffect(() => {

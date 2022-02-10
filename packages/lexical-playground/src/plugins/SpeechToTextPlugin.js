@@ -10,7 +10,7 @@
 import type {
   CommandListenerEditorPriority,
   LexicalEditor,
-  Selection,
+  RangeSelection,
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -21,7 +21,7 @@ import useReport from '../hooks/useReport';
 const EditorPriority: CommandListenerEditorPriority = 0;
 
 const VOICE_COMMANDS: $ReadOnly<{
-  [string]: ({editor: LexicalEditor, selection: Selection}) => void,
+  [string]: ({editor: LexicalEditor, selection: RangeSelection}) => void,
 }> = {
   undo: ({editor}) => {
     editor.execCommand('undo');

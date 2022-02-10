@@ -10,7 +10,7 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {TextNode} from './nodes/base/LexicalTextNode';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
-import type {Selection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import {
@@ -56,14 +56,19 @@ type RootElementEvents = Array<
   [string, {} | ((event: Event, editor: LexicalEditor) => void)],
 >;
 
-const PASS_THROUGH_COMMAND = {};
+const PASS_THROUGH_COMMAND = Object.freeze({});
 
 const rootElementEvents: RootElementEvents = [
   ['selectionchange', onSelectionChange],
+  // $FlowIgnore bad event inheritance
   ['keydown', onKeyDown],
+  // $FlowIgnore bad event inheritance
   ['compositionstart', onCompositionStart],
+  // $FlowIgnore bad event inheritance
   ['compositionend', onCompositionEnd],
+  // $FlowIgnore bad event inheritance
   ['input', onInput],
+  // $FlowIgnore bad event inheritance
   ['click', onClick],
   ['cut', PASS_THROUGH_COMMAND],
   ['copy', PASS_THROUGH_COMMAND],
@@ -74,6 +79,7 @@ const rootElementEvents: RootElementEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
+  // $FlowIgnore bad event inheritance
   rootElementEvents.push(['beforeinput', onBeforeInput]);
 } else {
   rootElementEvents.push(['drop', PASS_THROUGH_COMMAND]);
@@ -156,7 +162,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
   });
 }
 
-function $applyTargetRange(selection: Selection, event: InputEvent): void {
+function $applyTargetRange(selection: RangeSelection, event: InputEvent): void {
   if (event.getTargetRanges) {
     const targetRange = event.getTargetRanges()[0];
 
@@ -457,6 +463,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       if (isDelete(keyCode)) {
         editor.execCommand('keyDelete', event);
       } else {
+        event.preventDefault();
         editor.execCommand('deleteCharacter', false);
       }
     } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {

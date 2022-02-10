@@ -12,7 +12,7 @@ import type {
   CommandListenerLowPriority,
   ElementNode,
   TextNode,
-  Selection,
+  RangeSelection,
 } from 'lexical';
 
 import * as React from 'react';
@@ -21,7 +21,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode} from 'lexical/HeadingNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$isListNode, ListNode} from 'lexical/ListNode';
+import {$isListNode, ListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {$isHorizontalRuleNode} from 'lexical';
@@ -37,6 +37,7 @@ import {
   $patchStyleText,
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
+  $isParentElementRTL,
 } from '@lexical/helpers/selection';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
@@ -84,7 +85,7 @@ const blockTypeToBlockName = {
   ol: 'Numbered List',
 };
 
-function getSelectedNode(selection: Selection): TextNode | ElementNode {
+function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = selection.anchor.getNode();
@@ -519,6 +520,7 @@ export default function ToolbarPlugin(): React$Node {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [modal, showModal] = useModal();
+  const [isRTL, setIsRTL] = useState(false);
   const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
     useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
@@ -562,6 +564,7 @@ export default function ToolbarPlugin(): React$Node {
       setIsUnderline(selection.hasFormat('underline'));
       setIsStrikethrough(selection.hasFormat('strikethrough'));
       setIsCode(selection.hasFormat('code'));
+      setIsRTL($isParentElementRTL(selection));
 
       // Update links
       const node = getSelectedNode(selection);
@@ -896,7 +899,7 @@ export default function ToolbarPlugin(): React$Node {
         }}
         className="toolbar-item spaced"
         aria-label="Outdent">
-        <i className="format outdent" />
+        <i className={'format ' + (isRTL ? 'indent' : 'outdent')} />
       </button>
       <button
         onClick={() => {
@@ -904,7 +907,7 @@ export default function ToolbarPlugin(): React$Node {
         }}
         className="toolbar-item"
         aria-label="Indent">
-        <i className="format indent" />
+        <i className={'format ' + (isRTL ? 'outdent' : 'indent')} />
       </button>
       {modal}
     </div>

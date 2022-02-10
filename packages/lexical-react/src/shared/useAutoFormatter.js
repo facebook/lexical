@@ -8,7 +8,7 @@
  */
 
 import type {EditorState} from 'lexical';
-import type {LexicalEditor, Selection} from 'lexical';
+import type {LexicalEditor, RangeSelection} from 'lexical';
 import type {
   AutoFormatCriteriaArray,
   AutoFormatTriggerState,
@@ -17,8 +17,10 @@ import type {
 } from './AutoFormatterUtils.js';
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
 import {$isCodeNode} from 'lexical/CodeNode';
-import {$isListItemNode} from 'lexical/ListItemNode';
+
+import {$isListItemNode} from '@lexical/list';
 import {$isTextNode, $getSelection} from 'lexical';
+
 import {useEffect} from 'react';
 import {
   getAllAutoFormatCriteria,
@@ -59,7 +61,7 @@ function getCriteriaWithMatchResultContext(
 }
 
 function getTextNodeForAutoFormatting(
-  selection: null | Selection,
+  selection: null | RangeSelection,
 ): null | TextNodeWithOffset {
   if (selection == null) {
     return null;

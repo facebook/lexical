@@ -117,13 +117,7 @@ export class ExcalidrawNode extends DecoratorNode {
   }
 
   decorate(editor: LexicalEditor): React$Node {
-    return (
-      <ExcalidrawComponent
-        nodeKey={this.getKey()}
-        state={this.__state}
-        elements={[]}
-      />
-    );
+    return <ExcalidrawComponent nodeKey={this.getKey()} state={this.__state} />;
   }
 }
 

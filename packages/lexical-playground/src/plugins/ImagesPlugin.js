@@ -12,7 +12,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$log, $getSelection} from 'lexical';
-import {ImageNode, $createImageNode} from '../nodes/ImageNode';
+import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 
@@ -22,7 +22,11 @@ export default function ImagesPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([ImageNode])) {
+      throw new Error('ImagesPlugin: ImageNode not registered on editor');
+    }
+
+    return editor.addListener(
       'command',
       (type) => {
         if (type === 'insertImage') {
@@ -42,13 +46,6 @@ export default function ImagesPlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removeImageNode = editor.registerNodes([ImageNode]);
-
-    return () => {
-      removeCommandListener();
-      removeImageNode();
-    };
   }, [editor]);
   return null;
 }

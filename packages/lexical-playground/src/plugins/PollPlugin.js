@@ -12,14 +12,18 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$log, $getSelection} from 'lexical';
-import {PollNode, $createPollNode} from '../nodes/PollNode';
+import {$createPollNode, PollNode} from '../nodes/PollNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function PollPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([PollNode])) {
+      throw new Error('PollPlugin: PollNode not registered on editor');
+    }
+
+    return editor.addListener(
       'command',
       (type, payload) => {
         if (type === 'insertPoll') {
@@ -36,13 +40,6 @@ export default function PollPlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removePollNode = editor.registerNodes([PollNode]);
-
-    return () => {
-      removeCommandListener();
-      removePollNode();
-    };
   }, [editor]);
   return null;
 }

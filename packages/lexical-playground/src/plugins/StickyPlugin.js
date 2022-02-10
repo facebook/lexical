@@ -14,7 +14,9 @@ import {StickyNode} from '../nodes/StickyNode';
 export default function StickyPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return editor.registerNodes([StickyNode]);
+    if (!editor.hasNodes([StickyNode])) {
+      throw new Error('StickyPlugin: StickyNode not registered on editor');
+    }
   }, [editor]);
   return null;
 }

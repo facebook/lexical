@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, Point, Selection, NodeMap} from 'lexical';
+import type {NodeKey, Point, RangeSelection, NodeMap} from 'lexical';
 import type {Binding} from './Bindings';
 import type {Provider} from '.';
 import type {
@@ -47,6 +47,7 @@ export type CursorSelection = {
     key: NodeKey,
     offset: number,
   },
+  name: HTMLSpanElement,
 };
 
 export type Cursor = {
@@ -473,8 +474,8 @@ export function syncCursorPositions(
 export function syncLexicalSelectionToYjs(
   binding: Binding,
   provider: Provider,
-  prevSelection: null | Selection,
-  nextSelection: null | Selection,
+  prevSelection: null | RangeSelection,
+  nextSelection: null | RangeSelection,
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();

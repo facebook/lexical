@@ -125,7 +125,9 @@ async function prepareLexicalYjsPackage() {
 async function prepareLexicalListPackage() {
   await exec(`rm -rf ./packages/lexical-list/npm`);
   await exec(`mkdir ./packages/lexical-list/npm`);
-  await exec(`cp -R ./packages/lexical-list/dist/*.js ./packages/lexical-list/npm`);
+  await exec(
+    `cp -R ./packages/lexical-list/dist/*.js ./packages/lexical-list/npm`,
+  );
   await exec(
     `cp -R ./packages/lexical-list/package.json ./packages/lexical-list/npm`,
   );

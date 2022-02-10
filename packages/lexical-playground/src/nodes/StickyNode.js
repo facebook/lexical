@@ -325,7 +325,6 @@ function StickyComponent({
           <HistoryPlugin externalHistoryState={historyState} />
         )}
         <BootstrapPlugin
-          isCollab={isCollab}
           initialPayloadFn={textInitFn}
           clearEditorFn={clearEditor}
         />

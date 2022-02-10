@@ -7,11 +7,16 @@
  * @flow strict
  */
 
-import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
+import type {
+  LexicalEditor,
+  CommandListenerEditorPriority,
+  CommandListenerLowPriority,
+} from 'lexical';
 import type {Provider, Binding} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
 import * as React from 'react';
+import {useLayoutEffect, useRef} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
@@ -27,6 +32,7 @@ import {
 } from '@lexical/yjs';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
+const BootstrapPriority: CommandListenerLowPriority = 1;
 
 export function useYjsCollaboration(
   editor: LexicalEditor,
@@ -54,6 +60,21 @@ export function useYjsCollaboration(
     }
   }, [provider]);
 
+  const isInitialized = useRef(false);
+
+  useLayoutEffect(() => {
+    return editor.addListener(
+      'command',
+      (type) => {
+        if (type === 'bootstrapEditor') {
+          return !isInitialized.current;
+        }
+        return false;
+      },
+      BootstrapPriority,
+    );
+  }, [editor]);
+
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
@@ -69,6 +90,7 @@ export function useYjsCollaboration(
         root.isEmpty() &&
         root._xmlText._length === 0
       ) {
+        isInitialized.current = true;
         editor.execCommand('bootstrapEditor');
       }
     };

@@ -7,13 +7,12 @@
  * @flow strict
  */
 
-import type {LexicalEditor, CommandListenerHighPriority} from 'lexical';
+import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
 
 import {$log} from 'lexical';
-import useLexicalDragonSupport from './useLexicalDragonSupport';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-const BootstrapPriority: CommandListenerHighPriority = 3;
+const BootstrapPriority: CommandListenerEditorPriority = 0;
 
 export function initEditor(
   editor: LexicalEditor,
@@ -63,6 +62,4 @@ export default function useBootstrapEditor(
       BootstrapPriority,
     );
   }, [clearEditorFn, editor, initialPayloadFn]);
-
-  useLexicalDragonSupport(editor);
 }

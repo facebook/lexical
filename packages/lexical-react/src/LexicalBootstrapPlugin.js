@@ -16,7 +16,6 @@ export default function LexicalBootstrapPlugin({
   initialPayloadFn,
   clearEditorFn,
 }: {
-  isCollab: boolean,
   initialPayloadFn: (LexicalEditor) => void,
   clearEditorFn: (LexicalEditor) => void,
 }): React$Node {

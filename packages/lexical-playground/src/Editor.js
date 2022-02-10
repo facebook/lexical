@@ -115,7 +115,6 @@ export default function Editor(): React$Node {
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         <BootstrapPlugin
-          isCollab={isCollab}
           clearEditorFn={clearEditor}
           initialPayloadFn={textInitFn}
         />

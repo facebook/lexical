@@ -37,6 +37,7 @@ import {
   $patchStyleText,
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
+  $isParentElementRTL,
 } from '@lexical/helpers/selection';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
@@ -519,6 +520,7 @@ export default function ToolbarPlugin(): React$Node {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [modal, showModal] = useModal();
+  const [isRTL, setIsRTL] = useState(false);
   const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
     useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
@@ -562,6 +564,7 @@ export default function ToolbarPlugin(): React$Node {
       setIsUnderline(selection.hasFormat('underline'));
       setIsStrikethrough(selection.hasFormat('strikethrough'));
       setIsCode(selection.hasFormat('code'));
+      setIsRTL($isParentElementRTL(selection));
 
       // Update links
       const node = getSelectedNode(selection);
@@ -896,7 +899,7 @@ export default function ToolbarPlugin(): React$Node {
         }}
         className="toolbar-item spaced"
         aria-label="Outdent">
-        <i className="format outdent" />
+        <i className={'format ' + (isRTL ? 'indent' : 'outdent')} />
       </button>
       <button
         onClick={() => {
@@ -904,7 +907,7 @@ export default function ToolbarPlugin(): React$Node {
         }}
         className="toolbar-item"
         aria-label="Indent">
-        <i className="format indent" />
+        <i className={'format ' + (isRTL ? 'outdent' : 'indent')} />
       </button>
       {modal}
     </div>

@@ -13,10 +13,10 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "peerDependencies": {
-    "lexical": "0.1.6",
-    "@lexical/list": "0.1.6"
+    "lexical": "0.1.7",
+    "@lexical/list": "0.1.7"
   },
   "repository": {
     "type": "git",

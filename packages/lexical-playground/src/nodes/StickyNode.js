@@ -36,6 +36,7 @@ import {
   CollaborationPlugin,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import Placeholder from '../ui/Placeholder';
@@ -102,6 +103,12 @@ function textInitFn(editor: LexicalEditor): void {
   if (firstChild === null) {
     initParagraph(root, editor);
   }
+}
+
+function clearEditor(editor: LexicalEditor): void {
+  const root = $getRoot();
+  root.clear();
+  initParagraph(root, editor);
 }
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
@@ -312,11 +319,16 @@ function StickyComponent({
           <CollaborationPlugin
             id={decoratorEditor.id}
             providerFactory={createWebsocketProvider}
-            initialPayloadFn={textInitFn}
+            shouldBootstrap={true}
           />
         ) : (
           <HistoryPlugin externalHistoryState={historyState} />
         )}
+        <BootstrapPlugin
+          isCollab={isCollab}
+          initialPayloadFn={textInitFn}
+          clearEditorFn={clearEditor}
+        />
         <PlainTextPlugin
           contentEditable={
             <ContentEditable className={stylex(styles.contentEditable)} />
@@ -326,7 +338,6 @@ function StickyComponent({
               What's up?
             </Placeholder>
           }
-          initialPayloadFn={textInitFn}
         />
       </LexicalNestedComposer>
     </div>

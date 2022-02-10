@@ -13,6 +13,7 @@ import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
 import usePlainTextSetup from './shared/usePlainTextSetup';
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
+import useBootstrapEditor from './shared/useBootstrapEditor';
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {
   const activeElement = document.activeElement;
@@ -48,6 +49,7 @@ export default function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
 ): void {
-  usePlainTextSetup(editor, textInitFn, clearEditor);
+  useBootstrapEditor(editor, textInitFn, clearEditor);
+  usePlainTextSetup(editor);
   useLexicalHistory(editor, externalHistoryState);
 }

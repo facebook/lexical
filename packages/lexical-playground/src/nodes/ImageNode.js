@@ -34,6 +34,7 @@ import {
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {Suspense, useCallback, useRef, useState} from 'react';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
 import {createWebsocketProvider} from '../collaboration';
@@ -469,7 +470,7 @@ function ImageComponent({
                   EmojiNode,
                   TypeaheadNode,
                   KeywordNode,
-                ]
+                ],
               }}>
               <MentionsPlugin />
               <TablesPlugin />
@@ -483,11 +484,16 @@ function ImageComponent({
                 <CollaborationPlugin
                   id={decoratorEditor.id}
                   providerFactory={createWebsocketProvider}
-                  initialPayloadFn={textInitFn}
+                  shouldBootstrap={true}
                 />
               ) : (
                 <HistoryPlugin externalHistoryState={historyState} />
               )}
+              <BootstrapPlugin
+                isCollab={isCollab}
+                initialPayloadFn={textInitFn}
+                clearEditorFn={clearEditor}
+              />
               <RichTextPlugin
                 contentEditable={
                   <ContentEditable className={stylex(styles.contentEditable)} />
@@ -497,8 +503,6 @@ function ImageComponent({
                     Enter a caption...
                   </Placeholder>
                 }
-                initialPayloadFn={!isCollab ? textInitFn : undefined}
-                clearEditorFn={clearEditor}
               />
               {showNestedEditorTreeView && <TreeViewPlugin />}
             </LexicalNestedComposer>

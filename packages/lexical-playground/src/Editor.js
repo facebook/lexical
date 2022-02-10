@@ -13,6 +13,7 @@ import * as React from 'react';
 
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -113,15 +114,18 @@ export default function Editor(): React$Node {
         <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
+        <BootstrapPlugin
+          isCollab={isCollab}
+          clearEditorFn={clearEditor}
+          initialPayloadFn={textInitFn}
+        />
         {isRichText ? (
           <>
             {isCollab ? (
               <CollaborationPlugin
                 id="main"
                 providerFactory={createWebsocketProvider}
-                initialPayloadFn={
-                  skipCollaborationInit ? undefined : textInitFn
-                }
+                shouldBootstrap={!skipCollaborationInit}
               />
             ) : (
               <HistoryPlugin externalHistoryState={historyState} />
@@ -129,8 +133,6 @@ export default function Editor(): React$Node {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              initialPayloadFn={!isCollab ? textInitFn : undefined}
-              clearEditorFn={clearEditor}
             />
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
@@ -146,8 +148,6 @@ export default function Editor(): React$Node {
             <PlainTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              initialPayloadFn={!isCollab ? textInitFn : undefined}
-              clearEditorFn={clearEditor}
             />
             <HistoryPlugin externalHistoryState={historyState} />
           </>

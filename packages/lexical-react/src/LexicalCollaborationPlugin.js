@@ -9,7 +9,6 @@
 
 import type {Provider} from '@lexical/yjs';
 import type {Doc} from 'yjs';
-import type {LexicalEditor} from 'lexical';
 
 import {createContext, useContext, useMemo} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -51,11 +50,11 @@ const randomEntry =
 export function CollaborationPlugin({
   id,
   providerFactory,
-  initialPayloadFn,
+  shouldBootstrap,
 }: {
   id: string,
   providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider,
-  initialPayloadFn?: (LexicalEditor) => void,
+  shouldBootstrap: boolean,
 }): React$Node {
   const collabContext = useCollaborationContext();
   const {yjsDocMap, name, color} = collabContext;
@@ -71,7 +70,7 @@ export function CollaborationPlugin({
     yjsDocMap,
     name,
     color,
-    initialPayloadFn,
+    shouldBootstrap,
   );
   collabContext.clientID = binding.clientID;
   useYjsHistory(editor, binding);

@@ -17,6 +17,7 @@ import {
   useCollaborationContext,
 } from '../../LexicalCollaborationPlugin';
 import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
+import LexicalBootstrapPlugin from '../../LexicalBootstrapPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import LexicalComposer from '../../LexicalComposer';
@@ -47,6 +48,12 @@ function textInitFn(editor: LexicalEditor): void {
   }
 }
 
+function clearEditor(editor: LexicalEditor): void {
+  const root = $getRoot();
+  root.clear();
+  initParagraph(root, editor);
+}
+
 function Editor({doc, provider, setEditor}) {
   const {yjsDocMap} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
@@ -60,6 +67,10 @@ function Editor({doc, provider, setEditor}) {
       <CollaborationPlugin
         id="main"
         providerFactory={() => provider}
+        shouldBootstrap={true}
+      />
+      <LexicalBootstrapPlugin
+        clearEditorFn={clearEditor}
         initialPayloadFn={textInitFn}
       />
       <LexicalRichTextPlugin

@@ -7,8 +7,6 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import * as React from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -19,19 +17,13 @@ import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
 export default function PlainTextPlugin({
   contentEditable,
   placeholder,
-  initialPayloadFn,
-  clearEditorFn,
-  onError,
 }: {
   contentEditable: React$Node,
   placeholder: React$Node,
-  initialPayloadFn?: (LexicalEditor) => void,
-  clearEditorFn?: (LexicalEditor) => void,
-  onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  usePlainTextSetup(editor, initialPayloadFn, clearEditorFn);
+  usePlainTextSetup(editor);
   const decorators = useDecorators(editor);
 
   return (

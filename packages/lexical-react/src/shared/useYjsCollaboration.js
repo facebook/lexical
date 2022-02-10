@@ -25,7 +25,6 @@ import {
   initLocalState,
   setLocalStateFocus,
 } from '@lexical/yjs';
-import {initEditor} from './useRichTextSetup';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -36,7 +35,7 @@ export function useYjsCollaboration(
   docMap: Map<string, Doc>,
   name: string,
   color: string,
-  initialPayloadFn?: (LexicalEditor) => void,
+  shouldBootstrap: boolean,
 ): [React$Node, Binding] {
   const binding = useMemo(
     () => createBinding(editor, provider, id, docMap),
@@ -65,12 +64,12 @@ export function useYjsCollaboration(
 
     const onSync = (isSynced: boolean) => {
       if (
-        initialPayloadFn != null &&
+        shouldBootstrap &&
         isSynced &&
         root.isEmpty() &&
         root._xmlText._length === 0
       ) {
-        initEditor(editor, initialPayloadFn);
+        editor.execCommand('bootstrapEditor');
       }
     };
 
@@ -135,9 +134,9 @@ export function useYjsCollaboration(
     connect,
     disconnect,
     editor,
-    initialPayloadFn,
     name,
     provider,
+    shouldBootstrap,
   ]);
 
   const cursorsContainer = useMemo(() => {

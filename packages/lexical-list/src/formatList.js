@@ -15,7 +15,7 @@ import {
   $isLeafNode,
   $isRootNode,
   $isElementNode,
-  $createParagraphNode
+  $createParagraphNode,
 } from 'lexical';
 import {
   $createListItemNode,

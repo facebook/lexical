@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {LexicalNode, DecoratorArray, DecoratorMap, NodeKey, LexicalEditor} from 'lexical';
+import type {
+  LexicalNode,
+  DecoratorArray,
+  DecoratorMap,
+  NodeKey,
+  LexicalEditor,
+} from 'lexical';
 
 import {DecoratorNode, createDecoratorArray, createDecoratorMap} from 'lexical';
 import * as React from 'react';

@@ -12,11 +12,13 @@ import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 
 import usePlainTextSetup from './shared/usePlainTextSetup';
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
+import useBootstrapEditor from './shared/useBootstrapEditor';
 
 export default function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
 ): void {
-  usePlainTextSetup(editor, true);
+  useBootstrapEditor(editor);
+  usePlainTextSetup(editor);
   useLexicalHistory(editor, externalHistoryState);
 }

@@ -20,7 +20,7 @@ import {createPortal} from 'react-dom';
 import {$log, $getSelection} from 'lexical';
 import React, {useCallback, useLayoutEffect, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
-import {MentionNode, $createMentionNode} from '../nodes/MentionNode';
+import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
 
 type MentionMatch = {
   leadOffset: number,

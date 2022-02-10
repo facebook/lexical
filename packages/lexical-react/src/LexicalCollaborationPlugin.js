@@ -50,11 +50,11 @@ const randomEntry =
 export function CollaborationPlugin({
   id,
   providerFactory,
-  skipInit,
+  shouldBootstrap,
 }: {
   id: string,
   providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider,
-  skipInit?: boolean,
+  shouldBootstrap: boolean,
 }): React$Node {
   const collabContext = useCollaborationContext();
   const {yjsDocMap, name, color} = collabContext;
@@ -70,7 +70,7 @@ export function CollaborationPlugin({
     yjsDocMap,
     name,
     color,
-    skipInit || false,
+    shouldBootstrap,
   );
   collabContext.clientID = binding.clientID;
   useYjsHistory(editor, binding);

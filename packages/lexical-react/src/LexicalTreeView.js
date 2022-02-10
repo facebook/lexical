@@ -112,9 +112,16 @@ export default function TreeView({
   }, [timeStampedEditorStates, isPlaying, editor, totalEditorStates]);
 
   useEffect(() => {
-    if (treeElementRef.current) {
+    const element = treeElementRef.current;
+
+    if (element !== null) {
       // $FlowExpectedError[prop-missing] Internal field
-      treeElementRef.current.__lexicalEditor = editor;
+      element.__lexicalEditor = editor;
+
+      return () => {
+        // $FlowExpectedError[prop-missing] Internal field
+        element.__lexicalEditor = null;
+      };
     }
   }, [editor]);
 

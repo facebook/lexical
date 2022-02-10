@@ -48,7 +48,7 @@ function defaultClearEditor(editor: LexicalEditor): void {
   initParagraph(root, editor);
 }
 
-export function initEditor(
+function initEditor(
   editor: LexicalEditor,
   initialPayloadFn: (LexicalEditor) => void,
 ): void {
@@ -84,11 +84,17 @@ export default function useBootstrapEditor(
       'command',
       (type, payload): boolean => {
         if (type === 'bootstrapEditor') {
-          initEditor(editor, initialPayloadFn ?? defaultInitEditor);
+          initEditor(
+            editor,
+            initialPayloadFn != null ? initialPayloadFn : defaultInitEditor,
+          );
           return false;
         }
         if (type === 'clearEditor') {
-          clearEditor(editor, clearEditorFn ?? defaultClearEditor);
+          clearEditor(
+            editor,
+            clearEditorFn != null ? clearEditorFn : defaultClearEditor,
+          );
           return false;
         }
         return false;

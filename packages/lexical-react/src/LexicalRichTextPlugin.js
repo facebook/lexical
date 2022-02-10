@@ -17,16 +17,13 @@ import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
 export default function RichTextPlugin({
   contentEditable,
   placeholder,
-  skipInit,
 }: {
   contentEditable: React$Node,
   placeholder: React$Node,
-  skipInit?: boolean,
-  onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  useRichTextSetup(editor, !skipInit);
+  useRichTextSetup(editor);
   const decorators = useDecorators(editor);
 
   return (

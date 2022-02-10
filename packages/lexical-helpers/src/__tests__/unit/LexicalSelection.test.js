@@ -131,7 +131,7 @@ describe('LexicalSelection tests', () => {
 
     function TestBase() {
       editor = useLexicalEditor(ref);
-      const props = useLexicalRichText(editor, false);
+      const props = useLexicalRichText(editor);
       return <div ref={ref} contentEditable={true} {...props} />;
     }
 

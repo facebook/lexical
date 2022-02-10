@@ -69,6 +69,7 @@ module.name_mapper='^@lexical/react/LexicalCharacterLimitPlugin' -> '<PROJECT_RO
 module.name_mapper='^@lexical/react/LexicalHashtagPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalHashtagPlugin.js'
 module.name_mapper='^@lexical/react/LexicalPlainTextPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalPlainTextPlugin.js'
 module.name_mapper='^@lexical/react/LexicalRichTextPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalRichTextPlugin.js'
+module.name_mapper='^@lexical/react/LexicalBootstrapPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalBootstrapPlugin.js'
 module.name_mapper='^@lexical/react/LexicalHistoryPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalHistoryPlugin.js'
 module.name_mapper='^@lexical/react/LexicalCollaborationPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalCollaborationPlugin.js'
 module.name_mapper='^@lexical/react/LexicalTablePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalTablePlugin.js'

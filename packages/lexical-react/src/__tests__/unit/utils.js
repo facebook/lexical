@@ -15,6 +15,7 @@ import {
   useCollaborationContext,
 } from '../../LexicalCollaborationPlugin';
 import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
+import LexicalBootstrapPlugin from '../../LexicalBootstrapPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import LexicalComposer from '../../LexicalComposer';
@@ -30,7 +31,12 @@ function Editor({doc, provider, setEditor}) {
 
   return (
     <>
-      <CollaborationPlugin id="main" providerFactory={() => provider} />
+      <CollaborationPlugin
+        id="main"
+        providerFactory={() => provider}
+        shouldBootstrap={true}
+      />
+      <LexicalBootstrapPlugin />
       <LexicalRichTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={null}

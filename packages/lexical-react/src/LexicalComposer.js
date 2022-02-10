@@ -83,6 +83,7 @@ export default function LexicalComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
   return (
     <LexicalComposerContext.Provider value={composerContext}>
       {children}

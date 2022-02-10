@@ -12,11 +12,13 @@ import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 
 import {useRichTextSetup} from './shared/useRichTextSetup';
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
+import useBootstrapEditor from './shared/useBootstrapEditor';
 
 export default function useLexicalRichText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
 ): void {
-  useRichTextSetup(editor, true);
+  useBootstrapEditor(editor);
+  useRichTextSetup(editor);
   useLexicalHistory(editor, externalHistoryState);
 }

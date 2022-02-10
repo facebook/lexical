@@ -11,6 +11,7 @@ import * as React from 'react';
 
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -29,7 +30,6 @@ import ImagesPlugin from './plugins/ImagesPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import HorizontalRulePlugin from '@lexical/react/LexicalHorizontalRulePlugin';
-import StickyPlugin from './plugins/StickyPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
@@ -39,6 +39,7 @@ import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
+
 import {useSettings} from './context/SettingsContext';
 import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 
@@ -72,7 +73,6 @@ export default function Editor(): React$Node {
           !isRichText ? 'plain-text' : ''
         }`}>
         <AutoFocusPlugin />
-        <StickyPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
         <ExcalidrawPlugin />
@@ -81,13 +81,14 @@ export default function Editor(): React$Node {
         <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
+        <BootstrapPlugin />
         {isRichText ? (
           <>
             {isCollab ? (
               <CollaborationPlugin
                 id="main"
                 providerFactory={createWebsocketProvider}
-                skipInit={skipCollaborationInit}
+                shouldBootstrap={!skipCollaborationInit}
               />
             ) : (
               <HistoryPlugin externalHistoryState={historyState} />
@@ -95,7 +96,6 @@ export default function Editor(): React$Node {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              skipInit={isCollab}
             />
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />

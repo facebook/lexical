@@ -17,15 +17,13 @@ import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
 export default function PlainTextPlugin({
   contentEditable,
   placeholder,
-  skipInit,
 }: {
   contentEditable: React$Node,
   placeholder: React$Node,
-  skipInit?: boolean,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  usePlainTextSetup(editor, !skipInit);
+  usePlainTextSetup(editor);
   const decorators = useDecorators(editor);
 
   return (

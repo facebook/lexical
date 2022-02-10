@@ -882,7 +882,7 @@ describe('LexicalEditor tests', () => {
 
       function Test({divKey}) {
         editor = React.useMemo(() => createTestEditor(), []);
-        useLexicalRichText(editor, false);
+        useLexicalRichText(editor);
 
         React.useEffect(() => {
           editor.addListener('root', listener);

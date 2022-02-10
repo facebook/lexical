@@ -81,6 +81,7 @@ module.exports = {
         'LexicalHorizontalRulePlugin',
         'LexicalPlainTextPlugin',
         'LexicalRichTextPlugin',
+        'LexicalBootstrapPlugin',
         'LexicalCollaborationPlugin',
         'LexicalHistoryPlugin',
         'LexicalTablePlugin',

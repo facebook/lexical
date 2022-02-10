@@ -12,7 +12,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$log, $getSelection} from 'lexical';
-import {ExcalidrawNode, $createExcalidrawNode} from '../nodes/ExcalidrawNode';
+import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

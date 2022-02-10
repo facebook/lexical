@@ -6,12 +6,16 @@
  *
  */
 
-import {initializeE2E, assertHTML, focusEditor} from '../utils';
+import {initializeE2E, assertHTML, focusEditor, IS_MAC} from '../utils';
 import {moveToLineBeginning, deleteForward} from '../keyboardShortcuts';
 
 describe('Regression test #1258', () => {
   initializeE2E((e2e) => {
     it(`Can delete forward with keyboard`, async () => {
+      if (!IS_MAC) {
+        // Do Windows/Linux have equivalent shortcuts?
+        return;
+      }
       const {page} = e2e;
       await focusEditor(page);
 

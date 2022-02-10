@@ -17,12 +17,13 @@
   },
   "engineStrict": true,
   "scripts": {
-    "start": "concurrently \"npm:build\" \"npm:collab\" \"npm run start --prefix packages/lexical-playground\"",
+    "start": "NODE_ENV=development concurrently \"npm:build\" \"npm:collab\" \"npm run start --prefix packages/lexical-playground\"",
     "start:website": "concurrently \"npm:build\" \"npm run start --prefix packages/lexical-website -- -p 3030\"",
     "dev": "concurrently \"npm:watch\" \"npm run start --prefix packages/lexical-playground\"",
     "dev:website": "concurrently \"npm:build\" \"npm run dev --prefix packages/lexical-website -- -p 3030\"",
     "build": "node scripts/build.js --clean",
     "build-prod": "node scripts/build.js --prod --clean",
+    "build-release": "node scripts/build.js --prod --release --clean",
     "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod",
     "build-flow": "gen-flow-files ./packages/lexical/src --out-dir ./packages/lexical/dist && gen-flow-files ./packages/lexical-react/src --out-dir ./packages/lexical-react/dist",
     "clean": "node scripts/build.js --clean",
@@ -77,7 +78,7 @@
     "prettier-all": "prettier --write .",
     "prepare-ci": "npm run build --prefix packages/lexical-playground && serve packages/lexical-playground/build -l 4000",
     "prepare-ci-collab": "npm run build --prefix packages/lexical-playground && concurrently \"npm run collab\" \"serve packages/lexical-playground/build -l 4000\"",
-    "prepare-release": "npm run build-prod && node ./scripts/prepare-release.js",
+    "prepare-release": "npm run build-release && node ./scripts/prepare-release.js",
     "prepare": "husky install",
     "prepare-size-compare": "npm run build-prod && node ./scripts/prepare-size-compare.js"
   },

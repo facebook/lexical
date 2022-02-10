@@ -463,6 +463,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       if (isDelete(keyCode)) {
         editor.execCommand('keyDelete', event);
       } else {
+        event.preventDefault();
         editor.execCommand('deleteCharacter', false);
       }
     } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {

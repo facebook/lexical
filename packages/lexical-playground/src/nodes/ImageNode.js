@@ -14,7 +14,6 @@ import type {
   LexicalEditor,
   DecoratorMap,
   DecoratorEditor,
-  RootNode,
 } from 'lexical';
 
 import * as React from 'react';
@@ -23,9 +22,6 @@ import {
   $log,
   $getNodeByKey,
   createDecoratorEditor,
-  $getRoot,
-  $getSelection,
-  $createParagraphNode,
 } from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -105,36 +101,6 @@ function useSuspenseImage(src: string) {
       };
     });
   }
-}
-
-function shouldSelectParagraph(editor: LexicalEditor): boolean {
-  const activeElement = document.activeElement;
-  return (
-    $getSelection() !== null ||
-    (activeElement !== null && activeElement === editor.getRootElement())
-  );
-}
-
-function initParagraph(root: RootNode, editor: LexicalEditor): void {
-  const paragraph = $createParagraphNode();
-  root.append(paragraph);
-  if (shouldSelectParagraph(editor)) {
-    paragraph.select();
-  }
-}
-
-function textInitFn(editor: LexicalEditor): void {
-  const root = $getRoot();
-  const firstChild = root.getFirstChild();
-  if (firstChild === null) {
-    initParagraph(root, editor);
-  }
-}
-
-function clearEditor(editor: LexicalEditor): void {
-  const root = $getRoot();
-  root.clear();
-  initParagraph(root, editor);
 }
 
 function LazyImage({
@@ -489,10 +455,7 @@ function ImageComponent({
               ) : (
                 <HistoryPlugin externalHistoryState={historyState} />
               )}
-              <BootstrapPlugin
-                initialPayloadFn={textInitFn}
-                clearEditorFn={clearEditor}
-              />
+              <BootstrapPlugin />
               <RichTextPlugin
                 contentEditable={
                   <ContentEditable className={stylex(styles.contentEditable)} />

@@ -7,12 +7,46 @@
  * @flow strict
  */
 
-import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
+import type {
+  LexicalEditor,
+  CommandListenerEditorPriority,
+  RootNode,
+} from 'lexical';
 
-import {$log} from 'lexical';
+import {$log, $getRoot, $getSelection, $createParagraphNode} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const BootstrapPriority: CommandListenerEditorPriority = 0;
+
+function shouldSelectParagraph(editor: LexicalEditor): boolean {
+  const activeElement = document.activeElement;
+  return (
+    $getSelection() !== null ||
+    (activeElement !== null && activeElement === editor.getRootElement())
+  );
+}
+
+function initParagraph(root: RootNode, editor: LexicalEditor): void {
+  const paragraph = $createParagraphNode();
+  root.append(paragraph);
+  if (shouldSelectParagraph(editor)) {
+    paragraph.select();
+  }
+}
+
+function defaultInitEditor(editor: LexicalEditor): void {
+  const root = $getRoot();
+  const firstChild = root.getFirstChild();
+  if (firstChild === null) {
+    initParagraph(root, editor);
+  }
+}
+
+function defaultClearEditor(editor: LexicalEditor): void {
+  const root = $getRoot();
+  root.clear();
+  initParagraph(root, editor);
+}
 
 export function initEditor(
   editor: LexicalEditor,
@@ -42,19 +76,19 @@ function clearEditor(
 
 export default function useBootstrapEditor(
   editor: LexicalEditor,
-  initialPayloadFn: (LexicalEditor) => void,
-  clearEditorFn: (LexicalEditor) => void,
+  initialPayloadFn?: (LexicalEditor) => void,
+  clearEditorFn?: (LexicalEditor) => void,
 ): void {
   useLayoutEffect(() => {
     return editor.addListener(
       'command',
       (type, payload): boolean => {
         if (type === 'bootstrapEditor') {
-          initEditor(editor, initialPayloadFn);
+          initEditor(editor, initialPayloadFn ?? defaultInitEditor);
           return false;
         }
         if (type === 'clearEditor') {
-          clearEditor(editor, clearEditorFn);
+          clearEditor(editor, clearEditorFn ?? defaultClearEditor);
           return false;
         }
         return false;

@@ -7,8 +7,6 @@
  * @flow
  */
 
-import type {LexicalEditor, RootNode} from 'lexical';
-
 import * as React from 'react';
 import {createRoot} from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -21,38 +19,7 @@ import LexicalBootstrapPlugin from '../../LexicalBootstrapPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import LexicalComposer from '../../LexicalComposer';
-import {$getSelection, $getRoot, $createParagraphNode} from 'lexical';
 import * as Y from 'yjs';
-
-function shouldSelectParagraph(editor: LexicalEditor): boolean {
-  const activeElement = document.activeElement;
-  return (
-    $getSelection() !== null ||
-    (activeElement !== null && activeElement === editor.getRootElement())
-  );
-}
-
-function initParagraph(root: RootNode, editor: LexicalEditor): void {
-  const paragraph = $createParagraphNode();
-  root.append(paragraph);
-  if (shouldSelectParagraph(editor)) {
-    paragraph.select();
-  }
-}
-
-function textInitFn(editor: LexicalEditor): void {
-  const root = $getRoot();
-  const firstChild = root.getFirstChild();
-  if (firstChild === null) {
-    initParagraph(root, editor);
-  }
-}
-
-function clearEditor(editor: LexicalEditor): void {
-  const root = $getRoot();
-  root.clear();
-  initParagraph(root, editor);
-}
 
 function Editor({doc, provider, setEditor}) {
   const {yjsDocMap} = useCollaborationContext();
@@ -69,10 +36,7 @@ function Editor({doc, provider, setEditor}) {
         providerFactory={() => provider}
         shouldBootstrap={true}
       />
-      <LexicalBootstrapPlugin
-        clearEditorFn={clearEditor}
-        initialPayloadFn={textInitFn}
-      />
+      <LexicalBootstrapPlugin />
       <LexicalRichTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={null}

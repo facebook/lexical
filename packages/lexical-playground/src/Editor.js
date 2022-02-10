@@ -7,8 +7,6 @@
  * @flow strict
  */
 
-import type {LexicalEditor, RootNode} from 'lexical';
-
 import * as React from 'react';
 
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
@@ -42,42 +40,11 @@ import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
 
-import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
 import {useSettings} from './context/SettingsContext';
 import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
-
-function shouldSelectParagraph(editor: LexicalEditor): boolean {
-  const activeElement = document.activeElement;
-  return (
-    $getSelection() !== null ||
-    (activeElement !== null && activeElement === editor.getRootElement())
-  );
-}
-
-function initParagraph(root: RootNode, editor: LexicalEditor): void {
-  const paragraph = $createParagraphNode();
-  root.append(paragraph);
-  if (shouldSelectParagraph(editor)) {
-    paragraph.select();
-  }
-}
-
-function textInitFn(editor: LexicalEditor): void {
-  const root = $getRoot();
-  const firstChild = root.getFirstChild();
-  if (firstChild === null) {
-    initParagraph(root, editor);
-  }
-}
-
-function clearEditor(editor: LexicalEditor): void {
-  const root = $getRoot();
-  root.clear();
-  initParagraph(root, editor);
-}
 
 export default function Editor(): React$Node {
   const {historyState} = useSharedHistoryContext();
@@ -114,10 +81,7 @@ export default function Editor(): React$Node {
         <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
-        <BootstrapPlugin
-          clearEditorFn={clearEditor}
-          initialPayloadFn={textInitFn}
-        />
+        <BootstrapPlugin />
         {isRichText ? (
           <>
             {isCollab ? (

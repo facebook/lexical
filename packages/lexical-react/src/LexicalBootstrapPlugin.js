@@ -16,8 +16,8 @@ export default function LexicalBootstrapPlugin({
   initialPayloadFn,
   clearEditorFn,
 }: {
-  initialPayloadFn: (LexicalEditor) => void,
-  clearEditorFn: (LexicalEditor) => void,
+  initialPayloadFn?: (LexicalEditor) => void,
+  clearEditorFn?: (LexicalEditor) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   useBootstrapEditor(editor, initialPayloadFn, clearEditorFn);

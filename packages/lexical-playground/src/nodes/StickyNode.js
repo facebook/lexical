@@ -14,7 +14,6 @@ import type {
   DecoratorMap,
   DecoratorEditor,
   NodeKey,
-  RootNode,
 } from 'lexical';
 
 import * as React from 'react';
@@ -24,9 +23,6 @@ import {
   $getNodeByKey,
   $setSelection,
   createDecoratorEditor,
-  $getRoot,
-  $getSelection,
-  $createParagraphNode,
 } from 'lexical';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -80,36 +76,6 @@ const styles = stylex.create({
     pointerEvents: 'none',
   },
 });
-
-function shouldSelectParagraph(editor: LexicalEditor): boolean {
-  const activeElement = document.activeElement;
-  return (
-    $getSelection() !== null ||
-    (activeElement !== null && activeElement === editor.getRootElement())
-  );
-}
-
-function initParagraph(root: RootNode, editor: LexicalEditor): void {
-  const paragraph = $createParagraphNode();
-  root.append(paragraph);
-  if (shouldSelectParagraph(editor)) {
-    paragraph.select();
-  }
-}
-
-function textInitFn(editor: LexicalEditor): void {
-  const root = $getRoot();
-  const firstChild = root.getFirstChild();
-  if (firstChild === null) {
-    initParagraph(root, editor);
-  }
-}
-
-function clearEditor(editor: LexicalEditor): void {
-  const root = $getRoot();
-  root.clear();
-  initParagraph(root, editor);
-}
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -324,10 +290,7 @@ function StickyComponent({
         ) : (
           <HistoryPlugin externalHistoryState={historyState} />
         )}
-        <BootstrapPlugin
-          initialPayloadFn={textInitFn}
-          clearEditorFn={clearEditor}
-        />
+        <BootstrapPlugin />
         <PlainTextPlugin
           contentEditable={
             <ContentEditable className={stylex(styles.contentEditable)} />

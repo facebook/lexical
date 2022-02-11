@@ -60,7 +60,6 @@ type RootElementEvents = Array<
 const PASS_THROUGH_COMMAND = Object.freeze({});
 
 const rootElementEvents: RootElementEvents = [
-  ['selectionchange', onSelectionChange],
   // $FlowIgnore bad event inheritance
   ['keydown', onKeyDown],
   // $FlowIgnore bad event inheritance
@@ -88,7 +87,7 @@ if (CAN_USE_BEFORE_INPUT) {
 
 let lastKeyWasMaybeAndroidSoftKey = false;
 
-function onSelectionChange(event: Event, editor: LexicalEditor): void {
+function onSelectionChange(editor: LexicalEditor): void {
   const domSelection = window.getSelection();
   const parentEditors = getEditorsToPropagate(editor);
   const topLevelEditor = parentEditors[parentEditors.length - 1];
@@ -500,15 +499,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   });
 }
 
-function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
-  return eventName === 'selectionchange' ||
-    eventName === 'keyup' ||
-    eventName === 'pointerup' ||
-    eventName === 'pointercancel'
-    ? rootElement.ownerDocument
-    : rootElement;
-}
-
 function isRootEditable(editor: LexicalEditor): boolean {
   const rootElement = editor.getRootElement();
   return rootElement !== null && rootElement.contentEditable === 'true';
@@ -532,6 +522,35 @@ function clearRootElementRemoveHandles(rootElement: HTMLElement): void {
   rootElement._lexicalEventHandles = [];
 }
 
+function onDocumentSelectionChange(event: Event): void {
+  const sel = window.getSelection();
+  let node = sel.anchorNode;
+  while (node != null) {
+    if (node.contentEditable === 'true') {
+      const possibleLexicalEditor = node.__lexicalEditor;
+      if (possibleLexicalEditor !== undefined) {
+        onSelectionChange(possibleLexicalEditor);
+      }
+    }
+    node = node.parentNode;
+  }
+}
+
+export function addDocumentSelectionChangeEvent(
+  rootElement: HTMLElement,
+  editor: LexicalEditor,
+): void {
+  const doc = rootElement.ownerDocument;
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEditor = editor;
+  // $FlowFixMe: internal field
+  if (doc._lexicalEvent === undefined) {
+    // $FlowFixMe: internal field
+    doc._lexicalEvent = true;
+    doc.addEventListener('selectionchange', onDocumentSelectionChange);
+  }
+}
+
 export function addRootElementEvents(
   rootElement: HTMLElement,
   editor: LexicalEditor,
@@ -552,17 +571,16 @@ export function addRootElementEvents(
               editor.execCommand(eventName, event);
             }
           };
-    getTarget(eventName, rootElement).addEventListener(eventName, eventHandler);
+    rootElement.addEventListener(eventName, eventHandler);
     removeHandles.push(() => {
-      getTarget(eventName, rootElement).removeEventListener(
-        eventName,
-        eventHandler,
-      );
+      rootElement.removeEventListener(eventName, eventHandler);
     });
   }
 }
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEditor = null;
   const removeHandles = getRootElementRemoveHandles(rootElement);
   for (let i = 0; i < removeHandles.length; i++) {
     removeHandles[i]();

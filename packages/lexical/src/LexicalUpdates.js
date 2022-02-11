@@ -7,45 +7,46 @@
  * @flow strict
  */
 
-import type {ParsedEditorState} from './LexicalEditorState';
 import type {
+  CommandPayload,
+  EditorUpdateOptions,
   LexicalEditor,
   Transform,
-  EditorUpdateOptions,
-  CommandPayload,
 } from './LexicalEditor';
+import type {ParsedEditorState} from './LexicalEditorState';
 import type {LexicalNode} from './LexicalNode';
-import type {ParsedNode, NodeParserState} from './LexicalParsing';
+import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
-import {updateEditorState} from './LexicalReconciler';
-import {
-  internalCreateRangeSelection,
-  internalCreateSelectionFromParse,
-} from './LexicalSelection';
+import invariant from 'shared/invariant';
+
+import {$isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {resetEditor} from './LexicalEditor';
-import {initMutationObserver} from './LexicalMutations';
 import {
+  cloneEditorState,
   EditorState,
   editorStateHasDirtySelection,
-  cloneEditorState,
 } from './LexicalEditorState';
-import {
-  scheduleMicroTask,
-  $getCompositionKey,
-  getEditorStateTextContent,
-  getRegisteredNodeOrThrow,
-  getEditorsToPropagate,
-} from './LexicalUtils';
 import {
   $garbageCollectDetachedDecorators,
   $garbageCollectDetachedNodes,
 } from './LexicalGC';
-import {internalCreateNodeFromParse} from './LexicalParsing';
-import {applySelectionTransforms} from './LexicalSelection';
-import {$isTextNode} from '.';
+import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
-import invariant from 'shared/invariant';
+import {internalCreateNodeFromParse} from './LexicalParsing';
+import {updateEditorState} from './LexicalReconciler';
+import {
+  applySelectionTransforms,
+  internalCreateRangeSelection,
+  internalCreateSelectionFromParse,
+} from './LexicalSelection';
+import {
+  $getCompositionKey,
+  getEditorStateTextContent,
+  getEditorsToPropagate,
+  getRegisteredNodeOrThrow,
+  scheduleMicroTask,
+} from './LexicalUtils';
 
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
@@ -402,13 +403,13 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
-    tags,
+    dirtyElements,
+    dirtyLeaves,
+    editorState: pendingEditorState,
+    log,
     normalizedNodes,
     prevEditorState: currentEditorState,
-    editorState: pendingEditorState,
-    dirtyLeaves,
-    dirtyElements,
-    log,
+    tags,
   });
   triggerDeferredUpdateCallbacks(editor);
   triggerEnqueuedUpdates(editor);

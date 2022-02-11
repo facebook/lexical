@@ -7,23 +7,23 @@
  * @flow strict
  */
 
-import {ListNode, $createListNode, $isListNode} from './LexicalListNode';
+import {indentList, insertList, outdentList, removeList} from './formatList';
 import {
-  ListItemNode,
   $createListItemNode,
   $isListItemNode,
+  ListItemNode,
 } from './LexicalListItemNode';
-import {insertList, removeList, indentList, outdentList} from './formatList';
+import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
 
 export {
-  ListNode,
-  $createListNode,
-  $isListNode,
-  ListItemNode,
   $createListItemNode,
+  $createListNode,
   $isListItemNode,
-  insertList,
-  removeList,
+  $isListNode,
   indentList,
+  insertList,
+  ListItemNode,
+  ListNode,
   outdentList,
+  removeList,
 };

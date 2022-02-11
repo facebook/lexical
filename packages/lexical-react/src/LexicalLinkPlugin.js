@@ -10,9 +10,9 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect} from 'react';
-import {$log, $getSelection, $setSelection} from 'lexical';
+import {$getSelection, $log, $setSelection} from 'lexical';
 import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
+import {useEffect} from 'react';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

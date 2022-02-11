@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, LexicalNode, ParagraphNode} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey, ParagraphNode} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode, $createParagraphNode} from 'lexical';
+import {$createParagraphNode, ElementNode} from 'lexical';
 
 export class QuoteNode extends ElementNode {
   static getType(): string {

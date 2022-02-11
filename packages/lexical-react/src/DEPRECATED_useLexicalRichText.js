@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
 import type {HistoryState} from './DEPRECATED_useLexicalHistory';
+import type {LexicalEditor} from 'lexical';
 
-import {useRichTextSetup} from './shared/useRichTextSetup';
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
 import useBootstrapEditor from './shared/useBootstrapEditor';
+import {useRichTextSetup} from './shared/useRichTextSetup';
 
 export default function useLexicalRichText(
   editor: LexicalEditor,

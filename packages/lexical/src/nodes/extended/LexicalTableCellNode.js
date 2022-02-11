@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey, EditorConfig} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {ElementNode} from 'lexical';

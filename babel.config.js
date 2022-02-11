@@ -1,6 +1,12 @@
 'use strict';
 
 module.exports = {
+  plugins: [
+    [
+      require('./scripts/error-codes/transform-error-messages'),
+      {noMinify: true},
+    ],
+  ],
   presets: [
     [
       '@babel/preset-env',
@@ -12,11 +18,5 @@ module.exports = {
     ],
     '@babel/preset-react',
     '@babel/preset-flow',
-  ],
-  plugins: [
-    [
-      require('./scripts/error-codes/transform-error-messages'),
-      {noMinify: true},
-    ],
   ],
 };

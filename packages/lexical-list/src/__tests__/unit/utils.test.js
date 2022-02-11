@@ -6,9 +6,10 @@
  *
  */
 
+import {$createListItemNode, $createListNode} from '@lexical/list';
+import {$createParagraphNode, $getRoot} from 'lexical';
+
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
-import {$getRoot, $createParagraphNode} from 'lexical';
-import {$createListNode, $createListItemNode} from '@lexical/list';
 import {$getListDepth, $getTopListNode, $isLastItemInList} from '../../utils';
 
 describe('Lexical List Utils tests', () => {

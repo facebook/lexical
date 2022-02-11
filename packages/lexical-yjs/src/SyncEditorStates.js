@@ -7,50 +7,51 @@
  * @flow strict
  */
 
+import type {Binding, Provider, YjsEvent} from '.';
 import type {
-  NodeKey,
   EditorState,
   IntentionallyMarkedAsDirtyElement,
+  NodeKey,
 } from 'lexical';
-import type {Binding, Provider, YjsEvent} from '.';
 
-// $FlowFixMe: need Flow typings for yjs
+import {$createOffsetView} from '@lexical/helpers/offsets';
 import {
-  YTextEvent,
-  YMapEvent,
-  YXmlEvent,
-  Map as YMap,
-  Array as YArray,
-} from 'yjs';
-import {
-  $isTextNode,
-  $getSelection,
-  $getRoot,
-  $setSelection,
+  $createParagraphNode,
   $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isTextNode,
+  $setSelection,
   isDecoratorArray,
   isDecoratorMap,
-  $createParagraphNode,
 } from 'lexical';
+// $FlowFixMe: need Flow typings for yjs
+import {
+  Array as YArray,
+  Map as YMap,
+  YMapEvent,
+  YTextEvent,
+  YXmlEvent,
+} from 'yjs';
+
+import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
-  getOrInitCollabNodeFromSharedType,
-  doesSelectionNeedRecovering,
-  syncWithTransaction,
-} from './Utils';
-import {
+  syncCursorPositions,
   syncLexicalSelectionToYjs,
   syncLocalCursorPosition,
-  syncCursorPositions,
 } from './SyncCursors';
-import {CollabDecoratorNode} from './CollabDecoratorNode';
-import {$createOffsetView} from '@lexical/helpers/offsets';
 import {
   mutationFromCollab,
-  syncYjsDecoratorMapToLexical,
   syncYjsDecoratorArrayValueToLexical,
+  syncYjsDecoratorMapToLexical,
 } from './SyncDecoratorStates';
+import {
+  doesSelectionNeedRecovering,
+  getOrInitCollabNodeFromSharedType,
+  syncWithTransaction,
+} from './Utils';
 
 function syncEvent(
   binding: Binding,

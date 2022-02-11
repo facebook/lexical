@@ -11,16 +11,16 @@ import type {LexicalNode} from 'lexical';
 import type {TableNode} from 'lexical/TableNode';
 
 import {
-  $isElementNode,
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isLineBreakNode,
   $isTextNode,
-  $createParagraphNode,
 } from 'lexical';
+import {$createTableCellNode} from 'lexical/TableCellNode';
 import {$createTableNode} from 'lexical/TableNode';
 import {$createTableRowNode} from 'lexical/TableRowNode';
-import {$createTableCellNode} from 'lexical/TableCellNode';
 
 export function $dfs__DEPRECATED(
   startingNode: LexicalNode,

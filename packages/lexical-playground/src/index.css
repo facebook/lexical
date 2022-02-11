@@ -2,7 +2,8 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #eee;
@@ -119,7 +120,7 @@ pre::-webkit-scrollbar-thumb {
 }
 
 .editor-dev-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 10px;
   right: 10px;
@@ -167,7 +168,7 @@ pre::-webkit-scrollbar-thumb {
 }
 
 .test-recorder-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 8px;
   right: 8px;
@@ -279,7 +280,8 @@ pre::-webkit-scrollbar-thumb {
   background-color: #eee;
 }
 
-.link-editor .button i, .actions i {
+.link-editor .button i,
+.actions i {
   background-size: contain;
   display: inline-block;
   height: 20px;
@@ -387,7 +389,8 @@ i.diagram-2 {
   background-image: url(images/icons/diagram-2.svg);
 }
 
-.link-editor .button.active, .toolbar .button.active {
+.link-editor .button.active,
+.toolbar .button.active {
   background-color: rgb(223, 232, 250);
 }
 
@@ -435,7 +438,8 @@ i.diagram-2 {
   text-decoration: underline;
 }
 
-.link-editor .font-size-wrapper, .link-editor .font-family-wrapper {
+.link-editor .font-size-wrapper,
+.link-editor .font-family-wrapper {
   display: flex;
   margin: 0 4px;
 }
@@ -540,7 +544,8 @@ i.diagram-2 {
   z-index: 5;
   display: block;
   position: absolute;
-  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   min-width: 100px;
   min-height: 40px;
@@ -588,7 +593,7 @@ i.diagram-2 {
   display: flex;
   line-height: 20px;
   flex-grow: 1;
-  width: 200px
+  width: 200px;
 }
 
 .dropdown .item .icon {
@@ -605,19 +610,23 @@ i.diagram-2 {
   background-image: url(images/icons/text-paragraph.svg);
 }
 
-.icon.large-heading, .icon.h1 {
+.icon.large-heading,
+.icon.h1 {
   background-image: url(images/icons/type-h1.svg);
 }
 
-.icon.small-heading, .icon.h2 {
+.icon.small-heading,
+.icon.h2 {
   background-image: url(images/icons/type-h2.svg);
 }
 
-.icon.bullet-list, .icon.ul {
+.icon.bullet-list,
+.icon.ul {
   background-image: url(images/icons/list-ul.svg);
 }
 
-.icon.numbered-list, .icon.ol {
+.icon.numbered-list,
+.icon.ol {
   background-image: url(images/icons/list-ol.svg);
 }
 
@@ -705,11 +714,11 @@ i.diagram-2 {
   transition: transform 0.2s;
 }
 
-.switch button[aria-checked="true"] {
+.switch button[aria-checked='true'] {
   background-color: rgb(24, 119, 242);
 }
 
-.switch button[aria-checked="true"] span {
+.switch button[aria-checked='true'] span {
   transform: translateX(20px);
 }
 
@@ -724,7 +733,7 @@ i.diagram-2 {
 }
 
 .editor-shell .editor-image img.focused {
-  outline: 2px solid rgb(60,132,244);
+  outline: 2px solid rgb(60, 132, 244);
   user-select: none;
 }
 
@@ -742,7 +751,7 @@ i.diagram-2 {
   padding: 0;
   margin: 0;
   border-top: 1px solid #fff;
-  background-color: rgba(255,255,255,0.9);
+  background-color: rgba(255, 255, 255, 0.9);
   min-width: 100px;
   color: #000;
   overflow: hidden;
@@ -757,9 +766,9 @@ i.diagram-2 {
   width: 30%;
   padding: 10px;
   margin: 0 auto;
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 5px;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   min-width: 100px;
   color: #fff;
   cursor: pointer;
@@ -767,7 +776,7 @@ i.diagram-2 {
 }
 
 .editor-shell .editor-image .image-caption-button:hover {
-  background-color: rgba(60,132,244, 0.5);
+  background-color: rgba(60, 132, 244, 0.5);
 }
 
 .editor-shell .editor-image .image-resizer-sw {
@@ -777,7 +786,7 @@ i.diagram-2 {
   position: absolute;
   bottom: -2px;
   left: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: sw-resize;
 }
@@ -789,7 +798,7 @@ i.diagram-2 {
   position: absolute;
   top: -6px;
   right: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: ne-resize;
 }
@@ -801,7 +810,7 @@ i.diagram-2 {
   position: absolute;
   top: -6px;
   left: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: nw-resize;
 }
@@ -813,7 +822,7 @@ i.diagram-2 {
   position: absolute;
   bottom: -2px;
   right: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: nwse-resize;
 }
@@ -965,9 +974,15 @@ i.chevron-down {
 }
 
 @keyframes mic-pulsate-color {
-  0% { background-color: #ffdcdc; }
-  50% { background-color: #ff8585; }
-  100% { background-color: #ffdcdc; }
+  0% {
+    background-color: #ffdcdc;
+  }
+  50% {
+    background-color: #ff8585;
+  }
+  100% {
+    background-color: #ffdcdc;
+  }
 }
 
 .debug-timetravel-panel {
@@ -1162,7 +1177,7 @@ i.chevron-down {
   margin: 25px;
   padding: 20px 10px;
   position: absolute;
-  border: 1px solid #E8E8E8;
+  border: 1px solid #e8e8e8;
   font-family: 'Reenie Beanie';
   font-size: 24px;
   border-bottom-right-radius: 60px 5px;
@@ -1171,25 +1186,38 @@ i.chevron-down {
 }
 
 .sticky-note:after {
-  content: "";
+  content: '';
   position: absolute;
   z-index: -1;
-  right: -0px; bottom:20px;
+  right: -0px;
+  bottom: 20px;
   width: 120px;
   height: 25px;
   background: rgba(0, 0, 0, 0.2);
-  box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.40);
+  box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.4);
   transform: matrix(-1, -0.1, 0, 1, 0, 0);
 }
 
 .sticky-note.yellow {
   border-top: 1px solid #fdfd86;
-  background: linear-gradient(135deg, #ffff88 81%,#ffff88 82%,#ffff88 82%,#ffffc6 100%);
+  background: linear-gradient(
+    135deg,
+    #ffff88 81%,
+    #ffff88 82%,
+    #ffff88 82%,
+    #ffffc6 100%
+  );
 }
 
 .sticky-note.pink {
   border-top: 1px solid #e7d1e4;
-  background: linear-gradient(135deg, #f7cbe8 81%,#f7cbe8 82%,#f7cbe8 82%,#e7bfe1 100%);
+  background: linear-gradient(
+    135deg,
+    #f7cbe8 81%,
+    #f7cbe8 82%,
+    #f7cbe8 82%,
+    #e7bfe1 100%
+  );
 }
 
 .sticky-note.dragging {

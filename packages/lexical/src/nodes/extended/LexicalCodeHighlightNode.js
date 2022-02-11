@@ -8,17 +8,17 @@
  */
 
 import type {
-  NodeKey,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  NodeKey,
 } from 'lexical';
 
-import {TextNode} from 'lexical';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/helpers/elements';
+import {TextNode} from 'lexical';
 
 export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;

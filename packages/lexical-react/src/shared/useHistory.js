@@ -8,18 +8,18 @@
  */
 
 import type {
-  LexicalEditor,
-  EditorState,
-  LexicalNode,
-  RangeSelection,
-  NodeKey,
-  IntentionallyMarkedAsDirtyElement,
   CommandListenerEditorPriority,
+  EditorState,
+  IntentionallyMarkedAsDirtyElement,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
 } from 'lexical';
 
-import {$isTextNode, $isRootNode, $getSelection} from 'lexical';
-import {useCallback, useEffect, useMemo} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
+import {$getSelection, $isRootNode, $isTextNode} from 'lexical';
+import {useCallback, useEffect, useMemo} from 'react';
 
 type MergeAction = 0 | 1 | 2;
 const MERGE = 0;

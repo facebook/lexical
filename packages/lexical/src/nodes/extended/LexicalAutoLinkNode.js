@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {LexicalNode, RangeSelection, ElementNode} from 'lexical';
+import type {ElementNode, LexicalNode, RangeSelection} from 'lexical';
 
-import {LinkNode} from 'lexical/LinkNode';
 import {$isElementNode} from 'lexical';
+import {LinkNode} from 'lexical/LinkNode';
 
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link

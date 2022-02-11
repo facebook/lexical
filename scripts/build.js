@@ -25,17 +25,17 @@ const isClean = argv.clean;
 const extractCodes = argv.codes;
 
 const closureOptions = {
+  apply_input_source_maps: false,
   assume_function_wrapper: true,
   compilation_level: 'SIMPLE',
+  env: 'CUSTOM',
+  inject_libraries: false,
   language_in: 'ECMASCRIPT_2019',
   language_out: 'ECMASCRIPT_2019',
-  env: 'CUSTOM',
-  warning_level: 'QUIET',
-  apply_input_source_maps: false,
-  use_types_for_optimization: false,
   process_common_js_modules: false,
   rewrite_polyfills: false,
-  inject_libraries: false,
+  use_types_for_optimization: false,
+  warning_level: 'QUIET',
 };
 
 if (isClean) {
@@ -47,10 +47,10 @@ if (isClean) {
 }
 
 const wwwMappings = {
+  '@lexical/list': 'LexicalList',
+  '@lexical/yjs': 'LexicalYjs',
   lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
-  '@lexical/yjs': 'LexicalYjs',
-  '@lexical/list': 'LexicalList',
 };
 
 const lexicalNodes = fs
@@ -119,11 +119,10 @@ Object.keys(wwwMappings).forEach((mapping) => {
 
 async function build(name, inputFile, outputFile, isProd) {
   const inputOptions = {
-    input: inputFile,
-    treeshake: 'smallest',
     external(modulePath, src) {
       return externals.includes(modulePath);
     },
+    input: inputFile,
     onwarn(warning) {
       if (warning.code === 'CIRCULAR_DEPENDENCY') {
         // Ignored
@@ -213,10 +212,9 @@ async function build(name, inputFile, outputFile, isProd) {
       nodeResolve(),
       babel({
         babelHelpers: 'bundled',
-        exclude: '/**/node_modules/**',
         babelrc: false,
         configFile: false,
-        presets: ['@babel/preset-react'],
+        exclude: '/**/node_modules/**',
         plugins: [
           '@babel/plugin-transform-flow-strip-types',
           [
@@ -224,6 +222,7 @@ async function build(name, inputFile, outputFile, isProd) {
             {noMinify: !isProd},
           ],
         ],
+        presets: ['@babel/preset-react'],
       }),
       {
         resolveId(importee, importer) {
@@ -238,9 +237,9 @@ async function build(name, inputFile, outputFile, isProd) {
       replace(
         Object.assign(
           {
+            __DEV__: isProd ? 'false' : 'true',
             delimiters: ['', ''],
             preventAssignment: true,
-            __DEV__: isProd ? 'false' : 'true',
           },
           isWWW && strictWWWMappings,
         ),
@@ -253,15 +252,16 @@ ${source}`;
         },
       },
     ],
+    treeshake: 'smallest',
   };
   const outputOptions = {
+    esModule: false,
+    exports: 'auto',
+    externalLiveBindings: false,
     file: outputFile,
     format: 'cjs',
     freeze: false,
     interop: false,
-    esModule: false,
-    externalLiveBindings: false,
-    exports: 'auto',
   };
   if (isWatchMode) {
     const watcher = rollup.watch({
@@ -315,61 +315,58 @@ function getFileName(fileName, isProd) {
 
 const packages = [
   {
-    name: 'Lexical Core',
-    sourcePath: './packages/lexical/src/',
-    outputPath: './packages/lexical/dist/',
     modules: [
       {
-        sourceFileName: 'index.js',
         outputFileName: 'Lexical',
+        sourceFileName: 'index.js',
       },
     ],
+    name: 'Lexical Core',
+    outputPath: './packages/lexical/dist/',
+    sourcePath: './packages/lexical/src/',
   },
   {
-    name: 'Lexical List',
-    sourcePath: './packages/lexical-list/src/',
-    outputPath: './packages/lexical-list/dist/',
     modules: [
       {
-        sourceFileName: 'index.js',
         outputFileName: 'LexicalList',
+        sourceFileName: 'index.js',
       },
     ],
+    name: 'Lexical List',
+    outputPath: './packages/lexical-list/dist/',
+    sourcePath: './packages/lexical-list/src/',
   },
   {
-    name: 'Lexical Core Nodes',
-    sourcePath: './packages/lexical/src/nodes/extended/',
-    outputPath: './packages/lexical/dist/',
     modules: lexicalNodes.map((module) => ({
       name: module,
-      sourceFileName: module,
       outputFileName: module,
+      sourceFileName: module,
     })),
+    name: 'Lexical Core Nodes',
+    outputPath: './packages/lexical/dist/',
+    sourcePath: './packages/lexical/src/nodes/extended/',
   },
   {
-    name: 'Lexical Helpers',
-    sourcePath: './packages/lexical-helpers/src/',
-    outputPath: './packages/lexical-helpers/dist/',
     modules: lexicalHelpers.map((module) => ({
       name: module,
-      sourceFileName: module,
       outputFileName: module,
+      sourceFileName: module,
     })),
+    name: 'Lexical Helpers',
+    outputPath: './packages/lexical-helpers/dist/',
+    sourcePath: './packages/lexical-helpers/src/',
   },
   {
-    name: 'Lexical Shared',
-    sourcePath: './packages/shared/src/',
-    outputPath: './packages/shared/dist/',
     modules: lexicalShared.map((module) => ({
       name: module,
-      sourceFileName: module,
       outputFileName: module,
+      sourceFileName: module,
     })),
+    name: 'Lexical Shared',
+    outputPath: './packages/shared/dist/',
+    sourcePath: './packages/shared/src/',
   },
   {
-    name: 'Lexical React',
-    sourcePath: './packages/lexical-react/src/',
-    outputPath: './packages/lexical-react/dist/',
     modules: lexicalReactModules
       .filter((module) => {
         // We don't want to sync these modules, as they're bundled in the other
@@ -384,20 +381,23 @@ const packages = [
       })
       .map((module) => ({
         name: module,
-        sourceFileName: module,
         outputFileName: module,
+        sourceFileName: module,
       })),
+    name: 'Lexical React',
+    outputPath: './packages/lexical-react/dist/',
+    sourcePath: './packages/lexical-react/src/',
   },
   {
-    name: 'Lexical Yjs',
-    sourcePath: './packages/lexical-yjs/src/',
-    outputPath: './packages/lexical-yjs/dist/',
     modules: [
       {
-        sourceFileName: 'index.js',
         outputFileName: 'LexicalYjs',
+        sourceFileName: 'index.js',
       },
     ],
+    name: 'Lexical Yjs',
+    outputPath: './packages/lexical-yjs/dist/',
+    sourcePath: './packages/lexical-yjs/src/',
   },
 ];
 

@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey, EditorConfig} from 'lexical';
 import type {EditorThemeClasses} from '../../LexicalEditor';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {getCachedClassNameArray} from '../../LexicalUtils';
 import {$isElementNode, ElementNode} from './LexicalElementNode';

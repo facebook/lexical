@@ -7,8 +7,9 @@
  * @flow
  */
 
+import {$createTextNode, $getRoot} from 'lexical';
+
 import {createTestConnection, waitForReact} from './utils';
-import {$getRoot, $createTextNode} from 'lexical';
 
 describe('Collaboration', () => {
   let container = null;

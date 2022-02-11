@@ -7,16 +7,20 @@
  * @flow strict
  */
 
+import type {TextNodeWithOffset} from '@lexical/helpers/text';
 import type {
+  ElementNode,
   LexicalNode,
   NodeKey,
-  ElementNode,
   TextFormatType,
   TextNode,
 } from 'lexical';
-import type {TextNodeWithOffset} from '@lexical/helpers/text';
 
-import invariant from 'shared/invariant';
+import {
+  $findNodeWithOffsetFromJoinedText,
+  $joinTextNodesInElementNode,
+} from '@lexical/helpers/text';
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -24,24 +28,19 @@ import {
   $isElementNode,
   $setSelection,
 } from 'lexical';
-
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
-import {
-  $joinTextNodesInElementNode,
-  $findNodeWithOffsetFromJoinedText,
-} from '@lexical/helpers/text';
+import invariant from 'shared/invariant';
 
 // The trigger state helps to capture EditorState information
 // from the prior and current EditorState.
 // This is then used to determined if an auto format has been triggered.
 export type AutoFormatTriggerState = $ReadOnly<{
   anchorOffset: number,
+  hasParentNode: boolean,
   isCodeBlock: boolean,
   isParentAListItemNode: boolean,
-  hasParentNode: boolean,
   isSelectionCollapsed: boolean,
   isSimpleText: boolean,
   nodeKey: NodeKey,
@@ -79,8 +78,8 @@ export type NodeTransformationKind =
 export type AutoFormatCriteria = $ReadOnly<{
   nodeTransformationKind: ?NodeTransformationKind,
   regEx: RegExp,
-  regExExpectedCaptureGroupCount: number,
   regExCaptureGroupsToDelete: ?Array<number>,
+  regExExpectedCaptureGroupCount: number,
   requiresParagraphStart: ?boolean,
 }>;
 
@@ -91,8 +90,8 @@ export type AutoFormatCriteria = $ReadOnly<{
 // building up the ParagraphNode's text by calling getTextContent()
 // may be expensive. Rather, load this value lazily and store it for later use.
 export type ScanningContext = {
-  textNodeWithOffset: TextNodeWithOffset,
   joinedText: ?string,
+  textNodeWithOffset: TextNodeWithOffset,
 };
 
 // RegEx returns the discovered pattern matches in an array of capture groups.
@@ -101,11 +100,11 @@ export type ScanningContext = {
 // is the textLength of the sub-string, however, at the very end, we need to subtract
 // the TRIGGER_STRING.
 type CaptureGroupDetail = {
-  text: string,
-  textLength: number,
-  offsetInParent: number,
   anchorTextNodeWithOffset: ?TextNodeWithOffset,
   focusTextNodeWithOffset: ?TextNodeWithOffset,
+  offsetInParent: number,
+  text: string,
+  textLength: number,
 };
 
 // This type stores the result details when a particular
@@ -127,11 +126,11 @@ const TRIGGER_STRING_LENGTH = TRIGGER_STRING.length;
 const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused unicode character to separate text and non-text nodes.
 
 const autoFormatBase: AutoFormatCriteria = {
-  requiresParagraphStart: false,
   nodeTransformationKind: null,
   regEx: /(?:)/,
-  regExExpectedCaptureGroupCount: 1,
   regExCaptureGroupsToDelete: null,
+  regExExpectedCaptureGroupCount: 1,
+  requiresParagraphStart: false,
 };
 
 const paragraphStartBase: AutoFormatCriteria = {
@@ -141,44 +140,44 @@ const paragraphStartBase: AutoFormatCriteria = {
 
 const markdownHeader1: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:# )/,
   nodeTransformationKind: 'paragraphH1',
+  regEx: /(?:# )/,
 };
 
 const markdownHeader2: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:## )/,
   nodeTransformationKind: 'paragraphH2',
+  regEx: /(?:## )/,
 };
 
 const markdownHeader3: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:### )/,
   nodeTransformationKind: 'paragraphH2',
+  regEx: /(?:### )/,
 };
 
 const markdownBlockQuote: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:> )/,
   nodeTransformationKind: 'paragraphBlockQuote',
+  regEx: /(?:> )/,
 };
 
 const markdownUnorderedListDash: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:- )/,
   nodeTransformationKind: 'paragraphUnorderedList',
+  regEx: /(?:- )/,
 };
 
 const markdownUnorderedListAsterisk: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:\* )/,
   nodeTransformationKind: 'paragraphUnorderedList',
+  regEx: /(?:\* )/,
 };
 
 const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
-  regEx: /(?:``` )/,
   nodeTransformationKind: 'paragraphCodeBlock',
+  regEx: /(?:``` )/,
 };
 
 const markdownOrderedList: AutoFormatCriteria = {
@@ -192,11 +191,13 @@ const markdownBold: AutoFormatCriteria = {
   ...autoFormatBase,
   nodeTransformationKind: 'textBold',
   // regEx: /(\*)(?:\s*\b)(?:[^\*]*)(?:\b\s*)(\*\s)$/, // The $ will find the target at the end of the string.
-  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/, // The $ will find the target at the end of the string.
-  regExExpectedCaptureGroupCount: 6,
+  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
   // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
   // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
   regExCaptureGroupsToDelete: [1, 5],
+
+  // The $ will find the target at the end of the string.
+  regExExpectedCaptureGroupCount: 6,
 };
 
 const allAutoFormatCriteriaForTextNodes = [markdownBold];
@@ -252,15 +253,15 @@ function getMatchResultContextWithRegEx(
     ) {
       const textContent = regExMatches[captureGroupIndex];
       matchResultContext.regExCaptureGroups.push({
-        text: textContent,
+        anchorTextNodeWithOffset: null,
+        focusTextNodeWithOffset: null,
         offsetInParent: runningLength,
+        text: textContent,
         textLength:
           textContent.length -
           (captureGroupIndex + 1 === captureGroupsCount
             ? TRIGGER_STRING_LENGTH
             : 0),
-        anchorTextNodeWithOffset: null,
-        focusTextNodeWithOffset: null,
       });
 
       // The 0th capture group is special in that it's text contents is

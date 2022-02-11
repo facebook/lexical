@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {TextNode, $getRoot, $getSelection, ParagraphNode} from 'lexical';
-import {LexicalNode} from '../../LexicalNode';
+import {$getRoot, $getSelection, ParagraphNode, TextNode} from 'lexical';
 
+import {LexicalNode} from '../../LexicalNode';
 import {initializeUnitTest, TestElementNode} from '../utils';
 
 class TestNode extends LexicalNode {

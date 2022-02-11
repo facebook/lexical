@@ -8,19 +8,19 @@
  */
 
 import type {
-  LexicalNode,
-  NodeKey,
   EditorConfig,
   EditorThemeClasses,
+  LexicalNode,
+  NodeKey,
 } from 'lexical';
-
-import {$createTextNode, ElementNode} from 'lexical';
-import {$createListItemNode, $isListItemNode} from '@lexical/list';
 
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/helpers/elements';
+import {$createListItemNode, $isListItemNode} from '@lexical/list';
+import {$createTextNode, ElementNode} from 'lexical';
+
 import {$getListDepth} from './utils';
 
 type ListNodeTagType = 'ul' | 'ol';

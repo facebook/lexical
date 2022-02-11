@@ -7,12 +7,12 @@
  * @flow strict
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import usePlainTextSetup from './shared/usePlainTextSetup';
-import useDecorators from './shared/useDecorators';
 import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
+import useDecorators from './shared/useDecorators';
+import usePlainTextSetup from './shared/usePlainTextSetup';
 
 export default function PlainTextPlugin({
   contentEditable,

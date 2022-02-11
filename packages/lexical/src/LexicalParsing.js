@@ -8,25 +8,26 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {NodeKey, LexicalNode} from './LexicalNode';
+import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {
-  DecoratorMap,
   DecoratorArray,
+  DecoratorMap,
   DecoratorStateValue,
 } from './nodes/base/LexicalDecoratorNode';
 
+import invariant from 'shared/invariant';
+
+import {$isDecoratorNode, $isElementNode, $isRootNode, $isTextNode} from '.';
 import {
-  getActiveEditorState,
-  getActiveEditor,
   errorOnReadOnly,
+  getActiveEditor,
+  getActiveEditorState,
 } from './LexicalUpdates';
-import {$isRootNode, $isElementNode, $isTextNode, $isDecoratorNode} from '.';
 import {
+  createDecoratorArray,
   createDecoratorEditor,
   createDecoratorMap,
-  createDecoratorArray,
 } from './nodes/base/LexicalDecoratorNode';
-import invariant from 'shared/invariant';
 
 export type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -35,24 +36,24 @@ export type NodeParserState = {
 
 export type ParsedNode = {
   __key: NodeKey,
-  __type: string,
   __parent: null | NodeKey,
+  __type: string,
   ...
 };
 
 export type ParsedElementNode = {
   ...ParsedNode,
   __children: Array<NodeKey>,
-  __format: number,
   __dir: number,
+  __format: number,
   __indent: number,
 };
 
 export type ParsedTextNode = {
   ...ParsedNode,
-  __text: string,
-  __mode: number,
   __format: number,
+  __mode: number,
+  __text: string,
 };
 
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;

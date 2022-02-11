@@ -7,43 +7,43 @@
  * @flow strict
  */
 
-import type {UndoManager, RelativePosition, XmlText} from 'yjs';
 import type {Binding} from './Bindings';
+import type {RelativePosition, UndoManager, XmlText} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
 
 export type UserState = {
   anchorPos: null | RelativePosition,
-  focusPos: null | RelativePosition,
-  name: string,
   color: string,
   focusing: boolean,
+  focusPos: null | RelativePosition,
+  name: string,
 };
 
 declare class Provider {
-  connect(): void;
-  disconnect(): void;
   awareness: {
     getLocalState(): UserState,
-    setLocalState(UserState): void,
     getStates(): Array<UserState>,
-    on(type: 'update', cb: () => void): void,
     off(type: 'update', cb: () => void): void,
+    on(type: 'update', cb: () => void): void,
+    setLocalState(UserState): void,
   };
-  on(type: 'sync', cb: (isSynced: boolean) => void): void;
-  on(type: 'status', cb: ({status: string}) => void): void;
-  // $FlowFixMe: temp
-  on(type: 'update', cb: (any) => void): void;
+  connect(): void;
+  disconnect(): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
   // $FlowFixMe: temp
   off(type: 'update', cb: (any) => void): void;
   off(type: 'status', cb: ({status: string}) => void): void;
+  on(type: 'sync', cb: (isSynced: boolean) => void): void;
+  on(type: 'status', cb: ({status: string}) => void): void;
+  // $FlowFixMe: temp
+  on(type: 'update', cb: (any) => void): void;
 }
 
 export type Operation = {
-  insert: string | {...},
   attributes: {__type: string, ...},
+  insert: string | {...},
 };
 
 export type Delta = Array<Operation>;
@@ -54,8 +54,7 @@ export type YjsEvent = Object;
 
 export type {Provider};
 
-export type {ClientID, Binding} from './Bindings';
-
+export type {Binding, ClientID} from './Bindings';
 export {createBinding} from './Bindings';
 
 export function createUndoManager(
@@ -74,11 +73,11 @@ export function initLocalState(
   focusing: boolean,
 ): void {
   provider.awareness.setLocalState({
-    color,
-    name,
     anchorPos: null,
+    color,
     focusPos: null,
     focusing: focusing,
+    name,
   });
 }
 
@@ -90,8 +89,8 @@ export function setLocalStateFocus(provider: Provider, focusing: boolean) {
   });
 }
 
-export {
-  syncYjsChangesToLexical,
-  syncLexicalUpdateToYjs,
-} from './SyncEditorStates';
 export {syncCursorPositions} from './SyncCursors';
+export {
+  syncLexicalUpdateToYjs,
+  syncYjsChangesToLexical,
+} from './SyncEditorStates';

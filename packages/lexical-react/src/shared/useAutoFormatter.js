@@ -7,21 +7,20 @@
  * @flow strict
  */
 
-import type {EditorState} from 'lexical';
-import type {LexicalEditor, RangeSelection} from 'lexical';
 import type {
   AutoFormatCriteriaArray,
-  AutoFormatTriggerState,
   AutoFormatCriteriaWithMatchResultContext,
+  AutoFormatTriggerState,
   ScanningContext,
 } from './AutoFormatterUtils.js';
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
-import {$isCodeNode} from 'lexical/CodeNode';
+import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
 
 import {$isListItemNode} from '@lexical/list';
-import {$isTextNode, $getSelection} from 'lexical';
-
+import {$getSelection, $isTextNode} from 'lexical';
+import {$isCodeNode} from 'lexical/CodeNode';
 import {useEffect} from 'react';
+
 import {
   getAllAutoFormatCriteria,
   getAllAutoFormatCriteriaForTextNodes,
@@ -88,8 +87,8 @@ function updateAutoFormatting(
 
     // Please see the declaration of ScanningContext for a detailed explanation.
     const scanningContext: ScanningContext = {
-      textNodeWithOffset,
       joinedText: null,
+      textNodeWithOffset,
     };
     const criteriaWithMatchResultContext = getCriteriaWithMatchResultContext(
       // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.
@@ -166,11 +165,11 @@ function getTriggerState(
 
     criteria = {
       anchorOffset: selection.anchor.offset,
+      hasParentNode,
       isCodeBlock: $isCodeNode(node),
+      isParentAListItemNode,
       isSelectionCollapsed: selection.isCollapsed(),
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
-      hasParentNode,
-      isParentAListItemNode,
       nodeKey: node.getKey(),
       textContent: node.getTextContent(),
     };

@@ -7,27 +7,28 @@
  * @flow strict
  */
 
-import type {NodeKey, LexicalNode, TextNode, RangeSelection} from 'lexical';
-import type {YjsNode, Binding} from '.';
+import type {Binding, YjsNode} from '.';
+import type {LexicalNode, NodeKey, RangeSelection, TextNode} from 'lexical';
 
 import {
   $getNodeByKey,
-  $isElementNode,
-  $isTextNode,
-  $isLineBreakNode,
   $isDecoratorNode,
+  $isElementNode,
+  $isLineBreakNode,
+  $isTextNode,
 } from 'lexical';
-import {CollabElementNode, $createCollabElementNode} from './CollabElementNode';
-import {CollabTextNode, $createCollabTextNode} from './CollabTextNode';
+import {Map as YMap, XmlElement, XmlText} from 'yjs';
+
 import {
-  CollabLineBreakNode,
-  $createCollabLineBreakNode,
-} from './CollabLineBreakNode';
-import {
-  CollabDecoratorNode,
   $createCollabDecoratorNode,
+  CollabDecoratorNode,
 } from './CollabDecoratorNode';
-import {XmlText, XmlElement, Map as YMap} from 'yjs';
+import {$createCollabElementNode, CollabElementNode} from './CollabElementNode';
+import {
+  $createCollabLineBreakNode,
+  CollabLineBreakNode,
+} from './CollabLineBreakNode';
+import {$createCollabTextNode, CollabTextNode} from './CollabTextNode';
 
 const excludedProperties: Set<string> = new Set([
   '__key',
@@ -284,6 +285,7 @@ export function getPositionFromElementAndOffset(
   offset: number,
   boundaryIsEdge: boolean,
 ): {
+  length: number,
   node:
     | CollabElementNode
     | CollabTextNode
@@ -292,7 +294,6 @@ export function getPositionFromElementAndOffset(
     | null,
   nodeIndex: number,
   offset: number,
-  length: number,
 } {
   let index = 0;
   let i = 0;
@@ -312,20 +313,20 @@ export function getPositionFromElementAndOffset(
       }
       const diffLength = size - textOffset;
       return {
+        length: diffLength,
         node: child,
         nodeIndex: i,
         offset: textOffset,
-        length: diffLength,
       };
     }
 
     if (index > offset) {
-      return {node: child, nodeIndex: i, offset: childOffset, length: 0};
+      return {length: 0, node: child, nodeIndex: i, offset: childOffset};
     } else if (i === childrenLength - 1) {
-      return {node: null, nodeIndex: i + 1, offset: childOffset + 1, length: 0};
+      return {length: 0, node: null, nodeIndex: i + 1, offset: childOffset + 1};
     }
   }
-  return {node: null, nodeIndex: 0, offset: 0, length: 0};
+  return {length: 0, node: null, nodeIndex: 0, offset: 0};
 }
 
 export function doesSelectionNeedRecovering(

@@ -7,127 +7,127 @@
  * @flow strict
  */
 
-export type {
-  LexicalEditor,
-  EditorConfig,
-  EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
-  CommandListenerEditorPriority,
-  CommandListenerLowPriority,
-  CommandListenerNormalPriority,
-  CommandListenerHighPriority,
-  CommandListenerCriticalPriority,
-  DOMConversionMap,
-} from './LexicalEditor';
-export type {EditorState, ParsedEditorState} from './LexicalEditorState';
-export type {NodeKey, LexicalNode, NodeMap} from './LexicalNode';
-export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
-export type {
-  RangeSelection,
-  PointType as Point,
-  ElementPointType as ElementPoint,
-  TextPointType as TextPoint,
-} from './LexicalSelection';
-export type {
-  DecoratorMap,
-  DecoratorArray,
-  DecoratorEditor,
-  DecoratorStateValue,
-} from './nodes/base/LexicalDecoratorNode';
-export type {TextFormatType} from './nodes/base/LexicalTextNode';
-export type {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
-export type {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
-export type {RootNode} from './nodes/base/LexicalRootNode';
-export type {ElementFormatType} from './nodes/base/LexicalElementNode';
-
 import {VERSION} from './LexicalConstants';
 import {createEditor} from './LexicalEditor';
+import {$createNodeFromParse} from './LexicalParsing';
 import {
-  $createTextNode,
-  $isTextNode,
-  TextNode,
-} from './nodes/base/LexicalTextNode';
+  $createEmptyRangeSelection as $createRangeSelection,
+  $getPreviousSelection,
+  $getSelection,
+  $isRangeSelection,
+} from './LexicalSelection';
+import {
+  $getCompositionKey,
+  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
+  $getRoot,
+  $isLeafNode,
+  $pushLogEntry as $log,
+  $setCompositionKey,
+  $setSelection,
+} from './LexicalUtils';
+import {
+  $isDecoratorNode,
+  createDecoratorArray,
+  createDecoratorEditor,
+  createDecoratorMap,
+  DecoratorNode,
+  isDecoratorArray,
+  isDecoratorEditor,
+  isDecoratorMap,
+} from './nodes/base/LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './nodes/base/LexicalElementNode';
-import {$isRootNode} from './nodes/base/LexicalRootNode';
-import {
-  $createLineBreakNode,
-  $isLineBreakNode,
-} from './nodes/base/LexicalLineBreakNode';
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
 } from './nodes/base/LexicalHorizontalRuleNode';
 import {
-  ParagraphNode,
+  $createLineBreakNode,
+  $isLineBreakNode,
+} from './nodes/base/LexicalLineBreakNode';
+import {
   $createParagraphNode,
   $isParagraphNode,
+  ParagraphNode,
 } from './nodes/base/LexicalParagraphNode';
+import {$isRootNode} from './nodes/base/LexicalRootNode';
 import {
-  DecoratorNode,
-  $isDecoratorNode,
-  createDecoratorMap,
-  createDecoratorEditor,
-  createDecoratorArray,
-  isDecoratorMap,
-  isDecoratorEditor,
-  isDecoratorArray,
-} from './nodes/base/LexicalDecoratorNode';
-import {
-  $isLeafNode,
-  $pushLogEntry as $log,
-  $getRoot,
-  $getNodeByKey,
-  $getNearestNodeFromDOMNode,
-  $setSelection,
-  $setCompositionKey,
-  $getCompositionKey,
-} from './LexicalUtils';
-import {
-  $createEmptyRangeSelection as $createRangeSelection,
-  $getSelection,
-  $getPreviousSelection,
-  $isRangeSelection,
+  $createTextNode,
+  $isTextNode,
+  TextNode,
+} from './nodes/base/LexicalTextNode';
+
+export type {
+  CommandListenerCriticalPriority,
+  CommandListenerEditorPriority,
+  CommandListenerHighPriority,
+  CommandListenerLowPriority,
+  CommandListenerNormalPriority,
+  DOMConversionMap,
+  EditorConfig,
+  EditorThemeClasses,
+  IntentionallyMarkedAsDirtyElement,
+  LexicalEditor,
+} from './LexicalEditor';
+export type {EditorState, ParsedEditorState} from './LexicalEditorState';
+export type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
+export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
+export type {
+  ElementPointType as ElementPoint,
+  PointType as Point,
+  RangeSelection,
+  TextPointType as TextPoint,
 } from './LexicalSelection';
-import {$createNodeFromParse} from './LexicalParsing';
+export type {
+  DecoratorArray,
+  DecoratorEditor,
+  DecoratorMap,
+  DecoratorStateValue,
+} from './nodes/base/LexicalDecoratorNode';
+export type {ElementFormatType} from './nodes/base/LexicalElementNode';
+export type {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
+export type {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
+export type {RootNode} from './nodes/base/LexicalRootNode';
+export type {TextFormatType} from './nodes/base/LexicalTextNode';
 
 export {
-  VERSION,
-  createEditor,
-  ElementNode,
-  DecoratorNode,
-  TextNode,
-  ParagraphNode,
-  // Decorator state
-  createDecoratorMap,
-  createDecoratorEditor,
-  createDecoratorArray,
-  isDecoratorMap,
-  isDecoratorEditor,
-  isDecoratorArray,
-  // Node validation
-  $isLeafNode,
-  $isElementNode,
-  $isDecoratorNode,
-  $isHorizontalRuleNode,
-  $isLineBreakNode,
-  $isRootNode,
-  $isTextNode,
-  $isParagraphNode,
   // Used during read/update/transform
   $createHorizontalRuleNode,
   $createLineBreakNode,
-  $createTextNode,
   $createNodeFromParse,
   $createParagraphNode,
   $createRangeSelection,
-  $isRangeSelection,
-  $getRoot,
-  $getNodeByKey,
-  $getSelection,
-  $getPreviousSelection,
-  $setSelection,
-  $setCompositionKey,
+  $createTextNode,
   $getCompositionKey,
   $getNearestNodeFromDOMNode,
+  $getNodeByKey,
+  $getPreviousSelection,
+  $getRoot,
+  $getSelection,
+  $isDecoratorNode,
+  $isElementNode,
+  $isHorizontalRuleNode,
+  // Node validation
+  $isLeafNode,
+  $isLineBreakNode,
+  $isParagraphNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
   $log,
+  $setCompositionKey,
+  $setSelection,
+  createDecoratorArray,
+  createDecoratorEditor,
+  // Decorator state
+  createDecoratorMap,
+  createEditor,
+  DecoratorNode,
+  ElementNode,
+  isDecoratorArray,
+  isDecoratorEditor,
+  isDecoratorMap,
+  ParagraphNode,
+  TextNode,
+  VERSION,
 };

@@ -8,6 +8,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+
 import useAutoFormatter from './shared/useAutoFormatter';
 
 export default function AutoFormatterPlugin(): React$Node {

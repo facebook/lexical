@@ -8,10 +8,10 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useCharacterLimit} from './shared/useCharacterLimit';
-
 import * as React from 'react';
 import {useMemo, useState} from 'react';
+
+import {useCharacterLimit} from './shared/useCharacterLimit';
 
 const CHARACTER_LIMIT = 5;
 

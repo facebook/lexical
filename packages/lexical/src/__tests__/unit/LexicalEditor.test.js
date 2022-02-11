@@ -8,27 +8,27 @@
 
 import type {LexicalEditor} from 'lexical';
 
+import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isTextNode,
+  $setCompositionKey,
+  ElementNode,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  $createTextNode,
-  TextNode,
-  ElementNode,
-  $getRoot,
-  $setCompositionKey,
-  $getSelection,
-  $getNodeByKey,
-  $isTextNode,
-  $createParagraphNode,
-  ParagraphNode,
-} from 'lexical';
-import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {getEditorStateTextContent} from '../../LexicalUtils';
 import {
-  $createTestElementNode,
   $createTestDecoratorNode,
+  $createTestElementNode,
   createTestEditor,
 } from '../utils';
 
@@ -347,7 +347,7 @@ describe('LexicalEditor tests', () => {
     underlineListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-underline editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic editor-text-underline" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 
@@ -1001,13 +1001,13 @@ describe('LexicalEditor tests', () => {
         __type: 'paragraph',
       });
       expect(parsedText).toEqual({
-        __mode: 0,
         __detail: 0,
-        __text: 'Hello world',
         __format: 0,
         __key: textKey,
+        __mode: 0,
         __parent: paragraphKey,
         __style: '',
+        __text: 'Hello world',
         __type: 'text',
       });
     });

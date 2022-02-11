@@ -8,35 +8,39 @@
  */
 
 import type {
-  LexicalEditor,
   IntentionallyMarkedAsDirtyElement,
+  LexicalEditor,
   RegisteredNode,
 } from './LexicalEditor';
-import type {RootNode} from './nodes/base/LexicalRootNode';
-import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
-import type {TextNode, TextFormatType} from './nodes/base/LexicalTextNode';
-import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
+import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {RangeSelection} from './LexicalSelection';
+import type {RootNode} from './nodes/base/LexicalRootNode';
+import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
+import type {Node as ReactNode} from 'react';
+
+import {IS_APPLE} from 'shared/environment';
+import invariant from 'shared/invariant';
 
 import {
-  RTL_REGEX,
-  LTR_REGEX,
-  TEXT_TYPE_TO_FORMAT,
-  HAS_DIRTY_NODES,
-  NO_BREAK_SPACE_CHAR,
-  DOM_TEXT_TYPE,
-} from './LexicalConstants';
-import {
-  $isTextNode,
-  $isElementNode,
-  $isLineBreakNode,
-  $isDecoratorNode,
-  $getSelection,
   $createTextNode,
   $getPreviousSelection,
+  $getSelection,
+  $isDecoratorNode,
+  $isElementNode,
   $isHorizontalRuleNode,
+  $isLineBreakNode,
+  $isTextNode,
 } from '.';
+import {
+  DOM_TEXT_TYPE,
+  HAS_DIRTY_NODES,
+  LTR_REGEX,
+  NO_BREAK_SPACE_CHAR,
+  RTL_REGEX,
+  TEXT_TYPE_TO_FORMAT,
+} from './LexicalConstants';
+import {flushRootMutations} from './LexicalMutations';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -44,9 +48,6 @@ import {
   getActiveEditorState,
   updateEditor,
 } from './LexicalUpdates';
-import {flushRootMutations} from './LexicalMutations';
-import invariant from 'shared/invariant';
-import {IS_APPLE} from 'shared/environment';
 
 export const emptyFunction = () => {};
 

@@ -8,12 +8,12 @@
  */
 
 import type {
-  LexicalEditor,
   CommandListenerEditorPriority,
+  LexicalEditor,
   RootNode,
 } from 'lexical';
 
-import {$log, $getRoot, $getSelection, $createParagraphNode} from 'lexical';
+import {$createParagraphNode, $getRoot, $getSelection, $log} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const BootstrapPriority: CommandListenerEditorPriority = 0;

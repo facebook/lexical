@@ -8,21 +8,22 @@
 
 import type {State} from 'lexical';
 
-import {
-  $createTextNode,
-  TextNode,
-  $getSelection,
-  $getRoot,
-  $getNodeByKey,
-  $createParagraphNode,
-} from 'lexical';
 import {$cloneContents} from '@lexical/helpers/selection';
 import {
-  createTestEditor,
+  $createParagraphNode,
+  $createTextNode,
+  $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  TextNode,
+} from 'lexical';
+import {$createHeadingNode} from 'lexical/HeadingNode';
+
+import {
   $createTestElementNode,
   $createTestExcludeFromCopyElementNode,
+  createTestEditor,
 } from '../../../../lexical/src/__tests__/utils';
-import {$createHeadingNode} from 'lexical/HeadingNode';
 
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = $createParagraphNode();
@@ -78,20 +79,20 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
-            {text: 'a', key: 'a', mergeable: false},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: false},
+            {key: 'a', mergeable: false, text: 'a'},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: false, text: 'c'},
           ]);
           root.append(element);
           setAnchorPoint({
-            type: 'text',
-            offset: 0,
             key: 'a',
+            offset: 0,
+            type: 'text',
           });
           setFocusPoint({
-            type: 'text',
-            offset: 0,
             key: 'a',
+            offset: 0,
+            type: 'text',
           });
 
           const selection = $getSelection();
@@ -114,14 +115,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         expect($getNodeByKey('a').getTextContent()).toBe('Testa');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: 'a',
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: 'a',
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -129,14 +130,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertNodes([$createTextNode('foo')]);
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 3,
           key: element.getFirstChild().getKey(),
+          offset: 3,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 3,
           key: element.getFirstChild().getKey(),
+          offset: 3,
+          type: 'text',
         });
       });
 
@@ -144,14 +145,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection) => {
         selection.insertParagraph();
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 0,
           key: 'a',
+          offset: 0,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 0,
           key: 'a',
+          offset: 0,
+          type: 'text',
         });
       });
 
@@ -159,14 +160,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -176,14 +177,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         expect(element.getFirstChild().getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: element.getFirstChild().getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: element.getFirstChild().getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(element.getFirstChild().getNextSibling().getTextContent()).toBe(
           'a',
@@ -198,8 +199,8 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          range: ['a'],
           nodeMap: [['a', {...$getNodeByKey('a'), __text: ''}]],
+          range: ['a'],
         });
       });
     });
@@ -221,24 +222,24 @@ describe('LexicalSelectionHelpers tests', () => {
         element = createParagraphWithNodes(
           editor,
           [
-            {text: 'a', key: 'a', mergeable: true},
-            {text: 'bb', key: 'bb', mergeable: true},
-            {text: '', key: 'empty', mergeable: true},
-            {text: 'cc', key: 'cc', mergeable: true},
-            {text: 'd', key: 'd', mergeable: true},
+            {key: 'a', mergeable: true, text: 'a'},
+            {key: 'bb', mergeable: true, text: 'bb'},
+            {key: 'empty', mergeable: true, text: ''},
+            {key: 'cc', mergeable: true, text: 'cc'},
+            {key: 'd', mergeable: true, text: 'd'},
           ],
           true,
         );
         root.append(element);
         setAnchorPoint({
-          type: 'text',
           key: 'bb',
           offset: 1,
+          type: 'text',
         });
         setFocusPoint({
-          type: 'text',
           key: 'cc',
           offset: 1,
+          type: 'text',
         });
       });
 
@@ -247,14 +248,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
           key: 'a',
           offset: 2,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
           key: 'a',
           offset: 4,
+          type: 'text',
         });
       });
     });
@@ -276,23 +277,23 @@ describe('LexicalSelectionHelpers tests', () => {
         element = createParagraphWithNodes(
           editor,
           [
-            {text: 'a', key: 'a', mergeable: true},
-            {text: '', key: 'empty', mergeable: true},
-            {text: 'b', key: 'b', mergeable: true},
-            {text: 'c', key: 'c', mergeable: true},
+            {key: 'a', mergeable: true, text: 'a'},
+            {key: 'empty', mergeable: true, text: ''},
+            {key: 'b', mergeable: true, text: 'b'},
+            {key: 'c', mergeable: true, text: 'c'},
           ],
           true,
         );
         root.append(element);
         setAnchorPoint({
-          type: 'text',
           key: 'a',
           offset: 0,
+          type: 'text',
         });
         setFocusPoint({
-          type: 'text',
           key: 'c',
           offset: 1,
+          type: 'text',
         });
       });
 
@@ -301,14 +302,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
           key: 'a',
           offset: 0,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
           key: 'a',
           offset: 3,
+          type: 'text',
         });
       });
     });
@@ -329,19 +330,19 @@ describe('LexicalSelectionHelpers tests', () => {
         const root = $getRoot();
         element = createParagraphWithNodes(
           editor,
-          [{text: '', key: 'a', mergeable: true}],
+          [{key: 'a', mergeable: true, text: ''}],
           true,
         );
         root.append(element);
         setAnchorPoint({
-          type: 'text',
           key: 'a',
           offset: 0,
+          type: 'text',
         });
         setFocusPoint({
-          type: 'text',
           key: 'a',
           offset: 0,
+          type: 'text',
         });
       });
 
@@ -350,14 +351,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'element',
           key: element.getKey(),
           offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
           key: element.getKey(),
           offset: 0,
+          type: 'element',
         });
       });
     });
@@ -379,21 +380,21 @@ describe('LexicalSelectionHelpers tests', () => {
         element = createParagraphWithNodes(
           editor,
           [
-            {text: '', key: 'a', mergeable: true},
-            {text: 'b', key: 'b', mergeable: false},
+            {key: 'a', mergeable: true, text: ''},
+            {key: 'b', mergeable: false, text: 'b'},
           ],
           true,
         );
         root.append(element);
         setAnchorPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 2,
+          type: 'element',
         });
         setFocusPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 2,
+          type: 'element',
         });
       });
 
@@ -402,14 +403,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
           key: 'b',
           offset: 1,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
           key: 'b',
           offset: 1,
+          type: 'text',
         });
       });
     });
@@ -431,23 +432,23 @@ describe('LexicalSelectionHelpers tests', () => {
         element = createParagraphWithNodes(
           editor,
           [
-            {text: '', key: 'a', mergeable: true},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: true},
-            {text: 'd', key: 'd', mergeable: true},
+            {key: 'a', mergeable: true, text: ''},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: true, text: 'c'},
+            {key: 'd', mergeable: true, text: 'd'},
           ],
           true,
         );
         root.append(element);
         setAnchorPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 4,
+          type: 'element',
         });
         setFocusPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 4,
+          type: 'element',
         });
       });
 
@@ -456,14 +457,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
           key: 'c',
           offset: 2,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
           key: 'c',
           offset: 2,
+          type: 'text',
         });
       });
     });
@@ -485,23 +486,23 @@ describe('LexicalSelectionHelpers tests', () => {
         element = createParagraphWithNodes(
           editor,
           [
-            {text: '', key: 'a', mergeable: true},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: true},
-            {text: 'd', key: 'd', mergeable: true},
+            {key: 'a', mergeable: true, text: ''},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: true, text: 'c'},
+            {key: 'd', mergeable: true, text: 'd'},
           ],
           true,
         );
         root.append(element);
         setAnchorPoint({
-          type: 'text',
           key: 'd',
           offset: 1,
+          type: 'text',
         });
         setFocusPoint({
-          type: 'text',
           key: 'd',
           offset: 1,
+          type: 'text',
         });
       });
 
@@ -510,14 +511,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
           key: 'c',
           offset: 2,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
           key: 'c',
           offset: 2,
+          type: 'text',
         });
       });
     });
@@ -535,14 +536,14 @@ describe('LexicalSelectionHelpers tests', () => {
           const element = createParagraphWithNodes(editor, []);
           root.append(element);
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: element.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 0,
             key: element.getKey(),
+            offset: 0,
+            type: 'element',
           });
 
           const selection = $getSelection();
@@ -566,14 +567,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -582,14 +583,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertParagraph();
         const nextElement = element.getNextSibling();
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: nextElement.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: nextElement.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -597,14 +598,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -615,14 +616,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -634,8 +635,8 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          range: [],
           nodeMap: [],
+          range: [],
         });
       });
     });
@@ -651,20 +652,20 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
-            {text: 'a', key: 'a', mergeable: false},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: false},
+            {key: 'a', mergeable: false, text: 'a'},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: false, text: 'c'},
           ]);
           root.append(element);
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: element.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 0,
             key: element.getKey(),
+            offset: 0,
+            type: 'element',
           });
 
           const selection = $getSelection();
@@ -688,14 +689,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -704,14 +705,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertParagraph();
         const firstChild = element.getNextSibling().getFirstChild();
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 0,
           key: firstChild.getKey(),
+          offset: 0,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 0,
           key: firstChild.getKey(),
+          offset: 0,
+          type: 'text',
         });
       });
 
@@ -719,14 +720,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -737,14 +738,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -756,11 +757,11 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          range: [element.getKey()],
           nodeMap: [
             ['a', {...$getNodeByKey('a'), __text: ''}],
             [element.getKey(), {...element, __children: ['a']}],
           ],
+          range: [element.getKey()],
         });
       });
     });
@@ -776,20 +777,20 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
-            {text: 'a', key: 'a', mergeable: false},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: false},
+            {key: 'a', mergeable: false, text: 'a'},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: false, text: 'c'},
           ]);
           root.append(element);
           setAnchorPoint({
-            type: 'element',
-            offset: 3,
             key: element.getKey(),
+            offset: 3,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 3,
             key: element.getKey(),
+            offset: 3,
+            type: 'element',
           });
 
           const selection = $getSelection();
@@ -813,14 +814,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const lastChild = element.getLastChild();
         expect(lastChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: lastChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: lastChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -829,14 +830,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertParagraph();
         const nextSibling = element.getNextSibling();
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: nextSibling.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: nextSibling.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -845,14 +846,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertLineBreak(true);
         const thirdChild = $getNodeByKey('c');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 1,
           key: thirdChild.getKey(),
+          offset: 1,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 1,
           key: thirdChild.getKey(),
+          offset: 1,
+          type: 'text',
         });
       });
 
@@ -863,14 +864,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const lastChild = element.getLastChild();
         expect(lastChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: lastChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: lastChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -882,11 +883,11 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          range: [element.getKey()],
           nodeMap: [
             ['c', {...$getNodeByKey('c'), __text: ''}],
             [element.getKey(), {...element, __children: ['c']}],
           ],
+          range: [element.getKey()],
         });
       });
     });
@@ -906,20 +907,20 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
         element = createParagraphWithNodes(editor, [
-          {text: 'a', key: 'a', mergeable: true},
-          {text: 'b', key: 'b', mergeable: true},
-          {text: 'c', key: 'c', mergeable: true},
+          {key: 'a', mergeable: true, text: 'a'},
+          {key: 'b', mergeable: true, text: 'b'},
+          {key: 'c', mergeable: true, text: 'c'},
         ]);
         root.append(element);
         setAnchorPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 2,
+          type: 'element',
         });
         setFocusPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 2,
+          type: 'element',
         });
       });
 
@@ -928,14 +929,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
           key: 'a',
           offset: 2,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
           key: 'a',
           offset: 2,
+          type: 'text',
         });
       });
     });
@@ -955,20 +956,20 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
         element = createParagraphWithNodes(editor, [
-          {text: 'a', key: 'a', mergeable: true},
-          {text: 'b', key: 'b', mergeable: true},
-          {text: 'c', key: 'c', mergeable: true},
+          {key: 'a', mergeable: true, text: 'a'},
+          {key: 'b', mergeable: true, text: 'b'},
+          {key: 'c', mergeable: true, text: 'c'},
         ]);
         root.append(element);
         setAnchorPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 3,
+          type: 'element',
         });
         setFocusPoint({
-          type: 'element',
           key: element.getKey(),
           offset: 3,
+          type: 'element',
         });
       });
 
@@ -977,14 +978,14 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.getEditorState().read(() => {
         const selection = $getSelection();
         expect(selection.anchor).toEqual({
-          type: 'text',
           key: 'a',
           offset: 3,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
           key: 'a',
           offset: 3,
+          type: 'text',
         });
       });
     });
@@ -1002,20 +1003,20 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
-            {text: 'a', key: 'a', mergeable: false},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: false},
+            {key: 'a', mergeable: false, text: 'a'},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: false, text: 'c'},
           ]);
           root.append(element);
           setAnchorPoint({
-            type: 'text',
-            offset: 0,
             key: 'a',
+            offset: 0,
+            type: 'text',
           });
           setFocusPoint({
-            type: 'text',
-            offset: 0,
             key: 'b',
+            offset: 0,
+            type: 'text',
           });
 
           const selection = $getSelection();
@@ -1041,14 +1042,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         expect($getNodeByKey('a').getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: 'a',
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: 'a',
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -1056,14 +1057,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertNodes([$createTextNode('foo')]);
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 3,
           key: element.getFirstChild().getKey(),
+          offset: 3,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 3,
           key: element.getFirstChild().getKey(),
+          offset: 3,
+          type: 'text',
         });
       });
 
@@ -1071,14 +1072,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection) => {
         selection.insertParagraph();
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 0,
           key: 'b',
+          offset: 0,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 0,
           key: 'b',
+          offset: 0,
+          type: 'text',
         });
       });
 
@@ -1086,14 +1087,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -1103,14 +1104,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         expect(element.getFirstChild().getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: element.getFirstChild().getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: element.getFirstChild().getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -1122,12 +1123,12 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          range: [element.getKey()],
           nodeMap: [
             ['a', $getNodeByKey('a')],
             [element.getKey(), {...element, __children: ['a', 'b']}],
             ['b', {...$getNodeByKey('b'), __text: ''}],
           ],
+          range: [element.getKey()],
         });
       });
     });
@@ -1143,20 +1144,20 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
-            {text: 'a', key: 'a', mergeable: false},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: false},
+            {key: 'a', mergeable: false, text: 'a'},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: false, text: 'c'},
           ]);
           root.append(element);
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: element.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 1,
             key: element.getKey(),
+            offset: 1,
+            type: 'element',
           });
 
           const selection = $getSelection();
@@ -1183,14 +1184,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -1199,14 +1200,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertParagraph();
         const firstChild = element.getNextSibling().getFirstChild();
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 0,
           key: firstChild.getKey(),
+          offset: 0,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 0,
           key: firstChild.getKey(),
+          offset: 0,
+          type: 'text',
         });
       });
 
@@ -1214,14 +1215,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -1232,14 +1233,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -1252,12 +1253,12 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          range: [element.getKey()],
           nodeMap: [
             ['a', $getNodeByKey('a')],
             [element.getKey(), {...element, __children: ['a', 'b']}],
             ['b', {...$getNodeByKey('b'), __text: ''}],
           ],
+          range: [element.getKey()],
         });
       });
     });
@@ -1273,20 +1274,20 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
-            {text: 'a', key: 'a', mergeable: false},
-            {text: 'b', key: 'b', mergeable: false},
-            {text: 'c', key: 'c', mergeable: false},
+            {key: 'a', mergeable: false, text: 'a'},
+            {key: 'b', mergeable: false, text: 'b'},
+            {key: 'c', mergeable: false, text: 'c'},
           ]);
           root.append(element);
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: element.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'text',
-            offset: 1,
             key: 'c',
+            offset: 1,
+            type: 'text',
           });
 
           const selection = $getSelection();
@@ -1319,14 +1320,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -1335,14 +1336,14 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertParagraph();
         const nextElement = element.getNextSibling();
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: nextElement.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: nextElement.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -1350,14 +1351,14 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
         expect(selection.anchor).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
         expect(selection.focus).toEqual({
-          type: 'element',
-          offset: 0,
           key: element.getKey(),
+          offset: 0,
+          type: 'element',
         });
       });
 
@@ -1368,14 +1369,14 @@ describe('LexicalSelectionHelpers tests', () => {
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
         expect(selection.anchor).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
         expect(selection.focus).toEqual({
-          type: 'text',
-          offset: 4,
           key: firstChild.getKey(),
+          offset: 4,
+          type: 'text',
         });
       });
 
@@ -1391,13 +1392,13 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          range: [element.getKey()],
           nodeMap: [
             ['a', $getNodeByKey('a')],
             [element.getKey(), element],
             ['b', $getNodeByKey('b')],
             ['c', $getNodeByKey('c')],
           ],
+          range: [element.getKey()],
         });
       });
     });
@@ -1554,14 +1555,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           const selection = $getSelection();
 
@@ -1587,14 +1588,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           const selection = $getSelection();
 
@@ -1623,14 +1624,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           const selection = $getSelection();
           const heading = $createHeadingNode('h1');
@@ -1659,14 +1660,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           setFocusPoint({
-            type: 'element',
-            offset: 0,
             key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
           });
           const selection = $getSelection();
           const heading = $createHeadingNode('h1');
@@ -1701,14 +1702,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           setFocusPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           const selection = $getSelection();
 
@@ -1736,14 +1737,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           setFocusPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           const selection = $getSelection();
 
@@ -1774,14 +1775,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           setFocusPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           const selection = $getSelection();
           const heading = $createHeadingNode('h1');
@@ -1812,14 +1813,14 @@ describe('LexicalSelectionHelpers tests', () => {
           root.append(paragraph);
 
           setAnchorPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           setFocusPoint({
-            type: 'text',
-            offset: 16,
             key: text.getKey(),
+            offset: 16,
+            type: 'text',
           });
           const selection = $getSelection();
           const heading = $createHeadingNode('h1');
@@ -1855,14 +1856,14 @@ describe('extract', () => {
       root.append(paragraph);
 
       setAnchorPoint({
-        type: 'text',
-        offset: 16,
         key: text.getKey(),
+        offset: 16,
+        type: 'text',
       });
       setFocusPoint({
-        type: 'text',
-        offset: 16,
         key: text.getKey(),
+        offset: 16,
+        type: 'text',
       });
       const selection = $getSelection();
       expect(selection.extract()).toEqual([]);

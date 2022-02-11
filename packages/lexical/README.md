@@ -4,6 +4,7 @@ Lexical is an extensible JavaScript text-editor that provides reliable, accessib
 
 The core of Lexical is a dependency-free text editor engine that allows for powerful, simple and complex,
 editor implementations to be built on top. Lexical's engine provides three main parts:
+
 - editor instances that each attach to a single content editable element.
 - a set of editor states that represent the current and pending states of the editor at any given time.
 - a DOM reconciler that takes a set of editor states, diffs the changes, and updates the DOM according to their state.
@@ -64,9 +65,9 @@ editor state from an editor by calling `editor.getEditorState()`.
 Editor states have two phases:
 
 - During an update they can be thought of as "mutable". See "Updating an editor" below to
-mutate an editor state.
+  mutate an editor state.
 - After an update, the editor state is then locked and deemed immutable from there one. This
-editor state can therefore be thought of as a "snapshot".
+  editor state can therefore be thought of as a "snapshot".
 
 Editor states contain two core things:
 
@@ -77,9 +78,7 @@ Editor states are serializable to JSON, and the editor instance provides a usefu
 to deserialize stringified editor states.
 
 ```js
-const stringifiedEditorState = JSON.stringify(
-  editor.getEditorState().toJSON(),
-);
+const stringifiedEditorState = JSON.stringify(editor.getEditorState().toJSON());
 
 const newEditorState = editor.parseEditorState(stringifiedEditorState);
 ```

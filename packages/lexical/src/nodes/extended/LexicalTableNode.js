@@ -8,31 +8,31 @@
  */
 
 import type {
-  LexicalEditor,
+  CommandListenerCriticalPriority,
+  CommandListenerLowPriority,
   EditorConfig,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   TextFormatType,
-  CommandListenerLowPriority,
-  CommandListenerCriticalPriority,
 } from 'lexical';
 import type {TableCellNode} from 'lexical/TableCellNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {$findMatchingParent} from '@lexical/helpers/nodes';
 import {
-  ElementNode,
+  $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getNearestNodeFromDOMNode,
+  $getSelection,
   $isElementNode,
   $isTextNode,
-  $createRangeSelection,
-  $createParagraphNode,
-  $getSelection,
   $setSelection,
+  ElementNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import {$findMatchingParent} from '@lexical/helpers/nodes';
 import {$isTableCellNode} from 'lexical/TableCellNode';
+import invariant from 'shared/invariant';
 
 type Cell = {
   elem: HTMLElement,
@@ -44,15 +44,15 @@ type Cell = {
 type Cells = Array<Array<Cell>>;
 
 type Grid = {
-  rows: number,
-  columns: number,
   cells: Cells,
+  columns: number,
+  rows: number,
 };
 
 type SelectionShape = {
   fromX: number,
-  toX: number,
   fromY: number,
+  toX: number,
   toY: number,
 };
 
@@ -88,9 +88,9 @@ export function trackTableGrid(
 ): Grid {
   const cells: Cells = [];
   const grid = {
-    rows: 0,
-    columns: 0,
     cells,
+    columns: 0,
+    rows: 0,
   };
   const observer = new MutationObserver((records) => {
     editor.update(() => {
@@ -302,8 +302,8 @@ function applyCustomTableHandlers(
           editor.update(() => {
             highlightedCells = tableNode.setSelectionState({
               fromX,
-              toX,
               fromY,
+              toX,
               toY,
             });
           });

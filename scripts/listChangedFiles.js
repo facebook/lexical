@@ -12,9 +12,9 @@ const exec = (command, args) => {
   console.log('> ' + [command].concat(args).join(' '));
   const options = {
     cwd: process.cwd(),
+    encoding: 'utf-8',
     env: process.env,
     stdio: 'pipe',
-    encoding: 'utf-8',
   };
   return execFileSync(command, args, options);
 };

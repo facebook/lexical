@@ -7,19 +7,20 @@
  * @flow strict
  */
 
-import type {DecoratorNode, NodeKey, DecoratorMap, NodeMap} from 'lexical';
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
+import type {DecoratorMap, DecoratorNode, NodeKey, NodeMap} from 'lexical';
 import type {XmlElement} from 'yjs';
 
-import {$isDecoratorNode, $getNodeByKey} from 'lexical';
-import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
+import {$getNodeByKey, $isDecoratorNode} from 'lexical';
 import {Map as YMap} from 'yjs';
+
 import {
   observeDecoratorMap,
   syncLexicalDecoratorMapToYjs,
   syncYjsDecoratorMapToLexical,
 } from './SyncDecoratorStates';
+import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
 export class CollabDecoratorNode {
   _xmlElem: XmlElement;

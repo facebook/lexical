@@ -9,20 +9,21 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {
+  $createParagraphNode,
   $createTextNode,
-  $getSelection,
   $getNodeByKey,
   $getRoot,
-  $createParagraphNode,
+  $getSelection,
 } from 'lexical';
-import {mergePrevious} from '../../DEPRECATED_useLexicalCharacterLimit';
 import {
   $createOverflowNode,
   $isOverflowNode,
   OverflowNode,
 } from 'lexical/OverflowNode';
+
+import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
+import {mergePrevious} from '../../DEPRECATED_useLexicalCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(

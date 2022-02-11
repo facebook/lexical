@@ -19,32 +19,32 @@ declare class CompositionEvent extends UIEvent {
 
 declare class StaticRange {
   collapsed: boolean;
-  startContainer: Node;
   endContainer: Node;
-  startOffset: number;
   endOffset: number;
+  startContainer: Node;
+  startOffset: number;
 }
 
 declare class InputEvent extends UIEvent {
   +data: string | null;
+  +dataTransfer?: DataTransfer;
+  +getTargetRanges?: () => Array<StaticRange>;
   +inputType: string;
   +isComposing: boolean;
-  +getTargetRanges?: () => Array<StaticRange>;
-  +dataTransfer?: DataTransfer;
 }
 
 declare type Segment = {
-  +isWordLike: boolean,
   +index: number,
+  +isWordLike: boolean,
   +segment: string,
 };
 
 declare var Intl: {
   Collator: Class<Intl$Collator>,
   DateTimeFormat: Class<Intl$DateTimeFormat>,
+  getCanonicalLocales?: (locales?: Intl$Locales) => Intl$Locale[],
   NumberFormat: Class<Intl$NumberFormat>,
   PluralRules: ?Class<Intl$PluralRules>,
-  getCanonicalLocales?: (locales?: Intl$Locales) => Intl$Locale[],
   Segmenter: (
     locale?: string,
     options?: {

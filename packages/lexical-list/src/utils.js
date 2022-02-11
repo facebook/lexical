@@ -7,9 +7,10 @@
  * @flow strict
  */
 
-import type {LexicalNode} from 'lexical';
 import type {ListNode} from '@lexical/list';
-import {ListItemNode, $isListNode, $isListItemNode} from '@lexical/list';
+import type {LexicalNode} from 'lexical';
+
+import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import invariant from 'shared/invariant';
 
 export function $getListDepth(listNode: ListNode): number {

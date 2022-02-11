@@ -6,9 +6,14 @@
  *
  */
 
-import {ParagraphNode, $createParagraphNode, $isParagraphNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $getRoot,
+  $isParagraphNode,
+  ParagraphNode,
+} from 'lexical';
+
 import {initializeUnitTest} from '../../../__tests__/utils';
-import {$getRoot} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {

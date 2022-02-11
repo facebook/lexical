@@ -10,21 +10,22 @@
 import type {NodeKey} from '../../LexicalNode';
 import type {PointType, RangeSelection} from '../../LexicalSelection';
 
+import invariant from 'shared/invariant';
+
 import {$isRootNode, $isTextNode, TextNode} from '../../';
+import {ELEMENT_TYPE_TO_FORMAT} from '../../LexicalConstants';
 import {LexicalNode} from '../../LexicalNode';
 import {
-  internalMakeRangeSelection,
   $getSelection,
+  internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../../LexicalUpdates';
-import {ELEMENT_TYPE_TO_FORMAT} from '../../LexicalConstants';
 import {
   $getNodeByKey,
   $internallyMarkNodeAsDirty,
   $internallyMarkSiblingsAsDirty,
 } from '../../LexicalUtils';
-import invariant from 'shared/invariant';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
 

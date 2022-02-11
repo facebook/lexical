@@ -8,24 +8,23 @@
 
 import type {LexicalEditor} from 'lexical';
 
+import {createEditor, DecoratorNode, ElementNode, TextNode} from 'lexical';
+import ExtendedNodes from 'lexical/ExtendedNodes';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, ElementNode, TextNode, DecoratorNode} from 'lexical';
-import ExtendedNodes from 'lexical/ExtendedNodes';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
-  editor: LexicalEditor | null,
   container: HTMLDivElement | null,
+  editor: LexicalEditor | null,
   outerHTML: string,
 };
 
 export function createTestEditor(config = {}): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
-    theme: config.theme,
     editorState: config.editorState,
     namespace: config.namespace,
     nodes: [
@@ -36,6 +35,7 @@ export function createTestEditor(config = {}): LexicalEditor {
       TestDecoratorNode,
       ...customNodes,
     ],
+    theme: config.theme,
   });
   return editor;
 }
@@ -45,8 +45,8 @@ export function initializeUnitTest(
   editorConfig,
 ) {
   const testEnv: TestEnv = {
-    editor: null,
     container: null,
+    editor: null,
     get outerHTML() {
       return this.container.innerHTML;
     },

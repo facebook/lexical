@@ -7,29 +7,27 @@
  * @flow strict
  */
 
+import type {Binding, Provider} from '@lexical/yjs';
 import type {
-  LexicalEditor,
   CommandListenerEditorPriority,
   CommandListenerLowPriority,
+  LexicalEditor,
 } from 'lexical';
-import type {Provider, Binding} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
-import * as React from 'react';
-import {useLayoutEffect, useRef} from 'react';
-// $FlowFixMe
-import {createPortal} from 'react-dom';
-
-import {useCallback, useEffect, useMemo} from 'react';
 import {
   createBinding,
   createUndoManager,
-  syncLexicalUpdateToYjs,
-  syncYjsChangesToLexical,
-  syncCursorPositions,
   initLocalState,
   setLocalStateFocus,
+  syncCursorPositions,
+  syncLexicalUpdateToYjs,
+  syncYjsChangesToLexical,
 } from '@lexical/yjs';
+import * as React from 'react';
+import {useCallback, useEffect, useLayoutEffect, useMemo, useRef} from 'react';
+// $FlowFixMe
+import {createPortal} from 'react-dom';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 const BootstrapPriority: CommandListenerLowPriority = 1;

@@ -7,9 +7,10 @@
  * @flow strict
  */
 
-import type {LexicalEditor, CommandListenerLowPriority} from 'lexical';
+import type {CommandListenerLowPriority, LexicalEditor} from 'lexical';
+
+import {indentList, insertList, outdentList, removeList} from '@lexical/list';
 import {useEffect} from 'react';
-import {insertList, removeList, indentList, outdentList} from '@lexical/list';
 
 const LowPriority: CommandListenerLowPriority = 1;
 

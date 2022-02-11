@@ -9,23 +9,23 @@
 
 import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
 
-import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
+import * as React from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 export default function LexicalNestedComposer({
   initialConfig = {},
   children,
 }: {
-  initialConfig?: {
-    namespace?: string,
-    decoratorEditor: DecoratorEditor,
-    nodes?: Array<Class<LexicalNode>>,
-    theme?: EditorThemeClasses,
-    onError?: (Error) => void,
-  },
   children?: React$Node,
+  initialConfig?: {
+    decoratorEditor: DecoratorEditor,
+    namespace?: string,
+    nodes?: Array<Class<LexicalNode>>,
+    onError?: (Error) => void,
+    theme?: EditorThemeClasses,
+  },
 }): React$Node {
   const [nestedEditor, setNestedEditor] = useState(null);
   const {decoratorEditor, namespace, theme, nodes, onError} = initialConfig;
@@ -52,11 +52,11 @@ export default function LexicalNestedComposer({
   return (
     <LexicalComposer
       initialConfig={{
-        namespace,
         editor: decoratorEditor.editor,
+        namespace,
         nodes,
-        theme,
         onError,
+        theme,
       }}>
       <LexicalOnChangePlugin onChange={onChange} />
       {children}

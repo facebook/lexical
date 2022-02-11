@@ -10,6 +10,7 @@
 import type {HistoryState} from './shared/useHistory';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+
 import {useHistory} from './shared/useHistory';
 
 export {createEmptyHistoryState} from './shared/useHistory';

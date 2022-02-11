@@ -8,7 +8,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -31,6 +31,7 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../utils';
+import DEPRECATED__useMLCLexicalBootstrap from '../utils/DEPRECATED__useLexicalBootstrap';
 
 describe('LexicalEditor tests', () => {
   let container = null;
@@ -882,7 +883,8 @@ describe('LexicalEditor tests', () => {
 
       function Test({divKey}) {
         editor = React.useMemo(() => createTestEditor(), []);
-        useLexicalRichText(editor);
+        DEPRECATED__useMLCLexicalBootstrap(editor);
+        DEPRECATED__useLexicalRichText(editor);
 
         React.useEffect(() => {
           editor.addListener('root', listener);

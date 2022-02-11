@@ -150,7 +150,9 @@ export class CollabElementNode {
               delCount === 1 &&
               nodeIndex > 0 &&
               prevCollabNode instanceof CollabTextNode &&
-              length === nodeSize
+              length === nodeSize &&
+              // If the node has no keys, it's been deleted
+              Array.from(node._map.keys()).length === 0
             ) {
               // Merge the text node with previous.
               prevCollabNode._text += node._text;

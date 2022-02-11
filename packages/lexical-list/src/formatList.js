@@ -166,7 +166,7 @@ export function removeList(editor: LexicalEditor): void {
   });
 }
 
-function handleIndent(listItemNodes: Array<ListItemNode>): void {
+export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
     if (isNestedListNode(listItemNode)) {
@@ -226,7 +226,7 @@ function handleIndent(listItemNodes: Array<ListItemNode>): void {
   });
 }
 
-function handleOutdent(listItemNodes: Array<ListItemNode>): void {
+export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   listItemNodes.forEach((listItemNode) => {
     if (isNestedListNode(listItemNode)) {
@@ -306,9 +306,9 @@ function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): boolean {
   }
   if (listItemNodes.length > 0) {
     if (direction === 'indent') {
-      handleIndent(listItemNodes);
+      $handleIndent(listItemNodes);
     } else {
-      handleOutdent(listItemNodes);
+      $handleOutdent(listItemNodes);
     }
     return true;
   }

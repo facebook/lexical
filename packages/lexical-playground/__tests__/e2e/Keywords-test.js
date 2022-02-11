@@ -18,6 +18,7 @@ import {
   waitForSelector,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
+  IS_COLLAB,
 } from '../utils';
 
 const config = {appSettings: {isRichText: true}};
@@ -150,6 +151,10 @@ describe('Keywords', () => {
     });
 
     it('Can type "congrats Bob!" where " Bob!" is bold', async () => {
+      if (IS_COLLAB) {
+        // TODO Fixme #1265
+        return;
+      }
       const {page} = e2e;
 
       await focusEditor(page);
@@ -167,6 +172,7 @@ describe('Keywords', () => {
         focusPath: [0, 0, 0],
         focusOffset: 8,
       });
+      await page.pause();
 
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');

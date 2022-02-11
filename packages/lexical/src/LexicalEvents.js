@@ -523,6 +523,7 @@ function onDocumentSelectionChange(event: Event): void {
       if (possibleLexicalEditor !== undefined) {
         onSelectionChange(possibleLexicalEditor);
       }
+      return;
     }
     node = node.parentNode;
   }

@@ -29,6 +29,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {$handleIndent, $handleOutdent} from './formatList';
 import {$getTopListNode, $isLastItemInList} from './utils';
 
 export class ListItemNode extends ElementNode {
@@ -246,9 +247,17 @@ export class ListItemNode extends ElementNode {
     return indentLevel;
   }
 
-  setIndent(): this {
-    // TODO move indent/outdent logic to this file and use here.
-    invariant(true, 'setIndent is not implemented on ListItemNode');
+  setIndent(indent: number): this {
+    let currentIndent = this.getIndent();
+    while (currentIndent !== indent) {
+      if (currentIndent < indent) {
+        $handleIndent([this]);
+        currentIndent++;
+      } else {
+        $handleOutdent([this]);
+        currentIndent--;
+      }
+    }
     return this;
   }
 

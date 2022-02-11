@@ -16,7 +16,11 @@ import invariant from 'shared/invariant';
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {createEmptyEditorState} from './LexicalEditorState';
-import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
+import {
+  addDocumentSelectionChangeEvent,
+  addRootElementEvents,
+  removeRootElementEvents,
+} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {
   commitPendingUpdates,
@@ -490,6 +494,7 @@ class BaseLexicalEditor {
         commitPendingUpdates(getSelf(this));
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
+          addDocumentSelectionChangeEvent(nextRootElement, getSelf(this));
           addRootElementEvents(nextRootElement, getSelf(this));
         }
       }

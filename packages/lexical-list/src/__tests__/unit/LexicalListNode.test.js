@@ -7,31 +7,32 @@
  */
 
 import {
-  $createListNode,
-  ListNode,
-  $isListNode,
   $createListItemNode,
+  $createListNode,
   $isListItemNode,
+  $isListNode,
   ListItemNode,
+  ListNode,
 } from '@lexical/list';
+import {ParagraphNode, TextNode} from 'lexical';
+
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
-import {TextNode, ParagraphNode} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {
     list: {
-      ul: 'my-ul-list-class',
-      ul1: 'my-ul-list-class-1',
-      ul2: 'my-ul-list-class-2',
-      ul3: 'my-ul-list-class-3',
-      ul4: 'my-ul-list-class-4',
-      ul5: 'my-ul-list-class-5',
       ol: 'my-ol-list-class',
       ol1: 'my-ol-list-class-1',
       ol2: 'my-ol-list-class-2',
       ol3: 'my-ol-list-class-3',
       ol4: 'my-ol-list-class-4',
       ol5: 'my-ol-list-class-5',
+      ul: 'my-ul-list-class',
+      ul1: 'my-ul-list-class-1',
+      ul2: 'my-ul-list-class-2',
+      ul3: 'my-ul-list-class-3',
+      ul4: 'my-ul-list-class-4',
+      ul5: 'my-ul-list-class-5',
     },
   },
 });

@@ -8,8 +8,9 @@
  */
 
 import type {ElementNode, RootNode, TextNode} from 'lexical';
+
+import {$isElementNode, $isTextNode} from 'lexical';
 import invariant from 'shared/invariant';
-import {$isTextNode, $isElementNode} from 'lexical';
 
 export type TextNodeWithOffset = {
   node: TextNode,

@@ -6,7 +6,7 @@
  *
  */
 
-import {$createTextNode, $isTextNode, $getSelection} from 'lexical';
+import {$createTextNode, $getSelection, $isTextNode} from 'lexical';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {
@@ -29,8 +29,8 @@ if (!Selection.prototype.modify) {
   ): void {
     segments.push({
       index: index - str.length,
-      segment: str,
       isWordLike,
+      segment: str,
     });
   };
 
@@ -196,36 +196,36 @@ export function printWhitespace(whitespaceCharacter) {
 
 export function insertText(text) {
   return {
-    type: 'insert_text',
     text,
+    type: 'insert_text',
   };
 }
 
 export function insertImmutableNode(text) {
   return {
-    type: 'insert_immutable_node',
     text,
+    type: 'insert_immutable_node',
   };
 }
 
 export function insertSegmentedNode(text) {
   return {
-    type: 'insert_segmented_node',
     text,
+    type: 'insert_segmented_node',
   };
 }
 
 export function convertToImmutableNode() {
   return {
-    type: 'covert_to_immutable_node',
     text: null,
+    type: 'covert_to_immutable_node',
   };
 }
 
 export function convertToSegmentedNode() {
   return {
-    type: 'covert_to_segmented_node',
     text: null,
+    type: 'covert_to_segmented_node',
   };
 }
 
@@ -237,33 +237,33 @@ export function insertParagraph(text) {
 
 export function deleteWordBackward(n: ?number) {
   return {
-    type: 'delete_word_backward',
     text: null,
     times: n,
+    type: 'delete_word_backward',
   };
 }
 
 export function deleteWordForward(n: ?number) {
   return {
-    type: 'delete_word_forward',
     text: null,
     times: n,
+    type: 'delete_word_forward',
   };
 }
 
 export function moveBackward(n: ?number) {
   return {
-    type: 'move_backward',
     text: null,
     times: n,
+    type: 'move_backward',
   };
 }
 
 export function moveForward(n: ?number) {
   return {
-    type: 'move_forward',
     text: null,
     times: n,
+    type: 'move_forward',
   };
 }
 
@@ -275,82 +275,82 @@ export function moveEnd() {
 
 export function deleteBackward(n: ?number) {
   return {
-    type: 'delete_backward',
     text: null,
     times: n,
+    type: 'delete_backward',
   };
 }
 
 export function deleteForward(n: ?number) {
   return {
-    type: 'delete_forward',
     text: null,
     times: n,
+    type: 'delete_forward',
   };
 }
 
 export function formatBold() {
   return {
-    type: 'format_text',
     format: 'bold',
+    type: 'format_text',
   };
 }
 
 export function formatItalic() {
   return {
-    type: 'format_text',
     format: 'italic',
+    type: 'format_text',
   };
 }
 
 export function formatStrikeThrough() {
   return {
-    type: 'format_text',
     format: 'strikethrough',
+    type: 'format_text',
   };
 }
 
 export function formatUnderline() {
   return {
-    type: 'format_text',
     format: 'underline',
+    type: 'format_text',
   };
 }
 
 export function redo(n: ?number) {
   return {
-    type: 'redo',
     text: null,
     times: n,
+    type: 'redo',
   };
 }
 
 export function undo(n: ?number) {
   return {
-    type: 'undo',
     text: null,
     times: n,
+    type: 'undo',
   };
 }
 
 export function pastePlain(text: string) {
   return {
-    type: 'paste_plain',
     text: text,
+    type: 'paste_plain',
   };
 }
 
 export function pasteLexical(text: string) {
   return {
-    type: 'paste_lexical',
     text: text,
+    type: 'paste_lexical',
   };
 }
 
 export function pasteHTML(text: string) {
   return {
-    type: 'paste_html',
     text: text,
+    type: 'paste_html',
   };
 }
 
@@ -361,11 +361,11 @@ export function moveNativeSelection(
   focusOffset,
 ) {
   return {
-    type: 'move_native_selection',
-    anchorPath,
     anchorOffset,
-    focusPath,
+    anchorPath,
     focusOffset,
+    focusPath,
+    type: 'move_native_selection',
   };
 }
 
@@ -690,9 +690,9 @@ export async function applySelectionInputs(inputs, update, editor) {
                 bubbles: true,
                 cancelable: true,
                 ctrlKey: true,
-                shiftKey: true,
                 key: 'z',
                 keyCode: 90,
+                shiftKey: true,
               }),
             );
             break;

@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey, EditorConfig, ParagraphNode} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey, ParagraphNode} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode, $createParagraphNode} from 'lexical';
+import {$createParagraphNode, ElementNode} from 'lexical';
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 

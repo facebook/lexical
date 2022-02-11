@@ -9,11 +9,10 @@
 
 import type {LexicalEditor} from 'lexical';
 
-// $FlowFixMe: Flow doesn't like this for some reason
-import {createPortal, flushSync} from 'react-dom';
-
 import * as React from 'react';
 import {useMemo, useState} from 'react';
+// $FlowFixMe: Flow doesn't like this for some reason
+import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function useDecorators(

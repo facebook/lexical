@@ -6,13 +6,14 @@
  *
  */
 
-import {$createCodeNode} from 'lexical/CodeNode';
 import {
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
-  $createParagraphNode,
 } from 'lexical';
+import {$createCodeNode} from 'lexical/CodeNode';
+
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -72,9 +73,9 @@ describe('LexicalCodeNode tests', () => {
         expect(selection).toEqual({
           anchorKey: '_2',
           anchorOffset: 0,
+          dirty: true,
           focusKey: '_2',
           focusOffset: 0,
-          dirty: true,
           needsSync: false,
         });
       });

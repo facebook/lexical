@@ -7,33 +7,33 @@
  * @flow strict
  */
 
+import type {DOMChildConversion} from '../../lexical/src/LexicalEditor';
 import type {
-  LexicalEditor,
-  RangeSelection,
-  LexicalNode,
-  ParsedNodeMap,
-  NodeKey,
   DOMConversionMap,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  ParsedNodeMap,
+  RangeSelection,
 } from 'lexical';
 
 import {$cloneContents} from '@lexical/helpers/selection';
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import {
-  $createTextNode,
-  $createNodeFromParse,
-  $isTextNode,
-  $isElementNode,
-  $isDecoratorNode,
-  $log,
-  $getSelection,
   $createLineBreakNode,
+  $createNodeFromParse,
   $createParagraphNode,
+  $createTextNode,
+  $getSelection,
+  $isDecoratorNode,
+  $isElementNode,
+  $isTextNode,
+  $log,
 } from 'lexical';
-import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
-import {$createListNode, $createListItemNode} from '@lexical/list';
+import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
-import {$createCodeNode} from 'lexical/CodeNode';
-import type {DOMChildConversion} from '../../lexical/src/LexicalEditor';
+import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -47,16 +47,7 @@ const isCodeElement = (div: HTMLDivElement): boolean => {
 };
 
 const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
-  ul: () => ({node: $createListNode('ul')}),
-  ol: () => ({node: $createListNode('ol')}),
-  li: () => ({node: $createListItemNode()}),
-  h1: () => ({node: $createHeadingNode('h1')}),
-  h2: () => ({node: $createHeadingNode('h2')}),
-  h3: () => ({node: $createHeadingNode('h3')}),
-  h4: () => ({node: $createHeadingNode('h4')}),
-  h5: () => ({node: $createHeadingNode('h5')}),
-  p: () => ({node: $createParagraphNode()}),
-  br: () => ({node: $createLineBreakNode()}),
+  '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
   a: (domNode: Node) => {
     let node;
     if (domNode instanceof HTMLAnchorElement) {
@@ -66,78 +57,87 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
     }
     return {node};
   },
-  u: (domNode: Node) => {
-    return {
-      node: null,
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('underline');
-        }
-      },
-    };
-  },
   b: (domNode: Node) => {
     // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
     const b: HTMLElement = domNode;
     // Google Docs wraps all copied HTML in a <b> with font-weight normal
     const hasNormalFontWeight = b.style.fontWeight === 'normal';
     return {
-      node: null,
       forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
           lexicalNode.toggleFormat('bold');
         }
       },
+      node: null,
+    };
+  },
+  br: () => ({node: $createLineBreakNode()}),
+  div: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <div> since we matched it by nodeName
+    const div: HTMLDivElement = domNode;
+
+    return {
+      after: (childLexicalNodes) => {
+        const domParent = domNode.parentNode;
+        if (domParent != null && domNode !== domParent.lastChild) {
+          childLexicalNodes.push($createLineBreakNode());
+        }
+        return childLexicalNodes;
+      },
+      node: isCodeElement(div) ? $createCodeNode() : null,
+    };
+  },
+  em: (domNode: Node) => {
+    return {
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('italic');
+        }
+      },
+      node: null,
+    };
+  },
+  h1: () => ({node: $createHeadingNode('h1')}),
+  h2: () => ({node: $createHeadingNode('h2')}),
+  h3: () => ({node: $createHeadingNode('h3')}),
+  h4: () => ({node: $createHeadingNode('h4')}),
+  h5: () => ({node: $createHeadingNode('h5')}),
+  i: (domNode: Node) => {
+    return {
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('italic');
+        }
+      },
+      node: null,
+    };
+  },
+  li: () => ({node: $createListItemNode()}),
+  ol: () => ({node: $createListNode('ol')}),
+  p: () => ({node: $createParagraphNode()}),
+  pre: (domNode: Node) => ({node: $createCodeNode()}),
+  span: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
+    const span: HTMLSpanElement = domNode;
+    // Google Docs uses span tags + font-weight for bold text
+    const hasBoldFontWeight = span.style.fontWeight === '700';
+    return {
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+          lexicalNode.toggleFormat('bold');
+        }
+      },
+      node: null,
     };
   },
   strong: (domNode: Node) => {
     return {
-      node: null,
       forChild: (lexicalNode) => {
         if ($isTextNode(lexicalNode)) {
           lexicalNode.toggleFormat('bold');
         }
       },
-    };
-  },
-  i: (domNode: Node) => {
-    return {
       node: null,
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('italic');
-        }
-      },
-    };
-  },
-  em: (domNode: Node) => {
-    return {
-      node: null,
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('italic');
-        }
-      },
-    };
-  },
-  td: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
-    const cell: HTMLTableCellElement = domNode;
-    const isGitHubCodeCell = cell.classList.contains('js-file-line');
-
-    return {
-      node: null,
-      after: (childLexicalNodes) => {
-        if (
-          isGitHubCodeCell &&
-          cell.parentNode &&
-          cell.parentNode.nextSibling
-        ) {
-          // Append newline between code lines
-          childLexicalNodes.push($createLineBreakNode());
-        }
-        return childLexicalNodes;
-      },
     };
   },
   table: (domNode: Node) => {
@@ -151,42 +151,42 @@ const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
       node: isGitHubCodeTable ? $createCodeNode() : null,
     };
   },
-  span: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
-    const span: HTMLSpanElement = domNode;
-    // Google Docs uses span tags + font-weight for bold text
-    const hasBoldFontWeight = span.style.fontWeight === '700';
-    return {
-      node: null,
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
-          lexicalNode.toggleFormat('bold');
-        }
-      },
-    };
-  },
-  '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
-  pre: (domNode: Node) => ({node: $createCodeNode()}),
-  div: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <div> since we matched it by nodeName
-    const div: HTMLDivElement = domNode;
+  td: (domNode: Node) => {
+    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+    const cell: HTMLTableCellElement = domNode;
+    const isGitHubCodeCell = cell.classList.contains('js-file-line');
 
     return {
-      node: isCodeElement(div) ? $createCodeNode() : null,
       after: (childLexicalNodes) => {
-        const domParent = domNode.parentNode;
-        if (domParent != null && domNode !== domParent.lastChild) {
+        if (
+          isGitHubCodeCell &&
+          cell.parentNode &&
+          cell.parentNode.nextSibling
+        ) {
+          // Append newline between code lines
           childLexicalNodes.push($createLineBreakNode());
         }
         return childLexicalNodes;
       },
+      node: null,
     };
   },
+  u: (domNode: Node) => {
+    return {
+      forChild: (lexicalNode) => {
+        if ($isTextNode(lexicalNode)) {
+          lexicalNode.toggleFormat('underline');
+        }
+      },
+      node: null,
+    };
+  },
+  ul: () => ({node: $createListNode('ul')}),
 };
 
 function $generateNodes(nodeRange: {
-  range: Array<NodeKey>,
   nodeMap: ParsedNodeMap,
+  range: Array<NodeKey>,
 }): Array<LexicalNode> {
   const {range, nodeMap} = nodeRange;
   const parsedNodeMap: ParsedNodeMap = new Map(nodeMap);

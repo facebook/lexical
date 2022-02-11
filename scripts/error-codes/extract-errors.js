@@ -14,7 +14,6 @@ const evalToString = require('./evalToString');
 const invertObject = require('./invertObject');
 
 const babylonOptions = {
-  sourceType: 'module',
   // As a parser, babylon has its own options and we can't directly
   // import/require a babel preset. It should be kept **the same** as
   // the `babel-plugin-syntax-*` ones specified in
@@ -26,6 +25,8 @@ const babylonOptions = {
     'trailingFunctionCommas',
     'objectRestSpread',
   ],
+
+  sourceType: 'module',
 };
 
 module.exports = function (opts) {

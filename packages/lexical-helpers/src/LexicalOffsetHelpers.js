@@ -8,52 +8,52 @@
  */
 
 import type {
-  NodeKey,
-  RangeSelection,
-  LexicalEditor,
-  NodeMap,
   EditorState,
+  LexicalEditor,
+  NodeKey,
+  NodeMap,
+  RangeSelection,
 } from 'lexical';
 
 import {
   $createRangeSelection,
+  $getNodeByKey,
   $isElementNode,
   $isTextNode,
-  $getNodeByKey,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 type OffsetElementNode = {
-  type: 'element',
   child: null | OffsetNode,
-  prev: null | OffsetNode,
-  next: null | OffsetNode,
-  start: number,
   end: number,
   key: NodeKey,
+  next: null | OffsetNode,
   parent: null | OffsetElementNode,
+  prev: null | OffsetNode,
+  start: number,
+  type: 'element',
 };
 
 type OffsetTextNode = {
-  type: 'text',
   child: null,
-  prev: null | OffsetNode,
-  next: null | OffsetNode,
-  start: number,
   end: number,
   key: NodeKey,
+  next: null | OffsetNode,
   parent: null | OffsetElementNode,
+  prev: null | OffsetNode,
+  start: number,
+  type: 'text',
 };
 
 type OffsetInlineNode = {
-  type: 'inline',
   child: null,
-  prev: null | OffsetNode,
-  next: null | OffsetNode,
-  start: number,
   end: number,
   key: NodeKey,
+  next: null | OffsetNode,
   parent: null | OffsetElementNode,
+  prev: null | OffsetNode,
+  start: number,
+  type: 'inline',
 };
 
 type OffsetNode = OffsetElementNode | OffsetTextNode | OffsetInlineNode;
@@ -352,13 +352,13 @@ function $createInternalOffsetNode<N>(
   // $FlowFixMe: not sure why Flow doesn't like this?
   return {
     child,
-    prev: null,
-    next: null,
-    type,
-    start,
     end,
     key,
+    next: null,
     parent,
+    prev: null,
+    start,
+    type,
   };
 }
 

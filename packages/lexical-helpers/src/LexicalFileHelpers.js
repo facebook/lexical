@@ -42,15 +42,15 @@ function readTextFileFromSystem(callback: (text: string) => void) {
 
 export function exportFile(
   editor: LexicalEditor,
-  config?: $ReadOnly<{source?: string, fileName?: string}> = Object.freeze({}),
+  config?: $ReadOnly<{fileName?: string, source?: string}> = Object.freeze({}),
 ) {
   const now = new Date();
   const editorState = editor.getEditorState();
   const documentJSON = {
+    editorState: editorState,
+    lastSaved: now.getTime(),
     source: config.source || 'Lexical',
     version: VERSION,
-    lastSaved: now.getTime(),
-    editorState: editorState,
   };
   const fileName = config.fileName || now.toISOString();
   exportBlob(documentJSON, `${fileName}.lexical`);

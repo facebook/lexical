@@ -7,9 +7,10 @@
  * @flow strict
  */
 
-import type {LexicalEditor, EditorThemeClasses} from 'lexical';
-import invariant from 'shared/invariant';
+import type {EditorThemeClasses, LexicalEditor} from 'lexical';
+
 import {createContext as createReactContext, useContext} from 'react';
+import invariant from 'shared/invariant';
 
 export type LexicalComposerContextType = {
   getTheme: () => ?EditorThemeClasses,

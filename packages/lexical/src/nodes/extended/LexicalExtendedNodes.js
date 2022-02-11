@@ -9,18 +9,18 @@
 
 import type {LexicalNode} from 'lexical';
 
-import {QuoteNode} from 'lexical/QuoteNode';
+import {ListItemNode, ListNode} from '@lexical/list';
+import {AutoLinkNode} from 'lexical/AutoLinkNode';
+import {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 import {CodeNode} from 'lexical/CodeNode';
-import {TableNode} from 'lexical/TableNode';
-import {TableCellNode} from 'lexical/TableCellNode';
-import {TableRowNode} from 'lexical/TableRowNode';
 import {HashtagNode} from 'lexical/HashtagNode';
 import {HeadingNode} from 'lexical/HeadingNode';
-import {ListNode, ListItemNode} from '@lexical/list';
-import {CodeHighlightNode} from 'lexical/CodeHighlightNode';
-import {AutoLinkNode} from 'lexical/AutoLinkNode';
-import {OverflowNode} from 'lexical/OverflowNode';
 import {LinkNode} from 'lexical/LinkNode';
+import {OverflowNode} from 'lexical/OverflowNode';
+import {QuoteNode} from 'lexical/QuoteNode';
+import {TableCellNode} from 'lexical/TableCellNode';
+import {TableNode} from 'lexical/TableNode';
+import {TableRowNode} from 'lexical/TableRowNode';
 
 const LexicalExtendedNodes: Array<Class<LexicalNode>> = [
   HeadingNode,

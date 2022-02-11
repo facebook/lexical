@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {TextFormatType, TextModeType} from './nodes/base/LexicalTextNode';
 import type {ElementFormatType} from './nodes/base/LexicalElementNode';
+import type {TextFormatType, TextModeType} from './nodes/base/LexicalTextNode';
 
 export const VERSION = '0.1.7';
 
@@ -60,24 +60,24 @@ export const LTR_REGEX: RegExp = new RegExp('^[^' + RTL + ']*[' + LTR + ']');
 
 export const TEXT_TYPE_TO_FORMAT: {[TextFormatType]: number} = {
   bold: IS_BOLD,
-  underline: IS_UNDERLINE,
-  strikethrough: IS_STRIKETHROUGH,
-  italic: IS_ITALIC,
   code: IS_CODE,
+  italic: IS_ITALIC,
+  strikethrough: IS_STRIKETHROUGH,
   subscript: IS_SUBSCRIPT,
   superscript: IS_SUPERSCRIPT,
+  underline: IS_UNDERLINE,
 };
 
 export const ELEMENT_TYPE_TO_FORMAT: {[ElementFormatType]: number} = {
-  left: IS_ALIGN_LEFT,
-  right: IS_ALIGN_RIGHT,
   center: IS_ALIGN_CENTER,
   justify: IS_ALIGN_JUSTIFY,
+  left: IS_ALIGN_LEFT,
+  right: IS_ALIGN_RIGHT,
 };
 
 export const TEXT_MODE_TO_TYPE: {[TextModeType]: 0 | 1 | 2 | 3} = {
-  normal: IS_NORMAL,
-  token: IS_TOKEN,
-  segmented: IS_SEGMENTED,
   inert: IS_INERT,
+  normal: IS_NORMAL,
+  segmented: IS_SEGMENTED,
+  token: IS_TOKEN,
 };

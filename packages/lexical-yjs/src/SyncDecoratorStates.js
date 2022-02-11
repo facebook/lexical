@@ -7,20 +7,21 @@
  * @flow strict
  */
 
-import type {DecoratorMap, DecoratorArray, DecoratorStateValue} from 'lexical';
 import type {Binding} from '.';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
+import type {DecoratorArray, DecoratorMap, DecoratorStateValue} from 'lexical';
 
-import {Map as YMap, Array as YArray, Doc} from 'yjs';
 import {
-  isDecoratorMap,
-  isDecoratorEditor,
-  isDecoratorArray,
+  createDecoratorArray,
   createDecoratorEditor,
   createDecoratorMap,
-  createDecoratorArray,
+  isDecoratorArray,
+  isDecoratorEditor,
+  isDecoratorMap,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import {Array as YArray, Doc, Map as YMap} from 'yjs';
+
 import {syncWithTransaction} from './Utils';
 
 type YDecoratorValue =

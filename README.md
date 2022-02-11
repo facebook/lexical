@@ -32,6 +32,7 @@ import {$getRoot, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 
 import LexicalComposer from '@lexical/react/LexicalComposer';
+import LexicalBootstrapPllugin from '@lexical/react/LexicalBootstrapPlugin';
 import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
@@ -81,10 +82,12 @@ function Editor() {
   const initialConfig = {
     theme,
     onError,
+    nodes: [...nodeList],
   };
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
+      <LexicalBootstrapPlugin />
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}
@@ -107,7 +110,7 @@ it's advisable to [check out the source-code for the hooks that are shipped in `
 When you work with Lexical, you normally work with a single editor instance. An editor instance can be thought of as the one responsible
 for wiring up an EditorState with the DOM. The editor is also the place where you can register custom nodes, add listeners, and transforms.
 
-An editor instance can be created from the `lexical` package and accepts an optional configuration object that allows for theming and other options:
+An editor instance can be created from the `lexical` package and accepts an optional configuration object that allows for theming, supported Le and other options:
 
 ```js
 import {createEditor} from 'lexical';
@@ -184,8 +187,7 @@ based on the changes from the update.
 Here's an example of how you can update an editor instance:
 
 ```js
-import {$getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode} from 'lexical/PargraphNode';
+import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
 
 // Inside the `editor.update` you can use special $ prefixed helper functions.
 // These functions cannot be used outside the closure, and will error if you try.

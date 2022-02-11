@@ -17,6 +17,7 @@ import {$getRoot, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 
 import LexicalComposer from '@lexical/react/LexicalComposer';
+import LexicalBootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
@@ -70,6 +71,7 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
+      <LexicalBootstrapPlugin />
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}

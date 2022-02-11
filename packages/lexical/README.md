@@ -31,7 +31,7 @@ it's advisable to [check out the source-code for the hooks that are shipped in `
 When you work with Lexical, you normally work with a single editor instance. An editor instance can be thought of as the one responsible
 for wiring up an EditorState with the DOM. The editor is also the place where you can register custom nodes, add listeners, and transforms.
 
-An editor instance can be created from the `lexical` package and accepts an optional configuration object that allows for theming and other options:
+An editor instance can be created from the `lexical` package and accepts an optional configuration object that allows for theming, supported Lexical Nodes and other options:
 
 ```js
 import {createEditor} from 'lexical';
@@ -40,6 +40,7 @@ const config = {
   theme: {
     ...
   },
+  nodes: [...SupportedNodes]
 };
 
 const editor = createEditor(config);
@@ -108,8 +109,7 @@ based on the changes from the update.
 Here's an example of how you can update an editor instance:
 
 ```js
-import {$getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode} from 'lexical/PargraphNode';
+import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
 
 // Inside the `editor.update` you can use special $ prefixed helper functions.
 // These functions cannot be used outside the closure, and will error if you try.

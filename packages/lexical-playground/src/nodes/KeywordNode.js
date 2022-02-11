@@ -26,10 +26,18 @@ export class KeywordNode extends TextNode {
     dom.className = 'keyword';
     return dom;
   }
+
+  canInsertTextBefore(): boolean {
+    return false;
+  }
+
+  canInsertTextAfter(): boolean {
+    return false;
+  }
 }
 
 export function $createKeywordNode(keyword: string): KeywordNode {
-  return new KeywordNode(keyword).setMode('segmented');
+  return new KeywordNode(keyword);
 }
 
 export function $isKeywordNode(node: ?LexicalNode): boolean %checks {

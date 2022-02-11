@@ -522,8 +522,10 @@ function onDocumentSelectionChange(event: Event): void {
       const possibleLexicalEditor = node.__lexicalEditor;
       if (possibleLexicalEditor !== undefined) {
         onSelectionChange(possibleLexicalEditor);
+        if (possibleLexicalEditor._parentEditor === null) {
+          return;
+        }
       }
-      return;
     }
     node = node.parentNode;
   }

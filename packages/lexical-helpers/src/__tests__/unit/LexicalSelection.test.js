@@ -7,7 +7,7 @@
  */
 
 import {$createListItemNode, $createListNode} from '@lexical/list';
-import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import DEPRECATED_useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -26,6 +26,7 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../../lexical/src/__tests__/utils';
+import DEPRECATED__useMLCLexicalBootstrap from '../../../../lexical/src/__tests__/utils/DEPRECATED__useLexicalBootstrap';
 import {
   applySelectionInputs,
   convertToImmutableNode,
@@ -131,7 +132,8 @@ describe('LexicalSelection tests', () => {
 
     function TestBase() {
       editor = useLexicalEditor(ref);
-      const props = useLexicalRichText(editor);
+      DEPRECATED__useMLCLexicalBootstrap(editor);
+      const props = DEPRECATED_useLexicalRichText(editor);
       return <div ref={ref} contentEditable={true} {...props} />;
     }
 

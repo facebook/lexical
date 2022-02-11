@@ -13,22 +13,22 @@ jobs:
       PLAYWRIGHT_BROWSERS_PATH: 0
       GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run lint
-    - run: npm run flow
-    - run: npm run build
-    # - run: npm run prepare-size-compare
-    # - run: yarn danger ci
-    - run: npm run build-www
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run lint
+      - run: npm run flow
+      - run: npm run build
+      # - run: npm run prepare-size-compare
+      # - run: yarn danger ci
+      - run: npm run build-www
 
   unit:
     runs-on: ubuntu-latest
@@ -39,17 +39,17 @@ jobs:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run test-unit
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run test-unit
 
   e2e-mac:
     runs-on: macos-latest
@@ -92,22 +92,22 @@ jobs:
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: install required packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install xvfb
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: install required packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install xvfb
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run build
+      - run: npm run test-e2e-ci:${{ matrix.browser }}
 
   e2e-windows:
     runs-on: windows-latest
@@ -123,18 +123,18 @@ jobs:
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run build
+      - run: npm run test-e2e-ci:${{ matrix.browser }}
 
   e2e-collab-mac:
     runs-on: macos-latest
@@ -169,22 +169,22 @@ jobs:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: install required packages
-      run: |
-        sudo apt-get update
-        sudo apt-get install xvfb
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: install required packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install xvfb
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run build
+      - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
 
   e2e-collab-windows:
     runs-on: windows-latest
@@ -196,15 +196,15 @@ jobs:
       CI: true
       PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/cache@v2
-      with:
-        path: '**/node_modules'
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-    - run: npm install
-    - run: npm run build
-    - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run build
+      - run: npm run test-e2e-collab-ci:${{ matrix.browser }}

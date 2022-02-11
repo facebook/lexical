@@ -7,31 +7,33 @@
  * @flow strict
  */
 
-import type {LexicalEditor, ElementNode} from 'lexical';
 import type {ListNode} from '@lexical/list';
-import {
-  $getSelection,
-  $log,
-  $isLeafNode,
-  $isRootNode,
-  $isElementNode,
-  $createParagraphNode,
-} from 'lexical';
+import type {ElementNode, LexicalEditor} from 'lexical';
+
+import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 import {
   $createListItemNode,
-  $isListItemNode,
-  ListItemNode,
   $createListNode,
+  $isListItemNode,
   $isListNode,
+  ListItemNode,
 } from '@lexical/list';
+import {
+  $createParagraphNode,
+  $getSelection,
+  $isElementNode,
+  $isLeafNode,
+  $isRootNode,
+  $log,
+} from 'lexical';
+
 import {
   $getAllListItems,
   $getTopListNode,
-  getUniqueListItemNodes,
   findNearestListItemNode,
+  getUniqueListItemNodes,
   isNestedListNode,
 } from './utils';
-import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
   editor.update(() => {

@@ -7,6 +7,7 @@
  */
 
 import {$createHorizontalRuleNode, $isHorizontalRuleNode} from 'lexical';
+
 import {initializeUnitTest} from '../../../../__tests__/utils';
 
 describe('LexicalHorizontalRuleNode tests', () => {

@@ -6,11 +6,11 @@
  *
  */
 
+import {$createTextNode, $getRoot, $getSelection, TextNode} from 'lexical';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {$createTextNode, $getRoot, $getSelection, TextNode} from 'lexical';
 import {
   $createTestElementNode,
   createTestEditor,
@@ -229,95 +229,95 @@ describe('LexicalElementNode tests', () => {
     });
 
     const BASE_INSERTIONS: Array<{
+      deleteCount: number,
+      deleteOnly: ?boolean,
+      expectedText: string,
       name: string,
       start: number,
-      deleteCount: number,
-      expectedText: string,
-      deleteOnly: ?boolean,
     }> = [
       // Do nothing
       {
-        name: 'Do nothing',
-        start: 0,
         deleteCount: 0,
         deleteOnly: true,
         expectedText: 'FooBarBaz',
+        name: 'Do nothing',
+        start: 0,
       },
 
       // Insert
       {
-        name: 'Insert in the beginning',
-        start: 0,
         deleteCount: 0,
         expectedText: 'QuxQuuzFooBarBaz',
+        name: 'Insert in the beginning',
+        start: 0,
       },
       {
-        name: 'Insert in the middle',
-        start: 1,
         deleteCount: 0,
         expectedText: 'FooQuxQuuzBarBaz',
+        name: 'Insert in the middle',
+        start: 1,
       },
       {
-        name: 'Insert in the end',
-        start: 3,
         deleteCount: 0,
         expectedText: 'FooBarBazQuxQuuz',
+        name: 'Insert in the end',
+        start: 3,
       },
 
       // Delete
       {
-        name: 'Delete in the beginning',
-        start: 0,
         deleteCount: 1,
         deleteOnly: true,
         expectedText: 'BarBaz',
+        name: 'Delete in the beginning',
+        start: 0,
       },
       {
-        name: 'Delete in the middle',
-        start: 1,
         deleteCount: 1,
         deleteOnly: true,
         expectedText: 'FooBaz',
+        name: 'Delete in the middle',
+        start: 1,
       },
       {
-        name: 'Delete in the end',
-        start: 2,
         deleteCount: 1,
         deleteOnly: true,
         expectedText: 'FooBar',
+        name: 'Delete in the end',
+        start: 2,
       },
       {
-        name: 'Delete all',
-        start: 0,
         deleteCount: 3,
         deleteOnly: true,
         expectedText: '',
+        name: 'Delete all',
+        start: 0,
       },
 
       // Replace
       {
-        name: 'Replace in the beginning',
-        start: 0,
         deleteCount: 1,
         expectedText: 'QuxQuuzBarBaz',
+        name: 'Replace in the beginning',
+        start: 0,
       },
       {
-        name: 'Replace in the middle',
-        start: 1,
         deleteCount: 1,
         expectedText: 'FooQuxQuuzBaz',
+        name: 'Replace in the middle',
+        start: 1,
       },
       {
-        name: 'Replace in the end',
-        start: 2,
         deleteCount: 1,
         expectedText: 'FooBarQuxQuuz',
+        name: 'Replace in the end',
+        start: 2,
       },
       {
-        name: 'Replace all',
-        start: 0,
         deleteCount: 3,
         expectedText: 'QuxQuuz',
+        name: 'Replace all',
+        start: 0,
       },
     ];
 
@@ -340,79 +340,79 @@ describe('LexicalElementNode tests', () => {
     let nodes = {};
 
     const NESTED_ELEMENTS_TESTS: Array<{
-      name: string,
-      start: number,
       deleteCount: number,
-      expectedText: string,
+      deleteOnly?: boolean,
       expectedSelection: () => {
         anchor: {key: string, offset: number, type: string},
         focus: {key: string, offset: number, type: string},
       },
-      deleteOnly?: boolean,
+      expectedText: string,
+      name: string,
+      start: number,
     }> = [
       {
-        name: 'Do nothing',
-        start: 1,
         deleteCount: 0,
         deleteOnly: true,
-        expectedText: 'FooWiz\n\nFuz\n\nBar',
         expectedSelection: () => {
           return {
             anchor: {key: nodes.nestedText1.__key, offset: 1, type: 'text'},
             focus: {key: nodes.nestedText1.__key, offset: 1, type: 'text'},
           };
         },
+        expectedText: 'FooWiz\n\nFuz\n\nBar',
+        name: 'Do nothing',
+        start: 1,
       },
       {
+        deleteCount: 1,
+        deleteOnly: true,
+        expectedSelection: () => {
+          return {
+            anchor: {key: nodes.text1.__key, offset: 3, type: 'text'},
+            focus: {key: nodes.text1.__key, offset: 3, type: 'text'},
+          };
+        },
+        expectedText: 'FooFuz\n\nBar',
         name: 'Delete selected element (selection moves to the previous)',
         start: 1,
+      },
+      {
         deleteCount: 1,
-        deleteOnly: true,
-        expectedText: 'FooFuz\n\nBar',
         expectedSelection: () => {
           return {
             anchor: {key: nodes.text1.__key, offset: 3, type: 'text'},
             focus: {key: nodes.text1.__key, offset: 3, type: 'text'},
           };
         },
-      },
-      {
+        expectedText: 'FooQuxQuuzFuz\n\nBar',
         name: 'Replace selected element (selection moves to the previous)',
         start: 1,
-        deleteCount: 1,
-        expectedText: 'FooQuxQuuzFuz\n\nBar',
-        expectedSelection: () => {
-          return {
-            anchor: {key: nodes.text1.__key, offset: 3, type: 'text'},
-            focus: {key: nodes.text1.__key, offset: 3, type: 'text'},
-          };
-        },
       },
       {
-        name: 'Delete selected with previous element (selection moves to the next)',
-        start: 0,
         deleteCount: 2,
         deleteOnly: true,
-        expectedText: 'Fuz\n\nBar',
         expectedSelection: () => {
           return {
             anchor: {key: nodes.nestedText2.__key, offset: 0, type: 'text'},
             focus: {key: nodes.nestedText2.__key, offset: 0, type: 'text'},
           };
         },
+        expectedText: 'Fuz\n\nBar',
+        name: 'Delete selected with previous element (selection moves to the next)',
+        start: 0,
       },
       {
-        name: 'Delete selected with all siblings (selection moves up to the element)',
-        start: 0,
         deleteCount: 4,
         deleteOnly: true,
-        expectedText: '',
         expectedSelection: () => {
           return {
             anchor: {key: block.__key, offset: 0, type: 'element'},
             focus: {key: block.__key, offset: 0, type: 'element'},
           };
         },
+        expectedText: '',
+        name: 'Delete selected with all siblings (selection moves up to the element)',
+        start: 0,
       },
     ];
 
@@ -436,12 +436,12 @@ describe('LexicalElementNode tests', () => {
           expect(block.getTextContent()).toEqual('FooWiz\n\nFuz\n\nBar');
 
           nodes = {
-            text1,
-            text2,
             nestedBlock1,
             nestedBlock2,
             nestedText1,
             nestedText2,
+            text1,
+            text2,
           };
         });
 

@@ -7,12 +7,13 @@
  */
 
 import {
-  ListNode,
-  ListItemNode,
   $createListItemNode,
   $isListItemNode,
+  ListItemNode,
+  ListNode,
 } from '@lexical/list';
-import {TextNode, $getRoot} from 'lexical';
+import {$getRoot, TextNode} from 'lexical';
+
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({

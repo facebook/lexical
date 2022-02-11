@@ -8,17 +8,18 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {TextNode} from './nodes/base/LexicalTextNode';
-import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {RangeSelection} from './LexicalSelection';
+import type {ElementNode} from './nodes/base/LexicalElementNode';
+import type {TextNode} from './nodes/base/LexicalTextNode';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+
 import {
+  $getRoot,
   $getSelection,
+  $isElementNode,
   $log,
   $setCompositionKey,
-  $getRoot,
-  $isElementNode,
 } from '.';
 import {
   $flushMutations,

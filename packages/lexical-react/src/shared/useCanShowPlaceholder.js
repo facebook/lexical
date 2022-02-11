@@ -9,9 +9,9 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import useLayoutEffect from 'shared/useLayoutEffect';
-import {useState} from 'react';
 import {$canShowPlaceholderCurry} from '@lexical/helpers/root';
+import {useState} from 'react';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function useLexicalCanShowPlaceholder(
   editor: LexicalEditor,

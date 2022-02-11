@@ -9,10 +9,10 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {TextNode} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect} from 'react';
+import {TextNode} from 'lexical';
 import {$toggleHashtag} from 'lexical/HashtagNode';
+import {useEffect} from 'react';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
   alpha: string,

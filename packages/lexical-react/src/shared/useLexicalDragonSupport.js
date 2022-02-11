@@ -9,8 +9,8 @@
 
 import type {LexicalEditor} from 'lexical';
 
+import {$getSelection, $isTextNode, $log} from 'lexical';
 import {useEffect} from 'react';
-import {$isTextNode, $log, $getSelection} from 'lexical';
 
 export default function useLexicalDragonSupport(editor: LexicalEditor) {
   useEffect(() => {

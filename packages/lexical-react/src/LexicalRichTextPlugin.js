@@ -7,12 +7,12 @@
  * @flow strict
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useRichTextSetup} from './shared/useRichTextSetup';
-import useDecorators from './shared/useDecorators';
 import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
+import useDecorators from './shared/useDecorators';
+import {useRichTextSetup} from './shared/useRichTextSetup';
 
 export default function RichTextPlugin({
   contentEditable,

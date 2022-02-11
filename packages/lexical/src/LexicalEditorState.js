@@ -8,14 +8,15 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {NodeKey, NodeMap, LexicalNode} from './LexicalNode';
-import type {RangeSelection} from './LexicalSelection';
+import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {ParsedNode, ParsedSelection} from './LexicalParsing';
+import type {RangeSelection} from './LexicalSelection';
 
-import {$createRootNode} from './nodes/base/LexicalRootNode';
 import {readEditorState} from './LexicalUpdates';
+import {$createRootNode} from './nodes/base/LexicalRootNode';
 
 export type ParsedEditorState = {
+  _nodeMap: Array<[NodeKey, ParsedNode]>,
   _selection: null | {
     anchor: {
       key: string,
@@ -28,7 +29,6 @@ export type ParsedEditorState = {
       type: 'text' | 'element',
     },
   },
-  _nodeMap: Array<[NodeKey, ParsedNode]>,
 };
 
 export type JSONEditorState = {

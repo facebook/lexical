@@ -9,22 +9,23 @@
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
-import {createEditor} from 'lexical';
+
 import {
-  LexicalComposerContext,
   createLexicalComposerContext,
+  LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
+import {createEditor} from 'lexical';
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
+  children: React$Node,
   initialConfig?: {
     editor?: LexicalEditor | null,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
-    theme?: EditorThemeClasses,
     onError?: (Error) => void,
+    theme?: EditorThemeClasses,
   },
-  children: React$Node,
 };
 
 function defaultOnError(e: Error): void {
@@ -66,11 +67,11 @@ export default function LexicalComposer({
 
       if (editor === null) {
         editor = createEditor<LexicalComposerContextType>({
+          context,
           namespace,
           nodes,
-          theme: composerTheme,
           parentEditor,
-          context,
+          theme: composerTheme,
         });
 
         editor.addListener('error', onError || defaultOnError);

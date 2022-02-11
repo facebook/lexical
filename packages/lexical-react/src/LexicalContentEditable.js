@@ -7,10 +7,9 @@
  * @flow strict
  */
 
-import * as React from 'react';
-
-import {useCallback} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import * as React from 'react';
+import {useCallback} from 'react';
 
 export type Props = $ReadOnly<{
   ariaActiveDescendantID?: string,
@@ -29,8 +28,8 @@ export type Props = $ReadOnly<{
   className?: string,
   readOnly?: boolean,
   role?: string,
-  style?: StyleSheetList,
   spellCheck?: boolean,
+  style?: StyleSheetList,
   tabIndex?: number,
   testid?: string,
 }>;

@@ -8,23 +8,24 @@
  */
 
 import type {
-  LexicalEditor,
   CommandListenerEditorPriority,
-  TextFormatType,
   ElementFormatType,
+  LexicalEditor,
+  TextFormatType,
 } from 'lexical';
 
-import {$getSelection, $isElementNode} from 'lexical';
-import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
-  onCutForRichText,
-  onCopyForRichText,
-  onPasteForRichText,
-  $shouldOverrideDefaultCharacterSelection,
   $insertDataTransferForRichText,
+  $shouldOverrideDefaultCharacterSelection,
+  onCopyForRichText,
+  onCutForRichText,
+  onPasteForRichText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
+import {$getSelection, $isElementNode} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLexicalDragonSupport from './useLexicalDragonSupport';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

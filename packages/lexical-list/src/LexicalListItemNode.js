@@ -8,27 +8,28 @@
  */
 
 import type {
-  NodeKey,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
-  RangeSelection,
+  NodeKey,
   ParagraphNode,
+  RangeSelection,
 } from 'lexical';
 
-import {
-  $isElementNode,
-  ElementNode,
-  $createParagraphNode,
-  $isParagraphNode,
-} from 'lexical';
-import {$createListNode, $isListNode} from '@lexical/list';
-import invariant from 'shared/invariant';
-import {$getTopListNode, $isLastItemInList} from './utils';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/helpers/elements';
+import {$createListNode, $isListNode} from '@lexical/list';
+import {
+  $createParagraphNode,
+  $isElementNode,
+  $isParagraphNode,
+  ElementNode,
+} from 'lexical';
+import invariant from 'shared/invariant';
+
+import {$getTopListNode, $isLastItemInList} from './utils';
 
 export class ListItemNode extends ElementNode {
   static getType(): string {

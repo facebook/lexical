@@ -7,19 +7,20 @@
  * @flow
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import * as React from 'react';
 import {createRoot} from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
+import * as Y from 'yjs';
+
+import LexicalBootstrapPlugin from '../../LexicalBootstrapPlugin';
 import {
   CollaborationPlugin,
   useCollaborationContext,
 } from '../../LexicalCollaborationPlugin';
-import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
-import LexicalBootstrapPlugin from '../../LexicalBootstrapPlugin';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import LexicalComposer from '../../LexicalComposer';
-import * as Y from 'yjs';
+import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
 
 function Editor({doc, provider, setEditor}) {
   const {yjsDocMap} = useCollaborationContext();
@@ -64,17 +65,17 @@ class Client {
       getLocalState() {
         return this._awarenessState;
       },
-      setLocalState(state) {
-        this._awarenessState = state;
-      },
       getStates() {
         return [[0, this._awarenessState]];
+      },
+      off() {
+        // TODO
       },
       on() {
         // TODO
       },
-      off() {
-        // TODO
+      setLocalState(state) {
+        this._awarenessState = state;
       },
     };
   }

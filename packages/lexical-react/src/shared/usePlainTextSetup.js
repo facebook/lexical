@@ -7,19 +7,20 @@
  * @flow strict
  */
 
-import type {LexicalEditor, CommandListenerEditorPriority} from 'lexical';
+import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 
-import {$getSelection} from 'lexical';
-import useLexicalDragonSupport from './useLexicalDragonSupport';
 import {
-  onCutForPlainText,
-  onCopyForPlainText,
-  onPasteForPlainText,
-  $shouldOverrideDefaultCharacterSelection,
   $insertDataTransferForPlainText,
+  $shouldOverrideDefaultCharacterSelection,
+  onCopyForPlainText,
+  onCutForPlainText,
+  onPasteForPlainText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
+import {$getSelection} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLexicalDragonSupport from './useLexicalDragonSupport';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

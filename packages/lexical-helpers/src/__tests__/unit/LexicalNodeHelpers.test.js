@@ -7,24 +7,25 @@
  * @flow strict
  */
 
-import type {LexicalEditor, State, NodeKey, LexicalNode} from 'lexical';
+import type {LexicalEditor, LexicalNode, NodeKey, State} from 'lexical';
 
 import {
-  initializeUnitTest,
-  $createTestElementNode,
-} from '../../../../lexical/src/__tests__/utils';
-import {
-  $dfs__DEPRECATED,
   $areSiblingsNullOrSpace,
+  $dfs__DEPRECATED,
   $getNearestNodeOfType,
 } from '@lexical/helpers/nodes';
+import {$createListItemNode, $createListNode, ListNode} from '@lexical/list';
 import {
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
-  $createParagraphNode,
   $isParagraphNode,
 } from 'lexical';
-import {$createListNode, $createListItemNode, ListNode} from '@lexical/list';
+
+import {
+  $createTestElementNode,
+  initializeUnitTest,
+} from '../../../../lexical/src/__tests__/utils';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {

@@ -8,20 +8,20 @@
  */
 
 import type {
-  NodeKey,
   EditorConfig,
-  RangeSelection,
   LexicalNode,
+  NodeKey,
   ParagraphNode,
+  RangeSelection,
 } from 'lexical';
 import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {
-  ElementNode,
   $createLineBreakNode,
-  $isLineBreakNode,
   $createParagraphNode,
+  $isLineBreakNode,
+  ElementNode,
 } from 'lexical';
 import {
   $createCodeHighlightNode,

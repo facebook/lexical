@@ -522,8 +522,11 @@ function onDocumentSelectionChange(event: Event): void {
       const possibleLexicalEditor = node.__lexicalEditor;
       if (possibleLexicalEditor !== undefined) {
         onSelectionChange(possibleLexicalEditor);
+        getEditorsToPropagate(possibleLexicalEditor).forEach((parentEditor) =>
+          onSelectionChange(parentEditor),
+        );
+        return;
       }
-      return;
     }
     node = node.parentNode;
   }

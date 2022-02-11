@@ -367,6 +367,18 @@ class BaseLexicalEditor {
     this._log = [];
     // Used for identifying owning editors
     this._key = generateRandomKey();
+
+    // Default error listener
+    this.addListener(
+      'error',
+      (e: Error, log) => {
+        // Call default error handling only when no other error handling is specified
+        if (this._listeners.error.size === 1) {
+          console.error(e, log);
+        }
+      },
+      0,
+    );
   }
   isComposing(): boolean {
     return this._compositionKey != null;

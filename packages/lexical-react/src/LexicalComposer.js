@@ -27,10 +27,6 @@ type Props = {
   children: React$Node,
 };
 
-function defaultOnError(e: Error): void {
-  throw e;
-}
-
 export default function LexicalComposer({
   initialConfig = {},
   children,
@@ -73,7 +69,9 @@ export default function LexicalComposer({
           context,
         });
 
-        editor.addListener('error', onError || defaultOnError);
+        if (onError != null) {
+          editor.addListener('error', onError);
+        }
       }
 
       return [editor, context];

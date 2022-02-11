@@ -37,6 +37,7 @@ import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalBootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 
 const theme = {
   // Theme styling goes here
@@ -85,6 +86,7 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
+      <LexicalBootstrapPlugin />
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}
@@ -184,8 +186,7 @@ based on the changes from the update.
 Here's an example of how you can update an editor instance:
 
 ```js
-import {$getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode} from 'lexical/PargraphNode';
+import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
 
 // Inside the `editor.update` you can use special $ prefixed helper functions.
 // These functions cannot be used outside the closure, and will error if you try.

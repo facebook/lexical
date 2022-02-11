@@ -110,7 +110,7 @@ it's advisable to [check out the source-code for the hooks that are shipped in `
 When you work with Lexical, you normally work with a single editor instance. An editor instance can be thought of as the one responsible
 for wiring up an EditorState with the DOM. The editor is also the place where you can register custom nodes, add listeners, and transforms.
 
-An editor instance can be created from the `lexical` package and accepts an optional configuration object that allows for theming, supported Le and other options:
+An editor instance can be created from the `lexical` package and accepts an optional configuration object that allows for theming, supported Lexical Nodes and other options:
 
 ```js
 import {createEditor} from 'lexical';

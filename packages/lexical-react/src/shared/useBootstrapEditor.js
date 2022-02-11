@@ -88,14 +88,14 @@ export default function useBootstrapEditor(
             editor,
             initialPayloadFn != null ? initialPayloadFn : defaultInitEditor,
           );
-          return false;
+          return true;
         }
         if (type === 'clearEditor') {
           clearEditor(
             editor,
             clearEditorFn != null ? clearEditorFn : defaultClearEditor,
           );
-          return false;
+          return true;
         }
         return false;
       },

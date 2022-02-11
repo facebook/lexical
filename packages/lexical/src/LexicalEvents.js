@@ -522,6 +522,17 @@ function clearRootElementRemoveHandles(rootElement: HTMLElement): void {
   rootElement._lexicalEventHandles = [];
 }
 
+function onBlur(event: Event, editor: LexicalEditor): void {
+  // If we have a parent element, we'll need to let it know that
+  // we've possibly moved selection to a parent.
+  if (editor._parentEditor !== null) {
+    setTimeout(() => {
+      onSelectionChange(editor);
+    });
+  }
+  editor.execCommand('blur', event);
+}
+
 function onDocumentSelectionChange(event: Event): void {
   const sel = window.getSelection();
   let node = sel.anchorNode;

@@ -68,7 +68,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp qm54mken gatxiiaj" spellcheck="false"><br></code>',
+        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp" spellcheck="false"><br></code>',
 
       markdownText: '``` ', // Code block.
     },

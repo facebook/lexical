@@ -43,10 +43,12 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-react/dist'));
   fs.removeSync(path.resolve('./packages/lexical-helpers/dist'));
   fs.removeSync(path.resolve('./packages/lexical-list/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-file/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
+  '@lexical/file': 'LexicalFile',
   '@lexical/list': 'LexicalList',
   '@lexical/yjs': 'LexicalYjs',
   lexical: 'Lexical',
@@ -94,6 +96,7 @@ const externals = [
   // is different to that of the OSS version).
   'lexical',
   '@lexical/list',
+  '@lexical/file',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -179,12 +182,6 @@ async function build(name, inputFile, outputFile, isProd) {
             find: '@lexical/helpers/events',
             replacement: path.resolve(
               'packages/lexical-helpers/src/LexicalEventHelpers',
-            ),
-          },
-          {
-            find: '@lexical/helpers/file',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalFileHelpers',
             ),
           },
           {
@@ -335,6 +332,17 @@ const packages = [
     name: 'Lexical List',
     outputPath: './packages/lexical-list/dist/',
     sourcePath: './packages/lexical-list/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalFile',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical File',
+    outputPath: './packages/lexical-file/dist/',
+    sourcePath: './packages/lexical-file/src/',
   },
   {
     modules: lexicalNodes.map((module) => ({

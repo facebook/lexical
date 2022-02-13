@@ -10,6 +10,7 @@
     "@lexical/react": "0.1.8",
     "@lexical/helpers": "0.1.8",
     "@lexical/list": "0.1.8",
+    "@lexical/file": "0.1.8",
     "link-preview-generator": "1.0.7",
     "@craco/craco": "6.1.2",
     "@excalidraw/excalidraw": "latest",

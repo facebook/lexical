@@ -40,6 +40,7 @@ import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
 
+import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
 import {useSettings} from './context/SettingsContext';
 import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 
@@ -82,6 +83,7 @@ export default function Editor(): React$Node {
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         <BootstrapPlugin />
+        <CharacterStylesPopupPlugin />
         {isRichText ? (
           <>
             {isCollab ? (

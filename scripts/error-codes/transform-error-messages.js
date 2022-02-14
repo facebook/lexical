@@ -42,7 +42,7 @@ module.exports = function (babel) {
           const errorMsgExpressions = Array.from(node.arguments.slice(2));
           const errorMsgQuasis = errorMsgLiteral
             .split('%s')
-            .map((raw) => t.templateElement({raw, cooked: String.raw({raw})}));
+            .map((raw) => t.templateElement({cooked: String.raw({raw}), raw}));
 
           // Outputs:
           //   `A ${adj} message that contains ${noun}`;

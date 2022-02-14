@@ -7,28 +7,32 @@
  * @flow strict
  */
 
-import type {ElementNode, EditorState, LexicalEditor, Selection} from 'lexical';
+import type {
+  EditorState,
+  ElementNode,
+  LexicalEditor,
+  RangeSelection,
+} from 'lexical';
 
-import {$isElementNode, $isTextNode, $getRoot, $getSelection} from 'lexical';
-
+import {$getRoot, $getSelection, $isElementNode, $isTextNode} from 'lexical';
 import * as React from 'react';
-import {useState, useEffect, useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: $ReadOnly<{
   [string]: string,
 }> = Object.freeze({
-  '\n': '\\n',
   '\t': '\\t',
+  '\n': '\\n',
 });
 const NON_SINGLE_WIDTH_CHARS_REGEX = new RegExp(
   Object.keys(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).join('|'),
   'g',
 );
 const SYMBOLS = Object.freeze({
-  hasNextSibling: '├',
-  isLastChild: '└',
   ancestorHasNextSibling: '|',
   ancestorIsLastChild: ' ',
+  hasNextSibling: '├',
+  isLastChild: '└',
   selectedChar: '^',
   selectedLine: '>',
 });
@@ -41,17 +45,18 @@ export default function TreeView({
   timeTravelPanelClassName,
   editor,
 }: {
+  editor: LexicalEditor,
+  timeTravelButtonClassName: string,
+  timeTravelPanelButtonClassName: string,
   timeTravelPanelClassName: string,
   timeTravelPanelSliderClassName: string,
-  timeTravelPanelButtonClassName: string,
-  timeTravelButtonClassName: string,
   viewClassName: string,
-  editor: LexicalEditor,
 }): React$Node {
   const [timeStampedEditorStates, setTimeStampedEditorStates] = useState([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
   const playingIndexRef = useRef(0);
+  const treeElementRef = useRef<HTMLPreElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
@@ -105,6 +110,20 @@ export default function TreeView({
     }
   }, [timeStampedEditorStates, isPlaying, editor, totalEditorStates]);
 
+  useEffect(() => {
+    const element = treeElementRef.current;
+
+    if (element !== null) {
+      // $FlowExpectedError[prop-missing] Internal field
+      element.__lexicalEditor = editor;
+
+      return () => {
+        // $FlowExpectedError[prop-missing] Internal field
+        element.__lexicalEditor = null;
+      };
+    }
+  }, [editor]);
+
   return (
     <div className={viewClassName}>
       {!timeTravelEnabled && totalEditorStates > 2 && (
@@ -121,7 +140,7 @@ export default function TreeView({
           Time Travel
         </button>
       )}
-      <pre>{content}</pre>
+      <pre ref={treeElementRef}>{content}</pre>
       {timeTravelEnabled && (
         <div className={timeTravelPanelClassName}>
           <button
@@ -172,11 +191,11 @@ export default function TreeView({
   );
 }
 
-function printSelection(selection: Selection): string {
+function printRangeSelection(selection: RangeSelection): string {
   let res = '';
 
   const formatText = printFormatProperties(selection);
-  res += `${formatText !== '' ? ' - ' + formatText : ''}`;
+  res += `: range ${formatText !== '' ? `{ ${formatText} }` : ''}`;
 
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -209,8 +228,8 @@ function generateContent(editorState: EditorState): string {
       )} ${nodeKeyDisplay} ${typeDisplay} ${printNode(node)}\n`;
 
       res += printSelectedCharsLine({
-        isSelected,
         indent,
+        isSelected,
         node,
         nodeKeyDisplay,
         selection,
@@ -218,7 +237,7 @@ function generateContent(editorState: EditorState): string {
       });
     });
 
-    return selection === null ? ': null' : printSelection(selection);
+    return selection === null ? ': null' : printRangeSelection(selection);
   });
 
   return res + '\n selection' + selectionString;
@@ -264,7 +283,7 @@ function printNode(node) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const properties = printAllProperties(node);
-    return [title, properties.length !== 0 ? `- ${properties}` : null]
+    return [title, properties.length !== 0 ? `{ ${properties} }` : null]
       .filter(Boolean)
       .join(' ')
       .trim();
@@ -281,25 +300,58 @@ const FORMAT_PREDICATES = [
   (node) => node.hasFormat('underline') && 'Underline',
 ];
 
-const TEXT_PREDICATES = [
-  (node) => node.isToken() && 'Token',
-  (node) => node.isSegmented() && 'Segmented',
-  (node) => node.isInert() && 'Inert',
+const DETAIL_PREDICATES = [
   (node) => node.isDirectionless() && 'Directionless',
   (node) => node.isUnmergeable() && 'Unmergeable',
 ];
 
+const MODE_PREDICATES = [
+  (node) => node.isToken() && 'Token',
+  (node) => node.isSegmented() && 'Segmented',
+  (node) => node.isInert() && 'Inert',
+];
+
 function printAllProperties(node) {
-  return [...FORMAT_PREDICATES, ...TEXT_PREDICATES]
-    .map((predicate) => predicate(node))
+  return [
+    printFormatProperties(node),
+    printDetailProperties(node),
+    printModeProperties(node),
+  ]
     .filter(Boolean)
     .join(', ');
 }
 
-function printFormatProperties(nodeOrSelection) {
-  return FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+function printDetailProperties(nodeOrSelection) {
+  let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
-    .join(', ');
+    .join(', ')
+    .toLocaleLowerCase();
+  if (str !== '') {
+    str = 'detail: ' + str;
+  }
+  return str;
+}
+
+function printModeProperties(nodeOrSelection) {
+  let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+    .filter(Boolean)
+    .join(', ')
+    .toLocaleLowerCase();
+  if (str !== '') {
+    str = 'mode: ' + str;
+  }
+  return str;
+}
+
+function printFormatProperties(nodeOrSelection) {
+  let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+    .filter(Boolean)
+    .join(', ')
+    .toLocaleLowerCase();
+  if (str !== '') {
+    str = 'format: ' + str;
+  }
+  return str;
 }
 
 function printSelectedCharsLine({

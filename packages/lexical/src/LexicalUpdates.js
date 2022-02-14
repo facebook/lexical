@@ -7,42 +7,46 @@
  * @flow strict
  */
 
-import type {ParsedEditorState} from './LexicalEditorState';
 import type {
+  CommandPayload,
+  EditorUpdateOptions,
   LexicalEditor,
   Transform,
-  EditorUpdateOptions,
-  CommandPayload,
 } from './LexicalEditor';
+import type {ParsedEditorState} from './LexicalEditorState';
 import type {LexicalNode} from './LexicalNode';
-import type {ParsedNode, NodeParserState} from './LexicalParsing';
+import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
-import {updateEditorState} from './LexicalReconciler';
-import {$createSelection, $createSelectionFromParse} from './LexicalSelection';
+import invariant from 'shared/invariant';
+
+import {$isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {resetEditor} from './LexicalEditor';
-import {initMutationObserver} from './LexicalMutations';
 import {
+  cloneEditorState,
   EditorState,
   editorStateHasDirtySelection,
-  cloneEditorState,
 } from './LexicalEditorState';
-import {
-  scheduleMicroTask,
-  $getCompositionKey,
-  getEditorStateTextContent,
-  getRegisteredNodeOrThrow,
-  getEditorsToPropagate,
-} from './LexicalUtils';
 import {
   $garbageCollectDetachedDecorators,
   $garbageCollectDetachedNodes,
 } from './LexicalGC';
-import {$internalCreateNodeFromParse} from './LexicalParsing';
-import {applySelectionTransforms} from './LexicalSelection';
-import {$isTextNode} from '.';
+import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
-import invariant from 'shared/invariant';
+import {internalCreateNodeFromParse} from './LexicalParsing';
+import {updateEditorState} from './LexicalReconciler';
+import {
+  applySelectionTransforms,
+  internalCreateRangeSelection,
+  internalCreateSelectionFromParse,
+} from './LexicalSelection';
+import {
+  $getCompositionKey,
+  getEditorStateTextContent,
+  getEditorsToPropagate,
+  getRegisteredNodeOrThrow,
+  scheduleMicroTask,
+} from './LexicalUtils';
 
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
@@ -258,7 +262,7 @@ export function parseEditorState(
     const parsedNodeMap = new Map(parsedEditorState._nodeMap);
     // $FlowFixMe: root always exists in Map
     const parsedRoot = ((parsedNodeMap.get('root'): any): ParsedNode);
-    $internalCreateNodeFromParse(
+    internalCreateNodeFromParse(
       parsedRoot,
       parsedNodeMap,
       editor,
@@ -270,7 +274,7 @@ export function parseEditorState(
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
   }
-  editorState._selection = $createSelectionFromParse(
+  editorState._selection = internalCreateSelectionFromParse(
     nodeParserState.remappedSelection || nodeParserState.originalSelection,
   );
   return editorState;
@@ -399,13 +403,13 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
   triggerListeners('update', editor, true, {
-    tags,
+    dirtyElements,
+    dirtyLeaves,
+    editorState: pendingEditorState,
+    log,
     normalizedNodes,
     prevEditorState: currentEditorState,
-    editorState: pendingEditorState,
-    dirtyLeaves,
-    dirtyElements,
-    log,
+    tags,
   });
   triggerDeferredUpdateCallbacks(editor);
   triggerEnqueuedUpdates(editor);
@@ -424,14 +428,7 @@ function triggerTextContentListeners(
 }
 
 export function triggerListeners(
-  type:
-    | 'update'
-    | 'error'
-    | 'textmutation'
-    | 'root'
-    | 'decorator'
-    | 'textcontent'
-    | 'decoratorstate',
+  type: 'update' | 'error' | 'root' | 'decorator' | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
@@ -502,22 +499,32 @@ function triggerDeferredUpdateCallbacks(editor: LexicalEditor): void {
   }
 }
 
-function processNestedUpdates(
-  editor: LexicalEditor,
-  deferred: Array<() => void>,
-): void {
+function processNestedUpdates(editor: LexicalEditor): boolean {
   const queuedUpdates = editor._updates;
+  let skipTransforms = false;
   // Updates might grow as we process them, we so we'll need
   // to handle each update as we go until the updates array is
   // empty.
   while (queuedUpdates.length !== 0) {
     const [nextUpdateFn, options] = queuedUpdates.shift();
-    const onUpdate = options !== undefined && options.onUpdate;
-    if (onUpdate) {
-      deferred.push(onUpdate);
+    let onUpdate;
+    let tag;
+    if (options !== undefined) {
+      onUpdate = options.onUpdate;
+      tag = options.tag;
+      if (options.skipTransforms) {
+        skipTransforms = true;
+      }
+      if (onUpdate) {
+        editor._deferred.push(onUpdate);
+      }
+      if (tag) {
+        editor._updateTags.add(tag);
+      }
     }
     nextUpdateFn();
   }
+  return skipTransforms;
 }
 
 function beginUpdate(
@@ -526,7 +533,7 @@ function beginUpdate(
   skipEmptyCheck: boolean,
   options?: EditorUpdateOptions,
 ): void {
-  const deferred = editor._deferred;
+  const updateTags = editor._updateTags;
   let onUpdate;
   let tag;
   let skipTransforms = false;
@@ -534,10 +541,13 @@ function beginUpdate(
   if (options !== undefined) {
     onUpdate = options.onUpdate;
     tag = options.tag;
+    if (tag != null) {
+      updateTags.add(tag);
+    }
     skipTransforms = options.skipTransforms;
   }
   if (onUpdate) {
-    deferred.push(onUpdate);
+    editor._deferred.push(onUpdate);
   }
   const currentEditorState = editor._editorState;
   let pendingEditorState = editor._pendingEditorState;
@@ -560,14 +570,14 @@ function beginUpdate(
 
   try {
     if (editorStateWasCloned) {
-      pendingEditorState._selection = $createSelection(editor);
+      pendingEditorState._selection = internalCreateRangeSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();
-    processNestedUpdates(editor, deferred);
+    skipTransforms = processNestedUpdates(editor);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
-      if (pendingEditorState.isEmpty()) {
+      if (!skipEmptyCheck && pendingEditorState.isEmpty()) {
         invariant(
           false,
           'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
@@ -578,7 +588,7 @@ function beginUpdate(
       } else {
         $applyAllTransforms(pendingEditorState, editor);
       }
-      processNestedUpdates(editor, deferred);
+      processNestedUpdates(editor);
       $garbageCollectDetachedNodes(
         currentEditorState,
         pendingEditorState,
@@ -631,9 +641,6 @@ function beginUpdate(
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
-    if (tag != null) {
-      editor._updateTags.add(tag);
-    }
     if (pendingEditorState._flushSync) {
       pendingEditorState._flushSync = false;
       commitPendingUpdates(editor);
@@ -643,12 +650,10 @@ function beginUpdate(
       });
     }
   } else {
-    if (onUpdate) {
-      const index = deferred.indexOf(onUpdate);
-      deferred.splice(index, 1);
-    }
     pendingEditorState._flushSync = false;
     if (editorStateWasCloned) {
+      updateTags.clear();
+      editor._deferred = [];
       editor._pendingEditorState = null;
     }
   }

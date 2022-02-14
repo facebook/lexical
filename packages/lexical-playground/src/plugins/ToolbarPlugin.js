@@ -12,7 +12,7 @@ import type {
   CommandListenerLowPriority,
   ElementNode,
   TextNode,
-  Selection,
+  RangeSelection,
 } from 'lexical';
 
 import * as React from 'react';
@@ -20,25 +20,45 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode} from 'lexical/HeadingNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$isListNode, ListNode} from 'lexical/ListNode';
+import {$isListNode, ListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
-import {$log, $getNodeByKey, $getSelection} from 'lexical';
+import {$isHorizontalRuleNode} from 'lexical';
+import {
+  $log,
+  $getNodeByKey,
+  $getSelection,
+  $createParagraphNode,
+} from 'lexical';
 import {$isLinkNode} from 'lexical/LinkNode';
 import {
   $wrapLeafNodesInElements,
   $patchStyleText,
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
+  $isParentElementRTL,
 } from '@lexical/helpers/selection';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
+import LinkPreview from '../components/LinkPreview';
 
 import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+import useModal from '../hooks/useModal';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
+import stylex from 'stylex';
+
+const styles = stylex.create({
+  dialogActions: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'right',
+    marginTop: 20,
+  },
+});
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -65,7 +85,7 @@ const blockTypeToBlockName = {
   ol: 'Numbered List',
 };
 
-function getSelectedNode(selection: Selection): TextNode | ElementNode {
+function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = selection.anchor.getNode();
@@ -88,9 +108,7 @@ function positionEditorElement(editor, rect) {
     editor.style.left = '-1000px';
   } else {
     editor.style.opacity = '1';
-    editor.style.top = `${
-      rect.top + window.pageYOffset - editor.offsetHeight
-    }px`;
+    editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
     editor.style.left = `${
       rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2
     }px`;
@@ -134,7 +152,17 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);
-      const rect = domRange.getBoundingClientRect();
+      let rect;
+      if (nativeSelection.anchorNode === rootElement) {
+        let inner = rootElement;
+        while (inner.firstElementChild != null) {
+          inner = inner.firstElementChild;
+        }
+        rect = inner.getBoundingClientRect();
+      } else {
+        rect = domRange.getBoundingClientRect();
+      }
+
       if (!mouseDownRef.current) {
         positionEditorElement(editorElem, rect);
       }
@@ -168,6 +196,12 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
     );
   }, [editor, updateLinkEditor]);
 
+  useEffect(() => {
+    if (isEditMode && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditMode]);
+
   return (
     <div ref={editorRef} className="link-editor">
       {isEditMode ? (
@@ -187,26 +221,84 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
                 }
                 setEditMode(false);
               }
+            } else if (event.key === 'Escape') {
+              event.preventDefault();
+              setEditMode(false);
             }
           }}
         />
       ) : (
-        <div className="link-input">
-          <a href={linkUrl} target="_blank" rel="noopener noreferrer">
-            {linkUrl}
-          </a>
-          <div
-            className="link-edit"
-            role="button"
-            tabIndex={0}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              setEditMode(true);
-            }}
-          />
-        </div>
+        <>
+          <div className="link-input">
+            <a href={linkUrl} target="_blank" rel="noopener noreferrer">
+              {linkUrl}
+            </a>
+            <div
+              className="link-edit"
+              role="button"
+              tabIndex={0}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                setEditMode(true);
+              }}
+            />
+          </div>
+          <LinkPreview url={linkUrl} />
+        </>
       )}
     </div>
+  );
+}
+
+function InsertTableDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [rows, setRows] = useState('3');
+  const [columns, setColumns] = useState('3');
+
+  const onClick = () => {
+    activeEditor.execCommand('insertTable', {rows, columns});
+    onClose();
+  };
+
+  return (
+    <>
+      <Input label="No of rows" onChange={setRows} value={rows} />
+      <Input label="No of columns" onChange={setColumns} value={columns} />
+      <div className={stylex(styles.dialogActions)}>
+        <Button onClick={onClick}>Confirm</Button>
+      </div>
+    </>
+  );
+}
+
+function InsertPollDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [question, setQuestion] = useState('');
+
+  const onClick = () => {
+    activeEditor.execCommand('insertPoll', question);
+    onClose();
+  };
+
+  return (
+    <>
+      <Input label="Poll Question" onChange={setQuestion} value={question} />
+      <div className={stylex(styles.dialogActions)}>
+        <Button disabled={question.trim() === ''} onClick={onClick}>
+          Confirm
+        </Button>
+      </div>
+    </>
   );
 }
 
@@ -427,6 +519,8 @@ export default function ToolbarPlugin(): React$Node {
   const [isCode, setIsCode] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [modal, showModal] = useModal();
+  const [isRTL, setIsRTL] = useState(false);
   const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
     useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
@@ -436,7 +530,7 @@ export default function ToolbarPlugin(): React$Node {
     if (selection !== null) {
       const anchorNode = selection.anchor.getNode();
       const element =
-        anchorNode.getKey() === 'root'
+        anchorNode.getKey() === 'root' || $isHorizontalRuleNode(anchorNode)
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
@@ -470,6 +564,7 @@ export default function ToolbarPlugin(): React$Node {
       setIsUnderline(selection.hasFormat('underline'));
       setIsStrikethrough(selection.hasFormat('strikethrough'));
       setIsCode(selection.hasFormat('code'));
+      setIsRTL($isParentElementRTL(selection));
 
       // Update links
       const node = getSelectedNode(selection);
@@ -541,7 +636,7 @@ export default function ToolbarPlugin(): React$Node {
 
   const insertLink = useCallback(() => {
     if (!isLink) {
-      editor.execCommand('toggleLink', 'http://');
+      editor.execCommand('toggleLink', 'https://');
     } else {
       editor.execCommand('toggleLink', null);
     }
@@ -713,6 +808,14 @@ export default function ToolbarPlugin(): React$Node {
             )}
           <button
             onClick={() => {
+              activeEditor.execCommand('insertHorizontalRule');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Horizontal Rule">
+            <i className="format horizontal-rule" />
+          </button>
+          <button
+            onClick={() => {
               activeEditor.execCommand('insertImage');
             }}
             className="toolbar-item spaced"
@@ -721,11 +824,37 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.execCommand('insertTable');
+              activeEditor.execCommand('insertExcalidraw');
+            }}
+            className="toolbar-item spaced"
+            aria-label="Insert Excalidraw">
+            <i className="format diagram-2" />
+          </button>
+          <button
+            onClick={() => {
+              showModal('Insert Table', (onClose) => (
+                <InsertTableDialog
+                  activeEditor={activeEditor}
+                  onClose={onClose}
+                />
+              ));
             }}
             className="toolbar-item"
             aria-label="Insert Table">
             <i className="format table" />
+          </button>
+          <button
+            onClick={() => {
+              showModal('Insert Poll', (onClose) => (
+                <InsertPollDialog
+                  activeEditor={activeEditor}
+                  onClose={onClose}
+                />
+              ));
+            }}
+            className="toolbar-item"
+            aria-label="Insert Poll">
+            <i className="format poll" />
           </button>
         </>
       )}
@@ -770,7 +899,7 @@ export default function ToolbarPlugin(): React$Node {
         }}
         className="toolbar-item spaced"
         aria-label="Outdent">
-        <i className="format outdent" />
+        <i className={'format ' + (isRTL ? 'indent' : 'outdent')} />
       </button>
       <button
         onClick={() => {
@@ -778,8 +907,9 @@ export default function ToolbarPlugin(): React$Node {
         }}
         className="toolbar-item"
         aria-label="Indent">
-        <i className="format indent" />
+        <i className={'format ' + (isRTL ? 'outdent' : 'indent')} />
       </button>
+      {modal}
     </div>
   );
 }

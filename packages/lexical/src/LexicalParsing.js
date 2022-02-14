@@ -8,20 +8,26 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {NodeKey, LexicalNode} from './LexicalNode';
-import type {DecoratorMap} from './nodes/base/LexicalDecoratorNode';
+import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {
+  DecoratorArray,
+  DecoratorMap,
+  DecoratorStateValue,
+} from './nodes/base/LexicalDecoratorNode';
 
+import invariant from 'shared/invariant';
+
+import {$isDecoratorNode, $isElementNode, $isRootNode, $isTextNode} from '.';
 import {
-  getActiveEditorState,
-  getActiveEditor,
   errorOnReadOnly,
+  getActiveEditor,
+  getActiveEditorState,
 } from './LexicalUpdates';
-import {$isRootNode, $isElementNode, $isTextNode, $isDecoratorNode} from '.';
 import {
+  createDecoratorArray,
   createDecoratorEditor,
   createDecoratorMap,
 } from './nodes/base/LexicalDecoratorNode';
-import invariant from 'shared/invariant';
 
 export type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -30,24 +36,24 @@ export type NodeParserState = {
 
 export type ParsedNode = {
   __key: NodeKey,
-  __type: string,
   __parent: null | NodeKey,
+  __type: string,
   ...
 };
 
 export type ParsedElementNode = {
   ...ParsedNode,
   __children: Array<NodeKey>,
-  __format: number,
   __dir: number,
+  __format: number,
   __indent: number,
 };
 
 export type ParsedTextNode = {
   ...ParsedNode,
-  __text: string,
-  __mode: number,
   __format: number,
+  __mode: number,
+  __text: string,
 };
 
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
@@ -71,50 +77,72 @@ export function $createNodeFromParse(
 ): LexicalNode {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  return $internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
+  return internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
+}
+
+function createDecoratorValueFromParse(
+  editor: LexicalEditor,
+  parsedValue,
+): DecoratorStateValue {
+  let value;
+
+  if (
+    typeof parsedValue === 'string' ||
+    typeof parsedValue === 'number' ||
+    typeof parsedValue === 'boolean' ||
+    parsedValue === null
+  ) {
+    value = parsedValue;
+  } else if (typeof parsedValue === 'object') {
+    const bindingType = parsedValue.type;
+    if (bindingType === 'editor') {
+      value = createDecoratorEditor(parsedValue.id, parsedValue.editorState);
+    } else if (bindingType === 'array') {
+      value = createDecoratorArrayFromParse(editor, parsedValue);
+    } else {
+      value = createDecoratorMapFromParse(editor, parsedValue);
+    }
+  } else {
+    invariant(false, 'Should never happen');
+  }
+  return value;
+}
+
+function createDecoratorArrayFromParse(
+  editor: LexicalEditor,
+  parsedDecoratorState,
+): DecoratorArray {
+  const parsedArray = parsedDecoratorState.array;
+  const array = [];
+  for (let i = 0; i < parsedArray.length; i++) {
+    const parsedValue = parsedArray[i];
+    array.push(createDecoratorValueFromParse(editor, parsedValue));
+  }
+  return createDecoratorArray(editor, array);
 }
 
 function createDecoratorMapFromParse(
-  editor,
+  editor: LexicalEditor,
   parsedDecoratorState,
 ): DecoratorMap {
   const parsedMap = parsedDecoratorState.map;
   const map = new Map();
   for (let i = 0; i < parsedMap.length; i++) {
     const [key, parsedValue] = parsedMap[i];
-    let value;
-
-    if (
-      typeof parsedValue === 'string' ||
-      typeof parsedValue === 'number' ||
-      typeof parsedValue === 'boolean' ||
-      parsedValue === null
-    ) {
-      value = parsedValue;
-    } else if (typeof parsedValue === 'object') {
-      const bindingType = parsedValue.type;
-      if (bindingType === 'editor') {
-        value = createDecoratorEditor(parsedValue.id, parsedValue.editorState);
-      } else {
-        value = createDecoratorMapFromParse(editor, parsedValue);
-      }
-    } else {
-      invariant(false, 'Should never happen');
-    }
-    map.set(key, value);
+    map.set(key, createDecoratorValueFromParse(editor, parsedValue));
   }
   return createDecoratorMap(editor, map);
 }
 
-export function $internalCreateNodeFromParse(
+export function internalCreateNodeFromParse(
   parsedNode: $FlowFixMe,
   parsedNodeMap: ParsedNodeMap,
   editor: LexicalEditor,
   parentKey: null | NodeKey,
-  state: NodeParserState = {},
+  state: NodeParserState = {originalSelection: null},
 ): LexicalNode {
   const nodeType = parsedNode.__type;
-  const registeredNode = editor._registeredNodes.get(nodeType);
+  const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
   }
@@ -139,7 +167,7 @@ export function $internalCreateNodeFromParse(
       const childKey = children[i];
       const parsedChild = parsedNodeMap.get(childKey);
       if (parsedChild !== undefined) {
-        const child = $internalCreateNodeFromParse(
+        const child = internalCreateNodeFromParse(
           parsedChild,
           parsedNodeMap,
           editor,

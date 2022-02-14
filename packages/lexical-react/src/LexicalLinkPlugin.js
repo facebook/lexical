@@ -10,9 +10,9 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$getSelection, $log, $setSelection} from 'lexical';
+import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
 import {useEffect} from 'react';
-import {$log, $getSelection, $setSelection} from 'lexical';
-import {$createLinkNode, LinkNode, $isLinkNode} from 'lexical/LinkNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -101,7 +101,7 @@ export default function LinkPlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    return editor.addListener(
       'command',
       (type, payload) => {
         if (type === 'toggleLink') {
@@ -113,13 +113,6 @@ export default function LinkPlugin(): null {
       },
       EditorPriority,
     );
-
-    const unregisterNodes = editor.registerNodes([LinkNode]);
-
-    return () => {
-      removeCommandListener();
-      unregisterNodes();
-    };
   }, [editor]);
 
   return null;

@@ -8,30 +8,30 @@
 
 import type {LexicalEditor} from 'lexical';
 
+import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isTextNode,
+  $setCompositionKey,
+  ElementNode,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  $createTextNode,
-  TextNode,
-  ElementNode,
-  $getRoot,
-  $setCompositionKey,
-  $getSelection,
-  $getNodeByKey,
-  $isTextNode,
-} from 'lexical';
-import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
-import useLexicalRichText from '@lexical/react/useLexicalRichText';
 import {getEditorStateTextContent} from '../../LexicalUtils';
 import {
-  $createTestElementNode,
   $createTestDecoratorNode,
+  $createTestElementNode,
   createTestEditor,
 } from '../utils';
-import {LineBreakNode} from '../../nodes/base/LexicalLineBreakNode';
-import {RootNode} from '../../nodes/base/LexicalRootNode';
+import DEPRECATED__useMLCLexicalBootstrap from '../utils/DEPRECATED__useLexicalBootstrap';
 
 describe('LexicalEditor tests', () => {
   let container = null;
@@ -121,22 +121,24 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
 
     const initialEditorState = initialEditor.getEditorState();
 
     initialEditor.setRootElement(null);
-    expect(container.innerHTML).toBe('<div data-lexical-editor="true"></div>');
+    expect(container.innerHTML).toBe(
+      '<div style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"></div>',
+    );
 
     editor = createTestEditor({
-      initialEditorState: initialEditorState,
+      editorState: initialEditorState,
     });
     editor.setRootElement(rootElement);
 
     expect(editor.getEditorState()).toEqual(initialEditorState);
     expect(container.innerHTML).toBe(
-      '<div data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
@@ -346,7 +348,7 @@ describe('LexicalEditor tests', () => {
     underlineListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-underline editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic editor-text-underline" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 
@@ -400,7 +402,7 @@ describe('LexicalEditor tests', () => {
     italicsListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
     );
   });
 
@@ -455,7 +457,7 @@ describe('LexicalEditor tests', () => {
     boldFooListener();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Foo!!</strong></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Foo!!</strong></p></div>',
     );
   });
 
@@ -660,7 +662,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
@@ -682,7 +684,7 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
 
     expect(errorListener).toHaveBeenCalledTimes(0);
@@ -699,7 +701,7 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(1);
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
   });
 
@@ -721,7 +723,7 @@ describe('LexicalEditor tests', () => {
     await Promise.resolve().then();
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
 
     expect(errorListener).toHaveBeenCalledTimes(0);
@@ -742,7 +744,7 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(1);
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Foo</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Foo</span></p></div>',
     );
   });
 
@@ -794,7 +796,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Not changed</span></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Not changed</span></p></div>',
     );
 
     await ReactTestUtils.act(() => {
@@ -804,7 +806,7 @@ describe('LexicalEditor tests', () => {
     expect(rootListener).toHaveBeenCalledTimes(3);
     expect(updateListener).toHaveBeenCalledTimes(3);
     expect(container.innerHTML).toBe(
-      '<span contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
+      '<span contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Change successful</span></p></span>',
     );
   });
 
@@ -871,7 +873,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p>' +
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p>' +
           '<span data-lexical-decorator="true"><span>Hello world</span></span><br></p></div>',
       );
     });
@@ -881,7 +883,8 @@ describe('LexicalEditor tests', () => {
 
       function Test({divKey}) {
         editor = React.useMemo(() => createTestEditor(), []);
-        useLexicalRichText(editor, false);
+        DEPRECATED__useMLCLexicalBootstrap(editor);
+        DEPRECATED__useLexicalRichText(editor);
 
         React.useEffect(() => {
           editor.addListener('root', listener);
@@ -906,7 +909,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
 
       ReactTestUtils.act(() => {
@@ -914,7 +917,7 @@ describe('LexicalEditor tests', () => {
       });
       expect(listener).toHaveBeenCalledTimes(3);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
       // Wait for update to complete
       await Promise.resolve().then();
@@ -1000,13 +1003,13 @@ describe('LexicalEditor tests', () => {
         __type: 'paragraph',
       });
       expect(parsedText).toEqual({
-        __mode: 0,
         __detail: 0,
-        __text: 'Hello world',
         __format: 0,
         __key: textKey,
+        __mode: 0,
         __parent: paragraphKey,
         __style: '',
+        __text: 'Hello world',
         __type: 'text',
       });
     });
@@ -1144,7 +1147,7 @@ describe('LexicalEditor tests', () => {
           next.join(''),
         );
         expect(container.innerHTML.replace(/\sclass="*."/g, '')).toBe(
-          `<div contenteditable="true" data-lexical-editor="true"><p${
+          `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p${
             next.length > 0 ? ' dir="ltr"' : ''
           }>${
             next.length > 0
@@ -1222,7 +1225,7 @@ describe('LexicalEditor tests', () => {
       expect(editor._editorState._nodeMap.size).toBe(keys.length + 1); // + root
       expect(editor._keyToDOMMap.size).toBe(keys.length + 1); // + root
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">B</span></div></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">B</span></div></div></p></div>',
       );
     });
 
@@ -1253,7 +1256,7 @@ describe('LexicalEditor tests', () => {
         elementNode2.append(elementNode1);
       });
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">B</span><div dir="ltr"><span data-lexical-text="true">A</span></div></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">B</span><div dir="ltr"><span data-lexical-text="true">A</span></div></div></p></div>',
       );
     });
 
@@ -1290,7 +1293,7 @@ describe('LexicalEditor tests', () => {
         elementNode1.append(elementNode3);
       });
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">C</span></div></div><div dir="ltr"><span data-lexical-text="true">B</span></div></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">C</span></div></div><div dir="ltr"><span data-lexical-text="true">B</span></div></p></div>',
       );
     });
   });
@@ -1310,109 +1313,6 @@ describe('LexicalEditor tests', () => {
     });
     removeTextTransform();
     removeParagraphTransform();
-  });
-
-  it('registers node type', () => {
-    init();
-
-    const pairs = [
-      ['text', TextNode],
-      ['linebreak', LineBreakNode],
-      ['root', RootNode],
-    ];
-    for (let i = 0; i < pairs.length; i++) {
-      const currentPair = pairs[i];
-      expect(editor._registeredNodes.get(currentPair[0]).klass).toBe(
-        currentPair[1],
-      );
-    }
-    class CustomTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    expect(editor._registeredNodes.get('custom_text_node')).toBe(undefined);
-
-    const unregisterNodes = editor.registerNodes([CustomTextNode]);
-    expect(editor._registeredNodes.get('custom_text_node').klass).toBe(
-      CustomTextNode,
-    );
-    unregisterNodes();
-  });
-
-  it('throws when overriding existing node type', () => {
-    init();
-
-    class CustomFirstTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    class CustomSecondTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    editor.registerNodes([CustomFirstTextNode]);
-    expect(() => editor.registerNodes([CustomSecondTextNode])).toThrow();
-    editor.update(() => {
-      // eslint-disable-next-line no-new
-      new CustomFirstTextNode();
-      expect(() => new CustomSecondTextNode()).toThrow();
-    });
-  });
-
-  it('registers the same node three times, unregisters it, and registers a different node with the same type', () => {
-    init();
-
-    class CustomFirstTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    class CustomSecondTextNode extends TextNode {
-      static getType(): string {
-        return 'custom_text_node';
-      }
-      static clone(key): CustomTextNode {
-        return new CustomTextNode(key);
-      }
-    }
-
-    const unregisterFn1 = editor.registerNodes([CustomFirstTextNode]);
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(1);
-    const unregisterFn2 = editor.registerNodes([
-      CustomFirstTextNode,
-      CustomFirstTextNode,
-    ]);
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(3);
-    unregisterFn1();
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(2);
-    unregisterFn2();
-    expect(editor._registeredNodes.get('custom_text_node')).toBe(undefined);
-
-    editor.registerNodes([CustomSecondTextNode]);
-    expect(editor._registeredNodes.get('custom_text_node').count).toBe(1);
-    editor.update(() => {
-      // eslint-disable-next-line no-new
-      new CustomSecondTextNode();
-    });
   });
 
   it('textcontent listener', async () => {

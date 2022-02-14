@@ -7,13 +7,22 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, Selection, LexicalNode} from 'lexical';
-import type {ParagraphNode} from 'lexical/ParagraphNode';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+  RangeSelection,
+} from 'lexical';
 import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode, $createLineBreakNode, $isLineBreakNode} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {
+  $createLineBreakNode,
+  $createParagraphNode,
+  $isLineBreakNode,
+  ElementNode,
+} from 'lexical';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -48,7 +57,7 @@ export class CodeNode extends ElementNode {
 
   // Mutation
   insertNewAfter(
-    selection: Selection,
+    selection: RangeSelection,
   ): null | ParagraphNode | CodeHighlightNode {
     const children = this.getChildren();
     const childrenLength = children.length;
@@ -72,7 +81,7 @@ export class CodeNode extends ElementNode {
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
     const anchor = selection.anchor.getNode();
-    const firstNode = seekToFirstCodeHighlightNode(anchor);
+    const firstNode = getFirstCodeHighlightNodeOfLine(anchor);
     if (firstNode != null) {
       let leadingWhitespace = 0;
       const firstNodeText = firstNode.getTextContent();
@@ -125,7 +134,7 @@ export function $isCodeNode(node: ?LexicalNode): boolean %checks {
   return node instanceof CodeNode;
 }
 
-export function seekToFirstCodeHighlightNode(
+export function getFirstCodeHighlightNodeOfLine(
   anchor: LexicalNode,
 ): ?CodeHighlightNode {
   let currentNode = null;
@@ -133,6 +142,25 @@ export function seekToFirstCodeHighlightNode(
   previousSiblings.push(anchor);
   while (previousSiblings.length > 0) {
     const node = previousSiblings.pop();
+    if ($isCodeHighlightNode(node)) {
+      currentNode = node;
+    }
+    if ($isLineBreakNode(node)) {
+      break;
+    }
+  }
+
+  return currentNode;
+}
+
+export function getLastCodeHighlightNodeOfLine(
+  anchor: LexicalNode,
+): ?CodeHighlightNode {
+  let currentNode = null;
+  const nextSiblings = anchor.getNextSiblings();
+  nextSiblings.unshift(anchor);
+  while (nextSiblings.length > 0) {
+    const node = nextSiblings.shift();
     if ($isCodeHighlightNode(node)) {
       currentNode = node;
     }

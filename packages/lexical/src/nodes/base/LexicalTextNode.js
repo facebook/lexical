@@ -7,40 +7,42 @@
  * @flow strict
  */
 
-import type {Selection} from '../../LexicalSelection';
-import type {NodeKey} from '../../LexicalNode';
 import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
+import type {NodeKey} from '../../LexicalNode';
+import type {RangeSelection} from '../../LexicalSelection';
 
+import invariant from 'shared/invariant';
+
+import {
+  IS_BOLD,
+  IS_CODE,
+  IS_DIRECTIONLESS,
+  IS_INERT,
+  IS_ITALIC,
+  IS_SEGMENTED,
+  IS_STRIKETHROUGH,
+  IS_TOKEN,
+  IS_UNDERLINE,
+  IS_UNMERGEABLE,
+  NO_BREAK_SPACE_CHAR,
+  TEXT_MODE_TO_TYPE,
+  TEXT_TYPE_TO_FORMAT,
+} from '../../LexicalConstants';
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
-  $makeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
+  internalMakeRangeSelection,
 } from '../../LexicalSelection';
-import {
-  $getCompositionKey,
-  $setCompositionKey,
-  toggleTextFormatType,
-  $internallyMarkSiblingsAsDirty,
-} from '../../LexicalUtils';
-import invariant from 'shared/invariant';
 import {errorOnReadOnly} from '../../LexicalUpdates';
 import {
-  IS_CODE,
-  IS_BOLD,
-  IS_ITALIC,
-  IS_STRIKETHROUGH,
-  IS_UNDERLINE,
-  IS_TOKEN,
-  IS_SEGMENTED,
-  IS_INERT,
-  NO_BREAK_SPACE_CHAR,
-  TEXT_TYPE_TO_FORMAT,
-  TEXT_MODE_TO_TYPE,
-  IS_DIRECTIONLESS,
-  IS_UNMERGEABLE,
-} from '../../LexicalConstants';
+  $getCompositionKey,
+  $internallyMarkSiblingsAsDirty,
+  $setCompositionKey,
+  getCachedClassNameArray,
+  toggleTextFormatType,
+} from '../../LexicalUtils';
 
 export type TextFormatType =
   | 'bold'
@@ -70,24 +72,6 @@ function getElementInnerTag(node: TextNode, format: number): string {
   return 'span';
 }
 
-function getCachedTextClassNameArray(
-  textNodeClassNamesTheme: TextNodeThemeClasses,
-  textNodeClassNameThemeType: string,
-): Array<string> | void {
-  const classNames = textNodeClassNamesTheme[textNodeClassNameThemeType];
-  // As we're using classList, we need
-  // to handle className tokens that have spaces.
-  // The easiest way to do this to convert the
-  // className tokens to an array that can be
-  // applied to classList.add()/remove().
-  if (typeof classNames === 'string') {
-    const classNamesArr = classNames.split(' ');
-    textNodeClassNamesTheme[textNodeClassNameThemeType] = classNamesArr;
-    return classNamesArr;
-  }
-  return classNames;
-}
-
 function setTextThemeClassNames(
   tag: string,
   prevFormat: number,
@@ -97,7 +81,10 @@ function setTextThemeClassNames(
 ): void {
   const domClassList = dom.classList;
   // Firstly we handle the base theme.
-  let classNames = getCachedTextClassNameArray(textClassNames, 'base');
+  let classNames = getCachedClassNameArray<TextNodeThemeClasses>(
+    textClassNames,
+    'base',
+  );
   if (classNames !== undefined) {
     domClassList.add(...classNames);
   }
@@ -106,7 +93,7 @@ function setTextThemeClassNames(
   // the same CSS property will need to be used: text-decoration.
   // In an ideal world we shouldn't have to do this, but there's no
   // easy workaround for many atomic CSS systems today.
-  classNames = getCachedTextClassNameArray(
+  classNames = getCachedClassNameArray<TextNodeThemeClasses>(
     textClassNames,
     'underlineStrikethrough',
   );
@@ -131,7 +118,10 @@ function setTextThemeClassNames(
     // $FlowFixMe: expected cast here
     const format: TextFormatType = key;
     const flag = TEXT_TYPE_TO_FORMAT[format];
-    classNames = getCachedTextClassNameArray(textClassNames, key);
+    classNames = getCachedClassNameArray<TextNodeThemeClasses>(
+      textClassNames,
+      key,
+    );
     if (classNames !== undefined) {
       if (nextFormat & flag) {
         if (
@@ -363,8 +353,8 @@ export class TextNode extends LexicalNode {
 
   // Mutators
   selectionTransform(
-    prevSelection: null | Selection,
-    nextSelection: Selection,
+    prevSelection: null | RangeSelection,
+    nextSelection: RangeSelection,
   ): void {}
   setFormat(format: number): this {
     errorOnReadOnly();
@@ -404,7 +394,7 @@ export class TextNode extends LexicalNode {
     writableSelf.__text = text;
     return writableSelf;
   }
-  select(_anchorOffset?: number, _focusOffset?: number): Selection {
+  select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
@@ -424,7 +414,7 @@ export class TextNode extends LexicalNode {
       focusOffset = 0;
     }
     if (selection === null) {
-      return $makeSelection(
+      return internalMakeRangeSelection(
         key,
         anchorOffset,
         key,

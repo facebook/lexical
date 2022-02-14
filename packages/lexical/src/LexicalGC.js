@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from '.';
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
+import type {NodeKey, NodeMap} from './LexicalNode';
 
 import {$isElementNode} from '.';
 import {cloneDecorators} from './LexicalUtils';

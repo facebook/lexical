@@ -9,10 +9,8 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {$insertRichText} from '@lexical/helpers/selection';
-
+import {$getSelection, $isTextNode, $log} from 'lexical';
 import {useEffect} from 'react';
-import {$isTextNode, $log, $getSelection} from 'lexical';
 
 export default function useLexicalDragonSupport(editor: LexicalEditor) {
   useEffect(() => {
@@ -72,7 +70,7 @@ export default function useLexicalDragonSupport(editor: LexicalEditor) {
                     }
                   }
                   if (setSelStart !== setSelEnd || text !== '') {
-                    $insertRichText(selection, text);
+                    selection.insertRawText(text);
                     anchorNode = anchor.getNode();
                   }
                   if ($isTextNode(anchorNode)) {

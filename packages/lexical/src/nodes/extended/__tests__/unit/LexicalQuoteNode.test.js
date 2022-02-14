@@ -6,9 +6,9 @@
  *
  */
 
+import {$getRoot, ParagraphNode} from 'lexical';
 import {$createQuoteNode} from 'lexical/QuoteNode';
-import {ParagraphNode} from 'lexical/ParagraphNode';
-import {$getRoot} from 'lexical';
+
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -68,7 +68,7 @@ describe('LexicalQuoteNode tests', () => {
         root.append(quoteNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><blockquote><br></blockquote></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><blockquote><br></blockquote></div>',
       );
       await editor.update(() => {
         const result = quoteNode.insertNewAfter();
@@ -76,7 +76,7 @@ describe('LexicalQuoteNode tests', () => {
         expect(result.getDirection()).toEqual(quoteNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><blockquote><br></blockquote><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><blockquote><br></blockquote><p><br></p></div>',
       );
     });
 

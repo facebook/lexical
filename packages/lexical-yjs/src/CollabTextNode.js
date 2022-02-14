@@ -7,19 +7,20 @@
  * @flow strict
  */
 
-import type {TextNode, NodeKey, NodeMap} from 'lexical';
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
+import type {NodeKey, NodeMap, TextNode} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
-import {$getSelection, $isTextNode, $getNodeByKey} from 'lexical';
+import {$getNodeByKey, $getSelection, $isTextNode} from 'lexical';
+
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
 function simpleDiffWithCursor(
   a: string,
   b: string,
   cursor: number,
-): {index: number, remove: number, insert: string} {
+): {index: number, insert: string, remove: number} {
   const aLength = a.length;
   const bLength = b.length;
   let left = 0; // number of same characters counting from left
@@ -52,8 +53,8 @@ function simpleDiffWithCursor(
   }
   return {
     index: left,
-    remove: aLength - left - right,
     insert: b.slice(left, bLength - right),
+    remove: aLength - left - right,
   };
 }
 

@@ -7,40 +7,120 @@
  * @flow strict
  */
 
+import type {Binding, Provider, YjsEvent} from '.';
 import type {
-  NodeKey,
   EditorState,
   IntentionallyMarkedAsDirtyElement,
+  NodeKey,
 } from 'lexical';
-import type {Binding, Provider, YjsEvent} from '.';
 
-// $FlowFixMe: need Flow typings for yjs
-import {YTextEvent, YMapEvent, YXmlEvent} from 'yjs';
+import {$createOffsetView} from '@lexical/helpers/offsets';
 import {
-  $isTextNode,
-  $getSelection,
-  $getRoot,
-  $setSelection,
+  $createParagraphNode,
   $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isTextNode,
+  $setSelection,
+  isDecoratorArray,
+  isDecoratorMap,
 } from 'lexical';
+import {
+  Array as YArray,
+  Map as YMap,
+  // $FlowFixMe: need Flow typings for yjs
+  YMapEvent,
+  // $FlowFixMe: need Flow typings for yjs
+  YTextEvent,
+  // $FlowFixMe: need Flow typings for yjs
+  YXmlEvent,
+} from 'yjs';
+
+import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
-  getOrInitCollabNodeFromSharedType,
-  doesSelectionNeedRecovering,
-} from './Utils';
-import {
+  syncCursorPositions,
   syncLexicalSelectionToYjs,
   syncLocalCursorPosition,
-  syncCursorPositions,
 } from './SyncCursors';
-import {CollabDecoratorNode} from './CollabDecoratorNode';
-import {$createOffsetView} from '@lexical/helpers/offsets';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {
+  mutationFromCollab,
+  syncYjsDecoratorArrayValueToLexical,
+  syncYjsDecoratorMapToLexical,
+} from './SyncDecoratorStates';
+import {
+  doesSelectionNeedRecovering,
+  getOrInitCollabNodeFromSharedType,
+  syncWithTransaction,
+} from './Utils';
 
-function syncEvent(binding: Binding, event: YTextEvent | YMapEvent): void {
+function syncEvent(
+  binding: Binding,
+  event: YTextEvent | YMapEvent | YXmlEvent,
+): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
+  // $FlowFixMe: internal field
+  const decoratorStateValue = target._lexicalValue;
+
+  // Check if this event relates to a decorator state change.
+  if (
+    decoratorStateValue !== undefined &&
+    collabNode instanceof CollabDecoratorNode
+  ) {
+    if (target instanceof YMap) {
+      // Sync decorator state value
+      syncYjsDecoratorMapToLexical(
+        binding,
+        collabNode,
+        target,
+        decoratorStateValue,
+        event.keysChanged,
+      );
+    } else if (
+      target instanceof YArray &&
+      isDecoratorArray(decoratorStateValue)
+    ) {
+      // Sync decorator state value
+      const deltas = event.delta;
+      let offset = 0;
+      for (let i = 0; i < deltas.length; i++) {
+        const delta = deltas[i];
+        const retainOp = delta.retain;
+        const deleteOp = delta.delete;
+        const insertOp = delta.insert;
+
+        if (retainOp !== undefined) {
+          offset += retainOp;
+        } else if (deleteOp !== undefined) {
+          mutationFromCollab(() => {
+            const elements = decoratorStateValue._array.slice(
+              offset,
+              offset + deleteOp,
+            );
+            elements.forEach((element) => {
+              if (isDecoratorArray(element) || isDecoratorMap(element)) {
+                element.destroy();
+              }
+            });
+            decoratorStateValue.splice(offset, deleteOp);
+          });
+        } else if (insertOp !== undefined) {
+          syncYjsDecoratorArrayValueToLexical(
+            binding,
+            collabNode,
+            target,
+            decoratorStateValue,
+            offset,
+          );
+        } else {
+          throw new Error('Not supported');
+        }
+      }
+    }
+    return;
+  }
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     const {keysChanged, childListChanged, delta} = event;
@@ -202,8 +282,7 @@ export function syncLexicalUpdateToYjs(
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void {
-  window.foo = binding.doc;
-  binding.doc.transact(() => {
+  syncWithTransaction(binding, () => {
     currEditorState.read(() => {
       // We check if the update has come from a origin where the origin
       // was the collaboration binding previously. This can help us
@@ -239,5 +318,5 @@ export function syncLexicalUpdateToYjs(
       const prevSelection = prevEditorState._selection;
       syncLexicalSelectionToYjs(binding, provider, prevSelection, selection);
     });
-  }, binding);
+  });
 }

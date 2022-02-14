@@ -11,6 +11,7 @@ import type {Settings as AppSettings} from '../../src/appSettings';
 import {chromium, firefox, webkit} from 'playwright';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
+import {selectAll} from '../keyboardShortcuts';
 
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
@@ -58,6 +59,9 @@ export function initializeE2E(runTests, config: Config = {}) {
   if (IS_COLLAB) {
     appSettings.isCollab =
       process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+  }
+  if (appSettings.showNestedEditorTreeView === undefined) {
+    appSettings.showNestedEditorTreeView = true;
   }
   const e2e = {
     isRichText: appSettings.isRichText,
@@ -403,7 +407,8 @@ export async function sleep(delay) {
   await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
-export async function focusEditor(page) {
+export async function focusEditor(page, parentSelector = '.editor-shell') {
+  const selector = `${parentSelector} div[contenteditable="true"]`;
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     if ((await leftFrame.$$('.loading').length) !== 0) {
@@ -412,9 +417,9 @@ export async function focusEditor(page) {
       });
       await sleep(500);
     }
-    await leftFrame.focus('div[contenteditable="true"]');
+    await leftFrame.focus(selector);
   } else {
-    await page.focus('div[contenteditable="true"]');
+    await page.focus(selector);
   }
 }
 
@@ -469,5 +474,27 @@ export async function evaluate(page, fn, args) {
     return await leftFrame.evaluate(fn, args);
   } else {
     return await page.evaluate(fn, args);
+  }
+}
+
+export async function clearEditor(page) {
+  await selectAll(page);
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Backspace');
+}
+
+export async function insertImage(page, caption = null) {
+  await waitForSelector(page, 'button .image');
+  await click(page, 'button .image');
+  await waitForSelector(page, '.editor-image img');
+
+  if (caption !== null) {
+    await click(page, '.editor-image img');
+    await click(page, '.image-caption-button');
+    await waitForSelector(page, '.editor-image img.focused', {
+      state: 'detached',
+    });
+    await focusEditor(page, '.image-caption-container');
+    await page.keyboard.type(caption);
   }
 }

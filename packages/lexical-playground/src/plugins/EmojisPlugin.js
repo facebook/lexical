@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalEditor, Selection} from 'lexical';
+import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
@@ -26,7 +26,7 @@ const emojis: Map<string, [string, string]> = new Map([
 ]);
 
 function findAndTransformEmoji(
-  selection: null | Selection,
+  selection: null | RangeSelection,
   node: TextNode,
 ): null | TextNode {
   const text = node.getTextContent();
@@ -63,12 +63,11 @@ function textNodeTransform(node: TextNode): void {
 
 function useEmojis(editor: LexicalEditor): void {
   useEffect(() => {
-    const unregisterNodes = editor.registerNodes([EmojiNode]);
-    const removeTransform = editor.addTransform(TextNode, textNodeTransform);
-    return () => {
-      unregisterNodes();
-      removeTransform();
-    };
+    if (!editor.hasNodes([EmojiNode])) {
+      throw new Error('EmojisPlugin: EmojiNode not registered on editor');
+    }
+
+    return editor.addTransform(TextNode, textNodeTransform);
   }, [editor]);
 }
 

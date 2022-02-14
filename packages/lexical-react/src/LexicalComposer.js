@@ -8,30 +8,46 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, DecoratorEditor} from 'lexical';
-import {createEditor} from 'lexical';
+import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
+
 import {
-  LexicalComposerContext,
   createLexicalComposerContext,
+  LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
+import {createEditor} from 'lexical';
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
   children: React$Node,
-  theme?: EditorThemeClasses,
-  initialDecoratorEditor?: DecoratorEditor,
+  initialConfig?: {
+    editor?: LexicalEditor | null,
+    namespace?: string,
+    nodes?: Array<Class<LexicalNode>>,
+    onError?: (Error) => void,
+    theme?: EditorThemeClasses,
+  },
 };
 
+function defaultOnError(e: Error): void {
+  throw e;
+}
+
 export default function LexicalComposer({
+  initialConfig = {},
   children,
-  initialDecoratorEditor,
-  theme,
 }: Props): React$MixedElement {
   const parentContext = useContext(LexicalComposerContext);
   const composerContext = useMemo(
     () => {
       let composerTheme: void | EditorThemeClasses;
       let parentEditor;
+      const {
+        theme,
+        namespace,
+        editor: initialEditor,
+        nodes,
+        onError,
+      } = initialConfig;
 
       if (theme != null) {
         composerTheme = theme;
@@ -43,34 +59,32 @@ export default function LexicalComposer({
         }
       }
 
-      const config = {theme: composerTheme || {}, parentEditor};
       const context: LexicalComposerContextType = createLexicalComposerContext(
         parentContext,
         composerTheme,
       );
-      let editor =
-        initialDecoratorEditor !== undefined
-          ? initialDecoratorEditor.editor
-          : null;
+      let editor = initialEditor || null;
 
       if (editor === null) {
         editor = createEditor<LexicalComposerContextType>({
-          ...config,
           context,
+          namespace,
+          nodes,
+          parentEditor,
+          theme: composerTheme,
         });
-      } else {
-        editor._config = {
-          ...config,
-          context,
-        };
+
+        editor.addListener('error', onError || defaultOnError);
       }
 
       return [editor, context];
     },
 
+    // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [theme],
+    [],
   );
+
   return (
     <LexicalComposerContext.Provider value={composerContext}>
       {children}

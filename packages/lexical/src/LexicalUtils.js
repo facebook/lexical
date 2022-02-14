@@ -8,29 +8,39 @@
  */
 
 import type {
-  LexicalEditor,
   IntentionallyMarkedAsDirtyElement,
+  LexicalEditor,
   RegisteredNode,
 } from './LexicalEditor';
-import type {RootNode} from './nodes/base/LexicalRootNode';
-import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
-import type {TextNode, TextFormatType} from './nodes/base/LexicalTextNode';
-import type {Node as ReactNode} from 'react';
 import type {EditorState} from './LexicalEditorState';
-import type {Selection} from './LexicalSelection';
+import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
+import type {RangeSelection} from './LexicalSelection';
+import type {RootNode} from './nodes/base/LexicalRootNode';
+import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
+import type {Node as ReactNode} from 'react';
+
+import {IS_APPLE} from 'shared/environment';
+import invariant from 'shared/invariant';
 
 import {
-  RTL_REGEX,
-  LTR_REGEX,
-  TEXT_TYPE_TO_FORMAT,
-  HAS_DIRTY_NODES,
-} from './LexicalConstants';
-import {
-  $isTextNode,
-  $isElementNode,
-  $isLineBreakNode,
+  $createTextNode,
+  $getPreviousSelection,
+  $getSelection,
   $isDecoratorNode,
+  $isElementNode,
+  $isHorizontalRuleNode,
+  $isLineBreakNode,
+  $isTextNode,
 } from '.';
+import {
+  DOM_TEXT_TYPE,
+  HAS_DIRTY_NODES,
+  LTR_REGEX,
+  NO_BREAK_SPACE_CHAR,
+  RTL_REGEX,
+  TEXT_TYPE_TO_FORMAT,
+} from './LexicalConstants';
+import {flushRootMutations} from './LexicalMutations';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -38,8 +48,6 @@ import {
   getActiveEditorState,
   updateEditor,
 } from './LexicalUpdates';
-import {flushRootMutations} from './LexicalMutations';
-import invariant from 'shared/invariant';
 
 export const emptyFunction = () => {};
 
@@ -57,7 +65,7 @@ export function getRegisteredNodeOrThrow(
   editor: LexicalEditor,
   nodeType: string,
 ): RegisteredNode {
-  const registeredNode = editor._registeredNodes.get(nodeType);
+  const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'registeredNode: Type %s not found', nodeType);
   }
@@ -105,13 +113,17 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
 }
 
 export function $isTokenOrInertOrSegmented(node: TextNode): boolean {
-  return node.isToken() || node.isInert() || node.isSegmented();
+  return $isTokenOrInert(node) || node.isSegmented();
+}
+
+export function $isTokenOrInert(node: TextNode): boolean {
+  return node.isToken() || node.isInert();
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
-    if (node.nodeType === 3) {
+    if (node.nodeType === DOM_TEXT_TYPE) {
       // $FlowFixMe: this is a Text
       return node;
     }
@@ -143,7 +155,12 @@ export function toggleTextFormatType(
 }
 
 export function $isLeafNode(node: ?LexicalNode): boolean %checks {
-  return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
+  return (
+    $isTextNode(node) ||
+    $isLineBreakNode(node) ||
+    $isDecoratorNode(node) ||
+    $isHorizontalRuleNode(node)
+  );
 }
 
 export function $generateKey(node: LexicalNode): NodeKey {
@@ -241,8 +258,11 @@ export function $getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
-export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null {
-  const editorState = getActiveEditorState();
+export function $getNodeByKey<N: LexicalNode>(
+  key: NodeKey,
+  _editorState?: EditorState,
+): N | null {
+  const editorState = _editorState || getActiveEditorState();
   const node = editorState._nodeMap.get(key);
   if (node === undefined) {
     return null;
@@ -250,22 +270,26 @@ export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null {
   return (node: $FlowFixMe);
 }
 
-export function getNodeFromDOMNode(dom: Node): LexicalNode | null {
+export function getNodeFromDOMNode(
+  dom: Node,
+  editorState?: EditorState,
+): LexicalNode | null {
   const editor = getActiveEditor();
   // $FlowFixMe: internal field
   const key: NodeKey | undefined = dom['__lexicalKey_' + editor._key];
   if (key !== undefined) {
-    return $getNodeByKey(key);
+    return $getNodeByKey(key, editorState);
   }
   return null;
 }
 
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
+  editorState?: EditorState,
 ): LexicalNode | null {
   let dom = startingDOM;
   while (dom != null) {
-    const node = getNodeFromDOMNode(dom);
+    const node = getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
       return node;
     }
@@ -321,12 +345,14 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
   );
 }
 
-export function $getRoot(): RootNode {
-  // $FlowFixMe: root is always in our Map
-  return ((getActiveEditorState()._nodeMap.get('root'): any): RootNode);
+export function $getRoot(editorState?: EditorState): RootNode {
+  return (((editorState || getActiveEditorState())._nodeMap.get(
+    'root',
+    // $FlowFixMe: root is always in our Map
+  ): any): RootNode);
 }
 
-export function $setSelection(selection: null | Selection): void {
+export function $setSelection(selection: null | RangeSelection): void {
   const editorState = getActiveEditorState();
   editorState._selection = selection;
 }
@@ -348,10 +374,6 @@ export function getNodeFromDOM(dom: Node): null | LexicalNode {
     return null;
   }
   return $getNodeByKey(nodeKey);
-}
-
-export function domIsElement(dom: Node): boolean {
-  return dom.nodeType === 1;
 }
 
 export function getTextNodeOffset(
@@ -400,4 +422,372 @@ export function createUID(): string {
     .toString(36)
     .replace(/[^a-z]+/g, '')
     .substr(0, 5);
+}
+
+export function $updateSelectedTextFromDOM(
+  editor: LexicalEditor,
+  compositionEnd: boolean,
+): void {
+  // Update the text content with the latest composition text
+  const domSelection = window.getSelection();
+  if (domSelection === null) {
+    return;
+  }
+  const {anchorNode, anchorOffset, focusOffset} = domSelection;
+  if (anchorNode !== null && anchorNode.nodeType === DOM_TEXT_TYPE) {
+    const node = $getNearestNodeFromDOMNode(anchorNode);
+    if ($isTextNode(node)) {
+      $updateTextNodeFromDOMContent(
+        node,
+        anchorNode.nodeValue,
+        anchorOffset,
+        focusOffset,
+        compositionEnd,
+      );
+    }
+  }
+}
+
+export function $updateTextNodeFromDOMContent(
+  textNode: TextNode,
+  textContent: string,
+  anchorOffset: null | number,
+  focusOffset: null | number,
+  compositionEnd: boolean,
+): void {
+  let node = textNode;
+  if (node.isAttached() && (compositionEnd || !node.isDirty())) {
+    const isComposing = node.isComposing();
+    let normalizedTextContent = textContent;
+
+    if (
+      (isComposing || compositionEnd) &&
+      textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
+    ) {
+      normalizedTextContent = textContent.slice(0, -1);
+    }
+    const prevTextContent = node.getTextContent();
+
+    if (compositionEnd || normalizedTextContent !== prevTextContent) {
+      if (normalizedTextContent === '') {
+        if (isComposing) {
+          $setCompositionKey(null);
+        }
+        node.remove();
+        return;
+      }
+      const parent = node.getParent();
+      const prevSelection = $getPreviousSelection();
+
+      if (
+        $isTokenOrInert(node) ||
+        ($getCompositionKey() !== null && !isComposing) ||
+        // Check if character was added at the start, and we need
+        // to clear this input from occuring as that action wasn't
+        // permitted.
+        (parent !== null &&
+          prevSelection !== null &&
+          !parent.canInsertTextBefore() &&
+          prevSelection.anchor.offset === 0)
+      ) {
+        node.markDirty();
+        return;
+      }
+      const selection = $getSelection();
+
+      if (selection === null || anchorOffset === null || focusOffset === null) {
+        node.setTextContent(normalizedTextContent);
+        return;
+      }
+      selection.setTextNodeRange(node, anchorOffset, node, focusOffset);
+
+      if (node.isSegmented()) {
+        const originalTextContent = node.getTextContent();
+        const replacement = $createTextNode(originalTextContent);
+        node.replace(replacement);
+        node = replacement;
+      }
+      node = node.setTextContent(normalizedTextContent);
+    }
+  }
+}
+
+function $shouldInsertTextAfterOrBeforeTextNode(
+  selection: RangeSelection,
+  node: TextNode,
+): boolean {
+  if (node.isSegmented()) {
+    return true;
+  }
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const offset = selection.anchor.offset;
+  const parent = node.getParentOrThrow();
+  const isToken = node.isToken();
+  const shouldInsertTextBefore =
+    offset === 0 &&
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
+  const shouldInsertTextAfter =
+    node.getTextContentSize() === offset &&
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
+  return shouldInsertTextBefore || shouldInsertTextAfter;
+}
+
+export function $shouldPreventDefaultAndInsertText(
+  selection: RangeSelection,
+  text: string,
+  isBeforeInput: boolean,
+): boolean {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+
+  return (
+    anchor.key !== focus.key ||
+    // If we're working with a range that is not during composition.
+    (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
+    // If the text length is more than a single character and we're either
+    // dealing with this in "beforeinput" or where the node has already recently
+    // been changed (thus is dirty).
+    ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
+    // If we're working with a non-text node.
+    !$isTextNode(anchorNode) ||
+    // Check if we're changing from bold to italics, or some other format.
+    anchorNode.getFormat() !== selection.format ||
+    // One last set of heuristics to check against.
+    $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
+  );
+}
+
+export function isTab(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return keyCode === 9 && !altKey && !ctrlKey && !metaKey;
+}
+
+export function isBold(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 66 && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isItalic(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 73 && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isUnderline(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 85 && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isParagraph(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && !shiftKey;
+}
+
+export function isLineBreak(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && shiftKey;
+}
+
+// Inserts a new line after the selection
+export function isOpenLineBreak(keyCode: number, ctrlKey: boolean): boolean {
+  // 79 = KeyO
+  return IS_APPLE && ctrlKey && keyCode === 79;
+}
+
+export function isDeleteWordBackward(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return isBackspace(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+}
+
+export function isDeleteWordForward(
+  keyCode: number,
+  altKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return isDelete(keyCode) && (IS_APPLE ? altKey : ctrlKey);
+}
+
+export function isDeleteLineBackward(
+  keyCode: number,
+  metaKey: boolean,
+): boolean {
+  return IS_APPLE && metaKey && isBackspace(keyCode);
+}
+
+export function isDeleteLineForward(
+  keyCode: number,
+  metaKey: boolean,
+): boolean {
+  return IS_APPLE && metaKey && isDelete(keyCode);
+}
+
+export function isDeleteBackward(
+  keyCode: number,
+  altKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    if (altKey || metaKey) {
+      return false;
+    }
+    return isBackspace(keyCode) || (keyCode === 72 && ctrlKey);
+  }
+  if (ctrlKey || altKey || metaKey) {
+    return false;
+  }
+  return isBackspace(keyCode);
+}
+
+export function isDeleteForward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    if (shiftKey || altKey || metaKey) {
+      return false;
+    }
+    return isDelete(keyCode) || (keyCode === 68 && ctrlKey);
+  }
+  if (ctrlKey || altKey || metaKey) {
+    return false;
+  }
+  return isDelete(keyCode);
+}
+
+export function isUndo(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 90 && !shiftKey && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function isRedo(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (IS_APPLE) {
+    return keyCode === 90 && metaKey && shiftKey;
+  }
+  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
+}
+
+function isArrowLeft(keyCode: number): boolean {
+  return keyCode === 37;
+}
+
+function isArrowRight(keyCode: number): boolean {
+  return keyCode === 39;
+}
+
+function isArrowUp(keyCode: number): boolean {
+  return keyCode === 38;
+}
+
+function isArrowDown(keyCode: number): boolean {
+  return keyCode === 40;
+}
+
+export function isMoveBackward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowLeft(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+export function isMoveForward(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowRight(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+export function isMoveUp(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowUp(keyCode) && !ctrlKey && !metaKey;
+}
+
+export function isMoveDown(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowDown(keyCode) && !ctrlKey && !metaKey;
+}
+
+export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
+  if (IS_APPLE) {
+    return metaKey;
+  }
+  return ctrlKey;
+}
+
+export function isReturn(keyCode: number): boolean {
+  return keyCode === 13;
+}
+
+export function isBackspace(keyCode: number): boolean {
+  return keyCode === 8;
+}
+
+export function isEscape(keyCode: number): boolean {
+  return keyCode === 27;
+}
+
+export function isDelete(keyCode: number): boolean {
+  return keyCode === 46;
+}
+
+export function getCachedClassNameArray<Theme: {...}>(
+  classNamesTheme: Theme,
+  classNameThemeType: string,
+): Array<string> | void {
+  const classNames = classNamesTheme[classNameThemeType];
+  // As we're using classList, we need
+  // to handle className tokens that have spaces.
+  // The easiest way to do this to convert the
+  // className tokens to an array that can be
+  // applied to classList.add()/remove().
+  if (typeof classNames === 'string') {
+    const classNamesArr = classNames.split(' ');
+    classNamesTheme[classNameThemeType] = classNamesArr;
+    return classNamesArr;
+  }
+  return classNames;
 }

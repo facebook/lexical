@@ -9,14 +9,14 @@
 
 import type {State} from 'lexical';
 
-import {$createTextNode, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
 import {
   $isTextContentEmpty,
   $isTextContentEmptyCurry,
   $textContent,
   $textContentCurry,
 } from '@lexical/helpers/root';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 describe('LexicalRootHelpers tests', () => {

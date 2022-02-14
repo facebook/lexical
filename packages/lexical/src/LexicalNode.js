@@ -8,19 +8,27 @@
  */
 
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
-import type {Selection} from './LexicalSelection';
+import type {RangeSelection} from './LexicalSelection';
+
+import invariant from 'shared/invariant';
 
 import {
-  $isElementNode,
-  $isTextNode,
-  $isRootNode,
-  ElementNode,
   $isDecoratorNode,
+  $isElementNode,
+  $isRootNode,
+  $isTextNode,
+  ElementNode,
 } from '.';
 import {
-  getActiveEditorState,
+  $getSelection,
+  $moveSelectionPointToEnd,
+  $updateElementSelectionOnCreateDeleteNode,
+  moveSelectionPointToSibling,
+} from './LexicalSelection';
+import {
   errorOnReadOnly,
   getActiveEditor,
+  getActiveEditorState,
 } from './LexicalUpdates';
 import {
   $generateKey,
@@ -30,13 +38,6 @@ import {
   $internallyMarkSiblingsAsDirty,
   $setCompositionKey,
 } from './LexicalUtils';
-import invariant from 'shared/invariant';
-import {
-  $getSelection,
-  $moveSelectionPointToEnd,
-  $updateElementSelectionOnCreateDeleteNode,
-  moveSelectionPointToSibling,
-} from './LexicalSelection';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -56,11 +57,23 @@ export function removeNode(
     const anchor = selection.anchor;
     const focus = selection.focus;
     if (anchor.key === key) {
-      moveSelectionPointToSibling(anchor, nodeToRemove, parent);
+      moveSelectionPointToSibling(
+        anchor,
+        nodeToRemove,
+        parent,
+        nodeToRemove.getPreviousSibling(),
+        nodeToRemove.getNextSibling(),
+      );
       selectionMoved = true;
     }
     if (focus.key === key) {
-      moveSelectionPointToSibling(focus, nodeToRemove, parent);
+      moveSelectionPointToSibling(
+        focus,
+        nodeToRemove,
+        parent,
+        nodeToRemove.getPreviousSibling(),
+        nodeToRemove.getNextSibling(),
+      );
       selectionMoved = true;
     }
   }
@@ -667,7 +680,7 @@ export class LexicalNode {
     }
     return nodeToInsert;
   }
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection {
+  selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const prevSibling = this.getPreviousSibling();
     const parent = this.getParentOrThrow();
@@ -682,7 +695,7 @@ export class LexicalNode {
     }
     return prevSibling.select(anchorOffset, focusOffset);
   }
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection {
+  selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();
     const parent = this.getParentOrThrow();
@@ -719,12 +732,12 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Class<LexicalNode>,
 ): void {
-  const registeredNode = getActiveEditor()._registeredNodes.get(type);
+  const registeredNode = getActiveEditor()._nodes.get(type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(
       false,
-      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use editor.registerNode to register your custom nodes.',
+      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use register your custom nodes.',
       klass.name,
     );
   }

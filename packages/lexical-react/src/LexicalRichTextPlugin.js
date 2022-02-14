@@ -7,37 +7,24 @@
  * @flow strict
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
+import useDecorators from './shared/useDecorators';
 import {useRichTextSetup} from './shared/useRichTextSetup';
-import useLexicalDecorators from './useLexicalDecorators';
-import useLexicalCanShowPlaceholder from './useLexicalCanShowPlaceholder';
-import useLayoutEffect from 'shared/useLayoutEffect';
-
-function onErrorDefault(e: Error): void {
-  throw e;
-}
 
 export default function RichTextPlugin({
   contentEditable,
   placeholder,
-  skipInit,
-  onError,
 }: {
   contentEditable: React$Node,
   placeholder: React$Node,
-  skipInit?: boolean,
-  onError?: (error: Error, log: Array<string>) => void,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
-  const showPlaceholder = useLexicalCanShowPlaceholder(editor);
-  useRichTextSetup(editor, !skipInit);
-  const decorators = useLexicalDecorators(editor);
-
-  useLayoutEffect(() => {
-    return editor.addListener('error', onError || onErrorDefault);
-  }, [editor, onError]);
+  const showPlaceholder = useCanShowPlaceholder(editor);
+  useRichTextSetup(editor);
+  const decorators = useDecorators(editor);
 
   return (
     <>

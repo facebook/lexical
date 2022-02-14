@@ -8,52 +8,52 @@
  */
 
 import type {
-  NodeKey,
-  Selection,
-  LexicalEditor,
-  NodeMap,
   EditorState,
+  LexicalEditor,
+  NodeKey,
+  NodeMap,
+  RangeSelection,
 } from 'lexical';
 
 import {
-  $createSelection,
+  $createRangeSelection,
+  $getNodeByKey,
   $isElementNode,
   $isTextNode,
-  $getNodeByKey,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 type OffsetElementNode = {
-  type: 'element',
   child: null | OffsetNode,
-  prev: null | OffsetNode,
-  next: null | OffsetNode,
-  start: number,
   end: number,
   key: NodeKey,
+  next: null | OffsetNode,
   parent: null | OffsetElementNode,
+  prev: null | OffsetNode,
+  start: number,
+  type: 'element',
 };
 
 type OffsetTextNode = {
-  type: 'text',
   child: null,
-  prev: null | OffsetNode,
-  next: null | OffsetNode,
-  start: number,
   end: number,
   key: NodeKey,
+  next: null | OffsetNode,
   parent: null | OffsetElementNode,
+  prev: null | OffsetNode,
+  start: number,
+  type: 'text',
 };
 
 type OffsetInlineNode = {
-  type: 'inline',
   child: null,
-  prev: null | OffsetNode,
-  next: null | OffsetNode,
-  start: number,
   end: number,
   key: NodeKey,
+  next: null | OffsetNode,
   parent: null | OffsetElementNode,
+  prev: null | OffsetNode,
+  start: number,
+  type: 'inline',
 };
 
 type OffsetNode = OffsetElementNode | OffsetTextNode | OffsetInlineNode;
@@ -79,7 +79,7 @@ export class OffsetView {
     originalStart: number,
     originalEnd: number,
     diffOffsetView?: OffsetView,
-  ): null | Selection {
+  ): null | RangeSelection {
     const firstNode = this._firstNode;
     if (firstNode === null) {
       return null;
@@ -168,7 +168,7 @@ export class OffsetView {
       endOffset =
         end > endOffsetNode.start ? endOffsetNode.end : endOffsetNode.start;
     }
-    const selection = $createSelection();
+    const selection = $createRangeSelection();
     if (selection === null) {
       return null;
     }
@@ -177,7 +177,7 @@ export class OffsetView {
     return selection;
   }
 
-  getOffsetsFromSelection(selection: Selection): [number, number] {
+  getOffsetsFromSelection(selection: RangeSelection): [number, number] {
     const anchor = selection.anchor;
     const focus = selection.focus;
     const offsetMap = this._offsetMap;
@@ -352,13 +352,13 @@ function $createInternalOffsetNode<N>(
   // $FlowFixMe: not sure why Flow doesn't like this?
   return {
     child,
-    prev: null,
-    next: null,
-    type,
-    start,
     end,
     key,
+    next: null,
     parent,
+    prev: null,
+    start,
+    type,
   };
 }
 

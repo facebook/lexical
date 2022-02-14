@@ -7,38 +7,40 @@
  * @flow strict
  */
 
-import type {NodeKey, NodeMap} from './LexicalNode';
 import type {
-  LexicalEditor,
   EditorConfig,
   IntentionallyMarkedAsDirtyElement,
+  LexicalEditor,
 } from './LexicalEditor';
-import type {Selection as LexicalSelection} from './LexicalSelection';
-import type {Node as ReactNode} from 'react';
+import type {NodeKey, NodeMap} from './LexicalNode';
+import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
+import type {Node as ReactNode} from 'react';
 
-import {EditorState} from './LexicalEditorState';
-import {
-  isSelectionWithinEditor,
-  getDOMTextNode,
-  cloneDecorators,
-  getTextDirection,
-} from './LexicalUtils';
-import {
-  FULL_RECONCILE,
-  IS_ALIGN_LEFT,
-  IS_ALIGN_CENTER,
-  IS_ALIGN_RIGHT,
-  IS_ALIGN_JUSTIFY,
-} from './LexicalConstants';
+import invariant from 'shared/invariant';
+
 import {
   $isDecoratorNode,
   $isElementNode,
-  $isTextNode,
   $isLineBreakNode,
   $isRootNode,
+  $isTextNode,
 } from '.';
-import invariant from 'shared/invariant';
+import {
+  DOM_TEXT_TYPE,
+  FULL_RECONCILE,
+  IS_ALIGN_CENTER,
+  IS_ALIGN_JUSTIFY,
+  IS_ALIGN_LEFT,
+  IS_ALIGN_RIGHT,
+} from './LexicalConstants';
+import {EditorState} from './LexicalEditorState';
+import {
+  cloneDecorators,
+  getDOMTextNode,
+  getTextDirection,
+  isSelectionWithinEditor,
+} from './LexicalUtils';
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
@@ -153,11 +155,14 @@ function createNode(
   } else {
     if ($isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
+      const text = node.getTextContent();
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
       // Decorators are always non editable
       dom.contentEditable = 'false';
+      subTreeTextContent += text;
+      editorTextContent += text;
     } else {
       const text = node.getTextContent();
       if ($isTextNode(node)) {
@@ -603,7 +608,7 @@ function reconcileRoot(
   prevEditorState: EditorState,
   nextEditorState: EditorState,
   editor: LexicalEditor,
-  selection: null | LexicalSelection,
+  selection: null | RangeSelection,
   dirtyType: 0 | 1 | 2,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
@@ -649,8 +654,8 @@ export function updateEditorState(
   rootElement: HTMLElement,
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
-  currentSelection: LexicalSelection | null,
-  pendingSelection: LexicalSelection | null,
+  currentSelection: RangeSelection | null,
+  pendingSelection: RangeSelection | null,
   needsUpdate: boolean,
   editor: LexicalEditor,
 ): void {
@@ -674,9 +679,9 @@ export function updateEditorState(
       );
     } finally {
       observer.observe(rootElement, {
+        characterData: true,
         childList: true,
         subtree: true,
-        characterData: true,
       });
     }
   }
@@ -695,9 +700,10 @@ export function updateEditorState(
   }
 }
 
-function scrollIntoViewIfNeeded(node: Node): void {
-  // $FlowFixMe: this is valid, as we are checking the nodeType
-  const element: Element = node.nodeType === 3 ? node.parentNode : node;
+function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
+  const element: Element =
+    // $FlowFixMe: this is valid, as we are checking the nodeType
+    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node;
   if (element !== null) {
     const rect = element.getBoundingClientRect();
 
@@ -705,13 +711,20 @@ function scrollIntoViewIfNeeded(node: Node): void {
       element.scrollIntoView(false);
     } else if (rect.top < 0) {
       element.scrollIntoView();
+    } else if (rootElement) {
+      const rootRect = rootElement.getBoundingClientRect();
+      if (rect.bottom > rootRect.bottom) {
+        element.scrollIntoView(false);
+      } else if (rect.top < rootRect.top) {
+        element.scrollIntoView();
+      }
     }
   }
 }
 
 function reconcileSelection(
-  prevSelection: LexicalSelection | null,
-  nextSelection: LexicalSelection | null,
+  prevSelection: RangeSelection | null,
+  nextSelection: RangeSelection | null,
   editor: LexicalEditor,
   domSelection: Selection,
 ): void {
@@ -800,7 +813,7 @@ function reconcileSelection(
       nextFocusOffset,
     );
     if (nextSelection.isCollapsed() && rootElement === activeElement) {
-      scrollIntoViewIfNeeded(nextAnchorNode);
+      scrollIntoViewIfNeeded(nextAnchorNode, rootElement);
     }
   } catch (error) {
     // If we encounter an error, continue. This can sometimes

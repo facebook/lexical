@@ -2,8 +2,8 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', sans-serif;
-  font-weight: 500;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #eee;
@@ -35,7 +35,7 @@ header h1 {
 .editor-shell {
   margin: 20px auto 20px auto;
   border-radius: 2px;
-  width: 900px;
+  width: 1000px;
   color: #000;
   position: relative;
   line-height: 20px;
@@ -62,7 +62,7 @@ header h1 {
 
 .test-recorder-output {
   margin: 20px auto 20px auto;
-  width: 900px;
+  width: 1000px;
 }
 
 pre {
@@ -86,7 +86,6 @@ pre {
   white-space: pre-wrap;
   margin: 1px auto 10px auto;
   max-height: 250px;
-  width: 900px;
   position: relative;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -121,7 +120,7 @@ pre::-webkit-scrollbar-thumb {
 }
 
 .editor-dev-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 10px;
   right: 10px;
@@ -169,7 +168,7 @@ pre::-webkit-scrollbar-thumb {
 }
 
 .test-recorder-button::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 8px;
   right: 8px;
@@ -250,18 +249,18 @@ pre::-webkit-scrollbar-thumb {
 }
 
 .link-editor {
-  padding: 4px;
   position: absolute;
   z-index: 100;
   top: -10000px;
   left: -10000px;
   margin-top: -6px;
+  max-width: 400px;
+  width: 100%;
   opacity: 0;
   background-color: #fff;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   transition: opacity 0.5s;
-  display: flex;
 }
 
 .link-editor .button {
@@ -281,7 +280,8 @@ pre::-webkit-scrollbar-thumb {
   background-color: #eee;
 }
 
-.link-editor .button i, .actions i {
+.link-editor .button i,
+.actions i {
   background-size: contain;
   display: inline-block;
   height: 20px;
@@ -321,12 +321,20 @@ i.link {
   background-image: url(images/icons/link.svg);
 }
 
+i.horizontal-rule {
+  background-image: url(images/icons/horizontal-rule.svg);
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }
 
 i.table {
   background-image: url(images/icons/table.svg);
+}
+
+i.poll {
+  background-image: url(images/icons/card-checklist.svg);
 }
 
 i.left-align {
@@ -377,34 +385,42 @@ i.export {
   background-image: url(images/icons/download.svg);
 }
 
-.link-editor .button.active, .toolbar .button.active {
+i.diagram-2 {
+  background-image: url(images/icons/diagram-2.svg);
+}
+
+.link-editor .button.active,
+.toolbar .button.active {
   background-color: rgb(223, 232, 250);
 }
 
 .link-editor .link-input {
-  display: inline-block;
-  margin: 0 2px;
+  display: block;
+  width: calc(100% - 24px);
+  box-sizing: border-box;
+  margin: 8px 12px;
   padding: 8px 12px;
   border-radius: 15px;
-  background-color: rgb(240, 242, 245);
+  background-color: #eee;
   font-size: 15px;
   color: rgb(5, 5, 5);
-  min-width: 200px;
   border: 0;
   outline: 0;
   position: relative;
+  font-family: inherit;
 }
 
 .link-editor div.link-edit {
   background-image: url(images/icons/pencil-fill.svg);
-  background-size: contain;
-  display: inline-block;
-  height: 16px;
-  width: 16px;
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 35px;
   vertical-align: -0.25em;
   position: absolute;
-  right: 10px;
-  top: 10px;
+  right: 0;
+  top: 0;
+  bottom: 0;
   cursor: pointer;
 }
 
@@ -412,13 +428,18 @@ i.export {
   color: rgb(33, 111, 219);
   text-decoration: none;
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  margin-right: 30px;
+  text-overflow: ellipsis;
 }
 
 .link-editor .link-input a:hover {
   text-decoration: underline;
 }
 
-.link-editor .font-size-wrapper, .link-editor .font-family-wrapper {
+.link-editor .font-size-wrapper,
+.link-editor .font-family-wrapper {
   display: flex;
   margin: 0 4px;
 }
@@ -523,7 +544,8 @@ i.export {
   z-index: 5;
   display: block;
   position: absolute;
-  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   min-width: 100px;
   min-height: 40px;
@@ -571,7 +593,7 @@ i.export {
   display: flex;
   line-height: 20px;
   flex-grow: 1;
-  width: 200px
+  width: 200px;
 }
 
 .dropdown .item .icon {
@@ -588,19 +610,23 @@ i.export {
   background-image: url(images/icons/text-paragraph.svg);
 }
 
-.icon.large-heading, .icon.h1 {
+.icon.large-heading,
+.icon.h1 {
   background-image: url(images/icons/type-h1.svg);
 }
 
-.icon.small-heading, .icon.h2 {
+.icon.small-heading,
+.icon.h2 {
   background-image: url(images/icons/type-h2.svg);
 }
 
-.icon.bullet-list, .icon.ul {
+.icon.bullet-list,
+.icon.ul {
   background-image: url(images/icons/list-ul.svg);
 }
 
-.icon.numbered-list, .icon.ol {
+.icon.numbered-list,
+.icon.ol {
   background-image: url(images/icons/list-ol.svg);
 }
 
@@ -688,11 +714,11 @@ i.export {
   transition: transform 0.2s;
 }
 
-.switch button[aria-checked="true"] {
+.switch button[aria-checked='true'] {
   background-color: rgb(24, 119, 242);
 }
 
-.switch button[aria-checked="true"] span {
+.switch button[aria-checked='true'] span {
   transform: translateX(20px);
 }
 
@@ -707,8 +733,13 @@ i.export {
 }
 
 .editor-shell .editor-image img.focused {
-  outline: 2px solid rgb(60,132,244);
+  outline: 2px solid rgb(60, 132, 244);
   user-select: none;
+}
+
+.editor-shell .editor-image .image-caption-container .tree-view-output {
+  margin: 0;
+  border-radius: 0;
 }
 
 .editor-shell .editor-image .image-caption-container {
@@ -718,10 +749,9 @@ i.export {
   left: 0;
   right: 0;
   padding: 0;
-  height: 40px;
   margin: 0;
   border-top: 1px solid #fff;
-  background-color: rgba(255,255,255,0.9);
+  background-color: rgba(255, 255, 255, 0.9);
   min-width: 100px;
   color: #000;
   overflow: hidden;
@@ -736,9 +766,9 @@ i.export {
   width: 30%;
   padding: 10px;
   margin: 0 auto;
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 5px;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   min-width: 100px;
   color: #fff;
   cursor: pointer;
@@ -746,7 +776,7 @@ i.export {
 }
 
 .editor-shell .editor-image .image-caption-button:hover {
-  background-color: rgba(60,132,244, 0.5);
+  background-color: rgba(60, 132, 244, 0.5);
 }
 
 .editor-shell .editor-image .image-resizer-sw {
@@ -756,7 +786,7 @@ i.export {
   position: absolute;
   bottom: -2px;
   left: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: sw-resize;
 }
@@ -768,7 +798,7 @@ i.export {
   position: absolute;
   top: -6px;
   right: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: ne-resize;
 }
@@ -780,7 +810,7 @@ i.export {
   position: absolute;
   top: -6px;
   left: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: nw-resize;
 }
@@ -792,7 +822,7 @@ i.export {
   position: absolute;
   bottom: -2px;
   right: -6px;
-  background-color: rgb(60,132,244);
+  background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: nwse-resize;
 }
@@ -944,16 +974,21 @@ i.chevron-down {
 }
 
 @keyframes mic-pulsate-color {
-  0% { background-color: #ffdcdc; }
-  50% { background-color: #ff8585; }
-  100% { background-color: #ffdcdc; }
+  0% {
+    background-color: #ffdcdc;
+  }
+  50% {
+    background-color: #ff8585;
+  }
+  100% {
+    background-color: #ffdcdc;
+  }
 }
 
 .debug-timetravel-panel {
   overflow: hidden;
   padding: 0 0 10px 0;
   margin: auto;
-  width: 900px;
   display: flex;
 }
 
@@ -1142,7 +1177,7 @@ i.chevron-down {
   margin: 25px;
   padding: 20px 10px;
   position: absolute;
-  border: 1px solid #E8E8E8;
+  border: 1px solid #e8e8e8;
   font-family: 'Reenie Beanie';
   font-size: 24px;
   border-bottom-right-radius: 60px 5px;
@@ -1151,25 +1186,38 @@ i.chevron-down {
 }
 
 .sticky-note:after {
-  content: "";
+  content: '';
   position: absolute;
   z-index: -1;
-  right: -0px; bottom:20px;
+  right: -0px;
+  bottom: 20px;
   width: 120px;
   height: 25px;
   background: rgba(0, 0, 0, 0.2);
-  box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.40);
+  box-shadow: 2px 15px 5px rgba(0, 0, 0, 0.4);
   transform: matrix(-1, -0.1, 0, 1, 0, 0);
 }
 
 .sticky-note.yellow {
   border-top: 1px solid #fdfd86;
-  background: linear-gradient(135deg, #ffff88 81%,#ffff88 82%,#ffff88 82%,#ffffc6 100%);
+  background: linear-gradient(
+    135deg,
+    #ffff88 81%,
+    #ffff88 82%,
+    #ffff88 82%,
+    #ffffc6 100%
+  );
 }
 
 .sticky-note.pink {
   border-top: 1px solid #e7d1e4;
-  background: linear-gradient(135deg, #f7cbe8 81%,#f7cbe8 82%,#f7cbe8 82%,#e7bfe1 100%);
+  background: linear-gradient(
+    135deg,
+    #f7cbe8 81%,
+    #f7cbe8 82%,
+    #f7cbe8 82%,
+    #e7bfe1 100%
+  );
 }
 
 .sticky-note.dragging {
@@ -1215,4 +1263,12 @@ i.chevron-down {
   width: 12px;
   height: 12px;
   background-size: contain;
+}
+
+.PollNode__optionCheckboxChecked {
+  background-image: url(images/icons/check-lg.svg);
+}
+
+.PollNode__optionDelete {
+  background-image: url(images/icons/x-lg.svg);
 }

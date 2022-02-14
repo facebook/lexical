@@ -8,22 +8,35 @@
  */
 
 import type {LexicalEditor} from '../../LexicalEditor';
+import type {EditorState} from '../../LexicalEditorState';
 import type {NodeKey} from '../../LexicalNode';
 import type {Node as ReactNode} from 'react';
-import type {EditorState} from '../../LexicalEditorState';
+
+import invariant from 'shared/invariant';
 
 import {LexicalNode} from '../../LexicalNode';
-import invariant from 'shared/invariant';
+import {getActiveEditor} from '../../LexicalUpdates';
 import {createUID} from '../../LexicalUtils';
-import {getActiveEditor, triggerListeners} from '../../LexicalUpdates';
 
 export type DecoratorStateValue =
   | DecoratorMap
   | DecoratorEditor
+  | DecoratorArray
   | null
   | boolean
   | number
   | string;
+
+export type DecoratorMapObserver = (
+  key: string,
+  value: DecoratorStateValue,
+) => void;
+
+export type DecoratorArrayObserver = (
+  index: number,
+  delCont: number,
+  value: void | DecoratorStateValue,
+) => void;
 
 function isStringified(
   editorState: null | EditorState | string,
@@ -61,18 +74,18 @@ export class DecoratorEditor {
   }
 
   toJSON(): $ReadOnly<{
+    editorState: null | string,
     id: string,
     type: 'editor',
-    editorState: null | string,
   }> {
     const editorState = this.editorState;
     return {
-      id: this.id,
-      type: 'editor',
       editorState:
         editorState === null || isStringified(editorState)
           ? editorState
           : JSON.stringify(editorState.toJSON()),
+      id: this.id,
+      type: 'editor',
     };
   }
 
@@ -94,10 +107,12 @@ export function isDecoratorEditor(x?: mixed): boolean %checks {
 
 export class DecoratorMap {
   _editor: LexicalEditor;
+  _observers: Set<DecoratorMapObserver>;
   _map: Map<string, DecoratorStateValue>;
 
   constructor(editor: LexicalEditor, map?: Map<string, DecoratorStateValue>) {
     this._editor = editor;
+    this._observers = new Set();
     this._map = map || new Map();
   }
 
@@ -111,16 +126,31 @@ export class DecoratorMap {
 
   set(key: string, value: DecoratorStateValue): void {
     this._map.set(key, value);
-    triggerListeners('decoratorstate', this._editor, false, this, key);
+    const observers = Array.from(this._observers);
+    for (let i = 0; i < observers.length; i++) {
+      observers[i](key, value);
+    }
+  }
+
+  observe(observer: DecoratorMapObserver): () => void {
+    const observers = this._observers;
+    observers.add(observer);
+    return () => {
+      observers.delete(observer);
+    };
+  }
+
+  destroy(): void {
+    this._observers.clear();
   }
 
   toJSON(): $ReadOnly<{
-    type: 'map',
     map: Array<[string, DecoratorStateValue]>,
+    type: 'map',
   }> {
     return {
-      type: 'map',
       map: Array.from(this._map.entries()),
+      type: 'map',
     };
   }
 }
@@ -134,6 +164,104 @@ export function createDecoratorMap(
 
 export function isDecoratorMap(x?: mixed): boolean %checks {
   return x instanceof DecoratorMap;
+}
+
+export class DecoratorArray {
+  _editor: LexicalEditor;
+  _observers: Set<DecoratorArrayObserver>;
+  _array: Array<DecoratorStateValue>;
+
+  constructor(editor: LexicalEditor, array?: Array<DecoratorStateValue>) {
+    this._editor = editor;
+    this._observers = new Set();
+    this._array = array || [];
+  }
+
+  observe(observer: DecoratorArrayObserver): () => void {
+    const observers = this._observers;
+    observers.add(observer);
+    return () => {
+      observers.delete(observer);
+    };
+  }
+
+  getLength(): number {
+    return this._array.length;
+  }
+
+  map<V>(
+    fn: (DecoratorStateValue, number, Array<DecoratorStateValue>) => V,
+  ): Array<V> {
+    const res = [];
+    const arr = this._array;
+    for (let i = 0; i < arr.length; i++) {
+      const value = arr[i];
+      res.push(fn(value, i, arr));
+    }
+    return res;
+  }
+
+  reduce(
+    fn: (DecoratorStateValue, DecoratorStateValue) => DecoratorStateValue,
+    initial?: DecoratorStateValue,
+  ): DecoratorStateValue | void {
+    let accum = initial;
+    const arr = this._array;
+    for (let i = 0; i < arr.length; i++) {
+      const value = arr[i];
+      accum = accum !== undefined ? fn(accum, value) : value;
+    }
+    return accum;
+  }
+
+  push(value: DecoratorStateValue): void {
+    this.splice(this._array.length, 0, value);
+  }
+
+  splice(
+    insertIndex: number,
+    delCount: number,
+    value?: DecoratorStateValue,
+  ): void {
+    if (value === undefined) {
+      this._array.splice(insertIndex, delCount);
+    } else {
+      this._array.splice(insertIndex, delCount, value);
+    }
+    const observers = Array.from(this._observers);
+    for (let i = 0; i < observers.length; i++) {
+      observers[i](insertIndex, delCount, value);
+    }
+  }
+
+  indexOf(value: DecoratorStateValue): number {
+    return this._array.indexOf(value);
+  }
+
+  destroy(): void {
+    this._observers.clear();
+  }
+
+  toJSON(): $ReadOnly<{
+    array: Array<DecoratorStateValue>,
+    type: 'array',
+  }> {
+    return {
+      array: this._array,
+      type: 'array',
+    };
+  }
+}
+
+export function createDecoratorArray(
+  editor: LexicalEditor,
+  list?: Array<DecoratorStateValue>,
+): DecoratorArray {
+  return new DecoratorArray(editor, list);
+}
+
+export function isDecoratorArray(x?: mixed): boolean %checks {
+  return x instanceof DecoratorArray;
 }
 
 export class DecoratorNode extends LexicalNode {

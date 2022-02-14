@@ -7,35 +7,36 @@
  * @flow strict
  */
 
-import type {TextOperation, XmlText, XmlElement} from 'yjs';
+import type {Binding} from '.';
 import type {
   ElementNode,
-  NodeKey,
   IntentionallyMarkedAsDirtyElement,
+  NodeKey,
   NodeMap,
 } from 'lexical';
-import type {Binding} from '.';
+import type {TextOperation, XmlElement, XmlText} from 'yjs';
 
 import {
-  $getNodeByKeyOrThrow,
-  syncPropertiesFromLexical,
-  $createCollabNodeFromLexicalNode,
-  getOrInitCollabNodeFromSharedType,
-  createLexicalNodeFromCollabNode,
-  getPositionFromElementAndOffset,
-  syncPropertiesFromYjs,
-  spliceString,
-} from './Utils';
-import {CollabTextNode} from './CollabTextNode';
-import {CollabLineBreakNode} from './CollabLineBreakNode';
-import {
-  $isElementNode,
-  $isTextNode,
   $getNodeByKey,
   $isDecoratorNode,
+  $isElementNode,
+  $isTextNode,
 } from 'lexical';
-import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {Map as YMap} from 'yjs';
+
+import {CollabDecoratorNode} from './CollabDecoratorNode';
+import {CollabLineBreakNode} from './CollabLineBreakNode';
+import {CollabTextNode} from './CollabTextNode';
+import {
+  $createCollabNodeFromLexicalNode,
+  $getNodeByKeyOrThrow,
+  createLexicalNodeFromCollabNode,
+  getOrInitCollabNodeFromSharedType,
+  getPositionFromElementAndOffset,
+  spliceString,
+  syncPropertiesFromLexical,
+  syncPropertiesFromYjs,
+} from './Utils';
 
 export class CollabElementNode {
   _key: NodeKey;
@@ -149,7 +150,9 @@ export class CollabElementNode {
               delCount === 1 &&
               nodeIndex > 0 &&
               prevCollabNode instanceof CollabTextNode &&
-              length === nodeSize
+              length === nodeSize &&
+              // If the node has no keys, it's been deleted
+              Array.from(node._map.keys()).length === 0
             ) {
               // Merge the text node with previous.
               prevCollabNode._text += node._text;

@@ -7,18 +7,23 @@
  * @flow strict
  */
 
-import type {HistoryState} from './useLexicalHistory';
+import type {HistoryState} from './shared/useHistory';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalHistory} from '@lexical/react/useLexicalHistory';
 
-export default function HistoryPlugin({
+import {useHistory} from './shared/useHistory';
+
+export {createEmptyHistoryState} from './shared/useHistory';
+
+export type {HistoryState};
+
+export function HistoryPlugin({
   externalHistoryState,
 }: {
   externalHistoryState?: HistoryState,
 }): null {
   const [editor] = useLexicalComposerContext();
-  useLexicalHistory(editor, externalHistoryState);
+  useHistory(editor, externalHistoryState);
 
   return null;
 }

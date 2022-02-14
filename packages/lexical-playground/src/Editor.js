@@ -11,6 +11,7 @@ import * as React from 'react';
 
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -26,38 +27,37 @@ import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import ListPlugin from '@lexical/react/LexicalListPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
+import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
-import StickyPlugin from './plugins/StickyPlugin';
+import HorizontalRulePlugin from '@lexical/react/LexicalHorizontalRulePlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
 import {createWebsocketProvider} from './collaboration';
-import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
+import PollPlugin from './plugins/PollPlugin';
 
-type Props = {
-  isCollab: boolean,
-  isCharLimit: boolean,
-  isCharLimitUtf8: boolean,
-  isAutocomplete: boolean,
-  isRichText: boolean,
-  showTreeView: boolean,
-};
+import {useSettings} from './context/SettingsContext';
+import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
 
-export default function Editor({
-  isCollab,
-  isAutocomplete,
-  isCharLimit,
-  isCharLimitUtf8,
-  isRichText,
-  showTreeView,
-}: Props): React$Node {
+export default function Editor(): React$Node {
   const {historyState} = useSharedHistoryContext();
+  const {
+    settings: {
+      isCollab,
+      isAutocomplete,
+      isCharLimit,
+      isCharLimitUtf8,
+      isRichText,
+      showTreeView,
+    },
+  } = useSettings();
   const text = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
@@ -72,24 +72,23 @@ export default function Editor({
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
-        <StickyPlugin />
+        <AutoFocusPlugin />
         <MentionsPlugin />
-        <TablesPlugin />
-        <TableCellActionMenuPlugin />
-        <ImagesPlugin />
-        <LinkPlugin />
         <EmojisPlugin />
+        <ExcalidrawPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
+        <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
+        <BootstrapPlugin />
         {isRichText ? (
           <>
             {isCollab ? (
               <CollaborationPlugin
                 id="main"
                 providerFactory={createWebsocketProvider}
-                skipInit={skipCollaborationInit}
+                shouldBootstrap={!skipCollaborationInit}
               />
             ) : (
               <HistoryPlugin externalHistoryState={historyState} />
@@ -97,11 +96,15 @@ export default function Editor({
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              skipInit={isCollab}
             />
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
+            <TablesPlugin />
+            <TableCellActionMenuPlugin />
+            <ImagesPlugin />
+            <LinkPlugin />
+            <PollPlugin />
           </>
         ) : (
           <>

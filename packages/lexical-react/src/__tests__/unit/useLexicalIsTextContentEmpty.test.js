@@ -7,12 +7,17 @@
  * @flow
  */
 
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  createEditor,
+  ParagraphNode,
+} from 'lexical';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {createEditor, $createTextNode, $getRoot} from 'lexical';
-import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
 import useLexicalIsTextContentEmpty from '../../useLexicalIsTextContentEmpty';
 
 describe('useLexicalIsTextContentEmpty', () => {
@@ -33,7 +38,13 @@ describe('useLexicalIsTextContentEmpty', () => {
   });
 
   function useLexicalEditor(rootElementRef) {
-    const editor = React.useMemo(() => createEditor(), []);
+    const editor = React.useMemo(
+      () =>
+        createEditor({
+          nodes: [ParagraphNode],
+        }),
+      [],
+    );
 
     React.useEffect(() => {
       const rootElement = rootElementRef.current;
@@ -54,7 +65,6 @@ describe('useLexicalIsTextContentEmpty', () => {
       editor.addListener('error', (error) => {
         throw error;
       });
-      editor.registerNodes([ParagraphNode]);
       const isBlank = useLexicalIsTextContentEmpty(editor);
       expect(isBlank).toBe(!hasText);
       return <div ref={ref} contentEditable={true} />;

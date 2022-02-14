@@ -32,11 +32,12 @@ import {
   CollaborationPlugin,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import Placeholder from '../ui/Placeholder';
 import ContentEditable from '../ui/ContentEditable';
-import HistoryPlugin from '@lexical/react/LexicalHistoryPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
@@ -275,17 +276,21 @@ function StickyComponent({
         <i className="bucket" />
       </button>
       <LexicalNestedComposer
-        theme={StickyEditorTheme}
-        initialDecoratorEditor={decoratorEditor}>
+        initialConfig={{
+          namespace: 'PlaygroundStickyEditor',
+          theme: StickyEditorTheme,
+          decoratorEditor: decoratorEditor,
+        }}>
         {isCollab ? (
           <CollaborationPlugin
             id={decoratorEditor.id}
             providerFactory={createWebsocketProvider}
-            initEditorState={false}
+            shouldBootstrap={true}
           />
         ) : (
           <HistoryPlugin externalHistoryState={historyState} />
         )}
+        <BootstrapPlugin />
         <PlainTextPlugin
           contentEditable={
             <ContentEditable className={stylex(styles.contentEditable)} />
@@ -295,7 +300,6 @@ function StickyComponent({
               What's up?
             </Placeholder>
           }
-          skipInit={isCollab}
         />
       </LexicalNestedComposer>
     </div>

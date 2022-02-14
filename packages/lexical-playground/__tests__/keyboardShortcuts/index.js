@@ -75,6 +75,12 @@ export async function deleteNextWord(page) {
   await keyUpCtrlOrAlt(page);
 }
 
+export async function deleteForward(page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.press('d');
+  await page.keyboard.up('Control');
+}
+
 export async function moveToPrevWord(page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowLeft');
@@ -161,4 +167,10 @@ export async function selectCharacters(
   await page.keyboard.down('Shift');
   await moveFunction(page, numCharacters);
   await page.keyboard.up('Shift');
+}
+
+export async function toggleBold(page): Promise<void> {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('b');
+  await keyUpCtrlOrMeta(page);
 }

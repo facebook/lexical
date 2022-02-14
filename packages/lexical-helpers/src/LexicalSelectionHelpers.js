@@ -8,22 +8,20 @@
  */
 
 import type {
-  NodeKey,
-  LexicalNode,
-  Selection,
-  TextNode,
   ElementNode,
+  LexicalNode,
+  NodeKey,
   Point,
+  RangeSelection,
+  TextNode,
 } from 'lexical';
 
 import {
-  $createLineBreakNode,
   $isDecoratorNode,
-  $isLeafNode,
-  $isTextNode,
   $isElementNode,
-  $createTextNode,
+  $isLeafNode,
   $isRootNode,
+  $isTextNode,
 } from 'lexical';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
@@ -119,9 +117,9 @@ function $copyLeafNodeBranchToRoot(
   }
 }
 
-export function $cloneContents(selection: Selection): {
-  range: Array<NodeKey>,
+export function $cloneContents(selection: RangeSelection): {
   nodeMap: Array<[NodeKey, LexicalNode]>,
+  range: Array<NodeKey>,
 } {
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -145,11 +143,11 @@ export function $cloneContents(selection: Selection): {
       endOffset,
     );
     const key = clonedFirstNode.getKey();
-    return {range: [key], nodeMap: [[key, clonedFirstNode]]};
+    return {nodeMap: [[key, clonedFirstNode]], range: [key]};
   }
   const nodes = selection.getNodes();
   if (nodes.length === 0) {
-    return {range: [], nodeMap: []};
+    return {nodeMap: [], range: []};
   }
   // Check if we can use the parent of the nodes, if the
   // parent can't be empty, then it's important that we
@@ -210,7 +208,7 @@ export function $cloneContents(selection: Selection): {
     range,
     nodeMap,
   );
-  return {range, nodeMap: Array.from(nodeMap.entries())};
+  return {nodeMap: Array.from(nodeMap.entries()), range};
 }
 
 export function getStyleObjectFromCSS(css: string): {[string]: string} | null {
@@ -236,7 +234,7 @@ function $patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
 }
 
 export function $patchStyleText(
-  selection: Selection,
+  selection: RangeSelection,
   patch: {[string]: string},
 ): void {
   const selectedNodes = selection.getNodes();
@@ -337,7 +335,7 @@ export function $patchStyleText(
 }
 
 export function $getSelectionStyleValueForProperty(
-  selection: Selection,
+  selection: RangeSelection,
   styleProperty: string,
   defaultValue: string = '',
 ): string {
@@ -389,7 +387,7 @@ function $getNodeStyleValueForProperty(
 }
 
 export function $moveCaretSelection(
-  selection: Selection,
+  selection: RangeSelection,
   isHoldingShift: boolean,
   isBackward: boolean,
   granularity: 'character' | 'word' | 'lineboundary',
@@ -397,18 +395,18 @@ export function $moveCaretSelection(
   selection.modify(isHoldingShift ? 'extend' : 'move', isBackward, granularity);
 }
 
-function isParentElementRTL(selection: Selection): boolean {
+export function $isParentElementRTL(selection: RangeSelection): boolean {
   const anchorNode = selection.anchor.getNode();
   const parent = anchorNode.getParentOrThrow();
   return parent.getDirection() === 'rtl';
 }
 
 export function $moveCharacter(
-  selection: Selection,
+  selection: RangeSelection,
   isHoldingShift: boolean,
   isBackward: boolean,
 ): void {
-  const isRTL = isParentElementRTL(selection);
+  const isRTL = $isParentElementRTL(selection);
   $moveCaretSelection(
     selection,
     isHoldingShift,
@@ -417,27 +415,7 @@ export function $moveCharacter(
   );
 }
 
-export function $insertRichText(selection: Selection, text: string): void {
-  const parts = text.split(/\r?\n/);
-  if (parts.length === 1) {
-    selection.insertText(text);
-  } else {
-    const nodes = [];
-    const length = parts.length;
-    for (let i = 0; i < length; i++) {
-      const part = parts[i];
-      if (part !== '') {
-        nodes.push($createTextNode(part));
-      }
-      if (i !== length - 1) {
-        nodes.push($createLineBreakNode());
-      }
-    }
-    selection.insertNodes(nodes);
-  }
-}
-
-export function $selectAll(selection: Selection): void {
+export function $selectAll(selection: RangeSelection): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
@@ -480,7 +458,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 }
 
 export function $wrapLeafNodesInElements(
-  selection: Selection,
+  selection: RangeSelection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
 ): void {

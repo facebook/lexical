@@ -30,9 +30,6 @@ const styles = stylex.create({
     tabSize: 1,
     outline: 0,
     padding: 10,
-    userSelect: 'text',
-    whiteSpace: 'pre-wrap',
-    overflowWrap: 'break-word',
   },
 });
 
@@ -61,7 +58,7 @@ export default function ContentEditable({
   return (
     <LexicalContentEditable
       className={className || stylex(styles.root)}
-      isReadOnly={isReadOnly}
+      readOnly={isReadOnly}
     />
   );
 }

@@ -7,45 +7,57 @@
  * @flow strict
  */
 
-import type {DecoratorEditor, EditorThemeClasses} from 'lexical';
+import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
 
-import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
+import * as React from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 export default function LexicalNestedComposer({
+  initialConfig = {},
   children,
-  initialDecoratorEditor,
-  theme,
 }: {
   children?: React$Node,
-  initialDecoratorEditor: DecoratorEditor,
-  theme?: EditorThemeClasses,
+  initialConfig?: {
+    decoratorEditor: DecoratorEditor,
+    namespace?: string,
+    nodes?: Array<Class<LexicalNode>>,
+    onError?: (Error) => void,
+    theme?: EditorThemeClasses,
+  },
 }): React$Node {
   const [nestedEditor, setNestedEditor] = useState(null);
+  const {decoratorEditor, namespace, theme, nodes, onError} = initialConfig;
 
   useEffect(() => {
-    if (!initialDecoratorEditor.isEmpty() && nestedEditor !== null) {
-      initialDecoratorEditor.init(nestedEditor);
+    if (!decoratorEditor.isEmpty() && nestedEditor !== null) {
+      decoratorEditor.init(nestedEditor);
     }
-  }, [initialDecoratorEditor, nestedEditor]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nestedEditor]);
 
   const onChange = useCallback(
     (editorState, nextNestedEditor) => {
       if (!editorState.isEmpty()) {
-        initialDecoratorEditor.set(nextNestedEditor);
+        decoratorEditor.set(nextNestedEditor);
       } else {
         setNestedEditor(nextNestedEditor);
       }
     },
-    [initialDecoratorEditor],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   return (
     <LexicalComposer
-      initialEditor={initialDecoratorEditor.editor}
-      theme={theme}>
+      initialConfig={{
+        editor: decoratorEditor.editor,
+        namespace,
+        nodes,
+        onError,
+        theme,
+      }}>
       <LexicalOnChangePlugin onChange={onChange} />
       {children}
     </LexicalComposer>

@@ -7,21 +7,23 @@
  * @flow strict
  */
 
-import type {Cursor} from './SyncCursors';
-import type {NodeKey, LexicalEditor} from 'lexical';
 import type {Provider} from '.';
-import type {Doc} from 'yjs';
-import type {CollabElementNode} from './CollabElementNode';
-import type {CollabTextNode} from './CollabTextNode';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
+import type {CollabElementNode} from './CollabElementNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
+import type {CollabTextNode} from './CollabTextNode';
+import type {Cursor} from './SyncCursors';
+import type {LexicalEditor, NodeKey} from 'lexical';
+import type {Doc} from 'yjs';
+
+import {XmlText} from 'yjs';
 
 import {$createCollabElementNode} from './CollabElementNode';
-import {XmlText} from 'yjs';
 
 export type ClientID = string;
 
 export type Binding = {
+  clientID: number,
   collabNodeMap: Map<
     NodeKey,
     | CollabElementNode
@@ -29,14 +31,14 @@ export type Binding = {
     | CollabDecoratorNode
     | CollabLineBreakNode,
   >,
-  nodeProperties: Map<string, Array<string>>,
-  editor: LexicalEditor,
-  id: string,
   cursors: Map<ClientID, Cursor>,
   cursorsContainer: null | HTMLElement,
   doc: Doc,
-  root: CollabElementNode,
   docMap: Map<string, Doc>,
+  editor: LexicalEditor,
+  id: string,
+  nodeProperties: Map<string, Array<string>>,
+  root: CollabElementNode,
 };
 
 export function createBinding(
@@ -61,14 +63,15 @@ export function createBinding(
 
   // $FlowFixMe: our Flow bindings need fixing
   return {
+    clientID: doc.clientID,
     collabNodeMap: new Map(),
-    nodeProperties: new Map(),
-    editor,
-    id,
     cursors: new Map(),
     cursorsContainer: null,
     doc,
-    root,
     docMap,
+    editor,
+    id,
+    nodeProperties: new Map(),
+    root,
   };
 }

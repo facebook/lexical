@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {ElementNode, CommandListenerEditorPriority} from 'lexical';
+import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
 
-import {useEffect} from 'react';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$log, $getSelection} from 'lexical';
-import {TableNode} from 'lexical/TableNode';
-import {TableCellNode} from 'lexical/TableCellNode';
-import {TableRowNode} from 'lexical/TableRowNode';
 import {$createTableNodeWithDimensions} from '@lexical/helpers/nodes';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$createParagraphNode, $getSelection, $log} from 'lexical';
+import {TableCellNode} from 'lexical/TableCellNode';
+import {TableNode} from 'lexical/TableNode';
+import {TableRowNode} from 'lexical/TableRowNode';
+import {useEffect} from 'react';
+import invariant from 'shared/invariant';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 
@@ -24,10 +24,17 @@ export default function TablePlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
+      invariant(
+        false,
+        'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
+      );
+    }
+    return editor.addListener(
       'command',
-      (type) => {
+      (type, payload) => {
         if (type === 'insertTable') {
+          const {columns, rows} = payload;
           $log('handleAddTable');
           const selection = $getSelection();
           if (selection === null) {
@@ -37,7 +44,7 @@ export default function TablePlugin(): React$Node {
 
           if (focusNode !== null) {
             const topLevelNode = focusNode.getTopLevelElementOrThrow();
-            const tableNode = $createTableNodeWithDimensions(3, 3);
+            const tableNode = $createTableNodeWithDimensions(rows, columns);
             topLevelNode.insertAfter(tableNode);
             tableNode.insertAfter($createParagraphNode());
             const firstCell = tableNode
@@ -51,17 +58,6 @@ export default function TablePlugin(): React$Node {
       },
       EditorPriority,
     );
-
-    const removeNodes = editor.registerNodes([
-      TableNode,
-      TableCellNode,
-      TableRowNode,
-    ]);
-
-    return () => {
-      removeCommandListener();
-      removeNodes();
-    };
   }, [editor]);
 
   return null;

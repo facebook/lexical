@@ -6,22 +6,25 @@
  *
  */
 
-import {$createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 
 import {
+  $getNodeByKey,
+  $isTokenOrInertOrSegmented,
   emptyFunction,
-  resetRandomKey,
   generateRandomKey,
+  getTextDirection,
   isArray,
   isSelectionWithinEditor,
-  getTextDirection,
-  $isTokenOrInertOrSegmented,
+  resetRandomKey,
 } from '../../LexicalUtils';
-
 import {initializeUnitTest} from '../utils';
-import {$getNodeByKey} from '../../LexicalUtils';
-import {$createParagraphNode, ParagraphNode} from 'lexical/ParagraphNode';
-import {TextNode} from 'lexical';
 
 describe('LexicalUtils tests', () => {
   initializeUnitTest((testEnv) => {

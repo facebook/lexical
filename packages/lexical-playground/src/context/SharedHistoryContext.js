@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {HistoryState} from '@lexical/react/useLexicalHistory';
+import type {HistoryState} from '@lexical/react/LexicalHistoryPlugin';
 
-import {createEmptyHistoryState} from '@lexical/react/useLexicalHistory';
+import {createEmptyHistoryState} from '@lexical/react/LexicalHistoryPlugin';
 import * as React from 'react';
 import {createContext, useContext, useMemo} from 'react';
 
@@ -17,7 +17,9 @@ type ContextShape = {
   historyState?: HistoryState,
 };
 
-const Context: React$Context<ContextShape> = createContext({});
+const Context: React$Context<ContextShape> = createContext({
+  historyState: {current: null, redoStack: [], undoStack: []},
+});
 
 export const SharedHistoryContext = ({
   children,

@@ -12,8 +12,7 @@ import type {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
-import {$createTextNode, $log, $getRoot} from 'lexical';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
+import {$createTextNode, $log, $getRoot, $createParagraphNode} from 'lexical';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
 

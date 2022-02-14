@@ -7,12 +7,13 @@
  * @flow strict
  */
 
-import type {LexicalEditor, ElementNode} from 'lexical';
+import type {LexicalEditor} from 'lexical';
 
 import {
   CodeNode,
   $isCodeNode,
-  seekToFirstCodeHighlightNode,
+  getFirstCodeHighlightNodeOfLine,
+  getLastCodeHighlightNodeOfLine,
 } from 'lexical/CodeNode';
 import {
   $createLineBreakNode,
@@ -61,8 +62,13 @@ export const getCodeLanguages = (): Array<string> =>
 export default function CodeHighlightPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
+    if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
+      throw new Error(
+        'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
+      );
+    }
+
     return withSubscriptions(
-      editor.registerNodes([CodeNode, CodeHighlightNode]),
       editor.addTransform(CodeNode, (node) => codeNodeTransform(node, editor)),
       editor.addTransform(TextNode, (node) => textNodeTransform(node, editor)),
       editor.addTransform(CodeHighlightNode, (node) =>
@@ -73,6 +79,8 @@ export default function CodeHighlightPlugin(): React$Node {
         (type, payload): boolean =>
           type === 'indentContent' || type === 'outdentContent'
             ? handleMultilineIndent(type)
+            : type === 'keyArrowUp' || type === 'keyArrowDown'
+            ? handleShiftLines(type, payload)
             : false,
         1,
       ),
@@ -110,9 +118,9 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
         );
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(node.getChildren(), highlightNodes);
-        if (diffRange !== null) {
-          const {from, to, nodesForReplacement} = diffRange;
-          replaceRange(node, from, to, nodesForReplacement);
+        const {from, to, nodesForReplacement} = diffRange;
+        if (from !== to || nodesForReplacement.length) {
+          node.splice(from, to - from, nodesForReplacement);
           return true;
         }
         return false;
@@ -227,39 +235,6 @@ function updateAndRetainSelection(
   });
 }
 
-// Inserts notes into specific range of node's children. Works for replacement (from != to && nodesToInsert not empty),
-// insertion (from == to && nodesToInsert not empty) and deletion (from != to && nodesToInsert is empty)
-function replaceRange(
-  node: ElementNode,
-  from: number,
-  to: number,
-  nodesToInsert: Array<LexicalNode>,
-): void {
-  let children = node.getChildren();
-  for (let i = from; i < to; i++) {
-    children[i].remove();
-  }
-
-  children = node.getChildren();
-  if (children.length === 0) {
-    node.append(...nodesToInsert);
-    return;
-  }
-
-  if (from === 0) {
-    const firstChild = children[0];
-    for (let i = 0; i < nodesToInsert.length; i++) {
-      firstChild.insertBefore(nodesToInsert[i]);
-    }
-  } else {
-    let currentNode = children[from - 1] || children[children.length - 1];
-    for (let i = 0; i < nodesToInsert.length; i++) {
-      currentNode.insertAfter(nodesToInsert[i]);
-      currentNode = nodesToInsert[i];
-    }
-  }
-}
-
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes
 // that needs to be replaced with `nodes` (subset of nextNodes) to make prevNodes equal to nextNodes.
 function getDiffRange(
@@ -269,7 +244,7 @@ function getDiffRange(
   from: number,
   to: number,
   nodesForReplacement: Array<LexicalNode>,
-} | null {
+} {
   let leadingMatch = 0;
   while (leadingMatch < prevNodes.length) {
     if (!isEqual(prevNodes[leadingMatch], nextNodes[leadingMatch])) {
@@ -303,14 +278,11 @@ function getDiffRange(
     leadingMatch,
     nextNodesLength - trailingMatch,
   );
-  const hasChanges = from !== to || nodesForReplacement.length > 0;
-  return hasChanges
-    ? {
-        from,
-        to,
-        nodesForReplacement,
-      }
-    : null;
+  return {
+    from,
+    to,
+    nodesForReplacement,
+  };
 }
 
 function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
@@ -347,8 +319,7 @@ function handleMultilineIndent(
       return false;
     }
   }
-
-  const startOfLine = seekToFirstCodeHighlightNode(nodes[0]);
+  const startOfLine = getFirstCodeHighlightNodeOfLine(nodes[0]);
 
   if (startOfLine != null) {
     doIndent(startOfLine, type);
@@ -395,4 +366,84 @@ function doIndent(
       }
     }
   }
+}
+
+function handleShiftLines(
+  type: 'keyArrowUp' | 'keyArrowDown',
+  event: KeyboardEvent,
+): boolean {
+  // We only care about the alt+arrow keys
+  const selection = $getSelection();
+  if (!event.altKey || selection == null) {
+    return false;
+  }
+
+  // I'm not quite sure why, but it seems like calling anchor.getNode() collapses the selection here
+  // So first, get the anchor and the focus, then get their nodes
+  const {anchor, focus} = selection;
+  const anchorOffset = anchor.offset;
+  const focusOffset = focus.offset;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+
+  // Ensure the selection is within the codeblock
+  if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
+    return false;
+  }
+  const start = getFirstCodeHighlightNodeOfLine(anchorNode);
+  const end = getLastCodeHighlightNodeOfLine(focusNode);
+  if (start == null || end == null) {
+    return false;
+  }
+
+  const range = start.getNodesBetween(end);
+  for (let i = 0; i < range.length; i++) {
+    const node = range[i];
+    if (!$isCodeHighlightNode(node) && !$isLineBreakNode(node)) {
+      return false;
+    }
+  }
+
+  // After this point, we know the selection is within the codeblock. We may not be able to
+  // actually move the lines around, but we want to return true either way to prevent
+  // the event's default behavior
+  event.preventDefault();
+  event.stopPropagation(); // required to stop cursor movement under Firefox
+
+  const arrowIsUp = type === 'keyArrowUp';
+  const linebreak = arrowIsUp
+    ? start.getPreviousSibling()
+    : end.getNextSibling();
+  if (!$isLineBreakNode(linebreak)) {
+    return true;
+  }
+  const sibling = arrowIsUp
+    ? linebreak.getPreviousSibling()
+    : linebreak.getNextSibling();
+  if (sibling == null) {
+    return true;
+  }
+
+  const maybeInsertionPoint = arrowIsUp
+    ? getFirstCodeHighlightNodeOfLine(sibling)
+    : getLastCodeHighlightNodeOfLine(sibling);
+  let insertionPoint =
+    maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
+  linebreak.remove();
+  range.forEach((node) => node.remove());
+  if (type === 'keyArrowUp') {
+    range.forEach((node) => insertionPoint.insertBefore(node));
+    insertionPoint.insertBefore(linebreak);
+  } else {
+    insertionPoint.insertAfter(linebreak);
+    insertionPoint = linebreak;
+    range.forEach((node) => {
+      insertionPoint.insertAfter(node);
+      insertionPoint = node;
+    });
+  }
+
+  selection.setTextNodeRange(anchorNode, anchorOffset, focusNode, focusOffset);
+
+  return true;
 }

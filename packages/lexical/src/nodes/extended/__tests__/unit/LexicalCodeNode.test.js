@@ -6,9 +6,14 @@
  *
  */
 
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+} from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
-import {$createParagraphNode} from 'lexical/ParagraphNode';
-import {$createTextNode, $getRoot, $getSelection} from 'lexical';
+
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -68,14 +73,14 @@ describe('LexicalCodeNode tests', () => {
         expect(selection).toEqual({
           anchorKey: '_2',
           anchorOffset: 0,
+          dirty: true,
           focusKey: '_2',
           focusOffset: 0,
-          dirty: true,
           needsSync: false,
         });
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><p dir="ltr"><span>foo</span></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p dir="ltr"><span>foo</span></p></div>',
       );
       await editor.update(() => {
         const codeNode = $createCodeNode();

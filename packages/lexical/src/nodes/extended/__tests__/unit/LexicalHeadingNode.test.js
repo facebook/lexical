@@ -6,14 +6,14 @@
  *
  */
 
+import {$createTextNode, $getRoot, ParagraphNode} from 'lexical';
 import {
-  HeadingNode,
   $createHeadingNode,
   $isHeadingNode,
+  HeadingNode,
 } from 'lexical/HeadingNode';
-import {ParagraphNode} from 'lexical/ParagraphNode';
+
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
-import {$createTextNode, $getRoot} from 'lexical';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -76,7 +76,7 @@ describe('LexicalHeadingNode tests', () => {
         root.append(headingNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><h1><br></h1></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><h1><br></h1></div>',
       );
       await editor.update(() => {
         const result = headingNode.insertNewAfter();
@@ -84,7 +84,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" data-lexical-editor="true"><h1><br></h1><p><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><h1><br></h1><p><br></p></div>',
       );
     });
 
@@ -127,7 +127,7 @@ describe('LexicalHeadingNode tests', () => {
         headingNode.append(textNode);
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable=\"true\" data-lexical-editor=\"true\"><h2 dir=\"ltr\"><span data-lexical-text=\"true\">${text}</span></h2></div>`,
+        `<div contenteditable=\"true\" style=\"user-select: text; white-space: pre-wrap; overflow-wrap: break-word;\" data-lexical-editor=\"true\"><h2 dir=\"ltr\"><span data-lexical-text=\"true\">${text}</span></h2></div>`,
       );
       await editor.update(() => {
         const result = headingNode.insertNewAfter();
@@ -135,7 +135,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable=\"true\" data-lexical-editor=\"true\"><h2 dir=\"ltr\"><span data-lexical-text=\"true\">${text}</span></h2><p><br></p></div>`,
+        `<div contenteditable=\"true\" style=\"user-select: text; white-space: pre-wrap; overflow-wrap: break-word;\" data-lexical-editor=\"true\"><h2 dir=\"ltr\"><span data-lexical-text=\"true\">${text}</span></h2><p><br></p></div>`,
       );
     });
   });

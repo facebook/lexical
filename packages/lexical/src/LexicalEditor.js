@@ -132,7 +132,7 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
-export type ErrorListener = (error: Error, log: Array<string>) => void;
+export type ErrorHandler = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
   tags: Set<string>,
   prevEditorState: EditorState,
@@ -173,7 +173,6 @@ export type CommandPayload = any;
 
 type Listeners = {
   decorator: Set<DecoratorListener>,
-  error: Set<ErrorListener>,
   textcontent: Set<TextContentListener>,
   root: Set<RootListener>,
   update: Set<UpdateListener>,
@@ -236,7 +235,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   disableEvents?: boolean,
   nodes?: Array<Class<LexicalNode>>,
   parentEditor?: LexicalEditor,
-  onError?: ErrorListener,
+  onError?: ErrorHandler,
 }): LexicalEditor {
   const config = editorConfig || {};
   const namespace = config.namespace || createUID();
@@ -323,13 +322,14 @@ class BaseLexicalEditor {
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;
+  _onError: ErrorHandler;
 
   constructor(
     editorState: EditorState,
     parentEditor: null | LexicalEditor,
     nodes: RegisteredNodes,
     config: EditorConfig<{...}>,
-    onError: ErrorListener,
+    onError: ErrorHandler,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -348,7 +348,6 @@ class BaseLexicalEditor {
     // Listeners
     this._listeners = {
       decorator: new Set(),
-      error: new Set(),
       textcontent: new Set(),
       textmutation: new Set(),
       root: new Set(),
@@ -375,8 +374,7 @@ class BaseLexicalEditor {
     this._log = [];
     // Used for identifying owning editors
     this._key = generateRandomKey();
-
-    this._listeners['error'].add(onError);
+    this._onError = onError;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -384,7 +382,6 @@ class BaseLexicalEditor {
   addListener(
     type: ListenerType,
     listener:
-      | ErrorListener
       | UpdateListener
       | DecoratorListener
       | RootListener
@@ -613,9 +610,9 @@ declare export class LexicalEditor {
   _observer: null | MutationObserver;
   _log: Array<string>;
   _key: string;
+  _onError: ErrorHandler;
 
   isComposing(): boolean;
-  addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;

@@ -10,12 +10,10 @@
 import type {LexicalEditor} from 'lexical';
 
 import {useCallback} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
 import useLexicalCanShowPlaceholder from '@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder';
 
 export default function useLexicalEditor(
   editor: LexicalEditor,
-  onError: (error: Error, log: Array<string>) => void,
 ): [(null | HTMLElement) => void, boolean] {
   const showPlaceholder = useLexicalCanShowPlaceholder(editor);
   const rootElementRef = useCallback(
@@ -24,9 +22,6 @@ export default function useLexicalEditor(
     },
     [editor],
   );
-  useLayoutEffect(() => {
-    return editor.addListener('error', onError);
-  }, [editor, onError]);
 
   return [rootElementRef, showPlaceholder];
 }

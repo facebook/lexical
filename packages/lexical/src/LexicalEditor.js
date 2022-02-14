@@ -150,6 +150,7 @@ export type RootListener = (
   prevRootElement: null | HTMLElement,
 ) => void;
 export type TextContentListener = (text: string) => void;
+export type MutationListener = (added: NodeKey, removed: NodeKey) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
@@ -176,6 +177,7 @@ type Listeners = {
   command: Array<Set<CommandListener>>,
   decorator: Set<DecoratorListener>,
   error: Set<ErrorListener>,
+  mutation: Set<MutationListener>,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
   update: Set<UpdateListener>,
@@ -208,6 +210,7 @@ export function resetEditor(
   editor._cloneNotNeeded.clear();
   editor._dirtyLeaves = new Set();
   editor._dirtyElements.clear();
+  editor._addedNodes = [];
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._updates = [];
@@ -308,6 +311,7 @@ class BaseLexicalEditor {
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
+  _addedNodes: Array<NodeKey>;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
@@ -338,6 +342,7 @@ class BaseLexicalEditor {
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
       decorator: new Set(),
       error: new Set(),
+      mutation: new Set(),
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
@@ -354,6 +359,7 @@ class BaseLexicalEditor {
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
+    this._addedNodes = [];
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
     // Handling of DOM mutations
@@ -372,6 +378,7 @@ class BaseLexicalEditor {
       | DecoratorListener
       | RootListener
       | TextContentListener
+      | MutationListener
       | CommandListener,
     priority: CommandListenerPriority,
   ): () => void {
@@ -573,6 +580,7 @@ class BaseLexicalEditor {
 // For some reason, we can't do this via an interface without
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class LexicalEditor {
+  _addedNodes: Array<NodeKey>;
   _cloneNotNeeded: Set<NodeKey>;
   _compositionKey: null | NodeKey;
   _config: EditorConfig<{...}>;
@@ -601,6 +609,7 @@ declare export class LexicalEditor {
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
+  addListener(type: 'mutation', listener: MutationListener): () => void;
   addListener(
     type: 'command',
     listener: CommandListener,

@@ -14,7 +14,7 @@ import type {
   Transform,
 } from './LexicalEditor';
 import type {ParsedEditorState} from './LexicalEditorState';
-import type {LexicalNode} from './LexicalNode';
+import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
 import invariant from 'shared/invariant';
@@ -380,6 +380,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
+  const addedNodes = editor._addedNodes;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
 
@@ -388,6 +389,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
+    editor._addedNodes = [];
     editor._normalizedNodes = new Set();
     editor._updateTags = new Set();
   }
@@ -399,6 +401,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     triggerListeners('decorator', editor, true, pendingDecorators);
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
+  triggerMutationListeners(editor, addedNodes);
   triggerListeners('update', editor, true, {
     dirtyElements,
     dirtyLeaves,
@@ -423,14 +426,24 @@ function triggerTextContentListeners(
   }
 }
 
+function triggerMutationListeners(
+  editor: LexicalEditor,
+  addedNodes: Array<NodeKey>,
+): void {
+  triggerListeners('mutation', editor, true, {
+    added: addedNodes,
+  });
+}
+
 export function triggerListeners(
-  type: 'update' | 'error' | 'root' | 'decorator' | 'textcontent',
+  type: 'update' | 'error' | 'mutation' | 'root' | 'decorator' | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   // $FlowFixMe: needs refining
   ...payload: Array<any>
 ): void {
+  console.info('trigger listeners');
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
   try {

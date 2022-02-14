@@ -67,11 +67,8 @@ export default function LexicalComposer({
           theme: composerTheme,
           parentEditor,
           context,
+          onError,
         });
-
-        if (onError != null) {
-          editor.addListener('error', onError);
-        }
       }
 
       return [editor, context];

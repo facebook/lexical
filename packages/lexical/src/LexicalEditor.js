@@ -183,7 +183,6 @@ type Listeners = {
 
 export type ListenerType =
   | 'update'
-  | 'error'
   | 'root'
   | 'decorator'
   | 'textcontent'
@@ -237,6 +236,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   disableEvents?: boolean,
   nodes?: Array<Class<LexicalNode>>,
   parentEditor?: LexicalEditor,
+  onError?: ErrorListener,
 }): LexicalEditor {
   const config = editorConfig || {};
   const namespace = config.namespace || createUID();
@@ -255,6 +255,12 @@ export function createEditor<EditorContext>(editorConfig?: {
     ParagraphNode,
     ...(config.nodes || []),
   ];
+
+  const defaultOnError = (e: Error, log) => {
+    throw e;
+  };
+  const onError = config.onError || defaultOnError;
+
   const registeredNodes = new Map();
   for (let i = 0; i < nodes.length; i++) {
     const klass = nodes[i];
@@ -278,6 +284,7 @@ export function createEditor<EditorContext>(editorConfig?: {
       htmlTransforms,
       disableEvents,
     },
+    onError,
   );
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -322,6 +329,7 @@ class BaseLexicalEditor {
     parentEditor: null | LexicalEditor,
     nodes: RegisteredNodes,
     config: EditorConfig<{...}>,
+    onError: ErrorListener,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -368,17 +376,7 @@ class BaseLexicalEditor {
     // Used for identifying owning editors
     this._key = generateRandomKey();
 
-    // Default error listener
-    this.addListener(
-      'error',
-      (e: Error, log) => {
-        // Call default error handling only when no other error handling is specified
-        if (this._listeners.error.size === 1) {
-          console.error(e, log);
-        }
-      },
-      0,
-    );
+    this._listeners['error'].add(onError);
   }
   isComposing(): boolean {
     return this._compositionKey != null;

@@ -10,6 +10,7 @@
 import type {
   CommandPayload,
   EditorUpdateOptions,
+  IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   Transform,
 } from './LexicalEditor';
@@ -380,7 +381,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
-  const addedNodes = editor._addedNodes;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
 
@@ -401,7 +401,13 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     triggerListeners('decorator', editor, true, pendingDecorators);
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
-  triggerMutationListeners(editor, addedNodes);
+  triggerMutationListeners(
+    editor,
+    currentEditorState,
+    pendingEditorState,
+    dirtyLeaves,
+    dirtyElements,
+  );
   triggerListeners('update', editor, true, {
     dirtyElements,
     dirtyLeaves,
@@ -428,12 +434,57 @@ function triggerTextContentListeners(
 
 function triggerMutationListeners(
   editor: LexicalEditor,
-  addedNodes: Array<NodeKey>,
+  currentEditorState: EditorState,
+  pendingEditorState: EditorState,
+  dirtyLeaves: Set<NodeKey>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
-  triggerListeners('mutation', editor, true, {
-    added: addedNodes,
+  const attachedDettachedNodes: Map<string, [Array<NodeKey>, Array<NodeKey>]> =
+    new Map();
+  const currentNodeMap = currentEditorState._nodeMap;
+  const nextNodeMap = pendingEditorState._nodeMap;
+  const nodes = Array.from(dirtyLeaves);
+  nodes.push(...dirtyElements.keys());
+  const nodesLength = nodes.length;
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    const currentNode = currentNodeMap.get(node);
+    const nextNode = nextNodeMap.get(node);
+    if (currentNode !== undefined && nextNode === undefined) {
+      const type = currentNode.__type;
+      let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
+      if (attachedDettachedNodesByType === undefined) {
+        attachedDettachedNodesByType = [[], []];
+        attachedDettachedNodes.set(type, attachedDettachedNodesByType);
+      }
+      const dettachedNodes = attachedDettachedNodesByType[1];
+      dettachedNodes.push(node);
+    } else if (currentNode === undefined && nextNode !== undefined) {
+      const type = nextNode.__type;
+      let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
+      if (attachedDettachedNodesByType === undefined) {
+        attachedDettachedNodesByType = [[], []];
+        attachedDettachedNodes.set(type, attachedDettachedNodesByType);
+      }
+      const attachedNodes = attachedDettachedNodesByType[0];
+      attachedNodes.push(node);
+    }
+  }
+  attachedDettachedNodes.forEach((attachedDettached, type) => {
+    const registeredNode = editor._nodes.get(type);
+    if (registeredNode === undefined) {
+      invariant(false, 'Mutation listener on an unregistered node %s', type);
+    }
+    const mutationListeners = Array.from(registeredNode.mutations);
+    const mutationListenersLength = mutationListeners.length;
+    for (let i = 0; i < mutationListenersLength; i++) {
+      console.info(attachedDettached);
+      mutationListeners[i](...attachedDettached);
+    }
   });
 }
+
+function childrenKeys()
 
 export function triggerListeners(
   type: 'update' | 'error' | 'mutation' | 'root' | 'decorator' | 'textcontent',
@@ -443,7 +494,6 @@ export function triggerListeners(
   // $FlowFixMe: needs refining
   ...payload: Array<any>
 ): void {
-  console.info('trigger listeners');
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
   try {

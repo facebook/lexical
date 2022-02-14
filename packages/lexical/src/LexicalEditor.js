@@ -131,6 +131,7 @@ export type EditorConfig<EditorContext> = {
 export type RegisteredNodes = Map<string, RegisteredNode>;
 export type RegisteredNode = {
   klass: Class<LexicalNode>,
+  mutations: Set<MutationListener>,
   transforms: Set<Transform<LexicalNode>>,
 };
 export type Transform<T> = (node: T) => void;
@@ -150,7 +151,10 @@ export type RootListener = (
   prevRootElement: null | HTMLElement,
 ) => void;
 export type TextContentListener = (text: string) => void;
-export type MutationListener = (added: NodeKey, removed: NodeKey) => void;
+export type MutationListener = (
+  added: Array<NodeKey>,
+  removed: Array<NodeKey>,
+) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
@@ -189,6 +193,11 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent'
+<<<<<<< HEAD
+=======
+  | 'textmutation'
+  | 'mutation'
+>>>>>>> 2bb9c152 (impl. based on editorState and dirtyNodes)
   | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
@@ -261,6 +270,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     const type = klass.getType();
     registeredNodes.set(type, {
       klass,
+      mutations: new Set(),
       transforms: new Set(),
     });
   }
@@ -380,10 +390,12 @@ class BaseLexicalEditor {
       | TextContentListener
       | MutationListener
       | CommandListener,
-    priority: CommandListenerPriority,
+    payload: Class<LexicalNode> | CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];
     if (type === 'command') {
+      // $FlowFixMe: TODO refine
+      const priority = (payload: CommandListenerPriority);
       if (priority === undefined) {
         invariant(false, 'Listener for type "command" requires a "priority".');
       }
@@ -396,6 +408,24 @@ class BaseLexicalEditor {
       return () => {
         // $FlowFixMe: cast
         commandSet.delete(listener);
+      };
+    } else if (type === 'mutation') {
+      // $FlowFixMe: refine
+      const klass = (payload: Class<LexicalNode>);
+      // $FlowFixMe: refine
+      const mutationListener = (listener: MutationListener);
+      const registeredNode = this._nodes.get(klass.getType());
+      if (registeredNode === undefined) {
+        invariant(
+          false,
+          'Node %s has not been registered. Ensure node has been passed to createEditor.',
+          klass.name,
+        );
+      }
+      const mutations = registeredNode.mutations;
+      mutations.add(mutationListener);
+      return () => {
+        mutations.delete(mutationListener);
       };
     } else {
       // $FlowFixMe: TODO refine this from the above types
@@ -609,7 +639,11 @@ declare export class LexicalEditor {
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
-  addListener(type: 'mutation', listener: MutationListener): () => void;
+  addListener(
+    type: 'mutation',
+    listener: MutationListener,
+    klass: Class<LexicalNode>,
+  ): () => void;
   addListener(
     type: 'command',
     listener: CommandListener,

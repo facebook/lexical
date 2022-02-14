@@ -21,12 +21,11 @@ module.exports = {
       },
       moduleNameMapper: {
         '^./dist/(.+)': './src/$1',
+        '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
         '^@lexical/helpers/elements$':
           '<rootDir>/packages/lexical-helpers/src/LexicalElementHelpers.js',
         '^@lexical/helpers/events$':
           '<rootDir>/packages/lexical-helpers/src/LexicalEventHelpers.js',
-        '^@lexical/helpers/file$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalFileHelpers.js',
         '^@lexical/helpers/nodes$':
           '<rootDir>/packages/lexical-helpers/src/LexicalNodeHelpers.js',
         '^@lexical/helpers/offsets$':

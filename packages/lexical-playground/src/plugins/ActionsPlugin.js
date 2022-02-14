@@ -16,7 +16,7 @@ import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
 import {$log, $getRoot} from 'lexical';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
-import {importFile, exportFile} from '@lexical/helpers/file';
+import {importFile, exportFile} from '@lexical/file';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

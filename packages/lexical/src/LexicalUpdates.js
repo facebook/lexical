@@ -381,6 +381,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
+  const attachedNodes = editor._attachedNodes;
+  const detachedNodes = editor._detachedNodes;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
 
@@ -389,7 +391,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
-    editor._addedNodes = [];
+    editor._attachedNodes = new Set();
+    editor._detachedNodes = new Set();
     editor._normalizedNodes = new Set();
     editor._updateTags = new Set();
   }
@@ -405,8 +408,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     editor,
     currentEditorState,
     pendingEditorState,
-    dirtyLeaves,
-    dirtyElements,
+    attachedNodes,
+    detachedNodes,
   );
   triggerListeners('update', editor, true, {
     dirtyElements,
@@ -436,40 +439,45 @@ function triggerMutationListeners(
   editor: LexicalEditor,
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
-  dirtyLeaves: Set<NodeKey>,
-  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  attached: Set<NodeKey>,
+  detached: Set<NodeKey>,
 ): void {
   const attachedDettachedNodes: Map<string, [Array<NodeKey>, Array<NodeKey>]> =
     new Map();
   const currentNodeMap = currentEditorState._nodeMap;
   const nextNodeMap = pendingEditorState._nodeMap;
-  const nodes = Array.from(dirtyLeaves);
-  nodes.push(...dirtyElements.keys());
-  const nodesLength = nodes.length;
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
-    const currentNode = currentNodeMap.get(node);
-    const nextNode = nextNodeMap.get(node);
-    if (currentNode !== undefined && nextNode === undefined) {
-      const type = currentNode.__type;
-      let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
-      if (attachedDettachedNodesByType === undefined) {
-        attachedDettachedNodesByType = [[], []];
-        attachedDettachedNodes.set(type, attachedDettachedNodesByType);
-      }
-      const dettachedNodes = attachedDettachedNodesByType[1];
-      dettachedNodes.push(node);
-    } else if (currentNode === undefined && nextNode !== undefined) {
-      const type = nextNode.__type;
-      let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
-      if (attachedDettachedNodesByType === undefined) {
-        attachedDettachedNodesByType = [[], []];
-        attachedDettachedNodes.set(type, attachedDettachedNodesByType);
-      }
-      const attachedNodes = attachedDettachedNodesByType[0];
-      attachedNodes.push(node);
+  attached.forEach((nodeKey) => {
+    if (detached.has(nodeKey)) {
+      // Attached node was later detached
+      return;
     }
-  }
+    const node = nextNodeMap.get(nodeKey);
+    if (node === undefined) {
+      invariant(false, 'Attached node not in nextNodeMap');
+    }
+    const type = node.__type;
+    let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
+    if (attachedDettachedNodesByType === undefined) {
+      attachedDettachedNodesByType = [[], []];
+      attachedDettachedNodes.set(type, attachedDettachedNodesByType);
+    }
+    const attachedNodes = attachedDettachedNodesByType[0];
+    attachedNodes.push(nodeKey);
+  });
+  detached.forEach((nodeKey) => {
+    const node = currentNodeMap.get(nodeKey);
+    if (node === undefined) {
+      invariant(false, 'Detached node not in currentNodeMap');
+    }
+    const type = node.__type;
+    let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
+    if (attachedDettachedNodesByType === undefined) {
+      attachedDettachedNodesByType = [[], []];
+      attachedDettachedNodes.set(type, attachedDettachedNodesByType);
+    }
+    const detachedNodes = attachedDettachedNodesByType[1];
+    detachedNodes.push(nodeKey);
+  });
   attachedDettachedNodes.forEach((attachedDettached, type) => {
     const registeredNode = editor._nodes.get(type);
     if (registeredNode === undefined) {
@@ -478,13 +486,10 @@ function triggerMutationListeners(
     const mutationListeners = Array.from(registeredNode.mutations);
     const mutationListenersLength = mutationListeners.length;
     for (let i = 0; i < mutationListenersLength; i++) {
-      console.info(attachedDettached);
       mutationListeners[i](...attachedDettached);
     }
   });
 }
-
-function childrenKeys()
 
 export function triggerListeners(
   type: 'update' | 'error' | 'mutation' | 'root' | 'decorator' | 'textcontent',
@@ -646,6 +651,7 @@ function beginUpdate(
         pendingEditorState,
         editor._dirtyLeaves,
         editor._dirtyElements,
+        editor._detachedNodes,
       );
     }
     const endingCompositionKey = editor._compositionKey;

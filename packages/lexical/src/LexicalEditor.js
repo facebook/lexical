@@ -219,7 +219,8 @@ export function resetEditor(
   editor._cloneNotNeeded.clear();
   editor._dirtyLeaves = new Set();
   editor._dirtyElements.clear();
-  editor._addedNodes = [];
+  editor._attachedNodes = new Set();
+  editor._detachedNodes = new Set();
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._updates = [];
@@ -321,7 +322,8 @@ class BaseLexicalEditor {
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
-  _addedNodes: Array<NodeKey>;
+  _attachedNodes: Set<NodeKey>;
+  _detachedNodes: Set<NodeKey>;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
@@ -369,7 +371,8 @@ class BaseLexicalEditor {
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
-    this._addedNodes = [];
+    this._attachedNodes = new Set();
+    this._detachedNodes = new Set();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
     // Handling of DOM mutations
@@ -610,12 +613,13 @@ class BaseLexicalEditor {
 // For some reason, we can't do this via an interface without
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class LexicalEditor {
-  _addedNodes: Array<NodeKey>;
+  _attachedNodes: Set<NodeKey>;
   _cloneNotNeeded: Set<NodeKey>;
   _compositionKey: null | NodeKey;
   _config: EditorConfig<{...}>;
   _decorators: {[NodeKey]: ReactNode};
   _deferred: Array<() => void>;
+  _detachedNodes: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyType: 0 | 1 | 2;

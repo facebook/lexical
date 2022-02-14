@@ -172,7 +172,7 @@ export function $generateKey(node: LexicalNode): NodeKey {
   }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
-  editor._addedNodes.push(key);
+  editor._attachedNodes.add(key);
   return key;
 }
 

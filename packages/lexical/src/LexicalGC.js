@@ -43,6 +43,7 @@ function $garbageCollectDetachedDeepChildNodes(
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  detachedNodes: Set<NodeKey>,
 ): void {
   const children = node.__children;
   const childrenLength = children.length;
@@ -57,6 +58,7 @@ function $garbageCollectDetachedDeepChildNodes(
           prevNodeMap,
           nodeMap,
           dirtyNodes,
+          detachedNodes,
         );
       }
       // If we have created a node and it was dereferenced, then also
@@ -65,6 +67,7 @@ function $garbageCollectDetachedDeepChildNodes(
         dirtyNodes.delete(childKey);
       }
       nodeMap.delete(childKey);
+      detachedNodes.add(childKey);
     }
   }
 }
@@ -74,6 +77,7 @@ export function $garbageCollectDetachedNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  detachedNodes: Set<NodeKey>,
 ): void {
   const dirtyLeavesArr = Array.from(dirtyLeaves);
   const dirtyLeavesLength = dirtyLeavesArr.length;
@@ -91,6 +95,7 @@ export function $garbageCollectDetachedNodes(
         dirtyLeaves.delete(nodeKey);
       }
       nodeMap.delete(nodeKey);
+      detachedNodes.add(nodeKey);
     }
   }
 
@@ -108,6 +113,7 @@ export function $garbageCollectDetachedNodes(
             prevNodeMap,
             nodeMap,
             dirtyElements,
+            detachedNodes,
           );
         }
         // If we have created a node and it was dereferenced, then also
@@ -116,6 +122,7 @@ export function $garbageCollectDetachedNodes(
           dirtyElements.delete(nodeKey);
         }
         nodeMap.delete(nodeKey);
+        detachedNodes.add(nodeKey);
       }
     }
   }

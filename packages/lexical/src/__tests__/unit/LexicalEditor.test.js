@@ -1338,14 +1338,14 @@ describe('LexicalEditor tests', () => {
     expect(fn).toHaveBeenCalledWith('foobar');
   });
 
-  it.only('mutation listener', async () => {
+  it('mutation listener', async () => {
     init();
     const paragraphAttachedDettached = jest.fn();
     const textNodeAttachedDettached = jest.fn();
     editor.addListener('mutation', paragraphAttachedDettached, ParagraphNode);
     editor.addListener('mutation', textNodeAttachedDettached, TextNode);
 
-    let paragraphKey;
+    const paragraphKeys = [];
     const textNodeKeys = [];
     // No await intentional (batch with next)
     editor.update(() => {
@@ -1354,7 +1354,7 @@ describe('LexicalEditor tests', () => {
       const textNode = $createTextNode('foo');
       root.append(paragraph);
       paragraph.append(textNode);
-      paragraphKey = paragraph.getKey();
+      paragraphKeys.push(paragraph.getKey());
       textNodeKeys.push(textNode.getKey());
     });
     await editor.update(() => {
@@ -1366,32 +1366,43 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push(textNode2.getKey());
       textNodeKeys.push(textNode3.getKey());
     });
-
     await editor.update(() => {
       $getRoot().clear();
     });
-    expect(paragraphAttachedDettached.mock.calls.length).toBe(2);
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraphKeys.push(paragraph.getKey());
+    });
+    expect(paragraphAttachedDettached.mock.calls.length).toBe(3);
     expect(textNodeAttachedDettached.mock.calls.length).toBe(2);
 
-    const [paragraphMutation1, paragraphMutation2] =
+    const [paragraphMutation1, paragraphMutation2, paragraphMutation3] =
       paragraphAttachedDettached.mock.calls;
-    // const [paragraphAttached1, paragraphDettached1] = paragraphMutation1;
-    // const [paragraphAttached2, paragraphDettached2] = paragraphMutation2;
     const [textNodeMutation1, textNodeMutation2] =
       textNodeAttachedDettached.mock.calls;
-    const [textNodeAttached1, textNodeDettached1] = textNodeMutation1;
-    const [textNodeAttached2, textNodeDettached2] = textNodeMutation2;
-    expect(paragraphMutation1[0]).toEqual([paragraphKey]);
+    expect(paragraphMutation1[0]).toEqual([paragraphKeys[0]]);
     expect(paragraphMutation1[1]).toEqual([]);
     expect(paragraphMutation2[0]).toEqual([]);
-    expect(paragraphMutation2[1]).toEqual([paragraphKey]);
-    expect();
-    // expect(paragraphMutation2).toEqual(expect.arrayContaining([paragraphKey]));
-    // expect(textNodeMutation1).toEqual(expect.arrayContaining(textNodeKeys));
-    // expect(textNodeMutation2).toEqual(expect.arrayContaining(textNodeKeys));
-    // expect(paragraphAttachedDettached.mock.calls).toEqual([
-    //   [arg1, arg2, ...], // First call
-    //   [arg1, arg2, ...]  // Second call
-    // ]);
+    expect(paragraphMutation2[1]).toEqual([paragraphKeys[0]]);
+    expect(paragraphMutation3[0]).toEqual([paragraphKeys[1]]);
+    expect(paragraphMutation3[1]).toEqual([]);
+    expect(textNodeMutation1[0]).toEqual(
+      expect.arrayContaining([
+        textNodeKeys[0],
+        textNodeKeys[1],
+        textNodeKeys[2],
+      ]),
+    );
+    expect(textNodeMutation1[1]).toEqual([]);
+    expect(textNodeMutation2[0]).toEqual([]);
+    expect(textNodeMutation2[1]).toEqual(
+      expect.arrayContaining([
+        textNodeKeys[0],
+        textNodeKeys[1],
+        textNodeKeys[2],
+      ]),
+    );
   });
 });

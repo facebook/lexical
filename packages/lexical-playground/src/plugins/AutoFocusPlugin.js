@@ -18,11 +18,5 @@ export default function AutoFocusPlugin(): null {
     editor.focus();
   }, [editor]);
 
-  useEffect(() => {
-    return editor.addListener('mutation', (addedNodes) => {
-      console.info(addedNodes);
-    });
-  });
-
   return null;
 }

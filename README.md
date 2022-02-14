@@ -225,7 +225,7 @@ editor.addListener('update', ({editorState}) => {
     // Just like editor.update(), .read() expects a closure where you can use
     // the $ prefixed helper functions.
   });
-}); 
+});
 ```
 
 ### Creating custom Lexical nodes

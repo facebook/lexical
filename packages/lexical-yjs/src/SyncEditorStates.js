@@ -25,12 +25,14 @@ import {
   isDecoratorArray,
   isDecoratorMap,
 } from 'lexical';
-// $FlowFixMe: need Flow typings for yjs
 import {
   Array as YArray,
   Map as YMap,
+  // $FlowFixMe: need Flow typings for yjs
   YMapEvent,
+  // $FlowFixMe: need Flow typings for yjs
   YTextEvent,
+  // $FlowFixMe: need Flow typings for yjs
   YXmlEvent,
 } from 'yjs';
 

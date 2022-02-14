@@ -1340,10 +1340,10 @@ describe('LexicalEditor tests', () => {
 
   it('mutation listener', async () => {
     init();
-    const paragraphAttachedDettached = jest.fn();
-    const textNodeAttachedDettached = jest.fn();
-    editor.addListener('mutation', paragraphAttachedDettached, ParagraphNode);
-    editor.addListener('mutation', textNodeAttachedDettached, TextNode);
+    const paragraphAttachedDetached = jest.fn();
+    const textNodeAttachedDetached = jest.fn();
+    editor.addListener('mutation', paragraphAttachedDetached, ParagraphNode);
+    editor.addListener('mutation', textNodeAttachedDetached, TextNode);
 
     const paragraphKeys = [];
     const textNodeKeys = [];
@@ -1375,13 +1375,13 @@ describe('LexicalEditor tests', () => {
       root.append(paragraph);
       paragraphKeys.push(paragraph.getKey());
     });
-    expect(paragraphAttachedDettached.mock.calls.length).toBe(3);
-    expect(textNodeAttachedDettached.mock.calls.length).toBe(2);
+    expect(paragraphAttachedDetached.mock.calls.length).toBe(3);
+    expect(textNodeAttachedDetached.mock.calls.length).toBe(2);
 
     const [paragraphMutation1, paragraphMutation2, paragraphMutation3] =
-      paragraphAttachedDettached.mock.calls;
+      paragraphAttachedDetached.mock.calls;
     const [textNodeMutation1, textNodeMutation2] =
-      textNodeAttachedDettached.mock.calls;
+      textNodeAttachedDetached.mock.calls;
     expect(paragraphMutation1[0]).toEqual([paragraphKeys[0]]);
     expect(paragraphMutation1[1]).toEqual([]);
     expect(paragraphMutation2[0]).toEqual([]);

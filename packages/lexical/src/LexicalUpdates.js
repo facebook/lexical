@@ -10,7 +10,6 @@
 import type {
   CommandPayload,
   EditorUpdateOptions,
-  IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   Transform,
 } from './LexicalEditor';
@@ -442,7 +441,7 @@ function triggerMutationListeners(
   attached: Set<NodeKey>,
   detached: Set<NodeKey>,
 ): void {
-  const attachedDettachedNodes: Map<string, [Array<NodeKey>, Array<NodeKey>]> =
+  const attachedDetachedNodes: Map<string, [Array<NodeKey>, Array<NodeKey>]> =
     new Map();
   const currentNodeMap = currentEditorState._nodeMap;
   const nextNodeMap = pendingEditorState._nodeMap;
@@ -456,12 +455,12 @@ function triggerMutationListeners(
       invariant(false, 'Attached node not in nextNodeMap');
     }
     const type = node.__type;
-    let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
-    if (attachedDettachedNodesByType === undefined) {
-      attachedDettachedNodesByType = [[], []];
-      attachedDettachedNodes.set(type, attachedDettachedNodesByType);
+    let attachedDetachedNodesByType = attachedDetachedNodes.get(type);
+    if (attachedDetachedNodesByType === undefined) {
+      attachedDetachedNodesByType = [[], []];
+      attachedDetachedNodes.set(type, attachedDetachedNodesByType);
     }
-    const attachedNodes = attachedDettachedNodesByType[0];
+    const attachedNodes = attachedDetachedNodesByType[0];
     attachedNodes.push(nodeKey);
   });
   detached.forEach((nodeKey) => {
@@ -470,15 +469,15 @@ function triggerMutationListeners(
       invariant(false, 'Detached node not in currentNodeMap');
     }
     const type = node.__type;
-    let attachedDettachedNodesByType = attachedDettachedNodes.get(type);
-    if (attachedDettachedNodesByType === undefined) {
-      attachedDettachedNodesByType = [[], []];
-      attachedDettachedNodes.set(type, attachedDettachedNodesByType);
+    let attachedDetachedNodesByType = attachedDetachedNodes.get(type);
+    if (attachedDetachedNodesByType === undefined) {
+      attachedDetachedNodesByType = [[], []];
+      attachedDetachedNodes.set(type, attachedDetachedNodesByType);
     }
-    const detachedNodes = attachedDettachedNodesByType[1];
+    const detachedNodes = attachedDetachedNodesByType[1];
     detachedNodes.push(nodeKey);
   });
-  attachedDettachedNodes.forEach((attachedDettached, type) => {
+  attachedDetachedNodes.forEach((attachedDetached, type) => {
     const registeredNode = editor._nodes.get(type);
     if (registeredNode === undefined) {
       invariant(false, 'Mutation listener on an unregistered node %s', type);
@@ -486,7 +485,7 @@ function triggerMutationListeners(
     const mutationListeners = Array.from(registeredNode.mutations);
     const mutationListenersLength = mutationListeners.length;
     for (let i = 0; i < mutationListenersLength; i++) {
-      mutationListeners[i](...attachedDettached);
+      mutationListeners[i](...attachedDetached);
     }
   });
 }

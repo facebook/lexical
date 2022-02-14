@@ -24,6 +24,7 @@ import {
 import {
   $flushMutations,
   $isTokenOrInert,
+  $setSelection,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,
   getEditorsToPropagate,
@@ -46,7 +47,6 @@ import {
   isOpenLineBreak,
   isParagraph,
   isRedo,
-  isSelectionWithinEditor,
   isTab,
   isUnderline,
   isUndo,
@@ -87,34 +87,12 @@ if (CAN_USE_BEFORE_INPUT) {
 
 let lastKeyWasMaybeAndroidSoftKey = false;
 
-function onSelectionChange(editor: LexicalEditor): void {
-  const domSelection = window.getSelection();
-  const parentEditors = getEditorsToPropagate(editor);
-  const topLevelEditor = parentEditors[parentEditors.length - 1];
-  const topLevelEditorElement = topLevelEditor.getRootElement();
-
-  // This is a hot-path, so let's avoid doing an update when
-  // the anchorNode is not actually inside the editor (or its parent).
-  if (
-    topLevelEditorElement &&
-    !topLevelEditorElement.contains(domSelection.anchorNode)
-  ) {
-    return;
-  }
-
-  // This update functions as a way of reconciling a bad selection
-  // to a good selection.
+function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
   editor.update(() => {
-    $log('onSelectionChange');
-
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
-    const isActiveEditor = isSelectionWithinEditor(
-      editor,
-      domSelection.anchorNode,
-      domSelection.focusNode,
-    );
-    if (!isActiveEditor) {
+    if (!isActive) {
+      $setSelection(null);
       return;
     }
 
@@ -514,17 +492,38 @@ function clearRootElementRemoveHandles(rootElement: HTMLElement): void {
   rootElement._lexicalEventHandles = [];
 }
 
+// Mapping root editors to their active nested editors, contains nested editors
+// mapping only, so if root editor is selected map will have no reference to free up memory
+const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
+
 function onDocumentSelectionChange(event: Event): void {
   const sel = window.getSelection();
   let node = sel.anchorNode;
   while (node != null) {
     if (node.contentEditable === 'true') {
-      const possibleLexicalEditor = node.__lexicalEditor;
-      if (possibleLexicalEditor !== undefined) {
-        onSelectionChange(possibleLexicalEditor);
-        getEditorsToPropagate(possibleLexicalEditor).forEach((parentEditor) =>
-          onSelectionChange(parentEditor),
-        );
+      const nextActiveEditor = node.__lexicalEditor;
+      if (nextActiveEditor !== undefined) {
+        // When editor receives selection change event, we're checking if
+        // it has any sibling editors (within same parent editor) that were active
+        // before, and trigger selection change on it to nullify selection.
+        const editors = getEditorsToPropagate(nextActiveEditor);
+        const rootEditor = editors[editors.length - 1];
+        const rootEditorKey = rootEditor._key;
+        const activeNestedEditor = activeNestedEditorsMap.get(rootEditorKey);
+        const prevActiveEditor = activeNestedEditor || rootEditor;
+
+        if (prevActiveEditor !== nextActiveEditor) {
+          onSelectionChange(prevActiveEditor, false);
+        }
+
+        onSelectionChange(nextActiveEditor, true);
+
+        // If newly selected editor is nested, then add it to the map, clean map otherwise
+        if (nextActiveEditor !== rootEditor) {
+          activeNestedEditorsMap.set(rootEditorKey, nextActiveEditor);
+        } else if (activeNestedEditor) {
+          activeNestedEditorsMap.delete(rootEditorKey);
+        }
         return;
       }
     }
@@ -576,10 +575,28 @@ export function addRootElementEvents(
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
   // $FlowFixMe: internal field
+  cleanActiveNestedEditorsMap(rootElement.__lexicalEditor);
+  // $FlowFixMe: internal field
   rootElement.__lexicalEditor = null;
   const removeHandles = getRootElementRemoveHandles(rootElement);
   for (let i = 0; i < removeHandles.length; i++) {
     removeHandles[i]();
   }
   clearRootElementRemoveHandles(rootElement);
+}
+
+function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
+  // $FlowFixMe: internal field
+  if (editor._parentEditor) {
+    // For nested editor cleanup map if this editor was marked as active
+    const editors = getEditorsToPropagate(editor);
+    const rootEditor = editors[editors.length - 1];
+    const rootEditorKey = rootEditor._key;
+    if (activeNestedEditorsMap.get(rootEditorKey) === editor) {
+      activeNestedEditorsMap.delete(rootEditorKey);
+    }
+  } else {
+    // For top-level editors cleanup map
+    activeNestedEditorsMap.delete(editor._key);
+  }
 }

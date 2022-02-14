@@ -119,7 +119,12 @@ export function $findNodeWithOffsetFromJoinedText(
   const childrenLength = children.length;
   let runningLength = 0;
   for (let i = 0; i < childrenLength; ++i) {
-    if (runningLength >= joinedTextLength) {
+    // We must examine the offsetInJoinedText that is located
+    // at the length of the string.
+    // For example, given "hello", the length is 5, yet
+    // the caller still wants the node + offset at the
+    // right edge of the "o".
+    if (runningLength > joinedTextLength) {
       break;
     }
 
@@ -129,11 +134,12 @@ export function $findNodeWithOffsetFromJoinedText(
       : separatorLength;
 
     const newRunningLength = runningLength + childContentLength;
-    if (
-      runningLength <= offsetInJoinedText &&
-      offsetInJoinedText < newRunningLength &&
-      $isTextNode(child)
-    ) {
+
+    const isJoinedOffsetWithinNode =
+      (runningLength === 0 && runningLength === offsetInJoinedText) ||
+      (runningLength < offsetInJoinedText &&
+        offsetInJoinedText <= newRunningLength);
+    if (isJoinedOffsetWithinNode && $isTextNode(child)) {
       return {
         node: child,
         offset: offsetInJoinedText - runningLength,

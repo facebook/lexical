@@ -74,12 +74,9 @@ export type NodeTransformationKind =
 // // //
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
-// We can specify ahead of time which gapture groups shoud be removed using the regExCaptureGroupsToDelete.
 export type AutoFormatCriteria = $ReadOnly<{
   nodeTransformationKind: ?NodeTransformationKind,
   regEx: RegExp,
-  regExCaptureGroupsToDelete: ?Array<number>,
-  regExExpectedCaptureGroupCount: number,
   requiresParagraphStart: ?boolean,
 }>;
 
@@ -110,6 +107,7 @@ type CaptureGroupDetail = {
 // This type stores the result details when a particular
 // match is found.
 export type MatchResultContext = {
+  offsetInJoinedTextForCollapsedSelection: number, // The expected location for the blinking caret.
   regExCaptureGroups: Array<CaptureGroupDetail>,
   triggerState: ?AutoFormatTriggerState,
 };
@@ -128,8 +126,6 @@ const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused 
 const autoFormatBase: AutoFormatCriteria = {
   nodeTransformationKind: null,
   regEx: /(?:)/,
-  regExCaptureGroupsToDelete: null,
-  regExExpectedCaptureGroupCount: 1,
   requiresParagraphStart: false,
 };
 
@@ -184,7 +180,6 @@ const markdownOrderedList: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphOrderedList',
   regEx: /^(\d+)\.\s/,
-  regExExpectedCaptureGroupCount: 2 /*e.g. '321. ' returns '321. ' & '321'*/,
 };
 
 const markdownBold: AutoFormatCriteria = {
@@ -194,10 +189,6 @@ const markdownBold: AutoFormatCriteria = {
   regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
   // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
   // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
-  regExCaptureGroupsToDelete: [1, 5],
-
-  // The $ will find the target at the end of the string.
-  regExExpectedCaptureGroupCount: 6,
 };
 
 const allAutoFormatCriteriaForTextNodes = [markdownBold];
@@ -227,10 +218,10 @@ function getMatchResultContextWithRegEx(
   matchMustAppearAtStartOfString: boolean,
   matchMustAppearAtEndOfString: boolean,
   regEx: RegExp,
-  regExExpectedCaptureGroupCount: number,
   scanningContext: ScanningContext,
 ): null | MatchResultContext {
   const matchResultContext: MatchResultContext = {
+    offsetInJoinedTextForCollapsedSelection: 0,
     regExCaptureGroups: [],
     triggerState: null,
   };
@@ -239,11 +230,12 @@ function getMatchResultContextWithRegEx(
   if (
     regExMatches !== null &&
     regExMatches.length > 0 &&
-    regExMatches.length === regExExpectedCaptureGroupCount &&
     (matchMustAppearAtStartOfString === false || regExMatches.index === 0) &&
     (matchMustAppearAtEndOfString === false ||
       regExMatches.index + regExMatches[0].length === textToSearch.length)
   ) {
+    matchResultContext.offsetInJoinedTextForCollapsedSelection =
+      textToSearch.length;
     const captureGroupsCount = regExMatches.length;
     let runningLength = regExMatches.index;
     for (
@@ -292,7 +284,6 @@ function getMatchResultContextForParagraphs(
       true,
       false,
       autoFormatCriteria.regEx,
-      autoFormatCriteria.regExExpectedCaptureGroupCount,
       scanningContext,
     );
   }
@@ -321,7 +312,6 @@ function getMatchResultContextForText(
         false,
         true,
         autoFormatCriteria.regEx,
-        autoFormatCriteria.regExExpectedCaptureGroupCount,
         scanningContext,
       );
     } else {
@@ -480,21 +470,26 @@ function transformTextNodeForText(
   if (autoFormatCriteria.nodeTransformationKind != null) {
     switch (autoFormatCriteria.nodeTransformationKind) {
       case 'textBold': {
+        if (matchResultContext.regExCaptureGroups.length !== 6) {
+          // The expected reg ex pattern for bold should have 6 groups.
+          // If it does not, then break and fail silently.
+          // e2e tests validate the regEx pattern.
+          break;
+        }
         matchResultContext.regExCaptureGroups =
           getCaptureGroupsByResolvingAllDetails(
             scanningContext,
             autoFormatCriteria,
             matchResultContext,
           );
-
-        if (autoFormatCriteria.regExCaptureGroupsToDelete != null) {
-          // Remove unwanted text in reg ex patterh.
-          removeTextInCaptureGroups(
-            autoFormatCriteria.regExCaptureGroupsToDelete,
-            matchResultContext,
-          );
-          formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
-        }
+        // Remove unwanted text in reg ex patterh.
+        removeTextInCaptureGroups([1, 5], matchResultContext);
+        formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
+        makeCollapsedSelectionAtOffsetInJoinedText(
+          matchResultContext.offsetInJoinedTextForCollapsedSelection,
+          matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
+          scanningContext.textNodeWithOffset.node.getParentOrThrow(),
+        );
         break;
       }
       default:
@@ -637,6 +632,12 @@ function shiftCaptureGroupOffsets(
   startingCaptureGroupIndex: number,
   matchResultContext: MatchResultContext,
 ) {
+  matchResultContext.offsetInJoinedTextForCollapsedSelection += delta;
+  invariant(
+    matchResultContext.offsetInJoinedTextForCollapsedSelection > 0,
+    'The text content string length does not correlate with insertions/deletions of new text.',
+  );
+
   const regExCaptureGroups = matchResultContext.regExCaptureGroups;
   const regExCaptureGroupsCount = regExCaptureGroups.length;
   for (
@@ -705,6 +706,52 @@ function formatTextInCaptureGroupIndex(
     const currentSelection = $getSelection();
     if (currentSelection != null) {
       currentSelection.formatText(formatType);
+
+      const finalSelection = $createRangeSelection();
+
+      finalSelection.anchor.set(
+        focusTextNodeWithOffset.node.getKey(),
+        focusTextNodeWithOffset.offset + 1,
+        'text',
+      );
+
+      finalSelection.focus.set(
+        focusTextNodeWithOffset.node.getKey(),
+        focusTextNodeWithOffset.offset + 1,
+        'text',
+      );
+      $setSelection(finalSelection);
     }
+  }
+}
+
+function makeCollapsedSelectionAtOffsetInJoinedText(
+  offsetInJoinedText: number,
+  joinedTextLength: number,
+  parentElementNode: ElementNode,
+) {
+  const textNodeWithOffset = $findNodeWithOffsetFromJoinedText(
+    parentElementNode,
+    joinedTextLength,
+    offsetInJoinedText,
+    TRIGGER_STRING_LENGTH,
+  );
+
+  if (textNodeWithOffset != null) {
+    const newSelection = $createRangeSelection();
+
+    newSelection.anchor.set(
+      textNodeWithOffset.node.getKey(),
+      textNodeWithOffset.offset,
+      'text',
+    );
+
+    newSelection.focus.set(
+      textNodeWithOffset.node.getKey(),
+      textNodeWithOffset.offset,
+      'text',
+    );
+
+    $setSelection(newSelection);
   }
 }

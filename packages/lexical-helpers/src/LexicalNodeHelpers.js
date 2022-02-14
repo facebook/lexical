@@ -68,27 +68,6 @@ export type DOMNodeToLexicalConversionMap = {
   [string]: DOMNodeToLexicalConversion,
 };
 
-export function $createLexicalNodeFromDOMNode(
-  node: Node,
-  conversionMap: DOMNodeToLexicalConversionMap,
-): LexicalNode | null {
-  let lexicalNode: LexicalNode | null = null;
-  const createFunction = conversionMap[node.nodeName.toLowerCase()];
-  if (createFunction) {
-    lexicalNode = createFunction(node);
-    if ($isElementNode(lexicalNode)) {
-      const children = node.childNodes;
-      for (let i = 0; i < children.length; i++) {
-        const child = $createLexicalNodeFromDOMNode(children[i], conversionMap);
-        if (child !== null) {
-          lexicalNode.append(child);
-        }
-      }
-    }
-  }
-  return lexicalNode;
-}
-
 export function $createTableNodeWithDimensions(
   rowCount: number,
   columnCount: number,

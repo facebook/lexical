@@ -8,32 +8,31 @@
  */
 
 import type {
-  ElementNode,
   EditorState,
+  ElementNode,
   LexicalEditor,
   RangeSelection,
 } from 'lexical';
 
-import {$isElementNode, $isTextNode, $getRoot, $getSelection} from 'lexical';
-
+import {$getRoot, $getSelection, $isElementNode, $isTextNode} from 'lexical';
 import * as React from 'react';
-import {useState, useEffect, useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: $ReadOnly<{
   [string]: string,
 }> = Object.freeze({
-  '\n': '\\n',
   '\t': '\\t',
+  '\n': '\\n',
 });
 const NON_SINGLE_WIDTH_CHARS_REGEX = new RegExp(
   Object.keys(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).join('|'),
   'g',
 );
 const SYMBOLS = Object.freeze({
-  hasNextSibling: '├',
-  isLastChild: '└',
   ancestorHasNextSibling: '|',
   ancestorIsLastChild: ' ',
+  hasNextSibling: '├',
+  isLastChild: '└',
   selectedChar: '^',
   selectedLine: '>',
 });
@@ -46,12 +45,12 @@ export default function TreeView({
   timeTravelPanelClassName,
   editor,
 }: {
+  editor: LexicalEditor,
+  timeTravelButtonClassName: string,
+  timeTravelPanelButtonClassName: string,
   timeTravelPanelClassName: string,
   timeTravelPanelSliderClassName: string,
-  timeTravelPanelButtonClassName: string,
-  timeTravelButtonClassName: string,
   viewClassName: string,
-  editor: LexicalEditor,
 }): React$Node {
   const [timeStampedEditorStates, setTimeStampedEditorStates] = useState([]);
   const [content, setContent] = useState<string>('');
@@ -112,9 +111,16 @@ export default function TreeView({
   }, [timeStampedEditorStates, isPlaying, editor, totalEditorStates]);
 
   useEffect(() => {
-    if (treeElementRef.current) {
+    const element = treeElementRef.current;
+
+    if (element !== null) {
       // $FlowExpectedError[prop-missing] Internal field
-      treeElementRef.current.__lexicalEditor = editor;
+      element.__lexicalEditor = editor;
+
+      return () => {
+        // $FlowExpectedError[prop-missing] Internal field
+        element.__lexicalEditor = null;
+      };
     }
   }, [editor]);
 
@@ -222,8 +228,8 @@ function generateContent(editorState: EditorState): string {
       )} ${nodeKeyDisplay} ${typeDisplay} ${printNode(node)}\n`;
 
       res += printSelectedCharsLine({
-        isSelected,
         indent,
+        isSelected,
         node,
         nodeKeyDisplay,
         selection,

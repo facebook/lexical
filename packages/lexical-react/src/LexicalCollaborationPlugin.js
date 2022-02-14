@@ -10,19 +10,20 @@
 import type {Provider} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
-import {createContext, useContext, useMemo} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {createContext, useContext, useMemo} from 'react';
+
 import {
   useYjsCollaboration,
-  useYjsHistory,
   useYjsFocusTracking,
+  useYjsHistory,
 } from './shared/useYjsCollaboration';
 
 type CollaborationContextType = {
   clientID: number,
-  yjsDocMap: Map<string, Doc>,
-  name: string,
   color: string,
+  name: string,
+  yjsDocMap: Map<string, Doc>,
 };
 
 const entries = [
@@ -50,11 +51,11 @@ const randomEntry =
 export function CollaborationPlugin({
   id,
   providerFactory,
-  skipInit,
+  shouldBootstrap,
 }: {
   id: string,
   providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider,
-  skipInit?: boolean,
+  shouldBootstrap: boolean,
 }): React$Node {
   const collabContext = useCollaborationContext();
   const {yjsDocMap, name, color} = collabContext;
@@ -70,7 +71,7 @@ export function CollaborationPlugin({
     yjsDocMap,
     name,
     color,
-    skipInit || false,
+    shouldBootstrap,
   );
   collabContext.clientID = binding.clientID;
   useYjsHistory(editor, binding);
@@ -82,9 +83,9 @@ export function CollaborationPlugin({
 export const CollaborationContext: React$Context<CollaborationContextType> =
   createContext({
     clientID: 0,
-    yjsDocMap: new Map(),
-    name: randomEntry[0],
     color: randomEntry[1],
+    name: randomEntry[0],
+    yjsDocMap: new Map(),
   });
 
 export function useCollaborationContext(): CollaborationContextType {

@@ -8,27 +8,28 @@
  */
 
 import type {
-  LexicalEditor,
-  EditorThemeClasses,
-  EditorState,
   DOMConversionMap,
+  EditorState,
+  EditorThemeClasses,
+  LexicalEditor,
   LexicalNode,
 } from 'lexical';
 
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
+
 import useLexicalEditor from './DEPRECATED_useLexicalEditor';
 
 export default function useLexical<EditorContext>(editorConfig?: {
-  namespace?: string,
-  onError?: (error: Error, log: Array<string>) => void,
-  editorState?: EditorState,
-  theme?: EditorThemeClasses,
   context?: EditorContext,
-  nodes?: Array<Class<LexicalNode>>,
-  htmlTransforms?: DOMConversionMap,
-  parentEditor?: LexicalEditor,
   disableEvents?: boolean,
+  editorState?: EditorState,
+  htmlTransforms?: DOMConversionMap,
+  namespace?: string,
+  nodes?: Array<Class<LexicalNode>>,
+  onError?: (error: Error, log: Array<string>) => void,
+  parentEditor?: LexicalEditor,
+  theme?: EditorThemeClasses,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {
   const editor = useMemo(() => {
     if (editorConfig !== undefined) {

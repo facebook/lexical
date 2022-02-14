@@ -7,39 +7,40 @@
  * @flow strict
  */
 
-import type {NodeKey, NodeMap} from './LexicalNode';
 import type {
-  LexicalEditor,
   EditorConfig,
   IntentionallyMarkedAsDirtyElement,
+  LexicalEditor,
 } from './LexicalEditor';
+import type {NodeKey, NodeMap} from './LexicalNode';
 import type {RangeSelection} from './LexicalSelection';
-import type {Node as ReactNode} from 'react';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
+import type {Node as ReactNode} from 'react';
 
-import {EditorState} from './LexicalEditorState';
-import {
-  isSelectionWithinEditor,
-  getDOMTextNode,
-  cloneDecorators,
-  getTextDirection,
-} from './LexicalUtils';
-import {
-  FULL_RECONCILE,
-  IS_ALIGN_LEFT,
-  IS_ALIGN_CENTER,
-  IS_ALIGN_RIGHT,
-  IS_ALIGN_JUSTIFY,
-  DOM_TEXT_TYPE,
-} from './LexicalConstants';
+import invariant from 'shared/invariant';
+
 import {
   $isDecoratorNode,
   $isElementNode,
-  $isTextNode,
   $isLineBreakNode,
   $isRootNode,
+  $isTextNode,
 } from '.';
-import invariant from 'shared/invariant';
+import {
+  DOM_TEXT_TYPE,
+  FULL_RECONCILE,
+  IS_ALIGN_CENTER,
+  IS_ALIGN_JUSTIFY,
+  IS_ALIGN_LEFT,
+  IS_ALIGN_RIGHT,
+} from './LexicalConstants';
+import {EditorState} from './LexicalEditorState';
+import {
+  cloneDecorators,
+  getDOMTextNode,
+  getTextDirection,
+  isSelectionWithinEditor,
+} from './LexicalUtils';
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
@@ -678,9 +679,9 @@ export function updateEditorState(
       );
     } finally {
       observer.observe(rootElement, {
+        characterData: true,
         childList: true,
         subtree: true,
-        characterData: true,
       });
     }
   }

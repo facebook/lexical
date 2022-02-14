@@ -5,12 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isRootNode, $getRoot, $createParagraphNode} from 'lexical';
-import {$createRootNode} from '../../LexicalRootNode';
+import {$createParagraphNode, $getRoot, $isRootNode} from 'lexical';
+
 import {
   $createTestDecoratorNode,
   initializeUnitTest,
 } from '../../../../__tests__/utils';
+import {$createRootNode} from '../../LexicalRootNode';
 
 describe('LexicalRootNode tests', () => {
   initializeUnitTest((testEnv) => {

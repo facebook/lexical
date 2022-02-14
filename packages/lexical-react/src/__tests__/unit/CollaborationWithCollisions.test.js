@@ -8,24 +8,25 @@
  */
 
 import {
-  createTestConnection,
-  waitForReact,
-  createAndStartClients,
-  testClientsForEquality,
+  $createParagraphNode,
+  $createRangeSelection,
+  $createTextNode,
+  $getRoot,
+  $isTextNode,
+  $setSelection,
+  LexicalNode,
+  Selection,
+} from 'lexical';
+
+import {
   connectClients,
+  createAndStartClients,
+  createTestConnection,
   disconnectClients,
   stopClients,
+  testClientsForEquality,
+  waitForReact,
 } from './utils';
-import {
-  $getRoot,
-  $createTextNode,
-  $setSelection,
-  $createRangeSelection,
-  $isTextNode,
-  Selection,
-  LexicalNode,
-  $createParagraphNode,
-} from 'lexical';
 
 const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();
@@ -43,10 +44,10 @@ const $createSelectionByPath = ({
   focusPath,
   focusOffset,
 }: {
-  anchorPath: Array<number>,
   anchorOffset: number,
-  focusPath: Array<number>,
+  anchorPath: Array<number>,
   focusOffset: number,
+  focusPath: Array<number>,
 }): Selection => {
   const selection = $createRangeSelection();
   const root = $getRoot();
@@ -79,17 +80,17 @@ const $replaceTextByPath = ({
   focusOffset,
   text = '',
 }: {
-  anchorPath: Array<number>,
   anchorOffset: number,
-  focusPath: Array<number>,
+  anchorPath: Array<number>,
   focusOffset: number,
+  focusPath: Array<number>,
   text: ?string,
 }) => {
   const selection = $createSelectionByPath({
-    anchorPath,
     anchorOffset,
-    focusPath,
+    anchorPath,
     focusOffset,
+    focusPath,
   });
   selection.insertText(text);
 };
@@ -108,26 +109,20 @@ describe('CollaborationWithCollisions', () => {
   });
 
   const SIMPLE_TEXT_COLLISION_TESTS: Array<{
-    name: String,
-    init: () => void,
     clients: Array<() => void>,
     expectedHTML: ?String,
+    init: () => void,
+    name: String,
   }> = [
     {
-      name: 'Remove text at within the first of multiple paragraphs colliding with removing first paragraph',
-      init: () => {
-        $insertParagraph('Hello world 1');
-        $insertParagraph('Hello world 2');
-        $insertParagraph('Hello world 3');
-      },
       clients: [
         () => {
           // First client deletes text from first and second paragraphs
           $replaceTextByPath({
-            anchorPath: [0, 0],
             anchorOffset: 5,
-            focusPath: [1, 0],
+            anchorPath: [0, 0],
             focusOffset: 6,
+            focusPath: [1, 0],
           });
         },
         () => {
@@ -135,14 +130,14 @@ describe('CollaborationWithCollisions', () => {
           $getRoot().getFirstChild().remove();
         },
       ],
-    },
-    {
-      name: 'Remove first two paragraphs colliding with removing first paragraph',
       init: () => {
         $insertParagraph('Hello world 1');
         $insertParagraph('Hello world 2');
         $insertParagraph('Hello world 3');
       },
+      name: 'Remove text at within the first of multiple paragraphs colliding with removing first paragraph',
+    },
+    {
       clients: [
         () => {
           // First client deletes first two paragraphs
@@ -155,34 +150,40 @@ describe('CollaborationWithCollisions', () => {
           $getRoot().getFirstChild().remove();
         },
       ],
-    },
-    {
-      name: 'Editing first and second paragraphs colliding with editing second and third paragraphs (with overlapping edit)',
       init: () => {
         $insertParagraph('Hello world 1');
         $insertParagraph('Hello world 2');
         $insertParagraph('Hello world 3');
       },
+      name: 'Remove first two paragraphs colliding with removing first paragraph',
+    },
+    {
       clients: [
         () => {
           $replaceTextByPath({
-            anchorPath: [0, 0],
             anchorOffset: 0,
-            focusPath: [1, 0],
+            anchorPath: [0, 0],
             focusOffset: 7,
+            focusPath: [1, 0],
             text: 'Hello client 1',
           });
         },
         () => {
           $replaceTextByPath({
-            anchorPath: [1, 0],
             anchorOffset: 5,
-            focusPath: [2, 0],
+            anchorPath: [1, 0],
             focusOffset: 5,
+            focusPath: [2, 0],
             text: 'Hello client 2',
           });
         },
       ],
+      init: () => {
+        $insertParagraph('Hello world 1');
+        $insertParagraph('Hello world 2');
+        $insertParagraph('Hello world 3');
+      },
+      name: 'Editing first and second paragraphs colliding with editing second and third paragraphs (with overlapping edit)',
     },
   ];
 

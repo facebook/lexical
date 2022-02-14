@@ -7,32 +7,32 @@
  * @flow strict
  */
 
-import type {LexicalEditor, LexicalNode, ElementNode} from 'lexical';
+import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
-  TextNode,
   $createTextNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
+  TextNode,
 } from 'lexical';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
-import {useEffect} from 'react';
 import {
-  AutoLinkNode,
   $createAutoLinkNode,
   $isAutoLinkNode,
+  AutoLinkNode,
 } from 'lexical/AutoLinkNode';
+import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 
 type LinkMatcherResult = {
+  index: number,
+  length: number,
   text: string,
   url: string,
-  length: number,
-  index: number,
 };
 
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;

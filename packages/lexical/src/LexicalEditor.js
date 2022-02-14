@@ -7,10 +7,21 @@
  * @flow strict
  */
 
+import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
-import type {EditorState} from './LexicalEditorState';
 
+import invariant from 'shared/invariant';
+
+import {$getRoot, $getSelection, TextNode} from '.';
+import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
+import {createEmptyEditorState} from './LexicalEditorState';
+import {
+  addDocumentSelectionChangeEvent,
+  addRootElementEvents,
+  removeRootElementEvents,
+} from './LexicalEvents';
+import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {
   commitPendingUpdates,
   parseEditorState,
@@ -18,21 +29,15 @@ import {
   triggerListeners,
   updateEditor,
 } from './LexicalUpdates';
-import {TextNode, $getSelection, $getRoot} from '.';
-import {createEmptyEditorState} from './LexicalEditorState';
-import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
-import {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
-import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
-import {NO_DIRTY_NODES, FULL_RECONCILE} from './LexicalConstants';
-import {flushRootMutations, initMutationObserver} from './LexicalMutations';
-import {RootNode} from './nodes/base/LexicalRootNode';
 import {
   createUID,
   generateRandomKey,
   markAllNodesAsDirty,
 } from './LexicalUtils';
-import invariant from 'shared/invariant';
-import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
+import {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
+import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
+import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
+import {RootNode} from './nodes/base/LexicalRootNode';
 
 export type DOMConversion = (
   element: Node,
@@ -43,9 +48,9 @@ export type DOMConversionMap = {
   [string]: DOMConversion,
 };
 type DOMConversionOutput = {
-  node: LexicalNode | null,
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
   forChild?: DOMChildConversion,
+  node: LexicalNode | null,
 };
 
 export type EditorThemeClassName = string;
@@ -53,17 +58,17 @@ export type EditorThemeClassName = string;
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName,
   bold?: EditorThemeClassName,
-  underline?: EditorThemeClassName,
-  strikethrough?: EditorThemeClassName,
-  underlineStrikethrough?: EditorThemeClassName,
-  italic?: EditorThemeClassName,
   code?: EditorThemeClassName,
+  italic?: EditorThemeClassName,
+  strikethrough?: EditorThemeClassName,
+  underline?: EditorThemeClassName,
+  underlineStrikethrough?: EditorThemeClassName,
 };
 
 export type EditorUpdateOptions = {|
   onUpdate?: () => void,
-  tag?: string,
   skipTransforms?: true,
+  tag?: string,
 |};
 
 export type EditorSetOptions = {|
@@ -71,38 +76,6 @@ export type EditorSetOptions = {|
 |};
 
 export type EditorThemeClasses = {
-  ltr?: EditorThemeClassName,
-  rtl?: EditorThemeClassName,
-  root?: EditorThemeClassName,
-  text?: TextNodeThemeClasses,
-  paragraph?: EditorThemeClassName,
-  horizontalRule?: EditorThemeClassName,
-  image?: EditorThemeClassName,
-  list?: {
-    ul?: EditorThemeClassName,
-    ul1?: EditorThemeClassName,
-    ul2?: EditorThemeClassName,
-    ul3?: EditorThemeClassName,
-    ul4?: EditorThemeClassName,
-    ul5?: EditorThemeClassName,
-    ol?: EditorThemeClassName,
-    ol1?: EditorThemeClassName,
-    ol2?: EditorThemeClassName,
-    ol3?: EditorThemeClassName,
-    ol4?: EditorThemeClassName,
-    ol5?: EditorThemeClassName,
-    listitem: EditorThemeClassName,
-    nested: {
-      list?: EditorThemeClassName,
-      listitem?: EditorThemeClassName,
-    },
-  },
-  table?: EditorThemeClassName,
-  tableRow?: EditorThemeClassName,
-  tableCell?: EditorThemeClassName,
-  tableCellHeader?: EditorThemeClassName,
-  link?: EditorThemeClassName,
-  quote?: EditorThemeClassName,
   code?: EditorThemeClassName,
   codeHighlight?: {[string]: EditorThemeClassName},
   hashtag?: EditorThemeClassName,
@@ -113,16 +86,48 @@ export type EditorThemeClasses = {
     h4?: EditorThemeClassName,
     h5?: EditorThemeClassName,
   },
+  horizontalRule?: EditorThemeClassName,
+  image?: EditorThemeClassName,
+  link?: EditorThemeClassName,
+  list?: {
+    listitem: EditorThemeClassName,
+    nested: {
+      list?: EditorThemeClassName,
+      listitem?: EditorThemeClassName,
+    },
+    ol?: EditorThemeClassName,
+    ol1?: EditorThemeClassName,
+    ol2?: EditorThemeClassName,
+    ol3?: EditorThemeClassName,
+    ol4?: EditorThemeClassName,
+    ol5?: EditorThemeClassName,
+    ul?: EditorThemeClassName,
+    ul1?: EditorThemeClassName,
+    ul2?: EditorThemeClassName,
+    ul3?: EditorThemeClassName,
+    ul4?: EditorThemeClassName,
+    ul5?: EditorThemeClassName,
+  },
+  ltr?: EditorThemeClassName,
+  paragraph?: EditorThemeClassName,
+  quote?: EditorThemeClassName,
+  root?: EditorThemeClassName,
+  rtl?: EditorThemeClassName,
+  table?: EditorThemeClassName,
+  tableCell?: EditorThemeClassName,
+  tableCellHeader?: EditorThemeClassName,
+  tableRow?: EditorThemeClassName,
+  text?: TextNodeThemeClasses,
   // Handle other generic values
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
 export type EditorConfig<EditorContext> = {
+  context: EditorContext,
+  disableEvents?: boolean,
+  htmlTransforms?: DOMConversionMap,
   namespace: string,
   theme: EditorThemeClasses,
-  context: EditorContext,
-  htmlTransforms?: DOMConversionMap,
-  disableEvents?: boolean,
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -134,13 +139,13 @@ export type Transform<T> = (node: T) => void;
 
 export type ErrorHandler = (error: Error, log: Array<string>) => void;
 export type UpdateListener = ({
-  tags: Set<string>,
-  prevEditorState: EditorState,
-  editorState: EditorState,
-  dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-  normalizedNodes: Set<NodeKey>,
+  dirtyLeaves: Set<NodeKey>,
+  editorState: EditorState,
   log: Array<string>,
+  normalizedNodes: Set<NodeKey>,
+  prevEditorState: EditorState,
+  tags: Set<string>,
 }) => void;
 export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
 export type RootListener = (
@@ -172,12 +177,13 @@ export type CommandListenerPriority =
 export type CommandPayload = any;
 
 type Listeners = {
-  decorator: Set<DecoratorListener>,
-  textcontent: Set<TextContentListener>,
-  root: Set<RootListener>,
-  update: Set<UpdateListener>,
   command: Array<Set<CommandListener>>,
+  decorator: Set<DecoratorListener>,
+  root: Set<RootListener>,
+  textcontent: Set<TextContentListener>,
+  textcontent: Set<TextContentListener>,
   textmutation: Set<TextMutationListener>,
+  update: Set<UpdateListener>,
 };
 
 export type ListenerType =
@@ -227,15 +233,15 @@ export function resetEditor(
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
-  namespace?: string,
-  editorState?: EditorState,
-  theme?: EditorThemeClasses,
   context?: EditorContext,
-  htmlTransforms?: DOMConversionMap,
   disableEvents?: boolean,
+  editorState?: EditorState,
+  htmlTransforms?: DOMConversionMap,
+  namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
-  parentEditor?: LexicalEditor,
   onError?: ErrorHandler,
+  parentEditor?: LexicalEditor,
+  theme?: EditorThemeClasses,
 }): LexicalEditor {
   const config = editorConfig || {};
   const namespace = config.namespace || createUID();
@@ -278,10 +284,10 @@ export function createEditor<EditorContext>(editorConfig?: {
     {
       // $FlowFixMe: we use our internal type to simpify the generics
       context,
+      disableEvents,
+      htmlTransforms,
       namespace,
       theme,
-      htmlTransforms,
-      disableEvents,
     },
     onError,
   );
@@ -347,12 +353,12 @@ class BaseLexicalEditor {
     this._updating = false;
     // Listeners
     this._listeners = {
+      command: [new Set(), new Set(), new Set(), new Set(), new Set()],
       decorator: new Set(),
+      root: new Set(),
       textcontent: new Set(),
       textmutation: new Set(),
-      root: new Set(),
       update: new Set(),
-      command: [new Set(), new Set(), new Set(), new Set(), new Set()],
     };
     // Editor configuration for theme/context.
     this._config = config;
@@ -496,6 +502,7 @@ class BaseLexicalEditor {
         commitPendingUpdates(getSelf(this));
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
+          addDocumentSelectionChangeEvent(nextRootElement, getSelf(this));
           addRootElementEvents(nextRootElement, getSelf(this));
         }
       }
@@ -587,32 +594,31 @@ class BaseLexicalEditor {
 // For some reason, we can't do this via an interface without
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class LexicalEditor {
-  _parentEditor: null | LexicalEditor;
-  _rootElement: null | HTMLElement;
-  _editorState: EditorState;
-  _pendingEditorState: null | EditorState;
+  _cloneNotNeeded: Set<NodeKey>;
   _compositionKey: null | NodeKey;
+  _config: EditorConfig<{...}>;
+  _decorators: {[NodeKey]: ReactNode};
   _deferred: Array<() => void>;
-  _updates: Array<[() => void, void | EditorUpdateOptions]>;
-  _updating: boolean;
+  _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
+  _dirtyLeaves: Set<NodeKey>;
+  _dirtyType: 0 | 1 | 2;
+  _editorState: EditorState;
+  _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _nodes: RegisteredNodes;
-  _decorators: {[NodeKey]: ReactNode};
-  _pendingDecorators: null | {[NodeKey]: ReactNode};
-  _config: EditorConfig<{...}>;
-  _dirtyType: 0 | 1 | 2;
-  _cloneNotNeeded: Set<NodeKey>;
-  _dirtyLeaves: Set<NodeKey>;
-  _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
-  _normalizedNodes: Set<NodeKey>;
-  _updateTags: Set<string>;
-  _observer: null | MutationObserver;
   _log: Array<string>;
-  _key: string;
+  _nodes: RegisteredNodes;
+  _normalizedNodes: Set<NodeKey>;
+  _observer: null | MutationObserver;
   _onError: ErrorHandler;
+  _parentEditor: null | LexicalEditor;
+  _pendingDecorators: null | {[NodeKey]: ReactNode};
+  _pendingEditorState: null | EditorState;
+  _rootElement: null | HTMLElement;
+  _updates: Array<[() => void, void | EditorUpdateOptions]>;
+  _updateTags: Set<string>;
+  _updating: boolean;
 
-  isComposing(): boolean;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
@@ -626,16 +632,17 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  execCommand(type: string, payload: CommandPayload): boolean;
-  hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
-  getDecorators(): {[NodeKey]: ReactNode};
-  getRootElement(): null | HTMLElement;
-  setRootElement(rootElement: null | HTMLElement): void;
-  getElementByKey(key: NodeKey): null | HTMLElement;
-  getEditorState(): EditorState;
-  setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
-  parseEditorState(stringifiedEditorState: string): EditorState;
-  update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
-  focus(callbackFn?: () => void): void;
   blur(): void;
+  execCommand(type: string, payload: CommandPayload): boolean;
+  focus(callbackFn?: () => void): void;
+  getDecorators(): {[NodeKey]: ReactNode};
+  getEditorState(): EditorState;
+  getElementByKey(key: NodeKey): null | HTMLElement;
+  getRootElement(): null | HTMLElement;
+  hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
+  isComposing(): boolean;
+  parseEditorState(stringifiedEditorState: string): EditorState;
+  setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
+  setRootElement(rootElement: null | HTMLElement): void;
+  update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
 }

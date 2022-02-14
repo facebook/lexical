@@ -9,22 +9,23 @@
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
-import {createEditor} from 'lexical';
+
 import {
-  LexicalComposerContext,
   createLexicalComposerContext,
+  LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
+import {createEditor} from 'lexical';
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
+  children: React$Node,
   initialConfig?: {
     editor?: LexicalEditor | null,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
-    theme?: EditorThemeClasses,
     onError?: (Error) => void,
+    theme?: EditorThemeClasses,
   },
-  children: React$Node,
 };
 
 export default function LexicalComposer({
@@ -62,12 +63,12 @@ export default function LexicalComposer({
 
       if (editor === null) {
         editor = createEditor<LexicalComposerContextType>({
+          context,
           namespace,
           nodes,
-          theme: composerTheme,
-          parentEditor,
-          context,
           onError,
+          parentEditor,
+          theme: composerTheme,
         });
       }
 
@@ -78,6 +79,7 @@ export default function LexicalComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
   return (
     <LexicalComposerContext.Provider value={composerContext}>
       {children}

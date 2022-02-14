@@ -8,27 +8,29 @@
  */
 
 import type {
-  NodeKey,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
-  RangeSelection,
+  NodeKey,
   ParagraphNode,
+  RangeSelection,
 } from 'lexical';
 
-import {
-  $isElementNode,
-  ElementNode,
-  $createParagraphNode,
-  $isParagraphNode,
-} from 'lexical';
-import {$createListNode, $isListNode} from '@lexical/list';
-import invariant from 'shared/invariant';
-import {$getTopListNode, $isLastItemInList} from './utils';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/helpers/elements';
+import {$createListNode, $isListNode} from '@lexical/list';
+import {
+  $createParagraphNode,
+  $isElementNode,
+  $isParagraphNode,
+  ElementNode,
+} from 'lexical';
+import invariant from 'shared/invariant';
+
+import {$handleIndent, $handleOutdent} from './formatList';
+import {$getTopListNode, $isLastItemInList} from './utils';
 
 export class ListItemNode extends ElementNode {
   static getType(): string {
@@ -245,9 +247,17 @@ export class ListItemNode extends ElementNode {
     return indentLevel;
   }
 
-  setIndent(): this {
-    // TODO move indent/outdent logic to this file and use here.
-    invariant(true, 'setIndent is not implemented on ListItemNode');
+  setIndent(indent: number): this {
+    let currentIndent = this.getIndent();
+    while (currentIndent !== indent) {
+      if (currentIndent < indent) {
+        $handleIndent([this]);
+        currentIndent++;
+      } else {
+        $handleOutdent([this]);
+        currentIndent--;
+      }
+    }
     return this;
   }
 

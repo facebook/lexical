@@ -4,6 +4,7 @@ const ClosureCompiler = require('google-closure-compiler').compiler;
 const {promisify} = require('util');
 const fs = require('fs');
 const tmp = require('tmp');
+
 const writeFileAsync = promisify(fs.writeFile);
 
 function compile(flags) {

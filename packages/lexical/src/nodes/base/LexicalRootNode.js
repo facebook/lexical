@@ -10,11 +10,12 @@
 import type {LexicalNode} from '../../LexicalNode';
 import type {RangeSelection} from '../../LexicalSelection';
 
-import {ElementNode, $isElementNode} from './LexicalElementNode';
-import {$isDecoratorNode} from './LexicalDecoratorNode';
+import invariant from 'shared/invariant';
+
 import {NO_DIRTY_NODES} from '../../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../../LexicalUpdates';
-import invariant from 'shared/invariant';
+import {$isDecoratorNode} from './LexicalDecoratorNode';
+import {$isElementNode, ElementNode} from './LexicalElementNode';
 
 export class RootNode extends ElementNode {
   __cachedText: null | string;

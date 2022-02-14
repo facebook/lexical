@@ -8,17 +8,18 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {TextNode} from './nodes/base/LexicalTextNode';
-import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {RangeSelection} from './LexicalSelection';
+import type {ElementNode} from './nodes/base/LexicalElementNode';
+import type {TextNode} from './nodes/base/LexicalTextNode';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+
 import {
+  $getRoot,
   $getSelection,
+  $isElementNode,
   $log,
   $setCompositionKey,
-  $getRoot,
-  $isElementNode,
 } from '.';
 import {
   $flushMutations,
@@ -59,7 +60,6 @@ type RootElementEvents = Array<
 const PASS_THROUGH_COMMAND = Object.freeze({});
 
 const rootElementEvents: RootElementEvents = [
-  ['selectionchange', onSelectionChange],
   // $FlowIgnore bad event inheritance
   ['keydown', onKeyDown],
   // $FlowIgnore bad event inheritance
@@ -87,7 +87,7 @@ if (CAN_USE_BEFORE_INPUT) {
 
 let lastKeyWasMaybeAndroidSoftKey = false;
 
-function onSelectionChange(event: Event, editor: LexicalEditor): void {
+function onSelectionChange(editor: LexicalEditor): void {
   const domSelection = window.getSelection();
   const parentEditors = getEditorsToPropagate(editor);
   const topLevelEditor = parentEditors[parentEditors.length - 1];
@@ -427,85 +427,68 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   if (editor.isComposing()) {
     return;
   }
-  editor.update(() => {
-    $log('onKeyDown');
+  const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
 
-    const selection = $getSelection();
-    if (selection === null) {
-      return;
+  if (isMoveForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+    editor.execCommand('keyArrowRight', event);
+  } else if (isMoveBackward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+    editor.execCommand('keyArrowLeft', event);
+  } else if (isMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+    editor.execCommand('keyArrowUp', event);
+  } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+    editor.execCommand('keyArrowDown', event);
+  } else if (isLineBreak(keyCode, shiftKey)) {
+    editor.execCommand('keyEnter', event);
+  } else if (isOpenLineBreak(keyCode, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('insertLineBreak', true);
+  } else if (isParagraph(keyCode, shiftKey)) {
+    editor.execCommand('keyEnter', event);
+  } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
+    if (isBackspace(keyCode)) {
+      editor.execCommand('keyBackspace', event);
+    } else {
+      editor.execCommand('deleteCharacter', true);
     }
-    const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
-
-    if (isMoveForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-      editor.execCommand('keyArrowRight', event);
-    } else if (isMoveBackward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-      editor.execCommand('keyArrowLeft', event);
-    } else if (isMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-      editor.execCommand('keyArrowUp', event);
-    } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-      editor.execCommand('keyArrowDown', event);
-    } else if (isLineBreak(keyCode, shiftKey)) {
-      editor.execCommand('keyEnter', event);
-    } else if (isOpenLineBreak(keyCode, ctrlKey)) {
+  } else if (isEscape(keyCode)) {
+    editor.execCommand('keyEscape', event);
+  } else if (isDeleteForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+    if (isDelete(keyCode)) {
+      editor.execCommand('keyDelete', event);
+    } else {
       event.preventDefault();
-      editor.execCommand('insertLineBreak', true);
-    } else if (isParagraph(keyCode, shiftKey)) {
-      editor.execCommand('keyEnter', event);
-    } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
-      if (isBackspace(keyCode)) {
-        editor.execCommand('keyBackspace', event);
-      } else {
-        editor.execCommand('deleteCharacter', true);
-      }
-    } else if (isEscape(keyCode)) {
-      editor.execCommand('keyEscape', event);
-    } else if (isDeleteForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-      if (isDelete(keyCode)) {
-        editor.execCommand('keyDelete', event);
-      } else {
-        event.preventDefault();
-        editor.execCommand('deleteCharacter', false);
-      }
-    } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {
-      event.preventDefault();
-      editor.execCommand('deleteWord', true);
-    } else if (isDeleteWordForward(keyCode, altKey, ctrlKey)) {
-      event.preventDefault();
-      editor.execCommand('deleteWord', false);
-    } else if (isDeleteLineBackward(keyCode, metaKey)) {
-      event.preventDefault();
-      editor.execCommand('deleteLine', true);
-    } else if (isDeleteLineForward(keyCode, metaKey)) {
-      event.preventDefault();
-      editor.execCommand('deleteLine', false);
-    } else if (isBold(keyCode, metaKey, ctrlKey)) {
-      event.preventDefault();
-      editor.execCommand('formatText', 'bold');
-    } else if (isUnderline(keyCode, metaKey, ctrlKey)) {
-      event.preventDefault();
-      editor.execCommand('formatText', 'underline');
-    } else if (isItalic(keyCode, metaKey, ctrlKey)) {
-      event.preventDefault();
-      editor.execCommand('formatText', 'italic');
-    } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {
-      editor.execCommand('keyTab', event);
-    } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {
-      event.preventDefault();
-      editor.execCommand('undo');
-    } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
-      event.preventDefault();
-      editor.execCommand('redo');
+      editor.execCommand('deleteCharacter', false);
     }
-  });
-}
-
-function getTarget(eventName: string, rootElement: HTMLElement): EventTarget {
-  return eventName === 'selectionchange' ||
-    eventName === 'keyup' ||
-    eventName === 'pointerup' ||
-    eventName === 'pointercancel'
-    ? rootElement.ownerDocument
-    : rootElement;
+  } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('deleteWord', true);
+  } else if (isDeleteWordForward(keyCode, altKey, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('deleteWord', false);
+  } else if (isDeleteLineBackward(keyCode, metaKey)) {
+    event.preventDefault();
+    editor.execCommand('deleteLine', true);
+  } else if (isDeleteLineForward(keyCode, metaKey)) {
+    event.preventDefault();
+    editor.execCommand('deleteLine', false);
+  } else if (isBold(keyCode, metaKey, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('formatText', 'bold');
+  } else if (isUnderline(keyCode, metaKey, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('formatText', 'underline');
+  } else if (isItalic(keyCode, metaKey, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('formatText', 'italic');
+  } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {
+    editor.execCommand('keyTab', event);
+  } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('undo');
+  } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
+    event.preventDefault();
+    editor.execCommand('redo');
+  }
 }
 
 function isRootEditable(editor: LexicalEditor): boolean {
@@ -531,6 +514,39 @@ function clearRootElementRemoveHandles(rootElement: HTMLElement): void {
   rootElement._lexicalEventHandles = [];
 }
 
+function onDocumentSelectionChange(event: Event): void {
+  const sel = window.getSelection();
+  let node = sel.anchorNode;
+  while (node != null) {
+    if (node.contentEditable === 'true') {
+      const possibleLexicalEditor = node.__lexicalEditor;
+      if (possibleLexicalEditor !== undefined) {
+        onSelectionChange(possibleLexicalEditor);
+        getEditorsToPropagate(possibleLexicalEditor).forEach((parentEditor) =>
+          onSelectionChange(parentEditor),
+        );
+        return;
+      }
+    }
+    node = node.parentNode;
+  }
+}
+
+export function addDocumentSelectionChangeEvent(
+  rootElement: HTMLElement,
+  editor: LexicalEditor,
+): void {
+  const doc = rootElement.ownerDocument;
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEditor = editor;
+  // $FlowFixMe: internal field
+  if (doc._lexicalEvent === undefined) {
+    // $FlowFixMe: internal field
+    doc._lexicalEvent = true;
+    doc.addEventListener('selectionchange', onDocumentSelectionChange);
+  }
+}
+
 export function addRootElementEvents(
   rootElement: HTMLElement,
   editor: LexicalEditor,
@@ -551,17 +567,16 @@ export function addRootElementEvents(
               editor.execCommand(eventName, event);
             }
           };
-    getTarget(eventName, rootElement).addEventListener(eventName, eventHandler);
+    rootElement.addEventListener(eventName, eventHandler);
     removeHandles.push(() => {
-      getTarget(eventName, rootElement).removeEventListener(
-        eventName,
-        eventHandler,
-      );
+      rootElement.removeEventListener(eventName, eventHandler);
     });
   }
 }
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEditor = null;
   const removeHandles = getRootElementRemoveHandles(rootElement);
   for (let i = 0; i < removeHandles.length; i++) {
     removeHandles[i]();

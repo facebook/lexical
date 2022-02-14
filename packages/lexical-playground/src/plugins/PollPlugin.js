@@ -12,7 +12,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$log, $getSelection} from 'lexical';
-import {PollNode, $createPollNode} from '../nodes/PollNode';
+import {$createPollNode, PollNode} from '../nodes/PollNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

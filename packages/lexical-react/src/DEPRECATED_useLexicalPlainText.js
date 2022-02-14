@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
 import type {HistoryState} from './DEPRECATED_useLexicalHistory';
+import type {LexicalEditor} from 'lexical';
 
-import usePlainTextSetup from './shared/usePlainTextSetup';
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
+import usePlainTextSetup from './shared/usePlainTextSetup';
 
 export default function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
 ): void {
-  usePlainTextSetup(editor, true);
+  usePlainTextSetup(editor);
   useLexicalHistory(editor, externalHistoryState);
 }

@@ -9,28 +9,28 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import {$dfs__DEPRECATED} from '@lexical/helpers/nodes';
+import {$textContentCurry} from '@lexical/helpers/root';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
+  $getRoot,
+  $getSelection,
   $isLeafNode,
   $isTextNode,
   $log,
-  $getSelection,
-  $getRoot,
   $setSelection,
 } from 'lexical';
-import {$dfs__DEPRECATED} from '@lexical/helpers/nodes';
-import {$textContentCurry} from '@lexical/helpers/root';
-import {useEffect} from 'react';
-import withSubscriptions from '@lexical/react/withSubscriptions';
-import invariant from 'shared/invariant';
 import {
-  OverflowNode,
-  $isOverflowNode,
   $createOverflowNode,
+  $isOverflowNode,
+  OverflowNode,
 } from 'lexical/OverflowNode';
+import {useEffect} from 'react';
+import invariant from 'shared/invariant';
 
 type OptionalProps = {
-  strlen?: (input: string) => number,
   remainingCharacters?: (characters: number) => void,
+  strlen?: (input: string) => number,
 };
 
 export function useCharacterLimit(

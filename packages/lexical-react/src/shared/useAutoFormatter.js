@@ -7,19 +7,20 @@
  * @flow strict
  */
 
-import type {EditorState} from 'lexical';
-import type {LexicalEditor, RangeSelection} from 'lexical';
 import type {
   AutoFormatCriteriaArray,
-  AutoFormatTriggerState,
   AutoFormatCriteriaWithMatchResultContext,
+  AutoFormatTriggerState,
   ScanningContext,
-  TextNodeWithOffset,
 } from './AutoFormatterUtils.js';
-import {$isCodeNode} from 'lexical/CodeNode';
+import type {TextNodeWithOffset} from '@lexical/helpers/text';
+import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
+
 import {$isListItemNode} from '@lexical/list';
-import {$isElementNode, $isTextNode, $getSelection} from 'lexical';
+import {$getSelection, $isTextNode} from 'lexical';
+import {$isCodeNode} from 'lexical/CodeNode';
 import {useEffect} from 'react';
+
 import {
   getAllAutoFormatCriteria,
   getAllAutoFormatCriteriaForTextNodes,
@@ -34,7 +35,7 @@ function getCriteriaWithMatchResultContext(
   scanningContext: ScanningContext,
 ): AutoFormatCriteriaWithMatchResultContext {
   const count = autoFormatCriteriaArray.length;
-  for (let i = 0; i < count; ++i) {
+  for (let i = 0; i < count; i++) {
     const autoFormatCriteria = autoFormatCriteriaArray[i];
 
     // Skip code block nodes, unless the nodeTransformationKind calls for toggling the code block.
@@ -86,8 +87,8 @@ function updateAutoFormatting(
 
     // Please see the declaration of ScanningContext for a detailed explanation.
     const scanningContext: ScanningContext = {
+      joinedText: null,
       textNodeWithOffset,
-      trimmedParagraphText: null,
     };
     const criteriaWithMatchResultContext = getCriteriaWithMatchResultContext(
       // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.
@@ -129,7 +130,7 @@ function shouldAttemptToAutoFormat(
   const triggerOffset = currentTriggerState.anchorOffset - triggerStringLength;
 
   return (
-    currentTriggerState.isParentAnElementNode === true &&
+    currentTriggerState.hasParentNode === true &&
     currentTriggerState.isSimpleText &&
     currentTriggerState.isSelectionCollapsed &&
     currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
@@ -160,16 +161,15 @@ function getTriggerState(
     const isParentAListItemNode =
       parentNode !== null && $isListItemNode(parentNode);
 
-    const isParentAnElementNode =
-      parentNode !== null && $isElementNode(parentNode);
+    const hasParentNode = parentNode !== null;
 
     criteria = {
       anchorOffset: selection.anchor.offset,
+      hasParentNode,
       isCodeBlock: $isCodeNode(node),
+      isParentAListItemNode,
       isSelectionCollapsed: selection.isCollapsed(),
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
-      isParentAnElementNode,
-      isParentAListItemNode,
       nodeKey: node.getKey(),
       textContent: node.getTextContent(),
     };

@@ -7,26 +7,26 @@
  * @flow strict
  */
 
+import type {TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
-import type {TextNode} from '.';
 
 import {
-  $isTextNode,
-  $isDecoratorNode,
-  $getSelection,
-  $setSelection,
-  $isElementNode,
   $getRoot,
+  $getSelection,
+  $isDecoratorNode,
+  $isElementNode,
+  $isTextNode,
+  $setSelection,
 } from '.';
+import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
-  getNodeFromDOMNode,
   $pushLogEntry,
   $updateTextNodeFromDOMContent,
+  getNodeFromDOMNode,
 } from './LexicalUtils';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
 
 // The time between a text entry event and the mutation observer firing.
 const TEXT_MUTATION_VARIANCE = 100;

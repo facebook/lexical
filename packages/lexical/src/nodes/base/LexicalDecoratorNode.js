@@ -8,14 +8,15 @@
  */
 
 import type {LexicalEditor} from '../../LexicalEditor';
+import type {EditorState} from '../../LexicalEditorState';
 import type {NodeKey} from '../../LexicalNode';
 import type {Node as ReactNode} from 'react';
-import type {EditorState} from '../../LexicalEditorState';
+
+import invariant from 'shared/invariant';
 
 import {LexicalNode} from '../../LexicalNode';
-import invariant from 'shared/invariant';
-import {createUID} from '../../LexicalUtils';
 import {getActiveEditor} from '../../LexicalUpdates';
+import {createUID} from '../../LexicalUtils';
 
 export type DecoratorStateValue =
   | DecoratorMap
@@ -73,18 +74,18 @@ export class DecoratorEditor {
   }
 
   toJSON(): $ReadOnly<{
+    editorState: null | string,
     id: string,
     type: 'editor',
-    editorState: null | string,
   }> {
     const editorState = this.editorState;
     return {
-      id: this.id,
-      type: 'editor',
       editorState:
         editorState === null || isStringified(editorState)
           ? editorState
           : JSON.stringify(editorState.toJSON()),
+      id: this.id,
+      type: 'editor',
     };
   }
 
@@ -144,12 +145,12 @@ export class DecoratorMap {
   }
 
   toJSON(): $ReadOnly<{
-    type: 'map',
     map: Array<[string, DecoratorStateValue]>,
+    type: 'map',
   }> {
     return {
-      type: 'map',
       map: Array.from(this._map.entries()),
+      type: 'map',
     };
   }
 }
@@ -242,12 +243,12 @@ export class DecoratorArray {
   }
 
   toJSON(): $ReadOnly<{
-    type: 'array',
     array: Array<DecoratorStateValue>,
+    type: 'array',
   }> {
     return {
-      type: 'array',
       array: this._array,
+      type: 'array',
     };
   }
 }

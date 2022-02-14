@@ -7,41 +7,42 @@
  * @flow strict
  */
 
-import type {RangeSelection} from '../../LexicalSelection';
-import type {NodeKey} from '../../LexicalNode';
 import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
+import type {NodeKey} from '../../LexicalNode';
+import type {RangeSelection} from '../../LexicalSelection';
 
+import invariant from 'shared/invariant';
+
+import {
+  IS_BOLD,
+  IS_CODE,
+  IS_DIRECTIONLESS,
+  IS_INERT,
+  IS_ITALIC,
+  IS_SEGMENTED,
+  IS_STRIKETHROUGH,
+  IS_TOKEN,
+  IS_UNDERLINE,
+  IS_UNMERGEABLE,
+  NO_BREAK_SPACE_CHAR,
+  TEXT_MODE_TO_TYPE,
+  TEXT_TYPE_TO_FORMAT,
+} from '../../LexicalConstants';
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
-  internalMakeRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
+  internalMakeRangeSelection,
 } from '../../LexicalSelection';
-import {
-  $getCompositionKey,
-  $setCompositionKey,
-  toggleTextFormatType,
-  $internallyMarkSiblingsAsDirty,
-  getCachedClassNameArray,
-} from '../../LexicalUtils';
-import invariant from 'shared/invariant';
 import {errorOnReadOnly} from '../../LexicalUpdates';
 import {
-  IS_CODE,
-  IS_BOLD,
-  IS_ITALIC,
-  IS_STRIKETHROUGH,
-  IS_UNDERLINE,
-  IS_TOKEN,
-  IS_SEGMENTED,
-  IS_INERT,
-  NO_BREAK_SPACE_CHAR,
-  TEXT_TYPE_TO_FORMAT,
-  TEXT_MODE_TO_TYPE,
-  IS_DIRECTIONLESS,
-  IS_UNMERGEABLE,
-} from '../../LexicalConstants';
+  $getCompositionKey,
+  $internallyMarkSiblingsAsDirty,
+  $setCompositionKey,
+  getCachedClassNameArray,
+  toggleTextFormatType,
+} from '../../LexicalUtils';
 
 export type TextFormatType =
   | 'bold'

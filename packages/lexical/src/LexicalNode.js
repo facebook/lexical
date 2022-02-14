@@ -10,17 +10,25 @@
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
 
+import invariant from 'shared/invariant';
+
 import {
-  $isElementNode,
-  $isTextNode,
-  $isRootNode,
-  ElementNode,
   $isDecoratorNode,
+  $isElementNode,
+  $isRootNode,
+  $isTextNode,
+  ElementNode,
 } from '.';
 import {
-  getActiveEditorState,
+  $getSelection,
+  $moveSelectionPointToEnd,
+  $updateElementSelectionOnCreateDeleteNode,
+  moveSelectionPointToSibling,
+} from './LexicalSelection';
+import {
   errorOnReadOnly,
   getActiveEditor,
+  getActiveEditorState,
 } from './LexicalUpdates';
 import {
   $generateKey,
@@ -30,13 +38,6 @@ import {
   $internallyMarkSiblingsAsDirty,
   $setCompositionKey,
 } from './LexicalUtils';
-import invariant from 'shared/invariant';
-import {
-  $getSelection,
-  $moveSelectionPointToEnd,
-  $updateElementSelectionOnCreateDeleteNode,
-  moveSelectionPointToSibling,
-} from './LexicalSelection';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 

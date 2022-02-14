@@ -7,47 +7,48 @@
  * @flow strict
  */
 
-import type {NodeKey, Point, RangeSelection, NodeMap} from 'lexical';
-import type {Binding} from './Bindings';
 import type {Provider} from '.';
+import type {Binding} from './Bindings';
+import type {NodeKey, NodeMap, Point, RangeSelection} from 'lexical';
 import type {
   AbsolutePosition,
+  Map as YMap,
   RelativePosition,
   XmlText,
-  Map as YMap,
 } from 'yjs';
 
 import {
-  compareRelativePositions,
-  createRelativePositionFromTypeIndex,
-  createAbsolutePositionFromRelativePosition,
-} from 'yjs';
-import {
-  $isTextNode,
-  $isElementNode,
   $getNodeByKey,
   $getSelection,
+  $isElementNode,
+  $isTextNode,
 } from 'lexical';
-import {CollabTextNode} from './CollabTextNode';
-import {CollabElementNode} from './CollabElementNode';
+import {
+  compareRelativePositions,
+  createAbsolutePositionFromRelativePosition,
+  createRelativePositionFromTypeIndex,
+} from 'yjs';
+
 import {CollabDecoratorNode} from './CollabDecoratorNode';
+import {CollabElementNode} from './CollabElementNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
+import {CollabTextNode} from './CollabTextNode';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
-  caret: HTMLElement,
-  color: string,
-  selections: Array<HTMLElement>,
-  range: Range,
   anchor: {
     key: NodeKey,
     offset: number,
   },
+  caret: HTMLElement,
+  color: string,
   focus: {
     key: NodeKey,
     offset: number,
   },
   name: HTMLSpanElement,
+  range: Range,
+  selections: Array<HTMLElement>,
 };
 
 export type Cursor = {
@@ -156,19 +157,19 @@ function createCursorSelection(
   name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:rgb(${color});color:#fff;line-height:12px;height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold`;
   caret.appendChild(name);
   return {
-    caret,
-    name,
-    color,
-    range: document.createRange(),
-    selections: [],
     anchor: {
       key: anchorKey,
       offset: anchorOffset,
     },
+    caret,
+    color,
     focus: {
       key: focusKey,
       offset: focusOffset,
     },
+    name,
+    range: document.createRange(),
+    selections: [],
   };
 }
 
@@ -510,6 +511,6 @@ export function syncLexicalSelectionToYjs(
     shouldUpdatePosition(currentAnchorPos, anchorPos) ||
     shouldUpdatePosition(currentFocusPos, focusPos)
   ) {
-    awareness.setLocalState({name, color, anchorPos, focusPos, focusing});
+    awareness.setLocalState({anchorPos, color, focusPos, focusing, name});
   }
 }

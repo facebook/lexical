@@ -7,67 +7,68 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {LexicalEditor} from './LexicalEditor';
+import type {EditorState} from './LexicalEditorState';
+import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
-import type {EditorState} from './LexicalEditorState';
 
+import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
+import invariant from 'shared/invariant';
+
+import {
+  $createLineBreakNode,
+  $createTextNode,
+  $isDecoratorNode,
+  $isElementNode,
+  $isHorizontalRuleNode,
+  $isLeafNode,
+  $isLineBreakNode,
+  $isRootNode,
+  $isTextNode,
+  TextNode,
+} from '.';
+import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {getIsProcesssingMutations} from './LexicalMutations';
 import {
   getActiveEditor,
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
-import {getIsProcesssingMutations} from './LexicalMutations';
-import {
-  $isTextNode,
-  $isElementNode,
-  $isLineBreakNode,
-  $isDecoratorNode,
-  $isRootNode,
-  TextNode,
-  $createTextNode,
-  $isLeafNode,
-  $createLineBreakNode,
-  $isHorizontalRuleNode,
-} from '.';
 import {
   $getCompositionKey,
   $getNodeByKey,
-  isSelectionWithinEditor,
+  $isTokenOrInert,
   $setCompositionKey,
-  toggleTextFormatType,
+  doesContainGrapheme,
   getNodeFromDOM,
   getTextNodeOffset,
-  doesContainGrapheme,
-  $isTokenOrInert,
+  isSelectionWithinEditor,
+  toggleTextFormatType,
 } from './LexicalUtils';
-import invariant from 'shared/invariant';
-import {TEXT_TYPE_TO_FORMAT, DOM_ELEMENT_TYPE} from './LexicalConstants';
-import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 export type TextPointType = {
+  getCharacterOffset: () => number,
+  getNode: () => TextNode,
+  is: (PointType) => boolean,
+  isAtNodeEnd: () => boolean,
+  isBefore: (PointType) => boolean,
   key: NodeKey,
   offset: number,
-  type: 'text',
-  is: (PointType) => boolean,
-  isBefore: (PointType) => boolean,
-  getNode: () => TextNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
-  getCharacterOffset: () => number,
-  isAtNodeEnd: () => boolean,
+  type: 'text',
 };
 
 export type ElementPointType = {
+  getCharacterOffset: () => number,
+  getNode: () => ElementNode,
+  is: (PointType) => boolean,
+  isAtNodeEnd: () => boolean,
+  isBefore: (PointType) => boolean,
   key: NodeKey,
   offset: number,
-  type: 'element',
-  is: (PointType) => boolean,
-  isBefore: (PointType) => boolean,
-  getNode: () => ElementNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
-  getCharacterOffset: () => number,
-  isAtNodeEnd: () => boolean,
+  type: 'element',
 };
 
 export type PointType = TextPointType | ElementPointType;
@@ -208,14 +209,14 @@ function $setPointValues(
 }
 
 interface Selection {
-  dirty: boolean;
-
-  getNodes(): Array<LexicalNode>;
-  is(selection: null | RangeSelection): boolean;
-  getTextContent(): string;
   clone(): Selection;
+
+  dirty: boolean;
   extract(): Array<LexicalNode>;
+  getNodes(): Array<LexicalNode>;
+  getTextContent(): string;
   insertRawText(text: string): void;
+  is(selection: null | RangeSelection): boolean;
 }
 
 export class RangeSelection implements Selection {

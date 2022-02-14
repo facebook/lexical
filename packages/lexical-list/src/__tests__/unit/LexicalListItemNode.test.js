@@ -7,12 +7,13 @@
  */
 
 import {
-  ListNode,
-  ListItemNode,
   $createListItemNode,
   $isListItemNode,
+  ListItemNode,
+  ListNode,
 } from '@lexical/list';
-import {TextNode, $getRoot} from 'lexical';
+import {$getRoot, TextNode} from 'lexical';
+
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -351,6 +352,48 @@ describe('LexicalListItemNode tests', () => {
       await editor.update(() => {
         const listItemNode = new ListItemNode();
         expect($isListItemNode(listItemNode)).toBe(true);
+      });
+    });
+
+    describe('ListItemNode.setIndent()', () => {
+      let listNode;
+      let listItemNode1;
+      let listItemNode2;
+
+      beforeEach(async () => {
+        const {editor} = testEnv;
+        await editor.update(() => {
+          const root = $getRoot();
+          listNode = new ListNode('ul', 1);
+          listItemNode1 = new ListItemNode();
+          listItemNode2 = new ListItemNode();
+          root.append(listNode);
+          listNode.append(listItemNode1, listItemNode2);
+          listItemNode1.append(new TextNode('one'));
+          listItemNode2.append(new TextNode('two'));
+        });
+      });
+
+      it('indents and outdents list item', async () => {
+        const {editor} = testEnv;
+        await editor.update(() => {
+          listItemNode1.setIndent(3);
+        });
+        await editor.update(() => {
+          expect(listItemNode1.getIndent()).toBe(3);
+        });
+        expect(editor.getRootElement().innerHTML).toBe(
+          '<ul><li value="1"><ul><li value="1"><ul><li value="1"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul></li></ul></li></ul></li><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li></ul>',
+        );
+        await editor.update(() => {
+          listItemNode1.setIndent(0);
+        });
+        await editor.update(() => {
+          expect(listItemNode1.getIndent()).toBe(0);
+        });
+        expect(editor.getRootElement().innerHTML).toBe(
+          '<ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li></ul>',
+        );
       });
     });
   });

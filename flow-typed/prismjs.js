@@ -3,15 +3,15 @@
 type TokenStream = Array<string | Token>;
 
 type Token = {
-  type: string,
   alias: string | Array<string>,
   content: string | TokenStream,
+  type: string,
 };
 
 declare module 'prismjs/components/prism-core' {
   declare module.exports: {
-    tokenize(code: string, grammar: Object): TokenStream,
     languages: {[string]: Object | Function},
+    tokenize(code: string, grammar: Object): TokenStream,
   };
 }
 

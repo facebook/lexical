@@ -32,6 +32,7 @@ import {
   CollaborationPlugin,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import Placeholder from '../ui/Placeholder';
@@ -284,11 +285,12 @@ function StickyComponent({
           <CollaborationPlugin
             id={decoratorEditor.id}
             providerFactory={createWebsocketProvider}
-            skipInit={false}
+            shouldBootstrap={true}
           />
         ) : (
           <HistoryPlugin externalHistoryState={historyState} />
         )}
+        <BootstrapPlugin />
         <PlainTextPlugin
           contentEditable={
             <ContentEditable className={stylex(styles.contentEditable)} />
@@ -298,7 +300,6 @@ function StickyComponent({
               What's up?
             </Placeholder>
           }
-          skipInit={isCollab}
         />
       </LexicalNestedComposer>
     </div>

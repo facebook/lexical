@@ -7,23 +7,21 @@
  * @flow strict
  */
 
-import type {HistoryState} from './shared/useHistory';
+import type {LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
-import {useHistory} from './shared/useHistory';
+import useBootstrapEditor from './shared/useBootstrapEditor';
 
-export {createEmptyHistoryState} from './shared/useHistory';
-
-export type {HistoryState};
-
-export function HistoryPlugin({
-  externalHistoryState,
+export default function LexicalBootstrapPlugin({
+  initialPayloadFn,
+  clearEditorFn,
 }: {
-  externalHistoryState?: HistoryState,
-}): null {
+  clearEditorFn?: (LexicalEditor) => void,
+  initialPayloadFn?: (LexicalEditor) => void,
+}): React$Node {
   const [editor] = useLexicalComposerContext();
-  useHistory(editor, externalHistoryState);
+  useBootstrapEditor(editor, initialPayloadFn, clearEditorFn);
 
   return null;
 }

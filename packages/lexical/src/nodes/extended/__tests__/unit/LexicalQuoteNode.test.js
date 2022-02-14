@@ -6,8 +6,9 @@
  *
  */
 
-import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$getRoot, ParagraphNode} from 'lexical';
+import {$createQuoteNode} from 'lexical/QuoteNode';
+
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({

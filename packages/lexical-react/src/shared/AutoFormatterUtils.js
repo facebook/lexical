@@ -53,6 +53,7 @@ export type AutoFormatTriggerState = $ReadOnly<{
 // 2. Convert the text formatting: e.g. "**hello**" converts to bold "hello".
 
 export type NodeTransformationKind =
+  | 'noTransformation'
   | 'paragraphH1'
   | 'paragraphH2'
   | 'paragraphH3'
@@ -61,6 +62,20 @@ export type NodeTransformationKind =
   | 'paragraphOrderedList'
   | 'paragraphCodeBlock'
   | 'textBold';
+
+// The scanning context provides the overall data structure for
+// locating a auto formatting candidate and then transforming that candidate
+// into the newly formatted stylized text.
+// The context is filled out lazily to avoid redundant or up-front expensive
+// calculations. For example, this includes the parent element's getTextContent() which
+// ultimately gets deposited into the joinedText field.
+export type ScanningContext = {
+  autoFormatCriteria: AutoFormatCriteria,
+  joinedText: ?string,
+  matchResultContext: MatchResultContext,
+  textNodeWithOffset: TextNodeWithOffset,
+  triggerState: AutoFormatTriggerState,
+};
 
 // The auto formatter runs these steps:
 // 1. Examine the current and prior editor states to see if a potential auto format is triggered.
@@ -80,17 +95,6 @@ export type AutoFormatCriteria = $ReadOnly<{
   requiresParagraphStart: ?boolean,
 }>;
 
-// While scanning over the text, comparing each
-// auto format criteria against the text, certain
-// details may be captured rather than re-calculated.
-// For example, scanning over each AutoFormatCriteria,
-// building up the ParagraphNode's text by calling getTextContent()
-// may be expensive. Rather, load this value lazily and store it for later use.
-export type ScanningContext = {
-  joinedText: ?string,
-  textNodeWithOffset: TextNodeWithOffset,
-};
-
 // RegEx returns the discovered pattern matches in an array of capture groups.
 // Using this array, we can extract the sub-string per pattern, determine its
 // offset within the parent (except for non-textNode children) within the overall string and determine its length. Typically the length
@@ -109,7 +113,6 @@ type CaptureGroupDetail = {
 export type MatchResultContext = {
   offsetInJoinedTextForCollapsedSelection: number, // The expected location for the blinking caret.
   regExCaptureGroups: Array<CaptureGroupDetail>,
-  triggerState: ?AutoFormatTriggerState,
 };
 
 export type AutoFormatCriteriaWithMatchResultContext = {
@@ -213,17 +216,35 @@ export function getAllAutoFormatCriteria(): AutoFormatCriteriaArray {
   return allAutoFormatCriteria;
 }
 
+export function getInitialScanningContext(
+  textNodeWithOffset: TextNodeWithOffset,
+  triggerState: AutoFormatTriggerState,
+): ScanningContext {
+  return {
+    autoFormatCriteria: {
+      nodeTransformationKind: 'noTransformation',
+      regEx: /(?:)/, // Empty reg ex will do until the precise criteria is discovered.
+      requiresParagraphStart: null,
+    },
+    joinedText: null,
+    matchResultContext: {
+      offsetInJoinedTextForCollapsedSelection: 0,
+      regExCaptureGroups: [],
+    },
+    textNodeWithOffset,
+    triggerState,
+  };
+}
+
 function getMatchResultContextWithRegEx(
   textToSearch: string,
   matchMustAppearAtStartOfString: boolean,
   matchMustAppearAtEndOfString: boolean,
   regEx: RegExp,
-  scanningContext: ScanningContext,
 ): null | MatchResultContext {
   const matchResultContext: MatchResultContext = {
     offsetInJoinedTextForCollapsedSelection: 0,
     regExCaptureGroups: [],
-    triggerState: null,
   };
 
   const regExMatches = textToSearch.match(regEx);
@@ -284,7 +305,6 @@ function getMatchResultContextForParagraphs(
       true,
       false,
       autoFormatCriteria.regEx,
-      scanningContext,
     );
   }
 
@@ -312,7 +332,6 @@ function getMatchResultContextForText(
         false,
         true,
         autoFormatCriteria.regEx,
-        scanningContext,
       );
     } else {
       invariant(
@@ -343,12 +362,13 @@ export function getMatchResultContextForCriteria(
 }
 
 function getNewNodeForCriteria(
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
+  scanningContext: ScanningContext,
   children: Array<LexicalNode>,
 ): null | ElementNode {
   let newNode = null;
 
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+  const matchResultContext = scanningContext.matchResultContext;
   if (autoFormatCriteria.nodeTransformationKind != null) {
     switch (autoFormatCriteria.nodeTransformationKind) {
       case 'paragraphH1': {
@@ -395,8 +415,8 @@ function getNewNodeForCriteria(
       case 'paragraphCodeBlock': {
         // Toggle code and paragraph nodes.
         if (
-          matchResultContext.triggerState != null &&
-          matchResultContext.triggerState.isCodeBlock
+          scanningContext.triggerState != null &&
+          scanningContext.triggerState.isCodeBlock
         ) {
           newNode = $createParagraphNode();
         } else {
@@ -404,6 +424,9 @@ function getNewNodeForCriteria(
         }
         newNode.append(...children);
         return newNode;
+      }
+      case 'noTransformation': {
+        invariant(false, 'No auto format kind was assigned.');
       }
       default:
         break;
@@ -423,37 +446,22 @@ function updateTextNode(node: TextNode, count: number): void {
 
 export function transformTextNodeForAutoFormatCriteria(
   scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
 ) {
-  if (autoFormatCriteria.requiresParagraphStart) {
-    transformTextNodeForParagraphs(
-      scanningContext,
-      autoFormatCriteria,
-      matchResultContext,
-    );
+  if (scanningContext.autoFormatCriteria.requiresParagraphStart) {
+    transformTextNodeForParagraphs(scanningContext);
   } else {
-    transformTextNodeForText(
-      scanningContext,
-      autoFormatCriteria,
-      matchResultContext,
-    );
+    transformTextNodeForText(scanningContext);
   }
 }
 
-function transformTextNodeForParagraphs(
-  scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
-) {
+function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const element = textNodeWithOffset.node.getParentOrThrow();
-  const text = matchResultContext.regExCaptureGroups[0].text;
+  const text = scanningContext.matchResultContext.regExCaptureGroups[0].text;
   updateTextNode(textNodeWithOffset.node, text.length);
 
   const elementNode = getNewNodeForCriteria(
-    autoFormatCriteria,
-    matchResultContext,
+    scanningContext,
     element.getChildren(),
   );
 
@@ -462,11 +470,10 @@ function transformTextNodeForParagraphs(
   }
 }
 
-function transformTextNodeForText(
-  scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
-) {
+function transformTextNodeForText(scanningContext: ScanningContext) {
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+  const matchResultContext = scanningContext.matchResultContext;
+
   if (autoFormatCriteria.nodeTransformationKind != null) {
     switch (autoFormatCriteria.nodeTransformationKind) {
       case 'textBold': {
@@ -477,12 +484,8 @@ function transformTextNodeForText(
           break;
         }
         matchResultContext.regExCaptureGroups =
-          getCaptureGroupsByResolvingAllDetails(
-            scanningContext,
-            autoFormatCriteria,
-            matchResultContext,
-          );
-        // Remove unwanted text in reg ex patterh.
+          getCaptureGroupsByResolvingAllDetails(scanningContext);
+        // Remove unwanted text in reg ex pattern.
         removeTextInCaptureGroups([1, 5], matchResultContext);
         formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
         makeCollapsedSelectionAtOffsetInJoinedText(
@@ -503,9 +506,10 @@ function transformTextNodeForText(
 // known, the details may be fully resolved without incurring unwasted performance cost.
 function getCaptureGroupsByResolvingAllDetails(
   scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
 ): Array<CaptureGroupDetail> {
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+  const matchResultContext = scanningContext.matchResultContext;
+
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const regExCaptureGroups = matchResultContext.regExCaptureGroups;
   const captureGroupsCount = regExCaptureGroups.length;

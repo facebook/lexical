@@ -216,7 +216,6 @@ async function build(name, inputFile, outputFile, isProd) {
         configFile: false,
         exclude: '/**/node_modules/**',
         plugins: [
-          'babel-plugin-transform-flow-enums',
           '@babel/plugin-transform-flow-strip-types',
           [
             require('./error-codes/transform-error-messages'),

@@ -2,10 +2,7 @@ const generateLinkPreview = require('link-preview-generator');
 
 module.exports = {
   babel: {
-    plugins: [
-      ['babel-plugin-transform-stylex', {dev: true}],
-      'babel-plugin-transform-flow-enums',
-    ],
+    plugins: [['babel-plugin-transform-stylex', {dev: true}]],
   },
   webpack: {
     alias: {

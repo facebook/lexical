@@ -135,10 +135,9 @@ export type RegisteredNode = {
   mutations: Set<MutationListener>,
   transforms: Set<Transform<LexicalNode>>,
 };
-export enum NodeMutation {
-  Attached = true,
-  Detached = false,
-}
+export type NodeAttached = true;
+export type NodeDetached = false;
+export type NodeMutation = NodeAttached | NodeDetached;
 export type Transform<T> = (node: T) => void;
 
 export type ErrorListener = (error: Error) => void;

@@ -11,12 +11,13 @@ import type {ElementNode} from '.';
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
+  NodeDetached,
+  NodeMutation,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {NodeKey, NodeMap} from './LexicalNode';
 
 import {$isElementNode} from '.';
-import {NodeMutation} from './LexicalEditor';
 import {cloneDecorators} from './LexicalUtils';
 
 export function $garbageCollectDetachedDecorators(
@@ -68,7 +69,7 @@ function $garbageCollectDetachedDeepChildNodes(
         dirtyNodes.delete(childKey);
       }
       nodeMap.delete(childKey);
-      mutatedNodes.set(childKey, NodeMutation.Detached);
+      mutatedNodes.set(childKey, (false: NodeDetached));
     }
   }
 }
@@ -96,7 +97,7 @@ export function $garbageCollectDetachedNodes(
         dirtyLeaves.delete(nodeKey);
       }
       nodeMap.delete(nodeKey);
-      mutatedNodes.set(nodeKey, NodeMutation.Detached);
+      mutatedNodes.set(nodeKey, (false: NodeDetached));
     }
   }
 
@@ -123,7 +124,7 @@ export function $garbageCollectDetachedNodes(
           dirtyElements.delete(nodeKey);
         }
         nodeMap.delete(nodeKey);
-        mutatedNodes.set(nodeKey, NodeMutation.Detached);
+        mutatedNodes.set(nodeKey, (false: NodeDetached));
       }
     }
   }

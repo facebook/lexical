@@ -10,6 +10,9 @@
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
+  NodeAttached,
+  NodeDetached,
+  NodeMutation,
   RegisteredNode,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
@@ -39,7 +42,6 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
-import {NodeMutation} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   errorOnInfiniteTransforms,
@@ -173,7 +175,7 @@ export function $generateKey(node: LexicalNode): NodeKey {
   }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
-  editor._mutatedNodes.set(key, NodeMutation.Attached);
+  editor._mutatedNodes.set(key, (true: NodeAttached));
   return key;
 }
 
@@ -790,13 +792,13 @@ export function mutatedNodes(
   previousNodeMap.forEach((node) => {
     const key = node.__key;
     if (!nextNodeMap.has(key)) {
-      mutations.set(key, NodeMutation.Detached);
+      mutations.set(key, (false: NodeDetached));
     }
   });
   nextNodeMap.forEach((node) => {
     const key = node.__key;
     if (!previousNodeMap.has(key)) {
-      mutations.set(key, NodeMutation.Attached);
+      mutations.set(key, (true: NodeAttached));
     }
   });
   return mutations;

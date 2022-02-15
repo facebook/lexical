@@ -11,6 +11,9 @@ import type {
   CommandPayload,
   EditorUpdateOptions,
   LexicalEditor,
+  NodeAttached,
+  NodeDetached,
+  NodeMutation,
   Transform,
 } from './LexicalEditor';
 import type {ParsedEditorState} from './LexicalEditorState';
@@ -21,7 +24,7 @@ import invariant from 'shared/invariant';
 
 import {$isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
-import {NodeMutation, resetEditor} from './LexicalEditor';
+import {resetEditor} from './LexicalEditor';
 import {
   cloneEditorState,
   EditorState,
@@ -447,14 +450,14 @@ function triggerMutationListeners(
     let attached = null;
     let detached = null;
     let type = null;
-    if (mutation === NodeMutation.Attached) {
+    if (mutation === (true: NodeAttached)) {
       const node = nextNodeMap.get(nodeKey);
       if (node === undefined) {
         invariant(false, 'Attached node not in nextNodeMap');
       }
       attached = nodeKey;
       type = node.__type;
-    } else if (mutation === NodeMutation.Detached) {
+    } else if (mutation === (false: NodeDetached)) {
       const node = currentNodeMap.get(nodeKey);
       if (node === undefined) {
         // Can happen when a node is attached and GCed in the same update

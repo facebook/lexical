@@ -38,9 +38,9 @@ import {
 import {errorOnReadOnly} from '../../LexicalUpdates';
 import {
   $getCompositionKey,
-  $internallyMarkSiblingsAsDirty,
   $setCompositionKey,
   getCachedClassNameArray,
+  internalMarkSiblingsAsDirty,
   toggleTextFormatType,
 } from '../../LexicalUtils';
 
@@ -147,12 +147,33 @@ function setTextThemeClassNames(
   }
 }
 
+function diffComposedText(a: string, b: string): [number, number, string] {
+  const aLength = a.length;
+  const bLength = b.length;
+  let left = 0;
+  let right = 0;
+
+  while (left < aLength && left < bLength && a[left] === b[left]) {
+    left++;
+  }
+  while (
+    right + left < aLength &&
+    right + left < bLength &&
+    a[aLength - right - 1] === b[bLength - right - 1]
+  ) {
+    right++;
+  }
+
+  return [left, aLength - left - right, b.slice(left, bLength - right)];
+}
+
 function setTextContent(
   nextText: string,
   dom: HTMLElement,
   node: TextNode,
 ): void {
-  const firstChild = dom.firstChild;
+  // $FlowFixMe: first node is always text
+  const firstChild: ?Text = dom.firstChild;
   const isComposing = node.isComposing();
   // Always add a suffix if we're composing a node
   const suffix = isComposing ? NO_BREAK_SPACE_CHAR : '';
@@ -160,8 +181,18 @@ function setTextContent(
 
   if (firstChild == null) {
     dom.textContent = text;
-  } else if (firstChild.nodeValue !== text) {
-    firstChild.nodeValue = text;
+  } else {
+    const nodeValue = firstChild.nodeValue;
+    if (nodeValue !== text)
+      if (isComposing) {
+        const [index, remove, insert] = diffComposedText(nodeValue, text);
+        if (remove !== 0) {
+          firstChild.deleteData(index, remove);
+        }
+        firstChild.insertData(index, insert);
+      } else {
+        firstChild.nodeValue = text;
+      }
   }
 }
 
@@ -571,7 +602,7 @@ export class TextNode extends LexicalNode {
     }
 
     // Insert the nodes into the parent's children
-    $internallyMarkSiblingsAsDirty(this);
+    internalMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);

@@ -97,7 +97,7 @@ export function initializeE2E(runTests, config: Config = {}) {
     }?${urlParams.toString()}`;
     const context = await e2e.browser.newContext({acceptDownloads: true});
     const page = await context.newPage();
-    await page.goto(url);
+    await page.goto(url, {timeout: 60000});
     e2e.page = page;
   });
   afterEach(async () => {

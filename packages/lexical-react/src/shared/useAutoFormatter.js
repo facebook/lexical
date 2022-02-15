@@ -85,7 +85,7 @@ function updateAutoFormatting(
       transformTextNodeForAutoFormatCriteria(scanningContext);
     },
     {
-      tag: 'no-history-merge',
+      tag: 'history-push',
     },
   );
 }

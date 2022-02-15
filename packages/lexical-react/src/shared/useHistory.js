@@ -216,9 +216,9 @@ function createMergeActionGetter(
     );
 
     const mergeAction = (() => {
-      const shouldNotMergeWithHistory = tags.has('no-history-merge');
+      const shouldPushHistory = tags.has('history-push');
       const shouldMergeHistory =
-        !shouldNotMergeWithHistory && tags.has('history-merge');
+        !shouldPushHistory && tags.has('history-merge');
 
       if (shouldMergeHistory) {
         return HISTORY_MERGE;
@@ -240,7 +240,7 @@ function createMergeActionGetter(
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
 
       if (
-        shouldNotMergeWithHistory === false &&
+        shouldPushHistory === false &&
         changeType !== OTHER &&
         changeType === prevChangeType &&
         changeTime < prevChangeTime + delay &&

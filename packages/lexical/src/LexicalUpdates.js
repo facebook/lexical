@@ -466,7 +466,8 @@ function triggerMutationListeners(
   detached.forEach((nodeKey) => {
     const node = currentNodeMap.get(nodeKey);
     if (node === undefined) {
-      invariant(false, 'Detached node not in currentNodeMap');
+      // Attached and GCed in the same update
+      return;
     }
     const type = node.__type;
     let attachedDetachedNodesByType = attachedDetachedNodes.get(type);
@@ -682,6 +683,9 @@ function beginUpdate(
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements.clear();
+    editor._attachedNodes = new Set();
+    editor._detachedNodes = new Set();
+    editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;
   } finally {

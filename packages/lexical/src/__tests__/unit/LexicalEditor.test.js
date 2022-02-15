@@ -1374,6 +1374,8 @@ describe('LexicalEditor tests', () => {
       const paragraph = $createParagraphNode();
       root.append(paragraph);
       paragraphKeys.push(paragraph.getKey());
+      // Created and deleted in the same update
+      $createTextNode('zzz');
     });
     expect(paragraphAttachedDetached.mock.calls.length).toBe(3);
     expect(textNodeAttachedDetached.mock.calls.length).toBe(2);

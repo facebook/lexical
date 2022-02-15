@@ -490,7 +490,7 @@ class BaseLexicalEditor {
         nextRootElement.setAttribute('data-lexical-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));
-        this._updateTags.add('without-history');
+        this._updateTags.add('history-merge');
         commitPendingUpdates(getSelf(this));
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {

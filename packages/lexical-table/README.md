@@ -1,3 +1,3 @@
-# `@lexical/list`
+# `@lexical/table`
 
-This package contains the functionality for the List feature of Lexical.
+This package contains the functionality for the Tables feature of Lexical.

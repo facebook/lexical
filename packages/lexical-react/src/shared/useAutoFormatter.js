@@ -84,13 +84,9 @@ function updateAutoFormatting(
     () => {
       transformTextNodeForAutoFormatCriteria(scanningContext);
     },
-    editor._pendingEditorState === null
-      ? {
-          tag: 'test1',
-        }
-      : {
-          tag: 'test2',
-        },
+    {
+      tag: 'skip_merge_with_prior_history',
+    },
   );
 }
 

@@ -216,7 +216,13 @@ function createMergeActionGetter(
     );
 
     const mergeAction = (() => {
-      if (tags.has('without-history')) {
+      const skipMergeWithPriorHistory = tags.has(
+        'skip_merge_with_prior_history',
+      );
+      const shouldMergeWithPriorHistory =
+        !skipMergeWithPriorHistory && tags.has('without-history');
+
+      if (shouldMergeWithPriorHistory) {
         return MERGE;
       }
       if (prevEditorState === null) {
@@ -236,6 +242,7 @@ function createMergeActionGetter(
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
 
       if (
+        skipMergeWithPriorHistory === false &&
         changeType !== OTHER &&
         changeType === prevChangeType &&
         changeTime < prevChangeTime + delay &&

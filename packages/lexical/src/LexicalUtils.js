@@ -39,6 +39,7 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+import {NodeMutation} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   errorOnInfiniteTransforms,
@@ -172,7 +173,7 @@ export function $generateKey(node: LexicalNode): NodeKey {
   }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
-  editor._attachedNodes.add(key);
+  editor._mutatedNodes.set(key, NodeMutation.Attached);
   return key;
 }
 
@@ -779,4 +780,24 @@ export function getCachedClassNameArray<Theme: {...}>(
     return classNamesArr;
   }
   return classNames;
+}
+
+export function mutatedNodes(
+  previousNodeMap: NodeMap,
+  nextNodeMap: NodeMap,
+): Map<NodeKey, NodeMutation> {
+  const mutations = new Map();
+  previousNodeMap.forEach((node) => {
+    const key = node.__key;
+    if (!nextNodeMap.has(key)) {
+      mutations.set(key, NodeMutation.Detached);
+    }
+  });
+  nextNodeMap.forEach((node) => {
+    const key = node.__key;
+    if (!previousNodeMap.has(key)) {
+      mutations.set(key, NodeMutation.Attached);
+    }
+  });
+  return mutations;
 }

@@ -2,6 +2,7 @@
 
 module.exports = {
   plugins: [
+    'babel-plugin-transform-flow-enums',
     [
       require('./scripts/error-codes/transform-error-messages'),
       {noMinify: true},

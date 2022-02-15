@@ -21,7 +21,7 @@ import invariant from 'shared/invariant';
 
 import {$isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
-import {resetEditor} from './LexicalEditor';
+import {NodeMutation, resetEditor} from './LexicalEditor';
 import {
   cloneEditorState,
   EditorState,
@@ -255,7 +255,7 @@ export function parseEditorState(
   const previousActiveEditorState = editorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
-  const previousAttachedNodes = new Set(editor._attachedNodes);
+  const previousMutatedNodes = new Map(editor._mutatedNodes);
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
@@ -274,7 +274,7 @@ export function parseEditorState(
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
-    editor._attachedNodes = previousAttachedNodes;
+    editor._mutatedNodes = previousMutatedNodes;
   }
   editorState._selection = internalCreateSelectionFromParse(
     nodeParserState.remappedSelection || nodeParserState.originalSelection,
@@ -382,8 +382,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
-  const attachedNodes = editor._attachedNodes;
-  const detachedNodes = editor._detachedNodes;
+  const mutatedNodes = editor._mutatedNodes;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
 
@@ -392,8 +391,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
-    editor._attachedNodes = new Set();
-    editor._detachedNodes = new Set();
+    editor._mutatedNodes = new Map();
     editor._normalizedNodes = new Set();
     editor._updateTags = new Set();
   }
@@ -409,8 +407,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     editor,
     currentEditorState,
     pendingEditorState,
-    attachedNodes,
-    detachedNodes,
+    mutatedNodes,
   );
   triggerListeners('update', editor, true, {
     dirtyElements,
@@ -440,45 +437,45 @@ function triggerMutationListeners(
   editor: LexicalEditor,
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
-  attached: Set<NodeKey>,
-  detached: Set<NodeKey>,
+  mutatedNodes: Map<NodeKey, NodeMutation>,
 ): void {
   const attachedDetachedNodes: Map<string, [Array<NodeKey>, Array<NodeKey>]> =
     new Map();
   const currentNodeMap = currentEditorState._nodeMap;
   const nextNodeMap = pendingEditorState._nodeMap;
-  attached.forEach((nodeKey) => {
-    if (detached.has(nodeKey)) {
-      // Attached node was later detached
-      return;
+  mutatedNodes.forEach((mutation, nodeKey) => {
+    let attached = null;
+    let detached = null;
+    let type = null;
+    if (mutation === NodeMutation.Attached) {
+      const node = nextNodeMap.get(nodeKey);
+      if (node === undefined) {
+        invariant(false, 'Attached node not in nextNodeMap');
+      }
+      attached = nodeKey;
+      type = node.__type;
+    } else if (mutation === NodeMutation.Detached) {
+      const node = currentNodeMap.get(nodeKey);
+      if (node === undefined) {
+        // Can happen when a node is attached and GCed in the same update
+        return;
+      }
+      detached = nodeKey;
+      type = node.__type;
     }
-    const node = nextNodeMap.get(nodeKey);
-    if (node === undefined) {
-      invariant(false, 'Attached node not in nextNodeMap');
+    if ((attached !== null || detached !== null) && type !== null) {
+      let attachedDetachedNodesByType = attachedDetachedNodes.get(type);
+      if (attachedDetachedNodesByType === undefined) {
+        attachedDetachedNodesByType = [[], []];
+        attachedDetachedNodes.set(type, attachedDetachedNodesByType);
+      }
+      const [attachedNodes, detachedNodes] = attachedDetachedNodesByType;
+      if (attached !== null) {
+        attachedNodes.push(attached);
+      } else if (detached !== null) {
+        detachedNodes.push(detached);
+      }
     }
-    const type = node.__type;
-    let attachedDetachedNodesByType = attachedDetachedNodes.get(type);
-    if (attachedDetachedNodesByType === undefined) {
-      attachedDetachedNodesByType = [[], []];
-      attachedDetachedNodes.set(type, attachedDetachedNodesByType);
-    }
-    const attachedNodes = attachedDetachedNodesByType[0];
-    attachedNodes.push(nodeKey);
-  });
-  detached.forEach((nodeKey) => {
-    const node = currentNodeMap.get(nodeKey);
-    if (node === undefined) {
-      // Attached and GCed in the same update
-      return;
-    }
-    const type = node.__type;
-    let attachedDetachedNodesByType = attachedDetachedNodes.get(type);
-    if (attachedDetachedNodesByType === undefined) {
-      attachedDetachedNodesByType = [[], []];
-      attachedDetachedNodes.set(type, attachedDetachedNodesByType);
-    }
-    const detachedNodes = attachedDetachedNodesByType[1];
-    detachedNodes.push(nodeKey);
   });
   attachedDetachedNodes.forEach((attachedDetached, type) => {
     const registeredNode = editor._nodes.get(type);
@@ -653,7 +650,7 @@ function beginUpdate(
         pendingEditorState,
         editor._dirtyLeaves,
         editor._dirtyElements,
-        editor._detachedNodes,
+        editor._mutatedNodes,
       );
     }
     const endingCompositionKey = editor._compositionKey;
@@ -685,8 +682,7 @@ function beginUpdate(
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements.clear();
-    editor._attachedNodes = new Set();
-    editor._detachedNodes = new Set();
+    editor._mutatedNodes = new Map();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;

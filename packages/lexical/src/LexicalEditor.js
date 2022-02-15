@@ -33,6 +33,7 @@ import {
   createUID,
   generateRandomKey,
   markAllNodesAsDirty,
+  mutatedNodes,
 } from './LexicalUtils';
 import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
@@ -134,6 +135,10 @@ export type RegisteredNode = {
   mutations: Set<MutationListener>,
   transforms: Set<Transform<LexicalNode>>,
 };
+export enum NodeMutation {
+  Attached = true,
+  Detached = false,
+}
 export type Transform<T> = (node: T) => void;
 
 export type ErrorListener = (error: Error) => void;
@@ -193,11 +198,7 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent'
-<<<<<<< HEAD
-=======
-  | 'textmutation'
   | 'mutation'
->>>>>>> 2bb9c152 (impl. based on editorState and dirtyNodes)
   | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
@@ -219,8 +220,7 @@ export function resetEditor(
   editor._cloneNotNeeded.clear();
   editor._dirtyLeaves = new Set();
   editor._dirtyElements.clear();
-  editor._attachedNodes = new Set();
-  editor._detachedNodes = new Set();
+  editor._mutatedNodes = new Map();
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._updates = [];
@@ -322,8 +322,7 @@ class BaseLexicalEditor {
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
-  _attachedNodes: Set<NodeKey>;
-  _detachedNodes: Set<NodeKey>;
+  _mutatedNodes: Map<NodeKey, NodeMutation>;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
@@ -371,8 +370,7 @@ class BaseLexicalEditor {
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
-    this._attachedNodes = new Set();
-    this._detachedNodes = new Set();
+    this._mutatedNodes = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
     // Handling of DOM mutations
@@ -549,9 +547,8 @@ class BaseLexicalEditor {
       );
     }
     flushRootMutations(getSelf(this));
-    const previousNodeMap = this.getEditorState()._nodeMap;
+    const currentEditorState = this.getEditorState();
     const pendingEditorState = this._pendingEditorState;
-    const attachedNodes = this._attachedNodes;
     const tags = getSelf(this)._updateTags;
     const tag = options !== undefined ? options.tag : null;
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
@@ -562,12 +559,10 @@ class BaseLexicalEditor {
     }
     this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
-    editorState._nodeMap.forEach((node) => {
-      const nodeKey = node.__key;
-      if (!previousNodeMap.has(nodeKey)) {
-        attachedNodes.add(nodeKey);
-      }
-    });
+    this._mutatedNodes = mutatedNodes(
+      currentEditorState._nodeMap,
+      editorState._nodeMap,
+    );
     this._compositionKey = null;
     if (tag != null) {
       tags.add(tag);
@@ -621,13 +616,11 @@ class BaseLexicalEditor {
 // For some reason, we can't do this via an interface without
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class LexicalEditor {
-  _attachedNodes: Set<NodeKey>;
   _cloneNotNeeded: Set<NodeKey>;
   _compositionKey: null | NodeKey;
   _config: EditorConfig<{...}>;
   _decorators: {[NodeKey]: ReactNode};
   _deferred: Array<() => void>;
-  _detachedNodes: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyType: 0 | 1 | 2;
@@ -635,6 +628,7 @@ declare export class LexicalEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
+  _mutatedNodes: Map<NodeKey, NodeMutation>;
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;

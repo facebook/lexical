@@ -10,6 +10,7 @@
       "targets": "defaults"
     }],
     "@babel/preset-flow",
-    "@babel/preset-react"
+    "@babel/preset-react",
+    "babel-plugin-transform-flow-enums"
   ]
 }

@@ -549,7 +549,9 @@ class BaseLexicalEditor {
       );
     }
     flushRootMutations(getSelf(this));
+    const previousNodeMap = this.getEditorState()._nodeMap;
     const pendingEditorState = this._pendingEditorState;
+    const attachedNodes = this._attachedNodes;
     const tags = getSelf(this)._updateTags;
     const tag = options !== undefined ? options.tag : null;
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
@@ -560,6 +562,12 @@ class BaseLexicalEditor {
     }
     this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
+    editorState._nodeMap.forEach((node) => {
+      const nodeKey = node.__key;
+      if (!previousNodeMap.has(nodeKey)) {
+        attachedNodes.add(nodeKey);
+      }
+    });
     this._compositionKey = null;
     if (tag != null) {
       tags.add(tag);

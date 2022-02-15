@@ -255,6 +255,7 @@ export function parseEditorState(
   const previousActiveEditorState = editorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
+  const previousAttachedNodes = new Set(editor._attachedNodes);
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
@@ -273,6 +274,7 @@ export function parseEditorState(
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
+    editor._attachedNodes = previousAttachedNodes;
   }
   editorState._selection = internalCreateSelectionFromParse(
     nodeParserState.remappedSelection || nodeParserState.originalSelection,

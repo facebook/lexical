@@ -18,16 +18,36 @@ import {
   $isTableRowNode,
   TableRowNode,
 } from './LexicalTableRowNode';
-import {$createTableNodeWithDimensions} from './utils';
+import {
+  $createTableNodeWithDimensions,
+  $deleteTableColumn,
+  $getTableCellNodeFromLexicalNode,
+  $getTableColumnIndexFromTableCellNode,
+  $getTableNodeFromLexicalNodeOrThrow,
+  $getTableRowIndexFromTableCellNode,
+  $getTableRowNodeFromTableCellNodeOrThrow,
+  $insertTableColumn,
+  $insertTableRow,
+  $removeTableRowAtIndex,
+} from './utils';
 
 export {
   $createTableCellNode,
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
+  $deleteTableColumn,
+  $getTableCellNodeFromLexicalNode,
+  $getTableColumnIndexFromTableCellNode,
+  $getTableNodeFromLexicalNodeOrThrow,
+  $getTableRowIndexFromTableCellNode,
+  $getTableRowNodeFromTableCellNodeOrThrow,
+  $insertTableColumn,
+  $insertTableRow,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
+  $removeTableRowAtIndex,
   TableCellNode,
   TableNode,
   TableRowNode,

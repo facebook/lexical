@@ -58,14 +58,14 @@ export function useYjsCollaboration(
     }
   }, [provider]);
 
-  const isInitialized = useRef(false);
+  const bootstrapPropagationRef = useRef(true);
 
   useLayoutEffect(() => {
     return editor.addListener(
       'command',
       (type) => {
         if (type === 'bootstrapEditor') {
-          return !isInitialized.current;
+          return bootstrapPropagationRef.current;
         }
         return false;
       },
@@ -88,7 +88,7 @@ export function useYjsCollaboration(
         root.isEmpty() &&
         root._xmlText._length === 0
       ) {
-        isInitialized.current = true;
+        bootstrapPropagationRef.current = false;
         editor.execCommand('bootstrapEditor');
       }
     };

@@ -53,6 +53,7 @@ export type AutoFormatTriggerState = $ReadOnly<{
 // 2. Convert the text formatting: e.g. "**hello**" converts to bold "hello".
 
 export type NodeTransformationKind =
+  | 'noTransformation'
   | 'paragraphH1'
   | 'paragraphH2'
   | 'paragraphH3'
@@ -61,6 +62,20 @@ export type NodeTransformationKind =
   | 'paragraphOrderedList'
   | 'paragraphCodeBlock'
   | 'textBold';
+
+// The scanning context provides the overall data structure for
+// locating a auto formatting candidate and then transforming that candidate
+// into the newly formatted stylized text.
+// The context is filled out lazily to avoid redundant or up-front expensive
+// calculations. For example, this includes the parent element's getTextContent() which
+// ultimately gets deposited into the joinedText field.
+export type ScanningContext = {
+  autoFormatCriteria: AutoFormatCriteria,
+  joinedText: ?string,
+  matchResultContext: MatchResultContext,
+  textNodeWithOffset: TextNodeWithOffset,
+  triggerState: AutoFormatTriggerState,
+};
 
 // The auto formatter runs these steps:
 // 1. Examine the current and prior editor states to see if a potential auto format is triggered.
@@ -74,25 +89,11 @@ export type NodeTransformationKind =
 // // //
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
-// We can specify ahead of time which gapture groups shoud be removed using the regExCaptureGroupsToDelete.
 export type AutoFormatCriteria = $ReadOnly<{
   nodeTransformationKind: ?NodeTransformationKind,
   regEx: RegExp,
-  regExCaptureGroupsToDelete: ?Array<number>,
-  regExExpectedCaptureGroupCount: number,
   requiresParagraphStart: ?boolean,
 }>;
-
-// While scanning over the text, comparing each
-// auto format criteria against the text, certain
-// details may be captured rather than re-calculated.
-// For example, scanning over each AutoFormatCriteria,
-// building up the ParagraphNode's text by calling getTextContent()
-// may be expensive. Rather, load this value lazily and store it for later use.
-export type ScanningContext = {
-  joinedText: ?string,
-  textNodeWithOffset: TextNodeWithOffset,
-};
 
 // RegEx returns the discovered pattern matches in an array of capture groups.
 // Using this array, we can extract the sub-string per pattern, determine its
@@ -110,8 +111,8 @@ type CaptureGroupDetail = {
 // This type stores the result details when a particular
 // match is found.
 export type MatchResultContext = {
+  offsetInJoinedTextForCollapsedSelection: number, // The expected location for the blinking caret.
   regExCaptureGroups: Array<CaptureGroupDetail>,
-  triggerState: ?AutoFormatTriggerState,
 };
 
 export type AutoFormatCriteriaWithMatchResultContext = {
@@ -128,8 +129,6 @@ const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused 
 const autoFormatBase: AutoFormatCriteria = {
   nodeTransformationKind: null,
   regEx: /(?:)/,
-  regExCaptureGroupsToDelete: null,
-  regExExpectedCaptureGroupCount: 1,
   requiresParagraphStart: false,
 };
 
@@ -184,7 +183,6 @@ const markdownOrderedList: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphOrderedList',
   regEx: /^(\d+)\.\s/,
-  regExExpectedCaptureGroupCount: 2 /*e.g. '321. ' returns '321. ' & '321'*/,
 };
 
 const markdownBold: AutoFormatCriteria = {
@@ -194,10 +192,6 @@ const markdownBold: AutoFormatCriteria = {
   regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
   // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
   // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
-  regExCaptureGroupsToDelete: [1, 5],
-
-  // The $ will find the target at the end of the string.
-  regExExpectedCaptureGroupCount: 6,
 };
 
 const allAutoFormatCriteriaForTextNodes = [markdownBold];
@@ -222,28 +216,47 @@ export function getAllAutoFormatCriteria(): AutoFormatCriteriaArray {
   return allAutoFormatCriteria;
 }
 
+export function getInitialScanningContext(
+  textNodeWithOffset: TextNodeWithOffset,
+  triggerState: AutoFormatTriggerState,
+): ScanningContext {
+  return {
+    autoFormatCriteria: {
+      nodeTransformationKind: 'noTransformation',
+      regEx: /(?:)/, // Empty reg ex will do until the precise criteria is discovered.
+      requiresParagraphStart: null,
+    },
+    joinedText: null,
+    matchResultContext: {
+      offsetInJoinedTextForCollapsedSelection: 0,
+      regExCaptureGroups: [],
+    },
+    textNodeWithOffset,
+    triggerState,
+  };
+}
+
 function getMatchResultContextWithRegEx(
   textToSearch: string,
   matchMustAppearAtStartOfString: boolean,
   matchMustAppearAtEndOfString: boolean,
   regEx: RegExp,
-  regExExpectedCaptureGroupCount: number,
-  scanningContext: ScanningContext,
 ): null | MatchResultContext {
   const matchResultContext: MatchResultContext = {
+    offsetInJoinedTextForCollapsedSelection: 0,
     regExCaptureGroups: [],
-    triggerState: null,
   };
 
   const regExMatches = textToSearch.match(regEx);
   if (
     regExMatches !== null &&
     regExMatches.length > 0 &&
-    regExMatches.length === regExExpectedCaptureGroupCount &&
     (matchMustAppearAtStartOfString === false || regExMatches.index === 0) &&
     (matchMustAppearAtEndOfString === false ||
       regExMatches.index + regExMatches[0].length === textToSearch.length)
   ) {
+    matchResultContext.offsetInJoinedTextForCollapsedSelection =
+      textToSearch.length;
     const captureGroupsCount = regExMatches.length;
     let runningLength = regExMatches.index;
     for (
@@ -292,8 +305,6 @@ function getMatchResultContextForParagraphs(
       true,
       false,
       autoFormatCriteria.regEx,
-      autoFormatCriteria.regExExpectedCaptureGroupCount,
-      scanningContext,
     );
   }
 
@@ -321,8 +332,6 @@ function getMatchResultContextForText(
         false,
         true,
         autoFormatCriteria.regEx,
-        autoFormatCriteria.regExExpectedCaptureGroupCount,
-        scanningContext,
       );
     } else {
       invariant(
@@ -353,12 +362,13 @@ export function getMatchResultContextForCriteria(
 }
 
 function getNewNodeForCriteria(
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
+  scanningContext: ScanningContext,
   children: Array<LexicalNode>,
 ): null | ElementNode {
   let newNode = null;
 
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+  const matchResultContext = scanningContext.matchResultContext;
   if (autoFormatCriteria.nodeTransformationKind != null) {
     switch (autoFormatCriteria.nodeTransformationKind) {
       case 'paragraphH1': {
@@ -405,8 +415,8 @@ function getNewNodeForCriteria(
       case 'paragraphCodeBlock': {
         // Toggle code and paragraph nodes.
         if (
-          matchResultContext.triggerState != null &&
-          matchResultContext.triggerState.isCodeBlock
+          scanningContext.triggerState != null &&
+          scanningContext.triggerState.isCodeBlock
         ) {
           newNode = $createParagraphNode();
         } else {
@@ -433,37 +443,22 @@ function updateTextNode(node: TextNode, count: number): void {
 
 export function transformTextNodeForAutoFormatCriteria(
   scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
 ) {
-  if (autoFormatCriteria.requiresParagraphStart) {
-    transformTextNodeForParagraphs(
-      scanningContext,
-      autoFormatCriteria,
-      matchResultContext,
-    );
+  if (scanningContext.autoFormatCriteria.requiresParagraphStart) {
+    transformTextNodeForParagraphs(scanningContext);
   } else {
-    transformTextNodeForText(
-      scanningContext,
-      autoFormatCriteria,
-      matchResultContext,
-    );
+    transformTextNodeForText(scanningContext);
   }
 }
 
-function transformTextNodeForParagraphs(
-  scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
-) {
+function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const element = textNodeWithOffset.node.getParentOrThrow();
-  const text = matchResultContext.regExCaptureGroups[0].text;
+  const text = scanningContext.matchResultContext.regExCaptureGroups[0].text;
   updateTextNode(textNodeWithOffset.node, text.length);
 
   const elementNode = getNewNodeForCriteria(
-    autoFormatCriteria,
-    matchResultContext,
+    scanningContext,
     element.getChildren(),
   );
 
@@ -472,29 +467,29 @@ function transformTextNodeForParagraphs(
   }
 }
 
-function transformTextNodeForText(
-  scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
-) {
+function transformTextNodeForText(scanningContext: ScanningContext) {
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+  const matchResultContext = scanningContext.matchResultContext;
+
   if (autoFormatCriteria.nodeTransformationKind != null) {
     switch (autoFormatCriteria.nodeTransformationKind) {
       case 'textBold': {
-        matchResultContext.regExCaptureGroups =
-          getCaptureGroupsByResolvingAllDetails(
-            scanningContext,
-            autoFormatCriteria,
-            matchResultContext,
-          );
-
-        if (autoFormatCriteria.regExCaptureGroupsToDelete != null) {
-          // Remove unwanted text in reg ex patterh.
-          removeTextInCaptureGroups(
-            autoFormatCriteria.regExCaptureGroupsToDelete,
-            matchResultContext,
-          );
-          formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
+        if (matchResultContext.regExCaptureGroups.length !== 6) {
+          // The expected reg ex pattern for bold should have 6 groups.
+          // If it does not, then break and fail silently.
+          // e2e tests validate the regEx pattern.
+          break;
         }
+        matchResultContext.regExCaptureGroups =
+          getCaptureGroupsByResolvingAllDetails(scanningContext);
+        // Remove unwanted text in reg ex pattern.
+        removeTextInCaptureGroups([1, 5], matchResultContext);
+        formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
+        makeCollapsedSelectionAtOffsetInJoinedText(
+          matchResultContext.offsetInJoinedTextForCollapsedSelection,
+          matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
+          scanningContext.textNodeWithOffset.node.getParentOrThrow(),
+        );
         break;
       }
       default:
@@ -508,9 +503,10 @@ function transformTextNodeForText(
 // known, the details may be fully resolved without incurring unwasted performance cost.
 function getCaptureGroupsByResolvingAllDetails(
   scanningContext: ScanningContext,
-  autoFormatCriteria: AutoFormatCriteria,
-  matchResultContext: MatchResultContext,
 ): Array<CaptureGroupDetail> {
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+  const matchResultContext = scanningContext.matchResultContext;
+
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const regExCaptureGroups = matchResultContext.regExCaptureGroups;
   const captureGroupsCount = regExCaptureGroups.length;
@@ -637,6 +633,12 @@ function shiftCaptureGroupOffsets(
   startingCaptureGroupIndex: number,
   matchResultContext: MatchResultContext,
 ) {
+  matchResultContext.offsetInJoinedTextForCollapsedSelection += delta;
+  invariant(
+    matchResultContext.offsetInJoinedTextForCollapsedSelection > 0,
+    'The text content string length does not correlate with insertions/deletions of new text.',
+  );
+
   const regExCaptureGroups = matchResultContext.regExCaptureGroups;
   const regExCaptureGroupsCount = regExCaptureGroups.length;
   for (
@@ -705,6 +707,52 @@ function formatTextInCaptureGroupIndex(
     const currentSelection = $getSelection();
     if (currentSelection != null) {
       currentSelection.formatText(formatType);
+
+      const finalSelection = $createRangeSelection();
+
+      finalSelection.anchor.set(
+        focusTextNodeWithOffset.node.getKey(),
+        focusTextNodeWithOffset.offset + 1,
+        'text',
+      );
+
+      finalSelection.focus.set(
+        focusTextNodeWithOffset.node.getKey(),
+        focusTextNodeWithOffset.offset + 1,
+        'text',
+      );
+      $setSelection(finalSelection);
     }
+  }
+}
+
+function makeCollapsedSelectionAtOffsetInJoinedText(
+  offsetInJoinedText: number,
+  joinedTextLength: number,
+  parentElementNode: ElementNode,
+) {
+  const textNodeWithOffset = $findNodeWithOffsetFromJoinedText(
+    parentElementNode,
+    joinedTextLength,
+    offsetInJoinedText,
+    TRIGGER_STRING_LENGTH,
+  );
+
+  if (textNodeWithOffset != null) {
+    const newSelection = $createRangeSelection();
+
+    newSelection.anchor.set(
+      textNodeWithOffset.node.getKey(),
+      textNodeWithOffset.offset,
+      'text',
+    );
+
+    newSelection.focus.set(
+      textNodeWithOffset.node.getKey(),
+      textNodeWithOffset.offset,
+      'text',
+    );
+
+    $setSelection(newSelection);
   }
 }

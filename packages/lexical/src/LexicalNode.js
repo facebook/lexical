@@ -576,16 +576,16 @@ export class LexicalNode {
       if (focus.key === toReplaceKey) {
         $moveSelectionPointToEnd(focus, writableReplaceWith);
       }
-    }
-    const composition = $getComposition();
-    if (composition !== null && composition.key === toReplaceKey) {
-      if ($isTextNode(writableReplaceWith)) {
-        $setComposition({
-          key: newKey,
-          offset: 0,
-        });
-      } else {
-        $setComposition(null);
+      const composition = $getComposition();
+      if (composition !== null && composition.key === toReplaceKey) {
+        if ($isTextNode(writableReplaceWith)) {
+          $setComposition({
+            key: newKey,
+            offset: anchor.offset,
+          });
+        } else {
+          $setComposition(null);
+        }
       }
     }
     return writableReplaceWith;

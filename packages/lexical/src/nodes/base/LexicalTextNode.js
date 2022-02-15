@@ -147,7 +147,7 @@ function setTextThemeClassNames(
   }
 }
 
-function simpleComposedText(a: string, b: string): [number, number, string] {
+function diffComposedText(a: string, b: string): [number, number, string] {
   const aLength = a.length;
   const bLength = b.length;
   let left = 0;
@@ -205,7 +205,7 @@ function setTextContent(
     }
     const childNodeValue = textNode.nodeValue;
     if (childNodeValue !== composeText) {
-      const [index, remove, insert] = simpleComposedText(
+      const [index, remove, insert] = diffComposedText(
         childNodeValue,
         composeText,
       );
@@ -668,15 +668,18 @@ export class TextNode extends LexicalNode {
     const targetKey = target.__key;
     const text = this.__text;
     const textLength = text.length;
-    const composition = $getComposition();
 
-    if (composition !== null && composition.key === targetKey) {
-      $setComposition(null);
-    }
     const selection = $getSelection();
     if (selection !== null) {
       const anchor = selection.anchor;
       const focus = selection.focus;
+      const composition = $getComposition();
+      if (composition !== null && composition.key === targetKey) {
+        $setComposition({
+          key,
+          offset: isBefore ? anchor.offset : textLength + anchor.offset,
+        });
+      }
       if (anchor !== null && anchor.key === targetKey) {
         adjustPointOffsetForMergedSibling(
           anchor,

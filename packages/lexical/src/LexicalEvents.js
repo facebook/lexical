@@ -17,6 +17,7 @@ import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import {$getRoot, $getSelection, $isElementNode, $log} from '.';
 import {
   $flushMutations,
+  $getComposition,
   $isTokenOrInert,
   $setComposition,
   $setSelection,
@@ -229,6 +230,13 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         break;
       }
       case 'insertFromComposition': {
+        const composition = $getComposition();
+        // Set selection to composition point, ready for commit.
+        if (composition !== null) {
+          const offset = composition.offset;
+          anchor.offset = offset;
+          focus.offset = offset;
+        }
         // This is the end of composition
         $setComposition(null);
         editor.execCommand('insertText', event);

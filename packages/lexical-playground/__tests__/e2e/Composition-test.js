@@ -298,7 +298,7 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type Hiragana via IME part way through a mention', async () => {
+      it.only('Can type Hiragana via IME part way through a mention', async () => {
         const {page} = e2e;
 
         // We don't yet support FF.

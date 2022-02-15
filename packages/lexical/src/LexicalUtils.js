@@ -339,7 +339,7 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
     true,
     editor._pendingEditorState === null
       ? {
-          tag: 'without-history',
+          tag: 'history-merge',
         }
       : undefined,
   );

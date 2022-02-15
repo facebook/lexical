@@ -193,13 +193,13 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     await page.keyboard.type('7');
     await assertHTML(
       page,
-      '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></li></ul>',
+      '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></li></ul>',
     );
 
     await repeat(3, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span></li></ul',
+      '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span></li></ul',
     );
   });
 

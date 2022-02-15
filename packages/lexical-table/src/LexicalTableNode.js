@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {TableCellNode} from './LexicalTableCellNode';
 import type {
   CommandListenerCriticalPriority,
   CommandListenerLowPriority,
@@ -16,7 +17,6 @@ import type {
   NodeKey,
   TextFormatType,
 } from 'lexical';
-import type {TableCellNode} from 'lexical/TableCellNode';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {$findMatchingParent} from '@lexical/helpers/nodes';
@@ -31,8 +31,9 @@ import {
   $setSelection,
   ElementNode,
 } from 'lexical';
-import {$isTableCellNode} from 'lexical/TableCellNode';
 import invariant from 'shared/invariant';
+
+import {$isTableCellNode} from './LexicalTableCellNode';
 
 type Cell = {
   elem: HTMLElement,

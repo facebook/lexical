@@ -9,7 +9,6 @@
 
 import type {LexicalNode} from 'lexical';
 
-import {TableCellNode} from 'lexical/TableCellNode';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
@@ -20,9 +19,12 @@ import {
   TableRowNode,
   $isTableRowNode,
   $createTableRowNode,
-} from 'lexical/TableRowNode';
-import {$createTableCellNode, $isTableCellNode} from 'lexical/TableCellNode';
-import {TableNode, $isTableNode} from 'lexical/TableNode';
+  $createTableCellNode,
+  $isTableCellNode,
+  TableCellNode,
+  TableNode,
+  $isTableNode,
+} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 
 function getTableCellNodeFromLexicalNode(

@@ -35,6 +35,7 @@ module.exports = {
 
       // Lexical Features
       '@lexical/list': '@lexical/list/dist/LexicalList.js',
+      '@lexical/table': '@lexical/table/dist/LexicalTable.js',
 
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',

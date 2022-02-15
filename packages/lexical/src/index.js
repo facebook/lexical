@@ -17,7 +17,6 @@ import {
   $isRangeSelection,
 } from './LexicalSelection';
 import {
-  $getCompositionKey,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
@@ -98,7 +97,6 @@ export {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
-  $getCompositionKey,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getPreviousSelection,

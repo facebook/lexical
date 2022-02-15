@@ -1407,4 +1407,56 @@ describe('LexicalEditor tests', () => {
       ]),
     );
   });
+
+  it('mutation listener with setEditorState', async () => {
+    init();
+    await editor.update(() => {
+      $getRoot().append($createParagraphNode());
+    });
+    const initialEditorState = editor.getEditorState();
+    const textNodeAttachedDetached = jest.fn();
+    editor.addListener('mutation', textNodeAttachedDetached, TextNode);
+
+    const textNodeKeys = [];
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode1 = $createTextNode('foo');
+      paragraph.append(textNode1);
+      textNodeKeys.push(textNode1.getKey());
+    });
+    const fooEditorState = editor.getEditorState();
+    await editor.setEditorState(initialEditorState);
+    // This line should have no effect on the mutation listeners
+    const parsedFooEditorState = editor.parseEditorState(
+      JSON.stringify(fooEditorState),
+    );
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode2 = $createTextNode('bar').toggleFormat('bold');
+      const textNode3 = $createTextNode('xyz').toggleFormat('italic');
+      paragraph.append(textNode2, textNode3);
+      textNodeKeys.push(textNode2.getKey(), textNode3.getKey());
+    });
+    await editor.setEditorState(parsedFooEditorState);
+
+    expect(textNodeAttachedDetached.mock.calls.length).toBe(4);
+    const [
+      textNodeMutation1,
+      textNodeMutation2,
+      textNodeMutation3,
+      textNodeMutation4,
+    ] = textNodeAttachedDetached.mock.calls;
+    expect(textNodeMutation1[0]).toEqual([textNodeKeys[0]]);
+    expect(textNodeMutation1[1]).toEqual([]);
+    expect(textNodeMutation2[0]).toEqual([]);
+    expect(textNodeMutation2[1]).toEqual([textNodeKeys[0]]);
+    expect(textNodeMutation3[0]).toEqual(
+      expect.arrayContaining([textNodeKeys[1], textNodeKeys[2]]),
+    );
+    expect(textNodeMutation3[1]).toEqual([]);
+    expect(textNodeMutation4[0]).toHaveLength(1); // Newly generated key by parseEditorState
+    expect(textNodeMutation4[1]).toEqual(
+      expect.arrayContaining([textNodeKeys[1], textNodeKeys[2]]),
+    );
+  });
 });

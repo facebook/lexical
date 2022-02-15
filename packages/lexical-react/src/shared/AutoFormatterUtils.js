@@ -425,9 +425,6 @@ function getNewNodeForCriteria(
         newNode.append(...children);
         return newNode;
       }
-      case 'noTransformation': {
-        invariant(false, 'No auto format kind was assigned.');
-      }
       default:
         break;
     }

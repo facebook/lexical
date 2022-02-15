@@ -101,11 +101,6 @@ export function initializeE2E(runTests, config: Config = {}) {
     const navigationStart = performance.now();
     await page.goto(url, {timeout: 60000});
     const navigationEnd = performance.now();
-    if (IS_CI) {
-      if (navigationEnd - navigationStart > 30000) {
-        throw new Error('Navigation exceeded default timeout');
-      }
-    }
     e2e.page = page;
   });
   afterEach(async () => {

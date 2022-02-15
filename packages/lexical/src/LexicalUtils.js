@@ -8,6 +8,7 @@
  */
 
 import type {
+  CompositionState,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   RegisteredNode,
@@ -124,6 +125,11 @@ export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
     if (node.nodeType === DOM_TEXT_TYPE) {
+      const nextSibling = node.nextSibling;
+      if (nextSibling != null) {
+        // $FlowFixMe: this is a Text
+        return nextSibling;
+      }
       // $FlowFixMe: this is a Text
       return node;
     }
@@ -202,7 +208,7 @@ function $internallyMarkParentElementsAsDirty(
 
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
-export function $internallyMarkNodeAsDirty(node: LexicalNode): void {
+export function internallyMarkNodeAsDirty(node: LexicalNode): void {
   errorOnInfiniteTransforms();
   const latest = node.getLatest();
   const parent = latest.__parent;
@@ -223,39 +229,39 @@ export function $internallyMarkNodeAsDirty(node: LexicalNode): void {
   }
 }
 
-export function $internallyMarkSiblingsAsDirty(node: LexicalNode) {
+export function internallyMarkSiblingsAsDirty(node: LexicalNode) {
   const previousNode = node.getPreviousSibling();
   const nextNode = node.getNextSibling();
   if (previousNode !== null) {
-    $internallyMarkNodeAsDirty(previousNode);
+    internallyMarkNodeAsDirty(previousNode);
   }
   if (nextNode !== null) {
-    $internallyMarkNodeAsDirty(nextNode);
+    internallyMarkNodeAsDirty(nextNode);
   }
 }
 
-export function $setCompositionKey(compositionKey: null | NodeKey): void {
+export function $setComposition(composition: null | CompositionState): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
-  const previousCompositionKey = editor._compositionKey;
-  editor._compositionKey = compositionKey;
-  if (previousCompositionKey !== null) {
-    const node = $getNodeByKey(previousCompositionKey);
+  const previousComposition = editor._composition;
+  editor._composition = composition;
+  if (previousComposition !== null) {
+    const node = $getNodeByKey(previousComposition.key);
     if (node !== null) {
       node.getWritable();
     }
   }
-  if (compositionKey !== null) {
-    const node = $getNodeByKey(compositionKey);
+  if (composition !== null) {
+    const node = $getNodeByKey(composition.key);
     if (node !== null) {
       node.getWritable();
     }
   }
 }
 
-export function $getCompositionKey(): null | NodeKey {
+export function $getComposition(): null | CompositionState {
   const editor = getActiveEditor();
-  return editor._compositionKey;
+  return editor._composition;
 }
 
 export function $getNodeByKey<N: LexicalNode>(
@@ -439,7 +445,7 @@ export function $updateSelectedTextFromDOM(
     if ($isTextNode(node)) {
       $updateTextNodeFromDOMContent(
         node,
-        anchorNode.nodeValue,
+        anchorNode,
         anchorOffset,
         focusOffset,
         compositionEnd,
@@ -450,7 +456,7 @@ export function $updateSelectedTextFromDOM(
 
 export function $updateTextNodeFromDOMContent(
   textNode: TextNode,
-  textContent: string,
+  dom: Text,
   anchorOffset: null | number,
   focusOffset: null | number,
   compositionEnd: boolean,
@@ -458,20 +464,28 @@ export function $updateTextNodeFromDOMContent(
   let node = textNode;
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
+    const textContent = dom.nodeValue;
     let normalizedTextContent = textContent;
+    let composedOffset = 0;
 
     if (
       (isComposing || compositionEnd) &&
       textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
     ) {
       normalizedTextContent = textContent.slice(0, -1);
+      const prevSibling = dom.previousSibling;
+      if (prevSibling != null) {
+        const prevNodeValue = prevSibling.nodeValue;
+        normalizedTextContent = prevNodeValue + normalizedTextContent;
+        composedOffset = prevNodeValue.length;
+      }
     }
     const prevTextContent = node.getTextContent();
 
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
       if (normalizedTextContent === '') {
         if (isComposing) {
-          $setCompositionKey(null);
+          $setComposition(null);
         }
         node.remove();
         return;
@@ -481,7 +495,7 @@ export function $updateTextNodeFromDOMContent(
 
       if (
         $isTokenOrInert(node) ||
-        ($getCompositionKey() !== null && !isComposing) ||
+        ($getComposition() !== null && !isComposing) ||
         // Check if character was added at the start, and we need
         // to clear this input from occuring as that action wasn't
         // permitted.
@@ -499,7 +513,12 @@ export function $updateTextNodeFromDOMContent(
         node.setTextContent(normalizedTextContent);
         return;
       }
-      selection.setTextNodeRange(node, anchorOffset, node, focusOffset);
+      selection.setTextNodeRange(
+        node,
+        anchorOffset + composedOffset,
+        node,
+        focusOffset + composedOffset,
+      );
 
       if (node.isSegmented()) {
         const originalTextContent = node.getTextContent();
@@ -545,14 +564,14 @@ export function $shouldPreventDefaultAndInsertText(
 
   return (
     anchor.key !== focus.key ||
+    // If we're working with a non-text node.
+    !$isTextNode(anchorNode) ||
     // If we're working with a range that is not during composition.
     (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
     // If the text length is more than a single character and we're either
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
-    // If we're working with a non-text node.
-    !$isTextNode(anchorNode) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.

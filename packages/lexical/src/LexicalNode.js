@@ -32,11 +32,11 @@ import {
 } from './LexicalUpdates';
 import {
   $generateKey,
-  $getCompositionKey,
+  $getComposition,
   $getNodeByKey,
-  $internallyMarkNodeAsDirty,
-  $internallyMarkSiblingsAsDirty,
-  $setCompositionKey,
+  $setComposition,
+  internallyMarkNodeAsDirty,
+  internallyMarkSiblingsAsDirty,
 } from './LexicalUtils';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
@@ -84,7 +84,7 @@ export function removeNode(
   if (index === -1) {
     invariant(false, 'Node is not a child of its parent');
   }
-  $internallyMarkSiblingsAsDirty(nodeToRemove);
+  internallyMarkSiblingsAsDirty(nodeToRemove);
   parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
@@ -454,10 +454,6 @@ export class LexicalNode {
     const dirtyLeaves = editor._dirtyLeaves;
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
-  // TODO remove this and move to TextNode
-  isComposing(): boolean {
-    return this.__key === $getCompositionKey();
-  }
   // $FlowFixMe this is LexicalNode
   getLatest<T: LexicalNode>(this: T): T {
     const latest = $getNodeByKey(this.__key);
@@ -479,7 +475,7 @@ export class LexicalNode {
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      $internallyMarkNodeAsDirty(latestNode);
+      internallyMarkNodeAsDirty(latestNode);
       return latestNode;
     }
     const constructor = latestNode.constructor;
@@ -500,7 +496,7 @@ export class LexicalNode {
     }
     cloneNotNeeded.add(key);
     mutableNode.__key = key;
-    $internallyMarkNodeAsDirty(mutableNode);
+    internallyMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
     // $FlowFixMe this is LexicalNode
@@ -555,7 +551,7 @@ export class LexicalNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      $internallyMarkSiblingsAsDirty(writableReplaceWith);
+      internallyMarkSiblingsAsDirty(writableReplaceWith);
       children.splice(index, 1);
     }
     const newParent = this.getParentOrThrow();
@@ -569,7 +565,7 @@ export class LexicalNode {
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
-    $internallyMarkSiblingsAsDirty(writableReplaceWith);
+    internallyMarkSiblingsAsDirty(writableReplaceWith);
     const selection = $getSelection();
     if (selection !== null) {
       const anchor = selection.anchor;
@@ -581,8 +577,16 @@ export class LexicalNode {
         $moveSelectionPointToEnd(focus, writableReplaceWith);
       }
     }
-    if ($getCompositionKey() === toReplaceKey) {
-      $setCompositionKey(newKey);
+    const composition = $getComposition();
+    if (composition !== null && composition.key === toReplaceKey) {
+      if ($isTextNode(writableReplaceWith)) {
+        $setComposition({
+          key: newKey,
+          offset: 0,
+        });
+      } else {
+        $setComposition(null);
+      }
     }
     return writableReplaceWith;
   }
@@ -601,7 +605,7 @@ export class LexicalNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      $internallyMarkSiblingsAsDirty(writableNodeToInsert);
+      internallyMarkSiblingsAsDirty(writableNodeToInsert);
 
       if (selection !== null) {
         const oldParentKey = oldParent.getKey();
@@ -628,7 +632,7 @@ export class LexicalNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index + 1, 0, insertKey);
-    $internallyMarkSiblingsAsDirty(writableNodeToInsert);
+    internallyMarkSiblingsAsDirty(writableNodeToInsert);
     if (selection !== null) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -657,7 +661,7 @@ export class LexicalNode {
       if (index === -1) {
         invariant(false, 'Node is not a child of its parent');
       }
-      $internallyMarkSiblingsAsDirty(writableNodeToInsert);
+      internallyMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
@@ -669,7 +673,7 @@ export class LexicalNode {
       invariant(false, 'Node is not a child of its parent');
     }
     children.splice(index, 0, insertKey);
-    $internallyMarkSiblingsAsDirty(writableNodeToInsert);
+    internallyMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if (selection !== null) {
       $updateElementSelectionOnCreateDeleteNode(

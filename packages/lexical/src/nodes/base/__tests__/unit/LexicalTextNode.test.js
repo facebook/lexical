@@ -31,8 +31,8 @@ import {
   IS_UNDERLINE,
 } from '../../../../LexicalConstants';
 import {
-  $getCompositionKey,
-  $setCompositionKey,
+  $getComposition,
+  $setComposition,
   getEditorStateTextContent,
 } from '../../../../LexicalUtils';
 
@@ -409,15 +409,15 @@ describe('LexicalTextNode tests', () => {
       },
     );
 
-    test('splitText moves composition key to last node', async () => {
+    test('splitText nulls composition', async () => {
       await update(() => {
         const paragraphNode = $createParagraphNode();
         const textNode = $createTextNode('12345');
         paragraphNode.append(textNode);
-        $setCompositionKey(textNode.getKey());
+        $setComposition({key: textNode.getKey(), offset: 0});
 
-        const [, splitNode2] = textNode.splitText(1);
-        expect($getCompositionKey()).toBe(splitNode2.getKey());
+        textNode.splitText(1);
+        expect($getComposition()).toBe(null);
       });
     });
 

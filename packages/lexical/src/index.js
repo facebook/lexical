@@ -17,13 +17,13 @@ import {
   $isRangeSelection,
 } from './LexicalSelection';
 import {
-  $getCompositionKey,
+  $getComposition,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
   $isLeafNode,
   $pushLogEntry as $log,
-  $setCompositionKey,
+  $setComposition,
   $setSelection,
 } from './LexicalUtils';
 import {
@@ -63,6 +63,7 @@ export type {
   CommandListenerHighPriority,
   CommandListenerLowPriority,
   CommandListenerNormalPriority,
+  CompositionState,
   DOMConversionMap,
   EditorConfig,
   EditorThemeClasses,
@@ -98,7 +99,7 @@ export {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
-  $getCompositionKey,
+  $getComposition,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getPreviousSelection,
@@ -115,7 +116,7 @@ export {
   $isRootNode,
   $isTextNode,
   $log,
-  $setCompositionKey,
+  $setComposition,
   $setSelection,
   createDecoratorArray,
   createDecoratorEditor,

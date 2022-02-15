@@ -766,10 +766,15 @@ function reconcileSelection(
   }
   const anchorKey = anchor.key;
   const focusKey = focus.key;
+  const composition = editor._composition;
+  const compositionOffset =
+    composition !== null && composition.key === anchorKey
+      ? composition.offset
+      : 0;
   const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  const nextAnchorOffset = anchor.offset;
-  const nextFocusOffset = focus.offset;
+  const nextAnchorOffset = anchor.offset - compositionOffset;
+  const nextFocusOffset = focus.offset - compositionOffset;
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
 

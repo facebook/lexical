@@ -9,6 +9,7 @@
 
 import type {
   CommandPayload,
+  CompositionState,
   EditorUpdateOptions,
   LexicalEditor,
   Transform,
@@ -41,7 +42,7 @@ import {
   internalCreateSelectionFromParse,
 } from './LexicalSelection';
 import {
-  $getCompositionKey,
+  $getComposition,
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
@@ -166,7 +167,7 @@ function $applyAllTransforms(
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
   const nodeMap = editorState._nodeMap;
-  const compositionKey = $getCompositionKey();
+  const composition = $getComposition();
   const transformsCache = new Map();
 
   let untransformedDirtyLeaves = dirtyLeaves;
@@ -189,7 +190,7 @@ function $applyAllTransforms(
         }
         if (
           node !== undefined &&
-          $isNodeValidForTransform(node, compositionKey)
+          $isNodeValidForTransform(node, composition && composition.key)
         ) {
           $applyTransforms(editor, node, transformsCache);
         }
@@ -223,7 +224,7 @@ function $applyAllTransforms(
       const node = nodeMap.get(nodeKey);
       if (
         node !== undefined &&
-        $isNodeValidForTransform(node, compositionKey)
+        $isNodeValidForTransform(node, composition && composition.key)
       ) {
         $applyTransforms(editor, node, transformsCache);
       }
@@ -527,6 +528,25 @@ function processNestedUpdates(editor: LexicalEditor): boolean {
   return skipTransforms;
 }
 
+function shouldFlushSync(
+  startingComposition: null | CompositionState,
+  endingComposition: null | CompositionState,
+): boolean {
+  if (startingComposition === null) {
+    if (endingComposition !== null) {
+      return true;
+    }
+  } else {
+    if (
+      endingComposition === null ||
+      endingComposition.key !== startingComposition.key
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
@@ -572,7 +592,7 @@ function beginUpdate(
     if (editorStateWasCloned) {
       pendingEditorState._selection = internalCreateRangeSelection(editor);
     }
-    const startingCompositionKey = editor._compositionKey;
+    const startingComposition = editor._composition;
     updateFn();
     skipTransforms = processNestedUpdates(editor);
     applySelectionTransforms(pendingEditorState, editor);
@@ -596,8 +616,8 @@ function beginUpdate(
         editor._dirtyElements,
       );
     }
-    const endingCompositionKey = editor._compositionKey;
-    if (startingCompositionKey !== endingCompositionKey) {
+    const endingComposition = editor._composition;
+    if (shouldFlushSync(startingComposition, endingComposition)) {
       pendingEditorState._flushSync = true;
     }
     const pendingSelection = pendingEditorState._selection;

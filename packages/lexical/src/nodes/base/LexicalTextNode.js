@@ -37,10 +37,10 @@ import {
 } from '../../LexicalSelection';
 import {errorOnReadOnly} from '../../LexicalUpdates';
 import {
-  $getCompositionKey,
-  $internallyMarkSiblingsAsDirty,
-  $setCompositionKey,
+  $getComposition,
+  $setComposition,
   getCachedClassNameArray,
+  internallyMarkSiblingsAsDirty,
   toggleTextFormatType,
 } from '../../LexicalUtils';
 
@@ -147,21 +147,77 @@ function setTextThemeClassNames(
   }
 }
 
+function simpleComposedText(a: string, b: string): [number, number, string] {
+  const aLength = a.length;
+  const bLength = b.length;
+  let left = 0;
+  let right = 0;
+
+  while (left < aLength && left < bLength && a[left] === b[left]) {
+    left++;
+  }
+  while (
+    right + left < aLength &&
+    right + left < bLength &&
+    a[aLength - right - 1] === b[bLength - right - 1]
+  ) {
+    right++;
+  }
+
+  return [left, aLength - left - right, b.slice(left, bLength - right)];
+}
+
 function setTextContent(
   nextText: string,
   dom: HTMLElement,
   node: TextNode,
 ): void {
-  const firstChild = dom.firstChild;
-  const isComposing = node.isComposing();
-  // Always add a suffix if we're composing a node
-  const suffix = isComposing ? NO_BREAK_SPACE_CHAR : '';
-  const text = nextText + suffix;
+  // $FlowFixMe: will always be the case
+  let textNode: ?Text = dom.firstChild;
+  const composition = $getComposition();
 
-  if (firstChild == null) {
-    dom.textContent = text;
-  } else if (firstChild.nodeValue !== text) {
-    firstChild.nodeValue = text;
+  if (composition !== null && composition.key === node.__key) {
+    const compositionOffset = composition.offset;
+    const preText = nextText.slice(0, compositionOffset);
+    const composeText = nextText.slice(compositionOffset) + NO_BREAK_SPACE_CHAR;
+
+    if (preText !== '') {
+      const nextSibling = textNode != null ? textNode.nextSibling : null;
+      if (textNode == null || nextSibling == null) {
+        // $FlowFixMe: will always be the case
+        const prevNode: ?Text = textNode;
+        textNode = document.createTextNode(preText);
+        if (nextSibling == null && prevNode != null) {
+          dom.insertBefore(textNode, prevNode);
+          prevNode.nodeValue = composeText;
+        } else {
+          dom.appendChild(textNode);
+        }
+      } else if (textNode.nodeValue !== preText) {
+        textNode.nodeValue = preText;
+      }
+      // $FlowFixMe: will always be the case
+      textNode = ((textNode.nextSibling: any): ?Text);
+    }
+    if (textNode == null) {
+      textNode = document.createTextNode(composeText);
+      dom.appendChild(textNode);
+    }
+    const childNodeValue = textNode.nodeValue;
+    if (childNodeValue !== composeText) {
+      const [index, remove, insert] = simpleComposedText(
+        childNodeValue,
+        composeText,
+      );
+      if (remove !== 0) {
+        textNode.deleteData(index, remove);
+      }
+      textNode.insertData(index, insert);
+    }
+  } else if (textNode == null || textNode.nextSibling != null) {
+    dom.textContent = nextText;
+  } else if (textNode.nodeValue !== nextText) {
+    textNode.nodeValue = nextText;
   }
 }
 
@@ -256,6 +312,10 @@ export class TextNode extends LexicalNode {
     const self = this.getLatest();
     const format = self.__format;
     return toggleTextFormatType(format, type, alignWithFormat);
+  }
+  isComposing(): boolean {
+    const composition = $getComposition();
+    return composition !== null && this.__key === composition.key;
   }
 
   // View
@@ -423,12 +483,13 @@ export class TextNode extends LexicalNode {
         'text',
       );
     } else {
-      const compositionKey = $getCompositionKey();
+      const composition = $getComposition();
+      const compositionKey = composition && composition.key;
       if (
         compositionKey === selection.anchor.key ||
         compositionKey === selection.focus.key
       ) {
-        $setCompositionKey(key);
+        $setComposition({key, offset: anchorOffset});
       }
       selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
     }
@@ -477,7 +538,8 @@ export class TextNode extends LexicalNode {
     const self = this.getLatest();
     const textContent = self.getTextContent();
     const key = self.__key;
-    const compositionKey = $getCompositionKey();
+    const composition = $getComposition();
+    const compositionKey = composition && composition.key;
     const offsetsSet = new Set(splitOffsets);
     const parts = [];
     const textLength = textContent.length;
@@ -563,7 +625,7 @@ export class TextNode extends LexicalNode {
         }
       }
       if (compositionKey === key) {
-        $setCompositionKey(siblingKey);
+        $setComposition(null);
       }
       textSize = nextTextSize;
       sibling.__parent = parentKey;
@@ -571,7 +633,7 @@ export class TextNode extends LexicalNode {
     }
 
     // Insert the nodes into the parent's children
-    $internallyMarkSiblingsAsDirty(this);
+    internallyMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);
@@ -606,10 +668,10 @@ export class TextNode extends LexicalNode {
     const targetKey = target.__key;
     const text = this.__text;
     const textLength = text.length;
-    const compositionKey = $getCompositionKey();
+    const composition = $getComposition();
 
-    if (compositionKey === targetKey) {
-      $setCompositionKey(key);
+    if (composition !== null && composition.key === targetKey) {
+      $setComposition(null);
     }
     const selection = $getSelection();
     if (selection !== null) {

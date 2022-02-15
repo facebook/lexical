@@ -17,10 +17,12 @@ import type {
 import type {TextOperation, XmlElement, XmlText} from 'yjs';
 
 import {
+  $getComposition,
   $getNodeByKey,
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
+  $setComposition,
 } from 'lexical';
 import {Map as YMap} from 'yjs';
 
@@ -161,7 +163,16 @@ export class CollabElementNode {
               // The entire thing needs removing
               children.splice(nodeIndex, 1);
             } else {
+              const composition = $getComposition();
+              const key = node._key;
               node._text = spliceString(node._text, offset, delCount, '');
+              if (
+                composition !== null &&
+                composition.key === key &&
+                composition.offset >= offset
+              ) {
+                $setComposition({key, offset: composition.offset - delCount});
+              }
             }
             deletionSize -= delCount;
           } else {
@@ -178,7 +189,19 @@ export class CollabElementNode {
           );
 
           if (node instanceof CollabTextNode) {
+            const composition = $getComposition();
+            const key = node._key;
             node._text = spliceString(node._text, offset, 0, insertDelta);
+            if (
+              composition !== null &&
+              composition.key === key &&
+              composition.offset >= offset
+            ) {
+              $setComposition({
+                key,
+                offset: composition.offset + insertDelta.length,
+              });
+            }
           } else {
             // TODO: maybe we can improve this by keeping around a redundant
             // text node map, rather than removing all the text nodes, so there

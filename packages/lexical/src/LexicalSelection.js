@@ -36,10 +36,10 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
-  $getCompositionKey,
+  $getComposition,
   $getNodeByKey,
   $isTokenOrInert,
-  $setCompositionKey,
+  $setComposition,
   doesContainGrapheme,
   getNodeFromDOM,
   getTextNodeOffset,
@@ -125,8 +125,13 @@ class Point {
     this.offset = offset;
     this.type = type;
     if (!isCurrentlyReadOnlyMode()) {
-      if ($getCompositionKey() === oldKey) {
-        $setCompositionKey(key);
+      const composition = $getComposition();
+      if (
+        composition !== null &&
+        composition.key === oldKey &&
+        key !== oldKey
+      ) {
+        $setComposition({key, offset: type === 'text' ? offset : 0});
       }
       if (
         selection !== null &&
@@ -1476,7 +1481,17 @@ function internalResolveSelectionPoint(
   if (!$isTextNode(resolvedNode)) {
     return null;
   }
-  return $createPoint(resolvedNode.__key, resolvedOffset, 'text');
+  const composition = $getComposition();
+  const resolvedKey = resolvedNode.__key;
+
+  if (
+    composition !== null &&
+    composition.key === resolvedKey &&
+    dom.previousSibling != null
+  ) {
+    resolvedOffset += composition.offset;
+  }
+  return $createPoint(resolvedKey, resolvedOffset, 'text');
 }
 
 function internalResolveSelectionPoints(
@@ -1545,9 +1560,10 @@ function internalResolveSelectionPoints(
 
     const currentEditorState = editor.getEditorState();
     const lastSelection = currentEditorState._selection;
+    const composition = editor._composition;
     if (
-      editor.isComposing() &&
-      editor._compositionKey !== resolvedAnchorPoint.key &&
+      composition !== null &&
+      composition.key !== resolvedAnchorPoint.key &&
       lastSelection !== null
     ) {
       const lastAnchor = lastSelection.anchor;

@@ -16,7 +16,7 @@ import {
   $getRoot,
   $getSelection,
   $isTextNode,
-  $setCompositionKey,
+  $setComposition,
   ElementNode,
   ParagraphNode,
   TextNode,
@@ -205,7 +205,7 @@ describe('LexicalEditor tests', () => {
           editor.update(
             () => {
               // force flush sync
-              $setCompositionKey('root');
+              $setComposition({key: 'root', offset: 0});
               log.push('D2');
             },
             {

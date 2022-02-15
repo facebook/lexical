@@ -14,16 +14,11 @@ import type {TextNode} from './nodes/base/LexicalTextNode';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 
-import {
-  $getRoot,
-  $getSelection,
-  $isElementNode,
-  $log,
-  $setCompositionKey,
-} from '.';
+import {$getRoot, $getSelection, $isElementNode, $log} from '.';
 import {
   $flushMutations,
   $isTokenOrInert,
+  $setComposition,
   $setSelection,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,
@@ -184,7 +179,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
     if (inputType === 'deleteContentBackward') {
       // Used for Android
-      $setCompositionKey(null);
+      $setComposition(null);
       event.preventDefault();
       editor.execCommand('deleteCharacter', true);
       return;
@@ -235,19 +230,19 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       }
       case 'insertFromComposition': {
         // This is the end of composition
-        $setCompositionKey(null);
+        $setComposition(null);
         editor.execCommand('insertText', event);
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
-        $setCompositionKey(null);
+        $setComposition(null);
         editor.execCommand('insertLineBreak');
         break;
       }
       case 'insertParagraph': {
         // Used for Android
-        $setCompositionKey(null);
+        $setComposition(null);
         editor.execCommand('insertParagraph');
         break;
       }
@@ -351,7 +346,10 @@ function onCompositionStart(
     const selection = $getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
-      $setCompositionKey(anchor.key);
+      $setComposition({
+        key: anchor.key,
+        offset: anchor.type === 'text' ? anchor.offset : 0,
+      });
       if (
         !lastKeyWasMaybeAndroidSoftKey ||
         anchor.type === 'element' ||
@@ -373,7 +371,7 @@ function onCompositionEndInternal(
 ): void {
   editor.update(() => {
     $log('onCompositionEnd');
-    $setCompositionKey(null);
+    $setComposition(null);
     $updateSelectedTextFromDOM(editor, true);
   });
 }

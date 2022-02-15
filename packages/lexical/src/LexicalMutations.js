@@ -80,8 +80,7 @@ function handleTextMutation(
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
   }
-  const text = target.nodeValue;
-  $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
+  $updateTextNodeFromDOMContent(node, target, anchorOffset, focusOffset, false);
 }
 
 export function $flushMutations(

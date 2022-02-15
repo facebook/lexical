@@ -62,10 +62,11 @@ export default function TreeView({
   useEffect(() => {
     setContent(generateContent(editor.getEditorState()));
     return editor.addListener('update', ({editorState}) => {
-      const compositionKey = editor._compositionKey;
+      const composition = editor._composition;
       const treeText = generateContent(editor.getEditorState());
       const compositionText =
-        compositionKey !== null && `Composition key: ${compositionKey}`;
+        composition !== null &&
+        `composition { key ${composition.key}, offset ${composition.offset} }`;
       setContent([treeText, compositionText].filter(Boolean).join('\n\n'));
       if (!timeTravelEnabled) {
         setTimeStampedEditorStates((currentEditorStates) => [

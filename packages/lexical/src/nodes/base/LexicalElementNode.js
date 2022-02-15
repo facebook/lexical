@@ -23,8 +23,8 @@ import {
 import {errorOnReadOnly, getActiveEditor} from '../../LexicalUpdates';
 import {
   $getNodeByKey,
-  $internallyMarkNodeAsDirty,
-  $internallyMarkSiblingsAsDirty,
+  internallyMarkNodeAsDirty,
+  internallyMarkSiblingsAsDirty,
 } from '../../LexicalUtils';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
@@ -269,7 +269,7 @@ export class ElementNode extends LexicalNode {
     const nodesToAppendLength = nodesToAppend.length;
     const lastChild = this.getLastChild();
     if (lastChild !== null) {
-      $internallyMarkNodeAsDirty(lastChild);
+      internallyMarkNodeAsDirty(lastChild);
     }
     for (let i = 0; i < nodesToAppendLength; i++) {
       const nodeToAppend = nodesToAppend[i];
@@ -341,7 +341,7 @@ export class ElementNode extends LexicalNode {
         if (index === -1) {
           invariant(false, 'Node is not a child of its parent');
         }
-        $internallyMarkSiblingsAsDirty(nodeToInsert);
+        internallyMarkSiblingsAsDirty(nodeToInsert);
         children.splice(index, 1);
       }
       // Set child parent to self
@@ -353,11 +353,11 @@ export class ElementNode extends LexicalNode {
     // Mark range edges siblings as dirty
     const nodeBeforeRange = this.getChildAtIndex(start - 1);
     if (nodeBeforeRange) {
-      $internallyMarkNodeAsDirty(nodeBeforeRange);
+      internallyMarkNodeAsDirty(nodeBeforeRange);
     }
     const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
     if (nodeAfterRange) {
-      $internallyMarkNodeAsDirty(nodeAfterRange);
+      internallyMarkNodeAsDirty(nodeAfterRange);
     }
 
     // Remove defined range of children

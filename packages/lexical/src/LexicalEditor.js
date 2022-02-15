@@ -199,6 +199,11 @@ export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
 export type IntentionallyMarkedAsDirtyElement = boolean;
 
+export type CompositionState = {
+  key: NodeKey,
+  offset: number,
+};
+
 export function resetEditor(
   editor: LexicalEditor,
   prevRootElement: null | HTMLElement,
@@ -209,7 +214,7 @@ export function resetEditor(
   keyNodeMap.clear();
   editor._editorState = createEmptyEditorState();
   editor._pendingEditorState = pendingEditorState;
-  editor._compositionKey = null;
+  editor._composition = null;
   editor._dirtyType = NO_DIRTY_NODES;
   editor._cloneNotNeeded.clear();
   editor._dirtyLeaves = new Set();
@@ -301,7 +306,7 @@ class BaseLexicalEditor {
   _rootElement: null | HTMLElement;
   _editorState: EditorState;
   _pendingEditorState: null | EditorState;
-  _compositionKey: null | NodeKey;
+  _composition: null | CompositionState;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updates: Array<[() => void, void | EditorUpdateOptions]>;
@@ -336,7 +341,7 @@ class BaseLexicalEditor {
     // Handling of drafts and updates
     this._pendingEditorState = null;
     // Used to help co-ordinate selection and events
-    this._compositionKey = null;
+    this._composition = null;
     this._deferred = [];
     // Used during reconciliation
     this._keyToDOMMap = new Map();
@@ -374,7 +379,7 @@ class BaseLexicalEditor {
     this._key = generateRandomKey();
   }
   isComposing(): boolean {
-    return this._compositionKey != null;
+    return this._composition != null;
   }
   addListener(
     type: ListenerType,
@@ -532,7 +537,7 @@ class BaseLexicalEditor {
     }
     this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
-    this._compositionKey = null;
+    this._composition = null;
     if (tag != null) {
       tags.add(tag);
     }
@@ -587,7 +592,7 @@ class BaseLexicalEditor {
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class LexicalEditor {
   _cloneNotNeeded: Set<NodeKey>;
-  _compositionKey: null | NodeKey;
+  _composition: null | CompositionState;
   _config: EditorConfig<{...}>;
   _decorators: {[NodeKey]: ReactNode};
   _deferred: Array<() => void>;

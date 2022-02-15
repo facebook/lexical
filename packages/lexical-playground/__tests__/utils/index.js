@@ -21,7 +21,6 @@ export const IS_WINDOWS = process.platform === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
 export const IS_COLLAB =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
-export const IS_CI = process.env.IS_CI;
 
 jest.setTimeout(60000);
 

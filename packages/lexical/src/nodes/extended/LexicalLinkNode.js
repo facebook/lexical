@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {DOMConversion} from '../../LexicalNode';
 import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
@@ -47,6 +48,23 @@ export class LinkNode extends ElementNode {
       dom.href = url;
     }
     return false;
+  }
+
+  static convertDOM(element: Node): DOMConversion | null {
+    const nodeName = element.nodeName.toLowerCase();
+    if (nodeName === 'a') {
+      return {
+        fn: (domNode: Node) => {
+          let node = null;
+          if (domNode instanceof HTMLAnchorElement) {
+            node = $createLinkNode(domNode.href);
+          }
+          return {node};
+        },
+        priority: 1,
+      };
+    }
+    return null;
   }
 
   getURL(): string {

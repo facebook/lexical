@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {DOMConversion} from '../../lexical/src/LexicalNode';
 import type {
   EditorConfig,
   EditorThemeClasses,
@@ -63,6 +64,17 @@ export class ListItemNode extends ElementNode {
     dom.value = getListItemValue(this);
     $setListItemThemeClassNames(dom, config.theme, this);
     return false;
+  }
+
+  static convertDOM(element: Node): DOMConversion | null {
+    const nodeName = element.nodeName.toLowerCase();
+    if (nodeName === 'li') {
+      return {
+        fn: () => ({node: $createListItemNode()}),
+        priority: 0,
+      };
+    }
+    return null;
   }
 
   // Mutation

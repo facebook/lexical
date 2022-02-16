@@ -8,7 +8,7 @@
  */
 
 import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
-import type {NodeKey} from '../../LexicalNode';
+import type {NodeKey, DOMConversion} from '../../LexicalNode';
 import type {NodeSelection, RangeSelection} from '../../LexicalSelection';
 
 import invariant from 'shared/invariant';
@@ -381,6 +381,114 @@ export class TextNode extends LexicalNode {
       dom.style.cssText = nextStyle;
     }
     return false;
+  }
+
+  static convertDOM(element: Node): DOMConversion | null {
+    const nodeName = element.nodeName.toLowerCase();
+    if (nodeName === '#text') {
+      return {
+        fn: (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
+        priority: 0,
+      };
+    } else if (nodeName === 'a') {
+      return {
+        fn: (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
+        priority: 0,
+      };
+    } else if (nodeName === 'b') {
+      return {
+        fn: (domNode: Node) => {
+          // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
+          const b: HTMLElement = domNode;
+          // Google Docs wraps all copied HTML in a <b> with font-weight normal
+          const hasNormalFontWeight = b.style.fontWeight === 'normal';
+          return {
+            forChild: (lexicalNode) => {
+              if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
+                lexicalNode.toggleFormat('bold');
+              }
+            },
+            node: null,
+          };
+        },
+        priority: 0,
+      };
+    } else if (nodeName === 'em') {
+      return {
+        fn: (domNode: Node) => {
+          return {
+            forChild: (lexicalNode) => {
+              if ($isTextNode(lexicalNode)) {
+                lexicalNode.toggleFormat('italic');
+              }
+            },
+            node: null,
+          };
+        },
+        priority: 0,
+      };
+    } else if (nodeName === 'u') {
+      return {
+        fn: (domNode: Node) => {
+          return {
+            forChild: (lexicalNode) => {
+              if ($isTextNode(lexicalNode)) {
+                lexicalNode.toggleFormat('underline');
+              }
+            },
+            node: null,
+          };
+        },
+        priority: 0,
+      };
+    } else if (nodeName === 'i') {
+      return {
+        fn: (domNode: Node) => {
+          return {
+            forChild: (lexicalNode) => {
+              if ($isTextNode(lexicalNode)) {
+                lexicalNode.toggleFormat('italic');
+              }
+            },
+            node: null,
+          };
+        },
+        priority: 0,
+      };
+    } else if (nodeName === 'span') {
+      return {
+        fn: (domNode: Node) => {
+          // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
+          const span: HTMLSpanElement = domNode;
+          // Google Docs uses span tags + font-weight for bold text
+          const hasBoldFontWeight = span.style.fontWeight === '700';
+          return {
+            forChild: (lexicalNode) => {
+              if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+                lexicalNode.toggleFormat('bold');
+              }
+            },
+            node: null,
+          };
+        },
+        priority: 0,
+      };
+    } else if (nodeName === 'strong') {
+      return {
+        fn: (domNode: Node) => {
+          return {
+            forChild: (lexicalNode) => {
+              if ($isTextNode(lexicalNode)) {
+                lexicalNode.toggleFormat('bold');
+              }
+            },
+            node: null,
+          };
+        },
+        priority: 0,
+      };
+    }
+    return null;
   }
 
   // Mutators

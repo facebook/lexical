@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {DOMConversion} from '../../LexicalNode';
 import type {EditorConfig, LexicalNode, NodeKey, ParagraphNode} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
@@ -51,6 +52,23 @@ export class HeadingNode extends ElementNode {
 
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  static convertDOM(element: Node): DOMConversion | null {
+    const nodeName = element.nodeName.toLowerCase();
+    if (
+      nodeName === 'h1' ||
+      nodeName === 'h2' ||
+      nodeName === 'h3' ||
+      nodeName === 'h4' ||
+      nodeName === 'h5'
+    ) {
+      return {
+        fn: () => ({node: $createHeadingNode(nodeName)}),
+        priority: 0,
+      };
+    }
+    return null;
   }
 
   // Mutation

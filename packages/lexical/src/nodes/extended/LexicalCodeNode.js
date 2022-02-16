@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {DOMConversion} from '../../LexicalNode';
 import type {
   EditorConfig,
   LexicalNode,
@@ -53,6 +54,70 @@ export class CodeNode extends ElementNode {
   }
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  static convertDOM(element: Node): DOMConversion | null {
+    const nodeName = element.nodeName.toLowerCase();
+    if (nodeName === 'pre') {
+      return {
+        fn: () => ({node: $createCodeNode()}),
+        priority: 0,
+      };
+    } else if (nodeName === 'div') {
+      return {
+        fn: (domNode: Node) => {
+          // $FlowFixMe[incompatible-type] domNode is a <div> since we matched it by nodeName
+          const div: HTMLDivElement = domNode;
+          return {
+            after: (childLexicalNodes) => {
+              const domParent = domNode.parentNode;
+              if (domParent != null && domNode !== domParent.lastChild) {
+                childLexicalNodes.push($createLineBreakNode());
+              }
+              return childLexicalNodes;
+            },
+            node: isCodeElement(div) ? $createCodeNode() : null,
+          };
+        },
+        priority: 0,
+      };
+    } else if (nodeName === 'table') {
+      // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+      const table: HTMLTableElement = element;
+      if (isGitHubCodeTable(table)) {
+        return {
+          fn: (domNode: Node) => {
+            return {
+              node: $createCodeNode(),
+            };
+          },
+          priority: 1,
+        };
+      }
+    } else if (nodeName === 'td') {
+      // $FlowFixMe[incompatible-type] element is a <td> since we matched it by nodeName
+      const td: HTMLTableCellElement = element;
+      if (isGitHubCodeCell(td)) {
+        return {
+          fn: (domNode: Node) => {
+            // $FlowFixMe[incompatible-type] domNode is a <td> since we matched it by nodeName
+            const cell: HTMLTableCellElement = domNode;
+            return {
+              after: (childLexicalNodes) => {
+                if (cell.parentNode && cell.parentNode.nextSibling) {
+                  // Append newline between code lines
+                  childLexicalNodes.push($createLineBreakNode());
+                }
+                return childLexicalNodes;
+              },
+              node: null,
+            };
+          },
+          priority: 1,
+        };
+      }
+    }
+    return null;
   }
 
   // Mutation
@@ -170,4 +235,16 @@ export function getLastCodeHighlightNodeOfLine(
   }
 
   return currentNode;
+}
+
+function isCodeElement(div: HTMLDivElement): boolean {
+  return div.style.fontFamily.match('monospace') !== null;
+}
+
+function isGitHubCodeCell(cell: HTMLTableCellElement): boolean %checks {
+  return cell.classList.contains('js-file-line');
+}
+
+function isGitHubCodeTable(table: HTMLTableElement): boolean %checks {
+  return table.classList.contains('js-file-line-container');
 }

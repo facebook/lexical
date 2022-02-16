@@ -7,192 +7,23 @@
  * @flow strict
  */
 
-import type {LexicalNode} from 'lexical';
-
-import {TableCellNode} from 'lexical/TableCellNode';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createTextNode, $getSelection, $setSelection} from 'lexical';
+import {$getSelection, $setSelection} from 'lexical';
 import {
-  TableRowNode,
-  $isTableRowNode,
-  $createTableRowNode,
-} from 'lexical/TableRowNode';
-import {$createTableCellNode, $isTableCellNode} from 'lexical/TableCellNode';
-import {TableNode, $isTableNode} from 'lexical/TableNode';
-import {$findMatchingParent} from '@lexical/helpers/nodes';
-
-function getTableCellNodeFromLexicalNode(
-  startingNode: LexicalNode,
-): TableCellNode | null {
-  const node = $findMatchingParent(startingNode, (n) => $isTableCellNode(n));
-
-  if ($isTableCellNode(node)) {
-    return node;
-  }
-
-  return null;
-}
-
-function getTableRowNodeFromTableCellNodeOrThrow(
-  startingNode: LexicalNode,
-): TableRowNode {
-  const node = $findMatchingParent(startingNode, (n) => $isTableRowNode(n));
-
-  if ($isTableRowNode(node)) {
-    return node;
-  }
-
-  throw new Error('Expected table cell to be inside of table row.');
-}
-
-function getTableNodeFromLexicalNodeOrThrow(
-  startingNode: LexicalNode,
-): TableNode {
-  const node = $findMatchingParent(startingNode, (n) => $isTableNode(n));
-
-  if ($isTableNode(node)) {
-    return node;
-  }
-
-  throw new Error('Expected table cell to be inside of table.');
-}
-
-function getTableRowIndexFromTableCellNode(
-  tableCellNode: TableCellNode,
-): number {
-  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
-
-  const tableNode = getTableNodeFromLexicalNodeOrThrow(tableRowNode);
-
-  return tableNode.getChildren().findIndex((n) => n.is(tableRowNode));
-}
-
-function getTableColumnIndexFromTableCellNode(
-  tableCellNode: TableCellNode,
-): number {
-  const tableRowNode = getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
-
-  return tableRowNode.getChildren().findIndex((n) => n.is(tableCellNode));
-}
-
-function removeTableRowAtIndex(
-  tableNode: TableNode,
-  indexToDelete: number,
-): TableNode {
-  const tableRows = tableNode.getChildren();
-
-  if (indexToDelete >= tableRows.length || indexToDelete < 0) {
-    throw new Error('Expected table cell to be inside of table row.');
-  }
-
-  const targetRowNode = tableRows[indexToDelete];
-
-  targetRowNode.remove();
-
-  return tableNode;
-}
-
-function insertTableRow(
-  tableNode: TableNode,
-  targetIndex: number,
-  shouldInsertAfter?: boolean = true,
-  rowCount: number,
-): TableNode {
-  const tableRows = tableNode.getChildren();
-
-  if (targetIndex >= tableRows.length || targetIndex < 0) {
-    throw new Error('Table row target index out of range');
-  }
-
-  const targetRowNode = tableRows[targetIndex];
-  if ($isTableRowNode(targetRowNode)) {
-    for (let i = 0; i < rowCount; i++) {
-      const tableColumnCount = targetRowNode.getChildren().length;
-
-      const newTableRowNode = $createTableRowNode();
-
-      for (let i = 0; i < tableColumnCount; i++) {
-        const tableCellNode = $createTableCellNode(false);
-
-        tableCellNode.append($createTextNode());
-        newTableRowNode.append(tableCellNode);
-      }
-
-      if (shouldInsertAfter) {
-        targetRowNode.insertAfter(newTableRowNode);
-      } else {
-        targetRowNode.insertBefore(newTableRowNode);
-      }
-    }
-  } else {
-    throw new Error('Row before insertion index does not exist.');
-  }
-
-  return tableNode;
-}
-
-function insertTableColumn(
-  tableNode: TableNode,
-  targetIndex: number,
-  shouldInsertAfter?: boolean = true,
-  columnCount: number,
-): TableNode {
-  const tableRows = tableNode.getChildren();
-
-  for (let i = 0; i < tableRows.length; i++) {
-    const currentTableRowNode = tableRows[i];
-    if ($isTableRowNode(currentTableRowNode)) {
-      for (let j = 0; j < columnCount; j++) {
-        const newTableCell = $createTableCellNode(i === 0);
-
-        newTableCell.append($createTextNode());
-
-        const tableRowChildren = currentTableRowNode.getChildren();
-
-        if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
-          throw new Error('Table column target index out of range');
-        }
-
-        const targetCell = tableRowChildren[targetIndex];
-
-        if (shouldInsertAfter) {
-          targetCell.insertAfter(newTableCell);
-        } else {
-          targetCell.insertBefore(newTableCell);
-        }
-      }
-    }
-  }
-
-  return tableNode;
-}
-
-function deleteTableColumn(
-  tableNode: TableNode,
-  targetIndex: number,
-): TableNode {
-  const tableRows = tableNode.getChildren();
-
-  for (let i = 0; i < tableRows.length; i++) {
-    const currentTableRowNode = tableRows[i];
-
-    if ($isTableRowNode(currentTableRowNode)) {
-      const tableRowChildren = currentTableRowNode.getChildren();
-
-      if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
-        throw new Error('Table column target index out of range');
-      }
-
-      tableRowChildren[targetIndex].remove();
-    }
-  }
-
-  return tableNode;
-}
+  $deleteTableColumn,
+  $getTableCellNodeFromLexicalNode,
+  $getTableColumnIndexFromTableCellNode,
+  $getTableNodeFromLexicalNodeOrThrow,
+  $getTableRowIndexFromTableCellNode,
+  $insertTableColumn,
+  $insertTableRow,
+  $removeTableRowAtIndex,
+  TableCellNode,
+} from '@lexical/table';
 
 type TableCellActionMenuProps = $ReadOnly<{
   onClose: () => void,
@@ -217,7 +48,7 @@ function TableActionMenu({
 
   useEffect(() => {
     editor.update(() => {
-      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
       const selectionState = tableNode.getSelectionState();
 
       updateSelectionCounts({
@@ -271,7 +102,7 @@ function TableActionMenu({
 
   const clearTableSelection = useCallback(() => {
     editor.update(() => {
-      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
       tableNode.setSelectionState(null);
       tableNode.markDirty();
@@ -282,11 +113,11 @@ function TableActionMenu({
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update(() => {
-        const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
-        const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
+        const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
 
-        insertTableRow(
+        $insertTableRow(
           tableNode,
           tableRowIndex,
           shouldInsertAfter,
@@ -304,11 +135,11 @@ function TableActionMenu({
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update(() => {
-        const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
         const tableColumnIndex =
-          getTableColumnIndexFromTableCellNode(tableCellNode);
+          $getTableColumnIndexFromTableCellNode(tableCellNode);
 
-        insertTableColumn(
+        $insertTableColumn(
           tableNode,
           tableColumnIndex,
           shouldInsertAfter,
@@ -331,10 +162,10 @@ function TableActionMenu({
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update(() => {
-      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-      const tableRowIndex = getTableRowIndexFromTableCellNode(tableCellNode);
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
 
-      removeTableRowAtIndex(tableNode, tableRowIndex);
+      $removeTableRowAtIndex(tableNode, tableRowIndex);
 
       clearTableSelection();
 
@@ -344,7 +175,7 @@ function TableActionMenu({
 
   const deleteTableAtSelection = useCallback(() => {
     editor.update(() => {
-      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
       tableNode.remove();
 
       clearTableSelection();
@@ -354,12 +185,12 @@ function TableActionMenu({
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update(() => {
-      const tableNode = getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
       const tableColumnIndex =
-        getTableColumnIndexFromTableCellNode(tableCellNode);
+        $getTableColumnIndexFromTableCellNode(tableCellNode);
 
-      deleteTableColumn(tableNode, tableColumnIndex);
+      $deleteTableColumn(tableNode, tableColumnIndex);
 
       clearTableSelection();
       onClose();
@@ -460,7 +291,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
-      const tableCellNodeFromSelection = getTableCellNodeFromLexicalNode(
+      const tableCellNodeFromSelection = $getTableCellNodeFromLexicalNode(
         selection.anchor.getNode(),
       );
 

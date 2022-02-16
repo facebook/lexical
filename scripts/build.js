@@ -43,6 +43,7 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-react/dist'));
   fs.removeSync(path.resolve('./packages/lexical-helpers/dist'));
   fs.removeSync(path.resolve('./packages/lexical-list/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-table/dist'));
   fs.removeSync(path.resolve('./packages/lexical-file/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
@@ -50,6 +51,7 @@ if (isClean) {
 const wwwMappings = {
   '@lexical/file': 'LexicalFile',
   '@lexical/list': 'LexicalList',
+  '@lexical/table': 'LexicalTable',
   '@lexical/yjs': 'LexicalYjs',
   lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
@@ -96,6 +98,7 @@ const externals = [
   // is different to that of the OSS version).
   'lexical',
   '@lexical/list',
+  '@lexical/table',
   '@lexical/file',
   '@lexical/yjs',
   'react-dom',
@@ -332,6 +335,17 @@ const packages = [
     name: 'Lexical List',
     outputPath: './packages/lexical-list/dist/',
     sourcePath: './packages/lexical-list/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalTable',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Table',
+    outputPath: './packages/lexical-table/dist/',
+    sourcePath: './packages/lexical-table/src/',
   },
   {
     modules: [

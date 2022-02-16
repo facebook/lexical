@@ -8,19 +8,8 @@
  */
 
 import type {LexicalNode} from 'lexical';
-import type {TableNode} from 'lexical/TableNode';
 
-import {
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-  $isElementNode,
-  $isLineBreakNode,
-  $isTextNode,
-} from 'lexical';
-import {$createTableCellNode} from 'lexical/TableCellNode';
-import {$createTableNode} from 'lexical/TableNode';
-import {$createTableRowNode} from 'lexical/TableRowNode';
+import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
 export function $dfs__DEPRECATED(
   startingNode: LexicalNode,
@@ -67,31 +56,6 @@ export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
 export type DOMNodeToLexicalConversionMap = {
   [string]: DOMNodeToLexicalConversion,
 };
-
-export function $createTableNodeWithDimensions(
-  rowCount: number,
-  columnCount: number,
-  includeHeader?: boolean = true,
-): TableNode {
-  const tableNode = $createTableNode();
-
-  for (let iRow = 0; iRow < rowCount; iRow++) {
-    const tableRowNode = $createTableRowNode();
-
-    for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const tableCellNode = $createTableCellNode(iRow === 0 && includeHeader);
-      const paragraphNode = $createParagraphNode();
-      paragraphNode.append($createTextNode());
-
-      tableCellNode.append(paragraphNode);
-      tableRowNode.append(tableCellNode);
-    }
-
-    tableNode.append(tableRowNode);
-  }
-
-  return tableNode;
-}
 
 export function $findMatchingParent(
   startingNode: LexicalNode,

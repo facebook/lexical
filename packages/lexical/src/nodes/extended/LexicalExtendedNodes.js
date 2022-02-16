@@ -10,6 +10,7 @@
 import type {LexicalNode} from 'lexical';
 
 import {ListItemNode, ListNode} from '@lexical/list';
+import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {AutoLinkNode} from 'lexical/AutoLinkNode';
 import {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 import {CodeNode} from 'lexical/CodeNode';
@@ -18,9 +19,6 @@ import {HeadingNode} from 'lexical/HeadingNode';
 import {LinkNode} from 'lexical/LinkNode';
 import {OverflowNode} from 'lexical/OverflowNode';
 import {QuoteNode} from 'lexical/QuoteNode';
-import {TableCellNode} from 'lexical/TableCellNode';
-import {TableNode} from 'lexical/TableNode';
-import {TableRowNode} from 'lexical/TableRowNode';
 
 const LexicalExtendedNodes: Array<Class<LexicalNode>> = [
   HeadingNode,

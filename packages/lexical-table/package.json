@@ -1,27 +1,25 @@
 {
-  "name": "@lexical/helpers",
+  "name": "@lexical/table",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "This package provides Lexical helpers and utilities for Lexical.",
+  "description": "This package provides the Table feature for Lexical.",
   "keywords": [
-    "react",
     "lexical",
     "editor",
-    "helpers",
-    "rich-text"
+    "rich-text",
+    "table"
   ],
   "license": "MIT",
   "version": "0.1.8",
+  "main": "LexicalTable.js",
   "peerDependencies": {
-    "lexical": "0.1.8",
-    "@lexical/list": "0.1.8",
-    "@lexical/table": "0.1.8"
+    "lexical": "0.1.8"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
-    "directory": "packages/lexical-helpers"
+    "directory": "packages/lexical-table"
   }
 }

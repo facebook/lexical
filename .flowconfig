@@ -19,9 +19,6 @@ exact_by_default=true
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/src/index.js'
 
 module.name_mapper='^lexical/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalHeadingNode.js'
-module.name_mapper='^lexical/TableNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableNode.js'
-module.name_mapper='^lexical/TableRowNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableRowNode.js'
-module.name_mapper='^lexical/TableCellNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalTableCellNode.js'
 module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalQuoteNode.js'
 module.name_mapper='^lexical/CodeNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeNode.js'
 module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalLinkNode.js'
@@ -32,6 +29,7 @@ module.name_mapper='^lexical/OverflowNode' -> '<PROJECT_ROOT>/packages/lexical/s
 module.name_mapper='^lexical/ExtendedNodes' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalExtendedNodes.js'
 
 module.name_mapper='^@lexical/list' -> '<PROJECT_ROOT>/packages/lexical-list/src/index.js'
+module.name_mapper='^@lexical/table' -> '<PROJECT_ROOT>/packages/lexical-table/src/index.js'
 module.name_mapper='^@lexical/file' -> '<PROJECT_ROOT>/packages/lexical-file/src/index.js'
 
 module.name_mapper='^@lexical/helpers/selection' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalSelectionHelpers.js'

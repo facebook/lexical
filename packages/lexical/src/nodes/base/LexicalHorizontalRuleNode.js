@@ -24,6 +24,10 @@ export class HorizontalRuleNode extends LexicalNode {
     super(key);
   }
 
+  getTextContent(): '\n' {
+    return '\n';
+  }
+
   createDOM(): HTMLElement {
     const element = document.createElement('hr');
     element.setAttribute('contenteditable', 'false');

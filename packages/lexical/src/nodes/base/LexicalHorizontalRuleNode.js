@@ -13,7 +13,7 @@ import {LexicalNode} from '../../LexicalNode';
 
 export class HorizontalRuleNode extends LexicalNode {
   static getType(): string {
-    return 'horizontal-rule';
+    return 'horizontalrule';
   }
 
   static clone(node: HorizontalRuleNode): HorizontalRuleNode {

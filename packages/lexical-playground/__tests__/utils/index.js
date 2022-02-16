@@ -103,7 +103,7 @@ export function initializeE2E(runTests, config: Config = {}) {
     e2e.page = page;
   });
   afterEach(async () => {
-    if (!E2E_DEBUG) {
+    if (!E2E_DEBUG && e2e.page !== null) {
       await e2e.page.close();
     }
   });

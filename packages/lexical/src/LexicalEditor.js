@@ -34,7 +34,6 @@ import {
   generateRandomKey,
   markAllNodesAsDirty,
 } from './LexicalUtils';
-import {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
 import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
 import {RootNode} from './nodes/base/LexicalRootNode';
@@ -86,7 +85,6 @@ export type EditorThemeClasses = {
     h4?: EditorThemeClassName,
     h5?: EditorThemeClassName,
   },
-  horizontalRule?: EditorThemeClassName,
   image?: EditorThemeClassName,
   link?: EditorThemeClassName,
   list?: {
@@ -252,7 +250,6 @@ export function createEditor<EditorContext>(editorConfig?: {
   const nodes = [
     RootNode,
     TextNode,
-    HorizontalRuleNode,
     LineBreakNode,
     ParagraphNode,
     ...(config.nodes || []),
@@ -538,7 +535,7 @@ class BaseLexicalEditor {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
-    updateEditor(getSelf(this), updateFn, false, options);
+    updateEditor(getSelf(this), updateFn, options);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -557,7 +554,6 @@ class BaseLexicalEditor {
             root.selectEnd();
           }
         },
-        true,
         {
           onUpdate: () => {
             rootElement.removeAttribute('autocapitalize');

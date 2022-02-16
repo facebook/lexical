@@ -80,7 +80,6 @@ module.exports = {
         'LexicalAutoFormatterPlugin',
         'LexicalCharacterLimitPlugin',
         'LexicalHashtagPlugin',
-        'LexicalHorizontalRulePlugin',
         'LexicalPlainTextPlugin',
         'LexicalRichTextPlugin',
         'LexicalBootstrapPlugin',

@@ -31,6 +31,7 @@ const styles = stylex.create({
     padding: 15,
     borderRadius: 10,
     maxWidth: 600,
+    minWidth: 400,
   },
   heading: {
     marginLeft: 0,
@@ -332,7 +333,9 @@ export class PollNode extends DecoratorNode {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('div');
+    const elem = document.createElement('span');
+    elem.style.display = 'inline-block';
+    return elem;
   }
 
   updateDOM(): false {

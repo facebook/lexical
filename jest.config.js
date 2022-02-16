@@ -91,8 +91,8 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalTableRowNode.js',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
-        '^shared/getPossibleDecoratorNode$':
-          '<rootDir>/packages/shared/src/getPossibleDecoratorNode.js',
+        '^shared/getPossibleDecoratorOrHorizontalRuleNode$':
+          '<rootDir>/packages/shared/src/getPossibleDecoratorOrHorizontalRuleNode.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.js',

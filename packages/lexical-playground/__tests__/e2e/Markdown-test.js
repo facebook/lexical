@@ -76,7 +76,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<blockquote class="PlaygroundEditorTheme__quote m8h3af8h l7ghb35v kjdc1dyq kmwttqpk ilmd4f5g k1z55t6l cu002yh1 e9731kn7 jf6b6iuc tcghtb95 q5qw6xdq"><br></blockquote>',
+        '<blockquote class="PlaygroundEditorTheme__quote m8h3af8h l7ghb35v kjdc1dyq mswf2hbd k1z55t6l cu002yh1 nqdvql63 iv31pflw bf1zulr9 gt60zsk1"><br></blockquote>',
 
       markdownText: '> ', // Block quote.
     },
@@ -84,7 +84,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
 
       markdownText: '* ', // Unordered.
     },
@@ -92,7 +92,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
 
       markdownText: '- ', // Unordered.
     },
@@ -100,7 +100,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<ol start="321" class="PlaygroundEditorTheme__ol1 srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq kmwttqpk i2mu9gw5"><li value="321" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ol>',
+        '<ol start="321" class="PlaygroundEditorTheme__ol1 srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="321" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ol>',
 
       markdownText: '321. ', // Ordered.
     },

@@ -6,6 +6,7 @@
  *
  */
 
+import {moveToLineBeginning} from '../keyboardShortcuts';
 import {
   initializeE2E,
   assertHTML,
@@ -13,6 +14,7 @@ import {
   focusEditor,
   waitForSelector,
   click,
+  E2E_BROWSER,
 } from '../utils';
 
 describe('HorizontalRule', () => {
@@ -52,6 +54,62 @@ describe('HorizontalRule', () => {
         focusPath: [0],
         focusOffset: 0,
       });
+
+      await page.keyboard.press('ArrowRight');
+
+      await assertSelection(page, {
+        anchorPath: [2],
+        anchorOffset: 0,
+        focusPath: [2],
+        focusOffset: 0,
+      });
+
+      await page.keyboard.press('ArrowLeft');
+
+      await assertSelection(page, {
+        anchorPath: [0],
+        anchorOffset: 0,
+        focusPath: [0],
+        focusOffset: 0,
+      });
+
+      await page.keyboard.type('Some text');
+
+      await page.keyboard.press('ArrowRight');
+
+      await assertSelection(page, {
+        anchorPath: [2],
+        anchorOffset: 0,
+        focusPath: [2],
+        focusOffset: 0,
+      });
+
+      await page.keyboard.type('Some more text');
+
+      await assertHTML(
+        page,
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text</span></p><hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some more text</span></p>',
+      );
+
+      await moveToLineBeginning(page);
+
+      await page.keyboard.press('ArrowLeft');
+
+      if (E2E_BROWSER === 'webkit') {
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 9,
+          focusPath: [0, 0, 0],
+          focusOffset: 9,
+        });
+      } else {
+        await assertSelection(page, {
+          anchorPath: [0],
+          anchorOffset: 1,
+          focusPath: [0],
+          focusOffset: 1,
+        });
+      }
     });
 
     it('Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.', async () => {

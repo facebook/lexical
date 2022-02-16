@@ -153,7 +153,6 @@ export type RootListener = (
   prevRootElement: null | HTMLElement,
 ) => void;
 export type TextContentListener = (text: string) => void;
-export type TextMutationListener = (text: Text) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
@@ -181,8 +180,6 @@ type Listeners = {
   decorator: Set<DecoratorListener>,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
-  textcontent: Set<TextContentListener>,
-  textmutation: Set<TextMutationListener>,
   update: Set<UpdateListener>,
 };
 
@@ -191,7 +188,6 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent'
-  | 'textmutation'
   | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
@@ -357,7 +353,6 @@ class BaseLexicalEditor {
       decorator: new Set(),
       root: new Set(),
       textcontent: new Set(),
-      textmutation: new Set(),
       update: new Set(),
     };
     // Editor configuration for theme/context.

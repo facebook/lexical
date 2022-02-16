@@ -21,12 +21,11 @@ module.exports = {
       },
       moduleNameMapper: {
         '^./dist/(.+)': './src/$1',
+        '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
         '^@lexical/helpers/elements$':
           '<rootDir>/packages/lexical-helpers/src/LexicalElementHelpers.js',
         '^@lexical/helpers/events$':
           '<rootDir>/packages/lexical-helpers/src/LexicalEventHelpers.js',
-        '^@lexical/helpers/file$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalFileHelpers.js',
         '^@lexical/helpers/nodes$':
           '<rootDir>/packages/lexical-helpers/src/LexicalNodeHelpers.js',
         '^@lexical/helpers/offsets$':
@@ -92,8 +91,8 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalTableRowNode.js',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
-        '^shared/getPossibleDecoratorNode$':
-          '<rootDir>/packages/shared/src/getPossibleDecoratorNode.js',
+        '^shared/getPossibleDecoratorOrHorizontalRuleNode$':
+          '<rootDir>/packages/shared/src/getPossibleDecoratorOrHorizontalRuleNode.js',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.js',

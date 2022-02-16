@@ -10,6 +10,7 @@
 import type {Provider} from '.';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
 import type {CollabElementNode} from './CollabElementNode';
+import type {CollabHorizontalRuleNode} from './CollabHorizontalRuleNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
@@ -29,7 +30,8 @@ export type Binding = {
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
-    | CollabLineBreakNode,
+    | CollabLineBreakNode
+    | CollabHorizontalRuleNode,
   >,
   cursors: Map<ClientID, Cursor>,
   cursorsContainer: null | HTMLElement,

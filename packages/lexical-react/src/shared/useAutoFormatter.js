@@ -24,7 +24,6 @@ import {useEffect} from 'react';
 import {
   getAllAutoFormatCriteria,
   getAllAutoFormatCriteriaForTextNodes,
-  getInitialScanningContext,
   getMatchResultContextForCriteria,
   transformTextNodeForAutoFormatCriteria,
   TRIGGER_STRING,
@@ -32,18 +31,16 @@ import {
 
 function getCriteriaWithMatchResultContext(
   autoFormatCriteriaArray: AutoFormatCriteriaArray,
+  currentTriggerState: AutoFormatTriggerState,
   scanningContext: ScanningContext,
 ): AutoFormatCriteriaWithMatchResultContext {
-  const currentTriggerState = scanningContext.triggerState;
-
   const count = autoFormatCriteriaArray.length;
   for (let i = 0; i < count; i++) {
     const autoFormatCriteria = autoFormatCriteriaArray[i];
 
     // Skip code block nodes, unless the nodeTransformationKind calls for toggling the code block.
     if (
-      (currentTriggerState != null &&
-        currentTriggerState.isCodeBlock === false) ||
+      currentTriggerState.isCodeBlock === false ||
       autoFormatCriteria.nodeTransformationKind === 'paragraphCodeBlock'
     ) {
       const matchResultContext = getMatchResultContextForCriteria(
@@ -51,6 +48,7 @@ function getCriteriaWithMatchResultContext(
         scanningContext,
       );
       if (matchResultContext != null) {
+        matchResultContext.triggerState = currentTriggerState;
         return {
           autoFormatCriteria: autoFormatCriteria,
           matchResultContext,
@@ -78,24 +76,9 @@ function getTextNodeForAutoFormatting(
 
 function updateAutoFormatting(
   editor: LexicalEditor,
-  scanningContext: ScanningContext,
-): void {
-  editor.update(
-    () => {
-      transformTextNodeForAutoFormatCriteria(scanningContext);
-    },
-    {
-      tag: 'history-push',
-    },
-  );
-}
-
-function findScanningContextWithValidMatch(
-  editorState: EditorState,
   currentTriggerState: AutoFormatTriggerState,
-): null | ScanningContext {
-  let scanningContext = null;
-  editorState.read(() => {
+): void {
+  editor.update(() => {
     const textNodeWithOffset = getTextNodeForAutoFormatting($getSelection());
 
     if (textNodeWithOffset === null) {
@@ -103,17 +86,17 @@ function findScanningContextWithValidMatch(
     }
 
     // Please see the declaration of ScanningContext for a detailed explanation.
-    const initialScanningContext = getInitialScanningContext(
+    const scanningContext: ScanningContext = {
+      joinedText: null,
       textNodeWithOffset,
-      currentTriggerState,
-    );
-
+    };
     const criteriaWithMatchResultContext = getCriteriaWithMatchResultContext(
       // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.
       currentTriggerState.isParentAListItemNode === false
         ? getAllAutoFormatCriteria()
         : getAllAutoFormatCriteriaForTextNodes(),
-      initialScanningContext,
+      currentTriggerState,
+      scanningContext,
     );
 
     if (
@@ -122,23 +105,21 @@ function findScanningContextWithValidMatch(
     ) {
       return;
     }
-    scanningContext = initialScanningContext;
-    // Lazy fill-in the particular format criteria and any matching result information.
-    scanningContext.autoFormatCriteria =
-      criteriaWithMatchResultContext.autoFormatCriteria;
-    scanningContext.matchResultContext =
-      criteriaWithMatchResultContext.matchResultContext;
+
+    transformTextNodeForAutoFormatCriteria(
+      scanningContext,
+      criteriaWithMatchResultContext.autoFormatCriteria,
+      criteriaWithMatchResultContext.matchResultContext,
+    );
   });
-  return scanningContext;
 }
 
-function findScanningContext(
-  editorState: EditorState,
+function shouldAttemptToAutoFormat(
   currentTriggerState: null | AutoFormatTriggerState,
   priorTriggerState: null | AutoFormatTriggerState,
-): null | ScanningContext {
+): boolean {
   if (currentTriggerState == null || priorTriggerState == null) {
-    return null;
+    return false;
   }
 
   // The below checks needs to execute relativey quickly, so perform the light-weight ones first.
@@ -148,25 +129,20 @@ function findScanningContext(
   const currentTextContentLength = currentTriggerState.textContent.length;
   const triggerOffset = currentTriggerState.anchorOffset - triggerStringLength;
 
-  if (
-    (currentTriggerState.hasParentNode === true &&
-      currentTriggerState.isSimpleText &&
-      currentTriggerState.isSelectionCollapsed &&
-      currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
-      currentTriggerState.anchorOffset !== priorTriggerState.anchorOffset &&
-      triggerOffset >= 0 &&
-      triggerOffset + triggerStringLength <= currentTextContentLength &&
-      currentTriggerState.textContent.substr(
-        triggerOffset,
-        triggerStringLength,
-      ) === TRIGGER_STRING &&
-      currentTriggerState.textContent !== priorTriggerState.textContent) ===
-    false
-  ) {
-    return null;
-  }
-
-  return findScanningContextWithValidMatch(editorState, currentTriggerState);
+  return (
+    currentTriggerState.hasParentNode === true &&
+    currentTriggerState.isSimpleText &&
+    currentTriggerState.isSelectionCollapsed &&
+    currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
+    currentTriggerState.anchorOffset !== priorTriggerState.anchorOffset &&
+    triggerOffset >= 0 &&
+    triggerOffset + triggerStringLength <= currentTextContentLength &&
+    currentTriggerState.textContent.substr(
+      triggerOffset,
+      triggerStringLength,
+    ) === TRIGGER_STRING &&
+    currentTriggerState.textContent !== priorTriggerState.textContent
+  );
 }
 
 function getTriggerState(
@@ -210,21 +186,16 @@ export default function useAutoFormatter(editor: LexicalEditor): void {
     // However, given "#A B", where the user delets "A" should not.
 
     let priorTriggerState: null | AutoFormatTriggerState = null;
-    return editor.addListener('update', ({tags}) => {
+    editor.addListener('update', ({tags}) => {
       // Examine historic so that we are not running autoformatting within markdown.
       if (tags.has('historic') === false) {
-        const editorState = editor.getEditorState();
-        const currentTriggerState = getTriggerState(editorState);
-        const scanningContext =
-          currentTriggerState == null
-            ? null
-            : findScanningContext(
-                editorState,
-                currentTriggerState,
-                priorTriggerState,
-              );
-        if (scanningContext != null) {
-          updateAutoFormatting(editor, scanningContext);
+        const currentTriggerState = getTriggerState(editor.getEditorState());
+
+        if (
+          shouldAttemptToAutoFormat(currentTriggerState, priorTriggerState) &&
+          currentTriggerState != null
+        ) {
+          updateAutoFormatting(editor, currentTriggerState);
         }
         priorTriggerState = currentTriggerState;
       } else {

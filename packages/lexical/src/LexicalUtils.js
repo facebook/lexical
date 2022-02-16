@@ -10,10 +10,10 @@
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
-  NodeAttached,
-  NodeDetached,
+  MutatedNodes,
   NodeMutation,
   RegisteredNode,
+  RegisteredNodes,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
@@ -160,7 +160,11 @@ export function $isLeafNode(node: ?LexicalNode): boolean %checks {
   return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-export function $generateKey(node: LexicalNode): NodeKey {
+export function $setNodeKey(node: LexicalNode, existingKey: ?NodeKey): void {
+  if (existingKey != null) {
+    node.__key = existingKey;
+    return;
+  }
   errorOnReadOnly();
   errorOnInfiniteTransforms();
   const editor = getActiveEditor();
@@ -175,8 +179,8 @@ export function $generateKey(node: LexicalNode): NodeKey {
   }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
-  editor._mutatedNodes.set(key, (true: NodeAttached));
-  return key;
+  node.__key = key;
+  setMutatedNode(editor._mutatedNodes, editor._nodes, node, 'attached');
 }
 
 function internalMarkParentElementsAsDirty(
@@ -784,22 +788,42 @@ export function getCachedClassNameArray<Theme: {...}>(
   return classNames;
 }
 
-export function mutatedNodes(
+export function getAllMutatedNodes(
+  registeredNodes: RegisteredNodes,
   previousNodeMap: NodeMap,
   nextNodeMap: NodeMap,
-): Map<NodeKey, NodeMutation> {
-  const mutations = new Map();
+): MutatedNodes {
+  const mutatedNodes = new Map();
   previousNodeMap.forEach((node) => {
     const key = node.__key;
     if (!nextNodeMap.has(key)) {
-      mutations.set(key, (false: NodeDetached));
+      setMutatedNode(mutatedNodes, registeredNodes, node, 'detached');
     }
   });
   nextNodeMap.forEach((node) => {
     const key = node.__key;
     if (!previousNodeMap.has(key)) {
-      mutations.set(key, (true: NodeAttached));
+      setMutatedNode(mutatedNodes, registeredNodes, node, 'attached');
     }
   });
-  return mutations;
+  return mutatedNodes;
+}
+
+export function setMutatedNode(
+  mutatedNodes: MutatedNodes,
+  registeredNodes: RegisteredNodes,
+  node: LexicalNode,
+  mutation: NodeMutation,
+) {
+  const registeredNode = registeredNodes.get(node.__type);
+  if (registeredNode === undefined) {
+    invariant(false, 'Type %s not in registeredNodes', node.__type);
+  }
+  const klass = registeredNode.klass;
+  let mutatedNodesByType = mutatedNodes.get(klass);
+  if (mutatedNodesByType === undefined) {
+    mutatedNodesByType = new Map();
+    mutatedNodes.set(klass, mutatedNodesByType);
+  }
+  mutatedNodesByType.set(node.__key, mutation);
 }

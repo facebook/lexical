@@ -32,8 +32,8 @@ import {
 import {
   createUID,
   generateRandomKey,
+  getAllMutatedNodes,
   markAllNodesAsDirty,
-  mutatedNodes,
 } from './LexicalUtils';
 import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
@@ -132,13 +132,13 @@ export type EditorConfig<EditorContext> = {
 export type RegisteredNodes = Map<string, RegisteredNode>;
 export type RegisteredNode = {
   klass: Class<LexicalNode>,
-  mutations: Set<MutationListener>,
   transforms: Set<Transform<LexicalNode>>,
 };
-export type NodeAttached = true;
-export type NodeDetached = false;
-export type NodeMutation = NodeAttached | NodeDetached;
 export type Transform<T> = (node: T) => void;
+
+export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
+export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
+export type NodeMutation = 'attached' | 'detached';
 
 export type ErrorListener = (error: Error) => void;
 export type UpdateListener = ({
@@ -159,6 +159,7 @@ export type MutationListener = (
   added: Array<NodeKey>,
   removed: Array<NodeKey>,
 ) => void;
+export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
@@ -270,7 +271,6 @@ export function createEditor<EditorContext>(editorConfig?: {
     const type = klass.getType();
     registeredNodes.set(type, {
       klass,
-      mutations: new Set(),
       transforms: new Set(),
     });
   }
@@ -321,7 +321,8 @@ class BaseLexicalEditor {
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
-  _mutatedNodes: Map<NodeKey, NodeMutation>;
+  _mutatedNodes: MutatedNodes;
+  _mutationListeners: MutationListeners;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
@@ -370,6 +371,7 @@ class BaseLexicalEditor {
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
     this._mutatedNodes = new Map();
+    this._mutationListeners = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
     // Handling of DOM mutations
@@ -382,38 +384,38 @@ class BaseLexicalEditor {
   }
   addListener(
     type: ListenerType,
-    listener:
+    arg1:
       | ErrorListener
       | UpdateListener
       | DecoratorListener
       | RootListener
       | TextContentListener
-      | MutationListener
-      | CommandListener,
-    payload: Class<LexicalNode> | CommandListenerPriority,
+      | CommandListener
+      | Class<LexicalNode>,
+    arg2: MutationListener | CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];
     if (type === 'command') {
       // $FlowFixMe: TODO refine
-      const priority = (payload: CommandListenerPriority);
+      const listener: CommandListener = arg1;
+      // $FlowFixMe: TODO refine
+      const priority = (arg2: CommandListenerPriority);
       if (priority === undefined) {
         invariant(false, 'Listener for type "command" requires a "priority".');
       }
 
-      // $FlowFixMe: unsure how to csae this
+      // $FlowFixMe: unsure how to cast this
       const commands: Array<Set<CommandListener>> = listenerSetOrMap;
       const commandSet = commands[priority];
-      // $FlowFixMe: cast
       commandSet.add(listener);
       return () => {
-        // $FlowFixMe: cast
         commandSet.delete(listener);
       };
     } else if (type === 'mutation') {
       // $FlowFixMe: refine
-      const klass = (payload: Class<LexicalNode>);
+      const klass = (arg1: Class<LexicalNode>);
       // $FlowFixMe: refine
-      const mutationListener = (listener: MutationListener);
+      const mutationListener = (arg2: MutationListener);
       const registeredNode = this._nodes.get(klass.getType());
       if (registeredNode === undefined) {
         invariant(
@@ -422,12 +424,20 @@ class BaseLexicalEditor {
           klass.name,
         );
       }
-      const mutations = registeredNode.mutations;
-      mutations.add(mutationListener);
+      const mutations = this._mutationListeners;
+      mutations.set(mutationListener, klass);
       return () => {
         mutations.delete(mutationListener);
       };
     } else {
+      const listener:
+        | ErrorListener
+        | UpdateListener
+        | DecoratorListener
+        | RootListener
+        | TextContentListener
+        // $FlowFixMe: TODO refine
+        | CommandListener = arg1;
       // $FlowFixMe: TODO refine this from the above types
       listenerSetOrMap.add(listener);
 
@@ -558,7 +568,8 @@ class BaseLexicalEditor {
     }
     this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
-    this._mutatedNodes = mutatedNodes(
+    this._mutatedNodes = getAllMutatedNodes(
+      this._nodes,
       currentEditorState._nodeMap,
       editorState._nodeMap,
     );
@@ -627,7 +638,8 @@ declare export class LexicalEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _mutatedNodes: Map<NodeKey, NodeMutation>;
+  _mutatedNodes: MutatedNodes;
+  _mutationListeners: MutationListeners;
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;
@@ -646,8 +658,8 @@ declare export class LexicalEditor {
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
   addListener(
     type: 'mutation',
-    listener: MutationListener,
     klass: Class<LexicalNode>,
+    listener: MutationListener,
   ): () => void;
   addListener(
     type: 'command',

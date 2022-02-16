@@ -11,13 +11,11 @@ import type {
   CommandPayload,
   EditorUpdateOptions,
   LexicalEditor,
-  NodeAttached,
-  NodeDetached,
-  NodeMutation,
+  MutatedNodes,
   Transform,
 } from './LexicalEditor';
 import type {ParsedEditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {LexicalNode} from './LexicalNode';
 import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
 import invariant from 'shared/invariant';
@@ -440,56 +438,15 @@ function triggerMutationListeners(
   editor: LexicalEditor,
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
-  mutatedNodes: Map<NodeKey, NodeMutation>,
+  mutatedNodes: MutatedNodes,
 ): void {
-  const attachedDetachedNodes: Map<string, [Array<NodeKey>, Array<NodeKey>]> =
-    new Map();
-  const currentNodeMap = currentEditorState._nodeMap;
-  const nextNodeMap = pendingEditorState._nodeMap;
-  mutatedNodes.forEach((mutation, nodeKey) => {
-    let attached = null;
-    let detached = null;
-    let type = null;
-    if (mutation === (true: NodeAttached)) {
-      const node = nextNodeMap.get(nodeKey);
-      if (node === undefined) {
-        invariant(false, 'Attached node not in nextNodeMap');
-      }
-      attached = nodeKey;
-      type = node.__type;
-    } else if (mutation === (false: NodeDetached)) {
-      const node = currentNodeMap.get(nodeKey);
-      if (node === undefined) {
-        // Can happen when a node is attached and GCed in the same update
-        return;
-      }
-      detached = nodeKey;
-      type = node.__type;
+  const listeners = editor._mutationListeners;
+  listeners.forEach((klass, listener) => {
+    const mutatedNodesByType = mutatedNodes.get(klass);
+    if (mutatedNodesByType === undefined) {
+      return;
     }
-    if ((attached !== null || detached !== null) && type !== null) {
-      let attachedDetachedNodesByType = attachedDetachedNodes.get(type);
-      if (attachedDetachedNodesByType === undefined) {
-        attachedDetachedNodesByType = [[], []];
-        attachedDetachedNodes.set(type, attachedDetachedNodesByType);
-      }
-      const [attachedNodes, detachedNodes] = attachedDetachedNodesByType;
-      if (attached !== null) {
-        attachedNodes.push(attached);
-      } else if (detached !== null) {
-        detachedNodes.push(detached);
-      }
-    }
-  });
-  attachedDetachedNodes.forEach((attachedDetached, type) => {
-    const registeredNode = editor._nodes.get(type);
-    if (registeredNode === undefined) {
-      invariant(false, 'Mutation listener on an unregistered node %s', type);
-    }
-    const mutationListeners = Array.from(registeredNode.mutations);
-    const mutationListenersLength = mutationListeners.length;
-    for (let i = 0; i < mutationListenersLength; i++) {
-      mutationListeners[i](...attachedDetached);
-    }
+    listener(mutatedNodesByType);
   });
 }
 
@@ -654,6 +611,7 @@ function beginUpdate(
         editor._dirtyLeaves,
         editor._dirtyElements,
         editor._mutatedNodes,
+        editor._nodes,
       );
     }
     const endingCompositionKey = editor._compositionKey;

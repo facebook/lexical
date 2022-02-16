@@ -11,14 +11,14 @@ import type {ElementNode} from '.';
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
-  NodeDetached,
-  NodeMutation,
+  MutatedNodes,
+  RegisteredNodes,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {NodeKey, NodeMap} from './LexicalNode';
 
 import {$isElementNode} from '.';
-import {cloneDecorators} from './LexicalUtils';
+import {cloneDecorators, setMutatedNode} from './LexicalUtils';
 
 export function $garbageCollectDetachedDecorators(
   editor: LexicalEditor,
@@ -45,7 +45,8 @@ function $garbageCollectDetachedDeepChildNodes(
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-  mutatedNodes: Map<NodeKey, NodeMutation>,
+  mutatedNodes: MutatedNodes,
+  registeredNodes: RegisteredNodes,
 ): void {
   const children = node.__children;
   const childrenLength = children.length;
@@ -61,6 +62,7 @@ function $garbageCollectDetachedDeepChildNodes(
           nodeMap,
           dirtyNodes,
           mutatedNodes,
+          registeredNodes,
         );
       }
       // If we have created a node and it was dereferenced, then also
@@ -69,7 +71,7 @@ function $garbageCollectDetachedDeepChildNodes(
         dirtyNodes.delete(childKey);
       }
       nodeMap.delete(childKey);
-      mutatedNodes.set(childKey, (false: NodeDetached));
+      setMutatedNode(mutatedNodes, registeredNodes, child, 'detached');
     }
   }
 }
@@ -79,7 +81,8 @@ export function $garbageCollectDetachedNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-  mutatedNodes: Map<NodeKey, NodeMutation>,
+  mutatedNodes: MutatedNodes,
+  registeredNodes: RegisteredNodes,
 ): void {
   const dirtyLeavesArr = Array.from(dirtyLeaves);
   const dirtyLeavesLength = dirtyLeavesArr.length;
@@ -97,7 +100,7 @@ export function $garbageCollectDetachedNodes(
         dirtyLeaves.delete(nodeKey);
       }
       nodeMap.delete(nodeKey);
-      mutatedNodes.set(nodeKey, (false: NodeDetached));
+      setMutatedNode(mutatedNodes, registeredNodes, node, 'detached');
     }
   }
 
@@ -116,6 +119,7 @@ export function $garbageCollectDetachedNodes(
             nodeMap,
             dirtyElements,
             mutatedNodes,
+            registeredNodes,
           );
         }
         // If we have created a node and it was dereferenced, then also
@@ -124,7 +128,7 @@ export function $garbageCollectDetachedNodes(
           dirtyElements.delete(nodeKey);
         }
         nodeMap.delete(nodeKey);
-        mutatedNodes.set(nodeKey, (false: NodeDetached));
+        setMutatedNode(mutatedNodes, registeredNodes, node, 'detached');
       }
     }
   }

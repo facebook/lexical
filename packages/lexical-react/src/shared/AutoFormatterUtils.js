@@ -702,9 +702,9 @@ function formatTextInCaptureGroupIndex(
     );
 
     $setSelection(newSelection);
-    const currentSelection = $getSelection();
-    if (currentSelection != null) {
-      currentSelection.formatText(formatType);
+    const curSel = $getSelection();
+    if (curSel != null) {
+      curSel.formatText(formatType);
     }
   }
 }

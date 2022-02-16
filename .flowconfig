@@ -83,7 +83,7 @@ module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/src/
 
 module.name_mapper='^shared/invariant' -> '<PROJECT_ROOT>/packages/shared/src/invariant.js'
 module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/environment.js'
-module.name_mapper='^shared/getPossibleDecoratorNode' -> '<PROJECT_ROOT>/packages/shared/src/getPossibleDecoratorNode.js'
+module.name_mapper='^shared/getPossibleDecoratorOrHorizontalRuleNode' -> '<PROJECT_ROOT>/packages/shared/src/getPossibleDecoratorOrHorizontalRuleNode.js'
 module.name_mapper='^shared/useLayoutEffect' -> '<PROJECT_ROOT>/packages/shared/src/useLayoutEffect.js'
 module.name_mapper='^shared/canUseDOM' -> '<PROJECT_ROOT>/packages/shared/src/canUseDOM.js'
 

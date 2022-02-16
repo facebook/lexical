@@ -16,7 +16,7 @@ describe('LexicalHorizontalRuleNode tests', () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const horizontalRuleNode = $createHorizontalRuleNode();
-        expect(horizontalRuleNode.getType()).toEqual('horizontal-rule');
+        expect(horizontalRuleNode.getType()).toEqual('horizontalrule');
       });
     });
 

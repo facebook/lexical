@@ -8,13 +8,7 @@
  */
 
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
-import type {
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-  TextFormatType,
-  TextNode,
-} from 'lexical';
+import type {ElementNode, NodeKey, TextFormatType, TextNode} from 'lexical';
 
 import {
   $findNodeWithOffsetFromJoinedText,
@@ -22,6 +16,7 @@ import {
 } from '@lexical/helpers/text';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {
+  $createHorizontalRuleNode,
   $createParagraphNode,
   $createRangeSelection,
   $getSelection,
@@ -61,6 +56,7 @@ export type NodeTransformationKind =
   | 'paragraphUnorderedList'
   | 'paragraphOrderedList'
   | 'paragraphCodeBlock'
+  | 'horizontalRule'
   | 'textBold';
 
 // The scanning context provides the overall data structure for
@@ -185,6 +181,12 @@ const markdownOrderedList: AutoFormatCriteria = {
   regEx: /^(\d+)\.\s/,
 };
 
+const markdownHorizontalRule: AutoFormatCriteria = {
+  ...paragraphStartBase,
+  nodeTransformationKind: 'horizontalRule',
+  regEx: /(?:\*\*\* )/,
+};
+
 const markdownBold: AutoFormatCriteria = {
   ...autoFormatBase,
   nodeTransformationKind: 'textBold',
@@ -205,6 +207,7 @@ const allAutoFormatCriteria = [
   markdownUnorderedListAsterisk,
   markdownOrderedList,
   markdownCodeBlock,
+  markdownHorizontalRule,
   ...allAutoFormatCriteriaForTextNodes,
 ];
 
@@ -363,10 +366,11 @@ export function getMatchResultContextForCriteria(
 
 function getNewNodeForCriteria(
   scanningContext: ScanningContext,
-  children: Array<LexicalNode>,
+  element: ElementNode,
 ): null | ElementNode {
   let newNode = null;
 
+  const children = element.getChildren();
   const autoFormatCriteria = scanningContext.autoFormatCriteria;
   const matchResultContext = scanningContext.matchResultContext;
   if (autoFormatCriteria.nodeTransformationKind != null) {
@@ -425,6 +429,12 @@ function getNewNodeForCriteria(
         newNode.append(...children);
         return newNode;
       }
+      case 'horizontalRule': {
+        // return null for newNode. Insert the HR here.
+        const horizontalRuleNode = $createHorizontalRuleNode();
+        element.insertBefore(horizontalRuleNode);
+        break;
+      }
       default:
         break;
     }
@@ -457,10 +467,7 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   const text = scanningContext.matchResultContext.regExCaptureGroups[0].text;
   updateTextNode(textNodeWithOffset.node, text.length);
 
-  const elementNode = getNewNodeForCriteria(
-    scanningContext,
-    element.getChildren(),
-  );
+  const elementNode = getNewNodeForCriteria(scanningContext, element);
 
   if (elementNode !== null) {
     element.replace(elementNode);

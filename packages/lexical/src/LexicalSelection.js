@@ -305,6 +305,10 @@ export class RangeSelection implements Selection {
           prevWasElement = true;
         }
       } else {
+        if (prevWasElement && $isHorizontalRuleNode(node)) {
+          prevWasElement = false;
+          continue;
+        }
         prevWasElement = false;
         if ($isTextNode(node)) {
           let text = node.getTextContent();
@@ -923,7 +927,11 @@ export class RangeSelection implements Selection {
         if ($isTextNode(target)) {
           target = topLevelElement;
         }
-      } else if (didReplaceOrMerge && $isRootNode(target.getParent())) {
+      } else if (
+        didReplaceOrMerge &&
+        !$isHorizontalRuleNode(node) &&
+        $isRootNode(target.getParent())
+      ) {
         invariant(
           false,
           'insertNodes: cannot insert a non-element into a root node',
@@ -931,7 +939,10 @@ export class RangeSelection implements Selection {
       }
       didReplaceOrMerge = false;
       if ($isElementNode(target)) {
-        if (!$isElementNode(node)) {
+        if ($isHorizontalRuleNode(node)) {
+          target.insertAfter(node);
+          target = node;
+        } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
             firstChild.insertBefore(node);
@@ -945,6 +956,9 @@ export class RangeSelection implements Selection {
           }
           target = target.insertAfter(node);
         }
+      } else if ($isHorizontalRuleNode(target)) {
+        target.insertAfter(node);
+        target = node;
       } else if (!$isElementNode(node)) {
         target = target.insertAfter(node);
       } else {

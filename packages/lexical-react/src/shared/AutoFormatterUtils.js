@@ -187,6 +187,12 @@ const markdownHorizontalRule: AutoFormatCriteria = {
   regEx: /(?:\*\*\* )/,
 };
 
+const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
+  ...paragraphStartBase,
+  nodeTransformationKind: 'horizontalRule',
+  regEx: /(?:--- )/,
+};
+
 const markdownBold: AutoFormatCriteria = {
   ...autoFormatBase,
   nodeTransformationKind: 'textBold',
@@ -208,6 +214,7 @@ const allAutoFormatCriteria = [
   markdownOrderedList,
   markdownCodeBlock,
   markdownHorizontalRule,
+  markdownHorizontalRuleUsingDashes,
   ...allAutoFormatCriteriaForTextNodes,
 ];
 

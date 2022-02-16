@@ -13,7 +13,7 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
 
-import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
+import getPossibleDecoratorOrHorizontalRuleNode from 'shared/getPossibleDecoratorOrHorizontalRuleNode';
 import invariant from 'shared/invariant';
 
 import {
@@ -305,6 +305,10 @@ export class RangeSelection implements Selection {
           prevWasElement = true;
         }
       } else {
+        if (prevWasElement && $isHorizontalRuleNode(node)) {
+          prevWasElement = false;
+          continue;
+        }
         prevWasElement = false;
         if ($isTextNode(node)) {
           let text = node.getTextContent();
@@ -923,7 +927,11 @@ export class RangeSelection implements Selection {
         if ($isTextNode(target)) {
           target = topLevelElement;
         }
-      } else if (didReplaceOrMerge && $isRootNode(target.getParent())) {
+      } else if (
+        didReplaceOrMerge &&
+        !$isHorizontalRuleNode(node) &&
+        $isRootNode(target.getParent())
+      ) {
         invariant(
           false,
           'insertNodes: cannot insert a non-element into a root node',
@@ -931,7 +939,10 @@ export class RangeSelection implements Selection {
       }
       didReplaceOrMerge = false;
       if ($isElementNode(target)) {
-        if (!$isElementNode(node)) {
+        if ($isHorizontalRuleNode(node)) {
+          target.insertAfter(node);
+          target = node;
+        } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
             firstChild.insertBefore(node);
@@ -945,6 +956,9 @@ export class RangeSelection implements Selection {
           }
           target = target.insertAfter(node);
         }
+      } else if ($isHorizontalRuleNode(target)) {
+        target.insertAfter(node);
+        target = node;
       } else if (!$isElementNode(node)) {
         target = target.insertAfter(node);
       } else {
@@ -1150,17 +1164,34 @@ export class RangeSelection implements Selection {
     const collapse = alter === 'move';
 
     // Handle the selection movement around decorators.
-    const possibleDecoratorNode = getPossibleDecoratorNode(focus, isBackward);
-    if ($isDecoratorNode(possibleDecoratorNode)) {
+    const possibleNode = getPossibleDecoratorOrHorizontalRuleNode(
+      focus,
+      isBackward,
+    );
+    if ($isDecoratorNode(possibleNode)) {
       const sibling = isBackward
-        ? possibleDecoratorNode.getPreviousSibling()
-        : possibleDecoratorNode.getNextSibling();
+        ? possibleNode.getPreviousSibling()
+        : possibleNode.getNextSibling();
       if (!$isTextNode(sibling)) {
-        const elementKey = possibleDecoratorNode.getParentOrThrow().getKey();
-        let offset = possibleDecoratorNode.getIndexWithinParent();
+        const elementKey = possibleNode.getParentOrThrow().getKey();
+        let offset = possibleNode.getIndexWithinParent();
         if (!isBackward) {
           offset++;
         }
+        focus.set(elementKey, offset, 'element');
+        if (collapse) {
+          anchor.set(elementKey, offset, 'element');
+        }
+        return;
+      }
+    } else if ($isHorizontalRuleNode(possibleNode)) {
+      const sibling = isBackward
+        ? possibleNode.getPreviousSibling()
+        : possibleNode.getNextSibling();
+
+      if ($isElementNode(sibling)) {
+        const elementKey = sibling.getKey();
+        const offset = isBackward ? sibling.getChildrenSize() : 0;
         focus.set(elementKey, offset, 'element');
         if (collapse) {
           anchor.set(elementKey, offset, 'element');
@@ -1428,8 +1459,14 @@ function internalResolveSelectionPoint(
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else if ($isHorizontalRuleNode(resolvedNode)) {
-      resolvedOffset = 0;
-      return $createPoint(resolvedNode.__key, resolvedOffset, 'element');
+      // TODO: We should make this a part of GroupSelection in the future.
+      // For now, we try and move selection to the next sibling.
+      const nextSibling = resolvedNode.getNextSibling();
+      if ($isTextNode(nextSibling)) {
+        return $createPoint(nextSibling.__key, 0, 'text');
+      } else if ($isElementNode(nextSibling)) {
+        return $createPoint(nextSibling.__key, 0, 'element');
+      }
     } else {
       let resolvedElement = getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.

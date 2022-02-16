@@ -137,7 +137,7 @@ function useTypeahead(editor: LexicalEditor): void {
         }
       },
       {
-        tag: 'history-merge',
+        tag: 'without-history',
       },
     );
   }, [editor, getTypeaheadTextNode, selectionCollapsed, suggestion]);

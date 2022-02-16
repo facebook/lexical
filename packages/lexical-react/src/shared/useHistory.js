@@ -22,9 +22,9 @@ import {$getSelection, $isRootNode, $isTextNode} from 'lexical';
 import {useCallback, useEffect, useMemo} from 'react';
 
 type MergeAction = 0 | 1 | 2;
-const HISTORY_MERGE = 0;
-const HISTORY_PUSH = 1;
-const DISCARD_HISTORY_CANDIDATE = 2;
+const MERGE = 0;
+const NO_MERGE = 1;
+const DISCARD = 2;
 
 type ChangeType = 0 | 1 | 2 | 3 | 4;
 const OTHER = 0;
@@ -204,7 +204,7 @@ function createMergeActionGetter(
     if (tags.has('historic')) {
       prevChangeType = OTHER;
       prevChangeTime = changeTime;
-      return DISCARD_HISTORY_CANDIDATE;
+      return DISCARD;
     }
 
     const changeType = getChangeType(
@@ -216,40 +216,35 @@ function createMergeActionGetter(
     );
 
     const mergeAction = (() => {
-      const shouldPushHistory = tags.has('history-push');
-      const shouldMergeHistory =
-        !shouldPushHistory && tags.has('history-merge');
-
-      if (shouldMergeHistory) {
-        return HISTORY_MERGE;
+      if (tags.has('without-history')) {
+        return MERGE;
       }
       if (prevEditorState === null) {
-        return HISTORY_PUSH;
+        return NO_MERGE;
       }
       const selection = nextEditorState._selection;
       const prevSelection = prevEditorState._selection;
       const hasDirtyNodes = dirtyLeaves.size > 0 || dirtyElements.size > 0;
       if (!hasDirtyNodes) {
         if (prevSelection === null && selection !== null) {
-          return HISTORY_MERGE;
+          return MERGE;
         }
-        return DISCARD_HISTORY_CANDIDATE;
+        return DISCARD;
       }
 
       const isSameEditor =
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
 
       if (
-        shouldPushHistory === false &&
         changeType !== OTHER &&
         changeType === prevChangeType &&
         changeTime < prevChangeTime + delay &&
         isSameEditor
       ) {
-        return HISTORY_MERGE;
+        return MERGE;
       }
 
-      return HISTORY_PUSH;
+      return NO_MERGE;
     })();
 
     prevChangeTime = changeTime;
@@ -302,7 +297,7 @@ export function useHistory(
         tags,
       );
 
-      if (mergeAction === HISTORY_PUSH) {
+      if (mergeAction === NO_MERGE) {
         if (redoStack.length !== 0) {
           historyState.redoStack = [];
         }
@@ -313,7 +308,7 @@ export function useHistory(
           });
           editor.execCommand('canUndo', true);
         }
-      } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {
+      } else if (mergeAction === DISCARD) {
         return;
       }
 

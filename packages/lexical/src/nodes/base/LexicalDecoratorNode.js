@@ -62,7 +62,7 @@ export class DecoratorEditor {
       this.editorState = editorState;
       if (editorState !== null) {
         editor.setEditorState(editorState, {
-          tag: 'history-merge',
+          tag: 'without-history',
         });
       }
     }

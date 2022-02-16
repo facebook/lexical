@@ -81,7 +81,7 @@ export function useCharacterLimit(
               $wrapOverflowedNodes(offset);
             },
             {
-              tag: 'history-merge',
+              tag: 'without-history',
             },
           );
         }

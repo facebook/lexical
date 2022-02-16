@@ -216,7 +216,8 @@ function createMergeActionGetter(
     );
 
     const mergeAction = (() => {
-      if (tags.has('without-history')) {
+      const withoutHistory = tags.has('without-history') === true;
+      if (withoutHistory) {
         return MERGE;
       }
       if (prevEditorState === null) {

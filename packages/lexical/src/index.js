@@ -63,7 +63,6 @@ export type {
   CommandListenerHighPriority,
   CommandListenerLowPriority,
   CommandListenerNormalPriority,
-  DOMConversionMap,
   EditorConfig,
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,

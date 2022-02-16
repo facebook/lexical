@@ -34,20 +34,6 @@ import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
 import {RootNode} from './nodes/base/LexicalRootNode';
 
-export type DOMConversion = (
-  element: Node,
-  parent?: Node,
-) => DOMConversionOutput;
-export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
-export type DOMConversionMap = {
-  [string]: DOMConversion,
-};
-type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
-  forChild?: DOMChildConversion,
-  node: LexicalNode | null,
-};
-
 export type EditorThemeClassName = string;
 
 export type TextNodeThemeClasses = {
@@ -119,7 +105,6 @@ export type EditorThemeClasses = {
 export type EditorConfig<EditorContext> = {
   context: EditorContext,
   disableEvents?: boolean,
-  htmlTransforms?: DOMConversionMap,
   namespace: string,
   theme: EditorThemeClasses,
 };
@@ -231,7 +216,6 @@ export function createEditor<EditorContext>(editorConfig?: {
   context?: EditorContext,
   disableEvents?: boolean,
   editorState?: EditorState,
-  htmlTransforms?: DOMConversionMap,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
   onError?: ErrorHandler,
@@ -243,7 +227,6 @@ export function createEditor<EditorContext>(editorConfig?: {
   const theme = config.theme || {};
   const context = config.context || {};
   const parentEditor = config.parentEditor || null;
-  const htmlTransforms = config.htmlTransforms || {};
   const disableEvents = config.disableEvents || false;
   const editorState = createEmptyEditorState();
   const initialEditorState = config.editorState;
@@ -279,7 +262,6 @@ export function createEditor<EditorContext>(editorConfig?: {
       // $FlowFixMe: we use our internal type to simpify the generics
       context,
       disableEvents,
-      htmlTransforms,
       namespace,
       theme,
     },

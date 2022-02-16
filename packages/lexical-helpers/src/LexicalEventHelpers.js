@@ -7,11 +7,9 @@
  * @flow strict
  */
 
+import type {RegisteredNode} from '../../lexical/src/LexicalEditor';
 import type {
   DOMChildConversion,
-  RegisteredNode,
-} from '../../lexical/src/LexicalEditor';
-import type {
   DOMConversion,
   DOMConversionFn,
 } from '../../lexical/src/LexicalNode';

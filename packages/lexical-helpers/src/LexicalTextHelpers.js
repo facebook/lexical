@@ -118,28 +118,40 @@ export function $findNodeWithOffsetFromJoinedText(
   const children = elementNode.getChildren();
   const childrenLength = children.length;
   let runningLength = 0;
+  let isPriorNodeTextNode = false;
   for (let i = 0; i < childrenLength; ++i) {
-    if (runningLength >= joinedTextLength) {
+    // We must examine the offsetInJoinedText that is located
+    // at the length of the string.
+    // For example, given "hello", the length is 5, yet
+    // the caller still wants the node + offset at the
+    // right edge of the "o".
+    if (runningLength > joinedTextLength) {
       break;
     }
 
     const child = children[i];
-    const childContentLength = $isTextNode(child)
+    const isChildNodeTestNode = $isTextNode(child);
+    const childContentLength = isChildNodeTestNode
       ? child.getTextContent().length
       : separatorLength;
 
     const newRunningLength = runningLength + childContentLength;
-    if (
-      runningLength <= offsetInJoinedText &&
-      offsetInJoinedText < newRunningLength &&
-      $isTextNode(child)
-    ) {
+
+    const isJoinedOffsetWithinNode =
+      (isPriorNodeTextNode === false && runningLength === offsetInJoinedText) ||
+      (runningLength === 0 && runningLength === offsetInJoinedText) ||
+      (runningLength < offsetInJoinedText &&
+        offsetInJoinedText <= newRunningLength);
+
+    if (isJoinedOffsetWithinNode && $isTextNode(child)) {
+      // Check isTextNode again for flow.
       return {
         node: child,
         offset: offsetInJoinedText - runningLength,
       };
     }
     runningLength = newRunningLength;
+    isPriorNodeTextNode = isChildNodeTestNode;
   }
   return null;
 }

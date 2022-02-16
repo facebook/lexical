@@ -327,10 +327,7 @@ function handleMultilineIndent(
 
   for (let i = 1; i < nodes.length; i++) {
     const node = nodes[i];
-    if (
-      (i === 0 || $isLineBreakNode(nodes[i - 1])) &&
-      $isCodeHighlightNode(node)
-    ) {
+    if ($isLineBreakNode(nodes[i - 1]) && $isCodeHighlightNode(node)) {
       doIndent(node, type);
     }
   }

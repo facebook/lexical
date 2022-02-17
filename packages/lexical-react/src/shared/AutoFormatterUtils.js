@@ -15,8 +15,8 @@ import {
   $joinTextNodesInElementNode,
 } from '@lexical/helpers/text';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
-  $createHorizontalRuleNode,
   $createParagraphNode,
   $createRangeSelection,
   $getSelection,

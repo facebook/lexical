@@ -108,7 +108,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
 
       markdownText: '*** ', // Ordered.
     },
@@ -116,7 +116,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
 
       markdownText: '--- ', // Ordered.
     },

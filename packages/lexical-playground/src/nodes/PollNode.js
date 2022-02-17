@@ -69,7 +69,6 @@ const styles = stylex.create({
       fontWeight: 'normal',
       color: '#999',
     },
-    zIndex: 1,
   },
   optionInputVotes: {
     backgroundColor: 'rgb(236, 243, 254)',
@@ -95,7 +94,6 @@ const styles = stylex.create({
     marginRight: 10,
     borderRadius: 5,
     cursor: 'pointer',
-    zIndex: 2,
   },
   optionCheckboxChecked: {
     border: '1px solid rgb(61,135,245)',

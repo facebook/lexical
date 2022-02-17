@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {Provider} from '@lexical/yjs';
+import {Provider} from '@lexical/yjs';
 
 import {Doc} from 'yjs';
 

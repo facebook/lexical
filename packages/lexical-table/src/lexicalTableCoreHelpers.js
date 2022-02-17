@@ -514,14 +514,17 @@ export function $applyCustomTableHandlers(
         }
       }
 
-      if (type === 'indentContent' || type === 'outdentContent') {
+      if (type === 'keyTab') {
+        const event: KeyboardEvent = payload;
+
         if (selection.isCollapsed() && highlightedCells.length === 0) {
           const currentCords = tableNode.getCordsFromCellNode(tableCellNode);
+          event.preventDefault();
 
           selectGridNodeInDirection(
             currentCords.x,
             currentCords.y,
-            type === 'indentContent' ? 'forward' : 'backward',
+            !event.shiftKey && type === 'keyTab' ? 'forward' : 'backward',
           );
 
           return true;

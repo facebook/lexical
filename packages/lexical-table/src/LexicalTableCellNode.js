@@ -51,6 +51,10 @@ export class TableCellNode extends ElementNode {
   collapseAtStart(): true {
     return true;
   }
+
+  canBeEmpty(): false {
+    return false;
+  }
 }
 
 export function $createTableCellNode(isHeader: boolean): TableCellNode {

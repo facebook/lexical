@@ -38,58 +38,58 @@ describe('Selection', () => {
       expect(await editorHasFocus()).toEqual(false);
     });
 
-    it('keeps single active selection for nested editors', async () => {
-      const {page, isRichText} = e2e;
+    it.skipIf(
+      e2e.isPlainText,
+      'keeps single active selection for nested editors',
+      async () => {
+        const {page} = e2e;
 
-      if (!isRichText) {
-        return;
-      }
+        const hasSelection = async (parentSelector) =>
+          await evaluate(
+            page,
+            (parentSelector) => {
+              return (
+                document
+                  .querySelector(`${parentSelector} > .tree-view-output pre`)
+                  .__lexicalEditor.getEditorState()._selection !== null
+              );
+            },
+            parentSelector,
+          );
 
-      const hasSelection = async (parentSelector) =>
-        await evaluate(
-          page,
-          (parentSelector) => {
-            return (
-              document
-                .querySelector(`${parentSelector} > .tree-view-output pre`)
-                .__lexicalEditor.getEditorState()._selection !== null
-            );
-          },
-          parentSelector,
-        );
-
-      await focusEditor(page);
-      await insertImage(page, 'Hello world');
-      expect(await hasSelection('.image-caption-container')).toBe(true);
-      expect(await hasSelection('.editor-shell')).toBe(false);
-
-      // Click outside of the editor and check that selection remains the same
-      await click(page, 'header img');
-      expect(await hasSelection('.image-caption-container')).toBe(true);
-      expect(await hasSelection('.editor-shell')).toBe(false);
-
-      // Back to root editor
-      if (E2E_BROWSER === 'firefox') {
-        // TODO:
-        // In firefox .focus() on editor does not trigger selectionchange, while checking it
-        // explicitly clicking on an editor (passing position that is on the right side to
-        // prevent clicking on image and its nested editor)
-        await click(page, '.editor-shell', {position: {x: 600, y: 150}});
-      } else {
         await focusEditor(page);
-      }
-      expect(await hasSelection('.image-caption-container')).toBe(false);
-      expect(await hasSelection('.editor-shell')).toBe(true);
+        await insertImage(page, 'Hello world');
+        expect(await hasSelection('.image-caption-container')).toBe(true);
+        expect(await hasSelection('.editor-shell')).toBe(false);
 
-      // Click outside of the editor and check that selection remains the same
-      await click(page, 'header img');
-      expect(await hasSelection('.image-caption-container')).toBe(false);
-      expect(await hasSelection('.editor-shell')).toBe(true);
+        // Click outside of the editor and check that selection remains the same
+        await click(page, 'header img');
+        expect(await hasSelection('.image-caption-container')).toBe(true);
+        expect(await hasSelection('.editor-shell')).toBe(false);
 
-      // Back to nested editor editor
-      await focusEditor(page, '.image-caption-container');
-      expect(await hasSelection('.image-caption-container')).toBe(true);
-      expect(await hasSelection('.editor-shell')).toBe(false);
-    });
+        // Back to root editor
+        if (E2E_BROWSER === 'firefox') {
+          // TODO:
+          // In firefox .focus() on editor does not trigger selectionchange, while checking it
+          // explicitly clicking on an editor (passing position that is on the right side to
+          // prevent clicking on image and its nested editor)
+          await click(page, '.editor-shell', {position: {x: 600, y: 150}});
+        } else {
+          await focusEditor(page);
+        }
+        expect(await hasSelection('.image-caption-container')).toBe(false);
+        expect(await hasSelection('.editor-shell')).toBe(true);
+
+        // Click outside of the editor and check that selection remains the same
+        await click(page, 'header img');
+        expect(await hasSelection('.image-caption-container')).toBe(false);
+        expect(await hasSelection('.editor-shell')).toBe(true);
+
+        // Back to nested editor editor
+        await focusEditor(page, '.image-caption-container');
+        expect(await hasSelection('.image-caption-container')).toBe(true);
+        expect(await hasSelection('.editor-shell')).toBe(false);
+      },
+    );
   });
 });

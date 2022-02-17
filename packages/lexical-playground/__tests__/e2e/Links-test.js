@@ -25,112 +25,111 @@ import {
 
 describe('Links', () => {
   initializeE2E((e2e) => {
-    it(`Can convert a text node into a link`, async () => {
-      const {isRichText, page} = e2e;
-      if (!isRichText) {
-        return;
-      }
+    it.skipIf(
+      e2e.isPlainText,
+      `Can convert a text node into a link`,
+      async () => {
+        const {page} = e2e;
 
-      await focusEditor(page);
-      await page.keyboard.type('Hello');
-      await selectAll(page);
+        await focusEditor(page);
+        await page.keyboard.type('Hello');
+        await selectAll(page);
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
-      );
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
+        );
 
-      // link
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
+        // link
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a></p>',
-      );
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a></p>',
+        );
 
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0, 0],
-        focusOffset: 5,
-      });
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0, 0],
+          focusOffset: 5,
+        });
 
-      await selectAll(page);
+        await selectAll(page);
 
-      // set url
-      await waitForSelector(page, '.link-input');
-      await waitForSelector(page, '.link-edit');
-      await click(page, '.link-edit');
-      await focus(page, '.link-input');
-      await page.keyboard.type('facebook.com');
-      await page.keyboard.press('Enter');
+        // set url
+        await waitForSelector(page, '.link-input');
+        await waitForSelector(page, '.link-edit');
+        await click(page, '.link-edit');
+        await focus(page, '.link-input');
+        await page.keyboard.type('facebook.com');
+        await page.keyboard.press('Enter');
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a></p',
-      );
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a></p',
+        );
 
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0, 0],
-        focusOffset: 5,
-      });
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0, 0],
+          focusOffset: 5,
+        });
 
-      // unlink
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
+        // unlink
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
-      );
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
+        );
 
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      });
-    });
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 0, 0],
+          focusOffset: 5,
+        });
+      },
+    );
 
-    it(`Does nothing if the selection is collapsed at the end of a text node.`, async () => {
-      const {isRichText, page} = e2e;
-      if (!isRichText) {
-        return;
-      }
+    it.skipIf(
+      e2e.isPlainText,
+      `Does nothing if the selection is collapsed at the end of a text node.`,
+      async () => {
+        const {page} = e2e;
 
-      await focusEditor(page);
-      await page.keyboard.type('Hello');
+        await focusEditor(page);
+        await page.keyboard.type('Hello');
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
-      );
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
+        );
 
-      // link
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
+        // link
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
-      );
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></p>',
+        );
 
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 5,
-        focusPath: [0, 0, 0],
-        focusOffset: 5,
-      });
-    });
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 5,
+        });
+      },
+    );
 
-    it(`Can type text before and after`, async () => {
-      const {isRichText, page} = e2e;
-      if (!isRichText) {
-        return;
-      }
+    it.skipIf(e2e.isPlainText, `Can type text before and after`, async () => {
+      const {page} = e2e;
 
       await focusEditor(page);
       await page.keyboard.type('An Awesome Website');
@@ -158,178 +157,178 @@ describe('Links', () => {
       );
     });
 
-    it(`Can convert part of a text node into a link with forwards selection`, async () => {
-      const {isRichText, page} = e2e;
+    it.skipIf(
+      e2e.isPlainText,
+      `Can convert part of a text node into a link with forwards selection`,
+      async () => {
+        const {page} = e2e;
 
-      if (!isRichText) {
-        return;
-      }
+        await focusEditor(page);
+        await page.keyboard.type('Hello world');
 
-      await focusEditor(page);
-      await page.keyboard.type('Hello world');
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+        );
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
-      );
+        await moveLeft(page, 5);
+        await selectCharacters(page, 'right', 5);
 
-      await moveLeft(page, 5);
-      await selectCharacters(page, 'right', 5);
+        // link
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
 
-      // link
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
+        );
+        if (E2E_BROWSER === 'webkit') {
+          await assertSelection(page, {
+            anchorPath: [0, 1, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 1, 0, 0],
+            focusOffset: 5,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 6,
+            focusPath: [0, 1, 0, 0],
+            focusOffset: 5,
+          });
+        }
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
-      );
-      if (E2E_BROWSER === 'webkit') {
-        await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 1, 0, 0],
-          focusOffset: 5,
-        });
-      } else {
+        // set url
+        await waitForSelector(page, '.link-input');
+        await click(page, '.link-edit');
+        await focus(page, '.link-input');
+        await page.keyboard.type('facebook.com');
+        await page.keyboard.press('Enter');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
+        );
+
+        if (E2E_BROWSER === 'webkit') {
+          await assertSelection(page, {
+            anchorPath: [0, 1, 0, 0],
+            anchorOffset: 0,
+            focusPath: [0, 1, 0, 0],
+            focusOffset: 5,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 0, 0],
+            anchorOffset: 6,
+            focusPath: [0, 1, 0, 0],
+            focusOffset: 5,
+          });
+        }
+
+        // unlink
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+        );
+
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 1, 0, 0],
-          focusOffset: 5,
+          focusPath: [0, 0, 0],
+          focusOffset: 11,
         });
-      }
+      },
+    );
 
-      // set url
-      await waitForSelector(page, '.link-input');
-      await click(page, '.link-edit');
-      await focus(page, '.link-input');
-      await page.keyboard.type('facebook.com');
-      await page.keyboard.press('Enter');
+    it.skipIf(
+      e2e.isPlainText,
+      `Can convert part of a text node into a link with backwards selection`,
+      async () => {
+        const {page} = e2e;
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
-      );
+        await focusEditor(page);
+        await page.keyboard.type('Hello world');
 
-      if (E2E_BROWSER === 'webkit') {
-        await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
-          anchorOffset: 0,
-          focusPath: [0, 1, 0, 0],
-          focusOffset: 5,
-        });
-      } else {
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+        );
+
+        await selectCharacters(page, 'left', 5);
+
+        // link
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
+        );
+
+        if (E2E_BROWSER === 'webkit') {
+          await assertSelection(page, {
+            anchorPath: [0, 1, 0, 0],
+            anchorOffset: 5,
+            focusPath: [0, 1, 0, 0],
+            focusOffset: 0,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 1, 0, 0],
+            anchorOffset: 5,
+            focusPath: [0, 0, 0],
+            focusOffset: 6,
+          });
+        }
+
+        // set url
+        await waitForSelector(page, '.link-input');
+        await click(page, '.link-edit');
+        await focus(page, '.link-input');
+        await page.keyboard.type('facebook.com');
+        await page.keyboard.press('Enter');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
+        );
+
+        if (E2E_BROWSER === 'webkit') {
+          await assertSelection(page, {
+            anchorPath: [0, 1, 0, 0],
+            anchorOffset: 5,
+            focusPath: [0, 1, 0, 0],
+            focusOffset: 0,
+          });
+        } else {
+          await assertSelection(page, {
+            anchorPath: [0, 1, 0, 0],
+            anchorOffset: 5,
+            focusPath: [0, 0, 0],
+            focusOffset: 6,
+          });
+        }
+
+        // unlink
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
+        );
+
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
-          anchorOffset: 6,
-          focusPath: [0, 1, 0, 0],
-          focusOffset: 5,
-        });
-      }
-
-      // unlink
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
-      );
-
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 6,
-        focusPath: [0, 0, 0],
-        focusOffset: 11,
-      });
-    });
-
-    it(`Can convert part of a text node into a link with backwards selection`, async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-      await page.keyboard.type('Hello world');
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
-      );
-
-      await selectCharacters(page, 'left', 5);
-
-      // link
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
-      );
-
-      if (E2E_BROWSER === 'webkit') {
-        await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
-          anchorOffset: 5,
-          focusPath: [0, 1, 0, 0],
-          focusOffset: 0,
-        });
-      } else {
-        await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
-          anchorOffset: 5,
+          anchorOffset: 11,
           focusPath: [0, 0, 0],
           focusOffset: 6,
         });
-      }
-
-      // set url
-      await waitForSelector(page, '.link-input');
-      await click(page, '.link-edit');
-      await focus(page, '.link-input');
-      await page.keyboard.type('facebook.com');
-      await page.keyboard.press('Enter');
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
-      );
-
-      if (E2E_BROWSER === 'webkit') {
-        await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
-          anchorOffset: 5,
-          focusPath: [0, 1, 0, 0],
-          focusOffset: 0,
-        });
-      } else {
-        await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
-          anchorOffset: 5,
-          focusPath: [0, 0, 0],
-          focusOffset: 6,
-        });
-      }
-
-      // unlink
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
-      );
-
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 11,
-        focusPath: [0, 0, 0],
-        focusOffset: 6,
-      });
-    });
+      },
+    );
   });
 });

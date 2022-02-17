@@ -113,7 +113,7 @@ export function initializeE2E(runTests, config: Config = {}) {
     }
   });
 
-  if (!E2E_DEBUG) {
+  if (!E2E_DEBUG && !global.it._overridden) {
     const it = global.it;
     // if we mark the test as flaky, overwrite the original 'it' function
     // to attempt the test 10 times before actually failing
@@ -158,7 +158,8 @@ export function initializeE2E(runTests, config: Config = {}) {
       return result;
     };
     global.it = newIt;
-
+    // Preventing from overridding global.it twice (in case test suite runs initializeE2E twice)
+    newIt._overridden = true;
     newIt.skipIf = async (condition, description, test) => {
       if (typeof condition === 'function' ? condition() : !!condition) {
         it.skip(description, test);

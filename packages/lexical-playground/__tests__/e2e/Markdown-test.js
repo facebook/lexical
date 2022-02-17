@@ -115,139 +115,139 @@ describe('Markdown', () => {
       const markdownText = triggersAndExpectations[i].markdownText;
 
       if (triggersAndExpectations[i].isBlockTest === false) {
-        it(`Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`, async () => {
-          const {isRichText, page} = e2e;
+        it.skipIf(
+          e2e.isPlainText,
+          `Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`,
+          async () => {
+            const {page} = e2e;
 
-          if (!isRichText) {
-            return;
-          }
+            const text = 'x' + markdownText + 'y';
 
-          const text = 'x' + markdownText + 'y';
+            await focusEditor(page);
+            await page.keyboard.type(text);
+            await repeat(text.length, async () => {
+              await page.keyboard.press('ArrowLeft');
+            });
+            await assertSelection(page, {
+              anchorPath: [0, 0, 0],
+              anchorOffset: 0,
+              focusPath: [0, 0, 0],
+              focusOffset: 0,
+            });
 
-          await focusEditor(page);
-          await page.keyboard.type(text);
-          await repeat(text.length, async () => {
-            await page.keyboard.press('ArrowLeft');
-          });
-          await assertSelection(page, {
-            anchorPath: [0, 0, 0],
-            anchorOffset: 0,
-            focusPath: [0, 0, 0],
-            focusOffset: 0,
-          });
+            await repeat(1 + markdownText.length, async () => {
+              await page.keyboard.press('ArrowRight');
+            });
 
-          await repeat(1 + markdownText.length, async () => {
-            await page.keyboard.press('ArrowRight');
-          });
+            // Trigger markdown.
+            await page.keyboard.type(' ');
 
-          // Trigger markdown.
-          await page.keyboard.type(' ');
+            await checkHTMLExpectationsIncludingUndoRedo(
+              page,
+              triggersAndExpectations[i].expectation,
+              triggersAndExpectations[i].undoHTML,
+            );
+          },
+        );
 
-          await checkHTMLExpectationsIncludingUndoRedo(
-            page,
-            triggersAndExpectations[i].expectation,
-            triggersAndExpectations[i].undoHTML,
-          );
-        });
+        it.skipIf(
+          e2e.isPlainText,
+          `Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`,
+          async () => {
+            const {page} = e2e;
 
-        it(`Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`, async () => {
-          const {isRichText, page} = e2e;
+            const text = 'x' + markdownText + 'y';
 
-          if (!isRichText) {
-            return;
-          }
+            await focusEditor(page);
+            await page.keyboard.type(text);
+            await repeat(text.length, async () => {
+              await page.keyboard.press('ArrowLeft');
+            });
+            await assertSelection(page, {
+              anchorPath: [0, 0, 0],
+              anchorOffset: 0,
+              focusPath: [0, 0, 0],
+              focusOffset: 0,
+            });
 
-          const text = 'x' + markdownText + 'y';
+            // Select first 2 characters.
+            await page.keyboard.down('Shift');
+            await repeat(2, async () => {
+              await page.keyboard.press('ArrowRight');
+            });
+            await page.keyboard.up('Shift');
 
-          await focusEditor(page);
-          await page.keyboard.type(text);
-          await repeat(text.length, async () => {
-            await page.keyboard.press('ArrowLeft');
-          });
-          await assertSelection(page, {
-            anchorPath: [0, 0, 0],
-            anchorOffset: 0,
-            focusPath: [0, 0, 0],
-            focusOffset: 0,
-          });
+            // Make underline.
+            await keyDownCtrlOrMeta(page);
+            await page.keyboard.press('u');
+            await keyUpCtrlOrMeta(page);
 
-          // Select first 2 characters.
-          await page.keyboard.down('Shift');
-          await repeat(2, async () => {
-            await page.keyboard.press('ArrowRight');
-          });
-          await page.keyboard.up('Shift');
+            // Back to beginning.
+            await repeat(2, async () => {
+              await page.keyboard.press('ArrowLeft');
+            });
 
-          // Make underline.
-          await keyDownCtrlOrMeta(page);
-          await page.keyboard.press('u');
-          await keyUpCtrlOrMeta(page);
+            // Move to end.
+            await repeat(text.length, async () => {
+              await page.keyboard.press('ArrowRight');
+            });
 
-          // Back to beginning.
-          await repeat(2, async () => {
-            await page.keyboard.press('ArrowLeft');
-          });
+            // Select last two characters.
+            await page.keyboard.down('Shift');
+            await repeat(2, async () => {
+              await page.keyboard.press('ArrowLeft');
+            });
+            await page.keyboard.up('Shift');
 
-          // Move to end.
-          await repeat(text.length, async () => {
-            await page.keyboard.press('ArrowRight');
-          });
+            // Make underline.
+            await keyDownCtrlOrMeta(page);
+            await page.keyboard.press('u');
+            await keyUpCtrlOrMeta(page);
 
-          // Select last two characters.
-          await page.keyboard.down('Shift');
-          await repeat(2, async () => {
-            await page.keyboard.press('ArrowLeft');
-          });
-          await page.keyboard.up('Shift');
+            // Back to beginning of text.
+            await repeat(text.length, async () => {
+              await page.keyboard.press('ArrowLeft');
+            });
 
-          // Make underline.
-          await keyDownCtrlOrMeta(page);
-          await page.keyboard.press('u');
-          await keyUpCtrlOrMeta(page);
+            // Move after markdown text.
+            await repeat(1 + markdownText.length, async () => {
+              await page.keyboard.press('ArrowRight');
+            });
 
-          // Back to beginning of text.
-          await repeat(text.length, async () => {
-            await page.keyboard.press('ArrowLeft');
-          });
+            // Trigger markdown.
+            await page.keyboard.type(' ');
 
-          // Move after markdown text.
-          await repeat(1 + markdownText.length, async () => {
-            await page.keyboard.press('ArrowRight');
-          });
-
-          // Trigger markdown.
-          await page.keyboard.type(' ');
-
-          await checkHTMLExpectationsIncludingUndoRedo(
-            page,
-            triggersAndExpectations[i].stylizedExpectation,
-            triggersAndExpectations[i].stylizedUndoHTML,
-          );
-        });
+            await checkHTMLExpectationsIncludingUndoRedo(
+              page,
+              triggersAndExpectations[i].stylizedExpectation,
+              triggersAndExpectations[i].stylizedUndoHTML,
+            );
+          },
+        );
       }
 
       if (triggersAndExpectations[i].isBlockTest === true) {
-        it(`Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`, async () => {
-          const {isRichText, page} = e2e;
+        it.skipIf(
+          e2e.isPlainText,
+          `Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`,
+          async () => {
+            const {page} = e2e;
 
-          if (!isRichText) {
-            return;
-          }
+            await focusEditor(page);
 
-          await focusEditor(page);
+            await page.keyboard.type(markdownText);
 
-          await page.keyboard.type(markdownText);
+            const forwardHTML = triggersAndExpectations[i].expectation;
 
-          const forwardHTML = triggersAndExpectations[i].expectation;
+            const undoHTML = `<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">${markdownText}</span></p>`;
 
-          const undoHTML = `<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">${markdownText}</span></p>`;
-
-          await checkHTMLExpectationsIncludingUndoRedo(
-            page,
-            forwardHTML,
-            undoHTML,
-          );
-        });
+            await checkHTMLExpectationsIncludingUndoRedo(
+              page,
+              forwardHTML,
+              undoHTML,
+            );
+          },
+        );
       }
     }
   });

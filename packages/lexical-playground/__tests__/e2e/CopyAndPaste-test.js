@@ -356,572 +356,567 @@ describe('CopyAndPaste', () => {
       });
     });
 
-    it('Copy and paste of partial list items into an empty editor', async () => {
-      const {isRichText, page} = e2e;
+    it.skipIf(
+      e2e.isPlainText,
+      'Copy and paste of partial list items into an empty editor',
+      async () => {
+        const {page} = e2e;
 
-      if (!isRichText) {
-        return;
-      }
+        await focusEditor(page);
 
-      await focusEditor(page);
+        // Add three list items
+        await page.keyboard.type('- one');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('two');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('three');
 
-      // Add three list items
-      await page.keyboard.type('- one');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('two');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('three');
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Enter');
 
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Enter');
+        // Add a paragraph
+        await page.keyboard.type('Some text.');
 
-      // Add a paragraph
-      await page.keyboard.type('Some text.');
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 10,
+          focusPath: [1, 0, 0],
+          focusOffset: 10,
+        });
 
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [1, 0, 0],
-        focusOffset: 10,
-      });
+        await page.keyboard.down('Shift');
+        await moveToLineBeginning(page);
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.up('Shift');
 
-      await page.keyboard.down('Shift');
-      await moveToLineBeginning(page);
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.up('Shift');
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 10,
+          focusPath: [0, 2, 0, 0],
+          focusOffset: 3,
+        });
 
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [0, 2, 0, 0],
-        focusOffset: 3,
-      });
+        // Copy the partial list item and paragraph
+        const clipboard = await copyToClipboard(page);
 
-      // Copy the partial list item and paragraph
-      const clipboard = await copyToClipboard(page);
+        // Select all and remove content
+        await selectAll(page);
+        await page.keyboard.press('Backspace');
+        await page.keyboard.press('Backspace');
 
-      // Select all and remove content
-      await selectAll(page);
-      await page.keyboard.press('Backspace');
-      await page.keyboard.press('Backspace');
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0],
+          anchorOffset: 0,
+          focusPath: [0],
+          focusOffset: 0,
+        });
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0],
-        anchorOffset: 0,
-        focusPath: [0],
-        focusOffset: 0,
-      });
+        // Paste
 
-      // Paste
+        await pasteFromClipboard(page, clipboard);
 
-      await pasteFromClipboard(page, clipboard);
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">ee</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 10,
+          focusPath: [1, 0, 0],
+          focusOffset: 10,
+        });
+      },
+    );
 
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">ee</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [1, 0, 0],
-        focusOffset: 10,
-      });
-    });
+    it.skipIf(
+      e2e.isPlainText,
+      'Copy and paste of partial list items into the list',
+      async () => {
+        const {page} = e2e;
 
-    it('Copy and paste of partial list items into the list', async () => {
-      const {isRichText, page} = e2e;
+        await focusEditor(page);
 
-      if (!isRichText) {
-        return;
-      }
+        // Add three list items
+        await page.keyboard.type('- one');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('two');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('three');
 
-      await focusEditor(page);
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Enter');
 
-      // Add three list items
-      await page.keyboard.type('- one');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('two');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('three');
+        // Add a paragraph
+        await page.keyboard.type('Some text.');
 
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Enter');
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 10,
+          focusPath: [1, 0, 0],
+          focusOffset: 10,
+        });
 
-      // Add a paragraph
-      await page.keyboard.type('Some text.');
+        await page.keyboard.down('Shift');
+        await moveToLineBeginning(page);
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.up('Shift');
 
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [1, 0, 0],
-        focusOffset: 10,
-      });
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 10,
+          focusPath: [0, 2, 0, 0],
+          focusOffset: 3,
+        });
 
-      await page.keyboard.down('Shift');
-      await moveToLineBeginning(page);
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.up('Shift');
+        // Copy the partial list item and paragraph
+        const clipboard = await copyToClipboard(page);
 
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [0, 2, 0, 0],
-        focusOffset: 3,
-      });
-
-      // Copy the partial list item and paragraph
-      const clipboard = await copyToClipboard(page);
-
-      // Select all and remove content
-      await page.keyboard.press('ArrowUp');
-      await page.keyboard.press('ArrowUp');
-      if (!IS_WINDOWS && E2E_BROWSER === 'firefox') {
+        // Select all and remove content
         await page.keyboard.press('ArrowUp');
-      }
-      await moveToLineEnd(page);
-
-      await page.keyboard.down('Enter');
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 1],
-        anchorOffset: 0,
-        focusPath: [0, 1],
-        focusOffset: 0,
-      });
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">ee</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 10,
-        focusPath: [1, 0, 0],
-        focusOffset: 10,
-      });
-    });
-
-    it('Copy and paste of list items and paste back into list', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      await page.keyboard.type('- one');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('two');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('three');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('four');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('five');
-
-      await page.keyboard.press('ArrowUp');
-      await page.keyboard.press('ArrowUp');
-
-      await moveToLineBeginning(page);
-      await page.keyboard.down('Shift');
-      await page.keyboard.press('ArrowDown');
-      await moveToLineEnd(page);
-      await page.keyboard.up('Shift');
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 2, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 3, 0, 0],
-        focusOffset: 4,
-      });
-
-      const clipboard = await copyToClipboard(page);
-
-      await page.keyboard.press('Backspace');
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 2],
-        anchorOffset: 0,
-        focusPath: [0, 2],
-        focusOffset: 0,
-      });
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 3, 0, 0],
-        anchorOffset: 4,
-        focusPath: [0, 3, 0, 0],
-        focusOffset: 4,
-      });
-    });
-
-    it('Copy and paste of list items and paste back into list on an existing item', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      await page.keyboard.type('- one');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('two');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('three');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('four');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('five');
-
-      await page.keyboard.press('ArrowUp');
-      await page.keyboard.press('ArrowUp');
-
-      await moveToLineBeginning(page);
-      await page.keyboard.down('Shift');
-      await page.keyboard.press('ArrowDown');
-      await moveToLineEnd(page);
-      await page.keyboard.up('Shift');
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 2, 0, 0],
-        anchorOffset: 0,
-        focusPath: [0, 3, 0, 0],
-        focusOffset: 4,
-      });
-
-      const clipboard = await copyToClipboard(page);
-
-      await page.keyboard.press('ArrowRight');
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 3, 0, 0],
-        anchorOffset: 4,
-        focusPath: [0, 3, 0, 0],
-        focusOffset: 4,
-      });
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">fourthree</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="6" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 4, 0, 0],
-        anchorOffset: 4,
-        focusPath: [0, 4, 0, 0],
-        focusOffset: 4,
-      });
-    });
-
-    it('Copy and paste two paragraphs into list on an existing item', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      await page.keyboard.type('Hello');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('World');
-
-      await selectAll(page);
-
-      const clipboard = await copyToClipboard(page);
-
-      await page.keyboard.press('Backspace');
-
-      await page.keyboard.type('- one');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('two');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('three');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('four');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('five');
-
-      await page.keyboard.press('ArrowUp');
-      await page.keyboard.press('ArrowUp');
-
-      await moveToLineBeginning(page);
-      await page.keyboard.press('ArrowDown');
-      await moveToLineEnd(page);
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 3, 0, 0],
-        anchorOffset: 2,
-        focusPath: [0, 3, 0, 0],
-        focusOffset: 2,
-      });
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">foHello</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Worldur</span></p><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 5,
-        focusPath: [1, 0, 0],
-        focusOffset: 5,
-      });
-    });
-
-    it('Copy and paste two paragraphs at the end of a list', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      await page.keyboard.type('Hello');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('World');
-
-      await selectAll(page);
-
-      const clipboard = await copyToClipboard(page);
-
-      await page.keyboard.press('Backspace');
-
-      await page.keyboard.type('- one');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('two');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('three');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('four');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('five');
-      await page.keyboard.press('Enter');
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li><li value="6" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">World</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [1, 0, 0],
-        anchorOffset: 5,
-        focusPath: [1, 0, 0],
-        focusOffset: 5,
-      });
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li><li value="6" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">WorldHello</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">World</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [2, 0, 0],
-        anchorOffset: 5,
-        focusPath: [2, 0, 0],
-        focusOffset: 5,
-      });
-    });
-
-    it('Copy and paste an inline element into a leaf node', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      // Root
-      //   |- Paragraph
-      //      |- Link
-      //         |- Text "Hello"
-      //      |- Text "World"
-      await page.keyboard.type('Hello');
-      await selectAll(page);
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('Space');
-      await page.keyboard.type('World');
-
-      await selectAll(page);
-
-      const clipboard = await copyToClipboard(page);
-
-      await page.keyboard.press('ArrowRight');
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true"> World</span><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true"> World</span></p>',
-      );
-    });
-
-    it('HTML Copy + paste a plain DOM text node', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      const clipboard = {'text/html': 'Hello!'};
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello!</span></p>',
-      );
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0],
-        anchorOffset: 6,
-        focusPath: [0, 0, 0],
-        focusOffset: 6,
-      });
-    });
-
-    it('HTML Copy + paste a paragraph element', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      const clipboard = {'text/html': '<p>Hello!<p>'};
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello!</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"></br></p>',
-      );
-
-      await assertSelection(page, {
-        anchorPath: [1],
-        anchorOffset: 0,
-        focusPath: [1],
-        focusOffset: 0,
-      });
-    });
-
-    it('HTML Copy + paste an anchor element', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
-
-      await focusEditor(page);
-
-      const clipboard = {
-        'text/html': '<a href="https://facebook.com">Facebook!</a>',
-      };
-
-      await pasteFromClipboard(page, clipboard);
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><a class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr" href="https://facebook.com/"><span data-lexical-text="true">Facebook!</span></a></p>',
-      );
-
-      await assertSelection(page, {
-        anchorPath: [0, 0, 0, 0],
-        anchorOffset: 9,
-        focusPath: [0, 0, 0, 0],
-        focusOffset: 9,
-      });
-
-      await selectAll(page);
-
-      await waitForSelector(page, '.link');
-      await click(page, '.link');
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">Facebook!</span></p>',
-      );
-
-      await click(page, '.link');
-      await waitForSelector(page, '.link-input');
-      await click(page, '.link-edit');
-      await focus(page, '.link-input');
-      await page.keyboard.type('facebook.com');
-      await page.keyboard.press('Enter');
-
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Facebook!</span></a></p>',
-      );
-    });
-
-    it('HTML Copy + paste a list element', async () => {
-      const {isRichText, page} = e2e;
-
-      if (!isRichText) {
-        return;
-      }
+        await page.keyboard.press('ArrowUp');
+        if (!IS_WINDOWS && E2E_BROWSER === 'firefox') {
+          await page.keyboard.press('ArrowUp');
+        }
+        await moveToLineEnd(page);
+
+        await page.keyboard.down('Enter');
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 1],
+          anchorOffset: 0,
+          focusPath: [0, 1],
+          focusOffset: 0,
+        });
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">ee</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 10,
+          focusPath: [1, 0, 0],
+          focusOffset: 10,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'Copy and paste of list items and paste back into list',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        await page.keyboard.type('- one');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('two');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('three');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('four');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('five');
+
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('ArrowUp');
+
+        await moveToLineBeginning(page);
+        await page.keyboard.down('Shift');
+        await page.keyboard.press('ArrowDown');
+        await moveToLineEnd(page);
+        await page.keyboard.up('Shift');
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 3, 0, 0],
+          focusOffset: 4,
+        });
+
+        const clipboard = await copyToClipboard(page);
+
+        await page.keyboard.press('Backspace');
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 2],
+          anchorOffset: 0,
+          focusPath: [0, 2],
+          focusOffset: 0,
+        });
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 3, 0, 0],
+          anchorOffset: 4,
+          focusPath: [0, 3, 0, 0],
+          focusOffset: 4,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'Copy and paste of list items and paste back into list on an existing item',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        await page.keyboard.type('- one');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('two');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('three');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('four');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('five');
+
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('ArrowUp');
+
+        await moveToLineBeginning(page);
+        await page.keyboard.down('Shift');
+        await page.keyboard.press('ArrowDown');
+        await moveToLineEnd(page);
+        await page.keyboard.up('Shift');
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 2, 0, 0],
+          anchorOffset: 0,
+          focusPath: [0, 3, 0, 0],
+          focusOffset: 4,
+        });
+
+        const clipboard = await copyToClipboard(page);
+
+        await page.keyboard.press('ArrowRight');
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 3, 0, 0],
+          anchorOffset: 4,
+          focusPath: [0, 3, 0, 0],
+          focusOffset: 4,
+        });
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">fourthree</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="6" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 4, 0, 0],
+          anchorOffset: 4,
+          focusPath: [0, 4, 0, 0],
+          focusOffset: 4,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'Copy and paste two paragraphs into list on an existing item',
+      async () => {
+        const {page} = e2e;
+        await focusEditor(page);
+
+        await page.keyboard.type('Hello');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('World');
+
+        await selectAll(page);
+
+        const clipboard = await copyToClipboard(page);
+
+        await page.keyboard.press('Backspace');
+
+        await page.keyboard.type('- one');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('two');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('three');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('four');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('five');
+
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('ArrowUp');
+
+        await moveToLineBeginning(page);
+        await page.keyboard.press('ArrowDown');
+        await moveToLineEnd(page);
+        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowLeft');
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 3, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 3, 0, 0],
+          focusOffset: 2,
+        });
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">foHello</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Worldur</span></p><ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [1, 0, 0],
+          focusOffset: 5,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'Copy and paste two paragraphs at the end of a list',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        await page.keyboard.type('Hello');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('World');
+
+        await selectAll(page);
+
+        const clipboard = await copyToClipboard(page);
+
+        await page.keyboard.press('Backspace');
+
+        await page.keyboard.type('- one');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('two');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('three');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('four');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('five');
+        await page.keyboard.press('Enter');
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li><li value="6" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">World</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [1, 0, 0],
+          anchorOffset: 5,
+          focusPath: [1, 0, 0],
+          focusOffset: 5,
+        });
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">five</span></li><li value="6" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></li></ul><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">WorldHello</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">World</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [2, 0, 0],
+          anchorOffset: 5,
+          focusPath: [2, 0, 0],
+          focusOffset: 5,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'Copy and paste an inline element into a leaf node',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        // Root
+        //   |- Paragraph
+        //      |- Link
+        //         |- Text "Hello"
+        //      |- Text "World"
+        await page.keyboard.type('Hello');
+        await selectAll(page);
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('Space');
+        await page.keyboard.type('World');
+
+        await selectAll(page);
+
+        const clipboard = await copyToClipboard(page);
+
+        await page.keyboard.press('ArrowRight');
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true"> World</span><a href="https://" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true"> World</span></p>',
+        );
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'HTML Copy + paste a plain DOM text node',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        const clipboard = {'text/html': 'Hello!'};
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello!</span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0],
+          anchorOffset: 6,
+          focusPath: [0, 0, 0],
+          focusOffset: 6,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'HTML Copy + paste a paragraph element',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        const clipboard = {'text/html': '<p>Hello!<p>'};
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello!</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"></br></p>',
+        );
+
+        await assertSelection(page, {
+          anchorPath: [1],
+          anchorOffset: 0,
+          focusPath: [1],
+          focusOffset: 0,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'HTML Copy + paste an anchor element',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        const clipboard = {
+          'text/html': '<a href="https://facebook.com">Facebook!</a>',
+        };
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><a class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr" href="https://facebook.com/"><span data-lexical-text="true">Facebook!</span></a></p>',
+        );
+
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0, 0],
+          anchorOffset: 9,
+          focusPath: [0, 0, 0, 0],
+          focusOffset: 9,
+        });
+
+        await selectAll(page);
+
+        await waitForSelector(page, '.link');
+        await click(page, '.link');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">Facebook!</span></p>',
+        );
+
+        await click(page, '.link');
+        await waitForSelector(page, '.link-input');
+        await click(page, '.link-edit');
+        await focus(page, '.link-input');
+        await page.keyboard.type('facebook.com');
+        await page.keyboard.press('Enter');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><a href="https://facebook.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Facebook!</span></a></p>',
+        );
+      },
+    );
+
+    it.skipIf(e2e.isPlainText, 'HTML Copy + paste a list element', async () => {
+      const {page} = e2e;
 
       await focusEditor(page);
 

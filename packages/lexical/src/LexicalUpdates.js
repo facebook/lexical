@@ -256,7 +256,6 @@ export function parseEditorState(
   const previousActiveEditorState = editorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
-  const previousMutatedNodes = new Map(editor._mutatedNodes);
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
@@ -275,7 +274,6 @@ export function parseEditorState(
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;
     activeEditor = previousActiveEditor;
-    editor._mutatedNodes = previousMutatedNodes;
   }
   editorState._selection = internalCreateSelectionFromParse(
     nodeParserState.remappedSelection || nodeParserState.originalSelection,
@@ -399,7 +397,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
-    editor._mutatedNodes = new Map();
     editor._normalizedNodes = new Set();
     editor._updateTags = new Set();
   }
@@ -611,7 +608,6 @@ function beginUpdate(
         pendingEditorState,
         editor._dirtyLeaves,
         editor._dirtyElements,
-        editor._mutatedNodes,
         editor._nodes,
       );
     }
@@ -644,7 +640,6 @@ function beginUpdate(
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements.clear();
-    editor._mutatedNodes = new Map();
     editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;

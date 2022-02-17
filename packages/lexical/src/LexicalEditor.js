@@ -215,7 +215,6 @@ export function resetEditor(
   editor._cloneNotNeeded.clear();
   editor._dirtyLeaves = new Set();
   editor._dirtyElements.clear();
-  editor._mutatedNodes = new Map();
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._updates = [];
@@ -316,7 +315,6 @@ class BaseLexicalEditor {
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
-  _mutatedNodes: MutatedNodes;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
@@ -364,7 +362,6 @@ class BaseLexicalEditor {
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
-    this._mutatedNodes = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
     // Handling of DOM mutations
@@ -625,7 +622,6 @@ declare export class LexicalEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _mutatedNodes: MutatedNodes;
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;

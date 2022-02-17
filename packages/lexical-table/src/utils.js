@@ -141,7 +141,7 @@ export function $insertTableRow(
       for (let j = 0; j < tableColumnCount; j++) {
         const tableCellNode = $createTableCellNode(false);
 
-        tableCellNode.append($createTextNode());
+        tableCellNode.append($createParagraphNode());
         newTableRowNode.append(tableCellNode);
       }
 
@@ -172,7 +172,7 @@ export function $insertTableColumn(
       for (let j = 0; j < columnCount; j++) {
         const newTableCell = $createTableCellNode(i === 0);
 
-        newTableCell.append($createTextNode());
+        newTableCell.append($createParagraphNode());
 
         const tableRowChildren = currentTableRowNode.getChildren();
 

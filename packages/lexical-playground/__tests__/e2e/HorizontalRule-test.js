@@ -36,11 +36,6 @@ describe('HorizontalRule', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br /></p><hr contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br /></p>',
-        );
-
-        await assertHTML(
-          page,
           '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
         );
 
@@ -96,73 +91,6 @@ describe('HorizontalRule', () => {
           '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text</span></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some more text</span></p>',
         );
 
-        await assertSelection(page, {
-          anchorPath: [0],
-          anchorOffset: 0,
-          focusPath: [0],
-          focusOffset: 0,
-        });
-
-        await page.keyboard.press('ArrowRight');
-
-        await assertSelection(page, {
-          anchorPath: [2],
-          anchorOffset: 0,
-          focusPath: [2],
-          focusOffset: 0,
-        });
-
-        await page.keyboard.press('ArrowLeft');
-
-        await assertSelection(page, {
-          anchorPath: [0],
-          anchorOffset: 0,
-          focusPath: [0],
-          focusOffset: 0,
-        });
-
-        await repeat(10, async () => {
-          await page.keyboard.press('Backspace');
-        });
-
-        await assertHTML(
-          page,
-          '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some more text</span></p>',
-        );
-
-        await assertSelection(page, {
-          anchorPath: [],
-          anchorOffset: 0,
-          focusPath: [],
-          focusOffset: 0,
-        });
-      },
-    );
-
-    it.skipIf(
-      e2e.isPlainText,
-      'Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.',
-      async () => {
-        const {page} = e2e;
-
-        await page.keyboard.type('Some text');
-
-        await page.keyboard.press('ArrowRight');
-
-        await assertSelection(page, {
-          anchorPath: [2],
-          anchorOffset: 0,
-          focusPath: [2],
-          focusOffset: 0,
-        });
-
-        await page.keyboard.type('Some more text');
-
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some text</span></p><hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some more text</span></p>',
-        );
-
         await moveToLineBeginning(page);
 
         await page.keyboard.press('ArrowLeft');
@@ -182,6 +110,22 @@ describe('HorizontalRule', () => {
             focusOffset: 1,
           });
         }
+
+        await repeat(10, async () => {
+          await page.keyboard.press('Backspace');
+        });
+
+        await assertHTML(
+          page,
+          '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Some more text</span></p>',
+        );
+
+        await assertSelection(page, {
+          anchorPath: [],
+          anchorOffset: 0,
+          focusPath: [],
+          focusOffset: 0,
+        });
       },
     );
 
@@ -211,14 +155,11 @@ describe('HorizontalRule', () => {
 
         await click(page, 'button .horizontal-rule');
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-        );
+        await waitForSelector(page, 'hr');
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p><hr contenteditable="false"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Test</span></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
         );
 
         await assertSelection(page, {

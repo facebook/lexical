@@ -16,7 +16,7 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$createParagraphNode, $getSelection} from 'lexical';
+import {$createParagraphNode, $getSelection, $isRootNode} from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -41,12 +41,22 @@ export default function TablePlugin(): React$Node {
           if (selection === null) {
             return true;
           }
-          const focusNode = selection.focus.getNode();
+          const focus = selection.focus;
+          const focusNode = focus.getNode();
 
           if (focusNode !== null) {
-            const topLevelNode = focusNode.getTopLevelElementOrThrow();
             const tableNode = $createTableNodeWithDimensions(rows, columns);
-            topLevelNode.insertAfter(tableNode);
+            if ($isRootNode(focusNode)) {
+              const target = focusNode.getChildAtIndex(focus.offset);
+              if (target !== null) {
+                target.insertBefore(tableNode);
+              } else {
+                focusNode.append(tableNode);
+              }
+            } else {
+              const topLevelNode = focusNode.getTopLevelElementOrThrow();
+              topLevelNode.insertAfter(tableNode);
+            }
             tableNode.insertAfter($createParagraphNode());
             const firstCell = tableNode
               .getFirstChildOrThrow<ElementNode>()

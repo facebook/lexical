@@ -292,6 +292,10 @@ export class DecoratorNode extends LexicalNode {
   isIsolated(): boolean {
     return false;
   }
+
+  isTopLevel(): boolean {
+    return false;
+  }
 }
 
 export function $isDecoratorNode(node: ?LexicalNode): boolean %checks {

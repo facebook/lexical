@@ -13,7 +13,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection} from 'lexical';
 import {useEffect} from 'react';
 
-import {$createHorizontalRuleNode} from '../nodes/HorizontalRuleNode';
+import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

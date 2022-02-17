@@ -90,6 +90,7 @@ module.exports = {
         'LexicalAutoLinkPlugin',
         'LexicalListPlugin',
         'LexicalOnChangePlugin',
+        'LexicalHorizontalRuleNode',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

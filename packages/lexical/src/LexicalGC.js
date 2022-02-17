@@ -11,7 +11,6 @@ import type {ElementNode} from '.';
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
-  RegisteredNodes,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {NodeKey, NodeMap} from './LexicalNode';
@@ -44,7 +43,6 @@ function $garbageCollectDetachedDeepChildNodes(
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-  registeredNodes: RegisteredNodes,
 ): void {
   const children = node.__children;
   const childrenLength = children.length;
@@ -59,7 +57,6 @@ function $garbageCollectDetachedDeepChildNodes(
           prevNodeMap,
           nodeMap,
           dirtyNodes,
-          registeredNodes,
         );
       }
       // If we have created a node and it was dereferenced, then also
@@ -77,7 +74,6 @@ export function $garbageCollectDetachedNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-  registeredNodes: RegisteredNodes,
 ): void {
   const dirtyLeavesArr = Array.from(dirtyLeaves);
   const dirtyLeavesLength = dirtyLeavesArr.length;
@@ -112,7 +108,6 @@ export function $garbageCollectDetachedNodes(
             prevNodeMap,
             nodeMap,
             dirtyElements,
-            registeredNodes,
           );
         }
         // If we have created a node and it was dereferenced, then also

@@ -608,7 +608,6 @@ function beginUpdate(
         pendingEditorState,
         editor._dirtyLeaves,
         editor._dirtyElements,
-        editor._nodes,
       );
     }
     const endingCompositionKey = editor._compositionKey;

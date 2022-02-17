@@ -15,7 +15,7 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function useLexicalEditor(
   editor: LexicalEditor,
-  onError: (error: Error, log: Array<string>) => void,
+  onError: (error: Error) => void,
 ): [(null | HTMLElement) => void, boolean] {
   const showPlaceholder = useLexicalCanShowPlaceholder(editor);
   const rootElementRef = useCallback(

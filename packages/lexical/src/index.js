@@ -21,7 +21,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $isLeafNode,
-  $pushLogEntry as $log,
   $setCompositionKey,
   $setSelection,
 } from './LexicalUtils';
@@ -105,7 +104,6 @@ export {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
-  $log,
   $setCompositionKey,
   $setSelection,
   createDecoratorArray,

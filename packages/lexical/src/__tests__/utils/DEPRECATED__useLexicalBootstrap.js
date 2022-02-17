@@ -12,7 +12,7 @@ import type {
   RootNode,
 } from 'lexical';
 
-import {$createParagraphNode, $getRoot, $getSelection, $log} from 'lexical';
+import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 import {useLayoutEffect} from 'react';
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {
@@ -33,7 +33,6 @@ function initParagraph(root: RootNode, editor: LexicalEditor): void {
 
 function initEditor(editor: LexicalEditor): void {
   editor.update(() => {
-    $log('initEditor');
     const root = $getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild === null) {
@@ -48,7 +47,6 @@ function clearEditor(
 ): void {
   editor.update(
     () => {
-      $log('clearEditor');
       const root = $getRoot();
       root.clear();
       initParagraph(root, editor);

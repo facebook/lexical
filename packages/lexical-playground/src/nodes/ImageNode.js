@@ -17,12 +17,7 @@ import type {
 } from 'lexical';
 
 import * as React from 'react';
-import {
-  DecoratorNode,
-  $log,
-  $getNodeByKey,
-  createDecoratorEditor,
-} from 'lexical';
+import {DecoratorNode, $getNodeByKey, createDecoratorEditor} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   useCollaborationContext,
@@ -354,7 +349,6 @@ function ImageComponent({
   const handleKeyDown = (event) => {
     if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
       editor.update(() => {
-        $log('Image.keyDown');
         const node = $getNodeByKey(nodeKey);
         if ($isImageNode(node)) {
           node.remove();
@@ -382,7 +376,6 @@ function ImageComponent({
       }
       setIsResizing(false);
       editor.update(() => {
-        $log('ImageNode.resize');
         const node = $getNodeByKey(nodeKey);
         if ($isImageNode(node)) {
           node.setWidthAndHeight(nextWidth, nextHeight);

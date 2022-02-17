@@ -16,7 +16,7 @@ import type {
 } from 'lexical';
 
 import * as React from 'react';
-import {DecoratorNode, $log, $getNodeByKey} from 'lexical';
+import {DecoratorNode, $getNodeByKey} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useCallback, useState} from 'react';
 import ExcalidrawModal from './ExcalidrawModal';
@@ -40,7 +40,6 @@ function ExcalidrawComponent({
       event.key === 'Delete'
     ) {
       editor.update(() => {
-        $log('Excalidraw.keyDown');
         const node = $getNodeByKey(nodeKey);
         if ($isExcalidrawNode(node)) {
           node.remove();

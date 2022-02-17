@@ -14,7 +14,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
-import {$log, $getRoot} from 'lexical';
+import {$getRoot} from 'lexical';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
 import {importFile, exportFile} from '@lexical/file';
 
@@ -51,7 +51,6 @@ export default function ActionsPlugins({
 
   const insertSticky = useCallback(() => {
     editor.update(() => {
-      $log('insertSticky');
       const root = $getRoot();
       const stickyNode = $createStickyNode(0, 0);
       root.append(stickyNode);

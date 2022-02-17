@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {$log, $getSelection} from 'lexical';
+import {$getSelection} from 'lexical';
 import {$createPollNode, PollNode} from '../nodes/PollNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -27,7 +27,6 @@ export default function PollPlugin(): React$Node {
       'command',
       (type, payload) => {
         if (type === 'insertPoll') {
-          $log('insertImage');
           const selection = $getSelection();
           if (selection !== null) {
             const question: string = payload;

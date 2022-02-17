@@ -15,7 +15,6 @@ import {
   $isTextNode,
   $isElementNode,
   TextNode,
-  $log,
   $getNodeByKey,
   $getSelection,
   $getRoot,
@@ -59,7 +58,6 @@ function useTypeahead(editor: LexicalEditor): void {
   const renderTypeahead = useCallback(() => {
     editor.update(
       () => {
-        $log('useTypeahead');
         const currentTypeaheadNode = getTypeaheadTextNode();
 
         function maybeRemoveTypeahead() {
@@ -168,7 +166,6 @@ function useTypeahead(editor: LexicalEditor): void {
       const handleEvent = (event: KeyboardEvent) => {
         if (event.key === 'Tab' || event.key === 'ArrowRight') {
           editor.update(() => {
-            $log('useTypeahead');
             const typeaheadTextNode = getTypeaheadTextNode();
             const prevTextNode = typeaheadTextNode?.getPreviousSibling();
             // Make sure that the Typeahead is visible and previous child writable

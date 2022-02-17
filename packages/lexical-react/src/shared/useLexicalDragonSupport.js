@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {$getSelection, $isTextNode, $log} from 'lexical';
+import {$getSelection, $isTextNode} from 'lexical';
 import {useEffect} from 'react';
 
 export default function useLexicalDragonSupport(editor: LexicalEditor) {
@@ -48,7 +48,6 @@ export default function useLexicalDragonSupport(editor: LexicalEditor) {
               // eslint-disable-next-line no-unused-expressions
               formatCommand;
               editor.update(() => {
-                $log('useLexicalDragonSupport');
                 const selection = $getSelection();
                 if (selection !== null) {
                   const anchor = selection.anchor;

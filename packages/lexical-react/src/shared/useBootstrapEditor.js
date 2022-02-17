@@ -13,7 +13,7 @@ import type {
   RootNode,
 } from 'lexical';
 
-import {$createParagraphNode, $getRoot, $getSelection, $log} from 'lexical';
+import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const BootstrapPriority: CommandListenerEditorPriority = 0;
@@ -53,7 +53,6 @@ function initEditor(
   initialPayloadFn: (LexicalEditor) => void,
 ): void {
   editor.update(() => {
-    $log('initEditor');
     initialPayloadFn(editor);
   });
 }
@@ -65,7 +64,6 @@ function clearEditor(
 ): void {
   editor.update(
     () => {
-      $log('clearEditor');
       clearEditorFn(editor);
     },
     {

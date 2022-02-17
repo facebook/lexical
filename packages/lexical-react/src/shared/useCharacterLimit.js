@@ -17,7 +17,6 @@ import {
   $getSelection,
   $isLeafNode,
   $isTextNode,
-  $log,
   $setSelection,
 } from 'lexical';
 import {
@@ -77,7 +76,6 @@ export function useCharacterLimit(
           const offset = findOffset(text, maxCharacters, strlen);
           editor.update(
             () => {
-              $log('CharacterLimit');
               $wrapOverflowedNodes(offset);
             },
             {

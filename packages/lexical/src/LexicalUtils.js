@@ -299,11 +299,6 @@ export function cloneDecorators(editor: LexicalEditor): {[NodeKey]: ReactNode} {
   return pendingDecorators;
 }
 
-export function $pushLogEntry(entry: string): void {
-  const editor = getActiveEditor();
-  editor._log.push(entry);
-}
-
 export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read((view) => $getRoot().getTextContent());
 }

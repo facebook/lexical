@@ -23,7 +23,6 @@ import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
-  $pushLogEntry,
   $updateTextNodeFromDOMContent,
   getNodeFromDOMNode,
 } from './LexicalUtils';
@@ -94,7 +93,6 @@ export function $flushMutations(
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
   try {
     updateEditor(editor, () => {
-      $pushLogEntry('onMutation');
       const badDOMTargets = new Map();
       const rootElement = editor.getRootElement();
       // We use the current edtior state, as that reflects what is

@@ -61,7 +61,9 @@ export type NodeTransformationKind =
   | 'paragraphUnorderedList'
   | 'paragraphOrderedList'
   | 'paragraphCodeBlock'
-  | 'textBold';
+  | 'textBold'
+  | 'textItalic'
+  | 'textStrikethrough';
 
 // The scanning context provides the overall data structure for
 // locating a auto formatting candidate and then transforming that candidate

@@ -17,6 +17,7 @@ import {TypeaheadNode} from './TypeaheadNode';
 import {ImageNode} from './ImageNode';
 import {KeywordNode} from './KeywordNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
+import {HorizontalRuleNode} from './HorizontalRuleNode';
 import ExtendedNodes from 'lexical/ExtendedNodes';
 
 const PlaygroundNodes: Array<Class<LexicalNode>> = [
@@ -29,6 +30,7 @@ const PlaygroundNodes: Array<Class<LexicalNode>> = [
   ExcalidrawNode,
   TypeaheadNode,
   KeywordNode,
+  HorizontalRuleNode,
 ];
 
 export default PlaygroundNodes;

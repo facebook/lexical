@@ -8,7 +8,6 @@
  */
 
 import type {LexicalNode} from '../../LexicalNode';
-import type {RangeSelection} from '../../LexicalSelection';
 
 import invariant from 'shared/invariant';
 
@@ -33,6 +32,13 @@ export class RootNode extends ElementNode {
     this.__cachedText = null;
   }
 
+  getTopLevelElementOrThrow(): RootNode {
+    invariant(
+      false,
+      'getTopLevelElementOrThrow: root nodes are not top level elements',
+    );
+  }
+
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     const cachedText = this.__cachedText;
     if (
@@ -49,18 +55,11 @@ export class RootNode extends ElementNode {
     return super.getTextContent(includeInert, includeDirectionless);
   }
 
-  select(): RangeSelection {
-    // You can't select root nodes.
-    invariant(false, 'select: cannot be called on root nodes');
-  }
-
   remove(): void {
-    // You can't select root nodes.
     invariant(false, 'remove: cannot be called on root nodes');
   }
 
   replace<N: LexicalNode>(node: N): N {
-    // You can't select root nodes.
     invariant(false, 'replace: cannot be called on root nodes');
   }
 
@@ -91,10 +90,6 @@ export class RootNode extends ElementNode {
       }
     }
     return super.append(...nodesToAppend);
-  }
-
-  canBeEmpty(): false {
-    return false;
   }
 }
 

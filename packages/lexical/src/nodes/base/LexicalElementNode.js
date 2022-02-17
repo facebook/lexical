@@ -468,9 +468,6 @@ export class ElementNode extends LexicalNode {
   isInline(): boolean {
     return false;
   }
-  canSelectionRemove(): boolean {
-    return true;
-  }
   canMergeWith(node: ElementNode): boolean {
     return false;
   }

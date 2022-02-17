@@ -24,7 +24,6 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
-import {$isHorizontalRuleNode} from 'lexical';
 import {
   $log,
   $getNodeByKey,
@@ -530,7 +529,7 @@ export default function ToolbarPlugin(): React$Node {
     if (selection !== null) {
       const anchorNode = selection.anchor.getNode();
       const element =
-        anchorNode.getKey() === 'root' || $isHorizontalRuleNode(anchorNode)
+        anchorNode.getKey() === 'root'
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();

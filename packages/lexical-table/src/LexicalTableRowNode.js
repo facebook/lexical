@@ -40,10 +40,6 @@ export class TableRowNode extends ElementNode {
   canBeEmpty(): false {
     return false;
   }
-
-  canSelectionRemove(): boolean {
-    return false;
-  }
 }
 
 export function $createTableRowNode(): TableRowNode {

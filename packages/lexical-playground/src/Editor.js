@@ -29,7 +29,6 @@ import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
-import HorizontalRulePlugin from '@lexical/react/LexicalHorizontalRulePlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import Placeholder from './ui/Placeholder';
@@ -39,6 +38,7 @@ import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import PollPlugin from './plugins/PollPlugin';
+import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 
 import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
 import {useSettings} from './context/SettingsContext';

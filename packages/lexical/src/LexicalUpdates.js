@@ -479,7 +479,7 @@ function triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
   if (queuedUpdates.length !== 0) {
     const [updateFn, options] = queuedUpdates.shift();
-    beginUpdate(editor, updateFn, false, options);
+    beginUpdate(editor, updateFn, options);
   }
 }
 
@@ -530,7 +530,6 @@ function processNestedUpdates(editor: LexicalEditor): boolean {
 function beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
-  skipEmptyCheck: boolean,
   options?: EditorUpdateOptions,
 ): void {
   const updateTags = editor._updateTags;
@@ -577,12 +576,6 @@ function beginUpdate(
     skipTransforms = processNestedUpdates(editor);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
-      if (!skipEmptyCheck && pendingEditorState.isEmpty()) {
-        invariant(
-          false,
-          'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
-        );
-      }
       if (skipTransforms) {
         $normalizeAllDirtyTextNodes(pendingEditorState, editor);
       } else {
@@ -662,12 +655,11 @@ function beginUpdate(
 export function updateEditor(
   editor: LexicalEditor,
   updateFn: () => void,
-  skipEmptyCheck: boolean,
   options?: EditorUpdateOptions,
 ): void {
   if (editor._updating) {
     editor._updates.push([updateFn, options]);
   } else {
-    beginUpdate(editor, updateFn, skipEmptyCheck, options);
+    beginUpdate(editor, updateFn, options);
   }
 }

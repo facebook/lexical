@@ -10,8 +10,10 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createHorizontalRuleNode, $getSelection, $log} from 'lexical';
+import {$getSelection, $log} from 'lexical';
 import {useEffect} from 'react';
+
+import {$createHorizontalRuleNode} from '../nodes/HorizontalRuleNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

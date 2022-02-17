@@ -372,6 +372,10 @@ export class StickyNode extends DecoratorNode {
       document.body,
     );
   }
+
+  isIsolated(): true {
+    return true;
+  }
 }
 
 export function $isStickyNode(node: ?LexicalNode): boolean %checks {

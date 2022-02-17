@@ -7,35 +7,39 @@
  * @flow strict
  */
 
-import type {NodeKey} from '../../LexicalNode';
+import type {LexicalNode} from 'lexical';
 
-import {LexicalNode} from '../../LexicalNode';
+import {DecoratorNode} from 'lexical';
+import * as React from 'react';
 
-export class HorizontalRuleNode extends LexicalNode {
+function HorizontalRuleComponent() {
+  return <hr />;
+}
+
+export class HorizontalRuleNode extends DecoratorNode {
   static getType(): string {
     return 'horizontalrule';
   }
 
   static clone(node: HorizontalRuleNode): HorizontalRuleNode {
-    return new HorizontalRuleNode(node.__key);
+    return new HorizontalRuleNode(node.__state, node.__key);
   }
 
-  constructor(key?: NodeKey): void {
-    super(key);
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    div.style.display = 'contents';
+    return div;
   }
 
   getTextContent(): '\n' {
     return '\n';
   }
 
-  createDOM(): HTMLElement {
-    const element = document.createElement('hr');
-    element.setAttribute('contenteditable', 'false');
-    return element;
-  }
-
   updateDOM(): false {
     return false;
+  }
+  decorate(): React$Node {
+    return <HorizontalRuleComponent />;
   }
 }
 

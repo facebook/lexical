@@ -27,7 +27,6 @@ import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
-  $isTextNode,
   $setSelection,
   ElementNode,
 } from 'lexical';
@@ -422,56 +421,47 @@ function applyCustomTableHandlers(
     y: number,
     direction: 'backward' | 'forward' | 'up' | 'down',
   ): boolean => {
-    let nodeToSelect;
-
     switch (direction) {
       case 'backward':
       case 'forward': {
         const isForward = direction === 'forward';
 
         if (y !== (isForward ? grid.columns - 1 : 0)) {
-          nodeToSelect = tableNode.getCellNodeFromCords(
-            x,
-            y + (isForward ? 1 : -1),
-          );
+          tableNode.getCellNodeFromCords(x, y + (isForward ? 1 : -1)).select();
         } else {
           if (x !== (isForward ? grid.rows - 1 : 0)) {
-            nodeToSelect = tableNode.getCellNodeFromCords(
-              x + (isForward ? 1 : -1),
-              isForward ? 0 : grid.columns - 1,
-            );
+            tableNode
+              .getCellNodeFromCords(
+                x + (isForward ? 1 : -1),
+                isForward ? 0 : grid.columns - 1,
+              )
+              .select();
           } else if (!isForward) {
-            nodeToSelect = tableNode.getPreviousSibling();
+            tableNode.selectPrevious();
           } else {
-            nodeToSelect = tableNode.getNextSibling();
+            tableNode.selectNext();
           }
         }
-
-        break;
+        return true;
       }
 
       case 'up': {
-        nodeToSelect =
-          x !== 0
-            ? tableNode.getCellNodeFromCords(x - 1, y)
-            : tableNode.getPreviousSibling();
-
-        break;
+        if (x !== 0) {
+          tableNode.getCellNodeFromCords(x - 1, y).select();
+        } else {
+          tableNode.selectPrevious();
+        }
+        return true;
       }
 
       case 'down': {
-        nodeToSelect =
-          x !== grid.rows - 1
-            ? tableNode.getCellNodeFromCords(x + 1, y)
-            : tableNode.getNextSibling();
-
-        break;
+        if (x !== grid.rows - 1) {
+          tableNode.getCellNodeFromCords(x + 1, y).select();
+        } else {
+          tableNode.selectNext();
+        }
+        return true;
       }
-    }
-
-    if ($isElementNode(nodeToSelect) || $isTextNode(nodeToSelect)) {
-      nodeToSelect.select();
-      return true;
     }
 
     return false;
@@ -688,6 +678,10 @@ export class TableNode extends ElementNode {
 
   getGrid(): ?Grid {
     return this.__grid;
+  }
+
+  canSelectBefore(): true {
+    return true;
   }
 }
 

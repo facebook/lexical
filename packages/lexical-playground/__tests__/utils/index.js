@@ -167,14 +167,6 @@ export function initializeE2E(runTests, config: Config = {}) {
         newIt(description, test);
       }
     };
-  } else {
-    it.skipIf = async (condition, description, test) => {
-      if (typeof condition === 'function' ? condition() : !!condition) {
-        it.skip(description, test);
-      } else {
-        it(description, test);
-      }
-    };
   }
 
   runTests(e2e);

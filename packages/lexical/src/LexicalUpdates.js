@@ -349,7 +349,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._updating = true;
 
   try {
-    updateEditorState(
+    const mutatedNodes = updateEditorState(
       rootElement,
       currentEditorState,
       pendingEditorState,
@@ -358,6 +358,14 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       needsUpdate,
       editor,
     );
+    if (mutatedNodes !== null) {
+      triggerMutationListeners(
+        editor,
+        currentEditorState,
+        pendingEditorState,
+        mutatedNodes,
+      );
+    }
   } catch (error) {
     // Report errors
     triggerListeners('error', editor, false, error);
@@ -383,7 +391,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
-  const mutatedNodes = editor._mutatedNodes;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
 
@@ -404,12 +411,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     triggerListeners('decorator', editor, true, pendingDecorators);
   }
   triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
-  triggerMutationListeners(
-    editor,
-    currentEditorState,
-    pendingEditorState,
-    mutatedNodes,
-  );
   triggerListeners('update', editor, true, {
     dirtyElements,
     dirtyLeaves,

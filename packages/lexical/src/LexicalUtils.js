@@ -180,7 +180,6 @@ export function $setNodeKey(node: LexicalNode, existingKey: ?NodeKey): void {
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   node.__key = key;
-  setMutatedNode(editor._mutatedNodes, editor._nodes, node, 'attached');
 }
 
 function internalMarkParentElementsAsDirty(
@@ -786,27 +785,6 @@ export function getCachedClassNameArray<Theme: {...}>(
     return classNamesArr;
   }
   return classNames;
-}
-
-export function getAllMutatedNodes(
-  registeredNodes: RegisteredNodes,
-  previousNodeMap: NodeMap,
-  nextNodeMap: NodeMap,
-): MutatedNodes {
-  const mutatedNodes = new Map();
-  previousNodeMap.forEach((node) => {
-    const key = node.__key;
-    if (!nextNodeMap.has(key)) {
-      setMutatedNode(mutatedNodes, registeredNodes, node, 'detached');
-    }
-  });
-  nextNodeMap.forEach((node) => {
-    const key = node.__key;
-    if (!previousNodeMap.has(key)) {
-      setMutatedNode(mutatedNodes, registeredNodes, node, 'attached');
-    }
-  });
-  return mutatedNodes;
 }
 
 export function setMutatedNode(

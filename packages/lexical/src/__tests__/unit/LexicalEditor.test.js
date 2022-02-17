@@ -1378,12 +1378,11 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push($createTextNode('zzz').getKey());
     });
     expect(paragraphMutations.mock.calls.length).toBe(3);
-    expect(textNodeMutations.mock.calls.length).toBe(3);
+    expect(textNodeMutations.mock.calls.length).toBe(2);
 
     const [paragraphMutation1, paragraphMutation2, paragraphMutation3] =
       paragraphMutations.mock.calls;
-    const [textNodeMutation1, textNodeMutation2, textNodeMutation3] =
-      textNodeMutations.mock.calls;
+    const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
     expect(paragraphMutation1[0].size).toBe(1);
     expect(paragraphMutation1[0].get(paragraphKeys[0])).toBe('attached');
     expect(paragraphMutation1[0].size).toBe(1);
@@ -1398,8 +1397,6 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('detached');
     expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('detached');
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('detached');
-    expect(textNodeMutation3[0].size).toBe(1);
-    expect(textNodeMutation3[0].get(textNodeKeys[3])).toBe('detached');
   });
 
   it('mutation listener with setEditorState', async () => {
@@ -1465,5 +1462,42 @@ describe('LexicalEditor tests', () => {
 
     expect(paragraphMutations.mock.calls.length).toBe(1);
     expect(textNodeMutations.mock.calls.length).toBe(0);
+  });
+
+  it('mutation listeners with normalization', async () => {
+    init();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const textNodeKeys = [];
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode1 = $createTextNode('foo');
+      const textNode2 = $createTextNode('bar');
+      textNodeKeys.push(textNode1.getKey(), textNode2.getKey());
+      root.append(paragraph);
+      paragraph.append(textNode1, textNode2);
+    });
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode3 = $createTextNode('xyz').toggleFormat('bold');
+      paragraph.append(textNode3);
+      textNodeKeys.push(textNode3.getKey());
+    });
+    await editor.update(() => {
+      const textNode3 = $getNodeByKey(textNodeKeys[2]);
+      textNode3.toggleFormat('bold'); // Normalize with foobar
+    });
+
+    expect(textNodeMutations.mock.calls.length).toBe(3);
+    const [textNodeMutation1, textNodeMutation2, textNodeMutation3] =
+      textNodeMutations.mock.calls;
+    expect(textNodeMutation1[0].size).toBe(1);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('attached');
+    expect(textNodeMutation2[0].size).toBe(1);
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('attached');
+    expect(textNodeMutation3[0].size).toBe(1);
+    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('detached');
   });
 });

@@ -18,7 +18,7 @@ import type {EditorState} from './LexicalEditorState';
 import type {NodeKey, NodeMap} from './LexicalNode';
 
 import {$isElementNode} from '.';
-import {cloneDecorators, setMutatedNode} from './LexicalUtils';
+import {cloneDecorators} from './LexicalUtils';
 
 export function $garbageCollectDetachedDecorators(
   editor: LexicalEditor,
@@ -71,7 +71,6 @@ function $garbageCollectDetachedDeepChildNodes(
         dirtyNodes.delete(childKey);
       }
       nodeMap.delete(childKey);
-      setMutatedNode(mutatedNodes, registeredNodes, child, 'detached');
     }
   }
 }
@@ -100,7 +99,6 @@ export function $garbageCollectDetachedNodes(
         dirtyLeaves.delete(nodeKey);
       }
       nodeMap.delete(nodeKey);
-      setMutatedNode(mutatedNodes, registeredNodes, node, 'detached');
     }
   }
 
@@ -128,7 +126,6 @@ export function $garbageCollectDetachedNodes(
           dirtyElements.delete(nodeKey);
         }
         nodeMap.delete(nodeKey);
-        setMutatedNode(mutatedNodes, registeredNodes, node, 'detached');
       }
     }
   }

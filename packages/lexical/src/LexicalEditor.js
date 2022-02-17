@@ -32,7 +32,6 @@ import {
 import {
   createUID,
   generateRandomKey,
-  getAllMutatedNodes,
   markAllNodesAsDirty,
 } from './LexicalUtils';
 import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
@@ -550,7 +549,6 @@ class BaseLexicalEditor {
       );
     }
     flushRootMutations(getSelf(this));
-    const currentEditorState = this.getEditorState();
     const pendingEditorState = this._pendingEditorState;
     const tags = getSelf(this)._updateTags;
     const tag = options !== undefined ? options.tag : null;
@@ -562,11 +560,6 @@ class BaseLexicalEditor {
     }
     this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
-    this._mutatedNodes = getAllMutatedNodes(
-      this._nodes,
-      currentEditorState._nodeMap,
-      editorState._nodeMap,
-    );
     this._compositionKey = null;
     if (tag != null) {
       tags.add(tag);

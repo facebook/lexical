@@ -37,10 +37,6 @@ import {
 } from './nodes/base/LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './nodes/base/LexicalElementNode';
 import {
-  $createHorizontalRuleNode,
-  $isHorizontalRuleNode,
-} from './nodes/base/LexicalHorizontalRuleNode';
-import {
   $createLineBreakNode,
   $isLineBreakNode,
 } from './nodes/base/LexicalLineBreakNode';
@@ -84,14 +80,12 @@ export type {
   DecoratorStateValue,
 } from './nodes/base/LexicalDecoratorNode';
 export type {ElementFormatType} from './nodes/base/LexicalElementNode';
-export type {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
 export type {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 export type {RootNode} from './nodes/base/LexicalRootNode';
 export type {TextFormatType} from './nodes/base/LexicalTextNode';
 
 export {
   // Used during read/update/transform
-  $createHorizontalRuleNode,
   $createLineBreakNode,
   $createNodeFromParse,
   $createParagraphNode,
@@ -104,7 +98,6 @@ export {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isHorizontalRuleNode,
   // Node validation
   $isLeafNode,
   $isLineBreakNode,

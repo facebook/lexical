@@ -52,7 +52,7 @@ export class TableCellNode extends ElementNode {
     return true;
   }
 
-  canSelectionRemove(): boolean {
+  canBeEmpty(): false {
     return false;
   }
 }

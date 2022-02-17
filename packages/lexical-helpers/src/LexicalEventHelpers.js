@@ -27,14 +27,13 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isHorizontalRuleNode,
   $isTextNode,
   $log,
 } from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createLinkNode} from 'lexical/LinkNode';
-import getPossibleDecoratorOrHorizontalRuleNode from 'shared/getPossibleDecoratorOrHorizontalRuleNode';
+import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -351,11 +350,8 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
-  const possibleNode = getPossibleDecoratorOrHorizontalRuleNode(
-    selection.focus,
-    isBackward,
-  );
-  return $isDecoratorNode(possibleNode) || $isHorizontalRuleNode(possibleNode);
+  const possibleNode = getPossibleDecoratorNode(selection.focus, isBackward);
+  return $isDecoratorNode(possibleNode) && !possibleNode.isIsolated();
 }
 
 export function onPasteForPlainText(

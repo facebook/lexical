@@ -14,7 +14,6 @@ import {
   $getNodeByKey,
   $isDecoratorNode,
   $isElementNode,
-  $isHorizontalRuleNode,
   $isLineBreakNode,
   $isTextNode,
 } from 'lexical';
@@ -25,10 +24,6 @@ import {
   CollabDecoratorNode,
 } from './CollabDecoratorNode';
 import {$createCollabElementNode, CollabElementNode} from './CollabElementNode';
-import {
-  $createCollabHorizontalRuleNode,
-  CollabHorizontalRuleNode,
-} from './CollabHorizontalRuleNode';
 import {
   $createCollabLineBreakNode,
   CollabLineBreakNode,
@@ -83,8 +78,7 @@ export function $createCollabNodeFromLexicalNode(
   | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode
-  | CollabDecoratorNode
-  | CollabHorizontalRuleNode {
+  | CollabDecoratorNode {
   const nodeType = lexicalNode.__type;
   let collabNode;
   if ($isElementNode(lexicalNode)) {
@@ -106,10 +100,6 @@ export function $createCollabNodeFromLexicalNode(
     const map = new YMap();
     map.set('__type', 'linebreak');
     collabNode = $createCollabLineBreakNode(map, parent);
-  } else if ($isHorizontalRuleNode(lexicalNode)) {
-    const map = new YMap();
-    map.set('__type', 'horizontalrule');
-    collabNode = $createCollabHorizontalRuleNode(map, parent);
   } else if ($isDecoratorNode(lexicalNode)) {
     const xmlElem = new XmlElement();
     collabNode = $createCollabDecoratorNode(xmlElem, parent, nodeType);
@@ -142,8 +132,7 @@ export function getOrInitCollabNodeFromSharedType(
   | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode
-  | CollabDecoratorNode
-  | CollabHorizontalRuleNode {
+  | CollabDecoratorNode {
   // $FlowFixMe: internal field
   const collabNode = sharedType._collabNode;
   if (collabNode === undefined) {
@@ -170,8 +159,6 @@ export function getOrInitCollabNodeFromSharedType(
       }
       if (type === 'linebreak') {
         return $createCollabLineBreakNode(sharedType, targetParent);
-      } else if (type === 'horizontalrule') {
-        return $createCollabHorizontalRuleNode(sharedType, targetParent);
       }
       return $createCollabTextNode(sharedType, '', targetParent, type);
     } else if (sharedType instanceof XmlElement) {
@@ -187,8 +174,7 @@ export function createLexicalNodeFromCollabNode(
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
-    | CollabLineBreakNode
-    | CollabHorizontalRuleNode,
+    | CollabLineBreakNode,
   parentKey: NodeKey,
 ): LexicalNode {
   const type = collabNode.getType();
@@ -305,7 +291,6 @@ export function getPositionFromElementAndOffset(
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode
-    | CollabHorizontalRuleNode
     | null,
   nodeIndex: number,
   offset: number,

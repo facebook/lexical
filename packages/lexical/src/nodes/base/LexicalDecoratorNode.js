@@ -288,6 +288,10 @@ export class DecoratorNode extends LexicalNode {
   decorate(editor: LexicalEditor): ReactNode {
     invariant(false, 'decorate: base method not extended');
   }
+
+  isIsolated(): boolean {
+    return false;
+  }
 }
 
 export function $isDecoratorNode(node: ?LexicalNode): boolean %checks {

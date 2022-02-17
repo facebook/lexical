@@ -28,7 +28,6 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isHorizontalRuleNode,
   $isLineBreakNode,
   $isTextNode,
 } from '.';
@@ -155,12 +154,7 @@ export function toggleTextFormatType(
 }
 
 export function $isLeafNode(node: ?LexicalNode): boolean %checks {
-  return (
-    $isTextNode(node) ||
-    $isLineBreakNode(node) ||
-    $isDecoratorNode(node) ||
-    $isHorizontalRuleNode(node)
-  );
+  return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
 export function $generateKey(node: LexicalNode): NodeKey {
@@ -336,7 +330,6 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
         node.markDirty();
       }
     },
-    true,
     editor._pendingEditorState === null
       ? {
           tag: 'history-merge',

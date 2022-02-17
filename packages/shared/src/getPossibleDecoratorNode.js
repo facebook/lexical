@@ -29,7 +29,7 @@ function resolveElement(
   return block.getChildAtIndex(isBackward ? offset - 1 : offset);
 }
 
-export default function getPossibleDecoratorOrHorizontalRuleNode(
+export default function getPossibleDecoratorNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode {

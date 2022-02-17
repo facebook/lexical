@@ -18,6 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isRootNode,
   $log,
   $setCompositionKey,
 } from '.';
@@ -191,7 +192,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     }
     const data = event.data;
 
-    if (!selection.dirty && selection.isCollapsed()) {
+    if (
+      !selection.dirty &&
+      selection.isCollapsed() &&
+      !$isRootNode(selection.anchor.getNode())
+    ) {
       $applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;

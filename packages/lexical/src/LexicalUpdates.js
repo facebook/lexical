@@ -357,14 +357,13 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     );
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error, error._log);
+    triggerListeners('error', editor, false, error);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingEditorState);
       initMutationObserver(editor);
       editor._dirtyType = FULL_RECONCILE;
       isAttemptingToRecoverFromReconcilerError = true;
-      editor._log.push('ReconcileRecover');
       commitPendingUpdates(editor);
       isAttemptingToRecoverFromReconcilerError = false;
     }
@@ -383,9 +382,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const log = editor._log;
 
-  editor._log = [];
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._cloneNotNeeded.clear();
@@ -406,7 +403,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     dirtyElements,
     dirtyLeaves,
     editorState: pendingEditorState,
-    log,
     normalizedNodes,
     prevEditorState: currentEditorState,
     tags,
@@ -611,14 +607,13 @@ function beginUpdate(
     }
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error, editor._log);
+    triggerListeners('error', editor, false, error);
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements.clear();
-    editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;
   } finally {

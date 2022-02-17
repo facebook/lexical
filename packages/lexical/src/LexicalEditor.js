@@ -135,12 +135,11 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
-export type ErrorListener = (error: Error, log: Array<string>) => void;
+export type ErrorListener = (error: Error) => void;
 export type UpdateListener = ({
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
   editorState: EditorState,
-  log: Array<string>,
   normalizedNodes: Set<NodeKey>,
   prevEditorState: EditorState,
   tags: Set<string>,
@@ -211,7 +210,6 @@ export function resetEditor(
   editor._dirtyElements.clear();
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
-  editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
   if (observer !== null) {
@@ -313,7 +311,6 @@ class BaseLexicalEditor {
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
-  _log: Array<string>;
   _key: string;
 
   constructor(
@@ -361,8 +358,6 @@ class BaseLexicalEditor {
     this._updateTags = new Set();
     // Handling of DOM mutations
     this._observer = null;
-    // Logging for updates
-    this._log = [];
     // Used for identifying owning editors
     this._key = generateRandomKey();
   }
@@ -590,7 +585,6 @@ declare export class LexicalEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _log: Array<string>;
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;

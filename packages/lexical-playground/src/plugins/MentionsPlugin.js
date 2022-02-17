@@ -17,7 +17,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {$log, $getSelection} from 'lexical';
+import {$getSelection} from 'lexical';
 import React, {useCallback, useLayoutEffect, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
@@ -909,7 +909,6 @@ function createMentionNodeFromSearchResult(
   match: MentionMatch,
 ): void {
   editor.update(() => {
-    $log('createMentionNodeFromSearchResult');
     const selection = $getSelection();
     if (selection == null || !selection.isCollapsed()) {
       return;

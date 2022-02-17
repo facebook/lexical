@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {$log, $getSelection} from 'lexical';
+import {$getSelection} from 'lexical';
 import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -30,7 +30,6 @@ export default function ExcalidrawPlugin(): React$Node {
       'command',
       (type) => {
         if (type === 'insertExcalidraw') {
-          $log('insertExcalidraw');
           const selection = $getSelection();
           if (selection !== null) {
             const excalidrawNode = $createExcalidrawNode();

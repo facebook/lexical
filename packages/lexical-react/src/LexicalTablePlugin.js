@@ -16,7 +16,7 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$createParagraphNode, $getSelection, $log} from 'lexical';
+import {$createParagraphNode, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -37,7 +37,6 @@ export default function TablePlugin(): React$Node {
       (type, payload) => {
         if (type === 'insertTable') {
           const {columns, rows} = payload;
-          $log('handleAddTable');
           const selection = $getSelection();
           if (selection === null) {
             return true;

@@ -12,7 +12,7 @@ import type {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
-import {$createTextNode, $log, $getRoot, $createParagraphNode} from 'lexical';
+import {$createTextNode, $getRoot, $createParagraphNode} from 'lexical';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
 
@@ -341,7 +341,6 @@ ${steps.map(formatStep).join(`\n`)}
     (currentEditor) => {
       if (!isRecording) {
         currentEditor.update(() => {
-          $log('useStepRecorder');
           const root = $getRoot();
           root.clear();
           const text = $createTextNode();

@@ -10,7 +10,7 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $log, $setSelection} from 'lexical';
+import {$getSelection, $setSelection} from 'lexical';
 import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
 import {useEffect} from 'react';
 
@@ -18,7 +18,6 @@ const EditorPriority: CommandListenerEditorPriority = 0;
 
 function toggleLink(url: null | string) {
   const selection = $getSelection();
-  $log('toggleLink');
   if (selection !== null) {
     $setSelection(selection);
   }

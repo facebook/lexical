@@ -65,6 +65,8 @@ export function initializeE2E(runTests, config: Config = {}) {
   }
   const e2e = {
     isRichText: appSettings.isRichText,
+    isPlainText: !appSettings.isRichText,
+    isCollab: IS_COLLAB,
     browser: null,
     page: null,
     async saveScreenshot() {
@@ -111,11 +113,11 @@ export function initializeE2E(runTests, config: Config = {}) {
     }
   });
 
-  if (!E2E_DEBUG) {
+  if (!E2E_DEBUG && !global.it._overridden) {
     const it = global.it;
     // if we mark the test as flaky, overwrite the original 'it' function
     // to attempt the test 10 times before actually failing
-    global.it = async (description, test) => {
+    const newIt = async (description, test) => {
       const result = it(description, async () => {
         let count = 0;
         async function attempt() {
@@ -154,6 +156,16 @@ export function initializeE2E(runTests, config: Config = {}) {
         return await attempt();
       });
       return result;
+    };
+    global.it = newIt;
+    // Preventing from overridding global.it twice (in case test suite runs initializeE2E twice)
+    newIt._overridden = true;
+    newIt.skipIf = async (condition, description, test) => {
+      if (typeof condition === 'function' ? condition() : !!condition) {
+        it.skip(description, test);
+      } else {
+        newIt(description, test);
+      }
     };
   }
 

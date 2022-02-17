@@ -155,10 +155,6 @@ export type RootListener = (
   prevRootElement: null | HTMLElement,
 ) => void;
 export type TextContentListener = (text: string) => void;
-export type MutationListener = (
-  added: Array<NodeKey>,
-  removed: Array<NodeKey>,
-) => void;
 export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 export type CommandListener = (
   type: string,
@@ -186,7 +182,7 @@ type Listeners = {
   command: Array<Set<CommandListener>>,
   decorator: Set<DecoratorListener>,
   error: Set<ErrorListener>,
-  mutation: Set<MutationListener>,
+  mutation: MutationListeners,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
   update: Set<UpdateListener>,
@@ -322,7 +318,6 @@ class BaseLexicalEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _mutatedNodes: MutatedNodes;
-  _mutationListeners: MutationListeners;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
@@ -353,7 +348,7 @@ class BaseLexicalEditor {
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
       decorator: new Set(),
       error: new Set(),
-      mutation: new Set(),
+      mutation: new Map(),
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
@@ -371,7 +366,6 @@ class BaseLexicalEditor {
     this._dirtyLeaves = new Set();
     this._dirtyElements = new Map();
     this._mutatedNodes = new Map();
-    this._mutationListeners = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
     // Handling of DOM mutations
@@ -424,7 +418,7 @@ class BaseLexicalEditor {
           klass.name,
         );
       }
-      const mutations = this._mutationListeners;
+      const mutations = this._listeners.mutation;
       mutations.set(mutationListener, klass);
       return () => {
         mutations.delete(mutationListener);
@@ -639,7 +633,6 @@ declare export class LexicalEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _mutatedNodes: MutatedNodes;
-  _mutationListeners: MutationListeners;
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;

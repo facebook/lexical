@@ -440,7 +440,7 @@ function triggerMutationListeners(
   pendingEditorState: EditorState,
   mutatedNodes: MutatedNodes,
 ): void {
-  const listeners = editor._mutationListeners;
+  const listeners = editor._listeners.mutation;
   listeners.forEach((klass, listener) => {
     const mutatedNodesByType = mutatedNodes.get(klass);
     if (mutatedNodesByType === undefined) {
@@ -451,7 +451,7 @@ function triggerMutationListeners(
 }
 
 export function triggerListeners(
-  type: 'update' | 'error' | 'mutation' | 'root' | 'decorator' | 'textcontent',
+  type: 'update' | 'error' | 'root' | 'decorator' | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,

@@ -20,11 +20,8 @@ import {selectAll} from '../keyboardShortcuts';
 
 describe('File', () => {
   initializeE2E((e2e) => {
-    it(`Can import/export`, async () => {
-      const {isRichText, page} = e2e;
-      if (!isRichText) {
-        return;
-      }
+    it.skipIf(e2e.isPlainText, `Can import/export`, async () => {
+      const {page} = e2e;
 
       await focusEditor(page);
       await page.keyboard.type('Hello World');

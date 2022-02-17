@@ -6,7 +6,7 @@
  *
  */
 
-import {moveToLineBeginning} from '../keyboardShortcuts';
+import {moveToLineBeginning, selectAll} from '../keyboardShortcuts';
 import {
   initializeE2E,
   assertHTML,
@@ -16,6 +16,8 @@ import {
   click,
   E2E_BROWSER,
   repeat,
+  copyToClipboard,
+  pasteFromClipboard,
 } from '../utils';
 
 describe('HorizontalRule', () => {
@@ -218,6 +220,74 @@ describe('HorizontalRule', () => {
           anchorPath: [2, 0, 0],
           anchorOffset: 0,
           focusPath: [2, 0, 0],
+          focusOffset: 0,
+        });
+      },
+    );
+
+    it.skipIf(
+      e2e.isPlainText,
+      'Can copy and paste a horizontal rule',
+      async () => {
+        const {page} = e2e;
+
+        await focusEditor(page);
+
+        await waitForSelector(page, 'button .horizontal-rule');
+
+        await click(page, 'button .horizontal-rule');
+
+        await waitForSelector(page, 'hr');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        );
+
+        await assertSelection(page, {
+          anchorPath: [2],
+          anchorOffset: 0,
+          focusPath: [2],
+          focusOffset: 0,
+        });
+
+        // Select all the text
+        await selectAll(page);
+
+        // Copy all the text
+        const clipboard = await copyToClipboard(page);
+
+        // Delete content
+        await page.keyboard.press('Backspace');
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        );
+
+        await assertSelection(page, {
+          anchorPath: [2],
+          anchorOffset: 0,
+          focusPath: [2],
+          focusOffset: 0,
+        });
+
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('Backspace');
+
+        await pasteFromClipboard(page, clipboard);
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        );
+
+        await assertSelection(page, {
+          anchorPath: [2],
+          anchorOffset: 0,
+          focusPath: [2],
           focusOffset: 0,
         });
       },

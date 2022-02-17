@@ -17,7 +17,7 @@ import {TypeaheadNode} from './TypeaheadNode';
 import {ImageNode} from './ImageNode';
 import {KeywordNode} from './KeywordNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
-import {HorizontalRuleNode} from './HorizontalRuleNode';
+import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import ExtendedNodes from 'lexical/ExtendedNodes';
 
 const PlaygroundNodes: Array<Class<LexicalNode>> = [

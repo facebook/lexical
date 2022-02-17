@@ -944,7 +944,9 @@ export class RangeSelection implements Selection {
       }
       didReplaceOrMerge = false;
       if ($isElementNode(target)) {
-        if (!$isElementNode(node)) {
+        if ($isDecoratorNode(node) && node.isTopLevel()) {
+          target = target.insertAfter(node);
+        } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
             firstChild.insertBefore(node);
@@ -956,9 +958,22 @@ export class RangeSelection implements Selection {
           if (!node.canBeEmpty() && node.isEmpty()) {
             continue;
           }
-          target = target.insertAfter(node);
+          if ($isRootNode(target)) {
+            const placementNode = target.getChildAtIndex(anchorOffset);
+            if (placementNode !== null) {
+              placementNode.insertBefore(node);
+            } else {
+              target.append(node);
+            }
+            target = node;
+          } else {
+            target = target.insertAfter(node);
+          }
         }
-      } else if (!$isElementNode(node)) {
+      } else if (
+        !$isElementNode(node) ||
+        ($isDecoratorNode(target) && target.isTopLevel())
+      ) {
         target = target.insertAfter(node);
       } else {
         target = node.getParentOrThrow();

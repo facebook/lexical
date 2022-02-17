@@ -35,9 +35,14 @@ export class HorizontalRuleNode extends DecoratorNode {
     return '\n';
   }
 
+  isTopLevel(): true {
+    return true;
+  }
+
   updateDOM(): false {
     return false;
   }
+
   decorate(): React$Node {
     return <HorizontalRuleComponent />;
   }

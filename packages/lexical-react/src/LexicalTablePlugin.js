@@ -9,12 +9,14 @@
 
 import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
 
-import {$createTableNodeWithDimensions} from '@lexical/helpers/nodes';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createParagraphNode, $getSelection, $log} from 'lexical';
-import {TableCellNode} from 'lexical/TableCellNode';
-import {TableNode} from 'lexical/TableNode';
-import {TableRowNode} from 'lexical/TableRowNode';
+import {
+  $createTableNodeWithDimensions,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
+import {$createParagraphNode, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -35,7 +37,6 @@ export default function TablePlugin(): React$Node {
       (type, payload) => {
         if (type === 'insertTable') {
           const {columns, rows} = payload;
-          $log('handleAddTable');
           const selection = $getSelection();
           if (selection === null) {
             return true;

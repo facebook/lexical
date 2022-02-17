@@ -24,13 +24,7 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
-import {$isHorizontalRuleNode} from 'lexical';
-import {
-  $log,
-  $getNodeByKey,
-  $getSelection,
-  $createParagraphNode,
-} from 'lexical';
+import {$getNodeByKey, $getSelection, $createParagraphNode} from 'lexical';
 import {$isLinkNode} from 'lexical/LinkNode';
 import {
   $wrapLeafNodesInElements,
@@ -350,7 +344,6 @@ function BlockOptionsDropdownList({
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
       editor.update(() => {
-        $log('formatParagraph');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -364,7 +357,6 @@ function BlockOptionsDropdownList({
   const formatLargeHeading = () => {
     if (blockType !== 'h1') {
       editor.update(() => {
-        $log('formatLargeHeading');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -378,7 +370,6 @@ function BlockOptionsDropdownList({
   const formatSmallHeading = () => {
     if (blockType !== 'h2') {
       editor.update(() => {
-        $log('formatSmallHeading');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -410,7 +401,6 @@ function BlockOptionsDropdownList({
   const formatQuote = () => {
     if (blockType !== 'quote') {
       editor.update(() => {
-        $log('formatQuote');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -424,7 +414,6 @@ function BlockOptionsDropdownList({
   const formatCode = () => {
     if (blockType !== 'code') {
       editor.update(() => {
-        $log('formatCode');
         const selection = $getSelection();
 
         if (selection !== null) {
@@ -530,7 +519,7 @@ export default function ToolbarPlugin(): React$Node {
     if (selection !== null) {
       const anchorNode = selection.anchor.getNode();
       const element =
-        anchorNode.getKey() === 'root' || $isHorizontalRuleNode(anchorNode)
+        anchorNode.getKey() === 'root'
           ? anchorNode
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
@@ -610,7 +599,6 @@ export default function ToolbarPlugin(): React$Node {
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {
       activeEditor.update(() => {
-        $log('applyStyleText');
         const selection = $getSelection();
         if (selection !== null) {
           $patchStyleText(selection, styles);

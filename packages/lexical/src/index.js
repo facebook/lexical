@@ -17,12 +17,10 @@ import {
   $isRangeSelection,
 } from './LexicalSelection';
 import {
-  $getCompositionKey,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
   $isLeafNode,
-  $pushLogEntry as $log,
   $setCompositionKey,
   $setSelection,
 } from './LexicalUtils';
@@ -37,10 +35,6 @@ import {
   isDecoratorMap,
 } from './nodes/base/LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './nodes/base/LexicalElementNode';
-import {
-  $createHorizontalRuleNode,
-  $isHorizontalRuleNode,
-} from './nodes/base/LexicalHorizontalRuleNode';
 import {
   $createLineBreakNode,
   $isLineBreakNode,
@@ -85,20 +79,17 @@ export type {
   DecoratorStateValue,
 } from './nodes/base/LexicalDecoratorNode';
 export type {ElementFormatType} from './nodes/base/LexicalElementNode';
-export type {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
 export type {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 export type {RootNode} from './nodes/base/LexicalRootNode';
 export type {TextFormatType} from './nodes/base/LexicalTextNode';
 
 export {
   // Used during read/update/transform
-  $createHorizontalRuleNode,
   $createLineBreakNode,
   $createNodeFromParse,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
-  $getCompositionKey,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getPreviousSelection,
@@ -106,7 +97,6 @@ export {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isHorizontalRuleNode,
   // Node validation
   $isLeafNode,
   $isLineBreakNode,
@@ -114,7 +104,6 @@ export {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
-  $log,
   $setCompositionKey,
   $setSelection,
   createDecoratorArray,

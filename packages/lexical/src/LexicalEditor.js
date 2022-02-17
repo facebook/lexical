@@ -34,7 +34,6 @@ import {
   generateRandomKey,
   markAllNodesAsDirty,
 } from './LexicalUtils';
-import {HorizontalRuleNode} from './nodes/base/LexicalHorizontalRuleNode';
 import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
 import {RootNode} from './nodes/base/LexicalRootNode';
@@ -86,7 +85,6 @@ export type EditorThemeClasses = {
     h4?: EditorThemeClassName,
     h5?: EditorThemeClassName,
   },
-  horizontalRule?: EditorThemeClassName,
   image?: EditorThemeClassName,
   link?: EditorThemeClassName,
   list?: {
@@ -137,12 +135,11 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
-export type ErrorListener = (error: Error, log: Array<string>) => void;
+export type ErrorListener = (error: Error) => void;
 export type UpdateListener = ({
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
   editorState: EditorState,
-  log: Array<string>,
   normalizedNodes: Set<NodeKey>,
   prevEditorState: EditorState,
   tags: Set<string>,
@@ -153,7 +150,6 @@ export type RootListener = (
   prevRootElement: null | HTMLElement,
 ) => void;
 export type TextContentListener = (text: string) => void;
-export type TextMutationListener = (text: Text) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
@@ -182,7 +178,6 @@ type Listeners = {
   error: Set<ErrorListener>,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
-  textmutation: Set<TextMutationListener>,
   update: Set<UpdateListener>,
 };
 
@@ -192,7 +187,6 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent'
-  | 'textmutation'
   | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
@@ -216,7 +210,6 @@ export function resetEditor(
   editor._dirtyElements.clear();
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
-  editor._log = [];
   editor._updates = [];
   const observer = editor._observer;
   if (observer !== null) {
@@ -255,7 +248,6 @@ export function createEditor<EditorContext>(editorConfig?: {
   const nodes = [
     RootNode,
     TextNode,
-    HorizontalRuleNode,
     LineBreakNode,
     ParagraphNode,
     ...(config.nodes || []),
@@ -319,7 +311,6 @@ class BaseLexicalEditor {
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
-  _log: Array<string>;
   _key: string;
 
   constructor(
@@ -349,7 +340,6 @@ class BaseLexicalEditor {
       error: new Set(),
       root: new Set(),
       textcontent: new Set(),
-      textmutation: new Set(),
       update: new Set(),
     };
     // Editor configuration for theme/context.
@@ -368,8 +358,6 @@ class BaseLexicalEditor {
     this._updateTags = new Set();
     // Handling of DOM mutations
     this._observer = null;
-    // Logging for updates
-    this._log = [];
     // Used for identifying owning editors
     this._key = generateRandomKey();
   }
@@ -490,7 +478,7 @@ class BaseLexicalEditor {
         nextRootElement.setAttribute('data-lexical-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));
-        this._updateTags.add('without-history');
+        this._updateTags.add('history-merge');
         commitPendingUpdates(getSelf(this));
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
@@ -542,7 +530,7 @@ class BaseLexicalEditor {
     return parseEditorState(stringifiedEditorState, getSelf(this));
   }
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
-    updateEditor(getSelf(this), updateFn, false, options);
+    updateEditor(getSelf(this), updateFn, options);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -561,7 +549,6 @@ class BaseLexicalEditor {
             root.selectEnd();
           }
         },
-        true,
         {
           onUpdate: () => {
             rootElement.removeAttribute('autocapitalize');
@@ -598,7 +585,6 @@ declare export class LexicalEditor {
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _log: Array<string>;
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;

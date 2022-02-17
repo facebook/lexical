@@ -25,7 +25,6 @@ import {
   $isLeafNode,
   $isParagraphNode,
   $isRootNode,
-  $log,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -40,7 +39,6 @@ import {
 
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
   editor.update(() => {
-    $log('formatList');
     const selection = $getSelection();
     if (selection !== null) {
       const nodes = selection.getNodes();
@@ -132,7 +130,6 @@ function createListOrMerge(node: ElementNode, listType: 'ul' | 'ol'): ListNode {
 
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => {
-    $log('removeList');
     const selection = $getSelection();
     if (selection !== null) {
       const listNodes = new Set();

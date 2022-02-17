@@ -18,7 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $log,
+  $isRootNode,
   $setCompositionKey,
 } from '.';
 import {
@@ -118,7 +118,6 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
 // really isn't.
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
   editor.update(() => {
-    $log('onClick');
     const selection = $getSelection();
     if (selection === null) {
       return;
@@ -175,7 +174,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   }
 
   editor.update(() => {
-    $log('onBeforeInputForRichText');
     const selection = $getSelection();
 
     if (selection === null) {
@@ -191,7 +189,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     }
     const data = event.data;
 
-    if (!selection.dirty && selection.isCollapsed()) {
+    if (
+      !selection.dirty &&
+      selection.isCollapsed() &&
+      !$isRootNode(selection.anchor.getNode())
+    ) {
       $applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;
@@ -324,7 +326,6 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
   editor.update(() => {
-    $log('onInput');
     const selection = $getSelection();
     const data = event.data;
     if (
@@ -347,7 +348,6 @@ function onCompositionStart(
   editor: LexicalEditor,
 ): void {
   editor.update(() => {
-    $log('onCompositionStart');
     const selection = $getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
@@ -372,7 +372,6 @@ function onCompositionEndInternal(
   editor: LexicalEditor,
 ): void {
   editor.update(() => {
-    $log('onCompositionEnd');
     $setCompositionKey(null);
     $updateSelectedTextFromDOM(editor, true);
   });

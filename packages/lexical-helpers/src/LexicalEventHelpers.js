@@ -28,7 +28,6 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
-  $log,
 } from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
@@ -350,11 +349,8 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
-  const possibleDecoratorNode = getPossibleDecoratorNode(
-    selection.focus,
-    isBackward,
-  );
-  return $isDecoratorNode(possibleDecoratorNode);
+  const possibleNode = getPossibleDecoratorNode(selection.focus, isBackward);
+  return $isDecoratorNode(possibleNode) && !possibleNode.isIsolated();
 }
 
 export function onPasteForPlainText(
@@ -363,7 +359,6 @@ export function onPasteForPlainText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    $log('onPasteForPlainText');
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
@@ -378,7 +373,6 @@ export function onPasteForRichText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    $log('onPasteForRichText');
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (clipboardData != null && selection !== null) {
@@ -393,7 +387,6 @@ export function onCutForPlainText(
 ): void {
   onCopyForPlainText(event, editor);
   editor.update(() => {
-    $log('onCutForPlainText');
     const selection = $getSelection();
     if (selection !== null) {
       selection.removeText();
@@ -407,7 +400,6 @@ export function onCutForRichText(
 ): void {
   onCopyForRichText(event, editor);
   editor.update(() => {
-    $log('onCutForRichText');
     const selection = $getSelection();
     if (selection !== null) {
       selection.removeText();
@@ -421,7 +413,6 @@ export function onCopyForPlainText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    $log('onCopyForPlainText');
     const clipboardData = event.clipboardData;
     const selection = $getSelection();
     if (selection !== null) {
@@ -450,7 +441,6 @@ export function onCopyForRichText(
 ): void {
   event.preventDefault();
   editor.update(() => {
-    $log('onCopyForRichText');
     const clipboardData = event.clipboardData;
     const selection = $getSelection();
     if (selection !== null) {

@@ -155,7 +155,10 @@ export function $cloneContents(selection: RangeSelection): {
   let nodesLength = nodes.length;
   const firstNode = nodes[0];
   const firstNodeParent = firstNode.getParent();
-  if (firstNodeParent !== null && !firstNodeParent.canBeEmpty()) {
+  if (
+    firstNodeParent !== null &&
+    (!firstNodeParent.canBeEmpty() || $isRootNode(firstNodeParent))
+  ) {
     const parentChildren = firstNodeParent.__children;
     const parentChildrenLength = parentChildren.length;
     if (parentChildrenLength === nodesLength) {
@@ -397,7 +400,9 @@ export function $moveCaretSelection(
 
 export function $isParentElementRTL(selection: RangeSelection): boolean {
   const anchorNode = selection.anchor.getNode();
-  const parent = anchorNode.getParentOrThrow();
+  const parent = $isRootNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParentOrThrow();
   return parent.getDirection() === 'rtl';
 }
 

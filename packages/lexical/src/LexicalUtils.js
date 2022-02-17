@@ -28,7 +28,6 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isHorizontalRuleNode,
   $isLineBreakNode,
   $isTextNode,
 } from '.';
@@ -155,12 +154,7 @@ export function toggleTextFormatType(
 }
 
 export function $isLeafNode(node: ?LexicalNode): boolean %checks {
-  return (
-    $isTextNode(node) ||
-    $isLineBreakNode(node) ||
-    $isDecoratorNode(node) ||
-    $isHorizontalRuleNode(node)
-  );
+  return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
 export function $generateKey(node: LexicalNode): NodeKey {
@@ -181,7 +175,7 @@ export function $generateKey(node: LexicalNode): NodeKey {
   return key;
 }
 
-function $internallyMarkParentElementsAsDirty(
+function internalMarkParentElementsAsDirty(
   parentKey: NodeKey,
   nodeMap: NodeMap,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
@@ -202,7 +196,7 @@ function $internallyMarkParentElementsAsDirty(
 
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
-export function $internallyMarkNodeAsDirty(node: LexicalNode): void {
+export function internalMarkNodeAsDirty(node: LexicalNode): void {
   errorOnInfiniteTransforms();
   const latest = node.getLatest();
   const parent = latest.__parent;
@@ -211,7 +205,7 @@ export function $internallyMarkNodeAsDirty(node: LexicalNode): void {
   const nodeMap = editorState._nodeMap;
   const dirtyElements = editor._dirtyElements;
   if (parent !== null) {
-    $internallyMarkParentElementsAsDirty(parent, nodeMap, dirtyElements);
+    internalMarkParentElementsAsDirty(parent, nodeMap, dirtyElements);
   }
   const key = latest.__key;
   editor._dirtyType = HAS_DIRTY_NODES;
@@ -223,14 +217,14 @@ export function $internallyMarkNodeAsDirty(node: LexicalNode): void {
   }
 }
 
-export function $internallyMarkSiblingsAsDirty(node: LexicalNode) {
+export function internalMarkSiblingsAsDirty(node: LexicalNode) {
   const previousNode = node.getPreviousSibling();
   const nextNode = node.getNextSibling();
   if (previousNode !== null) {
-    $internallyMarkNodeAsDirty(previousNode);
+    internalMarkNodeAsDirty(previousNode);
   }
   if (nextNode !== null) {
-    $internallyMarkNodeAsDirty(nextNode);
+    internalMarkNodeAsDirty(nextNode);
   }
 }
 
@@ -305,11 +299,6 @@ export function cloneDecorators(editor: LexicalEditor): {[NodeKey]: ReactNode} {
   return pendingDecorators;
 }
 
-export function $pushLogEntry(entry: string): void {
-  const editor = getActiveEditor();
-  editor._log.push(entry);
-}
-
 export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read((view) => $getRoot().getTextContent());
 }
@@ -336,10 +325,9 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
         node.markDirty();
       }
     },
-    true,
     editor._pendingEditorState === null
       ? {
-          tag: 'without-history',
+          tag: 'history-merge',
         }
       : undefined,
   );

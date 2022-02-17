@@ -811,7 +811,6 @@ export class RangeSelection implements Selection {
     // Get all remaining text node siblings in this element so we can
     // append them after the last node we're inserting.
     const nextSiblings = anchorNode.getNextSiblings();
-
     const topLevelElement = $isRootNode(anchorNode)
       ? null
       : anchorNode.getTopLevelElementOrThrow();

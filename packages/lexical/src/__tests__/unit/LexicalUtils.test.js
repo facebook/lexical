@@ -193,20 +193,27 @@ describe('LexicalUtils tests', () => {
     test('$nodesOfType', async () => {
       const {editor} = testEnv;
       const paragraphKeys = [];
+      const $paragraphKeys = () =>
+        $nodesOfType(ParagraphNode).map((node) => node.getKey());
       await editor.update(() => {
         const root = $getRoot();
         const paragraph1 = $createParagraphNode();
         const paragraph2 = $createParagraphNode();
+        $createParagraphNode();
         root.append(paragraph1, paragraph2);
         paragraphKeys.push(paragraph1.getKey(), paragraph2.getKey());
-        expect(
-          $nodesOfType(ParagraphNode).map((node) => node.getKey()),
-        ).toEqual(expect.arrayContaining(paragraphKeys));
+        const currentParagraphKeys = $paragraphKeys();
+        expect(currentParagraphKeys).toHaveLength(paragraphKeys.length);
+        expect(currentParagraphKeys).toEqual(
+          expect.arrayContaining(paragraphKeys),
+        );
       });
       editor.getEditorState().read(() => {
-        expect(
-          $nodesOfType(ParagraphNode).map((node) => node.getKey()),
-        ).toEqual(expect.arrayContaining(paragraphKeys));
+        const currentParagraphKeys = $paragraphKeys();
+        expect(currentParagraphKeys).toHaveLength(paragraphKeys.length);
+        expect(currentParagraphKeys).toEqual(
+          expect.arrayContaining(paragraphKeys),
+        );
       });
     });
   });

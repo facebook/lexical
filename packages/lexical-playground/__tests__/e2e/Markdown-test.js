@@ -104,6 +104,22 @@ describe('Markdown', () => {
 
       markdownText: '321. ', // Ordered.
     },
+    {
+      isBlockTest: true,
+      undoHTML: '',
+      expectation:
+        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+
+      markdownText: '*** ', // Ordered.
+    },
+    {
+      isBlockTest: true,
+      undoHTML: '',
+      expectation:
+        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+
+      markdownText: '--- ', // Ordered.
+    },
   ];
 
   initializeE2E((e2e) => {

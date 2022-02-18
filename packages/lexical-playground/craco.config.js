@@ -35,6 +35,8 @@ module.exports = {
 
       // Lexical Features
       '@lexical/list': '@lexical/list/dist/LexicalList.js',
+      '@lexical/table': '@lexical/table/dist/LexicalTable.js',
+      '@lexical/file': '@lexical/file/dist/LexicalFile.js',
 
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',
@@ -78,7 +80,6 @@ module.exports = {
         'LexicalAutoFormatterPlugin',
         'LexicalCharacterLimitPlugin',
         'LexicalHashtagPlugin',
-        'LexicalHorizontalRulePlugin',
         'LexicalPlainTextPlugin',
         'LexicalRichTextPlugin',
         'LexicalBootstrapPlugin',
@@ -89,6 +90,7 @@ module.exports = {
         'LexicalAutoLinkPlugin',
         'LexicalListPlugin',
         'LexicalOnChangePlugin',
+        'LexicalHorizontalRuleNode',
       ].reduce(
         (aliases, plugin) => ({
           ...aliases,

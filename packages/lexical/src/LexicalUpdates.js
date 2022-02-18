@@ -11,6 +11,7 @@ import type {
   CommandPayload,
   EditorUpdateOptions,
   LexicalEditor,
+  MutatedNodes,
   Transform,
 } from './LexicalEditor';
 import type {ParsedEditorState} from './LexicalEditorState';
@@ -346,7 +347,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._updating = true;
 
   try {
-    updateEditorState(
+    const mutatedNodes = updateEditorState(
       rootElement,
       currentEditorState,
       pendingEditorState,
@@ -355,16 +356,23 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       needsUpdate,
       editor,
     );
+    if (mutatedNodes !== null) {
+      triggerMutationListeners(
+        editor,
+        currentEditorState,
+        pendingEditorState,
+        mutatedNodes,
+      );
+    }
   } catch (error) {
     // Report errors
-    editor._onError(error, error._log);
+    editor._onError(error);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingEditorState);
       initMutationObserver(editor);
       editor._dirtyType = FULL_RECONCILE;
       isAttemptingToRecoverFromReconcilerError = true;
-      editor._log.push('ReconcileRecover');
       commitPendingUpdates(editor);
       isAttemptingToRecoverFromReconcilerError = false;
     }
@@ -383,9 +391,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const log = editor._log;
 
-  editor._log = [];
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._cloneNotNeeded.clear();
@@ -406,7 +412,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     dirtyElements,
     dirtyLeaves,
     editorState: pendingEditorState,
-    log,
     normalizedNodes,
     prevEditorState: currentEditorState,
     tags,
@@ -425,6 +430,22 @@ function triggerTextContentListeners(
   if (currentTextContent !== latestTextContent) {
     triggerListeners('textcontent', editor, true, latestTextContent);
   }
+}
+
+function triggerMutationListeners(
+  editor: LexicalEditor,
+  currentEditorState: EditorState,
+  pendingEditorState: EditorState,
+  mutatedNodes: MutatedNodes,
+): void {
+  const listeners = editor._listeners.mutation;
+  listeners.forEach((klass, listener) => {
+    const mutatedNodesByType = mutatedNodes.get(klass);
+    if (mutatedNodesByType === undefined) {
+      return;
+    }
+    listener(mutatedNodesByType);
+  });
 }
 
 export function triggerListeners(
@@ -479,7 +500,7 @@ function triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
   if (queuedUpdates.length !== 0) {
     const [updateFn, options] = queuedUpdates.shift();
-    beginUpdate(editor, updateFn, false, options);
+    beginUpdate(editor, updateFn, options);
   }
 }
 
@@ -530,7 +551,6 @@ function processNestedUpdates(editor: LexicalEditor): boolean {
 function beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
-  skipEmptyCheck: boolean,
   options?: EditorUpdateOptions,
 ): void {
   const updateTags = editor._updateTags;
@@ -577,12 +597,6 @@ function beginUpdate(
     skipTransforms = processNestedUpdates(editor);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
-      if (!skipEmptyCheck && pendingEditorState.isEmpty()) {
-        invariant(
-          false,
-          'updateEditor: the pending editor state is empty. Ensure the root not never becomes empty from an update.',
-        );
-      }
       if (skipTransforms) {
         $normalizeAllDirtyTextNodes(pendingEditorState, editor);
       } else {
@@ -618,14 +632,13 @@ function beginUpdate(
     }
   } catch (error) {
     // Report errors
-    editor._onError(error, editor._log);
+    editor._onError(error);
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements.clear();
-    editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;
   } finally {
@@ -662,12 +675,11 @@ function beginUpdate(
 export function updateEditor(
   editor: LexicalEditor,
   updateFn: () => void,
-  skipEmptyCheck: boolean,
   options?: EditorUpdateOptions,
 ): void {
   if (editor._updating) {
     editor._updates.push([updateFn, options]);
   } else {
-    beginUpdate(editor, updateFn, skipEmptyCheck, options);
+    beginUpdate(editor, updateFn, options);
   }
 }

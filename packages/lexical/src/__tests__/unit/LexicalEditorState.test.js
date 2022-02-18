@@ -82,7 +82,7 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__key\":\"root\",\"__parent\":null,\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__key\":\"1\",\"__parent\":\"root\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__key\":\"2\",\"__parent\":\"1\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__parent\":null,\"__key\":\"root\",\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__parent\":\"root\",\"__key\":\"1\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__parent\":\"1\",\"__key\":\"2\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
       );
     });
 

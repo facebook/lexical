@@ -21,16 +21,6 @@ async function prepareLexicalCorePackage() {
   );
 
   await exec(
-    `mv ./packages/lexical/npm/LexicalTableNode.js ./packages/lexical/npm/TableNode.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalTableRowNode.js ./packages/lexical/npm/TableRowNode.js`,
-  );
-  await exec(
-    `mv ./packages/lexical/npm/LexicalTableCellNode.js ./packages/lexical/npm/TableCellNode.js`,
-  );
-
-  await exec(
     `mv ./packages/lexical/npm/LexicalLinkNode.js ./packages/lexical/npm/LinkNode.js`,
   );
   await exec(
@@ -120,7 +110,7 @@ async function prepareLexicalYjsPackage() {
 }
 
 async function prepareLexicalFeaturePackages() {
-  const packages = ['lexical-list', 'lexical-file'];
+  const packages = ['lexical-list', 'lexical-table', 'lexical-file'];
   for (let i = 0; i < packages.length; i++) {
     const pkg = packages[i];
     await exec(`rm -rf ./packages/${pkg}/npm`);

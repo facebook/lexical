@@ -62,7 +62,7 @@ export class DecoratorEditor {
       this.editorState = editorState;
       if (editorState !== null) {
         editor.setEditorState(editorState, {
-          tag: 'without-history',
+          tag: 'history-merge',
         });
       }
     }
@@ -287,6 +287,14 @@ export class DecoratorNode extends LexicalNode {
 
   decorate(editor: LexicalEditor): ReactNode {
     invariant(false, 'decorate: base method not extended');
+  }
+
+  isIsolated(): boolean {
+    return false;
+  }
+
+  isTopLevel(): boolean {
+    return false;
   }
 }
 

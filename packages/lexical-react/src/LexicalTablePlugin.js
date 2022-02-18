@@ -9,12 +9,14 @@
 
 import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
 
-import {$createTableNodeWithDimensions} from '@lexical/helpers/nodes';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createParagraphNode, $getSelection, $log} from 'lexical';
-import {TableCellNode} from 'lexical/TableCellNode';
-import {TableNode} from 'lexical/TableNode';
-import {TableRowNode} from 'lexical/TableRowNode';
+import {
+  $createTableNodeWithDimensions,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
+} from '@lexical/table';
+import {$createParagraphNode, $getSelection, $isRootNode} from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -35,17 +37,26 @@ export default function TablePlugin(): React$Node {
       (type, payload) => {
         if (type === 'insertTable') {
           const {columns, rows} = payload;
-          $log('handleAddTable');
           const selection = $getSelection();
           if (selection === null) {
             return true;
           }
-          const focusNode = selection.focus.getNode();
+          const focus = selection.focus;
+          const focusNode = focus.getNode();
 
           if (focusNode !== null) {
-            const topLevelNode = focusNode.getTopLevelElementOrThrow();
             const tableNode = $createTableNodeWithDimensions(rows, columns);
-            topLevelNode.insertAfter(tableNode);
+            if ($isRootNode(focusNode)) {
+              const target = focusNode.getChildAtIndex(focus.offset);
+              if (target !== null) {
+                target.insertBefore(tableNode);
+              } else {
+                focusNode.append(tableNode);
+              }
+            } else {
+              const topLevelNode = focusNode.getTopLevelElementOrThrow();
+              topLevelNode.insertAfter(tableNode);
+            }
             tableNode.insertAfter($createParagraphNode());
             const firstCell = tableNode
               .getFirstChildOrThrow<ElementNode>()

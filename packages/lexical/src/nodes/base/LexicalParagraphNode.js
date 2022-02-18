@@ -11,7 +11,7 @@ import type {EditorThemeClasses} from '../../LexicalEditor';
 import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {getCachedClassNameArray} from '../../LexicalUtils';
-import {$isElementNode, ElementNode} from './LexicalElementNode';
+import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
 export class ParagraphNode extends ElementNode {
@@ -57,24 +57,24 @@ export class ParagraphNode extends ElementNode {
 
   collapseAtStart(): boolean {
     const children = this.getChildren();
-    const sibling = this.getNextSibling();
     // If we have an empty (trimmed) first paragraph and try and remove it,
     // delete the paragraph as long as we have another sibling to go to
     if (
-      $isElementNode(sibling) &&
-      this.getIndexWithinParent() === 0 &&
-      (children.length === 0 ||
-        ($isTextNode(children[0]) &&
-          children[0].getTextContent().trim() === ''))
+      children.length === 0 ||
+      ($isTextNode(children[0]) && children[0].getTextContent().trim() === '')
     ) {
-      const firstChild = sibling.getFirstChild();
-      if ($isTextNode(firstChild)) {
-        firstChild.select(0, 0);
-      } else {
-        sibling.select(0, 0);
+      const nextSibling = this.getNextSibling();
+      if (nextSibling !== null) {
+        this.selectNext();
+        this.remove();
+        return true;
       }
-      this.remove();
-      return true;
+      const prevSibling = this.getPreviousSibling();
+      if (prevSibling !== null) {
+        this.selectPrevious();
+        this.remove();
+        return true;
+      }
     }
     return false;
   }

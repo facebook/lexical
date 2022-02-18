@@ -10,7 +10,10 @@
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
+  MutatedNodes,
+  NodeMutation,
   RegisteredNode,
+  RegisteredNodes,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
@@ -28,7 +31,6 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isHorizontalRuleNode,
   $isLineBreakNode,
   $isTextNode,
 } from '.';
@@ -155,15 +157,14 @@ export function toggleTextFormatType(
 }
 
 export function $isLeafNode(node: ?LexicalNode): boolean %checks {
-  return (
-    $isTextNode(node) ||
-    $isLineBreakNode(node) ||
-    $isDecoratorNode(node) ||
-    $isHorizontalRuleNode(node)
-  );
+  return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-export function $generateKey(node: LexicalNode): NodeKey {
+export function $setNodeKey(node: LexicalNode, existingKey: ?NodeKey): void {
+  if (existingKey != null) {
+    node.__key = existingKey;
+    return;
+  }
   errorOnReadOnly();
   errorOnInfiniteTransforms();
   const editor = getActiveEditor();
@@ -178,7 +179,7 @@ export function $generateKey(node: LexicalNode): NodeKey {
   }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
-  return key;
+  node.__key = key;
 }
 
 function internalMarkParentElementsAsDirty(
@@ -305,11 +306,6 @@ export function cloneDecorators(editor: LexicalEditor): {[NodeKey]: ReactNode} {
   return pendingDecorators;
 }
 
-export function $pushLogEntry(entry: string): void {
-  const editor = getActiveEditor();
-  editor._log.push(entry);
-}
-
 export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read((view) => $getRoot().getTextContent());
 }
@@ -336,17 +332,20 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
         node.markDirty();
       }
     },
-    true,
     editor._pendingEditorState === null
       ? {
-          tag: 'without-history',
+          tag: 'history-merge',
         }
       : undefined,
   );
 }
 
-export function $getRoot(editorState?: EditorState): RootNode {
-  return (((editorState || getActiveEditorState())._nodeMap.get(
+export function $getRoot(): RootNode {
+  return internalGetRoot(getActiveEditorState());
+}
+
+export function internalGetRoot(editorState: EditorState): RootNode {
+  return ((editorState._nodeMap.get(
     'root',
     // $FlowFixMe: root is always in our Map
   ): any): RootNode);
@@ -790,4 +789,23 @@ export function getCachedClassNameArray<Theme: {...}>(
     return classNamesArr;
   }
   return classNames;
+}
+
+export function setMutatedNode(
+  mutatedNodes: MutatedNodes,
+  registeredNodes: RegisteredNodes,
+  node: LexicalNode,
+  mutation: NodeMutation,
+) {
+  const registeredNode = registeredNodes.get(node.__type);
+  if (registeredNode === undefined) {
+    invariant(false, 'Type %s not in registeredNodes', node.__type);
+  }
+  const klass = registeredNode.klass;
+  let mutatedNodesByType = mutatedNodes.get(klass);
+  if (mutatedNodesByType === undefined) {
+    mutatedNodesByType = new Map();
+    mutatedNodes.set(klass, mutatedNodesByType);
+  }
+  mutatedNodesByType.set(node.__key, mutation);
 }

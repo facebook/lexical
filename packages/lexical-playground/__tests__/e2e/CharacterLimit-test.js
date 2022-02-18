@@ -13,15 +13,11 @@ import {
   assertSelection,
   repeat,
   E2E_BROWSER,
-  IS_COLLAB,
 } from '../utils';
 import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts';
 
 function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
-  it('displays overflow on text', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
+  it.skipIf(e2e.isCollab, 'displays overflow on text', async () => {
     const {page} = e2e;
     await page.focus('div[contenteditable="true"]');
 
@@ -58,10 +54,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     });
   });
 
-  it('displays overflow on immutable nodes', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
+  it.skipIf(e2e.isCollab, 'displays overflow on immutable nodes', async () => {
     // The smile emoji (S) is length 2, so for 1234S56:
     // - 1234 is non-overflow text
     // - S takes characters 5 and 6, since it's immutable and can't be split we count the whole
@@ -83,10 +76,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     );
   });
 
-  it('can type new lines inside overflow', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
+  it.skipIf(e2e.isCollab, 'can type new lines inside overflow', async () => {
     const {page, isRichText} = e2e;
     await page.focus('div[contenteditable="true"]');
 
@@ -112,127 +102,122 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     );
   });
 
-  it('can delete text in front and overflow is recomputed', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
-    const {page, isRichText} = e2e;
-    await page.focus('div[contenteditable="true"]');
+  it.skipIf(
+    e2e.isCollab,
+    'can delete text in front and overflow is recomputed',
+    async () => {
+      const {page, isRichText} = e2e;
+      await page.focus('div[contenteditable="true"]');
 
-    await page.keyboard.type('123456');
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('7');
-    await moveToEditorBeginning(page);
+      await page.keyboard.type('123456');
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('7');
+      await moveToEditorBeginning(page);
 
-    await page.keyboard.press('Delete');
-    if (isRichText) {
+      await page.keyboard.press('Delete');
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">23456</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></p>',
+        );
+      } else {
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">23456</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><br><span data-lexical-text="true">7</span></div></p>',
+        );
+      }
+
+      await page.keyboard.press('Delete');
+      if (isRichText) {
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">3456</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">7</span></p>',
+        );
+      } else {
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">3456</span><br><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></p>',
+        );
+      }
+    },
+  );
+
+  it.skipIf(
+    e2e.isCollab,
+    'can delete text in front and overflow is recomputed (immutable nodes)',
+    async () => {
+      // See 'displays overflow on immutable nodes'
+      const {page} = e2e;
+      await page.focus('div[contenteditable="true"]');
+
+      await page.keyboard.type('1234:)56');
+      await moveToLineBeginning(page);
+
+      await page.keyboard.press('Delete');
+      if (charset === 'UTF-16') {
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><span class="emoji happysmile" data-lexical-text="true">🙂</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">56</span></div></p>',
+        );
+      } else if (charset === 'UTF-8') {
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true">56</span></div></p>',
+        );
+      }
+    },
+  );
+
+  it.skipIf(
+    e2e.isCollab || e2e.isPlainText,
+    'can overflow in lists',
+    async () => {
+      const {page} = e2e;
+      await page.focus('div[contenteditable="true"]');
+
+      await page.keyboard.type('- 1234');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('56');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('7');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">23456</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></p>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></li></ul>',
       );
-    } else {
+
+      await repeat(3, async () => await page.keyboard.press('Backspace'));
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">23456</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><br><span data-lexical-text="true">7</span></div></p>',
+        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span></li></ul',
       );
-    }
+    },
+  );
 
-    await page.keyboard.press('Delete');
-    if (isRichText) {
+  it.skipIf(
+    e2e.isCollab || e2e.isPlainText,
+    'can delete an overflowed paragraph',
+    async () => {
+      const {page} = e2e;
+      await page.focus('div[contenteditable="true"]');
+
+      await page.keyboard.type('12345');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type('6');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">3456</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">7</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></p>',
       );
-    } else {
+
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">3456</span><br><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></p>',
       );
-    }
-  });
+    },
+  );
 
-  it('can delete text in front and overflow is recomputed (immutable nodes)', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
-    // See 'displays overflow on immutable nodes'
-    const {page} = e2e;
-    await page.focus('div[contenteditable="true"]');
-
-    await page.keyboard.type('1234:)56');
-    await moveToLineBeginning(page);
-
-    await page.keyboard.press('Delete');
-    if (charset === 'UTF-16') {
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><span class="emoji happysmile" data-lexical-text="true">🙂</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">56</span></div></p>',
-      );
-    } else if (charset === 'UTF-8') {
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true">56</span></div></p>',
-      );
-    }
-  });
-
-  it('can overflow in lists', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
-    const {page, isRichText} = e2e;
-    if (!isRichText) {
-      return;
-    }
-    await page.focus('div[contenteditable="true"]');
-
-    await page.keyboard.type('- 1234');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('56');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('7');
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></li></ul>',
-    );
-
-    await repeat(3, async () => await page.keyboard.press('Backspace'));
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span></li></ul',
-    );
-  });
-
-  it('can delete an overflowed paragraph', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
-    const {page, isRichText} = e2e;
-    if (!isRichText) {
-      return;
-    }
-    await page.focus('div[contenteditable="true"]');
-
-    await page.keyboard.type('12345');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('6');
-    await assertHTML(
-      page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></p>',
-    );
-
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('Backspace');
-    await assertHTML(
-      page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></p>',
-    );
-  });
-
-  it('handles accented characters', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
+  it.skipIf(e2e.isCollab, 'handles accented characters', async () => {
     const {page} = e2e;
     await page.focus('div[contenteditable="true"]');
 
@@ -251,10 +236,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     }
   });
 
-  it('handles graphemes', async () => {
-    if (IS_COLLAB) {
-      return;
-    }
+  it.skipIf(e2e.isCollab, 'handles graphemes', async () => {
     const {page} = e2e;
     await page.focus('div[contenteditable="true"]');
 

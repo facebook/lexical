@@ -18,7 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $log,
+  $isRootNode,
   $setCompositionKey,
 } from '.';
 import {
@@ -86,6 +86,7 @@ if (CAN_USE_BEFORE_INPUT) {
 }
 
 let lastKeyWasMaybeAndroidSoftKey = false;
+let rootElementsRegistered = 0;
 
 function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
   editor.update(() => {
@@ -118,7 +119,6 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
 // really isn't.
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
   editor.update(() => {
-    $log('onClick');
     const selection = $getSelection();
     if (selection === null) {
       return;
@@ -175,7 +175,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   }
 
   editor.update(() => {
-    $log('onBeforeInputForRichText');
     const selection = $getSelection();
 
     if (selection === null) {
@@ -191,7 +190,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     }
     const data = event.data;
 
-    if (!selection.dirty && selection.isCollapsed()) {
+    if (
+      !selection.dirty &&
+      selection.isCollapsed() &&
+      !$isRootNode(selection.anchor.getNode())
+    ) {
       $applyTargetRange(selection, event);
     }
     const anchor = selection.anchor;
@@ -324,7 +327,6 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
   editor.update(() => {
-    $log('onInput');
     const selection = $getSelection();
     const data = event.data;
     if (
@@ -347,7 +349,6 @@ function onCompositionStart(
   editor: LexicalEditor,
 ): void {
   editor.update(() => {
-    $log('onCompositionStart');
     const selection = $getSelection();
     if (selection !== null && !editor.isComposing()) {
       const anchor = selection.anchor;
@@ -372,7 +373,6 @@ function onCompositionEndInternal(
   editor: LexicalEditor,
 ): void {
   editor.update(() => {
-    $log('onCompositionEnd');
     $setCompositionKey(null);
     $updateSelectedTextFromDOM(editor, true);
   });
@@ -478,11 +478,11 @@ function getRootElementRemoveHandles(
   rootElement: HTMLElement,
 ): RootElementRemoveHandles {
   // $FlowFixMe: internal field
-  let eventHandles = rootElement._lexicalEventHandles;
+  let eventHandles = rootElement.__lexicalEventHandles;
   if (eventHandles === undefined) {
     eventHandles = [];
     // $FlowFixMe: internal field
-    rootElement._lexicalEventHandles = eventHandles;
+    rootElement.__lexicalEventHandles = eventHandles;
   }
   return eventHandles;
 }
@@ -531,25 +531,19 @@ function onDocumentSelectionChange(event: Event): void {
   }
 }
 
-export function addDocumentSelectionChangeEvent(
-  rootElement: HTMLElement,
-  editor: LexicalEditor,
-): void {
-  const doc = rootElement.ownerDocument;
-  // $FlowFixMe: internal field
-  rootElement.__lexicalEditor = editor;
-  // $FlowFixMe: internal field
-  if (doc._lexicalEvent === undefined) {
-    // $FlowFixMe: internal field
-    doc._lexicalEvent = true;
-    doc.addEventListener('selectionchange', onDocumentSelectionChange);
-  }
-}
-
 export function addRootElementEvents(
   rootElement: HTMLElement,
   editor: LexicalEditor,
 ): void {
+  // We only want to have a single global selectionchange event handler, shared
+  // between all editor instances.
+  if (rootElementsRegistered === 0) {
+    const doc = rootElement.ownerDocument;
+    doc.addEventListener('selectionchange', onDocumentSelectionChange);
+  }
+  rootElementsRegistered++;
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEditor = editor;
   const removeHandles = getRootElementRemoveHandles(rootElement);
 
   for (let i = 0; i < rootElementEvents.length; i++) {
@@ -574,6 +568,13 @@ export function addRootElementEvents(
 }
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
+  rootElementsRegistered--;
+  // We only want to have a single global selectionchange event handler, shared
+  // between all editor instances.
+  if (rootElementsRegistered === 0) {
+    const doc = rootElement.ownerDocument;
+    doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+  }
   // $FlowFixMe: internal field
   cleanActiveNestedEditorsMap(rootElement.__lexicalEditor);
   // $FlowFixMe: internal field

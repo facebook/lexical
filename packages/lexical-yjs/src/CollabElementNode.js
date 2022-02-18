@@ -25,7 +25,6 @@ import {
 import {Map as YMap} from 'yjs';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
-import {CollabHorizontalRuleNode} from './CollabHorizontalRuleNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
@@ -45,8 +44,7 @@ export class CollabElementNode {
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
-    | CollabLineBreakNode
-    | CollabHorizontalRuleNode,
+    | CollabLineBreakNode,
   >;
   _xmlText: XmlText;
   _type: string;
@@ -137,8 +135,7 @@ export class CollabElementNode {
           if (
             node instanceof CollabElementNode ||
             node instanceof CollabLineBreakNode ||
-            node instanceof CollabDecoratorNode ||
-            node instanceof CollabHorizontalRuleNode
+            node instanceof CollabDecoratorNode
           ) {
             children.splice(nodeIndex, 1);
             deletionSize -= 1;
@@ -264,10 +261,7 @@ export class CollabElementNode {
             childCollabNode.syncPropertiesAndTextFromYjs(binding, null);
           } else if (childCollabNode instanceof CollabDecoratorNode) {
             childCollabNode.syncPropertiesFromYjs(binding, null);
-          } else if (
-            !(childCollabNode instanceof CollabLineBreakNode) ||
-            !(childCollabNode instanceof CollabHorizontalRuleNode)
-          ) {
+          } else if (!(childCollabNode instanceof CollabLineBreakNode)) {
             throw new Error('Should never happen');
           }
         }
@@ -481,8 +475,7 @@ export class CollabElementNode {
       | CollabElementNode
       | CollabDecoratorNode
       | CollabTextNode
-      | CollabLineBreakNode
-      | CollabHorizontalRuleNode,
+      | CollabLineBreakNode,
   ): void {
     const xmlText = this._xmlText;
     const children = this._children;
@@ -497,10 +490,7 @@ export class CollabElementNode {
         xmlText.insertEmbed(offset, map);
       }
       xmlText.insert(offset + 1, collabNode._text);
-    } else if (
-      collabNode instanceof CollabLineBreakNode ||
-      collabNode instanceof CollabHorizontalRuleNode
-    ) {
+    } else if (collabNode instanceof CollabLineBreakNode) {
       xmlText.insertEmbed(offset, collabNode._map);
     } else if (collabNode instanceof CollabDecoratorNode) {
       xmlText.insertEmbed(offset, collabNode._xmlElem);
@@ -516,8 +506,7 @@ export class CollabElementNode {
       | CollabElementNode
       | CollabDecoratorNode
       | CollabTextNode
-      | CollabLineBreakNode
-      | CollabHorizontalRuleNode,
+      | CollabLineBreakNode,
   ): void {
     const children = this._children;
     const child = children[index];
@@ -547,10 +536,7 @@ export class CollabElementNode {
         xmlText.insertEmbed(offset, map);
       }
       xmlText.insert(offset + 1, collabNode._text);
-    } else if (
-      collabNode instanceof CollabLineBreakNode ||
-      collabNode instanceof CollabHorizontalRuleNode
-    ) {
+    } else if (collabNode instanceof CollabLineBreakNode) {
       xmlText.insertEmbed(offset, collabNode._map);
     } else if (collabNode instanceof CollabDecoratorNode) {
       xmlText.insertEmbed(offset, collabNode._xmlElem);
@@ -573,8 +559,7 @@ export class CollabElementNode {
       | CollabElementNode
       | CollabTextNode
       | CollabDecoratorNode
-      | CollabLineBreakNode
-      | CollabHorizontalRuleNode,
+      | CollabLineBreakNode,
   ): number {
     let offset = 0;
     const children = this._children;

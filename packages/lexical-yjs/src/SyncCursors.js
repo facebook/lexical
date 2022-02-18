@@ -31,7 +31,6 @@ import {
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
-import {CollabHorizontalRuleNode} from './CollabHorizontalRuleNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
 import {getPositionFromElementAndOffset} from './Utils';
@@ -372,7 +371,6 @@ function getCollabNodeAndOffset(
     | CollabElementNode
     | CollabTextNode
     | CollabLineBreakNode
-    | CollabHorizontalRuleNode
   ),
   number,
 ] {

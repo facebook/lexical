@@ -21,15 +21,17 @@ export type UserState = {
   name: string,
 };
 
-declare class Provider {
-  awareness: {
-    getLocalState(): UserState,
-    getStates(): Array<UserState>,
-    off(type: 'update', cb: () => void): void,
-    on(type: 'update', cb: () => void): void,
-    setLocalState(UserState): void,
-  };
-  connect(): void;
+export type ProviderAwareness = {
+  getLocalState: () => UserState,
+  getStates: () => Array<UserState>,
+  off: (type: 'update', cb: () => void) => void,
+  on: (type: 'update', cb: () => void) => void,
+  setLocalState: (UserState) => void,
+};
+
+declare interface Provider {
+  awareness: ProviderAwareness;
+  connect(): void | Promise<void>;
   disconnect(): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
   // $FlowFixMe: temp

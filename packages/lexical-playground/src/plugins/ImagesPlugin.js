@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {$log, $getSelection} from 'lexical';
+import {$getSelection, $isRootNode} from 'lexical';
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
@@ -30,9 +30,11 @@ export default function ImagesPlugin(): React$Node {
       'command',
       (type) => {
         if (type === 'insertImage') {
-          $log('insertImage');
           const selection = $getSelection();
           if (selection !== null) {
+            if ($isRootNode(selection.anchor.getNode())) {
+              selection.insertParagraph();
+            }
             const imageNode = $createImageNode(
               yellowFlowerImage,
               'Yellow flower in tilt shift lens',

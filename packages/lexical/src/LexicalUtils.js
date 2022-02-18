@@ -805,3 +805,18 @@ export function setMutatedNode(
   }
   mutatedNodesByType.set(node.__key, mutation);
 }
+
+export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T> {
+  const editorState = getActiveEditorState();
+  const klassType = klass.getType();
+  const nodes = Array.from(editorState._nodeMap.values());
+  const nodesLength = nodes.length;
+  const nodesOfType = [];
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    if (node instanceof klass && node.__type === klassType) {
+      nodesOfType.push(node);
+    }
+  }
+  return nodesOfType;
+}

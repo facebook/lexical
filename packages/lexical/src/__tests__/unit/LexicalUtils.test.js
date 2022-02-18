@@ -17,6 +17,7 @@ import {
 import {
   $getNodeByKey,
   $isTokenOrInertOrSegmented,
+  $nodesOfType,
   emptyFunction,
   generateRandomKey,
   getTextDirection,
@@ -187,6 +188,26 @@ describe('LexicalUtils tests', () => {
         expect($getNodeByKey('3')).toBe(null);
       });
       expect(() => $getNodeByKey()).toThrow();
+    });
+
+    test('$nodesOfType', async () => {
+      const {editor} = testEnv;
+      const paragraphKeys = [];
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        root.append(paragraph1, paragraph2);
+        paragraphKeys.push(paragraph1.getKey(), paragraph2.getKey());
+        expect(
+          $nodesOfType(ParagraphNode).map((node) => node.getKey()),
+        ).toEqual(expect.arrayContaining(paragraphKeys));
+      });
+      editor.getEditorState().read(() => {
+        expect(
+          $nodesOfType(ParagraphNode).map((node) => node.getKey()),
+        ).toEqual(expect.arrayContaining(paragraphKeys));
+      });
     });
   });
 });

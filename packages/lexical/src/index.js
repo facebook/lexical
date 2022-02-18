@@ -21,6 +21,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $isLeafNode,
+  $nodesOfType,
   $setCompositionKey,
   $setSelection,
 } from './LexicalUtils';
@@ -105,6 +106,7 @@ export {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $nodesOfType,
   $setCompositionKey,
   $setSelection,
   createDecoratorArray,

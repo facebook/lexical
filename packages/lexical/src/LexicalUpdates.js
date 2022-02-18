@@ -639,7 +639,6 @@ function beginUpdate(
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();
     editor._dirtyElements.clear();
-    editor._log.push('UpdateRecover');
     commitPendingUpdates(editor);
     return;
   } finally {

@@ -81,7 +81,8 @@
     "prepare-release": "npm run build-release && node ./scripts/npm/prepare-release.js",
     "prepare": "husky install",
     "prepare-size-compare": "npm run build-prod && node ./scripts/npm/prepare-size-compare.js",
-    "release": "npm run prepare-release && node ./scripts/npm/release.js"
+    "release": "npm run prepare-release && node ./scripts/npm/release.js",
+    "update-version": "node ./scripts/updateVersion"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.14.5",

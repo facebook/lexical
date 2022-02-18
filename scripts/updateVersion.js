@@ -7,9 +7,11 @@ const packages = {
   '@lexical/helpers': 'lexical-helpers',
   '@lexical/list': 'lexical-list',
   '@lexical/react': 'lexical-react',
+  '@lexical/table': 'lexical-table',
   '@lexical/yjs': 'lexical-yjs',
   lexical: 'lexical',
   'lexical-playground': 'lexical-playground',
+  shared: 'shared',
 };
 
 function updateVersion() {
@@ -18,8 +20,9 @@ function updateVersion() {
     const packageJSON = fs.readJsonSync(`./packages/${pkg}/package.json`);
     packageJSON.version = version;
     updateDependencies(packageJSON, version);
-    console.log(packageJSON);
-    //fs.writeJsonSync(`./packages/${pkg}/package.json`, packageJSON);
+    fs.writeJsonSync(`./packages/${pkg}/package.json`, packageJSON, {
+      spaces: 2,
+    });
   });
 }
 

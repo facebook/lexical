@@ -21,6 +21,7 @@ import {
   $createRangeSelection,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
 } from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
@@ -601,7 +602,7 @@ function removeTextInCaptureGroups(
 
         $setSelection(newSelection);
         const currentSelection = $getSelection();
-        if (currentSelection != null) {
+        if ($isRangeSelection(currentSelection)) {
           currentSelection.removeText();
 
           // Shift offsets for capture groups which are within the same node
@@ -719,7 +720,7 @@ function formatTextInCaptureGroupIndex(
 
     $setSelection(newSelection);
     const currentSelection = $getSelection();
-    if (currentSelection != null) {
+    if ($isRangeSelection(currentSelection)) {
       currentSelection.formatText(formatType);
 
       const finalSelection = $createRangeSelection();

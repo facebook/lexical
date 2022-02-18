@@ -9,7 +9,7 @@
 
 import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
 import type {NodeKey} from '../../LexicalNode';
-import type {RangeSelection} from '../../LexicalSelection';
+import type {NodeSelection, RangeSelection} from '../../LexicalSelection';
 
 import invariant from 'shared/invariant';
 
@@ -31,6 +31,7 @@ import {
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
+  $isRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
   internalMakeRangeSelection,
@@ -384,7 +385,7 @@ export class TextNode extends LexicalNode {
 
   // Mutators
   selectionTransform(
-    prevSelection: null | RangeSelection,
+    prevSelection: null | RangeSelection | NodeSelection,
     nextSelection: RangeSelection,
   ): void {}
   setFormat(format: number): this {
@@ -444,7 +445,7 @@ export class TextNode extends LexicalNode {
       anchorOffset = 0;
       focusOffset = 0;
     }
-    if (selection === null) {
+    if (!$isRangeSelection(selection)) {
       return internalMakeRangeSelection(
         key,
         anchorOffset,
@@ -483,7 +484,7 @@ export class TextNode extends LexicalNode {
       }
     }
     const selection = $getSelection();
-    if (moveSelection && selection !== null) {
+    if (moveSelection && $isRangeSelection(selection)) {
       const newOffset = offset + handledTextLength;
       selection.setTextNodeRange(
         writableSelf,
@@ -568,7 +569,7 @@ export class TextNode extends LexicalNode {
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
 
-      if (selection !== null) {
+      if ($isRangeSelection(selection)) {
         const anchor = selection.anchor;
         const focus = selection.focus;
 
@@ -614,7 +615,7 @@ export class TextNode extends LexicalNode {
       writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
     }
 
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         parent,
@@ -643,7 +644,7 @@ export class TextNode extends LexicalNode {
       $setCompositionKey(key);
     }
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const focus = selection.focus;
       if (anchor !== null && anchor.key === targetKey) {

@@ -60,6 +60,8 @@ module.name_mapper='^@lexical/react/LexicalNestedComposer' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^@lexical/react/withSubscriptions' -> '<PROJECT_ROOT>/packages/lexical-react/src/withSubscriptions.js'
 module.name_mapper='^@lexical/react/LexicalContentEditable' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalContentEditable.js'
 module.name_mapper='^@lexical/react/LexicalNestedComposer' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalNestedComposer.js'
+module.name_mapper='^@lexical/react/LexicalHorizontalRuleNode' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalHorizontalRuleNode.js'
+module.name_mapper='^@lexical/react/useLexicalNodeSelection' -> '<PROJECT_ROOT>/packages/lexical-react/src/useLexicalNodeSelection.js'
 
 # Composer Plugins
 module.name_mapper='^@lexical/react/LexicalAutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoFormatterPlugin.js'
@@ -75,7 +77,6 @@ module.name_mapper='^@lexical/react/LexicalLinkPlugin' -> '<PROJECT_ROOT>/packag
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalAutoLinkPlugin.js'
 module.name_mapper='^@lexical/react/LexicalListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalListPlugin.js'
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalOnChangePlugin.js'
-module.name_mapper='^@lexical/react/LexicalHorizontalRuleNode' -> '<PROJECT_ROOT>/packages/lexical-react/src/LexicalHorizontalRuleNode.js'
 
 module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/src/index.js'
 

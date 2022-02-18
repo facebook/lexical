@@ -24,7 +24,12 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from '@lexical/list';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
-import {$getNodeByKey, $getSelection, $createParagraphNode} from 'lexical';
+import {
+  $getNodeByKey,
+  $getSelection,
+  $createParagraphNode,
+  $isRangeSelection,
+} from 'lexical';
 import {$isLinkNode} from 'lexical/LinkNode';
 import {
   $wrapLeafNodesInElements,
@@ -119,7 +124,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
 
   const updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
       const parent = node.getParent();
       if ($isLinkNode(parent)) {
@@ -346,7 +351,7 @@ function BlockOptionsDropdownList({
       editor.update(() => {
         const selection = $getSelection();
 
-        if (selection !== null) {
+        if ($isRangeSelection(selection)) {
           $wrapLeafNodesInElements(selection, () => $createParagraphNode());
         }
       });
@@ -359,7 +364,7 @@ function BlockOptionsDropdownList({
       editor.update(() => {
         const selection = $getSelection();
 
-        if (selection !== null) {
+        if ($isRangeSelection(selection)) {
           $wrapLeafNodesInElements(selection, () => $createHeadingNode('h1'));
         }
       });
@@ -372,7 +377,7 @@ function BlockOptionsDropdownList({
       editor.update(() => {
         const selection = $getSelection();
 
-        if (selection !== null) {
+        if ($isRangeSelection(selection)) {
           $wrapLeafNodesInElements(selection, () => $createHeadingNode('h2'));
         }
       });
@@ -403,7 +408,7 @@ function BlockOptionsDropdownList({
       editor.update(() => {
         const selection = $getSelection();
 
-        if (selection !== null) {
+        if ($isRangeSelection(selection)) {
           $wrapLeafNodesInElements(selection, () => $createQuoteNode());
         }
       });
@@ -416,7 +421,7 @@ function BlockOptionsDropdownList({
       editor.update(() => {
         const selection = $getSelection();
 
-        if (selection !== null) {
+        if ($isRangeSelection(selection)) {
           $wrapLeafNodesInElements(selection, () => $createCodeNode());
         }
       });
@@ -516,7 +521,7 @@ export default function ToolbarPlugin(): React$Node {
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       const anchorNode = selection.anchor.getNode();
       const element =
         anchorNode.getKey() === 'root'
@@ -600,7 +605,7 @@ export default function ToolbarPlugin(): React$Node {
     (styles: {[string]: string}) => {
       activeEditor.update(() => {
         const selection = $getSelection();
-        if (selection !== null) {
+        if ($isRangeSelection(selection)) {
           $patchStyleText(selection, styles);
         }
       });

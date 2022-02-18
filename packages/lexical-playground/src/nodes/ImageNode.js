@@ -14,16 +14,24 @@ import type {
   LexicalEditor,
   DecoratorMap,
   DecoratorEditor,
+  CommandListenerLowPriority,
 } from 'lexical';
 
 import * as React from 'react';
-import {DecoratorNode, $getNodeByKey, createDecoratorEditor} from 'lexical';
+import {
+  DecoratorNode,
+  $getNodeByKey,
+  createDecoratorEditor,
+  $getSelection,
+  $isNodeSelection,
+} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
 import {
   useCollaborationContext,
   CollaborationPlugin,
 } from '@lexical/react/LexicalCollaborationPlugin';
-import {Suspense, useCallback, useRef, useState} from 'react';
+import {Suspense, useCallback, useRef, useState, useEffect} from 'react';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import Placeholder from '../ui/Placeholder';
@@ -49,6 +57,8 @@ import {EmojiNode} from './EmojiNode';
 import {TypeaheadNode} from './TypeaheadNode';
 import {KeywordNode} from './KeywordNode';
 import ExtendedNodes from 'lexical/ExtendedNodes';
+
+const LowPriority: CommandListenerLowPriority = 1;
 
 const styles = stylex.create({
   contentEditable: {
@@ -102,9 +112,6 @@ function LazyImage({
   altText,
   className,
   imageRef,
-  onFocus,
-  onBlur,
-  onKeyDown,
   src,
   width,
   height,
@@ -113,28 +120,18 @@ function LazyImage({
   altText: string,
   className: ?string,
   imageRef: {current: null | HTMLElement},
-  onFocus: () => void,
-  onBlur: () => void,
-  onKeyDown: (KeyboardEvent) => void,
   src: string,
   width: 'inherit' | number,
   height: 'inherit' | number,
   maxWidth: number,
 }): React.Node {
   useSuspenseImage(src);
-  // TODO: This needs to be made accessible.
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <img
       className={className}
       src={src}
       alt={altText}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      onKeyDown={onKeyDown}
       ref={imageRef}
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-      tabIndex={0}
       style={{
         width,
         height,
@@ -335,7 +332,8 @@ function ImageComponent({
   state: DecoratorMap,
 }): React.Node {
   const ref = useRef(null);
-  const [hasFocus, setHasFocus] = useState<boolean>(false);
+  const [isSelected, setSelected, clearSelection] =
+    useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const {yjsDocMap} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
@@ -345,19 +343,51 @@ function ImageComponent({
     'caption',
     () => createDecoratorEditor(),
   );
+  const [selection, setSelection] = useState(null);
 
-  const handleKeyDown = (event) => {
-    if ((hasFocus && event.key === 'Backspace') || event.key === 'Delete') {
-      editor.update(() => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isImageNode(node)) {
-          node.remove();
-          event.stopPropagation();
+  useEffect(() => {
+    return editor.addListener('update', ({editorState}) => {
+      setSelection(editorState.read(() => $getSelection()));
+    });
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.addListener(
+      'command',
+      (type, payload) => {
+        if (type === 'click') {
+          const event: MouseEvent = payload;
+
+          if (isResizing) {
+            return true;
+          }
+          if (event.target === ref.current) {
+            if (!event.shiftKey) {
+              clearSelection();
+            }
+            setSelected(!isSelected);
+            return true;
+          }
+        } else if (
+          isSelected &&
+          $isNodeSelection($getSelection()) &&
+          (type === 'keyDelete' || type === 'keyBackspace')
+        ) {
+          const event: KeyboardEvent = payload;
           event.preventDefault();
+          editor.update(() => {
+            const node = $getNodeByKey(nodeKey);
+            if ($isImageNode(node)) {
+              node.remove();
+            }
+            setSelected(false);
+          });
         }
-      });
-    }
-  };
+        return false;
+      },
+      LowPriority,
+    );
+  }, [clearSelection, editor, isResizing, isSelected, nodeKey, setSelected]);
 
   const setShowCaption = useCallback(() => {
     editor.update(() => {
@@ -374,7 +404,12 @@ function ImageComponent({
       if (rootElement !== null) {
         rootElement.style.setProperty('cursor', 'default');
       }
-      setIsResizing(false);
+
+      // Delay hiding the resize bars for click case
+      setTimeout(() => {
+        setIsResizing(false);
+      }, 200);
+
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isImageNode(node)) {
@@ -402,16 +437,10 @@ function ImageComponent({
     <Suspense fallback={null}>
       <>
         <LazyImage
-          className={hasFocus || isResizing ? 'focused' : null}
+          className={isSelected || isResizing ? 'focused' : null}
           src={src}
           altText={altText}
           imageRef={ref}
-          onFocus={() => setHasFocus(true)}
-          onBlur={() => {
-            // Delay for 100ms so we can click the caption
-            setTimeout(() => setHasFocus(false), 100);
-          }}
-          onKeyDown={handleKeyDown}
           width={width}
           height={height}
           maxWidth={maxWidth}
@@ -463,16 +492,18 @@ function ImageComponent({
             </LexicalNestedComposer>
           </div>
         )}
-        {resizable && (hasFocus || isResizing) && (
-          <ImageResizer
-            showCaption={showCaption}
-            setShowCaption={setShowCaption}
-            editor={editor}
-            imageRef={ref}
-            onResizeStart={onResizeStart}
-            onResizeEnd={onResizeEnd}
-          />
-        )}
+        {resizable &&
+          $isNodeSelection(selection) &&
+          (isSelected || isResizing) && (
+            <ImageResizer
+              showCaption={showCaption}
+              setShowCaption={setShowCaption}
+              editor={editor}
+              imageRef={ref}
+              onResizeStart={onResizeStart}
+              onResizeEnd={onResizeEnd}
+            />
+          )}
       </>
     </Suspense>
   );

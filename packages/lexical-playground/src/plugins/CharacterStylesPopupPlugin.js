@@ -9,7 +9,7 @@
 
 import type {RangeSelection, LexicalEditor, ElementNode} from 'lexical';
 
-import {TextNode, $isTextNode, $getSelection} from 'lexical';
+import {TextNode, $isTextNode, $getSelection, $isRangeSelection} from 'lexical';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -201,7 +201,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
       editorState.read(() => {
         const selection = $getSelection();
 
-        if (selection === null) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 

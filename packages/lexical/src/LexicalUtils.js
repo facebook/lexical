@@ -340,8 +340,12 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
   );
 }
 
-export function $getRoot(editorState?: EditorState): RootNode {
-  return (((editorState || getActiveEditorState())._nodeMap.get(
+export function $getRoot(): RootNode {
+  return internalGetRoot(getActiveEditorState());
+}
+
+export function internalGetRoot(editorState: EditorState): RootNode {
+  return ((editorState._nodeMap.get(
     'root',
     // $FlowFixMe: root is always in our Map
   ): any): RootNode);

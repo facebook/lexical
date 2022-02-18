@@ -107,7 +107,6 @@ export default function ExcalidrawModal({
   }
 
   const onChange = (els) => {
-    console.log('setting', els);
     setElements(els);
   };
 

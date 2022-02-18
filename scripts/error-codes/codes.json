@@ -49,5 +49,20 @@
   "49": "append: attemtping to append self",
   "50": "Node %s and selection point do not match.",
   "51": "setIndent is not implemented on ListItemNode",
-  "52": "Expected node %s to to be a ElementNode."
+  "52": "Expected node %s to to be a ElementNode.",
+  "53": "LexicalAutoLinkPlugin: AutoLinkNode, TableCellNode or TableRowNode not registered on editor",
+  "54": "TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor",
+  "55": "Grid not found.",
+  "56": "Listener for type \"command\" requires a \"priority\".",
+  "57": "Node %s has not been registered. Ensure node has been passed to createEditor.",
+  "58": "useCharacterLimit: OverflowNode not registered on editor",
+  "59": "Attached node not in nextNodeMap",
+  "60": "Mutation listener on an unregistered node %s",
+  "61": "Create node: Attempted to create node %s that was not previously registered on the editor. You can use register your custom nodes.",
+  "62": "joinedText was not calculated",
+  "63": "Bad regEx pattern found for %s",
+  "64": "Expected anchor and focus offsets to have ascending character order.",
+  "65": "The capture group count in the RegEx does match the actual capture group count.",
+  "66": "Type %s not in registeredNodes",
+  "67": "The text content string length does not correlate with insertions/deletions of new text."
 }

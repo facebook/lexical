@@ -1337,4 +1337,167 @@ describe('LexicalEditor tests', () => {
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith('foobar');
   });
+
+  it('mutation listener', async () => {
+    init();
+    const paragraphMutations = jest.fn();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', ParagraphNode, paragraphMutations);
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const paragraphKeys = [];
+    const textNodeKeys = [];
+    // No await intentional (batch with next)
+    editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('foo');
+      root.append(paragraph);
+      paragraph.append(textNode);
+      paragraphKeys.push(paragraph.getKey());
+      textNodeKeys.push(textNode.getKey());
+    });
+    await editor.update(() => {
+      const textNode = $getNodeByKey(textNodeKeys[0]);
+      const textNode2 = $createTextNode('bar').toggleFormat('bold');
+      const textNode3 = $createTextNode('xyz').toggleFormat('italic');
+      textNode.insertAfter(textNode2);
+      textNode2.insertAfter(textNode3);
+      textNodeKeys.push(textNode2.getKey());
+      textNodeKeys.push(textNode3.getKey());
+    });
+    await editor.update(() => {
+      $getRoot().clear();
+    });
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraphKeys.push(paragraph.getKey());
+      // Created and deleted in the same update
+      textNodeKeys.push($createTextNode('zzz').getKey());
+    });
+    expect(paragraphMutations.mock.calls.length).toBe(3);
+    expect(textNodeMutations.mock.calls.length).toBe(2);
+
+    const [paragraphMutation1, paragraphMutation2, paragraphMutation3] =
+      paragraphMutations.mock.calls;
+    const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
+    expect(paragraphMutation1[0].size).toBe(1);
+    expect(paragraphMutation1[0].get(paragraphKeys[0])).toBe('attached');
+    expect(paragraphMutation1[0].size).toBe(1);
+    expect(paragraphMutation2[0].get(paragraphKeys[0])).toBe('detached');
+    expect(paragraphMutation3[0].size).toBe(1);
+    expect(paragraphMutation3[0].get(paragraphKeys[1])).toBe('attached');
+    expect(textNodeMutation1[0].size).toBe(3);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('attached');
+    expect(textNodeMutation1[0].get(textNodeKeys[1])).toBe('attached');
+    expect(textNodeMutation1[0].get(textNodeKeys[2])).toBe('attached');
+    expect(textNodeMutation2[0].size).toBe(3);
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('detached');
+    expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('detached');
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('detached');
+  });
+
+  it('mutation listener with setEditorState', async () => {
+    init();
+    await editor.update(() => {
+      $getRoot().append($createParagraphNode());
+    });
+    const initialEditorState = editor.getEditorState();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const textNodeKeys = [];
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode1 = $createTextNode('foo');
+      paragraph.append(textNode1);
+      textNodeKeys.push(textNode1.getKey());
+    });
+    const fooEditorState = editor.getEditorState();
+    await editor.setEditorState(initialEditorState);
+    // This line should have no effect on the mutation listeners
+    const parsedFooEditorState = editor.parseEditorState(
+      JSON.stringify(fooEditorState),
+    );
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode2 = $createTextNode('bar').toggleFormat('bold');
+      const textNode3 = $createTextNode('xyz').toggleFormat('italic');
+      paragraph.append(textNode2, textNode3);
+      textNodeKeys.push(textNode2.getKey(), textNode3.getKey());
+    });
+    await editor.setEditorState(parsedFooEditorState);
+
+    expect(textNodeMutations.mock.calls.length).toBe(4);
+    const [
+      textNodeMutation1,
+      textNodeMutation2,
+      textNodeMutation3,
+      textNodeMutation4,
+    ] = textNodeMutations.mock.calls;
+    expect(textNodeMutation1[0].size).toBe(1);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('attached');
+    expect(textNodeMutation2[0].size).toBe(1);
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('detached');
+    expect(textNodeMutation3[0].size).toBe(2);
+    expect(textNodeMutation3[0].get(textNodeKeys[1])).toBe('attached');
+    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('attached');
+    expect(textNodeMutation4[0].size).toBe(3); // +1 newly generated key by parseEditorState
+    expect(textNodeMutation4[0].get(textNodeKeys[1])).toBe('detached');
+    expect(textNodeMutation4[0].get(textNodeKeys[2])).toBe('detached');
+  });
+
+  it('mutation listeners does not trigger when other node types are mutated', async () => {
+    init();
+    const paragraphMutations = jest.fn();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', ParagraphNode, paragraphMutations);
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    await editor.update(() => {
+      $getRoot().append($createParagraphNode());
+    });
+
+    expect(paragraphMutations.mock.calls.length).toBe(1);
+    expect(textNodeMutations.mock.calls.length).toBe(0);
+  });
+
+  it('mutation listeners with normalization', async () => {
+    init();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const textNodeKeys = [];
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode1 = $createTextNode('foo');
+      const textNode2 = $createTextNode('bar');
+      textNodeKeys.push(textNode1.getKey(), textNode2.getKey());
+      root.append(paragraph);
+      paragraph.append(textNode1, textNode2);
+    });
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode3 = $createTextNode('xyz').toggleFormat('bold');
+      paragraph.append(textNode3);
+      textNodeKeys.push(textNode3.getKey());
+    });
+    await editor.update(() => {
+      const textNode3 = $getNodeByKey(textNodeKeys[2]);
+      textNode3.toggleFormat('bold'); // Normalize with foobar
+    });
+
+    expect(textNodeMutations.mock.calls.length).toBe(3);
+    const [textNodeMutation1, textNodeMutation2, textNodeMutation3] =
+      textNodeMutations.mock.calls;
+    expect(textNodeMutation1[0].size).toBe(1);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('attached');
+    expect(textNodeMutation2[0].size).toBe(1);
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('attached');
+    expect(textNodeMutation3[0].size).toBe(1);
+    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('detached');
+  });
 });

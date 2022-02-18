@@ -62,6 +62,7 @@ export type {
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
+  NodeMutation,
 } from './LexicalEditor';
 export type {EditorState, ParsedEditorState} from './LexicalEditorState';
 export type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';

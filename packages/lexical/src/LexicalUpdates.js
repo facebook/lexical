@@ -11,6 +11,7 @@ import type {
   CommandPayload,
   EditorUpdateOptions,
   LexicalEditor,
+  MutatedNodes,
   Transform,
 } from './LexicalEditor';
 import type {ParsedEditorState} from './LexicalEditorState';
@@ -346,7 +347,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._updating = true;
 
   try {
-    updateEditorState(
+    const mutatedNodes = updateEditorState(
       rootElement,
       currentEditorState,
       pendingEditorState,
@@ -355,6 +356,14 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       needsUpdate,
       editor,
     );
+    if (mutatedNodes !== null) {
+      triggerMutationListeners(
+        editor,
+        currentEditorState,
+        pendingEditorState,
+        mutatedNodes,
+      );
+    }
   } catch (error) {
     // Report errors
     triggerListeners('error', editor, false, error);
@@ -421,6 +430,22 @@ function triggerTextContentListeners(
   if (currentTextContent !== latestTextContent) {
     triggerListeners('textcontent', editor, true, latestTextContent);
   }
+}
+
+function triggerMutationListeners(
+  editor: LexicalEditor,
+  currentEditorState: EditorState,
+  pendingEditorState: EditorState,
+  mutatedNodes: MutatedNodes,
+): void {
+  const listeners = editor._listeners.mutation;
+  listeners.forEach((klass, listener) => {
+    const mutatedNodesByType = mutatedNodes.get(klass);
+    if (mutatedNodesByType === undefined) {
+      return;
+    }
+    listener(mutatedNodesByType);
+  });
 }
 
 export function triggerListeners(

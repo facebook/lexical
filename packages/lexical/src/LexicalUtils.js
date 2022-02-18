@@ -10,7 +10,10 @@
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
+  MutatedNodes,
+  NodeMutation,
   RegisteredNode,
+  RegisteredNodes,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
@@ -157,7 +160,11 @@ export function $isLeafNode(node: ?LexicalNode): boolean %checks {
   return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-export function $generateKey(node: LexicalNode): NodeKey {
+export function $setNodeKey(node: LexicalNode, existingKey: ?NodeKey): void {
+  if (existingKey != null) {
+    node.__key = existingKey;
+    return;
+  }
   errorOnReadOnly();
   errorOnInfiniteTransforms();
   const editor = getActiveEditor();
@@ -172,7 +179,7 @@ export function $generateKey(node: LexicalNode): NodeKey {
   }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
-  return key;
+  node.__key = key;
 }
 
 function internalMarkParentElementsAsDirty(
@@ -778,4 +785,23 @@ export function getCachedClassNameArray<Theme: {...}>(
     return classNamesArr;
   }
   return classNames;
+}
+
+export function setMutatedNode(
+  mutatedNodes: MutatedNodes,
+  registeredNodes: RegisteredNodes,
+  node: LexicalNode,
+  mutation: NodeMutation,
+) {
+  const registeredNode = registeredNodes.get(node.__type);
+  if (registeredNode === undefined) {
+    invariant(false, 'Type %s not in registeredNodes', node.__type);
+  }
+  const klass = registeredNode.klass;
+  let mutatedNodesByType = mutatedNodes.get(klass);
+  if (mutatedNodesByType === undefined) {
+    mutatedNodesByType = new Map();
+    mutatedNodes.set(klass, mutatedNodesByType);
+  }
+  mutatedNodesByType.set(node.__key, mutation);
 }

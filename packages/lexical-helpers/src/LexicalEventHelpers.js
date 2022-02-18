@@ -30,7 +30,8 @@ import {
   $isHorizontalRuleNode,
   $log,
 } from 'lexical';
-import getPossibleDecoratorOrHorizontalRuleNode from 'shared/getPossibleDecoratorOrHorizontalRuleNode';
+
+import getPossibleDecoratorNode from '../../shared/src/getPossibleDecoratorNode';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (

@@ -63,7 +63,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [],
+      [onError],
     );
 
     React.useEffect(() => {

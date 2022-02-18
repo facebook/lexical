@@ -31,10 +31,10 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
-  $generateKey,
   $getCompositionKey,
   $getNodeByKey,
   $setCompositionKey,
+  $setNodeKey,
   internalMarkNodeAsDirty,
   internalMarkSiblingsAsDirty,
 } from './LexicalUtils';
@@ -131,8 +131,8 @@ export class LexicalNode {
 
   constructor(key?: NodeKey): void {
     this.__type = this.constructor.getType();
-    this.__key = key || $generateKey(this);
     this.__parent = null;
+    $setNodeKey(this, key);
 
     // Ensure custom nodes implement required methods.
     if (__DEV__) {

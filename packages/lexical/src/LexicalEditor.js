@@ -135,6 +135,10 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
+export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
+export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
+export type NodeMutation = 'attached' | 'detached';
+
 export type ErrorListener = (error: Error) => void;
 export type UpdateListener = ({
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
@@ -150,6 +154,7 @@ export type RootListener = (
   prevRootElement: null | HTMLElement,
 ) => void;
 export type TextContentListener = (text: string) => void;
+export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
@@ -176,6 +181,7 @@ type Listeners = {
   command: Array<Set<CommandListener>>,
   decorator: Set<DecoratorListener>,
   error: Set<ErrorListener>,
+  mutation: MutationListeners,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
   update: Set<UpdateListener>,
@@ -187,6 +193,7 @@ export type ListenerType =
   | 'root'
   | 'decorator'
   | 'textcontent'
+  | 'mutation'
   | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
@@ -338,6 +345,7 @@ class BaseLexicalEditor {
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
       decorator: new Set(),
       error: new Set(),
+      mutation: new Map(),
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
@@ -366,31 +374,60 @@ class BaseLexicalEditor {
   }
   addListener(
     type: ListenerType,
-    listener:
+    arg1:
       | ErrorListener
       | UpdateListener
       | DecoratorListener
       | RootListener
       | TextContentListener
-      | CommandListener,
-    priority: CommandListenerPriority,
+      | CommandListener
+      | Class<LexicalNode>,
+    arg2: MutationListener | CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];
     if (type === 'command') {
+      // $FlowFixMe: TODO refine
+      const listener: CommandListener = arg1;
+      // $FlowFixMe: TODO refine
+      const priority = (arg2: CommandListenerPriority);
       if (priority === undefined) {
         invariant(false, 'Listener for type "command" requires a "priority".');
       }
 
-      // $FlowFixMe: unsure how to csae this
+      // $FlowFixMe: unsure how to cast this
       const commands: Array<Set<CommandListener>> = listenerSetOrMap;
       const commandSet = commands[priority];
-      // $FlowFixMe: cast
       commandSet.add(listener);
       return () => {
-        // $FlowFixMe: cast
         commandSet.delete(listener);
       };
+    } else if (type === 'mutation') {
+      // $FlowFixMe: refine
+      const klass = (arg1: Class<LexicalNode>);
+      // $FlowFixMe: refine
+      const mutationListener = (arg2: MutationListener);
+      const registeredNode = this._nodes.get(klass.getType());
+      if (registeredNode === undefined) {
+        invariant(
+          false,
+          'Node %s has not been registered. Ensure node has been passed to createEditor.',
+          klass.name,
+        );
+      }
+      const mutations = this._listeners.mutation;
+      mutations.set(mutationListener, klass);
+      return () => {
+        mutations.delete(mutationListener);
+      };
     } else {
+      const listener:
+        | ErrorListener
+        | UpdateListener
+        | DecoratorListener
+        | RootListener
+        | TextContentListener
+        // $FlowFixMe: TODO refine
+        | CommandListener = arg1;
       // $FlowFixMe: TODO refine this from the above types
       listenerSetOrMap.add(listener);
 
@@ -601,6 +638,11 @@ declare export class LexicalEditor {
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
+  addListener(
+    type: 'mutation',
+    klass: Class<LexicalNode>,
+    listener: MutationListener,
+  ): () => void;
   addListener(
     type: 'command',
     listener: CommandListener,

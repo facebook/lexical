@@ -11,6 +11,8 @@ import type {
   EditorConfig,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
+  MutatedNodes,
+  RegisteredNodes,
 } from './LexicalEditor';
 import type {NodeKey, NodeMap} from './LexicalNode';
 import type {RangeSelection} from './LexicalSelection';
@@ -40,6 +42,7 @@ import {
   getDOMTextNode,
   getTextDirection,
   isSelectionWithinEditor,
+  setMutatedNode,
 } from './LexicalUtils';
 
 let subTreeTextContent = '';
@@ -47,6 +50,7 @@ let subTreeDirectionedTextContent = '';
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig<{...}>;
 let activeEditor: LexicalEditor;
+let activeEditorNodes: RegisteredNodes;
 let treatAllNodesAsDirty: boolean = false;
 let activeEditorStateReadOnly: boolean = false;
 let activeTextDirection = null;
@@ -55,6 +59,7 @@ let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
+let mutatedNodes: MutatedNodes;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
@@ -71,6 +76,9 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   if ($isElementNode(node)) {
     const children = node.__children;
     destroyChildren(children, 0, children.length - 1, null);
+  }
+  if (node !== undefined) {
+    setMutatedNode(mutatedNodes, activeEditorNodes, node, 'detached');
   }
 }
 
@@ -199,6 +207,7 @@ function createNode(
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
   }
+  setMutatedNode(mutatedNodes, activeEditorNodes, node, 'attached');
   return dom;
 }
 
@@ -612,7 +621,7 @@ function reconcileRoot(
   dirtyType: 0 | 1 | 2,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
-): void {
+): MutatedNodes {
   subTreeTextContent = '';
   editorTextContent = '';
   subTreeDirectionedTextContent = '';
@@ -622,12 +631,15 @@ function reconcileRoot(
   activeTextDirection = null;
   activeEditor = editor;
   activeEditorConfig = editor._config;
+  activeEditorNodes = editor._nodes;
   activeDirtyElements = dirtyElements;
   activeDirtyLeaves = dirtyLeaves;
   activePrevNodeMap = prevEditorState._nodeMap;
   activeNextNodeMap = nextEditorState._nodeMap;
   activeEditorStateReadOnly = nextEditorState._readOnly;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
+  const currentMutatedNodes = new Map();
+  mutatedNodes = currentMutatedNodes;
   reconcileNode('root', null);
 
   // We don't want a bunch of void checks throughout the scope
@@ -636,6 +648,8 @@ function reconcileRoot(
   // can leak memory.
   // $FlowFixMe
   activeEditor = undefined;
+  // $FlowFixMe
+  activeEditorNodes = undefined;
   // $FlowFixMe
   activeDirtyElements = undefined;
   // $FlowFixMe
@@ -648,6 +662,10 @@ function reconcileRoot(
   activeEditorConfig = undefined;
   // $FlowFixMe
   activePrevKeyToDOMMap = undefined;
+  // $FlowFixMe
+  mutatedNodes = undefined;
+
+  return currentMutatedNodes;
 }
 
 export function updateEditorState(
@@ -658,8 +676,9 @@ export function updateEditorState(
   pendingSelection: RangeSelection | null,
   needsUpdate: boolean,
   editor: LexicalEditor,
-): void {
+): null | MutatedNodes {
   const observer = editor._observer;
+  let reconcileMutatedNodes = null;
 
   if (needsUpdate && observer !== null) {
     const dirtyType = editor._dirtyType;
@@ -668,7 +687,7 @@ export function updateEditorState(
 
     observer.disconnect();
     try {
-      reconcileRoot(
+      reconcileMutatedNodes = reconcileRoot(
         currentEditorState,
         pendingEditorState,
         editor,
@@ -698,6 +717,8 @@ export function updateEditorState(
       domSelection,
     );
   }
+
+  return reconcileMutatedNodes;
 }
 
 function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {

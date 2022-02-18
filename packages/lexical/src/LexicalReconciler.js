@@ -78,7 +78,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     destroyChildren(children, 0, children.length - 1, null);
   }
   if (node !== undefined) {
-    setMutatedNode(mutatedNodes, activeEditorNodes, node, 'detached');
+    setMutatedNode(mutatedNodes, activeEditorNodes, node, 'destroyed');
   }
 }
 
@@ -207,7 +207,7 @@ function createNode(
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
   }
-  setMutatedNode(mutatedNodes, activeEditorNodes, node, 'attached');
+  setMutatedNode(mutatedNodes, activeEditorNodes, node, 'created');
   return dom;
 }
 

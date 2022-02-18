@@ -17,6 +17,7 @@ import {ELEMENT_TYPE_TO_FORMAT} from '../../LexicalConstants';
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
+  $isRangeSelection,
   internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../../LexicalSelection';
@@ -216,7 +217,7 @@ export class ElementNode extends LexicalNode {
       focusOffset = childrenCount;
     }
     const key = this.__key;
-    if (selection === null) {
+    if (!$isRangeSelection(selection)) {
       return internalMakeRangeSelection(
         key,
         anchorOffset,
@@ -373,7 +374,7 @@ export class ElementNode extends LexicalNode {
     if (deleteCount) {
       // Adjusting selection, in case node that was anchor/focus will be deleted
       const selection = $getSelection();
-      if (selection !== null) {
+      if ($isRangeSelection(selection)) {
         const nodesToRemoveKeySet = new Set(nodesToRemoveKeys);
         const nodesToInsertKeySet = new Set(nodesToInsertKeys);
         const isPointRemoved = (point: PointType): boolean => {

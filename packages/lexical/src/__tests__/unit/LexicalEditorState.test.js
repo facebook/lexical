@@ -6,7 +6,13 @@
  *
  */
 
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createNodeSelection,
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $setSelection,
+} from 'lexical';
 
 import {EditorState} from '../../LexicalEditorState';
 import {$createRootNode} from '../../nodes/base/LexicalRootNode';
@@ -72,7 +78,7 @@ describe('LexicalEditorState tests', () => {
       });
     });
 
-    test('toJSON()', async () => {
+    test('toJSON() for range selection', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const paragraph = $createParagraphNode();
@@ -82,7 +88,23 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__parent\":null,\"__key\":\"root\",\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__parent\":\"root\",\"__key\":\"1\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__parent\":\"1\",\"__key\":\"2\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"}}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__type\":\"root\",\"__parent\":null,\"__key\":\"root\",\"__children\":[\"1\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\",\"__cachedText\":\"Hello world\"}],[\"1\",{\"__type\":\"paragraph\",\"__parent\":\"root\",\"__key\":\"1\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__parent\":\"1\",\"__key\":\"2\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"},\"type\":\"range\"}}`,
+      );
+    });
+
+    test('toJSON() for node selection', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello world');
+        const selection = $createNodeSelection();
+        selection.add(text.getKey());
+        $setSelection(selection);
+        paragraph.append(text);
+        $getRoot().append(paragraph);
+      });
+      expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
+        '{"_nodeMap":[["root",{"__type":"root","__parent":null,"__key":"root","__children":["1"],"__format":0,"__indent":0,"__dir":"ltr","__cachedText":"Hello world"}],["1",{"__type":"paragraph","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":"ltr"}],["2",{"__type":"text","__parent":"1","__key":"2","__text":"Hello world","__format":0,"__style":"","__mode":0,"__detail":0}]],"_selection":{"objects":["2"],"type":"object"}}',
       );
     });
 

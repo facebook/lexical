@@ -12,7 +12,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $setSelection} from 'lexical';
+import {$getSelection, $setSelection, $isRangeSelection} from 'lexical';
 import {
   $deleteTableColumn,
   $getTableCellNodeFromLexicalNode,
@@ -287,7 +287,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
     const rootElement = editor.getRootElement();
 
     if (
-      selection !== null &&
+      $isRangeSelection(selection) &&
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {

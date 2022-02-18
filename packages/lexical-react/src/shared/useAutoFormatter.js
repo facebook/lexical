@@ -14,10 +14,15 @@ import type {
   ScanningContext,
 } from './AutoFormatterUtils.js';
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
-import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
+import type {
+  EditorState,
+  LexicalEditor,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
 
 import {$isListItemNode} from '@lexical/list';
-import {$getSelection, $isTextNode} from 'lexical';
+import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 import {$isCodeNode} from 'lexical/CodeNode';
 import {useEffect} from 'react';
 
@@ -62,9 +67,9 @@ function getCriteriaWithMatchResultContext(
 }
 
 function getTextNodeForAutoFormatting(
-  selection: null | RangeSelection,
+  selection: null | RangeSelection | NodeSelection,
 ): null | TextNodeWithOffset {
-  if (selection == null) {
+  if (!$isRangeSelection(selection)) {
     return null;
   }
 
@@ -176,7 +181,7 @@ function getTriggerState(
 
   editorState.read(() => {
     const selection = $getSelection();
-    if (selection == null || !selection.isCollapsed()) {
+    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
       return;
     }
     const node = selection.anchor.getNode();

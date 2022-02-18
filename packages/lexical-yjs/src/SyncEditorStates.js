@@ -20,6 +20,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
   isDecoratorArray,
@@ -172,13 +173,13 @@ export function syncYjsChangesToLexical(
       }
 
       const selection = $getSelection();
-      if (selection !== null) {
+      if ($isRangeSelection(selection)) {
         // We can't use Yjs's cursor position here, as it doesn't always
         // handle selection recovery correctly – especially on elements that
         // get moved around or split. So instead, we roll our own solution.
         if (doesSelectionNeedRecovering(selection)) {
           const prevSelection = currentEditorState._selection;
-          if (prevSelection !== null) {
+          if ($isRangeSelection(prevSelection)) {
             const prevOffsetView = $createOffsetView(
               editor,
               0,

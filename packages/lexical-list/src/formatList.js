@@ -23,6 +23,7 @@ import {
   $getSelection,
   $isElementNode,
   $isLeafNode,
+  $isRangeSelection,
   $isRootNode,
 } from 'lexical';
 
@@ -37,7 +38,7 @@ import {
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       const nodes = selection.getNodes();
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
@@ -128,7 +129,7 @@ function createListOrMerge(node: ElementNode, listType: 'ul' | 'ol'): ListNode {
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       const listNodes = new Set();
       const nodes = selection.getNodes();
       const anchorNode = selection.anchor.getNode();
@@ -283,7 +284,7 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
 
 function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): boolean {
   const selection = $getSelection();
-  if (selection === null) {
+  if (!$isRangeSelection(selection)) {
     return false;
   }
   const selectedNodes = selection.getNodes();

@@ -16,6 +16,7 @@ import {
   $getRoot,
   $getSelection,
   $isLeafNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from 'lexical';
@@ -142,7 +143,7 @@ function $wrapOverflowedNodes(offset: number): void {
         const selection = $getSelection();
         // Restore selection when the overflow children are removed
         if (
-          selection !== null &&
+          $isRangeSelection(selection) &&
           (!selection.anchor.getNode().isAttached() ||
             !selection.focus.getNode().isAttached())
         ) {
@@ -237,7 +238,7 @@ export function mergePrevious(overflowNode: OverflowNode): void {
   }
 
   const selection = $getSelection();
-  if (selection !== null) {
+  if ($isRangeSelection(selection)) {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();
     const focus = selection.focus;

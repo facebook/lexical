@@ -11,10 +11,17 @@ import type {
   EditorState,
   ElementNode,
   LexicalEditor,
+  NodeSelection,
   RangeSelection,
 } from 'lexical';
 
-import {$getRoot, $getSelection, $isElementNode, $isTextNode} from 'lexical';
+import {
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isTextNode,
+} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
@@ -211,6 +218,10 @@ function printRangeSelection(selection: RangeSelection): string {
   return res;
 }
 
+function printObjectSelection(selection: NodeSelection): string {
+  return `: node\n  └ [${Array.from(selection._objects).join(', ')}]`;
+}
+
 function generateContent(editorState: EditorState): string {
   let res = ' root\n';
 
@@ -237,7 +248,11 @@ function generateContent(editorState: EditorState): string {
       });
     });
 
-    return selection === null ? ': null' : printRangeSelection(selection);
+    return selection === null
+      ? ': null'
+      : $isRangeSelection(selection)
+      ? printRangeSelection(selection)
+      : printObjectSelection(selection);
   });
 
   return res + '\n selection' + selectionString;
@@ -365,7 +380,7 @@ function printSelectedCharsLine({
   // No selection or node is not selected.
   if (
     !$isTextNode(node) ||
-    selection === null ||
+    !$isRangeSelection(selection) ||
     !isSelected ||
     $isElementNode(node)
   ) {

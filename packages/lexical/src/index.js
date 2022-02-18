@@ -11,9 +11,11 @@ import {VERSION} from './LexicalConstants';
 import {createEditor} from './LexicalEditor';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
+  $createEmptyObjectSelection as $createNodeSelection,
   $createEmptyRangeSelection as $createRangeSelection,
   $getPreviousSelection,
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
 } from './LexicalSelection';
 import {
@@ -69,6 +71,7 @@ export type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
 export type {
   ElementPointType as ElementPoint,
+  NodeSelection,
   PointType as Point,
   RangeSelection,
   TextPointType as TextPoint,
@@ -85,9 +88,9 @@ export type {RootNode} from './nodes/base/LexicalRootNode';
 export type {TextFormatType} from './nodes/base/LexicalTextNode';
 
 export {
-  // Used during read/update/transform
   $createLineBreakNode,
   $createNodeFromParse,
+  $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -98,9 +101,9 @@ export {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  // Node validation
   $isLeafNode,
   $isLineBreakNode,
+  $isNodeSelection,
   $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
@@ -109,7 +112,6 @@ export {
   $setSelection,
   createDecoratorArray,
   createDecoratorEditor,
-  // Decorator state
   createDecoratorMap,
   createEditor,
   DecoratorNode,

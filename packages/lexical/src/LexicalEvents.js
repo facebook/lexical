@@ -18,6 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $isRootNode,
   $setCompositionKey,
 } from '.';
@@ -99,7 +100,7 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
 
     const selection = $getSelection();
     // Update the selection format
-    if (selection !== null && selection.isCollapsed()) {
+    if ($isRangeSelection(selection) && selection.isCollapsed()) {
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
@@ -120,23 +121,23 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (selection === null) {
-      return;
-    }
-    const anchor = selection.anchor;
-    if (
-      anchor.type === 'element' &&
-      anchor.offset === 0 &&
-      selection.isCollapsed() &&
-      $getRoot().getChildrenSize() === 1 &&
-      anchor.getNode().getTopLevelElementOrThrow().isEmpty()
-    ) {
-      const lastSelection = editor.getEditorState()._selection;
-      if (lastSelection !== null && selection.is(lastSelection)) {
-        window.getSelection().removeAllRanges();
-        selection.dirty = true;
+    if ($isRangeSelection(selection)) {
+      const anchor = selection.anchor;
+      if (
+        anchor.type === 'element' &&
+        anchor.offset === 0 &&
+        selection.isCollapsed() &&
+        $getRoot().getChildrenSize() === 1 &&
+        anchor.getNode().getTopLevelElementOrThrow().isEmpty()
+      ) {
+        const lastSelection = editor.getEditorState()._selection;
+        if (lastSelection !== null && selection.is(lastSelection)) {
+          window.getSelection().removeAllRanges();
+          selection.dirty = true;
+        }
       }
     }
+    editor.execCommand('click', event);
   });
 }
 
@@ -177,7 +178,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
 
-    if (selection === null) {
+    if (!$isRangeSelection(selection)) {
       return;
     }
 
@@ -331,7 +332,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     const data = event.data;
     if (
       data != null &&
-      selection !== null &&
+      $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
       editor.execCommand('insertText', data);
@@ -350,7 +351,7 @@ function onCompositionStart(
 ): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (selection !== null && !editor.isComposing()) {
+    if ($isRangeSelection(selection) && !editor.isComposing()) {
       const anchor = selection.anchor;
       $setCompositionKey(anchor.key);
       if (

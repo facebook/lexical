@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
-import {$getSelection, $isRootNode} from 'lexical';
+import {$getSelection, $isRootNode, $isRangeSelection} from 'lexical';
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
 import yellowFlowerImage from '../images/image/yellow-flower.jpg';
@@ -31,7 +31,7 @@ export default function ImagesPlugin(): React$Node {
       (type) => {
         if (type === 'insertImage') {
           const selection = $getSelection();
-          if (selection !== null) {
+          if ($isRangeSelection(selection)) {
             if ($isRootNode(selection.anchor.getNode())) {
               selection.insertParagraph();
             }

@@ -22,7 +22,12 @@ import {
   onPasteForRichText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
-import {$getSelection, $isElementNode} from 'lexical';
+import {
+  $getSelection,
+  $isElementNode,
+  $isNodeSelection,
+  $isRangeSelection,
+} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import useLexicalDragonSupport from './useLexicalDragonSupport';
@@ -35,7 +40,11 @@ export function useRichTextSetup(editor: LexicalEditor): void {
       'command',
       (type, payload): boolean => {
         const selection = $getSelection();
-        if (selection === null) {
+        if (type === 'click' && $isNodeSelection(selection)) {
+          selection.clear();
+          return true;
+        }
+        if (!$isRangeSelection(selection)) {
           return false;
         }
         switch (type) {

@@ -27,6 +27,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
   ElementNode,
 } from 'lexical';
@@ -345,7 +346,7 @@ function applyCustomTableHandlers(
 
   const formatCells = (type: TextFormatType) => {
     let selection = $getSelection();
-    if (selection === null) {
+    if (!$isRangeSelection(selection)) {
       selection = $createRangeSelection();
     }
     // This is to make Flow play ball.
@@ -472,7 +473,7 @@ function applyCustomTableHandlers(
     (type, payload) => {
       const selection = $getSelection();
 
-      if (selection == null) {
+      if (!$isRangeSelection(selection)) {
         return false;
       }
 

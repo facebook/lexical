@@ -25,7 +25,7 @@
     "build-prod": "node scripts/build.js --prod --clean",
     "build-release": "node scripts/build.js --prod --release --clean",
     "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod",
-    "build-flow": "gen-flow-files ./packages/lexical/src --out-dir ./packages/lexical/dist && gen-flow-files ./packages/lexical-react/src --out-dir ./packages/lexical-react/dist",
+    "build-flow": "./scripts/build-flow.sh",
     "clean": "node scripts/build.js --clean",
     "extract-codes": "node scripts/build.js --codes",
     "watch": "node scripts/build.js --watch",

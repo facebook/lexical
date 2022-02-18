@@ -308,7 +308,7 @@ function handleMultilineIndent(
 ): boolean {
   const selection = $getSelection();
 
-  if (selection === null || selection.isCollapsed()) {
+  if (!$isRangeSelection(selection) || selection.isCollapsed()) {
     return false;
   }
 

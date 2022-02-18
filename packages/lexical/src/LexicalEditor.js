@@ -8,7 +8,7 @@
  */
 
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 
 import invariant from 'shared/invariant';
@@ -212,6 +212,27 @@ export function resetEditor(
   }
 }
 
+export const DOMConversionCache: Map<
+  string,
+  Array<(node: Node) => DOMConversion | null>,
+> = new Map();
+
+function initializeConversionCache(nodes: RegisteredNodes): void {
+  nodes.forEach((node) => {
+    const map = node.klass.convertDOM();
+    if (map !== null) {
+      Object.keys(map).forEach((key) => {
+        let currentCache = DOMConversionCache.get(key);
+        if (currentCache === undefined) {
+          currentCache = [];
+          DOMConversionCache.set(key, currentCache);
+        }
+        currentCache.push(map[key]);
+      });
+    }
+  });
+}
+
 export function createEditor<EditorContext>(editorConfig?: {
   context?: EditorContext,
   disableEvents?: boolean,
@@ -252,6 +273,7 @@ export function createEditor<EditorContext>(editorConfig?: {
       transforms: new Set(),
     });
   }
+  initializeConversionCache(registeredNodes);
   // klass: Array<Class<LexicalNode>>
   // $FlowFixMe: use our declared type instead
   const editor: editor = new BaseLexicalEditor(

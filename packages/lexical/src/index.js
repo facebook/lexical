@@ -8,7 +8,7 @@
  */
 
 import {VERSION} from './LexicalConstants';
-import {createEditor} from './LexicalEditor';
+import {createEditor, DOMConversionCache} from './LexicalEditor';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
   $createEmptyObjectSelection as $createNodeSelection,
@@ -68,9 +68,19 @@ export type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   NodeMutation,
+  RegisteredNodes,
 } from './LexicalEditor';
 export type {EditorState, ParsedEditorState} from './LexicalEditorState';
-export type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
+export type {
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
+  DOMConversionMap,
+  DOMConversionOutput,
+  LexicalNode,
+  NodeKey,
+  NodeMap,
+} from './LexicalNode';
 export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
 export type {
   ElementPointType as ElementPoint,
@@ -122,6 +132,7 @@ export {
   createDecoratorMap,
   createEditor,
   DecoratorNode,
+  DOMConversionCache,
   ElementNode,
   GridCellNode,
   GridNode,

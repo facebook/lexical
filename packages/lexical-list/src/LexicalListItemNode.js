@@ -7,8 +7,9 @@
  * @flow strict
  */
 
-import type {DOMConversion} from '../../lexical/src/LexicalNode';
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
@@ -66,15 +67,13 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
-    const nodeName = element.nodeName.toLowerCase();
-    if (nodeName === 'li') {
-      return {
-        fn: () => ({node: $createListItemNode()}),
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      li: (node: Node) => ({
+        fn: convertListItemElement,
         priority: 0,
-      };
-    }
-    return null;
+      }),
+    };
   }
 
   // Mutation
@@ -355,6 +354,10 @@ function $setListItemThemeClassNames(
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
+}
+
+function convertListItemElement(domNode: Node): DOMConversionOutput {
+  return {node: $createListItemNode()};
 }
 
 export function $createListItemNode(): ListItemNode {

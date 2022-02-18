@@ -8,7 +8,11 @@
  */
 
 import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
-import type {NodeKey, DOMConversion} from '../../LexicalNode';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  NodeKey,
+} from '../../LexicalNode';
 import type {NodeSelection, RangeSelection} from '../../LexicalSelection';
 
 import invariant from 'shared/invariant';
@@ -383,112 +387,37 @@ export class TextNode extends LexicalNode {
     return false;
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
-    const nodeName = element.nodeName.toLowerCase();
-    if (nodeName === '#text') {
-      return {
-        fn: (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      '#text': (node: Node) => ({
+        fn: convertTextDOMNode,
         priority: 0,
-      };
-    } else if (nodeName === 'a') {
-      return {
-        fn: (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
+      }),
+      b: (node: Node) => ({
+        fn: convertBringAttentionToElement,
         priority: 0,
-      };
-    } else if (nodeName === 'b') {
-      return {
-        fn: (domNode: Node) => {
-          // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
-          const b: HTMLElement = domNode;
-          // Google Docs wraps all copied HTML in a <b> with font-weight normal
-          const hasNormalFontWeight = b.style.fontWeight === 'normal';
-          return {
-            forChild: (lexicalNode) => {
-              if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
-                lexicalNode.toggleFormat('bold');
-              }
-            },
-            node: null,
-          };
-        },
+      }),
+      em: (node: Node) => ({
+        fn: convertTextFormatElement,
         priority: 0,
-      };
-    } else if (nodeName === 'em') {
-      return {
-        fn: (domNode: Node) => {
-          return {
-            forChild: (lexicalNode) => {
-              if ($isTextNode(lexicalNode)) {
-                lexicalNode.toggleFormat('italic');
-              }
-            },
-            node: null,
-          };
-        },
+      }),
+      i: (node: Node) => ({
+        fn: convertTextFormatElement,
         priority: 0,
-      };
-    } else if (nodeName === 'u') {
-      return {
-        fn: (domNode: Node) => {
-          return {
-            forChild: (lexicalNode) => {
-              if ($isTextNode(lexicalNode)) {
-                lexicalNode.toggleFormat('underline');
-              }
-            },
-            node: null,
-          };
-        },
+      }),
+      span: (node: Node) => ({
+        fn: convertSpanElement,
         priority: 0,
-      };
-    } else if (nodeName === 'i') {
-      return {
-        fn: (domNode: Node) => {
-          return {
-            forChild: (lexicalNode) => {
-              if ($isTextNode(lexicalNode)) {
-                lexicalNode.toggleFormat('italic');
-              }
-            },
-            node: null,
-          };
-        },
+      }),
+      strong: (node: Node) => ({
+        fn: convertTextFormatElement,
         priority: 0,
-      };
-    } else if (nodeName === 'span') {
-      return {
-        fn: (domNode: Node) => {
-          // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
-          const span: HTMLSpanElement = domNode;
-          // Google Docs uses span tags + font-weight for bold text
-          const hasBoldFontWeight = span.style.fontWeight === '700';
-          return {
-            forChild: (lexicalNode) => {
-              if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
-                lexicalNode.toggleFormat('bold');
-              }
-            },
-            node: null,
-          };
-        },
+      }),
+      u: (node: Node) => ({
+        fn: convertTextFormatElement,
         priority: 0,
-      };
-    } else if (nodeName === 'strong') {
-      return {
-        fn: (domNode: Node) => {
-          return {
-            forChild: (lexicalNode) => {
-              if ($isTextNode(lexicalNode)) {
-                lexicalNode.toggleFormat('bold');
-              }
-            },
-            node: null,
-          };
-        },
-        priority: 0,
-      };
-    }
-    return null;
+      }),
+    };
   }
 
   // Mutators
@@ -782,6 +711,58 @@ export class TextNode extends LexicalNode {
     target.remove();
     return this.getLatest();
   }
+}
+
+function convertSpanElement(domNode: Node): DOMConversionOutput {
+  // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
+  const span: HTMLSpanElement = domNode;
+  // Google Docs uses span tags + font-weight for bold text
+  const hasBoldFontWeight = span.style.fontWeight === '700';
+  return {
+    forChild: (lexicalNode) => {
+      if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+        lexicalNode.toggleFormat('bold');
+      }
+    },
+    node: null,
+  };
+}
+function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
+  // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
+  const b: HTMLElement = domNode;
+  // Google Docs wraps all copied HTML in a <b> with font-weight normal
+  const hasNormalFontWeight = b.style.fontWeight === 'normal';
+  return {
+    forChild: (lexicalNode) => {
+      if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
+        lexicalNode.toggleFormat('bold');
+      }
+    },
+    node: null,
+  };
+}
+function convertTextDOMNode(domNode: Node): DOMConversionOutput {
+  return {node: $createTextNode(domNode.textContent)};
+}
+const nodeNameToTextFormat: {[string]: TextFormatType} = {
+  em: 'italic',
+  i: 'italic',
+  strong: 'bold',
+  u: 'underline',
+};
+function convertTextFormatElement(domNode: Node): DOMConversionOutput {
+  const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
+  if (format === undefined) {
+    return {node: null};
+  }
+  return {
+    forChild: (lexicalNode) => {
+      if ($isTextNode(lexicalNode)) {
+        lexicalNode.toggleFormat(format);
+      }
+    },
+    node: null,
+  };
 }
 
 export function $createTextNode(text?: string = ''): TextNode {

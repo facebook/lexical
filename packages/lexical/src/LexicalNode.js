@@ -113,9 +113,10 @@ export type DOMConversionFn = (
 ) => DOMConversionOutput;
 export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
 export type DOMConversionMap = {
-  [string]: DOMConversion,
+  [NodeName]: (node: Node) => DOMConversion | null,
 };
-type DOMConversionOutput = {
+type NodeName = string;
+export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
   forChild?: DOMChildConversion,
   node: LexicalNode | null,
@@ -557,7 +558,7 @@ export class LexicalNode {
     invariant(false, 'updateDOM: base method not extended');
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
+  static convertDOM(): DOMConversionMap | null {
     return null;
   }
 

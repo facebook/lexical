@@ -7,7 +7,11 @@
  * @flow strict
  */
 
-import type {DOMConversion, NodeKey} from '../../LexicalNode';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  NodeKey,
+} from '../../LexicalNode';
 
 import {LexicalNode} from '../../LexicalNode';
 
@@ -36,16 +40,18 @@ export class LineBreakNode extends LexicalNode {
     return false;
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
-    const nodeName = element.nodeName.toLowerCase();
-    if (nodeName === 'br') {
-      return {
-        fn: () => ({node: $createLineBreakNode()}),
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      br: (node: Node) => ({
+        fn: convertLineBreakElement,
         priority: 0,
-      };
-    }
-    return null;
+      }),
+    };
   }
+}
+
+function convertLineBreakElement(node: Node): DOMConversionOutput {
+  return {node: $createLineBreakNode()};
 }
 
 export function $createLineBreakNode(): LineBreakNode {

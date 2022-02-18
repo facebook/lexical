@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {DOMConversion} from '../../LexicalNode';
+import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
 import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
@@ -50,21 +50,13 @@ export class LinkNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
-    const nodeName = element.nodeName.toLowerCase();
-    if (nodeName === 'a') {
-      return {
-        fn: (domNode: Node) => {
-          let node = null;
-          if (domNode instanceof HTMLAnchorElement) {
-            node = $createLinkNode(domNode.href);
-          }
-          return {node};
-        },
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      a: (node: Node) => ({
+        fn: convertAnchorElement,
         priority: 1,
-      };
-    }
-    return null;
+      }),
+    };
   }
 
   getURL(): string {
@@ -101,6 +93,14 @@ export class LinkNode extends ElementNode {
   isInline(): true {
     return true;
   }
+}
+
+function convertAnchorElement(domNode: Node): DOMConversionOutput {
+  let node = null;
+  if (domNode instanceof HTMLAnchorElement) {
+    node = $createLinkNode(domNode.href);
+  }
+  return {node};
 }
 
 export function $createLinkNode(url: string): LinkNode {

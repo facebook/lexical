@@ -7,13 +7,10 @@
  * @flow strict
  */
 
-import type {RegisteredNode} from '../../lexical/src/LexicalEditor';
 import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
-} from '../../lexical/src/LexicalNode';
-import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -32,6 +29,7 @@ import {
   $isTextNode,
   $isHorizontalRuleNode,
   $log,
+  DOMConversionCache,
 } from 'lexical';
 import getPossibleDecoratorOrHorizontalRuleNode from 'shared/getPossibleDecoratorOrHorizontalRuleNode';
 
@@ -60,36 +58,26 @@ function $generateNodes(nodeRange: {
   return nodes;
 }
 
-const conversionCache: Map<string, Set<RegisteredNode>> = new Map();
-
 function getConversionFunction(
   domNode: Node,
   editor: LexicalEditor,
 ): DOMConversionFn | null {
   const {nodeName} = domNode;
-  let registeredNodes = conversionCache.get(nodeName);
-  let shouldCacheConversions = false;
-  if (registeredNodes === undefined) {
-    shouldCacheConversions = true;
-    registeredNodes = editor._nodes;
-  }
+  const cachedConversions = DOMConversionCache.get(nodeName);
   let currentConversion: DOMConversion | null = null;
-  registeredNodes.forEach((registeredNode) => {
-    const conversion = registeredNode.klass.convertDOM(domNode);
-    if (conversion !== null) {
-      if (shouldCacheConversions) {
-        const cache = conversionCache.get(nodeName) || new Set();
-        cache.add(registeredNode);
-        conversionCache.set(nodeName, cache);
+  if (cachedConversions !== undefined) {
+    cachedConversions.forEach((cachedConversion) => {
+      const domConversion = cachedConversion(domNode);
+      if (domConversion !== null) {
+        if (
+          currentConversion === null ||
+          currentConversion.priority < domConversion.priority
+        ) {
+          currentConversion = domConversion;
+        }
       }
-      if (
-        currentConversion === null ||
-        currentConversion.priority < conversion.priority
-      ) {
-        currentConversion = conversion;
-      }
-    }
-  });
+    });
+  }
   return currentConversion !== null ? currentConversion.fn : null;
 }
 

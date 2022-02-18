@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {DOMConversion} from '../../LexicalNode';
+import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
 import type {EditorConfig, LexicalNode, NodeKey, ParagraphNode} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
@@ -54,21 +54,29 @@ export class HeadingNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
-    const nodeName = element.nodeName.toLowerCase();
-    if (
-      nodeName === 'h1' ||
-      nodeName === 'h2' ||
-      nodeName === 'h3' ||
-      nodeName === 'h4' ||
-      nodeName === 'h5'
-    ) {
-      return {
-        fn: () => ({node: $createHeadingNode(nodeName)}),
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      h1: (node: Node) => ({
+        fn: convertHeadingElement,
         priority: 0,
-      };
-    }
-    return null;
+      }),
+      h2: (node: Node) => ({
+        fn: convertHeadingElement,
+        priority: 0,
+      }),
+      h3: (node: Node) => ({
+        fn: convertHeadingElement,
+        priority: 0,
+      }),
+      h4: (node: Node) => ({
+        fn: convertHeadingElement,
+        priority: 0,
+      }),
+      h5: (node: Node) => ({
+        fn: convertHeadingElement,
+        priority: 0,
+      }),
+    };
   }
 
   // Mutation
@@ -88,6 +96,21 @@ export class HeadingNode extends ElementNode {
     this.replace(paragraph);
     return true;
   }
+}
+
+function convertHeadingElement(domNode: Node): DOMConversionOutput {
+  const nodeName = domNode.nodeName.toLowerCase();
+  let node = null;
+  if (
+    nodeName === 'h1' ||
+    nodeName === 'h2' ||
+    nodeName === 'h3' ||
+    nodeName === 'h4' ||
+    nodeName === 'h5'
+  ) {
+    node = $createHeadingNode(nodeName);
+  }
+  return {node};
 }
 
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode {

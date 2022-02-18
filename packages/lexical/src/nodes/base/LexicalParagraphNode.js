@@ -8,7 +8,7 @@
  */
 
 import type {EditorThemeClasses} from '../../LexicalEditor';
-import type {DOMConversion} from '../../LexicalNode';
+import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
 import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {getCachedClassNameArray} from '../../LexicalUtils';
@@ -46,15 +46,13 @@ export class ParagraphNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
-    const nodeName = element.nodeName.toLowerCase();
-    if (nodeName === 'p') {
-      return {
-        fn: () => ({node: $createParagraphNode()}),
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      p: (node: Node) => ({
+        fn: convertParagraphElement,
         priority: 0,
-      };
-    }
-    return null;
+      }),
+    };
   }
 
   // Mutation
@@ -90,6 +88,10 @@ export class ParagraphNode extends ElementNode {
     }
     return false;
   }
+}
+
+function convertParagraphElement(): DOMConversionOutput {
+  return {node: $createParagraphNode()};
 }
 
 export function $createParagraphNode(): ParagraphNode {

@@ -7,8 +7,9 @@
  * @flow strict
  */
 
-import type {DOMConversion} from '../../lexical/src/LexicalNode';
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
@@ -72,15 +73,17 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(element: Node): DOMConversion | null {
-    const nodeName = element.nodeName.toLowerCase();
-    if (nodeName === 'ol' || nodeName === 'ul') {
-      return {
-        fn: () => ({node: $createListNode(nodeName)}),
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      ol: (node: Node) => ({
+        fn: convertListNode,
         priority: 0,
-      };
-    }
-    return null;
+      }),
+      ul: (node: Node) => ({
+        fn: convertListNode,
+        priority: 0,
+      }),
+    };
   }
 
   canBeEmpty(): false {
@@ -158,6 +161,15 @@ function setListThemeClassNames(
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
+}
+
+function convertListNode(domNode: Node): DOMConversionOutput {
+  const nodeName = domNode.nodeName.toLowerCase();
+  let node = null;
+  if (nodeName === 'ol' || nodeName === 'ul') {
+    node = $createListNode(nodeName);
+  }
+  return {node};
 }
 
 export function $createListNode(

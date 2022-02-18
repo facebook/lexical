@@ -54,9 +54,6 @@ describe('LexicalElementNode tests', () => {
 
     function TestBase() {
       editor = useLexicalEditor(ref);
-      editor.addListener('error', (error) => {
-        throw error;
-      });
       return <div ref={ref} contentEditable={true} />;
     }
 

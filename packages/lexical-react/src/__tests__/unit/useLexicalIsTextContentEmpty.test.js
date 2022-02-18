@@ -62,9 +62,6 @@ describe('useLexicalIsTextContentEmpty', () => {
 
     function TestBase() {
       editor = useLexicalEditor(ref);
-      editor.addListener('error', (error) => {
-        throw error;
-      });
       const isBlank = useLexicalIsTextContentEmpty(editor);
       expect(isBlank).toBe(!hasText);
       return <div ref={ref} contentEditable={true} />;

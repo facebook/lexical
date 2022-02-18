@@ -137,7 +137,7 @@ export type Transform<T> = (node: T) => void;
 
 export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
-export type NodeMutation = 'attached' | 'detached';
+export type NodeMutation = 'created' | 'destroyed';
 
 export type ErrorListener = (error: Error) => void;
 export type UpdateListener = ({

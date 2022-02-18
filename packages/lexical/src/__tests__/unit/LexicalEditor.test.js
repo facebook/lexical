@@ -1384,19 +1384,19 @@ describe('LexicalEditor tests', () => {
       paragraphMutations.mock.calls;
     const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
     expect(paragraphMutation1[0].size).toBe(1);
-    expect(paragraphMutation1[0].get(paragraphKeys[0])).toBe('attached');
+    expect(paragraphMutation1[0].get(paragraphKeys[0])).toBe('created');
     expect(paragraphMutation1[0].size).toBe(1);
-    expect(paragraphMutation2[0].get(paragraphKeys[0])).toBe('detached');
+    expect(paragraphMutation2[0].get(paragraphKeys[0])).toBe('destroyed');
     expect(paragraphMutation3[0].size).toBe(1);
-    expect(paragraphMutation3[0].get(paragraphKeys[1])).toBe('attached');
+    expect(paragraphMutation3[0].get(paragraphKeys[1])).toBe('created');
     expect(textNodeMutation1[0].size).toBe(3);
-    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('attached');
-    expect(textNodeMutation1[0].get(textNodeKeys[1])).toBe('attached');
-    expect(textNodeMutation1[0].get(textNodeKeys[2])).toBe('attached');
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
+    expect(textNodeMutation1[0].get(textNodeKeys[1])).toBe('created');
+    expect(textNodeMutation1[0].get(textNodeKeys[2])).toBe('created');
     expect(textNodeMutation2[0].size).toBe(3);
-    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('detached');
-    expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('detached');
-    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('detached');
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('destroyed');
+    expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('destroyed');
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('destroyed');
   });
 
   it('mutation listener with setEditorState', async () => {
@@ -1438,15 +1438,15 @@ describe('LexicalEditor tests', () => {
       textNodeMutation4,
     ] = textNodeMutations.mock.calls;
     expect(textNodeMutation1[0].size).toBe(1);
-    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('attached');
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
     expect(textNodeMutation2[0].size).toBe(1);
-    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('detached');
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('destroyed');
     expect(textNodeMutation3[0].size).toBe(2);
-    expect(textNodeMutation3[0].get(textNodeKeys[1])).toBe('attached');
-    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('attached');
+    expect(textNodeMutation3[0].get(textNodeKeys[1])).toBe('created');
+    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('created');
     expect(textNodeMutation4[0].size).toBe(3); // +1 newly generated key by parseEditorState
-    expect(textNodeMutation4[0].get(textNodeKeys[1])).toBe('detached');
-    expect(textNodeMutation4[0].get(textNodeKeys[2])).toBe('detached');
+    expect(textNodeMutation4[0].get(textNodeKeys[1])).toBe('destroyed');
+    expect(textNodeMutation4[0].get(textNodeKeys[2])).toBe('destroyed');
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {
@@ -1494,10 +1494,10 @@ describe('LexicalEditor tests', () => {
     const [textNodeMutation1, textNodeMutation2, textNodeMutation3] =
       textNodeMutations.mock.calls;
     expect(textNodeMutation1[0].size).toBe(1);
-    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('attached');
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
     expect(textNodeMutation2[0].size).toBe(1);
-    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('attached');
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('created');
     expect(textNodeMutation3[0].size).toBe(1);
-    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('detached');
+    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('destroyed');
   });
 });

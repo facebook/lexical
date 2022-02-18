@@ -19,7 +19,7 @@ Type "publish" to confirm.`,
 
   for (let i = 0; i < pkgs.length; i++) {
     const pkg = pkgs[i];
-    await exec(`cd ./packages/${pkg}/npm && npm publish`);
+    await exec(`cd ./packages/${pkg}/npm && npm publish --access public`);
   }
 }
 

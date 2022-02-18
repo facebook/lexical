@@ -196,34 +196,19 @@ export function useYjsCollaboration(
 
 export function useYjsFocusTracking(editor: LexicalEditor, provider: Provider) {
   useEffect(() => {
-    const onBlur = () => {
-      setLocalStateFocus(provider, false);
-    };
-    const onFocus = () => {
-      setLocalStateFocus(provider, true);
-    };
-
     return editor.addListener(
-      'root',
-      (
-        rootElement: null | HTMLElement,
-        prevRootElement: null | HTMLElement,
-      ) => {
-        // Clear our old listener if the root element changes
-        if (prevRootElement !== null) {
-          prevRootElement.removeEventListener('blur', onBlur);
-          prevRootElement.removeEventListener('focus', onFocus);
+      'command',
+      (type, payload) => {
+        if (type === 'focus') {
+          setLocalStateFocus(provider, true);
+        } else if (type === 'blur') {
+          setLocalStateFocus(provider, false);
         }
-        if (rootElement !== null) {
-          if (document.activeElement === rootElement) {
-            onFocus();
-          }
-          rootElement.addEventListener('blur', onBlur);
-          rootElement.addEventListener('focus', onFocus);
-        }
+        return false;
       },
+      EditorPriority,
     );
-  }, [editor, provider, provider.awareness]);
+  }, [editor, provider]);
 }
 
 export function useYjsHistory(

@@ -12,7 +12,6 @@ import type {LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
 
 import {
-  $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
@@ -25,6 +24,7 @@ import {
   $getNearestNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getNodeFromDOMNode,
+  internalGetRoot,
 } from './LexicalUtils';
 
 // The time between a text entry event and the mutation observer firing.
@@ -161,7 +161,7 @@ export function $flushMutations(
             }
             if (removedDOMsLength !== unremovedBRs) {
               if (targetDOM === rootElement) {
-                targetNode = $getRoot(currentEditorState);
+                targetNode = internalGetRoot(currentEditorState);
               }
               badDOMTargets.set(targetDOM, targetNode);
             }

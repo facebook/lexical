@@ -12,10 +12,10 @@
     "table"
   ],
   "license": "MIT",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "LexicalTable.js",
   "peerDependencies": {
-    "lexical": "0.1.8"
+    "lexical": "0.1.9"
   },
   "repository": {
     "type": "git",

@@ -10,6 +10,7 @@ import type {LexicalEditor} from 'lexical';
 
 import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
@@ -17,6 +18,7 @@ import {
   $getSelection,
   $isTextNode,
   $setCompositionKey,
+  $setSelection,
   ElementNode,
   ParagraphNode,
   TextNode,
@@ -953,78 +955,159 @@ describe('LexicalEditor tests', () => {
     let textKey;
     let parsedEditorState;
 
-    beforeEach(async () => {
-      init();
-      await update(() => {
-        const paragraph = $createParagraphNode();
-        originalText = $createTextNode('Hello world');
-        originalText.select(6, 11);
-        paragraph.append(originalText);
-        $getRoot().append(paragraph);
+    describe('range selection', () => {
+      beforeEach(async () => {
+        init();
+        await update(() => {
+          const paragraph = $createParagraphNode();
+          originalText = $createTextNode('Hello world');
+          originalText.select(6, 11);
+          paragraph.append(originalText);
+          $getRoot().append(paragraph);
+        });
+        const stringifiedEditorState = JSON.stringify(
+          editor.getEditorState().toJSON(),
+        );
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read(() => {
+          parsedRoot = $getRoot();
+          parsedParagraph = parsedRoot.getFirstChild();
+          paragraphKey = parsedParagraph.getKey();
+          parsedText = parsedParagraph.getFirstChild();
+          textKey = parsedText.getKey();
+          parsedSelection = $getSelection();
+        });
       });
-      const stringifiedEditorState = JSON.stringify(
-        editor.getEditorState().toJSON(),
-      );
-      parsedEditorState = editor.parseEditorState(stringifiedEditorState);
-      parsedEditorState.read(() => {
-        parsedRoot = $getRoot();
-        parsedParagraph = parsedRoot.getFirstChild();
-        paragraphKey = parsedParagraph.getKey();
-        parsedText = parsedParagraph.getFirstChild();
-        textKey = parsedText.getKey();
-        parsedSelection = $getSelection();
+
+      it('Parses the nodes of a stringified editor state', async () => {
+        expect(parsedRoot).toEqual({
+          __cachedText: null,
+          __children: [paragraphKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        });
+        expect(parsedParagraph).toEqual({
+          __children: [textKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: paragraphKey,
+          __parent: 'root',
+          __type: 'paragraph',
+        });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __parent: paragraphKey,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
+      });
+
+      it('Parses the text content of the editor state', async () => {
+        expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(
+          null,
+        );
+        expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
+          'Hello world',
+        );
+      });
+
+      it('Parses the selection offsets of a stringified editor state', async () => {
+        expect(parsedSelection.anchor.offset).toEqual(6);
+        expect(parsedSelection.focus.offset).toEqual(11);
+      });
+
+      it('Remaps the selection keys of a stringified editor state', async () => {
+        expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
+        expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
 
-    it('Parses the nodes of a stringified editor state', async () => {
-      expect(parsedRoot).toEqual({
-        __cachedText: null,
-        __children: [paragraphKey],
-        __dir: 'ltr',
-        __format: 0,
-        __indent: 0,
-        __key: 'root',
-        __parent: null,
-        __type: 'root',
+    describe('node selection', () => {
+      beforeEach(async () => {
+        init();
+        await update(() => {
+          const paragraph = $createParagraphNode();
+          originalText = $createTextNode('Hello world');
+          const selection = $createNodeSelection();
+          selection.add(originalText.getKey());
+          $setSelection(selection);
+          paragraph.append(originalText);
+          $getRoot().append(paragraph);
+        });
+        const stringifiedEditorState = JSON.stringify(
+          editor.getEditorState().toJSON(),
+        );
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read(() => {
+          parsedRoot = $getRoot();
+          parsedParagraph = parsedRoot.getFirstChild();
+          paragraphKey = parsedParagraph.getKey();
+          parsedText = parsedParagraph.getFirstChild();
+          textKey = parsedText.getKey();
+          parsedSelection = $getSelection();
+        });
       });
-      expect(parsedParagraph).toEqual({
-        __children: [textKey],
-        __dir: 'ltr',
-        __format: 0,
-        __indent: 0,
-        __key: paragraphKey,
-        __parent: 'root',
-        __type: 'paragraph',
+
+      it('Parses the nodes of a stringified editor state', async () => {
+        expect(parsedRoot).toEqual({
+          __cachedText: null,
+          __children: [paragraphKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        });
+        expect(parsedParagraph).toEqual({
+          __children: [textKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: paragraphKey,
+          __parent: 'root',
+          __type: 'paragraph',
+        });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __parent: paragraphKey,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
       });
-      expect(parsedText).toEqual({
-        __detail: 0,
-        __format: 0,
-        __key: textKey,
-        __mode: 0,
-        __parent: paragraphKey,
-        __style: '',
-        __text: 'Hello world',
-        __type: 'text',
+
+      it('Parses the text content of the editor state', async () => {
+        expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(
+          null,
+        );
+        expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
+          'Hello world',
+        );
       });
-    });
 
-    it('Parses the text content of the editor state', async () => {
-      expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(null);
-      expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
-        'Hello world',
-      );
-    });
+      it('Parses the selection offsets of a stringified editor state', async () => {
+        expect(Array.from(parsedSelection._objects)).toEqual([textKey]);
+      });
 
-    it('Parses the selection offsets of a stringified editor state', async () => {
-      expect(parsedSelection.anchor.offset).toEqual(6);
-      expect(parsedSelection.focus.offset).toEqual(11);
-    });
-
-    it('Remaps the selection keys of a stringified editor state', async () => {
-      expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
-      expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
-      expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
-      expect(parsedSelection.focus.key).toEqual(parsedText.__key);
+      it('Remaps the selection keys of a stringified editor state', async () => {
+        expect(parsedSelection._objects.has(originalText.__key)).toEqual(false);
+        expect(parsedSelection._objects.has(parsedText.__key)).toEqual(true);
+      });
     });
   });
 

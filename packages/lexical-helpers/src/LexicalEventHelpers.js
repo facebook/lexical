@@ -27,6 +27,7 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isRangeSelection,
   $isTextNode,
 } from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
@@ -361,7 +362,7 @@ export function onPasteForPlainText(
   editor.update(() => {
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
-    if (clipboardData != null && selection !== null) {
+    if (clipboardData != null && $isRangeSelection(selection)) {
       $insertDataTransferForPlainText(clipboardData, selection);
     }
   });
@@ -375,7 +376,7 @@ export function onPasteForRichText(
   editor.update(() => {
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
-    if (clipboardData != null && selection !== null) {
+    if (clipboardData != null && $isRangeSelection(selection)) {
       $insertDataTransferForRichText(clipboardData, selection, editor);
     }
   });
@@ -388,7 +389,7 @@ export function onCutForPlainText(
   onCopyForPlainText(event, editor);
   editor.update(() => {
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       selection.removeText();
     }
   });
@@ -401,7 +402,7 @@ export function onCutForRichText(
   onCopyForRichText(event, editor);
   editor.update(() => {
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       selection.removeText();
     }
   });

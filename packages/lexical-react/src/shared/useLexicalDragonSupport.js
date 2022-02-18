@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {$getSelection, $isTextNode} from 'lexical';
+import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 import {useEffect} from 'react';
 
 export default function useLexicalDragonSupport(editor: LexicalEditor) {
@@ -49,7 +49,7 @@ export default function useLexicalDragonSupport(editor: LexicalEditor) {
               formatCommand;
               editor.update(() => {
                 const selection = $getSelection();
-                if (selection !== null) {
+                if ($isRangeSelection(selection)) {
                   const anchor = selection.anchor;
                   let anchorNode = anchor.getNode();
                   let setSelStart = 0;

@@ -17,7 +17,7 @@ import type {
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
-import type {RangeSelection} from './LexicalSelection';
+import type {NodeSelection, RangeSelection} from './LexicalSelection';
 import type {RootNode} from './nodes/base/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
 import type {Node as ReactNode} from 'react';
@@ -32,6 +32,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isTextNode,
 } from '.';
 import {
@@ -351,7 +352,9 @@ export function internalGetRoot(editorState: EditorState): RootNode {
   ): any): RootNode);
 }
 
-export function $setSelection(selection: null | RangeSelection): void {
+export function $setSelection(
+  selection: null | RangeSelection | NodeSelection,
+): void {
   const editorState = getActiveEditorState();
   editorState._selection = selection;
 }
@@ -485,7 +488,7 @@ export function $updateTextNodeFromDOMContent(
         // to clear this input from occuring as that action wasn't
         // permitted.
         (parent !== null &&
-          prevSelection !== null &&
+          $isRangeSelection(prevSelection) &&
           !parent.canInsertTextBefore() &&
           prevSelection.anchor.offset === 0)
       ) {
@@ -494,7 +497,11 @@ export function $updateTextNodeFromDOMContent(
       }
       const selection = $getSelection();
 
-      if (selection === null || anchorOffset === null || focusOffset === null) {
+      if (
+        !$isRangeSelection(selection) ||
+        anchorOffset === null ||
+        focusOffset === null
+      ) {
         node.setTextContent(normalizedTextContent);
         return;
       }

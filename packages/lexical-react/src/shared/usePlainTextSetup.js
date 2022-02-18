@@ -17,7 +17,7 @@ import {
   onPasteForPlainText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
-import {$getSelection} from 'lexical';
+import {$getSelection, $isRangeSelection} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import useLexicalDragonSupport from './useLexicalDragonSupport';
@@ -30,7 +30,7 @@ export default function usePlainTextSetup(editor: LexicalEditor): void {
       'command',
       (type, payload): boolean => {
         const selection = $getSelection();
-        if (selection === null) {
+        if (!$isRangeSelection(selection)) {
           return false;
         }
         switch (type) {

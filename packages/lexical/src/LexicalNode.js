@@ -21,6 +21,7 @@ import {
 } from '.';
 import {
   $getSelection,
+  $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
   moveSelectionPointToSibling,
@@ -53,7 +54,7 @@ export function removeNode(
   }
   const selection = $getSelection();
   let selectionMoved = false;
-  if (selection !== null && restoreSelection) {
+  if ($isRangeSelection(selection) && restoreSelection) {
     const anchor = selection.anchor;
     const focus = selection.focus;
     if (anchor.key === key) {
@@ -89,7 +90,7 @@ export function removeNode(
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
 
-  if (selection !== null && restoreSelection && !selectionMoved) {
+  if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
   if (
@@ -184,6 +185,7 @@ export class LexicalNode {
     // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
     if (
+      $isRangeSelection(selection) &&
       selection.anchor.type === 'element' &&
       selection.focus.type === 'element' &&
       selection.anchor.key === selection.focus.key &&
@@ -571,7 +573,7 @@ export class LexicalNode {
     removeNode(this, false);
     internalMarkSiblingsAsDirty(writableReplaceWith);
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const focus = selection.focus;
       if (anchor.key === toReplaceKey) {
@@ -603,7 +605,7 @@ export class LexicalNode {
       }
       internalMarkSiblingsAsDirty(writableNodeToInsert);
 
-      if (selection !== null) {
+      if ($isRangeSelection(selection)) {
         const oldParentKey = oldParent.getKey();
         const oldIndex = nodeToInsert.getIndexWithinParent();
         const anchor = selection.anchor;
@@ -629,7 +631,7 @@ export class LexicalNode {
     }
     children.splice(index + 1, 0, insertKey);
     internalMarkSiblingsAsDirty(writableNodeToInsert);
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
@@ -671,7 +673,7 @@ export class LexicalNode {
     children.splice(index, 0, insertKey);
     internalMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,

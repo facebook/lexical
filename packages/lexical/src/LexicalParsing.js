@@ -58,18 +58,26 @@ export type ParsedTextNode = {
 
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
 
-export type ParsedSelection = {
+export type ParsedRangeSelection = {
   anchor: {
-    key: NodeKey,
+    key: string,
     offset: number,
     type: 'text' | 'element',
   },
   focus: {
-    key: NodeKey,
+    key: string,
     offset: number,
     type: 'text' | 'element',
   },
+  type: 'range',
 };
+
+export type ParsedObjectSelection = {
+  objects: Array<NodeKey>,
+  type: 'object',
+};
+
+export type ParsedSelection = ParsedRangeSelection | ParsedObjectSelection;
 
 export function $createNodeFromParse(
   parsedNode: ParsedNode,
@@ -194,27 +202,58 @@ export function internalCreateNodeFromParse(
   // new selection record with the old keys mapped to the new ones.
   const originalSelection = state != null ? state.originalSelection : undefined;
   if (originalSelection != null) {
-    if (parsedNode.__key === originalSelection.anchor.key) {
-      state.remappedSelection = state.remappedSelection || {
-        anchor: {
-          ...originalSelection.anchor,
-        },
-        focus: {
-          ...originalSelection.focus,
-        },
-      };
-      state.remappedSelection.anchor.key = node.__key;
-    }
-    if (parsedNode.__key === originalSelection.focus.key) {
-      state.remappedSelection = state.remappedSelection || {
-        anchor: {
-          ...originalSelection.anchor,
-        },
-        focus: {
-          ...originalSelection.focus,
-        },
-      };
-      state.remappedSelection.focus.key = node.__key;
+    let remappedSelection = state.remappedSelection;
+
+    if (originalSelection.type === 'range') {
+      const anchor = originalSelection.anchor;
+      const focus = originalSelection.focus;
+
+      if (parsedKey === anchor.key) {
+        if (remappedSelection == null) {
+          state.remappedSelection = remappedSelection = {
+            anchor: {
+              ...anchor,
+            },
+            focus: {
+              ...focus,
+            },
+            type: 'range',
+          };
+        }
+        if (remappedSelection.type === 'range') {
+          remappedSelection.anchor.key = key;
+        }
+      }
+      if (parsedKey === focus.key) {
+        if (remappedSelection == null) {
+          state.remappedSelection = remappedSelection = {
+            anchor: {
+              ...anchor,
+            },
+            focus: {
+              ...focus,
+            },
+            type: 'range',
+          };
+        }
+        if (remappedSelection.type === 'range') {
+          remappedSelection.focus.key = key;
+        }
+      }
+    } else if (originalSelection.type === 'object') {
+      const objects = originalSelection.objects;
+      const indexOf = objects.indexOf(parsedKey);
+      if (indexOf !== -1) {
+        if (remappedSelection == null) {
+          state.remappedSelection = remappedSelection = {
+            objects: [...objects],
+            type: 'object',
+          };
+        }
+        if (remappedSelection.type === 'object') {
+          remappedSelection.objects.splice(indexOf, 1, key);
+        }
+      }
     }
   }
   return node;

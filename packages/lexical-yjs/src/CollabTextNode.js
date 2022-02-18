@@ -12,7 +12,12 @@ import type {CollabElementNode} from './CollabElementNode';
 import type {NodeKey, NodeMap, TextNode} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
-import {$getNodeByKey, $getSelection, $isTextNode} from 'lexical';
+import {
+  $getNodeByKey,
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+} from 'lexical';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
@@ -66,7 +71,7 @@ function diffTextContentAndApplyDelta(
 ): void {
   const selection = $getSelection();
   let cursorOffset = nextText.length;
-  if (selection !== null && selection.isCollapsed()) {
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
     const anchor = selection.anchor;
     if (anchor.key === key) {
       cursorOffset = anchor.offset;

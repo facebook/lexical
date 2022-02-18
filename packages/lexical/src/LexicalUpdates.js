@@ -37,8 +37,10 @@ import {$normalizeTextNode} from './LexicalNormalization';
 import {internalCreateNodeFromParse} from './LexicalParsing';
 import {updateEditorState} from './LexicalReconciler';
 import {
+  $isNodeSelection,
+  $isRangeSelection,
   applySelectionTransforms,
-  internalCreateRangeSelection,
+  internalCreateSelection,
   internalCreateSelectionFromParse,
 } from './LexicalSelection';
 import {
@@ -590,7 +592,7 @@ function beginUpdate(
 
   try {
     if (editorStateWasCloned) {
-      pendingEditorState._selection = internalCreateRangeSelection(editor);
+      pendingEditorState._selection = internalCreateSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();
@@ -615,7 +617,7 @@ function beginUpdate(
       pendingEditorState._flushSync = true;
     }
     const pendingSelection = pendingEditorState._selection;
-    if (pendingSelection !== null) {
+    if ($isRangeSelection(pendingSelection)) {
       const pendingNodeMap = pendingEditorState._nodeMap;
       const anchorKey = pendingSelection.anchor.key;
       const focusKey = pendingSelection.focus.key;
@@ -628,6 +630,11 @@ function beginUpdate(
           'updateEditor: selection has been lost because the previously selected nodes have been removed and ' +
             "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
         );
+      }
+    } else if ($isNodeSelection(pendingSelection)) {
+      // TODO: we should also validate node selection?
+      if (pendingSelection._objects.size === 0) {
+        pendingEditorState._selection = null;
       }
     }
   } catch (error) {

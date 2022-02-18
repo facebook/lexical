@@ -14,7 +14,7 @@ import type {
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection} from 'lexical';
+import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import useReport from '../hooks/useReport';
 
@@ -63,7 +63,7 @@ function SpeechToTextPlugin(): null {
 
           editor.update(() => {
             const selection = $getSelection();
-            if (selection !== null) {
+            if ($isRangeSelection(selection)) {
               const command = VOICE_COMMANDS[transcript.toLowerCase().trim()];
               if (command) {
                 command({editor, selection});

@@ -23,6 +23,7 @@ import {
   $isTextNode,
   $isLineBreakNode,
   $getSelection,
+  $isRangeSelection,
 } from 'lexical';
 import {useEffect} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
@@ -185,7 +186,7 @@ function updateAndRetainSelection(
   updateFn: () => boolean,
 ): void {
   const selection = $getSelection();
-  if (!selection || !selection.anchor) {
+  if (!$isRangeSelection(selection) || !selection.anchor) {
     return;
   }
 
@@ -371,7 +372,7 @@ function handleShiftLines(
 ): boolean {
   // We only care about the alt+arrow keys
   const selection = $getSelection();
-  if (!event.altKey || selection == null) {
+  if (!event.altKey || !$isRangeSelection(selection)) {
     return false;
   }
 

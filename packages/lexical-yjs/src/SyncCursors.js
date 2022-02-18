@@ -9,7 +9,13 @@
 
 import type {Provider} from '.';
 import type {Binding} from './Bindings';
-import type {NodeKey, NodeMap, Point, RangeSelection} from 'lexical';
+import type {
+  NodeKey,
+  NodeMap,
+  NodeSelection,
+  Point,
+  RangeSelection,
+} from 'lexical';
 import type {
   AbsolutePosition,
   Map as YMap,
@@ -21,6 +27,7 @@ import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $isTextNode,
 } from 'lexical';
 import {
@@ -334,8 +341,8 @@ export function syncLocalCursorPosition(
         const focusKey = focusCollabNode.getKey();
 
         const selection = $getSelection();
-        if (selection === null) {
-          throw new Error('TODO: syncLocalCursorPosition');
+        if (!$isRangeSelection(selection)) {
+          return;
         }
         const anchor = selection.anchor;
         const focus = selection.focus;
@@ -475,8 +482,8 @@ export function syncCursorPositions(
 export function syncLexicalSelectionToYjs(
   binding: Binding,
   provider: Provider,
-  prevSelection: null | RangeSelection,
-  nextSelection: null | RangeSelection,
+  prevSelection: null | RangeSelection | NodeSelection,
+  nextSelection: null | RangeSelection | NodeSelection,
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();
@@ -502,7 +509,7 @@ export function syncLexicalSelectionToYjs(
     }
   }
 
-  if (nextSelection !== null) {
+  if ($isRangeSelection(nextSelection)) {
     anchorPos = createRelativePosition(nextSelection.anchor, binding);
     focusPos = createRelativePosition(nextSelection.focus, binding);
   }

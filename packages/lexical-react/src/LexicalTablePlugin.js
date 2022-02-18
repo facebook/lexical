@@ -16,7 +16,12 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$createParagraphNode, $getSelection, $isRootNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $getSelection,
+  $isRangeSelection,
+  $isRootNode,
+} from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -38,7 +43,7 @@ export default function TablePlugin(): React$Node {
         if (type === 'insertTable') {
           const {columns, rows} = payload;
           const selection = $getSelection();
-          if (selection === null) {
+          if (!$isRangeSelection(selection)) {
             return true;
           }
           const focus = selection.focus;

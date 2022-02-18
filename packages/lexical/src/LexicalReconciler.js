@@ -15,7 +15,7 @@ import type {
   RegisteredNodes,
 } from './LexicalEditor';
 import type {NodeKey, NodeMap} from './LexicalNode';
-import type {RangeSelection} from './LexicalSelection';
+import type {NodeSelection, RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {Node as ReactNode} from 'react';
 
@@ -25,6 +25,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isRootNode,
   $isTextNode,
 } from '.';
@@ -617,7 +618,6 @@ function reconcileRoot(
   prevEditorState: EditorState,
   nextEditorState: EditorState,
   editor: LexicalEditor,
-  selection: null | RangeSelection,
   dirtyType: 0 | 1 | 2,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
@@ -672,8 +672,8 @@ export function updateEditorState(
   rootElement: HTMLElement,
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
-  currentSelection: RangeSelection | null,
-  pendingSelection: RangeSelection | null,
+  currentSelection: RangeSelection | NodeSelection | null,
+  pendingSelection: RangeSelection | NodeSelection | null,
   needsUpdate: boolean,
   editor: LexicalEditor,
 ): null | MutatedNodes {
@@ -691,7 +691,6 @@ export function updateEditorState(
         currentEditorState,
         pendingEditorState,
         editor,
-        pendingSelection,
         dirtyType,
         dirtyElements,
         dirtyLeaves,
@@ -744,8 +743,8 @@ function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
 }
 
 function reconcileSelection(
-  prevSelection: RangeSelection | null,
-  nextSelection: RangeSelection | null,
+  prevSelection: RangeSelection | NodeSelection | null,
+  nextSelection: RangeSelection | NodeSelection | null,
   editor: LexicalEditor,
   domSelection: Selection,
 ): void {
@@ -764,7 +763,7 @@ function reconcileSelection(
     return;
   }
 
-  if (nextSelection === null) {
+  if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
     // of editor.setRootElement(). If this occurs on init when the
     // editor is already focused, then this can cause the editor to

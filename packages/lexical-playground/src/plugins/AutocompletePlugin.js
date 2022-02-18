@@ -18,6 +18,7 @@ import {
   $getNodeByKey,
   $getSelection,
   $getRoot,
+  $isRangeSelection,
 } from 'lexical';
 import {TypeaheadNode, $createTypeaheadNode} from '../nodes/TypeaheadNode';
 import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
@@ -63,7 +64,7 @@ function useTypeahead(editor: LexicalEditor): void {
         function maybeRemoveTypeahead() {
           if (currentTypeaheadNode !== null) {
             const selection = $getSelection();
-            if (selection !== null) {
+            if ($isRangeSelection(selection)) {
               const anchor = selection.anchor;
               const focus = selection.focus;
               if (anchor.type === 'text' && focus.type === 'text') {
@@ -119,11 +120,16 @@ function useTypeahead(editor: LexicalEditor): void {
         }
 
         const selection = $getSelection();
-        const anchorNode = selection?.anchor.getNode();
-        const anchorOffset = selection?.anchor.offset;
-        const anchorLength = anchorNode?.getTextContentSize();
-        const isCaretPositionAtEnd =
-          anchorLength != null && anchorOffset === anchorLength;
+        let isCaretPositionAtEnd = false;
+
+        if ($isRangeSelection(selection)) {
+          const anchorNode = selection?.anchor.getNode();
+          const anchorOffset = selection?.anchor.offset;
+          const anchorLength = anchorNode?.getTextContentSize();
+          isCaretPositionAtEnd =
+            anchorLength != null && anchorOffset === anchorLength;
+        }
+
         if (
           suggestion === null ||
           !selectionCollapsed ||

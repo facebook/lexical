@@ -72,10 +72,6 @@ describe('LexicalSelectionHelpers tests', () => {
       const setupTestCase = (cb) => {
         const editor = createTestEditor();
 
-        editor.addListener('error', (error) => {
-          throw error;
-        });
-
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
@@ -208,10 +204,6 @@ describe('LexicalSelectionHelpers tests', () => {
     test('Has correct text point after removal after merge', async () => {
       const editor = createTestEditor();
 
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -262,11 +254,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
     test('Has correct text point after removal after merge (2)', async () => {
       const editor = createTestEditor();
-
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -316,11 +303,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
     test('Has correct text point adjust to element point after removal of a single empty text node', async () => {
       const editor = createTestEditor();
-
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -365,11 +347,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
     test('Has correct element point after removal of an empty text node in a group #1', async () => {
       const editor = createTestEditor();
-
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -417,11 +394,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
     test('Has correct element point after removal of an empty text node in a group #2', async () => {
       const editor = createTestEditor();
-
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -471,11 +443,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
     test('Has correct text point after removal of an empty text node in a group #3', async () => {
       const editor = createTestEditor();
-
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -526,11 +493,6 @@ describe('LexicalSelectionHelpers tests', () => {
     test('Can handle an element point on empty element', () => {
       const setupTestCase = (cb) => {
         const editor = createTestEditor();
-
-        editor.addListener('error', (error) => {
-          throw error;
-        });
-
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, []);
@@ -644,11 +606,6 @@ describe('LexicalSelectionHelpers tests', () => {
     test('Can handle a start element point', () => {
       const setupTestCase = (cb) => {
         const editor = createTestEditor();
-
-        editor.addListener('error', (error) => {
-          throw error;
-        });
-
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
@@ -769,11 +726,6 @@ describe('LexicalSelectionHelpers tests', () => {
     test('Can handle an end element point', () => {
       const setupTestCase = (cb) => {
         const editor = createTestEditor();
-
-        editor.addListener('error', (error) => {
-          throw error;
-        });
-
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
@@ -894,11 +846,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
     test('Has correct element point after merge from middle', async () => {
       const editor = createTestEditor();
-
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -943,11 +890,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
     test('Has correct element point after merge from end', async () => {
       const editor = createTestEditor();
-
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       const domElement = document.createElement('div');
       let element;
 
@@ -995,11 +937,6 @@ describe('LexicalSelectionHelpers tests', () => {
     test('Can handle multiple text points', () => {
       const setupTestCase = (cb) => {
         const editor = createTestEditor();
-
-        editor.addListener('error', (error) => {
-          throw error;
-        });
-
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
@@ -1136,11 +1073,6 @@ describe('LexicalSelectionHelpers tests', () => {
     test('Can handle multiple element points', () => {
       const setupTestCase = (cb) => {
         const editor = createTestEditor();
-
-        editor.addListener('error', (error) => {
-          throw error;
-        });
-
         editor.update(() => {
           const root = $getRoot();
           const element = createParagraphWithNodes(editor, [
@@ -1266,10 +1198,6 @@ describe('LexicalSelectionHelpers tests', () => {
     test('Can handle a mix of text and element points', () => {
       const setupTestCase = (cb) => {
         const editor = createTestEditor();
-
-        editor.addListener('error', (error) => {
-          throw error;
-        });
 
         editor.update(() => {
           const root = $getRoot();
@@ -1406,9 +1334,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
   test('range with multiple paragraphs', async () => {
     const editor = createTestEditor();
-    editor.addListener('error', (error) => {
-      throw error;
-    });
     const element = document.createElement('div');
     editor.setRootElement(element);
 
@@ -1465,9 +1390,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
   test('range with excludeFromCopy nodes', async () => {
     const editor = createTestEditor();
-    editor.addListener('error', (error) => {
-      throw error;
-    });
     const element = document.createElement('div');
     editor.setRootElement(element);
 
@@ -1543,9 +1465,6 @@ describe('LexicalSelectionHelpers tests', () => {
     describe('with an empty paragraph node selected', () => {
       test('a single text node', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1576,9 +1495,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
       test('two text nodes', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1612,9 +1528,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
       test('a single heading node with a child text node', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1648,9 +1561,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
       test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1688,9 +1598,6 @@ describe('LexicalSelectionHelpers tests', () => {
     describe('with a paragraph node selected on some existing text', () => {
       test('a single text node', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1723,9 +1630,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
       test('two text nodes', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1761,9 +1665,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
       test('a single heading node with a child text node', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1799,9 +1700,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
       test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
         const editor = createTestEditor();
-        editor.addListener('error', (error) => {
-          throw error;
-        });
         const element = document.createElement('div');
         editor.setRootElement(element);
 
@@ -1843,9 +1741,6 @@ describe('LexicalSelectionHelpers tests', () => {
 describe('extract', () => {
   test('', async () => {
     const editor = createTestEditor();
-    editor.addListener('error', (error) => {
-      throw error;
-    });
     const element = document.createElement('div');
     editor.setRootElement(element);
     await editor.update(() => {

@@ -366,7 +366,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     }
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error);
+    editor._onError(error);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingEditorState);
@@ -449,7 +449,7 @@ function triggerMutationListeners(
 }
 
 export function triggerListeners(
-  type: 'update' | 'error' | 'root' | 'decorator' | 'textcontent',
+  type: 'update' | 'root' | 'decorator' | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
@@ -632,7 +632,7 @@ function beginUpdate(
     }
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error);
+    editor._onError(error);
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;

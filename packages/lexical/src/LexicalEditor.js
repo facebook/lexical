@@ -131,11 +131,11 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
+export type ErrorHandler = (error: Error) => void;
 export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
 export type NodeMutation = 'created' | 'destroyed';
 
-export type ErrorListener = (error: Error) => void;
 export type UpdateListener = ({
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
@@ -176,7 +176,6 @@ export type CommandPayload = any;
 type Listeners = {
   command: Array<Set<CommandListener>>,
   decorator: Set<DecoratorListener>,
-  error: Set<ErrorListener>,
   mutation: MutationListeners,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
@@ -185,7 +184,6 @@ type Listeners = {
 
 export type ListenerType =
   | 'update'
-  | 'error'
   | 'root'
   | 'decorator'
   | 'textcontent'
@@ -236,6 +234,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   htmlTransforms?: DOMConversionMap,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
+  onError?: ErrorHandler,
   parentEditor?: LexicalEditor,
   theme?: EditorThemeClasses,
 }): LexicalEditor {
@@ -255,6 +254,12 @@ export function createEditor<EditorContext>(editorConfig?: {
     ParagraphNode,
     ...(config.nodes || []),
   ];
+
+  const defaultOnError = (e: Error, log) => {
+    throw e;
+  };
+  const onError = config.onError || defaultOnError;
+
   const registeredNodes = new Map();
   for (let i = 0; i < nodes.length; i++) {
     const klass = nodes[i];
@@ -278,6 +283,7 @@ export function createEditor<EditorContext>(editorConfig?: {
       namespace,
       theme,
     },
+    onError,
   );
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -315,12 +321,14 @@ class BaseLexicalEditor {
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
   _key: string;
+  _onError: ErrorHandler;
 
   constructor(
     editorState: EditorState,
     parentEditor: null | LexicalEditor,
     nodes: RegisteredNodes,
     config: EditorConfig<{...}>,
+    onError: ErrorHandler,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -340,7 +348,6 @@ class BaseLexicalEditor {
     this._listeners = {
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
       decorator: new Set(),
-      error: new Set(),
       mutation: new Map(),
       root: new Set(),
       textcontent: new Set(),
@@ -364,6 +371,7 @@ class BaseLexicalEditor {
     this._observer = null;
     // Used for identifying owning editors
     this._key = generateRandomKey();
+    this._onError = onError;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -371,7 +379,6 @@ class BaseLexicalEditor {
   addListener(
     type: ListenerType,
     arg1:
-      | ErrorListener
       | UpdateListener
       | DecoratorListener
       | RootListener
@@ -417,7 +424,6 @@ class BaseLexicalEditor {
       };
     } else {
       const listener:
-        | ErrorListener
         | UpdateListener
         | DecoratorListener
         | RootListener
@@ -620,6 +626,7 @@ declare export class LexicalEditor {
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;
+  _onError: ErrorHandler;
   _parentEditor: null | LexicalEditor;
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _pendingEditorState: null | EditorState;
@@ -628,7 +635,6 @@ declare export class LexicalEditor {
   _updateTags: Set<string>;
   _updating: boolean;
 
-  addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;

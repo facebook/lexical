@@ -50,10 +50,11 @@ describe('LexicalEditor tests', () => {
     jest.restoreAllMocks();
   });
 
-  function useLexicalEditor(rootElementRef) {
+  function useLexicalEditor(rootElementRef, onError) {
     const editor = React.useMemo(
       () =>
         createTestEditor({
+          onError: onError || jest.fn(),
           theme: {
             text: {
               bold: 'editor-text-bold',
@@ -62,7 +63,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [],
+      [onError],
     );
 
     React.useEffect(() => {
@@ -80,14 +81,7 @@ describe('LexicalEditor tests', () => {
     const ref = React.createRef();
 
     function TestBase() {
-      editor = useLexicalEditor(ref);
-      editor.addListener('error', (error) => {
-        if (onError) {
-          onError(error);
-        } else {
-          throw error;
-        }
-      });
+      editor = useLexicalEditor(ref, onError);
       return <div ref={ref} contentEditable={true} />;
     }
 
@@ -105,7 +99,9 @@ describe('LexicalEditor tests', () => {
     const rootElement = document.createElement('div');
     container.appendChild(rootElement);
 
-    const initialEditor = createTestEditor();
+    const initialEditor = createTestEditor({
+      onError: jest.fn(),
+    });
 
     initialEditor.update(() => {
       const root = $getRoot();
@@ -133,6 +129,7 @@ describe('LexicalEditor tests', () => {
 
     editor = createTestEditor({
       editorState: initialEditorState,
+      onError: jest.fn(),
     });
     editor.setRootElement(rootElement);
 
@@ -888,9 +885,6 @@ describe('LexicalEditor tests', () => {
 
         React.useEffect(() => {
           editor.addListener('root', listener);
-          editor.addListener('error', (error) => {
-            throw error;
-          });
         }, []);
 
         const ref = React.useCallback((node) => {

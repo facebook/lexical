@@ -28,10 +28,6 @@ type Props = {
   },
 };
 
-function defaultOnError(e: Error): void {
-  throw e;
-}
-
 export default function LexicalComposer({
   initialConfig = {},
   children,
@@ -70,11 +66,10 @@ export default function LexicalComposer({
           context,
           namespace,
           nodes,
+          onError,
           parentEditor,
           theme: composerTheme,
         });
-
-        editor.addListener('error', onError || defaultOnError);
       }
 
       return [editor, context];

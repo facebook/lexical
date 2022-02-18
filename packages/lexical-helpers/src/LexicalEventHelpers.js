@@ -26,9 +26,6 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
-  $isTextNode,
-  $isHorizontalRuleNode,
-  $log,
 } from 'lexical';
 
 import getPossibleDecoratorNode from '../../shared/src/getPossibleDecoratorNode';

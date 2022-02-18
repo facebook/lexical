@@ -179,6 +179,11 @@ export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
 export type IntentionallyMarkedAsDirtyElement = boolean;
 
+type DOMConversionCache = Map<
+  string,
+  Array<(node: Node) => DOMConversion | null>,
+>;
+
 export function resetEditor(
   editor: LexicalEditor,
   prevRootElement: null | HTMLElement,
@@ -212,25 +217,28 @@ export function resetEditor(
   }
 }
 
-export const DOMConversionCache: Map<
-  string,
-  Array<(node: Node) => DOMConversion | null>,
-> = new Map();
-
-function initializeConversionCache(nodes: RegisteredNodes): void {
+function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
+  const conversionCache = new Map();
+  const handledConversions = new Set();
   nodes.forEach((node) => {
-    const map = node.klass.convertDOM();
+    const convertDOM = node.klass.convertDOM;
+    if (handledConversions.has(convertDOM)) {
+      return;
+    }
+    handledConversions.add(convertDOM);
+    const map = convertDOM();
     if (map !== null) {
       Object.keys(map).forEach((key) => {
-        let currentCache = DOMConversionCache.get(key);
+        let currentCache = conversionCache.get(key);
         if (currentCache === undefined) {
           currentCache = [];
-          DOMConversionCache.set(key, currentCache);
+          conversionCache.set(key, currentCache);
         }
         currentCache.push(map[key]);
       });
     }
   });
+  return conversionCache;
 }
 
 export function createEditor<EditorContext>(editorConfig?: {
@@ -273,7 +281,6 @@ export function createEditor<EditorContext>(editorConfig?: {
       transforms: new Set(),
     });
   }
-  initializeConversionCache(registeredNodes);
   // klass: Array<Class<LexicalNode>>
   // $FlowFixMe: use our declared type instead
   const editor: editor = new BaseLexicalEditor(
@@ -288,6 +295,7 @@ export function createEditor<EditorContext>(editorConfig?: {
       theme,
     },
     onError,
+    initializeConversionCache(registeredNodes),
   );
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -325,6 +333,7 @@ class BaseLexicalEditor {
   _observer: null | MutationObserver;
   _key: string;
   _onError: ErrorHandler;
+  _htmlConversions: DOMConversionCache;
 
   constructor(
     editorState: EditorState,
@@ -332,6 +341,7 @@ class BaseLexicalEditor {
     nodes: RegisteredNodes,
     config: EditorConfig<{...}>,
     onError: ErrorHandler,
+    htmlConversions: DOMConversionCache,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -375,6 +385,7 @@ class BaseLexicalEditor {
     // Used for identifying owning editors
     this._key = generateRandomKey();
     this._onError = onError;
+    this._htmlConversions = htmlConversions;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -623,6 +634,7 @@ declare export class LexicalEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyType: 0 | 1 | 2;
   _editorState: EditorState;
+  _htmlConversions: DOMConversionCache;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;

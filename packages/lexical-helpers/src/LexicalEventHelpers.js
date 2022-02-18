@@ -29,7 +29,6 @@ import {
   $isTextNode,
   $isHorizontalRuleNode,
   $log,
-  DOMConversionCache,
 } from 'lexical';
 import getPossibleDecoratorOrHorizontalRuleNode from 'shared/getPossibleDecoratorOrHorizontalRuleNode';
 
@@ -63,7 +62,7 @@ function getConversionFunction(
   editor: LexicalEditor,
 ): DOMConversionFn | null {
   const {nodeName} = domNode;
-  const cachedConversions = DOMConversionCache.get(nodeName);
+  const cachedConversions = editor._htmlConversions.get(nodeName.toLowerCase());
   let currentConversion: DOMConversion | null = null;
   if (cachedConversions !== undefined) {
     cachedConversions.forEach((cachedConversion) => {

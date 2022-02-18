@@ -8,7 +8,7 @@
  */
 
 import {VERSION} from './LexicalConstants';
-import {createEditor, DOMConversionCache} from './LexicalEditor';
+import {createEditor} from './LexicalEditor';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
   $createEmptyObjectSelection as $createNodeSelection,
@@ -132,7 +132,6 @@ export {
   createDecoratorMap,
   createEditor,
   DecoratorNode,
-  DOMConversionCache,
   ElementNode,
   GridCellNode,
   GridNode,

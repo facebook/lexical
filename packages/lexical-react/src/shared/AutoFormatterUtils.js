@@ -187,16 +187,42 @@ const markdownOrderedList: AutoFormatCriteria = {
   regEx: /^(\d+)\.\s/,
 };
 
-const markdownBold: AutoFormatCriteria = {
+const markdownItalic: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'textBold',
+  nodeTransformationKind: 'textItalic',
   // regEx: /(\*)(?:\s*\b)(?:[^\*]*)(?:\b\s*)(\*\s)$/, // The $ will find the target at the end of the string.
   regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
+
   // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
   // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
 };
 
-const allAutoFormatCriteriaForTextNodes = [markdownBold];
+// let's add strikethrough ~~, bold __, bold + italic and even underline.
+// (\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>\s)
+
+const markdownBold: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'textBold',
+  // regEx: /(\*)(?:\s*\b)(?:[^\*]*)(?:\b\s*)(\*\s)$/, // The $ will find the target at the end of the string.
+  regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*\s)$/,
+  // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
+  // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
+};
+
+const markdownBoldWithUnderlines: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'textBold',
+  // regEx: /(\*)(?:\s*\b)(?:[^\*]*)(?:\b\s*)(\*\s)$/, // The $ will find the target at the end of the string.
+  regEx: /(__)(\s*)([^__]*)(\s*)(__\s)$/,
+  // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
+  // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
+};
+
+const allAutoFormatCriteriaForTextNodes = [
+  markdownItalic,
+  markdownBold,
+  markdownBoldWithUnderlines,
+];
 
 const allAutoFormatCriteria = [
   markdownHeader1,
@@ -329,12 +355,6 @@ function getMatchResultContextForText(
           scanningContext.textNodeWithOffset,
         );
       }
-      return getMatchResultContextWithRegEx(
-        scanningContext.joinedText,
-        false,
-        true,
-        autoFormatCriteria.regEx,
-      );
     } else {
       invariant(
         false,
@@ -343,8 +363,12 @@ function getMatchResultContextForText(
       );
     }
   }
-  // This is a placeholder function for following PR's related to character based transformations.
-  return null;
+  return getMatchResultContextWithRegEx(
+    scanningContext.joinedText,
+    false,
+    true,
+    autoFormatCriteria.regEx,
+  );
 }
 
 export function getMatchResultContextForCriteria(
@@ -469,12 +493,35 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   }
 }
 
+function getTextFormatType(
+  nodeTransformationKind: NodeTransformationKind,
+): TextFormatType {
+  switch (nodeTransformationKind) {
+    case 'textItalic':
+      return 'italic';
+    case 'textBold': {
+      return 'bold';
+    }
+    default:
+      invariant(
+        false,
+        'Unexpected input when getting BIUS format (%s)',
+        nodeTransformationKind,
+      );
+  }
+}
+
 function transformTextNodeForText(scanningContext: ScanningContext) {
   const autoFormatCriteria = scanningContext.autoFormatCriteria;
   const matchResultContext = scanningContext.matchResultContext;
 
   if (autoFormatCriteria.nodeTransformationKind != null) {
+    let shouldTransform = false;
+    let captureGroupsToDelete = [];
+    let formatting = null;
+    let formatCaptureGroup = 0;
     switch (autoFormatCriteria.nodeTransformationKind) {
+      case 'textItalic':
       case 'textBold': {
         if (matchResultContext.regExCaptureGroups.length !== 6) {
           // The expected reg ex pattern for bold should have 6 groups.
@@ -482,20 +529,40 @@ function transformTextNodeForText(scanningContext: ScanningContext) {
           // e2e tests validate the regEx pattern.
           break;
         }
-        matchResultContext.regExCaptureGroups =
-          getCaptureGroupsByResolvingAllDetails(scanningContext);
-        // Remove unwanted text in reg ex pattern.
-        removeTextInCaptureGroups([1, 5], matchResultContext);
-        formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
-        makeCollapsedSelectionAtOffsetInJoinedText(
-          matchResultContext.offsetInJoinedTextForCollapsedSelection,
-          matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
-          scanningContext.textNodeWithOffset.node.getParentOrThrow(),
+        shouldTransform = true;
+        captureGroupsToDelete = [1, 5];
+        formatting = getTextFormatType(
+          autoFormatCriteria.nodeTransformationKind,
         );
+        formatCaptureGroup = 3;
         break;
       }
       default:
         break;
+    }
+
+    if (shouldTransform) {
+      matchResultContext.regExCaptureGroups =
+        getCaptureGroupsByResolvingAllDetails(scanningContext);
+
+      if (captureGroupsToDelete.length > 0) {
+        // Remove unwanted text in reg ex pattern.
+        removeTextInCaptureGroups(captureGroupsToDelete, matchResultContext);
+      }
+
+      if (formatting != null) {
+        formatTextInCaptureGroupIndex(
+          formatting,
+          formatCaptureGroup,
+          matchResultContext,
+        );
+      }
+
+      makeCollapsedSelectionAtOffsetInJoinedText(
+        matchResultContext.offsetInJoinedTextForCollapsedSelection,
+        matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
+        scanningContext.textNodeWithOffset.node.getParentOrThrow(),
+      );
     }
   }
 }

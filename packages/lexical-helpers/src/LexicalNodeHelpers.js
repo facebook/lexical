@@ -11,6 +11,80 @@ import type {LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
+interface DFSIterable extends Iterable<LexicalNode> {
+  forEach: ((LexicalNode) => void) => void;
+}
+
+export function $dfs(
+  startingNode?: LexicalNode,
+  endingNode?: LexicalNode,
+): DFSIterable {
+  // $FlowFixMe[prop-missing] @@iterator
+  return {
+    forEach: (callbackFn: (LexicalNode) => void) => {
+      const values = Array.from($dfs(startingNode, endingNode));
+      const valuesLength = values.length;
+      for (let i = 0; i < valuesLength; i++) {
+        callbackFn(values[i]);
+      }
+    },
+    [Symbol.iterator]: () =>
+      // $FlowFixMe[prop-missing] Unsupported [Symbol.iterator]
+      new DFSIterator(startingNode || $getRoot(), endingNode || $getRoot()),
+  };
+}
+
+class DFSIterator {
+  _node: null | LexicalNode;
+  _endingNode: LexicalNode;
+  _pristine: boolean;
+
+  constructor(startingNode: LexicalNode, endingNode: LexicalNode) {
+    this._node = startingNode;
+    this._endingNode = endingNode;
+    this._pristine = true;
+  }
+
+  // $FlowFixMe[unsupported-syntax]
+  [Symbol.iterator]() {
+    return this;
+  }
+  next(): IteratorResult<LexicalNode, void> {
+    const node = this._node;
+    let nextNode = node;
+    if (
+      nextNode === null ||
+      (!this._pristine && nextNode.is(this._endingNode))
+    ) {
+      return {
+        done: true,
+        value: undefined,
+      };
+    }
+    if ($isElementNode(nextNode) && nextNode.getChildrenSize() > 0) {
+      nextNode = nextNode.getFirstChild();
+    } else {
+      // Find immediate sibling or nearest parent sibling
+      let sibling = null;
+      while (sibling === null && nextNode !== null) {
+        sibling = nextNode.getNextSibling();
+        if (sibling === null) {
+          nextNode = nextNode.getParent();
+        } else {
+          nextNode = sibling;
+        }
+      }
+    }
+    this._node = nextNode;
+    this._pristine = false;
+    return {
+      done: false,
+      // $FlowFixMe[incompatible-return] Bad inference
+      value: node,
+    };
+  }
+}
+
 export function $dfs__DEPRECATED(
   startingNode: LexicalNode,
   nextNode: (LexicalNode) => null | LexicalNode,

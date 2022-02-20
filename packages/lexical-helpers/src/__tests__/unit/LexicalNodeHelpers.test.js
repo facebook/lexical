@@ -26,6 +26,7 @@ import {
   $createTestElementNode,
   initializeUnitTest,
 } from '../../../../lexical/src/__tests__/utils';
+import {$dfs} from '../../LexicalNodeHelpers';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
@@ -37,7 +38,7 @@ describe('LexicalNodeHelpers tests', () => {
      *
      *  DFS: R, P1, B1, T1, B2, T2, T3, P2, T4, T5, B3, T6
      */
-    test('DFS node order', async () => {
+    test.only('DFS node order', async () => {
       const editor: LexicalEditor = testEnv.editor;
       let expectedKeys: Array<NodeKey> = [];
       await editor.update((state: State) => {
@@ -81,8 +82,7 @@ describe('LexicalNodeHelpers tests', () => {
 
       const dfsKeys = [];
       await editor.update((state: State) => {
-        const root = $getRoot();
-        $dfs__DEPRECATED(root, (node: LexicalNode) => {
+        $dfs().forEach((node: LexicalNode) => {
           dfsKeys.push(node.getKey());
           return node;
         });

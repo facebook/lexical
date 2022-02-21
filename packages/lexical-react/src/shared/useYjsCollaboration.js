@@ -10,7 +10,7 @@
 import type {Binding, Provider} from '@lexical/yjs';
 import type {
   CommandListenerEditorPriority,
-  CommandListenerNormalPriority,
+  CommandListenerLowPriority,
   LexicalEditor,
 } from 'lexical';
 import type {Doc} from 'yjs';
@@ -30,7 +30,7 @@ import {useCallback, useEffect, useLayoutEffect, useMemo, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
-const BootstrapPriority: CommandListenerNormalPriority = 2;
+const BootstrapPriority: CommandListenerLowPriority = 1;
 
 export function useYjsCollaboration(
   editor: LexicalEditor,

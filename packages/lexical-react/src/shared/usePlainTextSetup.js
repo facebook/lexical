@@ -24,7 +24,7 @@ import useLexicalDragonSupport from './useLexicalDragonSupport';
 
 export default function usePlainTextSetup(editor: LexicalEditor): void {
   useEffect(() => {
-    const removeEventListener = editor.addListener(
+    const removeListener = editor.addListener(
       'command',
       (type, payload): boolean => {
         const selection = $getSelection();
@@ -145,26 +145,13 @@ export default function usePlainTextSetup(editor: LexicalEditor): void {
       },
       (0: CommandListenerEditorPriority),
     );
-    let removeBootstrapListener;
-    if (__DEV__) {
-      removeBootstrapListener = editor.addListener(
-        'command',
-        (type) => {
-          if (type === 'bootstrapEditor') {
-            console.warn(
-              'bootstrapEditor command was not handled. Did you forget to add <BootstrapPlugin />?',
-            );
-          }
-          return false;
-        },
-        (0: CommandListenerEditorPriority),
+    const bootstrapCommandHandled = editor.execCommand('bootstrapEditor');
+    if (__DEV__ && !bootstrapCommandHandled) {
+      console.warn(
+        'bootstrapEditor command was not handled. Did you forget to add <BootstrapPlugin />?',
       );
     }
-    editor.execCommand('bootstrapEditor');
-    return () => {
-      removeEventListener();
-      removeBootstrapListener();
-    };
+    return removeListener;
   }, [editor]);
 
   useLexicalDragonSupport(editor);

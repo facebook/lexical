@@ -8,6 +8,8 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
@@ -63,6 +65,15 @@ export class ListItemNode extends ElementNode {
     dom.value = getListItemValue(this);
     $setListItemThemeClassNames(dom, config.theme, this);
     return false;
+  }
+
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      li: (node: Node) => ({
+        conversion: convertListItemElement,
+        priority: 0,
+      }),
+    };
   }
 
   // Mutation
@@ -343,6 +354,10 @@ function $setListItemThemeClassNames(
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
+}
+
+function convertListItemElement(domNode: Node): DOMConversionOutput {
+  return {node: $createListItemNode()};
 }
 
 export function $createListItemNode(): ListItemNode {

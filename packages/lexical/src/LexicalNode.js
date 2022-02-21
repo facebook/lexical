@@ -103,6 +103,25 @@ export function removeNode(
   }
 }
 
+export type DOMConversion = {
+  conversion: DOMConversionFn,
+  priority: 0 | 1 | 2 | 3 | 4,
+};
+export type DOMConversionFn = (
+  element: Node,
+  parent?: Node,
+) => DOMConversionOutput;
+export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
+export type DOMConversionMap = {
+  [NodeName]: (node: Node) => DOMConversion | null,
+};
+type NodeName = string;
+export type DOMConversionOutput = {
+  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
+  forChild?: DOMChildConversion,
+  node: LexicalNode | null,
+};
+
 export type NodeKey = string;
 
 export class LexicalNode {
@@ -537,6 +556,10 @@ export class LexicalNode {
     config: EditorConfig<EditorContext>,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
+  }
+
+  static convertDOM(): DOMConversionMap | null {
+    return null;
   }
 
   // Setters and mutators

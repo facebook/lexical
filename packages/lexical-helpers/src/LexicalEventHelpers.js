@@ -7,9 +7,10 @@
  * @flow strict
  */
 
-import type {DOMChildConversion} from '../../lexical/src/LexicalEditor';
 import type {
-  DOMConversionMap,
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -18,22 +19,16 @@ import type {
 } from 'lexical';
 
 import {$cloneContents} from '@lexical/helpers/selection';
-import {$createListItemNode, $createListNode} from '@lexical/list';
 import {
-  $createLineBreakNode,
   $createNodeFromParse,
   $createParagraphNode,
-  $createTextNode,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
-  $isTextNode,
 } from 'lexical';
-import {$createCodeNode} from 'lexical/CodeNode';
-import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$createLinkNode} from 'lexical/LinkNode';
-import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
+
+import getPossibleDecoratorNode from '../../shared/src/getPossibleDecoratorNode';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -41,148 +36,6 @@ export type EventHandler = (
   event: Object,
   editor: LexicalEditor,
 ) => void;
-
-const isCodeElement = (div: HTMLDivElement): boolean => {
-  return div.style.fontFamily.match('monospace') !== null;
-};
-
-const DOM_NODE_NAME_TO_LEXICAL_NODE: DOMConversionMap = {
-  '#text': (domNode: Node) => ({node: $createTextNode(domNode.textContent)}),
-  a: (domNode: Node) => {
-    let node;
-    if (domNode instanceof HTMLAnchorElement) {
-      node = $createLinkNode(domNode.href);
-    } else {
-      node = $createTextNode(domNode.textContent);
-    }
-    return {node};
-  },
-  b: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
-    const b: HTMLElement = domNode;
-    // Google Docs wraps all copied HTML in a <b> with font-weight normal
-    const hasNormalFontWeight = b.style.fontWeight === 'normal';
-    return {
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
-          lexicalNode.toggleFormat('bold');
-        }
-      },
-      node: null,
-    };
-  },
-  br: () => ({node: $createLineBreakNode()}),
-  div: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <div> since we matched it by nodeName
-    const div: HTMLDivElement = domNode;
-
-    return {
-      after: (childLexicalNodes) => {
-        const domParent = domNode.parentNode;
-        if (domParent != null && domNode !== domParent.lastChild) {
-          childLexicalNodes.push($createLineBreakNode());
-        }
-        return childLexicalNodes;
-      },
-      node: isCodeElement(div) ? $createCodeNode() : null,
-    };
-  },
-  em: (domNode: Node) => {
-    return {
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('italic');
-        }
-      },
-      node: null,
-    };
-  },
-  h1: () => ({node: $createHeadingNode('h1')}),
-  h2: () => ({node: $createHeadingNode('h2')}),
-  h3: () => ({node: $createHeadingNode('h3')}),
-  h4: () => ({node: $createHeadingNode('h4')}),
-  h5: () => ({node: $createHeadingNode('h5')}),
-  i: (domNode: Node) => {
-    return {
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('italic');
-        }
-      },
-      node: null,
-    };
-  },
-  li: () => ({node: $createListItemNode()}),
-  ol: () => ({node: $createListNode('ol')}),
-  p: () => ({node: $createParagraphNode()}),
-  pre: (domNode: Node) => ({node: $createCodeNode()}),
-  span: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
-    const span: HTMLSpanElement = domNode;
-    // Google Docs uses span tags + font-weight for bold text
-    const hasBoldFontWeight = span.style.fontWeight === '700';
-    return {
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
-          lexicalNode.toggleFormat('bold');
-        }
-      },
-      node: null,
-    };
-  },
-  strong: (domNode: Node) => {
-    return {
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('bold');
-        }
-      },
-      node: null,
-    };
-  },
-  table: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
-    const table: HTMLTableElement = domNode;
-    const isGitHubCodeTable = table.classList.contains(
-      'js-file-line-container',
-    );
-
-    return {
-      node: isGitHubCodeTable ? $createCodeNode() : null,
-    };
-  },
-  td: (domNode: Node) => {
-    // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
-    const cell: HTMLTableCellElement = domNode;
-    const isGitHubCodeCell = cell.classList.contains('js-file-line');
-
-    return {
-      after: (childLexicalNodes) => {
-        if (
-          isGitHubCodeCell &&
-          cell.parentNode &&
-          cell.parentNode.nextSibling
-        ) {
-          // Append newline between code lines
-          childLexicalNodes.push($createLineBreakNode());
-        }
-        return childLexicalNodes;
-      },
-      node: null,
-    };
-  },
-  u: (domNode: Node) => {
-    return {
-      forChild: (lexicalNode) => {
-        if ($isTextNode(lexicalNode)) {
-          lexicalNode.toggleFormat('underline');
-        }
-      },
-      node: null,
-    };
-  },
-  ul: () => ({node: $createListNode('ul')}),
-};
 
 function $generateNodes(nodeRange: {
   nodeMap: ParsedNodeMap,
@@ -202,19 +55,37 @@ function $generateNodes(nodeRange: {
   return nodes;
 }
 
+function getConversionFunction(
+  domNode: Node,
+  editor: LexicalEditor,
+): DOMConversionFn | null {
+  const {nodeName} = domNode;
+  const cachedConversions = editor._htmlConversions.get(nodeName.toLowerCase());
+  let currentConversion: DOMConversion | null = null;
+  if (cachedConversions !== undefined) {
+    cachedConversions.forEach((cachedConversion) => {
+      const domConversion = cachedConversion(domNode);
+      if (domConversion !== null) {
+        if (
+          currentConversion === null ||
+          currentConversion.priority < domConversion.priority
+        ) {
+          currentConversion = domConversion;
+        }
+      }
+    });
+  }
+  return currentConversion !== null ? currentConversion.conversion : null;
+}
+
 export function $createNodesFromDOM(
   node: Node,
-  conversionMap: DOMConversionMap,
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   let currentLexicalNode = null;
-  const nodeName = node.nodeName.toLowerCase();
-  const customHtmlTransforms = editor._config.htmlTransforms || {};
-  const transformFunction =
-    customHtmlTransforms[nodeName] || conversionMap[nodeName];
-
+  const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction ? transformFunction(node) : null;
   let postTransform = null;
 
@@ -230,7 +101,7 @@ export function $createNodesFromDOM(
     }
 
     if (transformOutput.forChild != null) {
-      forChildMap.set(nodeName, transformOutput.forChild);
+      forChildMap.set(node.nodeName, transformOutput.forChild);
     }
   }
 
@@ -240,7 +111,7 @@ export function $createNodesFromDOM(
   let childLexicalNodes = [];
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
-      ...$createNodesFromDOM(children[i], conversionMap, editor, forChildMap),
+      ...$createNodesFromDOM(children[i], editor, forChildMap),
     );
   }
   if (postTransform != null) {
@@ -262,14 +133,13 @@ export function $createNodesFromDOM(
 
 function $generateNodesFromDOM(
   dom: Document,
-  conversionMap: DOMConversionMap,
   editor: LexicalEditor,
 ): Array<LexicalNode> {
   let lexicalNodes = [];
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
   for (let i = 0; i < elementsLength; i++) {
-    const lexicalNode = $createNodesFromDOM(elements[i], conversionMap, editor);
+    const lexicalNode = $createNodesFromDOM(elements[i], editor);
     if (lexicalNode !== null) {
       lexicalNodes = lexicalNodes.concat(lexicalNode);
     }
@@ -307,11 +177,7 @@ export function $insertDataTransferForRichText(
   if (htmlString) {
     const parser = new DOMParser();
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
-    const nodes = $generateNodesFromDOM(
-      dom,
-      DOM_NODE_NAME_TO_LEXICAL_NODE,
-      editor,
-    );
+    const nodes = $generateNodesFromDOM(dom, editor);
     // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
     const topLevelBlocks = [];
     let currentBlock = null;

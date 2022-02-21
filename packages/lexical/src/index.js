@@ -63,15 +63,24 @@ export type {
   CommandListenerHighPriority,
   CommandListenerLowPriority,
   CommandListenerNormalPriority,
-  DOMConversionMap,
   EditorConfig,
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   NodeMutation,
+  RegisteredNodes,
 } from './LexicalEditor';
 export type {EditorState, ParsedEditorState} from './LexicalEditorState';
-export type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
+export type {
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
+  DOMConversionMap,
+  DOMConversionOutput,
+  LexicalNode,
+  NodeKey,
+  NodeMap,
+} from './LexicalNode';
 export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
 export type {
   ElementPointType as ElementPoint,

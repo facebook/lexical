@@ -8,6 +8,8 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
@@ -69,6 +71,19 @@ export class ListNode extends ElementNode {
     }
     setListThemeClassNames(dom, config.theme, this);
     return false;
+  }
+
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      ol: (node: Node) => ({
+        conversion: convertListNode,
+        priority: 0,
+      }),
+      ul: (node: Node) => ({
+        conversion: convertListNode,
+        priority: 0,
+      }),
+    };
   }
 
   canBeEmpty(): false {
@@ -146,6 +161,15 @@ function setListThemeClassNames(
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
+}
+
+function convertListNode(domNode: Node): DOMConversionOutput {
+  const nodeName = domNode.nodeName.toLowerCase();
+  let node = null;
+  if (nodeName === 'ol' || nodeName === 'ul') {
+    node = $createListNode(nodeName);
+  }
+  return {node};
 }
 
 export function $createListNode(

@@ -8,6 +8,7 @@
  */
 
 import type {EditorThemeClasses} from '../../LexicalEditor';
+import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
 import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {getCachedClassNameArray} from '../../LexicalUtils';
@@ -45,6 +46,15 @@ export class ParagraphNode extends ElementNode {
     return false;
   }
 
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      p: (node: Node) => ({
+        conversion: convertParagraphElement,
+        priority: 0,
+      }),
+    };
+  }
+
   // Mutation
 
   insertNewAfter(): ParagraphNode {
@@ -78,6 +88,10 @@ export class ParagraphNode extends ElementNode {
     }
     return false;
   }
+}
+
+function convertParagraphElement(): DOMConversionOutput {
+  return {node: $createParagraphNode()};
 }
 
 export function $createParagraphNode(): ParagraphNode {

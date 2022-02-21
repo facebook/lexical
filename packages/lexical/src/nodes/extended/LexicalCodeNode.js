@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
 import type {
   EditorConfig,
   LexicalNode,
@@ -53,6 +54,41 @@ export class CodeNode extends ElementNode {
   }
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      div: (node: Node) => ({
+        conversion: convertDivElement,
+        priority: 1,
+      }),
+      pre: (node: Node) => ({
+        conversion: convertPreElement,
+        priority: 0,
+      }),
+      table: (node: Node) => {
+        // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
+        const table: HTMLTableElement = node;
+        if (isGitHubCodeTable(table)) {
+          return {
+            conversion: convertTableElement,
+            priority: 1,
+          };
+        }
+        return null;
+      },
+      td: (node: Node) => {
+        // $FlowFixMe[incompatible-type] element is a <td> since we matched it by nodeName
+        const td: HTMLTableCellElement = node;
+        if (isGitHubCodeCell(td)) {
+          return {
+            conversion: convertTableCellElement,
+            priority: 1,
+          };
+        }
+        return null;
+      },
+    };
   }
 
   // Mutation
@@ -170,4 +206,54 @@ export function getLastCodeHighlightNodeOfLine(
   }
 
   return currentNode;
+}
+
+function convertPreElement(domNode: Node): DOMConversionOutput {
+  return {node: $createCodeNode()};
+}
+
+function convertDivElement(domNode: Node): DOMConversionOutput {
+  // $FlowFixMe[incompatible-type] domNode is a <div> since we matched it by nodeName
+  const div: HTMLDivElement = domNode;
+  return {
+    after: (childLexicalNodes) => {
+      const domParent = domNode.parentNode;
+      if (domParent != null && domNode !== domParent.lastChild) {
+        childLexicalNodes.push($createLineBreakNode());
+      }
+      return childLexicalNodes;
+    },
+    node: isCodeElement(div) ? $createCodeNode() : null,
+  };
+}
+
+function convertTableElement(): DOMConversionOutput {
+  return {node: $createCodeNode()};
+}
+
+function convertTableCellElement(domNode: Node): DOMConversionOutput {
+  // $FlowFixMe[incompatible-type] domNode is a <td> since we matched it by nodeName
+  const cell: HTMLTableCellElement = domNode;
+  return {
+    after: (childLexicalNodes) => {
+      if (cell.parentNode && cell.parentNode.nextSibling) {
+        // Append newline between code lines
+        childLexicalNodes.push($createLineBreakNode());
+      }
+      return childLexicalNodes;
+    },
+    node: null,
+  };
+}
+
+function isCodeElement(div: HTMLDivElement): boolean {
+  return div.style.fontFamily.match('monospace') !== null;
+}
+
+function isGitHubCodeCell(cell: HTMLTableCellElement): boolean %checks {
+  return cell.classList.contains('js-file-line');
+}
+
+function isGitHubCodeTable(table: HTMLTableElement): boolean %checks {
+  return table.classList.contains('js-file-line-container');
 }

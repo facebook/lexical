@@ -35,8 +35,10 @@ const styles = stylex.create({
 
 export default function ContentEditable({
   className,
+  placeholder,
 }: {
   className?: string,
+  placeholder: React$Node,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const [isReadOnly, setIsReadyOnly] = useState(false);
@@ -59,6 +61,7 @@ export default function ContentEditable({
     <LexicalContentEditable
       className={className || stylex(styles.root)}
       readOnly={isReadOnly}
+      placeholder={placeholder}
     />
   );
 }

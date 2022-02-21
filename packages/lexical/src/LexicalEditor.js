@@ -170,7 +170,10 @@ export type CommandListenerPriority =
   | CommandListenerHighPriority
   | CommandListenerCriticalPriority;
 
-// $FlowFixMe: intentional
+export type Session = Session;
+// $FlowFixMe[unclear-type] intentional
+export type SessionPayload = any;
+// $FlowFixMe[unclear-type] intentional
 export type CommandPayload = any;
 
 type Listeners = {
@@ -205,6 +208,7 @@ export function resetEditor(
   editor._editorState = createEmptyEditorState();
   editor._pendingEditorState = pendingEditorState;
   editor._compositionKey = null;
+  editor._session = new Map();
   editor._dirtyType = NO_DIRTY_NODES;
   editor._cloneNotNeeded.clear();
   editor._dirtyLeaves = new Set();
@@ -307,6 +311,7 @@ class BaseLexicalEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _updates: Array<[() => void, void | EditorUpdateOptions]>;
   _updating: boolean;
+  _session: Session;
   _listeners: Listeners;
   _nodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
@@ -343,6 +348,7 @@ class BaseLexicalEditor {
     this._keyToDOMMap = new Map();
     this._updates = [];
     this._updating = false;
+    this._session = new Map();
     // Listeners
     this._listeners = {
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
@@ -483,6 +489,9 @@ class BaseLexicalEditor {
   }
   execCommand(type: string, payload?: CommandPayload): boolean {
     return triggerCommandListeners(getSelf(this), type, payload);
+  }
+  getSession(): Session {
+    return this._session;
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
@@ -630,6 +639,7 @@ declare export class LexicalEditor {
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _pendingEditorState: null | EditorState;
   _rootElement: null | HTMLElement;
+  _session: Session;
   _updates: Array<[() => void, void | EditorUpdateOptions]>;
   _updateTags: Set<string>;
   _updating: boolean;
@@ -659,6 +669,7 @@ declare export class LexicalEditor {
   getEditorState(): EditorState;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getRootElement(): null | HTMLElement;
+  getSession(): Session;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   isComposing(): boolean;
   parseEditorState(stringifiedEditorState: string): EditorState;

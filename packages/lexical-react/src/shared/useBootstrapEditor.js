@@ -78,16 +78,17 @@ export default function useBootstrapEditor(
   clearEditorFn?: (LexicalEditor) => void,
 ): void {
   useLayoutEffect(() => {
+    initEditor(
+      editor,
+      initialPayloadFn != null ? initialPayloadFn : defaultInitEditor,
+    );
+    // We only do this for init
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+  useLayoutEffect(() => {
     return editor.addListener(
       'command',
       (type, payload): boolean => {
-        if (type === 'bootstrapEditor') {
-          initEditor(
-            editor,
-            initialPayloadFn != null ? initialPayloadFn : defaultInitEditor,
-          );
-          return true;
-        }
         if (type === 'clearEditor') {
           clearEditor(
             editor,

@@ -227,7 +227,8 @@ export function useRichTextSetup(editor: LexicalEditor): void {
       },
       EditorPriority,
     );
-    editor.execCommand('bootstrapEditor');
+    editor.execCommand('events', 'RICH_TEXT');
+    editor.getSession().set('events', 'RICH_TEXT');
     return removeListener;
   }, [editor]);
 

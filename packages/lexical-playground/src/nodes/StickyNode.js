@@ -36,13 +36,13 @@ import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import Placeholder from '../ui/Placeholder';
-import ContentEditable from '../ui/ContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import stylex from 'stylex';
+import ContentEditable from '../ui/ContentEditable';
 
 const styles = stylex.create({
   contentEditable: {
@@ -291,10 +291,9 @@ function StickyComponent({
           <HistoryPlugin externalHistoryState={historyState} />
         )}
         <BootstrapPlugin />
-        <PlainTextPlugin
-          contentEditable={
-            <ContentEditable className={stylex(styles.contentEditable)} />
-          }
+        <PlainTextPlugin />
+        <ContentEditable
+          className={stylex(styles.placeholder)}
           placeholder={
             <Placeholder className={stylex(styles.placeholder)}>
               What's up?

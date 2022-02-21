@@ -8,29 +8,12 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import * as React from 'react';
 
-import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
-import useDecorators from './shared/useDecorators';
 import {useRichTextSetup} from './shared/useRichTextSetup';
 
-export default function RichTextPlugin({
-  contentEditable,
-  placeholder,
-}: {
-  contentEditable: React$Node,
-  placeholder: React$Node,
-}): React$Node {
+export default function RichTextPlugin(): null {
   const [editor] = useLexicalComposerContext();
-  const showPlaceholder = useCanShowPlaceholder(editor);
   useRichTextSetup(editor);
-  const decorators = useDecorators(editor);
 
-  return (
-    <>
-      {contentEditable}
-      {showPlaceholder && placeholder}
-      {decorators}
-    </>
-  );
+  return null;
 }

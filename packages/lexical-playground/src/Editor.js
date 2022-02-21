@@ -31,7 +31,6 @@ import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
-import Placeholder from './ui/Placeholder';
 import {createWebsocketProvider} from './collaboration';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
@@ -43,6 +42,7 @@ import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
 import {useSettings} from './context/SettingsContext';
 import AutoFocusPlugin from './plugins/AutoFocusPlugin';
+import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
@@ -59,12 +59,12 @@ export default function Editor(): React$Node {
       showTreeView,
     },
   } = useSettings();
-  const text = isCollab
+  const placeholderText = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
     ? 'Enter some rich text...'
     : 'Enter some plain text...';
-  const placeholder = <Placeholder>{text}</Placeholder>;
+  const placeholder = <Placeholder>{placeholderText}</Placeholder>;
 
   return (
     <>
@@ -73,6 +73,7 @@ export default function Editor(): React$Node {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}>
+        <ContentEditable placeholder={placeholder} />
         <AutoFocusPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
@@ -82,7 +83,6 @@ export default function Editor(): React$Node {
         <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
-        <BootstrapPlugin />
         <CharacterStylesPopupPlugin />
         {isRichText ? (
           <>
@@ -93,12 +93,12 @@ export default function Editor(): React$Node {
                 shouldBootstrap={!skipCollaborationInit}
               />
             ) : (
-              <HistoryPlugin externalHistoryState={historyState} />
+              <>
+                <HistoryPlugin externalHistoryState={historyState} />
+                <BootstrapPlugin />
+              </>
             )}
-            <RichTextPlugin
-              contentEditable={<ContentEditable />}
-              placeholder={placeholder}
-            />
+            <RichTextPlugin />
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
@@ -110,10 +110,7 @@ export default function Editor(): React$Node {
           </>
         ) : (
           <>
-            <PlainTextPlugin
-              contentEditable={<ContentEditable />}
-              placeholder={placeholder}
-            />
+            <PlainTextPlugin />
             <HistoryPlugin externalHistoryState={historyState} />
           </>
         )}

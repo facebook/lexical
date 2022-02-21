@@ -8,11 +8,7 @@
  */
 
 import type {Binding, Provider} from '@lexical/yjs';
-import type {
-  CommandListenerEditorPriority,
-  CommandListenerLowPriority,
-  LexicalEditor,
-} from 'lexical';
+import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 import type {Doc} from 'yjs';
 
 import {
@@ -24,13 +20,25 @@ import {
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
 } from '@lexical/yjs';
+import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useLayoutEffect, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
-const BootstrapPriority: CommandListenerLowPriority = 1;
+
+function bootstrap(editor: LexicalEditor): void {
+  editor.update(() => {
+    const root = $getRoot();
+    const paragraph = $createParagraphNode();
+    const selection = $getSelection();
+    root.append(paragraph);
+    if (selection === null) {
+      paragraph.select();
+    }
+  });
+}
 
 export function useYjsCollaboration(
   editor: LexicalEditor,
@@ -58,21 +66,6 @@ export function useYjsCollaboration(
     }
   }, [provider]);
 
-  const bootstrapPropagationRef = useRef(true);
-
-  useLayoutEffect(() => {
-    return editor.addListener(
-      'command',
-      (type) => {
-        if (type === 'bootstrapEditor') {
-          return bootstrapPropagationRef.current;
-        }
-        return false;
-      },
-      BootstrapPriority,
-    );
-  }, [editor]);
-
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
@@ -88,8 +81,7 @@ export function useYjsCollaboration(
         root.isEmpty() &&
         root._xmlText._length === 0
       ) {
-        bootstrapPropagationRef.current = false;
-        editor.execCommand('bootstrapEditor');
+        bootstrap(editor);
       }
     };
 

@@ -49,7 +49,7 @@ export class ParagraphNode extends ElementNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       p: (node: Node) => ({
-        fn: convertParagraphElement,
+        conversion: convertParagraphElement,
         priority: 0,
       }),
     };

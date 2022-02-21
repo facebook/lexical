@@ -57,23 +57,23 @@ export class HeadingNode extends ElementNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       h1: (node: Node) => ({
-        fn: convertHeadingElement,
+        conversion: convertHeadingElement,
         priority: 0,
       }),
       h2: (node: Node) => ({
-        fn: convertHeadingElement,
+        conversion: convertHeadingElement,
         priority: 0,
       }),
       h3: (node: Node) => ({
-        fn: convertHeadingElement,
+        conversion: convertHeadingElement,
         priority: 0,
       }),
       h4: (node: Node) => ({
-        fn: convertHeadingElement,
+        conversion: convertHeadingElement,
         priority: 0,
       }),
       h5: (node: Node) => ({
-        fn: convertHeadingElement,
+        conversion: convertHeadingElement,
         priority: 0,
       }),
     };

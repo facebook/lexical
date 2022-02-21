@@ -53,7 +53,7 @@ export class LinkNode extends ElementNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       a: (node: Node) => ({
-        fn: convertAnchorElement,
+        conversion: convertAnchorElement,
         priority: 1,
       }),
     };

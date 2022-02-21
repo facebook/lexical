@@ -70,7 +70,7 @@ export class ListItemNode extends ElementNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       li: (node: Node) => ({
-        fn: convertListItemElement,
+        conversion: convertListItemElement,
         priority: 0,
       }),
     };

@@ -104,7 +104,7 @@ export function removeNode(
 }
 
 export type DOMConversion = {
-  fn: DOMConversionFn,
+  conversion: DOMConversionFn,
   priority: 0 | 1 | 2 | 3 | 4,
 };
 export type DOMConversionFn = (

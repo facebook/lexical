@@ -43,7 +43,7 @@ export class LineBreakNode extends LexicalNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => ({
-        fn: convertLineBreakElement,
+        conversion: convertLineBreakElement,
         priority: 0,
       }),
     };

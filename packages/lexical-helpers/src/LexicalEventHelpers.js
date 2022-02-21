@@ -75,7 +75,7 @@ function getConversionFunction(
       }
     });
   }
-  return currentConversion !== null ? currentConversion.fn : null;
+  return currentConversion !== null ? currentConversion.conversion : null;
 }
 
 export function $createNodesFromDOM(

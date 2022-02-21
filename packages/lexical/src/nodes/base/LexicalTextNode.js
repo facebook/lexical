@@ -390,31 +390,31 @@ export class TextNode extends LexicalNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       '#text': (node: Node) => ({
-        fn: convertTextDOMNode,
+        conversion: convertTextDOMNode,
         priority: 0,
       }),
       b: (node: Node) => ({
-        fn: convertBringAttentionToElement,
+        conversion: convertBringAttentionToElement,
         priority: 0,
       }),
       em: (node: Node) => ({
-        fn: convertTextFormatElement,
+        conversion: convertTextFormatElement,
         priority: 0,
       }),
       i: (node: Node) => ({
-        fn: convertTextFormatElement,
+        conversion: convertTextFormatElement,
         priority: 0,
       }),
       span: (node: Node) => ({
-        fn: convertSpanElement,
+        conversion: convertSpanElement,
         priority: 0,
       }),
       strong: (node: Node) => ({
-        fn: convertTextFormatElement,
+        conversion: convertTextFormatElement,
         priority: 0,
       }),
       u: (node: Node) => ({
-        fn: convertTextFormatElement,
+        conversion: convertTextFormatElement,
         priority: 0,
       }),
     };

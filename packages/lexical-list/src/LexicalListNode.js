@@ -76,11 +76,11 @@ export class ListNode extends ElementNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       ol: (node: Node) => ({
-        fn: convertListNode,
+        conversion: convertListNode,
         priority: 0,
       }),
       ul: (node: Node) => ({
-        fn: convertListNode,
+        conversion: convertListNode,
         priority: 0,
       }),
     };

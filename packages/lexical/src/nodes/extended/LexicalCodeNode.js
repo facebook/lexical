@@ -59,11 +59,11 @@ export class CodeNode extends ElementNode {
   static convertDOM(): DOMConversionMap | null {
     return {
       div: (node: Node) => ({
-        fn: convertDivElement,
+        conversion: convertDivElement,
         priority: 1,
       }),
       pre: (node: Node) => ({
-        fn: convertPreElement,
+        conversion: convertPreElement,
         priority: 0,
       }),
       table: (node: Node) => {
@@ -71,7 +71,7 @@ export class CodeNode extends ElementNode {
         const table: HTMLTableElement = node;
         if (isGitHubCodeTable(table)) {
           return {
-            fn: convertTableElement,
+            conversion: convertTableElement,
             priority: 1,
           };
         }
@@ -82,7 +82,7 @@ export class CodeNode extends ElementNode {
         const td: HTMLTableCellElement = node;
         if (isGitHubCodeCell(td)) {
           return {
-            fn: convertTableCellElement,
+            conversion: convertTableCellElement,
             priority: 1,
           };
         }

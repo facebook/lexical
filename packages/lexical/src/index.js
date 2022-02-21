@@ -7,7 +7,6 @@
  * @flow strict
  */
 
-import {VERSION} from './LexicalConstants';
 import {createEditor} from './LexicalEditor';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
@@ -27,6 +26,7 @@ import {
   $setCompositionKey,
   $setSelection,
 } from './LexicalUtils';
+import {VERSION} from './LexicalVersion';
 import {
   $isDecoratorNode,
   createDecoratorArray,

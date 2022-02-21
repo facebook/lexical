@@ -8,7 +8,7 @@
  */
 
 import type {
-  CommandListenerEditorPriority,
+  CommandListenerLowPriority,
   LexicalEditor,
   RootNode,
 } from 'lexical';
@@ -16,7 +16,7 @@ import type {
 import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-const BootstrapPriority: CommandListenerEditorPriority = 0;
+const BootstrapPriority: CommandListenerLowPriority = 1;
 
 function shouldSelectParagraph(editor: LexicalEditor): boolean {
   const activeElement = document.activeElement;

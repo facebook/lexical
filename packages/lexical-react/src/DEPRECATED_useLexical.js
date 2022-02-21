@@ -8,7 +8,6 @@
  */
 
 import type {
-  DOMConversionMap,
   EditorState,
   EditorThemeClasses,
   LexicalEditor,
@@ -24,7 +23,6 @@ export default function useLexical<EditorContext>(editorConfig?: {
   context?: EditorContext,
   disableEvents?: boolean,
   editorState?: EditorState,
-  htmlTransforms?: DOMConversionMap,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
   onError?: (error: Error) => void,

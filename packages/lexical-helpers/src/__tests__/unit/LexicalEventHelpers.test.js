@@ -1,5 +1,5 @@
 import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
-import {$createTextNode, createEditor} from 'lexical';
+import {createEditor} from 'lexical';
 import ExtendedNodes from 'lexical/ExtendedNodes';
 import {LinkNode} from 'lexical/LinkNode';
 import React from 'react';
@@ -40,9 +40,6 @@ describe('LexicalEventHelpers', () => {
     const editor = React.useMemo(
       () =>
         createEditor({
-          htmlTransforms: {
-            testhtmltagname: () => ({node: $createTextNode('Hello world!')}),
-          },
           nodes: [LinkNode, ...ExtendedNodes],
           theme: {
             code: 'editor-code',
@@ -247,16 +244,6 @@ describe('LexicalEventHelpers', () => {
             ),
           ],
           name: 'should ignore multiple levels of DOM node types that do not have transformers, but still process their children.',
-        },
-        {
-          expectedHTML:
-            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; overflow-wrap: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">Hello world!</span></p></div>',
-          inputs: [
-            pasteHTML(
-              `<meta charset='utf-8'><testhtmltagname>World, hello!</testhtmltagname>`,
-            ),
-          ],
-          name: 'should respect htmlTransforms passed in via the editor config.',
         },
         {
           expectedHTML:

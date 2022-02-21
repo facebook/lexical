@@ -13,7 +13,11 @@ import type {
   DOMConversionOutput,
   NodeKey,
 } from '../../LexicalNode';
-import type {NodeSelection, RangeSelection} from '../../LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from '../../LexicalSelection';
 
 import invariant from 'shared/invariant';
 
@@ -422,7 +426,7 @@ export class TextNode extends LexicalNode {
 
   // Mutators
   selectionTransform(
-    prevSelection: null | RangeSelection | NodeSelection,
+    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
     nextSelection: RangeSelection,
   ): void {}
   setFormat(format: number): this {

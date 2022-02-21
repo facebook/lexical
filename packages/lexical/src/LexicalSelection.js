@@ -222,48 +222,50 @@ interface BaseSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertRawText(text: string): void;
-  is(selection: null | RangeSelection | NodeSelection): boolean;
+  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
 }
 
 export class NodeSelection implements BaseSelection {
-  _objects: Set<NodeKey>;
+  _nodes: Set<NodeKey>;
   dirty: boolean;
 
   constructor(objects: Set<NodeKey>) {
     this.dirty = false;
-    this._objects = objects;
+    this._nodes = objects;
   }
 
-  is(selection: null | RangeSelection | NodeSelection): boolean {
-    if (selection === null || $isRangeSelection(selection)) {
+  is(
+    selection: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isNodeSelection(selection)) {
       return false;
     }
-    const a: Set<NodeKey> = this._objects;
-    const b: Set<NodeKey> = selection._objects;
+    const a: Set<NodeKey> = this._nodes;
+    const b: Set<NodeKey> = selection._nodes;
     return a.size === b.size && Array.from(a).every((key) => b.has(key));
   }
 
   add(key: NodeKey): void {
     this.dirty = true;
-    this._objects.add(key);
+    this._nodes.add(key);
   }
 
   delete(key: NodeKey): void {
     this.dirty = true;
-    this._objects.delete(key);
+    this._nodes.delete(key);
   }
 
   clear(): void {
     this.dirty = true;
-    this._objects.clear();
+    this._nodes.clear();
   }
 
   has(key: NodeKey): boolean {
-    return this._objects.has(key);
+    return this._nodes.has(key);
   }
 
   clone(): NodeSelection {
-    return new NodeSelection(new Set(this._objects));
+    return new NodeSelection(new Set(this._nodes));
   }
 
   extract(): Array<LexicalNode> {
@@ -279,7 +281,7 @@ export class NodeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const objects = Array.from(this._objects);
+    const objects = Array.from(this._nodes);
     const nodes = [];
     for (let i = 0; i < objects.length; i++) {
       const node = $getNodeByKey(objects[i]);
@@ -304,8 +306,80 @@ export function $isRangeSelection(x: ?mixed): boolean %checks {
   return x instanceof RangeSelection;
 }
 
-export function $isNodeSelection(x: ?mixed): boolean %checks {
-  return x instanceof NodeSelection;
+export class GridSelection implements BaseSelection {
+  gridKey: NodeKey;
+  anchorCellKey: NodeKey;
+  focusCellKey: NodeKey;
+  dirty: boolean;
+
+  constructor(
+    gridKey: NodeKey,
+    anchorCellKey: NodeKey,
+    focusCellKey: NodeKey,
+  ): void {
+    this.gridKey = gridKey;
+    this.anchorCellKey = anchorCellKey;
+    this.focusCellKey = focusCellKey;
+    this.dirty = false;
+  }
+
+  is(
+    selection: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isGridSelection(selection)) {
+      return false;
+    }
+    return (
+      this.gridKey === selection.gridKey &&
+      this.anchorCellKey === selection.anchorCellKey &&
+      this.focusCellKey === selection.focusCellKey
+    );
+  }
+
+  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
+    this.dirty = true;
+    this.gridKey = gridKey;
+    this.anchorCellKey = anchorCellKey;
+    this.focusCellKey = focusCellKey;
+  }
+
+  clone(): GridSelection {
+    return new GridSelection(
+      this.gridKey,
+      this.anchorCellKey,
+      this.focusCellKey,
+    );
+  }
+
+  extract(): Array<LexicalNode> {
+    return this.getNodes();
+  }
+
+  insertRawText(): void {
+    // Do nothing?
+  }
+
+  insertText(): void {
+    // Do nothing?
+  }
+
+  getNodes(): Array<LexicalNode> {
+    const nodes = [];
+    // TODO
+    return nodes;
+  }
+
+  getTextContent(): string {
+    const nodes = this.getNodes();
+    let textContent = '';
+    for (let i = 0; i < nodes.length; i++) {
+      textContent += nodes[i].getTextContent();
+    }
+    return textContent;
+  }
+}
+export function $isGridSelection(x: ?mixed): boolean %checks {
+  return x instanceof GridSelection;
 }
 
 export class RangeSelection implements BaseSelection {
@@ -321,8 +395,10 @@ export class RangeSelection implements BaseSelection {
     this.format = format;
   }
 
-  is(selection: null | RangeSelection | NodeSelection): boolean {
-    if (selection === null || $isNodeSelection(selection)) {
+  is(
+    selection: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
       return false;
     }
     return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
@@ -1421,6 +1497,10 @@ export class RangeSelection implements BaseSelection {
   }
 }
 
+export function $isNodeSelection(x: ?mixed): boolean %checks {
+  return x instanceof NodeSelection;
+}
+
 function $swapPoints(selection: RangeSelection): void {
   const focus = selection.focus;
   const anchor = selection.anchor;
@@ -1633,7 +1713,7 @@ function internalResolveSelectionPoints(
   focusDOM: null | Node,
   focusOffset: number,
   editor: LexicalEditor,
-  lastSelection: null | RangeSelection | NodeSelection,
+  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
 ): null | [PointType, PointType] {
   if (
     anchorDOM === null ||
@@ -1751,6 +1831,10 @@ export function $createEmptyObjectSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
+export function $createEmptyGridSelection(): GridSelection {
+  return new GridSelection('root', 'root', 'root');
+}
+
 function getActiveEventType(): string | void {
   const event = window.event;
   return event && event.type;
@@ -1758,7 +1842,7 @@ function getActiveEventType(): string | void {
 
 export function internalCreateSelection(
   editor: LexicalEditor,
-): null | RangeSelection | NodeSelection {
+): null | RangeSelection | NodeSelection | GridSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
   const domSelection = window.getSelection();
@@ -1771,7 +1855,7 @@ export function internalCreateSelection(
 }
 
 function internalCreateRangeSelection(
-  lastSelection: null | RangeSelection | NodeSelection,
+  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
@@ -1833,19 +1917,27 @@ function internalCreateRangeSelection(
   );
 }
 
-export function $getSelection(): null | RangeSelection | NodeSelection {
+export function $getSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
-export function $getPreviousSelection(): null | RangeSelection | NodeSelection {
+export function $getPreviousSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
 }
 
 export function internalCreateSelectionFromParse(
   parsedSelection: null | ParsedSelection,
-): null | RangeSelection | NodeSelection {
+): null | RangeSelection | NodeSelection | GridSelection {
   if (parsedSelection !== null) {
     if (parsedSelection.type === 'range') {
       return new RangeSelection(
@@ -1861,8 +1953,14 @@ export function internalCreateSelectionFromParse(
         ),
         0,
       );
-    } else if (parsedSelection.type === 'object') {
-      return new NodeSelection(new Set(parsedSelection.objects));
+    } else if (parsedSelection.type === 'node') {
+      return new NodeSelection(new Set(parsedSelection.nodes));
+    } else if (parsedSelection.type === 'grid') {
+      return new GridSelection(
+        parsedSelection.gridKey,
+        parsedSelection.anchorCellKey,
+        parsedSelection.focusCellKey,
+      );
     }
   }
   return null;

@@ -10,6 +10,7 @@
 import type {
   EditorState,
   ElementNode,
+  GridSelection,
   LexicalEditor,
   NodeSelection,
   RangeSelection,
@@ -19,6 +20,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isGridSelection,
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
@@ -219,7 +221,11 @@ function printRangeSelection(selection: RangeSelection): string {
 }
 
 function printObjectSelection(selection: NodeSelection): string {
-  return `: node\n  └ [${Array.from(selection._objects).join(', ')}]`;
+  return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
+}
+
+function printGridSelection(selection: GridSelection): string {
+  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchorCellKey}, focusCell: ${selection.focusCellKey} }`;
 }
 
 function generateContent(editorState: EditorState): string {
@@ -252,6 +258,8 @@ function generateContent(editorState: EditorState): string {
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
+      : $isGridSelection(selection)
+      ? printGridSelection(selection)
       : printObjectSelection(selection);
   });
 

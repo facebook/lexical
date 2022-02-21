@@ -10,6 +10,7 @@
 import type {Provider} from '.';
 import type {Binding} from './Bindings';
 import type {
+  GridSelection,
   NodeKey,
   NodeMap,
   NodeSelection,
@@ -482,8 +483,8 @@ export function syncCursorPositions(
 export function syncLexicalSelectionToYjs(
   binding: Binding,
   provider: Provider,
-  prevSelection: null | RangeSelection | NodeSelection,
-  nextSelection: null | RangeSelection | NodeSelection,
+  prevSelection: null | RangeSelection | NodeSelection | GridSelection,
+  nextSelection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();

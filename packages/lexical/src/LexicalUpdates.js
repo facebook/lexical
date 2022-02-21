@@ -633,7 +633,7 @@ function beginUpdate(
       }
     } else if ($isNodeSelection(pendingSelection)) {
       // TODO: we should also validate node selection?
-      if (pendingSelection._objects.size === 0) {
+      if (pendingSelection._nodes.size === 0) {
         pendingEditorState._selection = null;
       }
     }

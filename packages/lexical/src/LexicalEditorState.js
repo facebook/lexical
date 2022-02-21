@@ -10,9 +10,17 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {ParsedNode, ParsedSelection} from './LexicalParsing';
-import type {NodeSelection, RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 
-import {$isNodeSelection, $isRangeSelection} from './LexicalSelection';
+import {
+  $isGridSelection,
+  $isNodeSelection,
+  $isRangeSelection,
+} from './LexicalSelection';
 import {readEditorState} from './LexicalUpdates';
 import {$createRootNode} from './nodes/base/LexicalRootNode';
 
@@ -53,13 +61,13 @@ export function createEmptyEditorState(): EditorState {
 
 export class EditorState {
   _nodeMap: NodeMap;
-  _selection: null | RangeSelection | NodeSelection;
+  _selection: null | RangeSelection | NodeSelection | GridSelection;
   _flushSync: boolean;
   _readOnly: boolean;
 
   constructor(
     nodeMap: NodeMap,
-    selection?: RangeSelection | NodeSelection | null,
+    selection?: RangeSelection | NodeSelection | GridSelection | null,
   ) {
     this._nodeMap = nodeMap;
     this._selection = selection || null;
@@ -72,7 +80,9 @@ export class EditorState {
   read<V>(callbackFn: () => V): V {
     return readEditorState(this, callbackFn);
   }
-  clone(selection?: RangeSelection | NodeSelection | null): EditorState {
+  clone(
+    selection?: RangeSelection | NodeSelection | GridSelection | null,
+  ): EditorState {
     const editorState = new EditorState(
       this._nodeMap,
       selection === undefined ? this._selection : selection,
@@ -101,8 +111,15 @@ export class EditorState {
           }
         : $isNodeSelection(selection)
         ? {
-            objects: Array.from(selection._objects),
-            type: 'object',
+            nodes: Array.from(selection._nodes),
+            type: 'node',
+          }
+        : $isGridSelection(selection)
+        ? {
+            anchorCellKey: selection.anchorCellKey,
+            focusCellKey: selection.focusCellKey,
+            gridKey: selection.gridKey,
+            type: 'grid',
           }
         : null,
     };

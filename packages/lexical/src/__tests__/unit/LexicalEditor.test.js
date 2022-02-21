@@ -10,6 +10,7 @@ import type {LexicalEditor} from 'lexical';
 
 import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
+  $createGridSelection,
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
@@ -1100,13 +1101,94 @@ describe('LexicalEditor tests', () => {
         );
       });
 
-      it('Parses the selection offsets of a stringified editor state', async () => {
-        expect(Array.from(parsedSelection._objects)).toEqual([textKey]);
+      it('Parses the selection nodes of a stringified editor state', async () => {
+        expect(Array.from(parsedSelection._nodes)).toEqual([textKey]);
       });
 
       it('Remaps the selection keys of a stringified editor state', async () => {
-        expect(parsedSelection._objects.has(originalText.__key)).toEqual(false);
-        expect(parsedSelection._objects.has(parsedText.__key)).toEqual(true);
+        expect(parsedSelection._nodes.has(originalText.__key)).toEqual(false);
+        expect(parsedSelection._nodes.has(parsedText.__key)).toEqual(true);
+      });
+    });
+
+    describe('grid selection', () => {
+      beforeEach(async () => {
+        init();
+        await update(() => {
+          const paragraph = $createParagraphNode();
+          originalText = $createTextNode('Hello world');
+          const selection = $createGridSelection();
+          selection.set(
+            originalText.getKey(),
+            originalText.getKey(),
+            originalText.getKey(),
+          );
+          $setSelection(selection);
+          paragraph.append(originalText);
+          $getRoot().append(paragraph);
+        });
+        const stringifiedEditorState = JSON.stringify(
+          editor.getEditorState().toJSON(),
+        );
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read(() => {
+          parsedRoot = $getRoot();
+          parsedParagraph = parsedRoot.getFirstChild();
+          paragraphKey = parsedParagraph.getKey();
+          parsedText = parsedParagraph.getFirstChild();
+          textKey = parsedText.getKey();
+          parsedSelection = $getSelection();
+        });
+      });
+
+      it('Parses the nodes of a stringified editor state', async () => {
+        expect(parsedRoot).toEqual({
+          __cachedText: null,
+          __children: [paragraphKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        });
+        expect(parsedParagraph).toEqual({
+          __children: [textKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: paragraphKey,
+          __parent: 'root',
+          __type: 'paragraph',
+        });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __parent: paragraphKey,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
+      });
+
+      it('Parses the text content of the editor state', async () => {
+        expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(
+          null,
+        );
+        expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
+          'Hello world',
+        );
+      });
+
+      it('Remaps the selection keys of a stringified editor state', async () => {
+        expect(parsedSelection.gridKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.anchorCellKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.focusCellKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.gridKey).toEqual(parsedText.__key);
+        expect(parsedSelection.anchorCellKey).toEqual(parsedText.__key);
+        expect(parsedSelection.focusCellKey).toEqual(parsedText.__key);
       });
     });
   });

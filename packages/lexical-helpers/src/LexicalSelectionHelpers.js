@@ -9,6 +9,7 @@
 
 import type {
   ElementNode,
+  GridSelection,
   LexicalNode,
   NodeKey,
   NodeSelection,
@@ -120,7 +121,9 @@ function $copyLeafNodeBranchToRoot(
   }
 }
 
-export function $cloneContents(selection: RangeSelection | NodeSelection): {
+export function $cloneContents(
+  selection: RangeSelection | NodeSelection | GridSelection,
+): {
   nodeMap: Array<[NodeKey, LexicalNode]>,
   range: Array<NodeKey>,
 } {

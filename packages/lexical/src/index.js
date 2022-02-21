@@ -10,10 +10,12 @@
 import {createEditor} from './LexicalEditor';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
+  $createEmptyGridSelection as $createGridSelection,
   $createEmptyObjectSelection as $createNodeSelection,
   $createEmptyRangeSelection as $createRangeSelection,
   $getPreviousSelection,
   $getSelection,
+  $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
 } from './LexicalSelection';
@@ -84,6 +86,7 @@ export type {
 export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
 export type {
   ElementPointType as ElementPoint,
+  GridSelection,
   NodeSelection,
   PointType as Point,
   RangeSelection,
@@ -101,6 +104,7 @@ export type {RootNode} from './nodes/base/LexicalRootNode';
 export type {TextFormatType} from './nodes/base/LexicalTextNode';
 
 export {
+  $createGridSelection,
   $createLineBreakNode,
   $createNodeFromParse,
   $createNodeSelection,
@@ -117,6 +121,7 @@ export {
   $isGridCellNode,
   $isGridNode,
   $isGridRowNode,
+  $isGridSelection,
   $isLeafNode,
   $isLineBreakNode,
   $isNodeSelection,

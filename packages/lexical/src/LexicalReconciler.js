@@ -15,7 +15,11 @@ import type {
   RegisteredNodes,
 } from './LexicalEditor';
 import type {NodeKey, NodeMap} from './LexicalNode';
-import type {NodeSelection, RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {Node as ReactNode} from 'react';
 
@@ -672,8 +676,8 @@ export function updateEditorState(
   rootElement: HTMLElement,
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
-  currentSelection: RangeSelection | NodeSelection | null,
-  pendingSelection: RangeSelection | NodeSelection | null,
+  currentSelection: RangeSelection | NodeSelection | GridSelection | null,
+  pendingSelection: RangeSelection | NodeSelection | GridSelection | null,
   needsUpdate: boolean,
   editor: LexicalEditor,
 ): null | MutatedNodes {
@@ -743,8 +747,8 @@ function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
 }
 
 function reconcileSelection(
-  prevSelection: RangeSelection | NodeSelection | null,
-  nextSelection: RangeSelection | NodeSelection | null,
+  prevSelection: RangeSelection | NodeSelection | GridSelection | null,
+  nextSelection: RangeSelection | NodeSelection | GridSelection | null,
   editor: LexicalEditor,
   domSelection: Selection,
 ): void {

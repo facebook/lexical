@@ -10,6 +10,7 @@
 import type {
   CommandListenerEditorPriority,
   EditorState,
+  GridSelection,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   LexicalNode,
@@ -44,7 +45,7 @@ const EditorPriority: CommandListenerEditorPriority = 0;
 export type HistoryStateEntry = {
   editor: LexicalEditor,
   editorState: EditorState,
-  undoSelection?: RangeSelection | NodeSelection | null,
+  undoSelection?: RangeSelection | NodeSelection | GridSelection | null,
 };
 
 export type HistoryState = {

@@ -17,7 +17,11 @@ import type {
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
-import type {NodeSelection, RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import type {RootNode} from './nodes/base/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
 import type {Node as ReactNode} from 'react';
@@ -353,7 +357,7 @@ export function internalGetRoot(editorState: EditorState): RootNode {
 }
 
 export function $setSelection(
-  selection: null | RangeSelection | NodeSelection,
+  selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
   const editorState = getActiveEditorState();
   editorState._selection = selection;

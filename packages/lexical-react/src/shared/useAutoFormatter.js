@@ -16,6 +16,7 @@ import type {
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
 import type {
   EditorState,
+  GridSelection,
   LexicalEditor,
   NodeSelection,
   RangeSelection,
@@ -67,7 +68,7 @@ function getCriteriaWithMatchResultContext(
 }
 
 function getTextNodeForAutoFormatting(
-  selection: null | RangeSelection | NodeSelection,
+  selection: null | RangeSelection | NodeSelection | GridSelection,
 ): null | TextNodeWithOffset {
   if (!$isRangeSelection(selection)) {
     return null;

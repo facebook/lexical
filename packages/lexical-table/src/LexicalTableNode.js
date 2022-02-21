@@ -29,7 +29,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $setSelection,
-  ElementNode,
+  GridNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -546,7 +546,7 @@ function applyCustomTableHandlers(
   );
 }
 
-export class TableNode extends ElementNode {
+export class TableNode extends GridNode {
   __selectionShape: ?SelectionShape;
   __grid: ?Grid;
 
@@ -559,6 +559,8 @@ export class TableNode extends ElementNode {
     selectionShape: ?SelectionShape,
     grid: ?Grid,
   ): TableNode {
+    // TODO: selectionShape and grid aren't being deeply cloned?
+    // They shouldn't really be on the table node IMO.
     return new TableNode(node.__key, node.__selectionShape, node.__grid);
   }
 

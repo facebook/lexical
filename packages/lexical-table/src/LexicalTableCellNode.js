@@ -10,21 +10,25 @@
 import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from 'lexical';
+import {GridCellNode} from 'lexical';
 
-export class TableCellNode extends ElementNode {
+export class TableCellNode extends GridCellNode {
   __isHeader: boolean;
 
-  static getType(): 'table-cell' {
-    return 'table-cell';
+  static getType(): 'tablecell' {
+    return 'tablecell';
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(false, node.__key);
+    return new TableCellNode(false, node.__colSpan, node.__key);
   }
 
-  constructor(isHeader?: boolean = false, key?: NodeKey): void {
-    super(key);
+  constructor(
+    isHeader?: boolean = false,
+    colSpan?: number = 1,
+    key?: NodeKey,
+  ): void {
+    super(colSpan, key);
     this.__isHeader = isHeader;
   }
 

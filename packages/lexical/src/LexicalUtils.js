@@ -100,11 +100,7 @@ export function isSelectionWithinEditor(
     return (
       rootElement !== null &&
       rootElement.contains(anchorDOM) &&
-      rootElement.contains(focusDOM) &&
-      // If selection is inside a decorator, then we treat it as
-      // if the focus is not in Lexical.
-      anchorDOM != null &&
-      !$isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM))
+      rootElement.contains(focusDOM)
     );
   } catch (error) {
     return false;

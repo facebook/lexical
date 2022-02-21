@@ -1691,7 +1691,18 @@ function internalResolveSelectionPoint(
           resolvedOffset++;
         }
       } else {
-        resolvedOffset = resolvedElement.getIndexWithinParent() + 1;
+        const index = resolvedElement.getIndexWithinParent();
+        // When selecting decorators, there can be some selection issues when using resolvedOffset,
+        // and instead we should be checking if we're using the offset
+        if (
+          offset === 0 &&
+          $isDecoratorNode(resolvedElement) &&
+          getNodeFromDOM(dom) === resolvedElement
+        ) {
+          resolvedOffset = index;
+        } else {
+          resolvedOffset = index + 1;
+        }
         resolvedElement = resolvedElement.getParentOrThrow();
       }
       if ($isElementNode(resolvedElement)) {

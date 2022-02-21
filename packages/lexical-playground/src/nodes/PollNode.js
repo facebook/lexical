@@ -69,6 +69,7 @@ const styles = stylex.create({
       fontWeight: 'normal',
       color: '#999',
     },
+    zIndex: 0,
   },
   optionInputVotes: {
     backgroundColor: 'rgb(236, 243, 254)',
@@ -77,6 +78,7 @@ const styles = stylex.create({
     top: 0,
     left: 0,
     transition: 'width 1s ease',
+    zIndex: 0,
   },
   optionInputVotesCount: {
     color: 'rgb(61,135,245)',
@@ -118,7 +120,7 @@ const styles = stylex.create({
     backgroundColor: 'transparent',
     backgroundPosition: '6px 6px',
     backgroundRepeat: 'no-repeat',
-    zIndex: 2,
+    zIndex: 0,
     cursor: 'pointer',
     borderRadius: 5,
     opacity: 0.3,
@@ -165,7 +167,7 @@ function getTotalVotes(options: DecoratorArray): number {
   // $FlowFixMe: need to revise type
   const votes: number = options.reduce((totalVotes, next) => {
     // $FlowFixMe: need to revise type
-    return totalVotes + next.get('votes').length;
+    return totalVotes + next.get('votes').getLength();
   }, 0);
 
   return votes;

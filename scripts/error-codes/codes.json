@@ -64,5 +64,8 @@
   "64": "Expected anchor and focus offsets to have ascending character order.",
   "65": "The capture group count in the RegEx does match the actual capture group count.",
   "66": "Type %s not in registeredNodes",
-  "67": "The text content string length does not correlate with insertions/deletions of new text."
+  "67": "The text content string length does not correlate with insertions/deletions of new text.",
+  "68": "TODO",
+  "69": "insertNode: topLevelElement is root node",
+  "70": "getTopLevelElementOrThrow: root nodes are not top level elements"
 }

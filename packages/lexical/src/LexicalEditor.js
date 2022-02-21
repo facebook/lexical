@@ -311,7 +311,6 @@ class BaseLexicalEditor {
   _nodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
-  _textContent: string;
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;

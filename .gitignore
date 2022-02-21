@@ -8,6 +8,7 @@ build
 coverage
 dist
 npm
+!scripts/npm
 .DS_Store
 .env.local
 .env.development.local

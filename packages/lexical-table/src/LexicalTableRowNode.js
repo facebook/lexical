@@ -10,11 +10,11 @@
 import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
-import {ElementNode} from 'lexical';
+import {GridRowNode} from 'lexical';
 
-export class TableRowNode extends ElementNode {
-  static getType(): 'table-row' {
-    return 'table-row';
+export class TableRowNode extends GridRowNode {
+  static getType(): 'tablerow' {
+    return 'tablerow';
   }
 
   static clone(node: TableRowNode): TableRowNode {

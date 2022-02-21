@@ -37,6 +37,9 @@ import {
   isDecoratorMap,
 } from './nodes/base/LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './nodes/base/LexicalElementNode';
+import {$isGridCellNode, GridCellNode} from './nodes/base/LexicalGridCellNode';
+import {$isGridNode, GridNode} from './nodes/base/LexicalGridNode';
+import {$isGridRowNode, GridRowNode} from './nodes/base/LexicalGridRowNode';
 import {
   $createLineBreakNode,
   $isLineBreakNode,
@@ -101,6 +104,9 @@ export {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isGridCellNode,
+  $isGridNode,
+  $isGridRowNode,
   $isLeafNode,
   $isLineBreakNode,
   $isNodeSelection,
@@ -116,6 +122,9 @@ export {
   createEditor,
   DecoratorNode,
   ElementNode,
+  GridCellNode,
+  GridNode,
+  GridRowNode,
   isDecoratorArray,
   isDecoratorEditor,
   isDecoratorMap,

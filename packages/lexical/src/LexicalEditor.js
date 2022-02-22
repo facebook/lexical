@@ -618,6 +618,10 @@ class BaseLexicalEditor {
     if (rootElement !== null) {
       rootElement.blur();
     }
+    const domSelection = window.getSelection();
+    if (domSelection !== null) {
+      domSelection.removeAllRanges();
+    }
   }
 }
 

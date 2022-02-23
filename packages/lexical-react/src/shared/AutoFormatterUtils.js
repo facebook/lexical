@@ -516,17 +516,17 @@ function getTextFormatType(
 }
 
 function transformTextNodeForText(scanningContext: ScanningContext) {
-  const autoFormatCriteria = scanningContext.autoFormatCriteria;
   const matchResultContext = scanningContext.matchResultContext;
+  if (matchResultContext.regExCaptureGroups.length !== 6) {
+    // The expected reg ex pattern for bold should have 6 groups.
+    // If it does not, then break and fail silently.
+    // e2e tests validate the regEx pattern.
+    return;
+  }
+
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
 
   if (autoFormatCriteria.nodeTransformationKind != null) {
-    if (matchResultContext.regExCaptureGroups.length !== 6) {
-      // The expected reg ex pattern for bold should have 6 groups.
-      // If it does not, then break and fail silently.
-      // e2e tests validate the regEx pattern.
-      return;
-    }
-
     const formatting = getTextFormatType(
       autoFormatCriteria.nodeTransformationKind,
     );

@@ -2,6 +2,7 @@
 
 packages/**/dist/*.js
 packages/**/config/*.js
+packages/**/*.js.flow
 packages/playwright
 packages/playwright-core
 packages/babel-plugin-transform-stylex

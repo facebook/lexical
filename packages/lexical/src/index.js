@@ -20,6 +20,7 @@ import {
   $isRangeSelection,
 } from './LexicalSelection';
 import {
+  $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
@@ -59,50 +60,6 @@ import {
   TextNode,
 } from './nodes/base/LexicalTextNode';
 
-export type {
-  CommandListenerCriticalPriority,
-  CommandListenerEditorPriority,
-  CommandListenerHighPriority,
-  CommandListenerLowPriority,
-  CommandListenerNormalPriority,
-  EditorConfig,
-  EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
-  LexicalEditor,
-  NodeMutation,
-  RegisteredNodes,
-} from './LexicalEditor';
-export type {EditorState, ParsedEditorState} from './LexicalEditorState';
-export type {
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
-  DOMConversionMap,
-  DOMConversionOutput,
-  LexicalNode,
-  NodeKey,
-  NodeMap,
-} from './LexicalNode';
-export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
-export type {
-  ElementPointType as ElementPoint,
-  GridSelection,
-  NodeSelection,
-  PointType as Point,
-  RangeSelection,
-  TextPointType as TextPoint,
-} from './LexicalSelection';
-export type {
-  DecoratorArray,
-  DecoratorEditor,
-  DecoratorMap,
-  DecoratorStateValue,
-} from './nodes/base/LexicalDecoratorNode';
-export type {ElementFormatType} from './nodes/base/LexicalElementNode';
-export type {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
-export type {RootNode} from './nodes/base/LexicalRootNode';
-export type {TextFormatType} from './nodes/base/LexicalTextNode';
-
 export {
   $createGridSelection,
   $createLineBreakNode,
@@ -111,6 +68,7 @@ export {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getPreviousSelection,

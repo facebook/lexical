@@ -7,9 +7,13 @@
  * @flow strict
  */
 
-import type {EditorThemeClasses} from '../../LexicalEditor';
-import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
-import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
+import type {EditorConfig, EditorThemeClasses} from '../../LexicalEditor';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  LexicalNode,
+  NodeKey,
+} from '../../LexicalNode';
 
 import {getCachedClassNameArray} from '../../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';

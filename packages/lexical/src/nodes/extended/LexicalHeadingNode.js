@@ -7,8 +7,14 @@
  * @flow strict
  */
 
-import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
-import type {EditorConfig, LexicalNode, NodeKey, ParagraphNode} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {$createParagraphNode, ElementNode} from 'lexical';

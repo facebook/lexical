@@ -22,13 +22,12 @@ import {$cloneContents} from '@lexical/helpers/selection';
 import {
   $createNodeFromParse,
   $createParagraphNode,
+  $getDecoratorNode,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
 } from 'lexical';
-
-import getPossibleDecoratorNode from '../../shared/src/getPossibleDecoratorNode';
 
 // TODO the Flow types here needs fixing
 export type EventHandler = (
@@ -216,7 +215,7 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
-  const possibleNode = getPossibleDecoratorNode(selection.focus, isBackward);
+  const possibleNode = $getDecoratorNode(selection.focus, isBackward);
   return $isDecoratorNode(possibleNode) && !possibleNode.isIsolated();
 }
 

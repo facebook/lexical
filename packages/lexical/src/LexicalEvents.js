@@ -585,7 +585,7 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     removeHandles[i]();
   }
   // $FlowFixMe: internal field
-  rootElement._lexicalEventHandles = [];
+  rootElement.__lexicalEventHandles = [];
 }
 
 function cleanActiveNestedEditorsMap(editor: LexicalEditor) {

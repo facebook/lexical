@@ -130,8 +130,13 @@ function $wrapOverflowedNodes(offset: number): void {
   const root = $getRoot();
   let accumulatedLength = 0;
 
-  let previousNode = root;
+  const dfsNodes = [];
   $dfs__DEPRECATED(root, (node: LexicalNode) => {
+    dfsNodes.push(node);
+    return node;
+  });
+  for (let i = 0; i < dfsNodes.length; i += 1) {
+    const node = dfsNodes[i];
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
       const nextLength = accumulatedLength + node.getTextContentSize();
@@ -155,7 +160,6 @@ function $wrapOverflowedNodes(offset: number): void {
             parent.select();
           }
         }
-        return previousNode;
       } else if (previousLength < offset) {
         const descendant = node.getFirstDescendant();
         const descendantLength =
@@ -169,7 +173,6 @@ function $wrapOverflowedNodes(offset: number): void {
           previousPlusDescendantLength <= offset;
         if (firstDescendantIsSimpleText || firstDescendantDoesNotOverflow) {
           $unwrapNode(node);
-          return previousNode;
         }
       }
     } else if ($isLeafNode(node)) {
@@ -198,9 +201,7 @@ function $wrapOverflowedNodes(offset: number): void {
         mergePrevious(overflowNode);
       }
     }
-    previousNode = node;
-    return node;
-  });
+  }
 }
 
 function $wrapNode(node: LexicalNode): OverflowNode {

@@ -488,11 +488,6 @@ function getRootElementRemoveHandles(
   return eventHandles;
 }
 
-function clearRootElementRemoveHandles(rootElement: HTMLElement): void {
-  // $FlowFixMe: internal field
-  rootElement._lexicalEventHandles = [];
-}
-
 // Mapping root editors to their active nested editors, contains nested editors
 // mapping only, so if root editor is selected map will have no reference to free up memory
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
@@ -569,27 +564,32 @@ export function addRootElementEvents(
 }
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  rootElementsRegistered--;
-  // We only want to have a single global selectionchange event handler, shared
-  // between all editor instances.
-  if (rootElementsRegistered === 0) {
-    const doc = rootElement.ownerDocument;
-    doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+  if (rootElementsRegistered !== 0) {
+    rootElementsRegistered--;
+    // We only want to have a single global selectionchange event handler, shared
+    // between all editor instances.
+    if (rootElementsRegistered === 0) {
+      const doc = rootElement.ownerDocument;
+      doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+    }
   }
   // $FlowFixMe: internal field
-  cleanActiveNestedEditorsMap(rootElement.__lexicalEditor);
-  // $FlowFixMe: internal field
-  rootElement.__lexicalEditor = null;
+  const editor: LexicalEditor | null | void = rootElement.__lexicalEditor;
+  if (editor != null) {
+    cleanActiveNestedEditorsMap(editor);
+    // $FlowFixMe: internal field
+    rootElement.__lexicalEditor = null;
+  }
   const removeHandles = getRootElementRemoveHandles(rootElement);
   for (let i = 0; i < removeHandles.length; i++) {
     removeHandles[i]();
   }
-  clearRootElementRemoveHandles(rootElement);
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEventHandles = [];
 }
 
 function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
-  // $FlowFixMe: internal field
-  if (editor._parentEditor) {
+  if (editor._parentEditor !== null) {
     // For nested editor cleanup map if this editor was marked as active
     const editors = getEditorsToPropagate(editor);
     const rootEditor = editors[editors.length - 1];

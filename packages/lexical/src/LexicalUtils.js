@@ -20,6 +20,7 @@ import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
+  PointType,
   RangeSelection,
 } from './LexicalSelection';
 import type {RootNode} from './nodes/base/LexicalRootNode';
@@ -38,6 +39,7 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  ElementNode,
 } from '.';
 import {
   DOM_TEXT_TYPE,
@@ -839,4 +841,54 @@ export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T> {
     }
   }
   return nodesOfType;
+}
+
+function resolveElement(
+  element: ElementNode,
+  isBackward: boolean,
+  focusOffset: number,
+): LexicalNode | null {
+  const parent = element.getParent();
+  let offset = focusOffset;
+  let block = element;
+  if (parent !== null) {
+    if (isBackward && focusOffset === 0) {
+      offset = block.getIndexWithinParent();
+      block = parent;
+    } else if (!isBackward && focusOffset === block.getChildrenSize()) {
+      offset = block.getIndexWithinParent() + 1;
+      block = parent;
+    }
+  }
+  return block.getChildAtIndex(isBackward ? offset - 1 : offset);
+}
+
+export function $getDecoratorNode(
+  focus: PointType,
+  isBackward: boolean,
+): null | LexicalNode {
+  const focusOffset = focus.offset;
+  if (focus.type === 'element') {
+    const block = focus.getNode();
+    return resolveElement(block, isBackward, focusOffset);
+  } else {
+    const focusNode = focus.getNode();
+    if (
+      (isBackward && focusOffset === 0) ||
+      (!isBackward && focusOffset === focusNode.getTextContentSize())
+    ) {
+      const possibleNode = isBackward
+        ? focusNode.getPreviousSibling()
+        : focusNode.getNextSibling();
+      if (possibleNode === null) {
+        return resolveElement(
+          focusNode.getParentOrThrow(),
+          isBackward,
+          focusNode.getIndexWithinParent() + (isBackward ? 0 : 1),
+        );
+      }
+      return possibleNode;
+    }
+  }
+  return null;
 }

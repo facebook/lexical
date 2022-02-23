@@ -11,13 +11,17 @@ import type {LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
-export function $dfs__DEPRECATED(
-  startingNode: LexicalNode,
-  nextNode: (LexicalNode) => null | LexicalNode,
-): void {
-  let node = startingNode;
-  nextNode(node);
-  while (node !== null) {
+export function $dfs(
+  startingNode?: LexicalNode,
+  endingNode?: LexicalNode,
+): Array<LexicalNode> {
+  const nodes = [];
+  const start = (startingNode || $getRoot()).getLatest();
+  const end =
+    endingNode || ($isElementNode(start) ? start.getLastDescendant() : start);
+  let node = start;
+  while (node !== null && !node.is(end)) {
+    nodes.push(node);
     if ($isElementNode(node) && node.getChildrenSize() > 0) {
       node = node.getFirstChild();
     } else {
@@ -32,10 +36,11 @@ export function $dfs__DEPRECATED(
         }
       }
     }
-    if (node !== null) {
-      node = nextNode(node);
-    }
   }
+  if (node !== null && node.is(end)) {
+    nodes.push(node);
+  }
+  return nodes;
 }
 
 export function $getNearestNodeOfType<T: LexicalNode>(

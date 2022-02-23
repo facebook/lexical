@@ -16,7 +16,7 @@ function HorizontalRuleComponent() {
   return <hr />;
 }
 
-export class HorizontalRuleNode extends DecoratorNode {
+export class HorizontalRuleNode extends DecoratorNode<React$Node> {
   static getType(): string {
     return 'horizontalrule';
   }

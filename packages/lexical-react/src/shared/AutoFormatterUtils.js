@@ -509,8 +509,7 @@ function getTextFormatType(
     case 'textUnderline':
       return 'underline';
     case 'strikethrough':
-      const result = nodeTransformationKind;
-      return result;
+      return nodeTransformationKind;
     default:
   }
   return null;

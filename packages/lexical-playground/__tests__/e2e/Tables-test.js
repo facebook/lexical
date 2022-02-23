@@ -46,7 +46,7 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('b');
 
   if (E2E_BROWSER !== 'chromium') {
-    page.click(`table:first-of-type > tr:nth-child(1) > td:nth-child(2)`);
+    await page.click(`table:first-of-type > tr:nth-child(1) > td:nth-child(2)`);
   }
 
   await page.keyboard.press('ArrowDown');
@@ -58,7 +58,7 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('f');
   await page.keyboard.press('ArrowUp');
   if (E2E_BROWSER !== 'chromium') {
-    page.click(`table:first-of-type > tr:nth-child(1) > td:nth-child(3)`);
+    await page.click(`table:first-of-type > tr:nth-child(1) > td:nth-child(3)`);
   }
   await page.keyboard.press('c');
 }

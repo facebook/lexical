@@ -306,7 +306,7 @@ function StickyComponent({
   );
 }
 
-export class StickyNode extends DecoratorNode {
+export class StickyNode extends DecoratorNode<React$Node> {
   __x: number;
   __y: number;
   __color: 'pink' | 'yellow';

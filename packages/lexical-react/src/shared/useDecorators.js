@@ -19,7 +19,7 @@ export default function useDecorators(
   editor: LexicalEditor,
 ): Array<React.Node> {
   const [decorators, setDecorators] = useState<{[string]: React.Node}>(() =>
-    editor.getDecorators(),
+    editor.getDecorators<React.Node>(),
   );
   // Subscribe to changes
   useLayoutEffect(() => {

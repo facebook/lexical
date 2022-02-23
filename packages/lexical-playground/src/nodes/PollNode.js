@@ -316,7 +316,7 @@ function PollComponent({
   );
 }
 
-export class PollNode extends DecoratorNode {
+export class PollNode extends DecoratorNode<React$Node> {
   __question: string;
 
   static getType(): string {

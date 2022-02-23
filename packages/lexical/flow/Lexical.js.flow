@@ -7,8 +7,6 @@
  * @flow strict
  */
 
-import type {Node as ReactNode} from 'react';
-
 /**
  * LexicalEditor
  */
@@ -25,7 +23,8 @@ type UpdateListener = ({
   normalizedNodes: Set<NodeKey>,
 }) => void;
 type DecoratorListener = (decorator: {
-  [NodeKey]: ReactNode,
+  // $FlowFixMe: defined by user
+  [NodeKey]: any,
 }) => void;
 type RootListener = (
   element: null | HTMLElement,
@@ -76,10 +75,10 @@ declare export class LexicalEditor {
   _listeners: Listeners;
   _nodes: RegisteredNodes;
   _decorators: {
-    [NodeKey]: ReactNode,
+    [NodeKey]: mixed,
   };
   _pendingDecorators: null | {
-    [NodeKey]: ReactNode,
+    [NodeKey]: mixed,
   };
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
@@ -112,8 +111,8 @@ declare export class LexicalEditor {
   ): () => void;
   execCommand(type: string, payload: CommandPayload): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
-  getDecorators(): {
-    [NodeKey]: ReactNode,
+  getDecorators<X>(): {
+    [NodeKey]: X,
   };
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
@@ -825,10 +824,10 @@ declare export function $isElementNode(
  * LexicalDecoratorNode
  */
 
-declare export class DecoratorNode extends LexicalNode {
+declare export class DecoratorNode<X> extends LexicalNode {
   __state: DecoratorMap;
   constructor(state?: DecoratorMap, key?: NodeKey): void;
-  decorate(editor: LexicalEditor): ReactNode;
+  decorate(editor: LexicalEditor): X;
   isIsolated(): boolean;
 }
 declare export function $isDecoratorNode(

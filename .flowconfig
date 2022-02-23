@@ -16,15 +16,17 @@ untyped-type-import=error
 server.max_workers=4
 exact_by_default=true
 
-module.name_mapper='^lexical/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalHeadingNode.js'
-module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalQuoteNode.js'
-module.name_mapper='^lexical/CodeNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeNode.js'
-module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalLinkNode.js'
-module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js'
-module.name_mapper='^lexical/HashtagNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js'
-module.name_mapper='^lexical/CodeHighlightNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js'
-module.name_mapper='^lexical/OverflowNode' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalOverflowNode.js'
-module.name_mapper='^lexical/ExtendedNodes' -> '<PROJECT_ROOT>/packages/lexical/src/nodes/extended/LexicalExtendedNodes.js'
+module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
+
+module.name_mapper='^lexical/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalHeadingNode.js.flow'
+module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalQuoteNode.js.flow'
+module.name_mapper='^lexical/CodeNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalCodeNode.js.flow'
+module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalLinkNode.js.flow'
+module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalAutoLinkNode.js.flow'
+module.name_mapper='^lexical/HashtagNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalHashtagNode.js.flow'
+module.name_mapper='^lexical/CodeHighlightNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalCodeHighlightNode.js.flow'
+module.name_mapper='^lexical/OverflowNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalOverflowNode.js.flow'
+module.name_mapper='^lexical/ExtendedNodes' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalExtendedNodes.js.flow'
 
 module.name_mapper='^@lexical/list' -> '<PROJECT_ROOT>/packages/lexical-list/src/index.js'
 module.name_mapper='^@lexical/table' -> '<PROJECT_ROOT>/packages/lexical-table/src/index.js'

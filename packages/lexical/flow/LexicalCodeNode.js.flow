@@ -1,0 +1,46 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+  RangeSelection,
+} from 'lexical';
+import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
+
+import {ElementNode} from 'lexical';
+
+declare export class CodeNode extends ElementNode {
+  static getType(): string;
+  static clone(node: CodeNode): CodeNode;
+  constructor(key?: NodeKey): void;
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
+  insertNewAfter(
+    selection: RangeSelection,
+  ): null | ParagraphNode | CodeHighlightNode;
+  canInsertTab(): true;
+  collapseAtStart(): true;
+  setLanguage(language: string): void;
+  getLanguage(): string | void;
+}
+declare export function $createCodeNode(): CodeNode;
+declare export function $isCodeNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof CodeNode);
+
+declare export function getFirstCodeHighlightNodeOfLine(
+  anchor: LexicalNode,
+): ?CodeHighlightNode;
+
+declare export function getLastCodeHighlightNodeOfLine(
+  anchor: LexicalNode,
+): ?CodeHighlightNode;

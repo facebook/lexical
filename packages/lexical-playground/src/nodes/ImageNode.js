@@ -509,7 +509,7 @@ function ImageComponent({
   );
 }
 
-export class ImageNode extends DecoratorNode {
+export class ImageNode extends DecoratorNode<React$Node> {
   __src: string;
   __altText: string;
   __width: 'inherit' | number;

@@ -64,7 +64,7 @@ export type NodeTransformationKind =
   | 'textBold'
   | 'textItalic'
   | 'textUnderline'
-  | 'strikethrough';
+  | 'textStrikethrough';
 
 // The scanning context provides the overall data structure for
 // locating a auto formatting candidate and then transforming that candidate
@@ -216,7 +216,7 @@ const fakeMarkdownUnderline: AutoFormatCriteria = {
 
 const markdownStrikethrough: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'strikethrough',
+  nodeTransformationKind: 'textStrikethrough',
   regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~\s)$/,
 };
 
@@ -508,8 +508,8 @@ function getTextFormatType(
       return 'bold';
     case 'textUnderline':
       return 'underline';
-    case 'strikethrough':
-      return nodeTransformationKind;
+    case 'textStrikethrough':
+      return 'strikethrough';
     default:
   }
   return null;

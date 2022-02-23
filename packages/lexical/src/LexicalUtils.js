@@ -42,6 +42,7 @@ import {
   ElementNode,
 } from '.';
 import {
+  DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
@@ -554,17 +555,21 @@ export function $shouldPreventDefaultAndInsertText(
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
+  const domSelection = window.getSelection();
+  const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
 
   return (
     anchor.key !== focus.key ||
+    // If we're working with a non-text node.
+    !$isTextNode(anchorNode) ||
     // If we're working with a range that is not during composition.
     (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
     // If the text length is more than a single character and we're either
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
-    // If we're working with a non-text node.
-    !$isTextNode(anchorNode) ||
+    // If the DOM selection is pointing to an element node
+    (domAnchorNode != null && domAnchorNode.nodeType === DOM_ELEMENT_TYPE) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.

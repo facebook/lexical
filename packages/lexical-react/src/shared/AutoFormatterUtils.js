@@ -197,10 +197,7 @@ const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
 const markdownBold: AutoFormatCriteria = {
   ...autoFormatBase,
   nodeTransformationKind: 'textBold',
-  // regEx: /(\*)(?:\s*\b)(?:[^\*]*)(?:\b\s*)(\*\s)$/, // The $ will find the target at the end of the string.
   regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
-  // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
-  // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
 };
 
 const allAutoFormatCriteriaForTextNodes = [markdownBold];

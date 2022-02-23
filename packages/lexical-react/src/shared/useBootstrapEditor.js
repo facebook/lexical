@@ -78,16 +78,15 @@ export default function useBootstrapEditor(
   clearEditorFn?: (LexicalEditor) => void,
 ): void {
   useLayoutEffect(() => {
+    initEditor(
+      editor,
+      initialPayloadFn != null ? initialPayloadFn : defaultInitEditor,
+    );
+  }, [editor, initialPayloadFn]);
+  useLayoutEffect(() => {
     return editor.addListener(
       'command',
       (type, payload): boolean => {
-        if (type === 'bootstrapEditor') {
-          initEditor(
-            editor,
-            initialPayloadFn != null ? initialPayloadFn : defaultInitEditor,
-          );
-          return true;
-        }
         if (type === 'clearEditor') {
           clearEditor(
             editor,

@@ -17,7 +17,7 @@ import type {
 
 import * as React from 'react';
 import {DecoratorNode, $getNodeByKey} from 'lexical';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {useCallback, useState} from 'react';
 import ExcalidrawModal from './ExcalidrawModal';
 import ExcalidrawImage from './ExcalidrawImage';
@@ -32,7 +32,7 @@ function ExcalidrawComponent({
   const [hasFocus, setHasFocus] = useState<boolean>(false);
   const [isModalOpen, setModalOpen] = useState<boolean>(true);
   const [elements, setElements] = useState([]);
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   const handleKeyDown = (event) => {
     if (

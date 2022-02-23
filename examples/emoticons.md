@@ -141,7 +141,7 @@ Since we're usin Lexical react, we can take advantage of Lexical's plugin system
 // EmoticonPlugin.js
 
 export default function EmoticonPlugin() {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   return null;
 }
 ```
@@ -169,7 +169,7 @@ function useEmoticons(editor) {
 }
 
 export default function EmoticonPlugin() {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useEmoticons(editor);
   return null;
 }
@@ -200,7 +200,7 @@ function useEmoticons(editor) {
 }
 
 export default function EmoticonPlugin() {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useEmoticons(editor);
   return null;
 }
@@ -231,7 +231,7 @@ function useEmoticons(editor) {
 }
 
 export default function EmoticonPlugin() {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useEmoticons(editor);
   return null;
 }

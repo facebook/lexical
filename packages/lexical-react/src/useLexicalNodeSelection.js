@@ -9,7 +9,7 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {
   $createNodeSelection,
   $getNodeByKey,
@@ -32,7 +32,7 @@ function isNodeSelected(editor: LexicalEditor, key: NodeKey): boolean {
 export default function useLexicalNodeSelection(
   key: NodeKey,
 ): [boolean, (boolean) => void, () => void] {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const [isSelected, setIsSelected] = useState(() =>
     isNodeSelected(editor, key),
   );

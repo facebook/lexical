@@ -12,14 +12,20 @@ import type {EditorThemeClasses, LexicalEditor} from 'lexical';
 import {createContext as createReactContext, useContext} from 'react';
 import invariant from 'shared/invariant';
 
-export type LexicalComposerContextType = {
+export type LexicalComposerContextType = $ReadOnly<{
   getTheme: () => ?EditorThemeClasses,
-};
+}>;
 
-export type LexicalComposerContextWithEditor = [
-  LexicalEditor,
-  LexicalComposerContextType,
-];
+export type ReadyType = $ReadOnly<{
+  isReady: () => void | boolean,
+  onReady: (listener: () => void) => () => void,
+}>;
+
+export type LexicalComposerContextWithEditor = $ReadOnly<{
+  context: LexicalComposerContextType,
+  editor: LexicalEditor,
+  ready: ReadyType,
+}>;
 
 export const LexicalComposerContext: React$Context<?LexicalComposerContextWithEditor> =
   createReactContext<?LexicalComposerContextWithEditor>(null);
@@ -46,7 +52,7 @@ export function createLexicalComposerContext(
   };
 }
 
-export function useLexicalComposerContext(): LexicalComposerContextWithEditor {
+function useLexicalComposerContext(): LexicalComposerContextWithEditor {
   const composerContext = useContext(LexicalComposerContext);
 
   if (composerContext == null) {
@@ -56,4 +62,22 @@ export function useLexicalComposerContext(): LexicalComposerContextWithEditor {
     );
   }
   return composerContext;
+}
+
+export function useLexicalComposerEditor(): LexicalEditor {
+  const {editor} = useLexicalComposerContext();
+  return editor;
+}
+
+export function useLexicalComposerEditorContext(): LexicalComposerContextType {
+  const {context} = useLexicalComposerContext();
+  return context;
+}
+
+export function useLexicalComposerReady(): [
+  () => void | boolean,
+  (listener: () => void) => () => void,
+] {
+  const {ready} = useLexicalComposerContext();
+  return [ready.isReady, ready.onReady];
 }

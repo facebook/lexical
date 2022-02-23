@@ -9,7 +9,7 @@
 
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   $createTextNode,
@@ -248,7 +248,7 @@ export default function AutoLinkPlugin({
   matchers: Array<LinkMatcher>,
   onChange?: ChangeHandler,
 }): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useAutoLink(editor, matchers, onChange);
   return null;
 }

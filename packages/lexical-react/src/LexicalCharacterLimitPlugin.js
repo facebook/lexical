@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 import {useMemo, useState} from 'react';
 
@@ -41,7 +41,7 @@ export default function CharacterLimitPlugin({
 }: {
   charset: 'UTF-8' | 'UTF-16',
 }): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const [remainingCharacters, setRemainingCharacters] = useState(0);
   const characterLimitProps = useMemo(
     () => ({

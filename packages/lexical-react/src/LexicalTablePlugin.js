@@ -9,7 +9,7 @@
 
 import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {
   $createTableNodeWithDimensions,
   TableCellNode,
@@ -28,7 +28,7 @@ import invariant from 'shared/invariant';
 const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function TablePlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   useEffect(() => {
     if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {

@@ -10,7 +10,7 @@
 import type {Provider} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {createContext, useContext, useMemo} from 'react';
 
 import {
@@ -59,7 +59,7 @@ export function CollaborationPlugin({
 }): React$Node {
   const collabContext = useCollaborationContext();
   const {yjsDocMap, name, color} = collabContext;
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const provider = useMemo(
     () => providerFactory(id, yjsDocMap),
     [id, providerFactory, yjsDocMap],

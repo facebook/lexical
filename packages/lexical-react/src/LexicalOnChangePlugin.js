@@ -9,7 +9,7 @@
 
 import type {EditorState, LexicalEditor} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function OnChangePlugin({
@@ -17,7 +17,7 @@ export default function OnChangePlugin({
 }: {
   onChange: (editorState: EditorState, editor: LexicalEditor) => void,
 }): null {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useLayoutEffect(() => {
     if (onChange) {
       return editor.addListener('update', ({editorState}) => {

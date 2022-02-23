@@ -26,7 +26,7 @@ import {
 } from 'lexical';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {
   useCollaborationContext,
   CollaborationPlugin,
@@ -99,7 +99,7 @@ function StickyComponent({
   color: 'pink' | 'yellow',
   decoratorStateMap: DecoratorMap,
 }): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const stickyContainerRef = useRef<null | HTMLElement>(null);
   const positioningRef = useRef<{
     x: number,

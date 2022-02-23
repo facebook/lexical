@@ -12,7 +12,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import stylex from 'stylex';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -38,7 +38,7 @@ export default function ContentEditable({
 }: {
   className?: string,
 }): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const [isReadOnly, setIsReadyOnly] = useState(false);
 
   useEffect(() => {

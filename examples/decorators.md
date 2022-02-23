@@ -60,7 +60,7 @@ As any other custom Lexical node, decorator nodes need to be registered _before_
 
 ```js
 function VideoPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   useEffect(() => {
     // Similar with command listener, which returns unlisten callback
@@ -99,7 +99,7 @@ Then assuming we have a some UE insert a video into the editor:
 
 ```js
 function ToolbarVideoButton(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const insertVideo = useCallback(
     (url) => {
       // Executing command defined in a plugin

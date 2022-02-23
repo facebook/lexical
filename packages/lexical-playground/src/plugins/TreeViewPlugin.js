@@ -9,10 +9,10 @@
 
 import LexicalTreeView from '@lexical/react/LexicalTreeView';
 import * as React from 'react';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 export default function TreeViewPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   return (
     <LexicalTreeView
       viewClassName="tree-view-output"

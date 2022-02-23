@@ -28,12 +28,12 @@ import {
   $isNodeSelection,
   $isRangeSelection,
 } from 'lexical';
-import {useEffect} from 'react';
+import {useLayoutEffect} from 'react';
 
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
 export function useRichTextSetup(editor: LexicalEditor): void {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const removeListener = editor.addListener(
       'command',
       (type, payload): boolean => {
@@ -225,12 +225,7 @@ export function useRichTextSetup(editor: LexicalEditor): void {
       },
       (0: CommandListenerEditorPriority),
     );
-    const bootstrapCommandHandled = editor.execCommand('bootstrapEditor');
-    if (__DEV__ && !bootstrapCommandHandled) {
-      console.warn(
-        'bootstrapEditor command was not handled. Did you forget to add <BootstrapPlugin />?',
-      );
-    }
+    editor.execCommand('eventListeners');
     return removeListener;
   }, [editor]);
 

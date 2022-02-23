@@ -10,7 +10,7 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import * as React from 'react';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useCallback, useEffect, useState} from 'react';
 import {$createStickyNode} from '../nodes/StickyNode';
@@ -28,7 +28,7 @@ export default function ActionsPlugins({
   const [isReadOnly, setIsReadyOnly] = useState(false);
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 

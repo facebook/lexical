@@ -9,7 +9,7 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 import {
   $isTextNode,
@@ -293,7 +293,7 @@ class TypeaheadServer {
 }
 
 export default function AutocompletePlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useTypeahead(editor);
 
   return null;

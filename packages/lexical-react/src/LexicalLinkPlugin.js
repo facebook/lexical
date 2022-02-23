@@ -9,7 +9,7 @@
 
 import type {CommandListenerEditorPriority} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $setSelection} from 'lexical';
 import {$createLinkNode, $isLinkNode} from 'lexical/LinkNode';
 import {useEffect} from 'react';
@@ -97,7 +97,7 @@ function toggleLink(url: null | string) {
 }
 
 export default function LinkPlugin(): null {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   useEffect(() => {
     return editor.addListener(

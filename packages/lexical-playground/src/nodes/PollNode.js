@@ -19,7 +19,7 @@ import {DecoratorNode, createDecoratorArray, createDecoratorMap} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import stylex from 'stylex';
 import Button from '../ui/Button';
@@ -270,7 +270,7 @@ function PollComponent({
   decoratorMap: DecoratorMap,
   question: string,
 }): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const [options] = useLexicalDecoratorMap(decoratorMap, 'options', () =>
     createDecoratorArray(editor, [
       createPollOptionMap(editor, ''),

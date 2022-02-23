@@ -17,7 +17,7 @@ import {
   $isLineBreakNode,
   $isParagraphNode,
 } from 'lexical';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {
   KeywordNode,
   $isKeywordNode,
@@ -246,7 +246,7 @@ function $convertKeywordNodeToPlainTextNode(node: KeywordNode): void {
 }
 
 export default function KeywordsPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useKeywords(editor);
   return null;
 }

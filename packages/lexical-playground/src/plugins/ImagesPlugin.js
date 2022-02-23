@@ -9,7 +9,7 @@
 
 import type {CommandListenerEditorPriority} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$getSelection, $isRootNode, $isRangeSelection} from 'lexical';
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
@@ -19,7 +19,7 @@ import yellowFlowerImage from '../images/image/yellow-flower.jpg';
 const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function ImagesPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   useEffect(() => {
     if (!editor.hasNodes([ImageNode])) {

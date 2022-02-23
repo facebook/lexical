@@ -13,7 +13,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import useReport from '../hooks/useReport';
@@ -38,7 +38,7 @@ export const SUPPORT_SPEECH_RECOGNITION: boolean =
   'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
 
 function SpeechToTextPlugin(): null {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const [isEnabled, setIsEnabled] = useState<boolean>(false);
   const recognition = useRef<SpeechRecognition | null>(null);
   const report = useReport();

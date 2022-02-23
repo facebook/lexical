@@ -7,7 +7,7 @@
  * @flow
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import * as React from 'react';
 import {createRoot} from 'react-dom';
@@ -24,7 +24,7 @@ import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
 
 function Editor({doc, provider, setEditor}) {
   const {yjsDocMap} = useCollaborationContext();
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   yjsDocMap.set('main', doc);
 

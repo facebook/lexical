@@ -12,7 +12,7 @@ import type {LexicalEditor} from 'lexical';
 import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 import {useEffect} from 'react';
 import {TextNode} from 'lexical';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],
@@ -68,7 +68,7 @@ function useEmojis(editor: LexicalEditor): void {
 }
 
 export default function EmojisPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useEmojis(editor);
   return null;
 }

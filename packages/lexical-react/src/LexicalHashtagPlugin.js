@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {TextNode} from 'lexical';
 import {$toggleHashtag} from 'lexical/HashtagNode';
 import {useEffect} from 'react';
@@ -285,7 +285,7 @@ function useHashtags(editor: LexicalEditor): void {
 }
 
 export default function HashtagPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useHashtags(editor);
 
   return null;

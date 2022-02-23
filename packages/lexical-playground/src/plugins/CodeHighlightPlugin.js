@@ -27,7 +27,7 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import Prism from 'prismjs/components/prism-core';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -61,7 +61,7 @@ export const getCodeLanguages = (): Array<string> =>
     .sort();
 
 export default function CodeHighlightPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useEffect(() => {
     if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
       throw new Error(

@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 import useList from './shared/useList';
 
 export default function ListPlugin(): null {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useList(editor);
 
   return null;

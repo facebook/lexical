@@ -13,7 +13,7 @@ import type {
   CommandListenerLowPriority,
 } from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -1019,6 +1019,6 @@ function useMentions(editor: LexicalEditor): React$Node {
 }
 
 export default function MentionsPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   return useMentions(editor);
 }

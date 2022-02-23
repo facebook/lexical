@@ -25,7 +25,7 @@ import {
   $getSelection,
   $isNodeSelection,
 } from 'lexical';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
 import {
   useCollaborationContext,
@@ -336,7 +336,7 @@ function ImageComponent({
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const {yjsDocMap} = useCollaborationContext();
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const isCollab = yjsDocMap.get('main') !== undefined;
   const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditor>(
     state,

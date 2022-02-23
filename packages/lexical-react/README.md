@@ -45,7 +45,7 @@ function onChange(editorState) {
 // desired, so you don't pay the cost for plugins until you
 // actually use them.
 function MyCustomAutoFocusPlugin() {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   useEffect(() => {
     // Focus the editor when the effect fires!

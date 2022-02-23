@@ -9,7 +9,7 @@
 
 import type {HistoryState} from './shared/useHistory';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 import {useHistory} from './shared/useHistory';
 
@@ -22,7 +22,7 @@ export function HistoryPlugin({
 }: {
   externalHistoryState?: HistoryState,
 }): null {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useHistory(editor, externalHistoryState);
 
   return null;

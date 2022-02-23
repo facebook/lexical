@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 import useBootstrapEditor from './shared/useBootstrapEditor';
 
@@ -20,7 +20,7 @@ export default function LexicalBootstrapPlugin({
   clearEditorFn?: (LexicalEditor) => void,
   initialPayloadFn?: (LexicalEditor) => void,
 }): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useBootstrapEditor(editor, initialPayloadFn, clearEditorFn);
 
   return null;

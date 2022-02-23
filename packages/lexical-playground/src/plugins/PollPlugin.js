@@ -9,7 +9,7 @@
 
 import type {CommandListenerEditorPriority} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$getSelection, $isRootNode, $isRangeSelection} from 'lexical';
 import {$createPollNode, PollNode} from '../nodes/PollNode';
@@ -17,7 +17,7 @@ import {$createPollNode, PollNode} from '../nodes/PollNode';
 const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function PollPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   useEffect(() => {
     if (!editor.hasNodes([PollNode])) {
       throw new Error('PollPlugin: PollNode not registered on editor');

@@ -18,7 +18,7 @@ import type {
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode} from 'lexical/HeadingNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$isListNode, ListNode} from '@lexical/list';
@@ -498,7 +498,7 @@ function Select({
 }
 
 export default function ToolbarPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const [activeEditor, setActiveEditor] = useState(editor);
   const toolbarRef = useRef(null);
   const [blockType, setBlockType] = useState('paragraph');

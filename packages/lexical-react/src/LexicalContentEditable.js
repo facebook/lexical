@@ -7,9 +7,12 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {
+  useLexicalComposerEditor,
+  useLexicalComposerReady,
+} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useCallback} from 'react';
+import {useCallback, useLayoutEffect, useState} from 'react';
 
 export type Props = $ReadOnly<{
   ariaActiveDescendantID?: string,
@@ -49,20 +52,27 @@ export default function LexicalContentEditable({
   autoComplete,
   autoCorrect,
   className,
-  readOnly = false,
+  readOnly: userReadOnly = false,
   role = 'textbox',
   spellCheck = true,
   style,
   tabIndex,
   testid,
 }: Props): React.MixedElement {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
+  const [isReady, onReady] = useLexicalComposerReady();
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {
       editor.setRootElement(rootElement);
     },
     [editor],
   );
+  const [readOnly, setReadOnly] = useState(() => !isReady());
+  useLayoutEffect(() => {
+    return onReady(() => {
+      setReadOnly(false);
+    });
+  }, [onReady]);
 
   return (
     <div

@@ -14,7 +14,7 @@ import {TextNode, $isTextNode, $getSelection, $isRangeSelection} from 'lexical';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {$isLinkNode} from 'lexical/LinkNode';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 
 import {$isAtNodeEnd} from '@lexical/helpers/selection';
@@ -250,6 +250,6 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
 }
 
 export default function CharacterStylesPopupPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   return useCharacterStylesPopup(editor);
 }

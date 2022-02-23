@@ -8,13 +8,18 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  CommandListenerEditorPriority,
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import {createEditor} from 'lexical';
+import {$getRoot, createEditor} from 'lexical';
 import React, {useContext, useMemo} from 'react';
 
 type Props = {
@@ -72,7 +77,58 @@ export default function LexicalComposer({
         });
       }
 
-      return [editor, context];
+      let hasEventListeners = false;
+      let hasBootstrapped = false;
+      let isReady = false;
+      const isReadyListeners = new Set();
+      const isReadyFn = () => isReady;
+      const onReady = (listener: () => void) => {
+        isReadyListeners.add(listener);
+        return () => {
+          isReadyListeners.delete(listener);
+        };
+      };
+      const triggerListeners = () => {
+        if (isReady) {
+          isReadyListeners.forEach((listener) => listener());
+        }
+      };
+      const removeEventListener = editor.addListener(
+        'command',
+        (type) => {
+          if (type === 'eventListeners') {
+            hasEventListeners = true;
+            isReady = hasBootstrapped;
+            triggerListeners();
+            removeEventListener();
+          }
+          return false;
+        },
+        (0: CommandListenerEditorPriority),
+      );
+      const removeBootstrapListener = editor.addListener(
+        'update',
+        ({editorState}) => {
+          editorState.read(() => {
+            const isEmpty = $getRoot().isEmpty();
+            if (!isEmpty) {
+              hasBootstrapped = true;
+              isReady = hasEventListeners;
+              triggerListeners();
+              removeBootstrapListener();
+            }
+          });
+        },
+      );
+
+      return {
+        context,
+        editor,
+        ready: {
+          isReady: isReadyFn,
+          onReady,
+        },
+      };
     },
 
     // We only do this for init

@@ -9,7 +9,7 @@
 
 import type {CommandListenerEditorPriority} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
@@ -17,7 +17,7 @@ import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
 const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function ExcalidrawPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   useEffect(() => {
     if (!editor.hasNodes([ExcalidrawNode])) {

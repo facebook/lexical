@@ -11,7 +11,7 @@ import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $setSelection, $isRangeSelection} from 'lexical';
 import {
   $deleteTableColumn,
@@ -38,7 +38,7 @@ function TableActionMenu({
   setIsMenuOpen,
   contextRef,
 }: TableCellActionMenuProps) {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const dropDownRef = useRef();
 
   const [selectionCounts, updateSelectionCounts] = useState({
@@ -263,7 +263,7 @@ function TableActionMenu({
 }
 
 function TableCellActionMenuContainer(): React.MixedElement {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   const menuButtonRef = useRef(null);
   const menuRootRef = useRef(null);
@@ -390,7 +390,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
 }
 
 export default function TableActionMenuPlugin(): React.Portal {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
 
   return useMemo(
     () =>

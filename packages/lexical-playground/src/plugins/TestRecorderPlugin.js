@@ -10,7 +10,7 @@
 import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerEditor} from '@lexical/react/LexicalComposerContext';
 
 import {$createTextNode, $getRoot, $createParagraphNode} from 'lexical';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -433,7 +433,7 @@ ${steps.map(formatStep).join(`\n`)}
 }
 
 export default function TreeViewPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
+  const editor = useLexicalComposerEditor();
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
 
   return (

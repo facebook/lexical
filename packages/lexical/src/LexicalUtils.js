@@ -10,11 +10,19 @@
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
+  MutatedNodes,
+  NodeMutation,
   RegisteredNode,
+  RegisteredNodes,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
-import type {RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  PointType,
+  RangeSelection,
+} from './LexicalSelection';
 import type {RootNode} from './nodes/base/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
 import type {Node as ReactNode} from 'react';
@@ -29,9 +37,12 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isTextNode,
+  ElementNode,
 } from '.';
 import {
+  DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
@@ -157,7 +168,11 @@ export function $isLeafNode(node: ?LexicalNode): boolean %checks {
   return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-export function $generateKey(node: LexicalNode): NodeKey {
+export function $setNodeKey(node: LexicalNode, existingKey: ?NodeKey): void {
+  if (existingKey != null) {
+    node.__key = existingKey;
+    return;
+  }
   errorOnReadOnly();
   errorOnInfiniteTransforms();
   const editor = getActiveEditor();
@@ -172,7 +187,7 @@ export function $generateKey(node: LexicalNode): NodeKey {
   }
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
-  return key;
+  node.__key = key;
 }
 
 function internalMarkParentElementsAsDirty(
@@ -333,14 +348,20 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
   );
 }
 
-export function $getRoot(editorState?: EditorState): RootNode {
-  return (((editorState || getActiveEditorState())._nodeMap.get(
+export function $getRoot(): RootNode {
+  return internalGetRoot(getActiveEditorState());
+}
+
+export function internalGetRoot(editorState: EditorState): RootNode {
+  return ((editorState._nodeMap.get(
     'root',
     // $FlowFixMe: root is always in our Map
   ): any): RootNode);
 }
 
-export function $setSelection(selection: null | RangeSelection): void {
+export function $setSelection(
+  selection: null | RangeSelection | NodeSelection | GridSelection,
+): void {
   const editorState = getActiveEditorState();
   editorState._selection = selection;
 }
@@ -474,7 +495,7 @@ export function $updateTextNodeFromDOMContent(
         // to clear this input from occuring as that action wasn't
         // permitted.
         (parent !== null &&
-          prevSelection !== null &&
+          $isRangeSelection(prevSelection) &&
           !parent.canInsertTextBefore() &&
           prevSelection.anchor.offset === 0)
       ) {
@@ -483,7 +504,11 @@ export function $updateTextNodeFromDOMContent(
       }
       const selection = $getSelection();
 
-      if (selection === null || anchorOffset === null || focusOffset === null) {
+      if (
+        !$isRangeSelection(selection) ||
+        anchorOffset === null ||
+        focusOffset === null
+      ) {
         node.setTextContent(normalizedTextContent);
         return;
       }
@@ -530,17 +555,21 @@ export function $shouldPreventDefaultAndInsertText(
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
+  const domSelection = window.getSelection();
+  const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
 
   return (
     anchor.key !== focus.key ||
+    // If we're working with a non-text node.
+    !$isTextNode(anchorNode) ||
     // If we're working with a range that is not during composition.
     (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
     // If the text length is more than a single character and we're either
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
-    // If we're working with a non-text node.
-    !$isTextNode(anchorNode) ||
+    // If the DOM selection is pointing to an element node
+    (domAnchorNode != null && domAnchorNode.nodeType === DOM_ELEMENT_TYPE) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
@@ -778,4 +807,93 @@ export function getCachedClassNameArray<Theme: {...}>(
     return classNamesArr;
   }
   return classNames;
+}
+
+export function setMutatedNode(
+  mutatedNodes: MutatedNodes,
+  registeredNodes: RegisteredNodes,
+  node: LexicalNode,
+  mutation: NodeMutation,
+) {
+  const registeredNode = registeredNodes.get(node.__type);
+  if (registeredNode === undefined) {
+    invariant(false, 'Type %s not in registeredNodes', node.__type);
+  }
+  const klass = registeredNode.klass;
+  let mutatedNodesByType = mutatedNodes.get(klass);
+  if (mutatedNodesByType === undefined) {
+    mutatedNodesByType = new Map();
+    mutatedNodes.set(klass, mutatedNodesByType);
+  }
+  mutatedNodesByType.set(node.__key, mutation);
+}
+
+export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T> {
+  const editorState = getActiveEditorState();
+  const readOnly = editorState._readOnly;
+  const klassType = klass.getType();
+  const nodes = Array.from(editorState._nodeMap.values());
+  const nodesLength = nodes.length;
+  const nodesOfType = [];
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    if (
+      node instanceof klass &&
+      node.__type === klassType &&
+      (readOnly || node.isAttached())
+    ) {
+      nodesOfType.push(node);
+    }
+  }
+  return nodesOfType;
+}
+
+function resolveElement(
+  element: ElementNode,
+  isBackward: boolean,
+  focusOffset: number,
+): LexicalNode | null {
+  const parent = element.getParent();
+  let offset = focusOffset;
+  let block = element;
+  if (parent !== null) {
+    if (isBackward && focusOffset === 0) {
+      offset = block.getIndexWithinParent();
+      block = parent;
+    } else if (!isBackward && focusOffset === block.getChildrenSize()) {
+      offset = block.getIndexWithinParent() + 1;
+      block = parent;
+    }
+  }
+  return block.getChildAtIndex(isBackward ? offset - 1 : offset);
+}
+
+export function $getDecoratorNode(
+  focus: PointType,
+  isBackward: boolean,
+): null | LexicalNode {
+  const focusOffset = focus.offset;
+  if (focus.type === 'element') {
+    const block = focus.getNode();
+    return resolveElement(block, isBackward, focusOffset);
+  } else {
+    const focusNode = focus.getNode();
+    if (
+      (isBackward && focusOffset === 0) ||
+      (!isBackward && focusOffset === focusNode.getTextContentSize())
+    ) {
+      const possibleNode = isBackward
+        ? focusNode.getPreviousSibling()
+        : focusNode.getNextSibling();
+      if (possibleNode === null) {
+        return resolveElement(
+          focusNode.getParentOrThrow(),
+          isBackward,
+          focusNode.getIndexWithinParent() + (isBackward ? 0 : 1),
+        );
+      }
+      return possibleNode;
+    }
+  }
+  return null;
 }

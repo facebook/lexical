@@ -16,7 +16,7 @@ function HorizontalRuleComponent() {
   return <hr />;
 }
 
-export class HorizontalRuleNode extends DecoratorNode {
+export class HorizontalRuleNode extends DecoratorNode<React$Node> {
   static getType(): string {
     return 'horizontalrule';
   }
@@ -35,9 +35,14 @@ export class HorizontalRuleNode extends DecoratorNode {
     return '\n';
   }
 
+  isTopLevel(): true {
+    return true;
+  }
+
   updateDOM(): false {
     return false;
   }
+
   decorate(): React$Node {
     return <HorizontalRuleComponent />;
   }

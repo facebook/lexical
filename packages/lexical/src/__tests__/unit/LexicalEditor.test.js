@@ -10,6 +10,8 @@ import type {LexicalEditor} from 'lexical';
 
 import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
+  $createGridSelection,
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
@@ -17,6 +19,7 @@ import {
   $getSelection,
   $isTextNode,
   $setCompositionKey,
+  $setSelection,
   ElementNode,
   ParagraphNode,
   TextNode,
@@ -50,10 +53,11 @@ describe('LexicalEditor tests', () => {
     jest.restoreAllMocks();
   });
 
-  function useLexicalEditor(rootElementRef) {
+  function useLexicalEditor(rootElementRef, onError) {
     const editor = React.useMemo(
       () =>
         createTestEditor({
+          onError: onError || jest.fn(),
           theme: {
             text: {
               bold: 'editor-text-bold',
@@ -62,7 +66,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [],
+      [onError],
     );
 
     React.useEffect(() => {
@@ -80,14 +84,7 @@ describe('LexicalEditor tests', () => {
     const ref = React.createRef();
 
     function TestBase() {
-      editor = useLexicalEditor(ref);
-      editor.addListener('error', (error) => {
-        if (onError) {
-          onError(error);
-        } else {
-          throw error;
-        }
-      });
+      editor = useLexicalEditor(ref, onError);
       return <div ref={ref} contentEditable={true} />;
     }
 
@@ -105,7 +102,9 @@ describe('LexicalEditor tests', () => {
     const rootElement = document.createElement('div');
     container.appendChild(rootElement);
 
-    const initialEditor = createTestEditor();
+    const initialEditor = createTestEditor({
+      onError: jest.fn(),
+    });
 
     initialEditor.update(() => {
       const root = $getRoot();
@@ -133,6 +132,7 @@ describe('LexicalEditor tests', () => {
 
     editor = createTestEditor({
       editorState: initialEditorState,
+      onError: jest.fn(),
     });
     editor.setRootElement(rootElement);
 
@@ -888,9 +888,6 @@ describe('LexicalEditor tests', () => {
 
         React.useEffect(() => {
           editor.addListener('root', listener);
-          editor.addListener('error', (error) => {
-            throw error;
-          });
         }, []);
 
         const ref = React.useCallback((node) => {
@@ -959,78 +956,240 @@ describe('LexicalEditor tests', () => {
     let textKey;
     let parsedEditorState;
 
-    beforeEach(async () => {
-      init();
-      await update(() => {
-        const paragraph = $createParagraphNode();
-        originalText = $createTextNode('Hello world');
-        originalText.select(6, 11);
-        paragraph.append(originalText);
-        $getRoot().append(paragraph);
+    describe('range selection', () => {
+      beforeEach(async () => {
+        init();
+        await update(() => {
+          const paragraph = $createParagraphNode();
+          originalText = $createTextNode('Hello world');
+          originalText.select(6, 11);
+          paragraph.append(originalText);
+          $getRoot().append(paragraph);
+        });
+        const stringifiedEditorState = JSON.stringify(
+          editor.getEditorState().toJSON(),
+        );
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read(() => {
+          parsedRoot = $getRoot();
+          parsedParagraph = parsedRoot.getFirstChild();
+          paragraphKey = parsedParagraph.getKey();
+          parsedText = parsedParagraph.getFirstChild();
+          textKey = parsedText.getKey();
+          parsedSelection = $getSelection();
+        });
       });
-      const stringifiedEditorState = JSON.stringify(
-        editor.getEditorState().toJSON(),
-      );
-      parsedEditorState = editor.parseEditorState(stringifiedEditorState);
-      parsedEditorState.read(() => {
-        parsedRoot = $getRoot();
-        parsedParagraph = parsedRoot.getFirstChild();
-        paragraphKey = parsedParagraph.getKey();
-        parsedText = parsedParagraph.getFirstChild();
-        textKey = parsedText.getKey();
-        parsedSelection = $getSelection();
+
+      it('Parses the nodes of a stringified editor state', async () => {
+        expect(parsedRoot).toEqual({
+          __cachedText: null,
+          __children: [paragraphKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        });
+        expect(parsedParagraph).toEqual({
+          __children: [textKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: paragraphKey,
+          __parent: 'root',
+          __type: 'paragraph',
+        });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __parent: paragraphKey,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
+      });
+
+      it('Parses the text content of the editor state', async () => {
+        expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(
+          null,
+        );
+        expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
+          'Hello world',
+        );
+      });
+
+      it('Parses the selection offsets of a stringified editor state', async () => {
+        expect(parsedSelection.anchor.offset).toEqual(6);
+        expect(parsedSelection.focus.offset).toEqual(11);
+      });
+
+      it('Remaps the selection keys of a stringified editor state', async () => {
+        expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
+        expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
 
-    it('Parses the nodes of a stringified editor state', async () => {
-      expect(parsedRoot).toEqual({
-        __cachedText: null,
-        __children: [paragraphKey],
-        __dir: 'ltr',
-        __format: 0,
-        __indent: 0,
-        __key: 'root',
-        __parent: null,
-        __type: 'root',
+    describe('node selection', () => {
+      beforeEach(async () => {
+        init();
+        await update(() => {
+          const paragraph = $createParagraphNode();
+          originalText = $createTextNode('Hello world');
+          const selection = $createNodeSelection();
+          selection.add(originalText.getKey());
+          $setSelection(selection);
+          paragraph.append(originalText);
+          $getRoot().append(paragraph);
+        });
+        const stringifiedEditorState = JSON.stringify(
+          editor.getEditorState().toJSON(),
+        );
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read(() => {
+          parsedRoot = $getRoot();
+          parsedParagraph = parsedRoot.getFirstChild();
+          paragraphKey = parsedParagraph.getKey();
+          parsedText = parsedParagraph.getFirstChild();
+          textKey = parsedText.getKey();
+          parsedSelection = $getSelection();
+        });
       });
-      expect(parsedParagraph).toEqual({
-        __children: [textKey],
-        __dir: 'ltr',
-        __format: 0,
-        __indent: 0,
-        __key: paragraphKey,
-        __parent: 'root',
-        __type: 'paragraph',
+
+      it('Parses the nodes of a stringified editor state', async () => {
+        expect(parsedRoot).toEqual({
+          __cachedText: null,
+          __children: [paragraphKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        });
+        expect(parsedParagraph).toEqual({
+          __children: [textKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: paragraphKey,
+          __parent: 'root',
+          __type: 'paragraph',
+        });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __parent: paragraphKey,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
       });
-      expect(parsedText).toEqual({
-        __detail: 0,
-        __format: 0,
-        __key: textKey,
-        __mode: 0,
-        __parent: paragraphKey,
-        __style: '',
-        __text: 'Hello world',
-        __type: 'text',
+
+      it('Parses the text content of the editor state', async () => {
+        expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(
+          null,
+        );
+        expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
+          'Hello world',
+        );
+      });
+
+      it('Parses the selection nodes of a stringified editor state', async () => {
+        expect(Array.from(parsedSelection._nodes)).toEqual([textKey]);
+      });
+
+      it('Remaps the selection keys of a stringified editor state', async () => {
+        expect(parsedSelection._nodes.has(originalText.__key)).toEqual(false);
+        expect(parsedSelection._nodes.has(parsedText.__key)).toEqual(true);
       });
     });
 
-    it('Parses the text content of the editor state', async () => {
-      expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(null);
-      expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
-        'Hello world',
-      );
-    });
+    describe('grid selection', () => {
+      beforeEach(async () => {
+        init();
+        await update(() => {
+          const paragraph = $createParagraphNode();
+          originalText = $createTextNode('Hello world');
+          const selection = $createGridSelection();
+          selection.set(
+            originalText.getKey(),
+            originalText.getKey(),
+            originalText.getKey(),
+          );
+          $setSelection(selection);
+          paragraph.append(originalText);
+          $getRoot().append(paragraph);
+        });
+        const stringifiedEditorState = JSON.stringify(
+          editor.getEditorState().toJSON(),
+        );
+        parsedEditorState = editor.parseEditorState(stringifiedEditorState);
+        parsedEditorState.read(() => {
+          parsedRoot = $getRoot();
+          parsedParagraph = parsedRoot.getFirstChild();
+          paragraphKey = parsedParagraph.getKey();
+          parsedText = parsedParagraph.getFirstChild();
+          textKey = parsedText.getKey();
+          parsedSelection = $getSelection();
+        });
+      });
 
-    it('Parses the selection offsets of a stringified editor state', async () => {
-      expect(parsedSelection.anchor.offset).toEqual(6);
-      expect(parsedSelection.focus.offset).toEqual(11);
-    });
+      it('Parses the nodes of a stringified editor state', async () => {
+        expect(parsedRoot).toEqual({
+          __cachedText: null,
+          __children: [paragraphKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: 'root',
+          __parent: null,
+          __type: 'root',
+        });
+        expect(parsedParagraph).toEqual({
+          __children: [textKey],
+          __dir: 'ltr',
+          __format: 0,
+          __indent: 0,
+          __key: paragraphKey,
+          __parent: 'root',
+          __type: 'paragraph',
+        });
+        expect(parsedText).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: textKey,
+          __mode: 0,
+          __parent: paragraphKey,
+          __style: '',
+          __text: 'Hello world',
+          __type: 'text',
+        });
+      });
 
-    it('Remaps the selection keys of a stringified editor state', async () => {
-      expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
-      expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
-      expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
-      expect(parsedSelection.focus.key).toEqual(parsedText.__key);
+      it('Parses the text content of the editor state', async () => {
+        expect(parsedEditorState.read(() => $getRoot().__cachedText)).toBe(
+          null,
+        );
+        expect(parsedEditorState.read(() => $getRoot().getTextContent())).toBe(
+          'Hello world',
+        );
+      });
+
+      it('Remaps the selection keys of a stringified editor state', async () => {
+        expect(parsedSelection.gridKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.anchorCellKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.focusCellKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.gridKey).toEqual(parsedText.__key);
+        expect(parsedSelection.anchorCellKey).toEqual(parsedText.__key);
+        expect(parsedSelection.focusCellKey).toEqual(parsedText.__key);
+      });
     });
   });
 
@@ -1336,5 +1495,168 @@ describe('LexicalEditor tests', () => {
     });
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith('foobar');
+  });
+
+  it('mutation listener', async () => {
+    init();
+    const paragraphMutations = jest.fn();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', ParagraphNode, paragraphMutations);
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const paragraphKeys = [];
+    const textNodeKeys = [];
+    // No await intentional (batch with next)
+    editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode = $createTextNode('foo');
+      root.append(paragraph);
+      paragraph.append(textNode);
+      paragraphKeys.push(paragraph.getKey());
+      textNodeKeys.push(textNode.getKey());
+    });
+    await editor.update(() => {
+      const textNode = $getNodeByKey(textNodeKeys[0]);
+      const textNode2 = $createTextNode('bar').toggleFormat('bold');
+      const textNode3 = $createTextNode('xyz').toggleFormat('italic');
+      textNode.insertAfter(textNode2);
+      textNode2.insertAfter(textNode3);
+      textNodeKeys.push(textNode2.getKey());
+      textNodeKeys.push(textNode3.getKey());
+    });
+    await editor.update(() => {
+      $getRoot().clear();
+    });
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraphKeys.push(paragraph.getKey());
+      // Created and deleted in the same update
+      textNodeKeys.push($createTextNode('zzz').getKey());
+    });
+    expect(paragraphMutations.mock.calls.length).toBe(3);
+    expect(textNodeMutations.mock.calls.length).toBe(2);
+
+    const [paragraphMutation1, paragraphMutation2, paragraphMutation3] =
+      paragraphMutations.mock.calls;
+    const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
+    expect(paragraphMutation1[0].size).toBe(1);
+    expect(paragraphMutation1[0].get(paragraphKeys[0])).toBe('created');
+    expect(paragraphMutation1[0].size).toBe(1);
+    expect(paragraphMutation2[0].get(paragraphKeys[0])).toBe('destroyed');
+    expect(paragraphMutation3[0].size).toBe(1);
+    expect(paragraphMutation3[0].get(paragraphKeys[1])).toBe('created');
+    expect(textNodeMutation1[0].size).toBe(3);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
+    expect(textNodeMutation1[0].get(textNodeKeys[1])).toBe('created');
+    expect(textNodeMutation1[0].get(textNodeKeys[2])).toBe('created');
+    expect(textNodeMutation2[0].size).toBe(3);
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('destroyed');
+    expect(textNodeMutation2[0].get(textNodeKeys[1])).toBe('destroyed');
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('destroyed');
+  });
+
+  it('mutation listener with setEditorState', async () => {
+    init();
+    await editor.update(() => {
+      $getRoot().append($createParagraphNode());
+    });
+    const initialEditorState = editor.getEditorState();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const textNodeKeys = [];
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode1 = $createTextNode('foo');
+      paragraph.append(textNode1);
+      textNodeKeys.push(textNode1.getKey());
+    });
+    const fooEditorState = editor.getEditorState();
+    await editor.setEditorState(initialEditorState);
+    // This line should have no effect on the mutation listeners
+    const parsedFooEditorState = editor.parseEditorState(
+      JSON.stringify(fooEditorState),
+    );
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode2 = $createTextNode('bar').toggleFormat('bold');
+      const textNode3 = $createTextNode('xyz').toggleFormat('italic');
+      paragraph.append(textNode2, textNode3);
+      textNodeKeys.push(textNode2.getKey(), textNode3.getKey());
+    });
+    await editor.setEditorState(parsedFooEditorState);
+
+    expect(textNodeMutations.mock.calls.length).toBe(4);
+    const [
+      textNodeMutation1,
+      textNodeMutation2,
+      textNodeMutation3,
+      textNodeMutation4,
+    ] = textNodeMutations.mock.calls;
+    expect(textNodeMutation1[0].size).toBe(1);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
+    expect(textNodeMutation2[0].size).toBe(1);
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('destroyed');
+    expect(textNodeMutation3[0].size).toBe(2);
+    expect(textNodeMutation3[0].get(textNodeKeys[1])).toBe('created');
+    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('created');
+    expect(textNodeMutation4[0].size).toBe(3); // +1 newly generated key by parseEditorState
+    expect(textNodeMutation4[0].get(textNodeKeys[1])).toBe('destroyed');
+    expect(textNodeMutation4[0].get(textNodeKeys[2])).toBe('destroyed');
+  });
+
+  it('mutation listeners does not trigger when other node types are mutated', async () => {
+    init();
+    const paragraphMutations = jest.fn();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', ParagraphNode, paragraphMutations);
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    await editor.update(() => {
+      $getRoot().append($createParagraphNode());
+    });
+
+    expect(paragraphMutations.mock.calls.length).toBe(1);
+    expect(textNodeMutations.mock.calls.length).toBe(0);
+  });
+
+  it('mutation listeners with normalization', async () => {
+    init();
+    const textNodeMutations = jest.fn();
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const textNodeKeys = [];
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode1 = $createTextNode('foo');
+      const textNode2 = $createTextNode('bar');
+      textNodeKeys.push(textNode1.getKey(), textNode2.getKey());
+      root.append(paragraph);
+      paragraph.append(textNode1, textNode2);
+    });
+    await editor.update(() => {
+      const paragraph = $getRoot().getFirstChild();
+      const textNode3 = $createTextNode('xyz').toggleFormat('bold');
+      paragraph.append(textNode3);
+      textNodeKeys.push(textNode3.getKey());
+    });
+    await editor.update(() => {
+      const textNode3 = $getNodeByKey(textNodeKeys[2]);
+      textNode3.toggleFormat('bold'); // Normalize with foobar
+    });
+
+    expect(textNodeMutations.mock.calls.length).toBe(3);
+    const [textNodeMutation1, textNodeMutation2, textNodeMutation3] =
+      textNodeMutations.mock.calls;
+    expect(textNodeMutation1[0].size).toBe(1);
+    expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
+    expect(textNodeMutation2[0].size).toBe(1);
+    expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('created');
+    expect(textNodeMutation3[0].size).toBe(1);
+    expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('destroyed');
   });
 });

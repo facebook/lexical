@@ -8,8 +8,16 @@
  */
 
 import type {EditorConfig, TextNodeThemeClasses} from '../../LexicalEditor';
-import type {NodeKey} from '../../LexicalNode';
-import type {RangeSelection} from '../../LexicalSelection';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  NodeKey,
+} from '../../LexicalNode';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from '../../LexicalSelection';
 
 import invariant from 'shared/invariant';
 
@@ -31,6 +39,7 @@ import {
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
+  $isRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
   internalMakeRangeSelection,
@@ -382,9 +391,42 @@ export class TextNode extends LexicalNode {
     return false;
   }
 
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      '#text': (node: Node) => ({
+        conversion: convertTextDOMNode,
+        priority: 0,
+      }),
+      b: (node: Node) => ({
+        conversion: convertBringAttentionToElement,
+        priority: 0,
+      }),
+      em: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      i: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      span: (node: Node) => ({
+        conversion: convertSpanElement,
+        priority: 0,
+      }),
+      strong: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      u: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+    };
+  }
+
   // Mutators
   selectionTransform(
-    prevSelection: null | RangeSelection,
+    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
     nextSelection: RangeSelection,
   ): void {}
   setFormat(format: number): this {
@@ -444,7 +486,7 @@ export class TextNode extends LexicalNode {
       anchorOffset = 0;
       focusOffset = 0;
     }
-    if (selection === null) {
+    if (!$isRangeSelection(selection)) {
       return internalMakeRangeSelection(
         key,
         anchorOffset,
@@ -483,7 +525,7 @@ export class TextNode extends LexicalNode {
       }
     }
     const selection = $getSelection();
-    if (moveSelection && selection !== null) {
+    if (moveSelection && $isRangeSelection(selection)) {
       const newOffset = offset + handledTextLength;
       selection.setTextNodeRange(
         writableSelf,
@@ -568,7 +610,7 @@ export class TextNode extends LexicalNode {
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;
 
-      if (selection !== null) {
+      if ($isRangeSelection(selection)) {
         const anchor = selection.anchor;
         const focus = selection.focus;
 
@@ -614,7 +656,7 @@ export class TextNode extends LexicalNode {
       writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
     }
 
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         parent,
@@ -643,7 +685,7 @@ export class TextNode extends LexicalNode {
       $setCompositionKey(key);
     }
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const focus = selection.focus;
       if (anchor !== null && anchor.key === targetKey) {
@@ -673,6 +715,58 @@ export class TextNode extends LexicalNode {
     target.remove();
     return this.getLatest();
   }
+}
+
+function convertSpanElement(domNode: Node): DOMConversionOutput {
+  // $FlowFixMe[incompatible-type] domNode is a <span> since we matched it by nodeName
+  const span: HTMLSpanElement = domNode;
+  // Google Docs uses span tags + font-weight for bold text
+  const hasBoldFontWeight = span.style.fontWeight === '700';
+  return {
+    forChild: (lexicalNode) => {
+      if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+        lexicalNode.toggleFormat('bold');
+      }
+    },
+    node: null,
+  };
+}
+function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
+  // $FlowFixMe[incompatible-type] domNode is a <b> since we matched it by nodeName
+  const b: HTMLElement = domNode;
+  // Google Docs wraps all copied HTML in a <b> with font-weight normal
+  const hasNormalFontWeight = b.style.fontWeight === 'normal';
+  return {
+    forChild: (lexicalNode) => {
+      if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
+        lexicalNode.toggleFormat('bold');
+      }
+    },
+    node: null,
+  };
+}
+function convertTextDOMNode(domNode: Node): DOMConversionOutput {
+  return {node: $createTextNode(domNode.textContent)};
+}
+const nodeNameToTextFormat: {[string]: TextFormatType} = {
+  em: 'italic',
+  i: 'italic',
+  strong: 'bold',
+  u: 'underline',
+};
+function convertTextFormatElement(domNode: Node): DOMConversionOutput {
+  const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
+  if (format === undefined) {
+    return {node: null};
+  }
+  return {
+    forChild: (lexicalNode) => {
+      if ($isTextNode(lexicalNode)) {
+        lexicalNode.toggleFormat(format);
+      }
+    },
+    node: null,
+  };
 }
 
 export function $createTextNode(text?: string = ''): TextNode {

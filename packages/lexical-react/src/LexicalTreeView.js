@@ -10,11 +10,20 @@
 import type {
   EditorState,
   ElementNode,
+  GridSelection,
   LexicalEditor,
+  NodeSelection,
   RangeSelection,
 } from 'lexical';
 
-import {$getRoot, $getSelection, $isElementNode, $isTextNode} from 'lexical';
+import {
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isGridSelection,
+  $isRangeSelection,
+  $isTextNode,
+} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
@@ -211,6 +220,14 @@ function printRangeSelection(selection: RangeSelection): string {
   return res;
 }
 
+function printObjectSelection(selection: NodeSelection): string {
+  return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
+}
+
+function printGridSelection(selection: GridSelection): string {
+  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchorCellKey}, focusCell: ${selection.focusCellKey} }`;
+}
+
 function generateContent(editorState: EditorState): string {
   let res = ' root\n';
 
@@ -237,7 +254,13 @@ function generateContent(editorState: EditorState): string {
       });
     });
 
-    return selection === null ? ': null' : printRangeSelection(selection);
+    return selection === null
+      ? ': null'
+      : $isRangeSelection(selection)
+      ? printRangeSelection(selection)
+      : $isGridSelection(selection)
+      ? printGridSelection(selection)
+      : printObjectSelection(selection);
   });
 
   return res + '\n selection' + selectionString;
@@ -365,7 +388,7 @@ function printSelectedCharsLine({
   // No selection or node is not selected.
   if (
     !$isTextNode(node) ||
-    selection === null ||
+    !$isRangeSelection(selection) ||
     !isSelected ||
     $isElementNode(node)
   ) {

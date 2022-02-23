@@ -17,7 +17,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {$getSelection} from 'lexical';
+import {$getSelection, $isRangeSelection} from 'lexical';
 import React, {useCallback, useLayoutEffect, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
@@ -868,7 +868,7 @@ function getMentionsTextToSearch(editor: LexicalEditor): string | null {
   let text = null;
   editor.getEditorState().read(() => {
     const selection = $getSelection();
-    if (selection == null) {
+    if (!$isRangeSelection(selection)) {
       return;
     }
     text = getTextUpToAnchor(selection);
@@ -910,7 +910,7 @@ function createMentionNodeFromSearchResult(
 ): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (selection == null || !selection.isCollapsed()) {
+    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
       return;
     }
     const anchor = selection.anchor;

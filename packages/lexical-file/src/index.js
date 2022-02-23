@@ -7,6 +7,6 @@
  * @flow strict
  */
 
-import {exportFile,importFile} from './fileImportExport';
+import {exportFile, importFile} from './fileImportExport';
 
-export {exportFile,importFile};
+export {exportFile, importFile};

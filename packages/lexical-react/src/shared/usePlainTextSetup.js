@@ -17,20 +17,18 @@ import {
   onPasteForPlainText,
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
-import {$getSelection} from 'lexical';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {$getSelection, $isRangeSelection} from 'lexical';
+import {useEffect} from 'react';
 
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
-const EditorPriority: CommandListenerEditorPriority = 0;
-
 export default function usePlainTextSetup(editor: LexicalEditor): void {
-  useLayoutEffect(() => {
+  useEffect(() => {
     const removeListener = editor.addListener(
       'command',
       (type, payload): boolean => {
         const selection = $getSelection();
-        if (selection === null) {
+        if (!$isRangeSelection(selection)) {
           return false;
         }
         switch (type) {
@@ -145,9 +143,14 @@ export default function usePlainTextSetup(editor: LexicalEditor): void {
         }
         return false;
       },
-      EditorPriority,
+      (0: CommandListenerEditorPriority),
     );
-    editor.execCommand('bootstrapEditor');
+    const bootstrapCommandHandled = editor.execCommand('bootstrapEditor');
+    if (__DEV__ && !bootstrapCommandHandled) {
+      console.warn(
+        'bootstrapEditor command was not handled. Did you forget to add <BootstrapPlugin />?',
+      );
+    }
     return removeListener;
   }, [editor]);
 

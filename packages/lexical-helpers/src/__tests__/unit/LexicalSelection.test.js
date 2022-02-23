@@ -115,10 +115,6 @@ describe('LexicalSelection tests', () => {
     React.useEffect(() => {
       const rootElement = rootElementRef.current;
 
-      editor.addListener('error', (error) => {
-        throw error;
-      });
-
       editor.setRootElement(rootElement);
     }, [rootElementRef, editor]);
 

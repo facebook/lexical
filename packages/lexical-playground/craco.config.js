@@ -71,6 +71,10 @@ module.exports = {
         '@lexical/react/dist/LexicalContentEditable',
       '@lexical/react/LexicalNestedComposer':
         '@lexical/react/dist/LexicalNestedComposer',
+      '@lexical/react/LexicalHorizontalRuleNode':
+        '@lexical/react/dist/LexicalHorizontalRuleNode',
+      '@lexical/react/useLexicalNodeSelection':
+        '@lexical/react/dist/useLexicalNodeSelection',
 
       // Composer and it's plugins
       '@lexical/react/LexicalComposer': '@lexical/react/dist/LexicalComposer',

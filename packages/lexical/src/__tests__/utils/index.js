@@ -25,8 +25,7 @@ type TestEnv = {
 export function createTestEditor(config = {}): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
-    editorState: config.editorState,
-    namespace: config.namespace,
+    ...config,
     nodes: [
       ...ExtendedNodes,
       TestElementNode,
@@ -35,7 +34,6 @@ export function createTestEditor(config = {}): LexicalEditor {
       TestDecoratorNode,
       ...customNodes,
     ],
-    theme: config.theme,
   });
   return editor;
 }
@@ -62,9 +60,6 @@ export function initializeUnitTest(
     const useLexicalEditor = (rootElementRef) => {
       const lexicalEditor = React.useMemo(() => {
         const lexical = createTestEditor(editorConfig);
-        lexical.addListener('error', (error) => {
-          throw error;
-        });
         return lexical;
       }, []);
 
@@ -77,9 +72,6 @@ export function initializeUnitTest(
 
     const Editor = () => {
       testEnv.editor = useLexicalEditor(ref);
-      testEnv.editor.addListener('error', (error) => {
-        throw error;
-      });
       return <div ref={ref} contentEditable={true} />;
     };
 

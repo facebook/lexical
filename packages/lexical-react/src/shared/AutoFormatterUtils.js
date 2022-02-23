@@ -8,24 +8,20 @@
  */
 
 import type {TextNodeWithOffset} from '@lexical/helpers/text';
-import type {
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-  TextFormatType,
-  TextNode,
-} from 'lexical';
+import type {ElementNode, NodeKey, TextFormatType, TextNode} from 'lexical';
 
 import {
   $findNodeWithOffsetFromJoinedText,
   $joinTextNodesInElementNode,
 } from '@lexical/helpers/text';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
   $createParagraphNode,
   $createRangeSelection,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
 } from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
@@ -61,6 +57,7 @@ export type NodeTransformationKind =
   | 'paragraphUnorderedList'
   | 'paragraphOrderedList'
   | 'paragraphCodeBlock'
+  | 'horizontalRule'
   | 'textBold';
 
 // The scanning context provides the overall data structure for
@@ -185,6 +182,18 @@ const markdownOrderedList: AutoFormatCriteria = {
   regEx: /^(\d+)\.\s/,
 };
 
+const markdownHorizontalRule: AutoFormatCriteria = {
+  ...paragraphStartBase,
+  nodeTransformationKind: 'horizontalRule',
+  regEx: /(?:\*\*\* )/,
+};
+
+const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
+  ...paragraphStartBase,
+  nodeTransformationKind: 'horizontalRule',
+  regEx: /(?:--- )/,
+};
+
 const markdownBold: AutoFormatCriteria = {
   ...autoFormatBase,
   nodeTransformationKind: 'textBold',
@@ -205,6 +214,8 @@ const allAutoFormatCriteria = [
   markdownUnorderedListAsterisk,
   markdownOrderedList,
   markdownCodeBlock,
+  markdownHorizontalRule,
+  markdownHorizontalRuleUsingDashes,
   ...allAutoFormatCriteriaForTextNodes,
 ];
 
@@ -363,10 +374,11 @@ export function getMatchResultContextForCriteria(
 
 function getNewNodeForCriteria(
   scanningContext: ScanningContext,
-  children: Array<LexicalNode>,
+  element: ElementNode,
 ): null | ElementNode {
   let newNode = null;
 
+  const children = element.getChildren();
   const autoFormatCriteria = scanningContext.autoFormatCriteria;
   const matchResultContext = scanningContext.matchResultContext;
   if (autoFormatCriteria.nodeTransformationKind != null) {
@@ -425,6 +437,12 @@ function getNewNodeForCriteria(
         newNode.append(...children);
         return newNode;
       }
+      case 'horizontalRule': {
+        // return null for newNode. Insert the HR here.
+        const horizontalRuleNode = $createHorizontalRuleNode();
+        element.insertBefore(horizontalRuleNode);
+        break;
+      }
       default:
         break;
     }
@@ -457,10 +475,7 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   const text = scanningContext.matchResultContext.regExCaptureGroups[0].text;
   updateTextNode(textNodeWithOffset.node, text.length);
 
-  const elementNode = getNewNodeForCriteria(
-    scanningContext,
-    element.getChildren(),
-  );
+  const elementNode = getNewNodeForCriteria(scanningContext, element);
 
   if (elementNode !== null) {
     element.replace(elementNode);
@@ -587,7 +602,7 @@ function removeTextInCaptureGroups(
 
         $setSelection(newSelection);
         const currentSelection = $getSelection();
-        if (currentSelection != null) {
+        if ($isRangeSelection(currentSelection)) {
           currentSelection.removeText();
 
           // Shift offsets for capture groups which are within the same node
@@ -705,7 +720,7 @@ function formatTextInCaptureGroupIndex(
 
     $setSelection(newSelection);
     const currentSelection = $getSelection();
-    if (currentSelection != null) {
+    if ($isRangeSelection(currentSelection)) {
       currentSelection.formatText(formatType);
 
       const finalSelection = $createRangeSelection();

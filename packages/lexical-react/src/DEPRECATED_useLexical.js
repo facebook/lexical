@@ -8,7 +8,6 @@
  */
 
 import type {
-  DOMConversionMap,
   EditorState,
   EditorThemeClasses,
   LexicalEditor,
@@ -20,33 +19,23 @@ import {useMemo} from 'react';
 
 import useLexicalEditor from './DEPRECATED_useLexicalEditor';
 
-function defaultOnErrorHandler(e: Error): void {
-  throw e;
-}
-
 export default function useLexical<EditorContext>(editorConfig?: {
   context?: EditorContext,
   disableEvents?: boolean,
   editorState?: EditorState,
-  htmlTransforms?: DOMConversionMap,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
   onError?: (error: Error) => void,
   parentEditor?: LexicalEditor,
   theme?: EditorThemeClasses,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {
-  const onError =
-    (editorConfig !== undefined && editorConfig.onError) ||
-    defaultOnErrorHandler;
   const editor = useMemo(() => {
     if (editorConfig !== undefined) {
-      // eslint-disable-next-line no-unused-vars
-      const {onError: _onError, ...config} = editorConfig;
-      return createEditor(config);
+      return createEditor(editorConfig);
     }
     return createEditor(editorConfig);
   }, [editorConfig]);
-  const [rootElementRef, showPlaceholder] = useLexicalEditor(editor, onError);
+  const [rootElementRef, showPlaceholder] = useLexicalEditor(editor);
 
   return [editor, rootElementRef, showPlaceholder];
 }

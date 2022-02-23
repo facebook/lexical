@@ -10,15 +10,22 @@
 import type {
   CommandListenerEditorPriority,
   EditorState,
+  GridSelection,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   RangeSelection,
 } from 'lexical';
 
 import withSubscriptions from '@lexical/react/withSubscriptions';
-import {$getSelection, $isRootNode, $isTextNode} from 'lexical';
+import {
+  $getSelection,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+} from 'lexical';
 import {useCallback, useEffect, useMemo} from 'react';
 
 type MergeAction = 0 | 1 | 2;
@@ -38,7 +45,7 @@ const EditorPriority: CommandListenerEditorPriority = 0;
 export type HistoryStateEntry = {
   editor: LexicalEditor,
   editorState: EditorState,
-  undoSelection?: RangeSelection | null,
+  undoSelection?: RangeSelection | NodeSelection | GridSelection | null,
 };
 
 export type HistoryState = {
@@ -99,8 +106,8 @@ function getChangeType(
     return COMPOSING_CHARACTER;
   }
   if (
-    nextSelection === null ||
-    prevSelection === null ||
+    !$isRangeSelection(nextSelection) ||
+    !$isRangeSelection(prevSelection) ||
     !prevSelection.isCollapsed() ||
     !nextSelection.isCollapsed()
   ) {

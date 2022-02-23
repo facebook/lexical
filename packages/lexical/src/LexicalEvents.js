@@ -18,6 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $isRootNode,
   $setCompositionKey,
 } from '.';
@@ -86,6 +87,7 @@ if (CAN_USE_BEFORE_INPUT) {
 }
 
 let lastKeyWasMaybeAndroidSoftKey = false;
+let rootElementsRegistered = 0;
 
 function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
   editor.update(() => {
@@ -98,7 +100,7 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
 
     const selection = $getSelection();
     // Update the selection format
-    if (selection !== null && selection.isCollapsed()) {
+    if ($isRangeSelection(selection) && selection.isCollapsed()) {
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
@@ -119,23 +121,23 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (selection === null) {
-      return;
-    }
-    const anchor = selection.anchor;
-    if (
-      anchor.type === 'element' &&
-      anchor.offset === 0 &&
-      selection.isCollapsed() &&
-      $getRoot().getChildrenSize() === 1 &&
-      anchor.getNode().getTopLevelElementOrThrow().isEmpty()
-    ) {
-      const lastSelection = editor.getEditorState()._selection;
-      if (lastSelection !== null && selection.is(lastSelection)) {
-        window.getSelection().removeAllRanges();
-        selection.dirty = true;
+    if ($isRangeSelection(selection)) {
+      const anchor = selection.anchor;
+      if (
+        anchor.type === 'element' &&
+        anchor.offset === 0 &&
+        selection.isCollapsed() &&
+        $getRoot().getChildrenSize() === 1 &&
+        anchor.getNode().getTopLevelElementOrThrow().isEmpty()
+      ) {
+        const lastSelection = editor.getEditorState()._selection;
+        if (lastSelection !== null && selection.is(lastSelection)) {
+          window.getSelection().removeAllRanges();
+          selection.dirty = true;
+        }
       }
     }
+    editor.execCommand('click', event);
   });
 }
 
@@ -176,7 +178,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
 
-    if (selection === null) {
+    if (!$isRangeSelection(selection)) {
       return;
     }
 
@@ -330,7 +332,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     const data = event.data;
     if (
       data != null &&
-      selection !== null &&
+      $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
       editor.execCommand('insertText', data);
@@ -349,7 +351,7 @@ function onCompositionStart(
 ): void {
   editor.update(() => {
     const selection = $getSelection();
-    if (selection !== null && !editor.isComposing()) {
+    if ($isRangeSelection(selection) && !editor.isComposing()) {
       const anchor = selection.anchor;
       $setCompositionKey(anchor.key);
       if (
@@ -477,18 +479,13 @@ function getRootElementRemoveHandles(
   rootElement: HTMLElement,
 ): RootElementRemoveHandles {
   // $FlowFixMe: internal field
-  let eventHandles = rootElement._lexicalEventHandles;
+  let eventHandles = rootElement.__lexicalEventHandles;
   if (eventHandles === undefined) {
     eventHandles = [];
     // $FlowFixMe: internal field
-    rootElement._lexicalEventHandles = eventHandles;
+    rootElement.__lexicalEventHandles = eventHandles;
   }
   return eventHandles;
-}
-
-function clearRootElementRemoveHandles(rootElement: HTMLElement): void {
-  // $FlowFixMe: internal field
-  rootElement._lexicalEventHandles = [];
 }
 
 // Mapping root editors to their active nested editors, contains nested editors
@@ -530,25 +527,19 @@ function onDocumentSelectionChange(event: Event): void {
   }
 }
 
-export function addDocumentSelectionChangeEvent(
-  rootElement: HTMLElement,
-  editor: LexicalEditor,
-): void {
-  const doc = rootElement.ownerDocument;
-  // $FlowFixMe: internal field
-  rootElement.__lexicalEditor = editor;
-  // $FlowFixMe: internal field
-  if (doc._lexicalEvent === undefined) {
-    // $FlowFixMe: internal field
-    doc._lexicalEvent = true;
-    doc.addEventListener('selectionchange', onDocumentSelectionChange);
-  }
-}
-
 export function addRootElementEvents(
   rootElement: HTMLElement,
   editor: LexicalEditor,
 ): void {
+  // We only want to have a single global selectionchange event handler, shared
+  // between all editor instances.
+  if (rootElementsRegistered === 0) {
+    const doc = rootElement.ownerDocument;
+    doc.addEventListener('selectionchange', onDocumentSelectionChange);
+  }
+  rootElementsRegistered++;
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEditor = editor;
   const removeHandles = getRootElementRemoveHandles(rootElement);
 
   for (let i = 0; i < rootElementEvents.length; i++) {
@@ -573,20 +564,32 @@ export function addRootElementEvents(
 }
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
+  if (rootElementsRegistered !== 0) {
+    rootElementsRegistered--;
+    // We only want to have a single global selectionchange event handler, shared
+    // between all editor instances.
+    if (rootElementsRegistered === 0) {
+      const doc = rootElement.ownerDocument;
+      doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+    }
+  }
   // $FlowFixMe: internal field
-  cleanActiveNestedEditorsMap(rootElement.__lexicalEditor);
-  // $FlowFixMe: internal field
-  rootElement.__lexicalEditor = null;
+  const editor: LexicalEditor | null | void = rootElement.__lexicalEditor;
+  if (editor != null) {
+    cleanActiveNestedEditorsMap(editor);
+    // $FlowFixMe: internal field
+    rootElement.__lexicalEditor = null;
+  }
   const removeHandles = getRootElementRemoveHandles(rootElement);
   for (let i = 0; i < removeHandles.length; i++) {
     removeHandles[i]();
   }
-  clearRootElementRemoveHandles(rootElement);
+  // $FlowFixMe: internal field
+  rootElement.__lexicalEventHandles = [];
 }
 
 function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
-  // $FlowFixMe: internal field
-  if (editor._parentEditor) {
+  if (editor._parentEditor !== null) {
     // For nested editor cleanup map if this editor was marked as active
     const editors = getEditorsToPropagate(editor);
     const rootEditor = editors[editors.length - 1];

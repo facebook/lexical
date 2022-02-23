@@ -7,23 +7,29 @@
  * @flow strict
  */
 
-import {VERSION} from './LexicalConstants';
 import {createEditor} from './LexicalEditor';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
+  $createEmptyGridSelection as $createGridSelection,
+  $createEmptyObjectSelection as $createNodeSelection,
   $createEmptyRangeSelection as $createRangeSelection,
   $getPreviousSelection,
   $getSelection,
+  $isGridSelection,
+  $isNodeSelection,
   $isRangeSelection,
 } from './LexicalSelection';
 import {
+  $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
   $isLeafNode,
+  $nodesOfType,
   $setCompositionKey,
   $setSelection,
 } from './LexicalUtils';
+import {VERSION} from './LexicalVersion';
 import {
   $isDecoratorNode,
   createDecoratorArray,
@@ -35,6 +41,9 @@ import {
   isDecoratorMap,
 } from './nodes/base/LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './nodes/base/LexicalElementNode';
+import {$isGridCellNode, GridCellNode} from './nodes/base/LexicalGridCellNode';
+import {$isGridNode, GridNode} from './nodes/base/LexicalGridNode';
+import {$isGridRowNode, GridRowNode} from './nodes/base/LexicalGridRowNode';
 import {
   $createLineBreakNode,
   $isLineBreakNode,
@@ -51,45 +60,15 @@ import {
   TextNode,
 } from './nodes/base/LexicalTextNode';
 
-export type {
-  CommandListenerCriticalPriority,
-  CommandListenerEditorPriority,
-  CommandListenerHighPriority,
-  CommandListenerLowPriority,
-  CommandListenerNormalPriority,
-  DOMConversionMap,
-  EditorConfig,
-  EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
-  LexicalEditor,
-} from './LexicalEditor';
-export type {EditorState, ParsedEditorState} from './LexicalEditorState';
-export type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
-export type {ParsedNode, ParsedNodeMap} from './LexicalParsing';
-export type {
-  ElementPointType as ElementPoint,
-  PointType as Point,
-  RangeSelection,
-  TextPointType as TextPoint,
-} from './LexicalSelection';
-export type {
-  DecoratorArray,
-  DecoratorEditor,
-  DecoratorMap,
-  DecoratorStateValue,
-} from './nodes/base/LexicalDecoratorNode';
-export type {ElementFormatType} from './nodes/base/LexicalElementNode';
-export type {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
-export type {RootNode} from './nodes/base/LexicalRootNode';
-export type {TextFormatType} from './nodes/base/LexicalTextNode';
-
 export {
-  // Used during read/update/transform
+  $createGridSelection,
   $createLineBreakNode,
   $createNodeFromParse,
+  $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getPreviousSelection,
@@ -97,22 +76,29 @@ export {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  // Node validation
+  $isGridCellNode,
+  $isGridNode,
+  $isGridRowNode,
+  $isGridSelection,
   $isLeafNode,
   $isLineBreakNode,
+  $isNodeSelection,
   $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $nodesOfType,
   $setCompositionKey,
   $setSelection,
   createDecoratorArray,
   createDecoratorEditor,
-  // Decorator state
   createDecoratorMap,
   createEditor,
   DecoratorNode,
   ElementNode,
+  GridCellNode,
+  GridNode,
+  GridRowNode,
   isDecoratorArray,
   isDecoratorEditor,
   isDecoratorMap,

@@ -10,25 +10,23 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {ParsedNode, ParsedSelection} from './LexicalParsing';
-import type {RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 
+import {
+  $isGridSelection,
+  $isNodeSelection,
+  $isRangeSelection,
+} from './LexicalSelection';
 import {readEditorState} from './LexicalUpdates';
 import {$createRootNode} from './nodes/base/LexicalRootNode';
 
 export type ParsedEditorState = {
   _nodeMap: Array<[NodeKey, ParsedNode]>,
-  _selection: null | {
-    anchor: {
-      key: string,
-      offset: number,
-      type: 'text' | 'element',
-    },
-    focus: {
-      key: string,
-      offset: number,
-      type: 'text' | 'element',
-    },
-  },
+  _selection: null | ParsedSelection,
 };
 
 export type JSONEditorState = {
@@ -63,11 +61,14 @@ export function createEmptyEditorState(): EditorState {
 
 export class EditorState {
   _nodeMap: NodeMap;
-  _selection: null | RangeSelection;
+  _selection: null | RangeSelection | NodeSelection | GridSelection;
   _flushSync: boolean;
   _readOnly: boolean;
 
-  constructor(nodeMap: NodeMap, selection?: RangeSelection | null) {
+  constructor(
+    nodeMap: NodeMap,
+    selection?: RangeSelection | NodeSelection | GridSelection | null,
+  ) {
     this._nodeMap = nodeMap;
     this._selection = selection || null;
     this._flushSync = false;
@@ -79,7 +80,9 @@ export class EditorState {
   read<V>(callbackFn: () => V): V {
     return readEditorState(this, callbackFn);
   }
-  clone(selection?: RangeSelection | null): EditorState {
+  clone(
+    selection?: RangeSelection | NodeSelection | GridSelection | null,
+  ): EditorState {
     const editorState = new EditorState(
       this._nodeMap,
       selection === undefined ? this._selection : selection,
@@ -92,21 +95,33 @@ export class EditorState {
 
     return {
       _nodeMap: Array.from(this._nodeMap.entries()),
-      _selection:
-        selection === null
-          ? null
-          : {
-              anchor: {
-                key: selection.anchor.key,
-                offset: selection.anchor.offset,
-                type: selection.anchor.type,
-              },
-              focus: {
-                key: selection.focus.key,
-                offset: selection.focus.offset,
-                type: selection.focus.type,
-              },
+      _selection: $isRangeSelection(selection)
+        ? {
+            anchor: {
+              key: selection.anchor.key,
+              offset: selection.anchor.offset,
+              type: selection.anchor.type,
             },
+            focus: {
+              key: selection.focus.key,
+              offset: selection.focus.offset,
+              type: selection.focus.type,
+            },
+            type: 'range',
+          }
+        : $isNodeSelection(selection)
+        ? {
+            nodes: Array.from(selection._nodes),
+            type: 'node',
+          }
+        : $isGridSelection(selection)
+        ? {
+            anchorCellKey: selection.anchorCellKey,
+            focusCellKey: selection.focusCellKey,
+            gridKey: selection.gridKey,
+            type: 'grid',
+          }
+        : null,
     };
   }
 }

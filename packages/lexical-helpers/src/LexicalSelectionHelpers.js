@@ -9,8 +9,10 @@
 
 import type {
   ElementNode,
+  GridSelection,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   Point,
   RangeSelection,
   TextNode,
@@ -20,9 +22,11 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
+  $isRangeSelection,
   $isRootNode,
   $isTextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
@@ -117,10 +121,15 @@ function $copyLeafNodeBranchToRoot(
   }
 }
 
-export function $cloneContents(selection: RangeSelection): {
+export function $cloneContents(
+  selection: RangeSelection | NodeSelection | GridSelection,
+): {
   nodeMap: Array<[NodeKey, LexicalNode]>,
   range: Array<NodeKey>,
 } {
+  if (!$isRangeSelection(selection)) {
+    invariant(false, 'TODO');
+  }
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorOffset = anchor.getCharacterOffset();

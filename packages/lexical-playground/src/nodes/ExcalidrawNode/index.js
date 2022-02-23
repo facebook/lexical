@@ -91,7 +91,7 @@ function ExcalidrawComponent({
   );
 }
 
-export class ExcalidrawNode extends DecoratorNode {
+export class ExcalidrawNode extends DecoratorNode<React$Node> {
   static getType(): string {
     return 'excalidraw';
   }

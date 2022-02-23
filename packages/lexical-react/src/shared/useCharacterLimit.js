@@ -9,13 +9,13 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
-import {$dfs__DEPRECATED} from '@lexical/helpers/nodes';
+import {$dfs} from '@lexical/helpers/nodes';
 import {$textContentCurry} from '@lexical/helpers/root';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
-  $getRoot,
   $getSelection,
   $isLeafNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from 'lexical';
@@ -126,11 +126,11 @@ function findOffset(
 }
 
 function $wrapOverflowedNodes(offset: number): void {
-  const root = $getRoot();
+  const dfsNodes = $dfs();
+  const dfsNodesLength = dfsNodes.length;
   let accumulatedLength = 0;
-
-  let previousNode = root;
-  $dfs__DEPRECATED(root, (node: LexicalNode) => {
+  for (let i = 0; i < dfsNodesLength; i += 1) {
+    const node = dfsNodes[i];
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
       const nextLength = accumulatedLength + node.getTextContentSize();
@@ -142,7 +142,7 @@ function $wrapOverflowedNodes(offset: number): void {
         const selection = $getSelection();
         // Restore selection when the overflow children are removed
         if (
-          selection !== null &&
+          $isRangeSelection(selection) &&
           (!selection.anchor.getNode().isAttached() ||
             !selection.focus.getNode().isAttached())
         ) {
@@ -154,7 +154,6 @@ function $wrapOverflowedNodes(offset: number): void {
             parent.select();
           }
         }
-        return previousNode;
       } else if (previousLength < offset) {
         const descendant = node.getFirstDescendant();
         const descendantLength =
@@ -168,7 +167,6 @@ function $wrapOverflowedNodes(offset: number): void {
           previousPlusDescendantLength <= offset;
         if (firstDescendantIsSimpleText || firstDescendantDoesNotOverflow) {
           $unwrapNode(node);
-          return previousNode;
         }
       }
     } else if ($isLeafNode(node)) {
@@ -197,9 +195,7 @@ function $wrapOverflowedNodes(offset: number): void {
         mergePrevious(overflowNode);
       }
     }
-    previousNode = node;
-    return node;
-  });
+  }
 }
 
 function $wrapNode(node: LexicalNode): OverflowNode {
@@ -237,7 +233,7 @@ export function mergePrevious(overflowNode: OverflowNode): void {
   }
 
   const selection = $getSelection();
-  if (selection !== null) {
+  if ($isRangeSelection(selection)) {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();
     const focus = selection.focus;

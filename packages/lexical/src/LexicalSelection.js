@@ -10,10 +10,10 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {ParsedSelection} from './LexicalParsing';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
 
-import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 import invariant from 'shared/invariant';
 
 import {
@@ -37,6 +37,7 @@ import {
 } from './LexicalUpdates';
 import {
   $getCompositionKey,
+  $getDecoratorNode,
   $getNodeByKey,
   $isTokenOrInert,
   $setCompositionKey,
@@ -214,18 +215,175 @@ function $setPointValues(
   point.type = type;
 }
 
-interface Selection {
-  clone(): Selection;
-
+interface BaseSelection {
+  clone(): BaseSelection;
   dirty: boolean;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertRawText(text: string): void;
-  is(selection: null | RangeSelection): boolean;
+  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
 }
 
-export class RangeSelection implements Selection {
+export class NodeSelection implements BaseSelection {
+  _nodes: Set<NodeKey>;
+  dirty: boolean;
+
+  constructor(objects: Set<NodeKey>) {
+    this.dirty = false;
+    this._nodes = objects;
+  }
+
+  is(
+    selection: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isNodeSelection(selection)) {
+      return false;
+    }
+    const a: Set<NodeKey> = this._nodes;
+    const b: Set<NodeKey> = selection._nodes;
+    return a.size === b.size && Array.from(a).every((key) => b.has(key));
+  }
+
+  add(key: NodeKey): void {
+    this.dirty = true;
+    this._nodes.add(key);
+  }
+
+  delete(key: NodeKey): void {
+    this.dirty = true;
+    this._nodes.delete(key);
+  }
+
+  clear(): void {
+    this.dirty = true;
+    this._nodes.clear();
+  }
+
+  has(key: NodeKey): boolean {
+    return this._nodes.has(key);
+  }
+
+  clone(): NodeSelection {
+    return new NodeSelection(new Set(this._nodes));
+  }
+
+  extract(): Array<LexicalNode> {
+    return this.getNodes();
+  }
+
+  insertRawText(): void {
+    // Do nothing?
+  }
+
+  insertText(): void {
+    // Do nothing?
+  }
+
+  getNodes(): Array<LexicalNode> {
+    const objects = Array.from(this._nodes);
+    const nodes = [];
+    for (let i = 0; i < objects.length; i++) {
+      const node = $getNodeByKey(objects[i]);
+      if (node !== null) {
+        nodes.push(node);
+      }
+    }
+    return nodes;
+  }
+
+  getTextContent(): string {
+    const nodes = this.getNodes();
+    let textContent = '';
+    for (let i = 0; i < nodes.length; i++) {
+      textContent += nodes[i].getTextContent();
+    }
+    return textContent;
+  }
+}
+
+export function $isRangeSelection(x: ?mixed): boolean %checks {
+  return x instanceof RangeSelection;
+}
+
+export class GridSelection implements BaseSelection {
+  gridKey: NodeKey;
+  anchorCellKey: NodeKey;
+  focusCellKey: NodeKey;
+  dirty: boolean;
+
+  constructor(
+    gridKey: NodeKey,
+    anchorCellKey: NodeKey,
+    focusCellKey: NodeKey,
+  ): void {
+    this.gridKey = gridKey;
+    this.anchorCellKey = anchorCellKey;
+    this.focusCellKey = focusCellKey;
+    this.dirty = false;
+  }
+
+  is(
+    selection: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isGridSelection(selection)) {
+      return false;
+    }
+    return (
+      this.gridKey === selection.gridKey &&
+      this.anchorCellKey === selection.anchorCellKey &&
+      this.focusCellKey === selection.focusCellKey
+    );
+  }
+
+  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
+    this.dirty = true;
+    this.gridKey = gridKey;
+    this.anchorCellKey = anchorCellKey;
+    this.focusCellKey = focusCellKey;
+  }
+
+  clone(): GridSelection {
+    return new GridSelection(
+      this.gridKey,
+      this.anchorCellKey,
+      this.focusCellKey,
+    );
+  }
+
+  extract(): Array<LexicalNode> {
+    return this.getNodes();
+  }
+
+  insertRawText(): void {
+    // Do nothing?
+  }
+
+  insertText(): void {
+    // Do nothing?
+  }
+
+  getNodes(): Array<LexicalNode> {
+    const nodes = [];
+    // TODO
+    return nodes;
+  }
+
+  getTextContent(): string {
+    const nodes = this.getNodes();
+    let textContent = '';
+    for (let i = 0; i < nodes.length; i++) {
+      textContent += nodes[i].getTextContent();
+    }
+    return textContent;
+  }
+}
+
+export function $isGridSelection(x: ?mixed): boolean %checks {
+  return x instanceof GridSelection;
+}
+
+export class RangeSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
@@ -238,8 +396,10 @@ export class RangeSelection implements Selection {
     this.format = format;
   }
 
-  is(selection: null | RangeSelection): boolean {
-    if (selection === null) {
+  is(
+    selection: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
       return false;
     }
     return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
@@ -944,7 +1104,9 @@ export class RangeSelection implements Selection {
       }
       didReplaceOrMerge = false;
       if ($isElementNode(target)) {
-        if (!$isElementNode(node)) {
+        if ($isDecoratorNode(node) && node.isTopLevel()) {
+          target = target.insertAfter(node);
+        } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
             firstChild.insertBefore(node);
@@ -956,9 +1118,22 @@ export class RangeSelection implements Selection {
           if (!node.canBeEmpty() && node.isEmpty()) {
             continue;
           }
-          target = target.insertAfter(node);
+          if ($isRootNode(target)) {
+            const placementNode = target.getChildAtIndex(anchorOffset);
+            if (placementNode !== null) {
+              placementNode.insertBefore(node);
+            } else {
+              target.append(node);
+            }
+            target = node;
+          } else {
+            target = target.insertAfter(node);
+          }
         }
-      } else if (!$isElementNode(node)) {
+      } else if (
+        !$isElementNode(node) ||
+        ($isDecoratorNode(target) && target.isTopLevel())
+      ) {
         target = target.insertAfter(node);
       } else {
         target = node.getParentOrThrow();
@@ -1181,7 +1356,7 @@ export class RangeSelection implements Selection {
     const collapse = alter === 'move';
 
     // Handle the selection movement around decorators.
-    const possibleNode = getPossibleDecoratorNode(focus, isBackward);
+    const possibleNode = $getDecoratorNode(focus, isBackward);
     if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
       const sibling = isBackward
         ? possibleNode.getPreviousSibling()
@@ -1321,6 +1496,10 @@ export class RangeSelection implements Selection {
     }
     this.removeText();
   }
+}
+
+export function $isNodeSelection(x: ?mixed): boolean %checks {
+  return x instanceof NodeSelection;
 }
 
 function $swapPoints(selection: RangeSelection): void {
@@ -1535,7 +1714,7 @@ function internalResolveSelectionPoints(
   focusDOM: null | Node,
   focusOffset: number,
   editor: LexicalEditor,
-  lastSelection: null | RangeSelection,
+  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
 ): null | [PointType, PointType] {
   if (
     anchorDOM === null ||
@@ -1547,7 +1726,7 @@ function internalResolveSelectionPoints(
   const resolvedAnchorPoint = internalResolveSelectionPoint(
     anchorDOM,
     anchorOffset,
-    lastSelection !== null ? lastSelection.anchor : null,
+    $isRangeSelection(lastSelection) ? lastSelection.anchor : null,
   );
   if (resolvedAnchorPoint === null) {
     return null;
@@ -1555,7 +1734,7 @@ function internalResolveSelectionPoints(
   const resolvedFocusPoint = internalResolveSelectionPoint(
     focusDOM,
     focusOffset,
-    lastSelection !== null ? lastSelection.focus : null,
+    $isRangeSelection(lastSelection) ? lastSelection.focus : null,
   );
   if (resolvedFocusPoint === null) {
     return null;
@@ -1599,7 +1778,7 @@ function internalResolveSelectionPoints(
     if (
       editor.isComposing() &&
       editor._compositionKey !== resolvedAnchorPoint.key &&
-      lastSelection !== null
+      $isRangeSelection(lastSelection)
     ) {
       const lastAnchor = lastSelection.anchor;
       const lastFocus = lastSelection.focus;
@@ -1649,12 +1828,36 @@ export function $createEmptyRangeSelection(): RangeSelection {
   return new RangeSelection(anchor, focus, 0);
 }
 
+export function $createEmptyObjectSelection(): NodeSelection {
+  return new NodeSelection(new Set());
+}
+
+export function $createEmptyGridSelection(): GridSelection {
+  return new GridSelection('root', 'root', 'root');
+}
+
 function getActiveEventType(): string | void {
   const event = window.event;
   return event && event.type;
 }
 
-export function internalCreateRangeSelection(
+export function internalCreateSelection(
+  editor: LexicalEditor,
+): null | RangeSelection | NodeSelection | GridSelection {
+  const currentEditorState = editor.getEditorState();
+  const lastSelection = currentEditorState._selection;
+  const domSelection = window.getSelection();
+
+  if ($isNodeSelection(lastSelection)) {
+    return lastSelection.clone();
+  }
+
+  return internalCreateRangeSelection(lastSelection, domSelection, editor);
+}
+
+function internalCreateRangeSelection(
+  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+  domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
   // When we create a selection, we try to use the previous
@@ -1671,8 +1874,6 @@ export function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const currentEditorState = editor.getEditorState();
-  const lastSelection = currentEditorState._selection;
   const eventType = getActiveEventType();
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
@@ -1685,8 +1886,7 @@ export function internalCreateRangeSelection(
       eventType === undefined);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
-  if (lastSelection === null || useDOMSelection) {
-    const domSelection = window.getSelection();
+  if (!$isRangeSelection(lastSelection) || useDOMSelection) {
     if (domSelection === null) {
       return null;
     }
@@ -1695,13 +1895,7 @@ export function internalCreateRangeSelection(
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
   } else {
-    const lastAnchor = lastSelection.anchor;
-    const lastFocus = lastSelection.focus;
-    return new RangeSelection(
-      $createPoint(lastAnchor.key, lastAnchor.offset, lastAnchor.type),
-      $createPoint(lastFocus.key, lastFocus.offset, lastFocus.type),
-      lastSelection.format,
-    );
+    return lastSelection.clone();
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
   // native selection.
@@ -1720,37 +1914,34 @@ export function internalCreateRangeSelection(
   return new RangeSelection(
     resolvedAnchorPoint,
     resolvedFocusPoint,
-    lastSelection === null ? 0 : lastSelection.format,
+    !$isRangeSelection(lastSelection) ? 0 : lastSelection.format,
   );
 }
 
-export function $getSelection(): null | RangeSelection {
+export function $getSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
-export function $getPreviousSelection(): null | RangeSelection {
+export function $getPreviousSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
 }
 
 export function internalCreateSelectionFromParse(
-  parsedSelection: null | {
-    anchor: {
-      key: string,
-      offset: number,
-      type: 'text' | 'element',
-    },
-    focus: {
-      key: string,
-      offset: number,
-      type: 'text' | 'element',
-    },
-  },
-): null | RangeSelection {
-  return parsedSelection === null
-    ? null
-    : new RangeSelection(
+  parsedSelection: null | ParsedSelection,
+): null | RangeSelection | NodeSelection | GridSelection {
+  if (parsedSelection !== null) {
+    if (parsedSelection.type === 'range') {
+      return new RangeSelection(
         $createPoint(
           parsedSelection.anchor.key,
           parsedSelection.anchor.offset,
@@ -1763,6 +1954,17 @@ export function internalCreateSelectionFromParse(
         ),
         0,
       );
+    } else if (parsedSelection.type === 'node') {
+      return new NodeSelection(new Set(parsedSelection.nodes));
+    } else if (parsedSelection.type === 'grid') {
+      return new GridSelection(
+        parsedSelection.gridKey,
+        parsedSelection.anchorCellKey,
+        parsedSelection.focusCellKey,
+      );
+    }
+  }
+  return null;
 }
 
 export function $updateElementSelectionOnCreateDeleteNode(
@@ -1880,7 +2082,7 @@ export function applySelectionTransforms(
   const prevEditorState = editor.getEditorState();
   const prevSelection = prevEditorState._selection;
   const nextSelection = nextEditorState._selection;
-  if (nextSelection !== null) {
+  if ($isRangeSelection(nextSelection)) {
     const anchor = nextSelection.anchor;
     const focus = nextSelection.focus;
     let anchorNode;
@@ -1950,8 +2152,4 @@ export function adjustPointOffsetForMergedSibling(
   } else if (point.offset > target.getIndexWithinParent()) {
     point.offset -= 1;
   }
-}
-
-export function $isRangeSelection(x: ?mixed): boolean %checks {
-  return x instanceof RangeSelection;
 }

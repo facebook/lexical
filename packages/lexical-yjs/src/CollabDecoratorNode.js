@@ -37,7 +37,7 @@ export class CollabDecoratorNode {
     this._unobservers = new Set();
   }
 
-  getPrevNode(nodeMap: null | NodeMap): null | DecoratorNode {
+  getPrevNode(nodeMap: null | NodeMap): null | DecoratorNode<{...}> {
     if (nodeMap === null) {
       return null;
     }
@@ -45,7 +45,7 @@ export class CollabDecoratorNode {
     return $isDecoratorNode(node) ? node : null;
   }
 
-  getNode(): null | DecoratorNode {
+  getNode(): null | DecoratorNode<{...}> {
     const node = $getNodeByKey(this._key);
     return $isDecoratorNode(node) ? node : null;
   }
@@ -73,7 +73,7 @@ export class CollabDecoratorNode {
 
   syncPropertiesFromLexical(
     binding: Binding,
-    nextLexicalNode: DecoratorNode,
+    nextLexicalNode: DecoratorNode<{...}>,
     prevNodeMap: null | NodeMap,
   ): void {
     const prevLexicalNode = this.getPrevNode(prevNodeMap);

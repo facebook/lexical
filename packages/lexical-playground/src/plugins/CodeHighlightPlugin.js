@@ -23,6 +23,7 @@ import {
   $isTextNode,
   $isLineBreakNode,
   $getSelection,
+  $isRangeSelection,
 } from 'lexical';
 import {useEffect} from 'react';
 import withSubscriptions from '@lexical/react/withSubscriptions';
@@ -77,7 +78,9 @@ export default function CodeHighlightPlugin(): React$Node {
       editor.addListener(
         'command',
         (type, payload): boolean =>
-          type === 'keyArrowUp' || type === 'keyArrowDown'
+          type === 'indentContent' || type === 'outdentContent'
+            ? handleMultilineIndent(type)
+            : type === 'keyArrowUp' || type === 'keyArrowDown'
             ? handleShiftLines(type, payload)
             : false,
         1,
@@ -183,7 +186,7 @@ function updateAndRetainSelection(
   updateFn: () => boolean,
 ): void {
   const selection = $getSelection();
-  if (!selection || !selection.anchor) {
+  if (!$isRangeSelection(selection) || !selection.anchor) {
     return;
   }
 
@@ -300,13 +303,76 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   return false;
 }
 
+function handleMultilineIndent(
+  type: 'indentContent' | 'outdentContent',
+): boolean {
+  const selection = $getSelection();
+
+  if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+    return false;
+  }
+
+  // Only run multiline indent logic on selections exclusively composed of code highlights and linebreaks
+  const nodes = selection.getNodes();
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (!$isCodeHighlightNode(node) && !$isLineBreakNode(node)) {
+      return false;
+    }
+  }
+  const startOfLine = getFirstCodeHighlightNodeOfLine(nodes[0]);
+
+  if (startOfLine != null) {
+    doIndent(startOfLine, type);
+  }
+
+  for (let i = 1; i < nodes.length; i++) {
+    const node = nodes[i];
+    if ($isLineBreakNode(nodes[i - 1]) && $isCodeHighlightNode(node)) {
+      doIndent(node, type);
+    }
+  }
+
+  return true;
+}
+
+function doIndent(
+  node: CodeHighlightNode,
+  type: 'indentContent' | 'outdentContent',
+) {
+  const text = node.getTextContent();
+  if (type === 'indentContent') {
+    // If the codeblock node doesn't start with whitespace, we don't want to
+    // naively prepend a '\t'; Prism will then mangle all of our nodes when
+    // it separates the whitespace from the first non-whitespace node. This
+    // will lead to selection bugs when indenting lines that previously
+    // didn't start with a whitespace character
+    if (text.length > 0 && /\s/.test(text[0])) {
+      node.setTextContent('\t' + text);
+    } else {
+      const indentNode = $createCodeHighlightNode('\t');
+      node.insertBefore(indentNode);
+    }
+  } else {
+    if (text.indexOf('\t') === 0) {
+      // Same as above - if we leave empty text nodes lying around, the resulting
+      // selection will be mangled
+      if (text.length === 1) {
+        node.remove();
+      } else {
+        node.setTextContent(text.substring(1));
+      }
+    }
+  }
+}
+
 function handleShiftLines(
   type: 'keyArrowUp' | 'keyArrowDown',
   event: KeyboardEvent,
 ): boolean {
   // We only care about the alt+arrow keys
   const selection = $getSelection();
-  if (!event.altKey || selection == null) {
+  if (!event.altKey || !$isRangeSelection(selection)) {
     return false;
   }
 

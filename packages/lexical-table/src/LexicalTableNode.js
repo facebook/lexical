@@ -27,8 +27,9 @@ import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
-  ElementNode,
+  GridNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -345,7 +346,7 @@ function applyCustomTableHandlers(
 
   const formatCells = (type: TextFormatType) => {
     let selection = $getSelection();
-    if (selection === null) {
+    if (!$isRangeSelection(selection)) {
       selection = $createRangeSelection();
     }
     // This is to make Flow play ball.
@@ -472,7 +473,7 @@ function applyCustomTableHandlers(
     (type, payload) => {
       const selection = $getSelection();
 
-      if (selection == null) {
+      if (!$isRangeSelection(selection)) {
         return false;
       }
 
@@ -545,7 +546,7 @@ function applyCustomTableHandlers(
   );
 }
 
-export class TableNode extends ElementNode {
+export class TableNode extends GridNode {
   __selectionShape: ?SelectionShape;
   __grid: ?Grid;
 
@@ -558,6 +559,8 @@ export class TableNode extends ElementNode {
     selectionShape: ?SelectionShape,
     grid: ?Grid,
   ): TableNode {
+    // TODO: selectionShape and grid aren't being deeply cloned?
+    // They shouldn't really be on the table node IMO.
     return new TableNode(node.__key, node.__selectionShape, node.__grid);
   }
 

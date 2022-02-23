@@ -58,18 +58,36 @@ export type ParsedTextNode = {
 
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
 
-export type ParsedSelection = {
+export type ParsedRangeSelection = {
   anchor: {
-    key: NodeKey,
+    key: string,
     offset: number,
     type: 'text' | 'element',
   },
   focus: {
-    key: NodeKey,
+    key: string,
     offset: number,
     type: 'text' | 'element',
   },
+  type: 'range',
 };
+
+export type ParsedNodeSelection = {
+  nodes: Array<NodeKey>,
+  type: 'node',
+};
+
+export type ParsedGridSelection = {
+  anchorCellKey: NodeKey,
+  focusCellKey: NodeKey,
+  gridKey: NodeKey,
+  type: 'grid',
+};
+
+export type ParsedSelection =
+  | ParsedRangeSelection
+  | ParsedNodeSelection
+  | ParsedGridSelection;
 
 export function $createNodeFromParse(
   parsedNode: ParsedNode,
@@ -194,27 +212,74 @@ export function internalCreateNodeFromParse(
   // new selection record with the old keys mapped to the new ones.
   const originalSelection = state != null ? state.originalSelection : undefined;
   if (originalSelection != null) {
-    if (parsedNode.__key === originalSelection.anchor.key) {
-      state.remappedSelection = state.remappedSelection || {
-        anchor: {
-          ...originalSelection.anchor,
-        },
-        focus: {
-          ...originalSelection.focus,
-        },
-      };
-      state.remappedSelection.anchor.key = node.__key;
-    }
-    if (parsedNode.__key === originalSelection.focus.key) {
-      state.remappedSelection = state.remappedSelection || {
-        anchor: {
-          ...originalSelection.anchor,
-        },
-        focus: {
-          ...originalSelection.focus,
-        },
-      };
-      state.remappedSelection.focus.key = node.__key;
+    let remappedSelection = state.remappedSelection;
+
+    if (originalSelection.type === 'range') {
+      const anchor = originalSelection.anchor;
+      const focus = originalSelection.focus;
+
+      if (
+        remappedSelection == null &&
+        (parsedKey === anchor.key || parsedKey === focus.key)
+      ) {
+        state.remappedSelection = remappedSelection = {
+          anchor: {
+            ...anchor,
+          },
+          focus: {
+            ...focus,
+          },
+          type: 'range',
+        };
+      }
+      if (remappedSelection != null && remappedSelection.type === 'range') {
+        if (parsedKey === anchor.key) {
+          remappedSelection.anchor.key = key;
+        }
+        if (parsedKey === focus.key) {
+          remappedSelection.focus.key = key;
+        }
+      }
+    } else if (originalSelection.type === 'node') {
+      const nodes = originalSelection.nodes;
+      const indexOf = nodes.indexOf(parsedKey);
+      if (indexOf !== -1) {
+        if (remappedSelection == null) {
+          state.remappedSelection = remappedSelection = {
+            nodes: [...nodes],
+            type: 'node',
+          };
+        }
+        if (remappedSelection.type === 'node') {
+          remappedSelection.nodes.splice(indexOf, 1, key);
+        }
+      }
+    } else if (originalSelection.type === 'grid') {
+      const gridKey = originalSelection.gridKey;
+      const anchorCellKey = originalSelection.anchorCellKey;
+      const focusCellKey = originalSelection.focusCellKey;
+      if (
+        remappedSelection == null &&
+        (gridKey === parsedKey ||
+          gridKey === anchorCellKey ||
+          gridKey === focusCellKey)
+      ) {
+        state.remappedSelection = remappedSelection = {
+          ...originalSelection,
+          type: 'grid',
+        };
+      }
+      if (remappedSelection != null && remappedSelection.type === 'grid') {
+        if (gridKey === parsedKey) {
+          remappedSelection.gridKey = key;
+        }
+        if (anchorCellKey === parsedKey) {
+          remappedSelection.anchorCellKey = key;
+        }
+        if (focusCellKey === parsedKey) {
+          remappedSelection.focusCellKey = key;
+        }
+      }
     }
   }
   return node;

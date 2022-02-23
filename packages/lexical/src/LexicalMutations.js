@@ -9,10 +9,13 @@
 
 import type {TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
-import type {RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 
 import {
-  $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
@@ -25,6 +28,7 @@ import {
   $getNearestNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getNodeFromDOMNode,
+  internalGetRoot,
 } from './LexicalUtils';
 
 // The time between a text entry event and the mutation observer firing.
@@ -60,7 +64,9 @@ function isManagedLineBreak(
   );
 }
 
-function getLastSelection(editor: LexicalEditor): null | RangeSelection {
+function getLastSelection(
+  editor: LexicalEditor,
+): null | RangeSelection | NodeSelection | GridSelection {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
     return selection !== null ? selection.clone() : null;
@@ -161,7 +167,7 @@ export function $flushMutations(
             }
             if (removedDOMsLength !== unremovedBRs) {
               if (targetDOM === rootElement) {
-                targetNode = $getRoot(currentEditorState);
+                targetNode = internalGetRoot(currentEditorState);
               }
               badDOMTargets.set(targetDOM, targetNode);
             }

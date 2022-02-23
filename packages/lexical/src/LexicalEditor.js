@@ -8,7 +8,7 @@
  */
 
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 
 import invariant from 'shared/invariant';
@@ -16,11 +16,7 @@ import invariant from 'shared/invariant';
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {createEmptyEditorState} from './LexicalEditorState';
-import {
-  addDocumentSelectionChangeEvent,
-  addRootElementEvents,
-  removeRootElementEvents,
-} from './LexicalEvents';
+import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {
   commitPendingUpdates,
@@ -37,20 +33,6 @@ import {
 import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
 import {RootNode} from './nodes/base/LexicalRootNode';
-
-export type DOMConversion = (
-  element: Node,
-  parent?: Node,
-) => DOMConversionOutput;
-export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
-export type DOMConversionMap = {
-  [string]: DOMConversion,
-};
-type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
-  forChild?: DOMChildConversion,
-  node: LexicalNode | null,
-};
 
 export type EditorThemeClassName = string;
 
@@ -123,7 +105,6 @@ export type EditorThemeClasses = {
 export type EditorConfig<EditorContext> = {
   context: EditorContext,
   disableEvents?: boolean,
-  htmlTransforms?: DOMConversionMap,
   namespace: string,
   theme: EditorThemeClasses,
 };
@@ -135,7 +116,11 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
-export type ErrorListener = (error: Error) => void;
+export type ErrorHandler = (error: Error) => void;
+export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
+export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
+export type NodeMutation = 'created' | 'destroyed';
+
 export type UpdateListener = ({
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
@@ -150,6 +135,7 @@ export type RootListener = (
   prevRootElement: null | HTMLElement,
 ) => void;
 export type TextContentListener = (text: string) => void;
+export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 export type CommandListener = (
   type: string,
   payload: CommandPayload,
@@ -175,7 +161,7 @@ export type CommandPayload = any;
 type Listeners = {
   command: Array<Set<CommandListener>>,
   decorator: Set<DecoratorListener>,
-  error: Set<ErrorListener>,
+  mutation: MutationListeners,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
   update: Set<UpdateListener>,
@@ -183,15 +169,20 @@ type Listeners = {
 
 export type ListenerType =
   | 'update'
-  | 'error'
   | 'root'
   | 'decorator'
   | 'textcontent'
+  | 'mutation'
   | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
 export type IntentionallyMarkedAsDirtyElement = boolean;
+
+type DOMConversionCache = Map<
+  string,
+  Array<(node: Node) => DOMConversion | null>,
+>;
 
 export function resetEditor(
   editor: LexicalEditor,
@@ -226,13 +217,37 @@ export function resetEditor(
   }
 }
 
+function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
+  const conversionCache = new Map();
+  const handledConversions = new Set();
+  nodes.forEach((node) => {
+    const convertDOM = node.klass.convertDOM;
+    if (handledConversions.has(convertDOM)) {
+      return;
+    }
+    handledConversions.add(convertDOM);
+    const map = convertDOM();
+    if (map !== null) {
+      Object.keys(map).forEach((key) => {
+        let currentCache = conversionCache.get(key);
+        if (currentCache === undefined) {
+          currentCache = [];
+          conversionCache.set(key, currentCache);
+        }
+        currentCache.push(map[key]);
+      });
+    }
+  });
+  return conversionCache;
+}
+
 export function createEditor<EditorContext>(editorConfig?: {
   context?: EditorContext,
   disableEvents?: boolean,
   editorState?: EditorState,
-  htmlTransforms?: DOMConversionMap,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
+  onError?: ErrorHandler,
   parentEditor?: LexicalEditor,
   theme?: EditorThemeClasses,
 }): LexicalEditor {
@@ -241,7 +256,6 @@ export function createEditor<EditorContext>(editorConfig?: {
   const theme = config.theme || {};
   const context = config.context || {};
   const parentEditor = config.parentEditor || null;
-  const htmlTransforms = config.htmlTransforms || {};
   const disableEvents = config.disableEvents || false;
   const editorState = createEmptyEditorState();
   const initialEditorState = config.editorState;
@@ -252,6 +266,12 @@ export function createEditor<EditorContext>(editorConfig?: {
     ParagraphNode,
     ...(config.nodes || []),
   ];
+
+  const defaultOnError = (e: Error, log) => {
+    throw e;
+  };
+  const onError = config.onError || defaultOnError;
+
   const registeredNodes = new Map();
   for (let i = 0; i < nodes.length; i++) {
     const klass = nodes[i];
@@ -271,10 +291,11 @@ export function createEditor<EditorContext>(editorConfig?: {
       // $FlowFixMe: we use our internal type to simpify the generics
       context,
       disableEvents,
-      htmlTransforms,
       namespace,
       theme,
     },
+    onError,
+    initializeConversionCache(registeredNodes),
   );
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -302,7 +323,6 @@ class BaseLexicalEditor {
   _nodes: RegisteredNodes;
   _decorators: {[NodeKey]: ReactNode};
   _pendingDecorators: null | {[NodeKey]: ReactNode};
-  _textContent: string;
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
@@ -312,12 +332,16 @@ class BaseLexicalEditor {
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
   _key: string;
+  _onError: ErrorHandler;
+  _htmlConversions: DOMConversionCache;
 
   constructor(
     editorState: EditorState,
     parentEditor: null | LexicalEditor,
     nodes: RegisteredNodes,
     config: EditorConfig<{...}>,
+    onError: ErrorHandler,
+    htmlConversions: DOMConversionCache,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -337,7 +361,7 @@ class BaseLexicalEditor {
     this._listeners = {
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
       decorator: new Set(),
-      error: new Set(),
+      mutation: new Map(),
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
@@ -360,37 +384,66 @@ class BaseLexicalEditor {
     this._observer = null;
     // Used for identifying owning editors
     this._key = generateRandomKey();
+    this._onError = onError;
+    this._htmlConversions = htmlConversions;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
   }
   addListener(
     type: ListenerType,
-    listener:
-      | ErrorListener
+    arg1:
       | UpdateListener
       | DecoratorListener
       | RootListener
       | TextContentListener
-      | CommandListener,
-    priority: CommandListenerPriority,
+      | CommandListener
+      | Class<LexicalNode>,
+    arg2: MutationListener | CommandListenerPriority,
   ): () => void {
     const listenerSetOrMap = this._listeners[type];
     if (type === 'command') {
+      // $FlowFixMe: TODO refine
+      const listener: CommandListener = arg1;
+      // $FlowFixMe: TODO refine
+      const priority = (arg2: CommandListenerPriority);
       if (priority === undefined) {
         invariant(false, 'Listener for type "command" requires a "priority".');
       }
 
-      // $FlowFixMe: unsure how to csae this
+      // $FlowFixMe: unsure how to cast this
       const commands: Array<Set<CommandListener>> = listenerSetOrMap;
       const commandSet = commands[priority];
-      // $FlowFixMe: cast
       commandSet.add(listener);
       return () => {
-        // $FlowFixMe: cast
         commandSet.delete(listener);
       };
+    } else if (type === 'mutation') {
+      // $FlowFixMe: refine
+      const klass = (arg1: Class<LexicalNode>);
+      // $FlowFixMe: refine
+      const mutationListener = (arg2: MutationListener);
+      const registeredNode = this._nodes.get(klass.getType());
+      if (registeredNode === undefined) {
+        invariant(
+          false,
+          'Node %s has not been registered. Ensure node has been passed to createEditor.',
+          klass.name,
+        );
+      }
+      const mutations = this._listeners.mutation;
+      mutations.set(mutationListener, klass);
+      return () => {
+        mutations.delete(mutationListener);
+      };
     } else {
+      const listener:
+        | UpdateListener
+        | DecoratorListener
+        | RootListener
+        | TextContentListener
+        // $FlowFixMe: TODO refine
+        | CommandListener = arg1;
       // $FlowFixMe: TODO refine this from the above types
       listenerSetOrMap.add(listener);
 
@@ -482,7 +535,6 @@ class BaseLexicalEditor {
         commitPendingUpdates(getSelf(this));
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
-          addDocumentSelectionChangeEvent(nextRootElement, getSelf(this));
           addRootElementEvents(nextRootElement, getSelf(this));
         }
       }
@@ -566,6 +618,10 @@ class BaseLexicalEditor {
     if (rootElement !== null) {
       rootElement.blur();
     }
+    const domSelection = window.getSelection();
+    if (domSelection !== null) {
+      domSelection.removeAllRanges();
+    }
   }
 }
 
@@ -582,12 +638,14 @@ declare export class LexicalEditor {
   _dirtyLeaves: Set<NodeKey>;
   _dirtyType: 0 | 1 | 2;
   _editorState: EditorState;
+  _htmlConversions: DOMConversionCache;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _nodes: RegisteredNodes;
   _normalizedNodes: Set<NodeKey>;
   _observer: null | MutationObserver;
+  _onError: ErrorHandler;
   _parentEditor: null | LexicalEditor;
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _pendingEditorState: null | EditorState;
@@ -596,11 +654,15 @@ declare export class LexicalEditor {
   _updateTags: Set<string>;
   _updating: boolean;
 
-  addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
   addListener(type: 'textcontent', listener: TextContentListener): () => void;
+  addListener(
+    type: 'mutation',
+    klass: Class<LexicalNode>,
+    listener: MutationListener,
+  ): () => void;
   addListener(
     type: 'command',
     listener: CommandListener,

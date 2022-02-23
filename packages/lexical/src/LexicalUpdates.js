@@ -11,6 +11,7 @@ import type {
   CommandPayload,
   EditorUpdateOptions,
   LexicalEditor,
+  MutatedNodes,
   Transform,
 } from './LexicalEditor';
 import type {ParsedEditorState} from './LexicalEditorState';
@@ -36,8 +37,10 @@ import {$normalizeTextNode} from './LexicalNormalization';
 import {internalCreateNodeFromParse} from './LexicalParsing';
 import {updateEditorState} from './LexicalReconciler';
 import {
+  $isNodeSelection,
+  $isRangeSelection,
   applySelectionTransforms,
-  internalCreateRangeSelection,
+  internalCreateSelection,
   internalCreateSelectionFromParse,
 } from './LexicalSelection';
 import {
@@ -346,7 +349,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._updating = true;
 
   try {
-    updateEditorState(
+    const mutatedNodes = updateEditorState(
       rootElement,
       currentEditorState,
       pendingEditorState,
@@ -355,9 +358,17 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       needsUpdate,
       editor,
     );
+    if (mutatedNodes !== null) {
+      triggerMutationListeners(
+        editor,
+        currentEditorState,
+        pendingEditorState,
+        mutatedNodes,
+      );
+    }
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error);
+    editor._onError(error);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingEditorState);
@@ -423,8 +434,24 @@ function triggerTextContentListeners(
   }
 }
 
+function triggerMutationListeners(
+  editor: LexicalEditor,
+  currentEditorState: EditorState,
+  pendingEditorState: EditorState,
+  mutatedNodes: MutatedNodes,
+): void {
+  const listeners = editor._listeners.mutation;
+  listeners.forEach((klass, listener) => {
+    const mutatedNodesByType = mutatedNodes.get(klass);
+    if (mutatedNodesByType === undefined) {
+      return;
+    }
+    listener(mutatedNodesByType);
+  });
+}
+
 export function triggerListeners(
-  type: 'update' | 'error' | 'root' | 'decorator' | 'textcontent',
+  type: 'update' | 'root' | 'decorator' | 'textcontent',
 
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
@@ -565,7 +592,7 @@ function beginUpdate(
 
   try {
     if (editorStateWasCloned) {
-      pendingEditorState._selection = internalCreateRangeSelection(editor);
+      pendingEditorState._selection = internalCreateSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();
@@ -590,7 +617,7 @@ function beginUpdate(
       pendingEditorState._flushSync = true;
     }
     const pendingSelection = pendingEditorState._selection;
-    if (pendingSelection !== null) {
+    if ($isRangeSelection(pendingSelection)) {
       const pendingNodeMap = pendingEditorState._nodeMap;
       const anchorKey = pendingSelection.anchor.key;
       const focusKey = pendingSelection.focus.key;
@@ -604,10 +631,15 @@ function beginUpdate(
             "selection wasn't moved to another node. Ensure selection changes after removing/replacing a selected node.",
         );
       }
+    } else if ($isNodeSelection(pendingSelection)) {
+      // TODO: we should also validate node selection?
+      if (pendingSelection._nodes.size === 0) {
+        pendingEditorState._selection = null;
+      }
     }
   } catch (error) {
     // Report errors
-    triggerListeners('error', editor, false, error);
+    editor._onError(error);
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;

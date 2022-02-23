@@ -7,8 +7,14 @@
  * @flow strict
  */
 
-import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
-import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {$isElementNode, ElementNode} from 'lexical';

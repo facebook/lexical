@@ -14,7 +14,6 @@ import type {ParsedSelection} from './LexicalParsing';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
 
-import getPossibleDecoratorNode from 'shared/getPossibleDecoratorNode';
 import invariant from 'shared/invariant';
 
 import {
@@ -38,6 +37,7 @@ import {
 } from './LexicalUpdates';
 import {
   $getCompositionKey,
+  $getDecoratorNode,
   $getNodeByKey,
   $isTokenOrInert,
   $setCompositionKey,
@@ -378,6 +378,7 @@ export class GridSelection implements BaseSelection {
     return textContent;
   }
 }
+
 export function $isGridSelection(x: ?mixed): boolean %checks {
   return x instanceof GridSelection;
 }
@@ -1355,7 +1356,7 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     // Handle the selection movement around decorators.
-    const possibleNode = getPossibleDecoratorNode(focus, isBackward);
+    const possibleNode = $getDecoratorNode(focus, isBackward);
     if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
       const sibling = isBackward
         ? possibleNode.getPreviousSibling()

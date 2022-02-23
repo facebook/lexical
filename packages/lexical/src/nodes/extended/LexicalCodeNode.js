@@ -7,8 +7,9 @@
  * @flow strict
  */
 
-import type {DOMConversionMap, DOMConversionOutput} from '../../LexicalNode';
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,

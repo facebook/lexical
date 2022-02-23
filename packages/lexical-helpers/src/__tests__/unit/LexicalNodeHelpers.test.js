@@ -7,25 +7,26 @@
  * @flow strict
  */
 
-import type {LexicalEditor, LexicalNode, NodeKey, State} from 'lexical';
-
 import {
   $areSiblingsNullOrSpace,
-  $dfs__DEPRECATED,
   $getNearestNodeOfType,
 } from '@lexical/helpers/nodes';
 import {$createListItemNode, $createListNode, ListNode} from '@lexical/list';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
-  $isParagraphNode,
+  LexicalEditor,
+  NodeKey,
+  State,
 } from 'lexical';
 
 import {
   $createTestElementNode,
   initializeUnitTest,
 } from '../../../../lexical/src/__tests__/utils';
+import {$dfs} from '../../LexicalNodeHelpers';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {
@@ -78,47 +79,57 @@ describe('LexicalNodeHelpers tests', () => {
           text6.getKey(),
         ];
       });
-
-      const dfsKeys = [];
-      await editor.update((state: State) => {
-        const root = $getRoot();
-        $dfs__DEPRECATED(root, (node: LexicalNode) => {
-          dfsKeys.push(node.getKey());
-          return node;
-        });
+      editor.getEditorState().read(() => {
+        const expectedNodes = expectedKeys.map((nodeKey) =>
+          $getNodeByKey(nodeKey).getLatest(),
+        );
+        const first = expectedNodes[0];
+        const second = expectedNodes[1];
+        const last = expectedNodes[expectedNodes.length - 1];
+        const secondToLast = expectedNodes[expectedNodes.length - 2];
+        expect($dfs(first, last)).toEqual(expectedNodes);
+        expect($dfs(second, secondToLast)).toEqual(
+          expectedNodes.slice(1, expectedKeys.length - 1),
+        );
+        expect($dfs()).toEqual(expectedNodes);
+        expect($dfs($getRoot())).toEqual(expectedNodes);
       });
-      expect(dfsKeys).toEqual(expectedKeys);
     });
 
-    test('Skip some DFS nodes', async () => {
+    test('DFS triggers getLatest()', async () => {
       const editor: LexicalEditor = testEnv.editor;
-      let expectedKeys: Array<NodeKey> = [];
-      await editor.update((state: State) => {
+      let rootKey;
+      let paragraphKey;
+      let block1Key;
+      let block2Key;
+      await editor.update(() => {
         const root = $getRoot();
-        const paragraph1 = $createParagraphNode();
+        const paragraph = $createParagraphNode();
         const block1 = $createTestElementNode();
         const block2 = $createTestElementNode();
+        rootKey = root.getKey();
+        paragraphKey = paragraph.getKey();
+        block1Key = block1.getKey();
+        block2Key = block2.getKey();
+        root.append(paragraph);
+        paragraph.append(block1, block2);
+      });
+      await editor.update(() => {
+        const root = $getNodeByKey(rootKey);
+        const paragraph = $getNodeByKey(paragraphKey);
+        const block1 = $getNodeByKey(block1Key);
+        const block2 = $getNodeByKey(block2Key);
         const block3 = $createTestElementNode();
-        root.append(paragraph1);
-        paragraph1.append(block1, block2, block3);
+        block1.append(block3);
 
-        expectedKeys = [root.getKey(), paragraph1.getKey(), block3.getKey()];
+        expect($dfs(root)).toEqual([
+          root.getLatest(),
+          paragraph.getLatest(),
+          block1.getLatest(),
+          block3.getLatest(),
+          block2.getLatest(),
+        ]);
       });
-
-      const dfsKeys = [];
-      await editor.update((state: State) => {
-        const root = $getRoot();
-        $dfs__DEPRECATED(root, (node: LexicalNode) => {
-          dfsKeys.push(node.getKey());
-          if ($isParagraphNode(node)) {
-            return (
-              node.getLastChild() && node.getLastChild().getPreviousSibling()
-            );
-          }
-          return node;
-        });
-      });
-      expect(dfsKeys).toEqual(expectedKeys);
     });
 
     test('getNearestNodeOfType should return the top node if it is of the given type.', async () => {

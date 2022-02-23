@@ -22,7 +22,6 @@ async function prepareLexicalPackage() {
   await exec(
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalHashtagNode.js ./packages/${LEXICAL_PKG}/npm/HashtagNode.js`,
   );
-
   await exec(
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalLinkNode.js ./packages/${LEXICAL_PKG}/npm/LinkNode.js`,
   );
@@ -45,6 +44,35 @@ async function prepareLexicalPackage() {
   await exec(`cp -R LICENSE ./packages/${LEXICAL_PKG}/npm`);
   await exec(
     `cp -R ./packages/${LEXICAL_PKG}/README.md ./packages/${LEXICAL_PKG}/npm`,
+  );
+  // Flow Types
+  await exec(
+    `cp -R ./packages/${LEXICAL_PKG}/flow/*.flow ./packages/${LEXICAL_PKG}/npm`,
+  );
+  // Remap Flow Types
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalCodeNode.js.flow ./packages/${LEXICAL_PKG}/npm/CodeNode.js.flow`,
+  );
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalQuoteNode.js.flow ./packages/${LEXICAL_PKG}/npm/QuoteNode.js.flow`,
+  );
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalHashtagNode.js.flow ./packages/${LEXICAL_PKG}/npm/HashtagNode.js.flow`,
+  );
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalLinkNode.js.flow ./packages/${LEXICAL_PKG}/npm/LinkNode.js.flow`,
+  );
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalHeadingNode.js.flow ./packages/${LEXICAL_PKG}/npm/HeadingNode.js.flow`,
+  );
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalAutoLinkNode.js.flow ./packages/${LEXICAL_PKG}/npm/AutoLinkNode.js.flow`,
+  );
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalCodeHighlightNode.js.flow ./packages/${LEXICAL_PKG}/npm/CodeHighlightNode.js.flow`,
+  );
+  await exec(
+    `mv ./packages/${LEXICAL_PKG}/npm/LexicalExtendedNodes.js.flow ./packages/${LEXICAL_PKG}/npm/LexicalExtendedNode.js.flow`,
   );
 }
 

@@ -58,9 +58,9 @@ export type NodeTransformationKind =
   | 'paragraphOrderedList'
   | 'paragraphCodeBlock'
   | 'horizontalRule'
-  | 'textBold'
-  | 'textItalic'
-  | 'textUnderline'
+  | 'bold'
+  | 'italic'
+  | 'underline'
   | 'strikethrough';
 
 // The scanning context provides the overall data structure for
@@ -90,7 +90,7 @@ export type ScanningContext = {
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
 export type AutoFormatCriteria = $ReadOnly<{
-  nodeTransformationKind: ?NodeTransformationKind,
+  nodeTransformationKind: ?NodeTransformationKind | TextFormatType,
   regEx: RegExp,
   requiresParagraphStart: ?boolean,
 }>;
@@ -199,19 +199,19 @@ const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
 
 const markdownItalic: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'textItalic',
+  nodeTransformationKind: 'italic',
   regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
 };
 
 const markdownBold: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'textBold',
+  nodeTransformationKind: 'bold',
   regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*\s)$/,
 };
 
 const markdownBoldWithUnderlines: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'textBold',
+  nodeTransformationKind: 'bold',
   regEx: /(__)(\s*)([^__]*)(\s*)(__\s)$/,
 };
 
@@ -219,7 +219,7 @@ const markdownBoldWithUnderlines: AutoFormatCriteria = {
 // the HTML tags for underline.
 const fakeMarkdownUnderline: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'textUnderline',
+  nodeTransformationKind: 'underline',
   regEx: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>\s)$/,
 };
 
@@ -513,24 +513,6 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   }
 }
 
-function getTextFormatType(
-  nodeTransformationKind: NodeTransformationKind,
-): null | TextFormatType {
-  switch (nodeTransformationKind) {
-    case 'textItalic':
-      return 'italic';
-    case 'textBold':
-      return 'bold';
-    case 'textUnderline':
-      return 'underline';
-    case 'strikethrough':
-      const result = nodeTransformationKind;
-      return result;
-    default:
-  }
-  return null;
-}
-
 function transformTextNodeForText(scanningContext: ScanningContext) {
   const autoFormatCriteria = scanningContext.autoFormatCriteria;
   const matchResultContext = scanningContext.matchResultContext;
@@ -543,10 +525,9 @@ function transformTextNodeForText(scanningContext: ScanningContext) {
       return;
     }
 
-    const formatting = getTextFormatType(
-      autoFormatCriteria.nodeTransformationKind,
-    );
-    if (formatting != null) {
+    const formatting = autoFormatCriteria.nodeTransformationKind;
+
+    if (formatting != null && typeof formatting !== 'string') {
       const captureGroupsToDelete = [1, 5];
       const formatCaptureGroup = 3;
       matchResultContext.regExCaptureGroups =

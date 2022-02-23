@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import {indentList, insertList, outdentList, removeList} from './formatList';
+import {
+  $handleListInsertParagraph,
+  indentList,
+  insertList,
+  outdentList,
+  removeList,
+} from './formatList';
 import {
   $createListItemNode,
   $isListItemNode,
@@ -18,6 +24,7 @@ import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
 export {
   $createListItemNode,
   $createListNode,
+  $handleListInsertParagraph,
   $isListItemNode,
   $isListNode,
   indentList,

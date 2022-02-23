@@ -9,7 +9,13 @@
 
 import type {CommandListenerLowPriority, LexicalEditor} from 'lexical';
 
-import {indentList, insertList, outdentList, removeList} from '@lexical/list';
+import {
+  $handleListInsertParagraph,
+  indentList,
+  insertList,
+  outdentList,
+  removeList,
+} from '@lexical/list';
 import {useEffect} from 'react';
 
 const LowPriority: CommandListenerLowPriority = 1;
@@ -38,6 +44,11 @@ export default function useList(editor: LexicalEditor): void {
         } else if (type === 'removeList') {
           removeList(editor);
           return true;
+        } else if (type === 'insertParagraph') {
+          const hasHandledInsertParagraph = $handleListInsertParagraph();
+          if (hasHandledInsertParagraph) {
+            return true;
+          }
         }
         return false;
       },

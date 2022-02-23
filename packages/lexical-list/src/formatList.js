@@ -23,13 +23,16 @@ import {
   $getSelection,
   $isElementNode,
   $isLeafNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {
   $getAllListItems,
   $getTopListNode,
+  $removeHighestEmptyListParent,
   findNearestListItemNode,
   getUniqueListItemNodes,
   isNestedListNode,
@@ -319,4 +322,57 @@ export function indentList(): boolean {
 
 export function outdentList(): boolean {
   return maybeIndentOrOutdent('outdent');
+}
+
+export function $handleListInsertParagraph(): boolean {
+  const selection = $getSelection();
+  if (selection === null || !selection.isCollapsed()) {
+    return false;
+  }
+  // Only run this code on empty list items
+  const anchor = selection.anchor.getNode();
+  if (!$isListItemNode(anchor) || anchor.getTextContent() !== '') {
+    return false;
+  }
+  const topListNode = $getTopListNode(anchor);
+  const parent = anchor.getParent();
+  invariant(
+    $isListNode(parent),
+    'A ListItemNode must have a ListNode for a parent.',
+  );
+
+  const grandparent = parent.getParent();
+
+  let replacementNode;
+  if ($isRootNode(grandparent)) {
+    replacementNode = $createParagraphNode();
+    topListNode.insertAfter(replacementNode);
+  } else if ($isListItemNode(grandparent)) {
+    replacementNode = $createListItemNode();
+    grandparent.insertAfter(replacementNode);
+  } else {
+    return false;
+  }
+  replacementNode.select();
+
+  const nextSiblings = anchor.getNextSiblings();
+  if (nextSiblings.length > 0) {
+    const newList = $createListNode(parent.getTag());
+    if ($isParagraphNode(replacementNode)) {
+      replacementNode.insertAfter(newList);
+    } else {
+      const newListItem = $createListItemNode();
+      newListItem.append(newList);
+      replacementNode.insertAfter(newListItem);
+    }
+    nextSiblings.forEach((sibling) => {
+      sibling.remove();
+      newList.append(sibling);
+    });
+  }
+
+  // Don't leave hanging nested empty lists
+  $removeHighestEmptyListParent(anchor);
+
+  return true;
 }

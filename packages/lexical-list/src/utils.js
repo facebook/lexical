@@ -112,3 +112,29 @@ export function getUniqueListItemNodes(
   }
   return Array.from(keys);
 }
+
+export function $removeHighestEmptyListParent(
+  sublist: ListItemNode | ListNode,
+) {
+  // Nodes may be repeatedly indented, to create deeply nested lists that each
+  // contain just one bullet.
+  // Our goal is to remove these (empty) deeply nested lists. The easiest
+  // way to do that is crawl back up the tree until we find a node that has siblings
+  // (e.g. is actually part of the list contents) and delete that, or delete
+  // the root of the list (if no list nodes have siblings.)
+  let emptyListPtr = sublist;
+  while (
+    emptyListPtr.getNextSibling() == null &&
+    emptyListPtr.getPreviousSibling() == null
+  ) {
+    const parent = emptyListPtr.getParent();
+    if (
+      parent == null ||
+      !($isListItemNode(emptyListPtr) || $isListNode(emptyListPtr))
+    ) {
+      break;
+    }
+    emptyListPtr = parent;
+  }
+  emptyListPtr.remove();
+}

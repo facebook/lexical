@@ -531,10 +531,7 @@ function getTextFormatType(
     case 'strikethrough':
       return [nodeTransformationKind];
     case 'bold_italic': {
-      const result = [];
-      result.push('bold');
-      result.push('italic');
-      return result;
+      return ['bold', 'italic'];
     }
     default:
   }
@@ -547,7 +544,8 @@ function transformTextNodeForText(scanningContext: ScanningContext) {
 
   if (autoFormatCriteria.nodeTransformationKind != null) {
     if (matchResultContext.regExCaptureGroups.length !== 6) {
-      // The expected reg ex pattern for bold should have 6 groups.
+      // For BIUS and other formatts which have a pattern + text + pattern,
+      // the expected reg ex pattern should have 6 groups.
       // If it does not, then break and fail silently.
       // e2e tests validate the regEx pattern.
       return;

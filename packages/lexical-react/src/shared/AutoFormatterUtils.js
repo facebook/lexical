@@ -177,7 +177,7 @@ const markdownUnorderedListAsterisk: AutoFormatCriteria = {
 const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphCodeBlock',
-  regEx: /(?:``` )/,
+  regEx: /(```)(js|javascript|py|hack|)/,
 };
 
 const markdownOrderedList: AutoFormatCriteria = {
@@ -472,6 +472,13 @@ function getNewNodeForCriteria(
           newNode = $createParagraphNode();
         } else {
           newNode = $createCodeNode();
+          const codingLanguage =
+            matchResultContext.regExCaptureGroups.length >= 3
+              ? matchResultContext.regExCaptureGroups[2].text
+              : null;
+          if (codingLanguage != null) {
+            newNode.setLanguage(codingLanguage);
+          }
         }
         newNode.append(...children);
         return newNode;

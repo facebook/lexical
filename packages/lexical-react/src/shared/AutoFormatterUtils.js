@@ -61,7 +61,8 @@ export type NodeTransformationKind =
   | 'bold'
   | 'italic'
   | 'underline'
-  | 'strikethrough';
+  | 'strikethrough'
+  | 'bold_italic';
 
 // The scanning context provides the overall data structure for
 // locating a auto formatting candidate and then transforming that candidate
@@ -90,7 +91,7 @@ export type ScanningContext = {
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
 export type AutoFormatCriteria = $ReadOnly<{
-  nodeTransformationKind: ?NodeTransformationKind | TextFormatType,
+  nodeTransformationKind: ?NodeTransformationKind,
   regEx: RegExp,
   requiresParagraphStart: ?boolean,
 }>;
@@ -215,6 +216,12 @@ const markdownBoldWithUnderlines: AutoFormatCriteria = {
   regEx: /(__)(\s*)([^__]*)(\s*)(__\s)$/,
 };
 
+const markdownBoldItalic: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'bold_italic',
+  regEx: /(__\*)(\s*\b)([^__\*]*)(\b\s*)(__\*\s)$/,
+};
+
 // Markdown does not support underline, but we can allow folks to use
 // the HTML tags for underline.
 const fakeMarkdownUnderline: AutoFormatCriteria = {
@@ -232,6 +239,7 @@ const markdownStrikethrough: AutoFormatCriteria = {
 const allAutoFormatCriteriaForTextNodes = [
   markdownItalic,
   markdownBold,
+  markdownBoldItalic,
   markdownBoldWithUnderlines,
   fakeMarkdownUnderline,
   markdownStrikethrough,
@@ -513,6 +521,26 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   }
 }
 
+function getTextFormatType(
+  nodeTransformationKind: NodeTransformationKind,
+): null | Array<TextFormatType> {
+  switch (nodeTransformationKind) {
+    case 'italic':
+    case 'bold':
+    case 'underline':
+    case 'strikethrough':
+      return [nodeTransformationKind];
+    case 'bold_italic': {
+      const result = [];
+      result.push('bold');
+      result.push('italic');
+      return result;
+    }
+    default:
+  }
+  return null;
+}
+
 function transformTextNodeForText(scanningContext: ScanningContext) {
   const autoFormatCriteria = scanningContext.autoFormatCriteria;
   const matchResultContext = scanningContext.matchResultContext;
@@ -525,9 +553,10 @@ function transformTextNodeForText(scanningContext: ScanningContext) {
       return;
     }
 
-    const formatting = autoFormatCriteria.nodeTransformationKind;
-
-    if (formatting != null && typeof formatting !== 'string') {
+    const formatting = getTextFormatType(
+      autoFormatCriteria.nodeTransformationKind,
+    );
+    if (formatting != null) {
       const captureGroupsToDelete = [1, 5];
       const formatCaptureGroup = 3;
       matchResultContext.regExCaptureGroups =
@@ -724,7 +753,7 @@ function shiftCaptureGroupOffsets(
 }
 
 function formatTextInCaptureGroupIndex(
-  formatType: TextFormatType,
+  formatTypes: Array<TextFormatType>,
   captureGroupIndex: number,
   matchResultContext: MatchResultContext,
 ) {
@@ -761,7 +790,9 @@ function formatTextInCaptureGroupIndex(
     $setSelection(newSelection);
     const currentSelection = $getSelection();
     if ($isRangeSelection(currentSelection)) {
-      currentSelection.formatText(formatType);
+      for (let i = 0; i < formatTypes.length; i++) {
+        currentSelection.formatText(formatTypes[i]);
+      }
 
       const finalSelection = $createRangeSelection();
 

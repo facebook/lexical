@@ -832,8 +832,22 @@ i.diagram-2 {
   background-size: 16px 16px;
   background-position: center;
   background-repeat: no-repeat;
-  padding: 0 0.15em;
   vertical-align: middle;
+  margin: 0 -1px;
+}
+
+.emoji-inner {
+  padding: 0 0.15em;
+}
+
+.emoji-inner::selection {
+  color: transparent;
+  background-color: rgba(150, 150, 150, 0.4);
+}
+
+.emoji-inner::moz-selection {
+  color: transparent;
+  background-color: rgba(150, 150, 150, 0.4);
 }
 
 .emoji.happysmile {

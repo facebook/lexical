@@ -268,7 +268,9 @@ function InsertTableDialog({
     <>
       <Input label="No of rows" onChange={setRows} value={rows} />
       <Input label="No of columns" onChange={setColumns} value={columns} />
-      <div className={stylex(styles.dialogActions)}>
+      <div
+        className={stylex(styles.dialogActions)}
+        data-test-id="table-model-confirm-insert">
         <Button onClick={onClick}>Confirm</Button>
       </div>
     </>

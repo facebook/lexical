@@ -196,6 +196,10 @@ function updateCells(
         cell.highlighted = false;
         elemStyle.removeProperty('background-color');
         elemStyle.removeProperty('caret-color');
+
+        if (!cell.elem.getAttribute('style')) {
+          cell.elem.removeAttribute('style');
+        }
       }
     }
   }
@@ -265,12 +269,16 @@ function applyCustomTableHandlers(
                     const cellNode = $getNearestNodeFromDOMNode(elem);
 
                     if ($isElementNode(cellNode)) {
-                      cellNode.clear();
-
                       const paragraphNode = $createParagraphNode();
                       const textNode = $createTextNode();
                       paragraphNode.append(textNode);
                       cellNode.append(paragraphNode);
+
+                      cellNode.getChildren().forEach((child) => {
+                        if (child !== paragraphNode) {
+                          child.remove();
+                        }
+                      });
                     }
                   });
                   tableNode.setSelectionState(null);
@@ -355,7 +363,7 @@ function applyCustomTableHandlers(
     const focus = formatSelection.focus;
     highlightedCells.forEach((highlightedCell) => {
       const cellNode = $getNearestNodeFromDOMNode(highlightedCell.elem);
-      if ($isElementNode(cellNode)) {
+      if ($isElementNode(cellNode) && cellNode.getTextContentSize() !== 0) {
         anchor.set(cellNode.getKey(), 0, 'element');
         focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
         formatSelection.formatText(type);
@@ -410,7 +418,11 @@ function applyCustomTableHandlers(
   });
 
   window.addEventListener('click', (e) => {
-    if (highlightedCells.length > 0 && !tableElement.contains(e.target)) {
+    if (
+      highlightedCells.length > 0 &&
+      !tableElement.contains(e.target) &&
+      rootElement.contains(e.target)
+    ) {
       editor.update(() => {
         tableNode.setSelectionState(null);
       });
@@ -490,7 +502,8 @@ function applyCustomTableHandlers(
         if (
           highlightedCells.length === 0 &&
           selection.isCollapsed() &&
-          selection.anchor.offset === 0
+          selection.anchor.offset === 0 &&
+          selection.anchor.getNode().getPreviousSiblings().length === 0
         ) {
           return true;
         }

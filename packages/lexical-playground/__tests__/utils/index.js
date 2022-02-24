@@ -194,6 +194,13 @@ export async function repeat(times, cb) {
   }
 }
 
+export async function clickSelectors(page, selectors) {
+  for (let i = 0; i < selectors.length; i++) {
+    await waitForSelector(page, selectors[i]);
+    await click(page, selectors[i]);
+  }
+}
+
 async function assertHTMLOnPageOrFrame(pageOrFrame, expectedHtml) {
   // Assert HTML of the editor matches the given html
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
@@ -517,4 +524,17 @@ export async function insertImage(page, caption = null) {
     await focusEditor(page, '.image-caption-container');
     await page.keyboard.type(caption);
   }
+}
+
+export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
+  await page.mouse.move(
+    firstBoundingBox.x + firstBoundingBox.width / 2,
+    firstBoundingBox.y + firstBoundingBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    secondBoundingBox.x + secondBoundingBox.width / 2,
+    secondBoundingBox.y + secondBoundingBox.height / 2,
+  );
+  await page.mouse.up();
 }

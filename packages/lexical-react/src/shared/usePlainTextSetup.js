@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {InitialEditorStateType} from './PlainRichTextUtils';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 
 import {
@@ -20,9 +21,13 @@ import {$moveCharacter} from '@lexical/helpers/selection';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
+import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
-export default function usePlainTextSetup(editor: LexicalEditor): void {
+export default function usePlainTextSetup(
+  editor: LexicalEditor,
+  initialEditorState?: InitialEditorStateType,
+): void {
   useEffect(() => {
     const removeListener = editor.addListener(
       'command',
@@ -145,13 +150,10 @@ export default function usePlainTextSetup(editor: LexicalEditor): void {
       },
       (0: CommandListenerEditorPriority),
     );
-    const bootstrapCommandHandled = editor.execCommand('bootstrapEditor');
-    if (__DEV__ && !bootstrapCommandHandled) {
-      console.warn(
-        'bootstrapEditor command was not handled. Did you forget to add <BootstrapPlugin />?',
-      );
-    }
+    initializeEditor(editor, initialEditorState);
     return removeListener;
+    // We only do this for init
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
   useLexicalDragonSupport(editor);

@@ -70,7 +70,6 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <LexicalBootstrapPlugin />
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}

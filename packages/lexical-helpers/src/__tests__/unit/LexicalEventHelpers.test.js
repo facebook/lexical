@@ -6,7 +6,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import DEPRECATED__useMLCLexicalBootstrap from '../../../../lexical/src/__tests__/utils/DEPRECATED__useLexicalBootstrap';
 import {
   applySelectionInputs,
   pasteHTML,
@@ -89,7 +88,6 @@ describe('LexicalEventHelpers', () => {
 
     function TestBase() {
       editor = useLexicalEditor(ref);
-      DEPRECATED__useMLCLexicalBootstrap(editor);
       const props = useLexicalRichText(editor);
       return <div ref={ref} contentEditable={true} {...props} />;
     }

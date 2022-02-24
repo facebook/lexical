@@ -37,7 +37,6 @@ import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalBootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
 
 const theme = {
   // Theme styling goes here
@@ -86,7 +85,6 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <LexicalBootstrapPlugin />
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={<div>Enter some text...</div>}

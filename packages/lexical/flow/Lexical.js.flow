@@ -930,6 +930,14 @@ declare export function $getDecoratorNode(
   isBackward: boolean,
 ): null | LexicalNode;
 
+// TODO the Flow types here needs fixing
+export type EventHandler = (
+  // $FlowFixMe: not sure how to handle this generic properly
+  event: Object,
+  editor: LexicalEditor,
+) => void;
+
+
 /**
  * LexicalVersion
  */

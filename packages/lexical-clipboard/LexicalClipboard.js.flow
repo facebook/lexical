@@ -1,0 +1,64 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+ import type {
+  LexicalEditor,
+  RangeSelection,
+} from "lexical";
+
+/*
+* Rich Text
+*/
+
+declare export function onCutForRichText(
+  event: ClipboardEvent,
+  editor: LexicalEditor,
+): void;
+
+declare export function onCopyForRichText(
+  event: ClipboardEvent,
+  editor: LexicalEditor,
+): void;
+
+declare export function onPasteForRichText(
+  event: ClipboardEvent,
+  editor: LexicalEditor,
+): void;
+
+declare export function $insertDataTransferForRichText(
+  dataTransfer: DataTransfer,
+  selection: RangeSelection,
+  editor: LexicalEditor,
+): void;
+
+/*
+* Plain Text
+*/
+
+
+declare export function onCutForPlainText(
+  event: ClipboardEvent,
+  editor: LexicalEditor,
+): void;
+
+
+declare export function onCopyForPlainText(
+  event: ClipboardEvent,
+  editor: LexicalEditor,
+): void;
+
+declare export function onPasteForPlainText(
+  event: ClipboardEvent,
+  editor: LexicalEditor,
+): void;
+
+declare export function $insertDataTransferForPlainText(
+  dataTransfer: DataTransfer,
+  selection: RangeSelection,
+): void;

@@ -12,12 +12,14 @@ import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 
 import {
   $insertDataTransferForPlainText,
-  $shouldOverrideDefaultCharacterSelection,
   onCopyForPlainText,
   onCutForPlainText,
   onPasteForPlainText,
-} from '@lexical/helpers/events';
-import {$moveCharacter} from '@lexical/helpers/selection';
+} from '@lexical/clipboard';
+import {
+  $moveCharacter,
+  $shouldOverrideDefaultCharacterSelection,
+} from '@lexical/helpers/selection';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 

@@ -17,12 +17,14 @@ import type {
 
 import {
   $insertDataTransferForRichText,
-  $shouldOverrideDefaultCharacterSelection,
   onCopyForRichText,
   onCutForRichText,
   onPasteForRichText,
-} from '@lexical/helpers/events';
-import {$moveCharacter} from '@lexical/helpers/selection';
+} from '@lexical/clipboard';
+import {
+  $moveCharacter,
+  $shouldOverrideDefaultCharacterSelection,
+} from '@lexical/helpers/selection';
 import {
   $getSelection,
   $isElementNode,

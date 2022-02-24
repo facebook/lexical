@@ -19,6 +19,7 @@ import type {
 } from 'lexical';
 
 import {
+  $getDecoratorNode,
   $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
@@ -607,4 +608,12 @@ export function $isAtNodeEnd(point: Point): boolean {
     return point.offset === point.getNode().getTextContentSize();
   }
   return point.offset === point.getNode().getChildrenSize();
+}
+
+export function $shouldOverrideDefaultCharacterSelection(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  const possibleNode = $getDecoratorNode(selection.focus, isBackward);
+  return $isDecoratorNode(possibleNode) && !possibleNode.isIsolated();
 }

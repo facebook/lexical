@@ -28,9 +28,26 @@ export class EmojiNode extends TextNode {
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
-    const dom = super.createDOM(config);
+    const dom = document.createElement('span');
+    const inner = super.createDOM(config);
     dom.className = this.__className;
+    inner.style.setProperty('clip-path', 'circle(0% at 50% 50%)');
+    dom.appendChild(inner);
     return dom;
+  }
+
+  updateDOM<EditorContext>(
+    prevNode: TextNode,
+    dom: HTMLElement,
+    config: EditorConfig<EditorContext>,
+  ): boolean {
+    // $FlowFixMe: this will always be an element or null
+    const inner: null | HTMLElement = dom.firstChild;
+    if (inner === null) {
+      return true;
+    }
+    super.updateDOM(prevNode, inner, config);
+    return false;
   }
 }
 

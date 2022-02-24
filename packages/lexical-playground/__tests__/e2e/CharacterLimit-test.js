@@ -66,7 +66,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     await page.keyboard.type('1234:)56');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">1234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true">56</span></div></p>',
+      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">1234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true">56</span></div></p>',
     );
 
     await repeat(3, async () => await page.keyboard.press('Backspace'));
@@ -157,12 +157,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       if (charset === 'UTF-16') {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><span class="emoji happysmile" data-lexical-text="true">🙂</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">56</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">56</span></div></p>',
         );
       } else if (charset === 'UTF-8') {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true">56</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true">56</span></div></p>',
         );
       }
     },

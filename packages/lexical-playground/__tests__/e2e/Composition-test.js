@@ -246,7 +246,7 @@ describe('Composition', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true">すし もじあ</span><span class="emoji happysmile" data-lexical-text="true">🙂</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true">すし もじあ</span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],

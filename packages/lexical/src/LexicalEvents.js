@@ -539,16 +539,15 @@ export function addRootElementEvents(
 
   for (let i = 0; i < rootElementEvents.length; i++) {
     const [eventName, onEvent] = rootElementEvents[i];
-    const isReadOnly = editor.getReadOnly();
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {
-            if (!isReadOnly) {
+            if (!editor.getReadOnly()) {
               onEvent(event, editor);
             }
           }
         : (event: Event) => {
-            if (!isReadOnly) {
+            if (!editor.getReadOnly()) {
               editor.execCommand(eventName, event);
             }
           };

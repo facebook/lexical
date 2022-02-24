@@ -17,7 +17,9 @@ export function initializeEditor(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ) {
-  if (initialEditorState === undefined) {
+  if (initialEditorState === null) {
+    return;
+  } else if (initialEditorState === undefined) {
     editor.update(
       () => {
         const root = $getRoot();
@@ -35,29 +37,21 @@ export function initializeEditor(
           }
         }
       },
-      {
-        tag: 'history-merge',
-      },
+      {tag: 'history-merge'},
     );
   } else if (initialEditorState !== null) {
     switch (typeof initialEditorState) {
       case 'string': {
         const parsedEditorState = editor.parseEditorState(initialEditorState);
-        editor.setEditorState(parsedEditorState, {
-          tag: 'history-merge',
-        });
+        editor.setEditorState(parsedEditorState, {tag: 'history-merge'});
         break;
       }
       case 'object': {
-        editor.setEditorState(initialEditorState, {
-          tag: 'history-merge',
-        });
+        editor.setEditorState(initialEditorState, {tag: 'history-merge'});
         break;
       }
       case 'function': {
-        editor.update(initialEditorState, {
-          tag: 'history-merge',
-        });
+        editor.update(initialEditorState, {tag: 'history-merge'});
         break;
       }
     }

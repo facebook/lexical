@@ -26,7 +26,7 @@ export default function ActionsPlugins({
   isRichText: boolean,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
-  const [isReadOnly, setIsReadyOnly] = useState(() => editor.getReadOnly());
+  const [isReadOnly, setIsReadyOnly] = useState(() => editor.isReadOnly());
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
   const {yjsDocMap} = useCollaborationContext();
@@ -101,7 +101,7 @@ export default function ActionsPlugins({
       <button
         className="action-button lock"
         onClick={() => {
-          editor.setReadOnly(!editor.getReadOnly());
+          editor.setReadOnly(!editor.isReadOnly());
         }}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>

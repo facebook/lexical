@@ -90,6 +90,7 @@ declare export class LexicalEditor {
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
   _key: string;
+  _readOnly: boolean;
   isComposing(): boolean;
   addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
@@ -101,7 +102,7 @@ declare export class LexicalEditor {
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
-  addListener(type: 'readOnly', listener: ReadOnlyListener): () => void;
+  addListener(type: 'readonly', listener: ReadOnlyListener): () => void;
   addListener(
     type: 'mutation',
     klass: Class<LexicalNode>,
@@ -125,8 +126,8 @@ declare export class LexicalEditor {
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
   blur(): void;
+  isReadOnly(): boolean;
   setReadOnly(isReadOnly: boolean): void;
-  getReadOnly(): boolean;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void,

@@ -58,7 +58,7 @@ export default function LexicalContentEditable({
   testid,
 }: Props): React.MixedElement {
   const [editor] = useLexicalComposerContext();
-  const [readOnly, setReadOnly] = useState(() => editor.getReadOnly());
+  const [isReadOnly, setReadOnly] = useState(() => editor.isReadOnly());
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {
       editor.setRootElement(rootElement);
@@ -66,35 +66,35 @@ export default function LexicalContentEditable({
     [editor],
   );
   useLayoutEffect(() => {
-    return editor.addListener('readOnly', (isReadOnly) => {
+    return editor.addListener('readonly', (currentIsReadOnly) => {
       flushSync(() => {
-        setReadOnly(isReadOnly);
+        setReadOnly(currentIsReadOnly);
       });
     });
   }, [editor]);
 
   return (
     <div
-      aria-activedescendant={readOnly ? null : ariaActiveDescendantID}
-      aria-autocomplete={readOnly ? null : ariaAutoComplete}
-      aria-controls={readOnly ? null : ariaControls}
+      aria-activedescendant={isReadOnly ? null : ariaActiveDescendantID}
+      aria-autocomplete={isReadOnly ? null : ariaAutoComplete}
+      aria-controls={isReadOnly ? null : ariaControls}
       aria-describedby={ariaDescribedBy}
       aria-expanded={
-        readOnly ? null : role === 'combobox' ? !!ariaExpanded : null
+        isReadOnly ? null : role === 'combobox' ? !!ariaExpanded : null
       }
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
-      aria-owns={readOnly ? null : ariaOwneeID}
+      aria-owns={isReadOnly ? null : ariaOwneeID}
       aria-required={ariaRequired}
       autoCapitalize={autoCapitalize}
       autoComplete={autoComplete}
       autoCorrect={autoCorrect}
       className={className}
-      contentEditable={!readOnly}
+      contentEditable={!isReadOnly}
       data-testid={testid}
       ref={ref}
-      role={readOnly ? null : role}
+      role={isReadOnly ? null : role}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}

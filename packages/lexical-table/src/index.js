@@ -12,6 +12,7 @@ import {
   $isTableCellNode,
   TableCellNode,
 } from './LexicalTableCellNode';
+import {$applyCustomTableHandlers} from './lexicalTableCoreHelpers';
 import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
 import {
   $createTableRowNode,
@@ -32,6 +33,7 @@ import {
 } from './utils';
 
 export {
+  $applyCustomTableHandlers,
   $createTableCellNode,
   $createTableNode,
   $createTableNodeWithDimensions,

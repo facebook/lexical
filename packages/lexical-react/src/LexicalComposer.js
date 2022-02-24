@@ -15,7 +15,7 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {createEditor} from 'lexical';
-import React, {useContext, useMemo} from 'react';
+import React, {useContext, useLayoutEffect, useMemo} from 'react';
 
 type Props = {
   children: React$Node,
@@ -44,7 +44,6 @@ export default function LexicalComposer({
         editor: initialEditor,
         nodes,
         onError,
-        isReadOnly,
       } = initialConfig;
 
       if (theme != null) {
@@ -72,9 +71,7 @@ export default function LexicalComposer({
           parentEditor,
           theme: composerTheme,
         });
-        if (isReadOnly != null) {
-          editor.setReadOnly(isReadOnly);
-        }
+        editor.setReadOnly(true);
       }
 
       return [editor, context];
@@ -84,6 +81,14 @@ export default function LexicalComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  useLayoutEffect(() => {
+    const isReadOnly = initialConfig.isReadOnly;
+    const [editor] = composerContext;
+    editor.setReadOnly(isReadOnly || false);
+    // We only do this for init
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <LexicalComposerContext.Provider value={composerContext}>

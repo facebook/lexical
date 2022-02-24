@@ -18,6 +18,7 @@ import {
   waitForSelector,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
+  IS_COLLAB,
 } from '../utils';
 
 const config = {appSettings: {isRichText: true}};
@@ -167,7 +168,6 @@ describe('Keywords', () => {
         focusPath: [0, 0, 0],
         focusOffset: 8,
       });
-      await page.pause();
 
       await keyDownCtrlOrMeta(page);
       await page.keyboard.press('b');
@@ -212,7 +212,7 @@ describe('Keywords', () => {
 
       await page.keyboard.press('Space');
 
-      if (E2E_BROWSER === 'firefox') {
+      if (E2E_BROWSER === 'firefox' && !IS_COLLAB) {
         await assertHTML(
           page,
           '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span style="cursor: default;" class="keyword" data-lexical-text="true">congrats</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true"> Bob!</strong></p>',

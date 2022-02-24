@@ -840,10 +840,14 @@ i.diagram-2 {
   padding: 0 0.15em;
 }
 
-.emoji-inner::selection,
+.emoji-inner::selection {
+  color: transparent;
+  background-color: rgba(150, 150, 150, 0.4);
+}
+
 .emoji-inner::moz-selection {
   color: transparent;
-  background-color: rgba(171, 203, 241, 0.5);
+  background-color: rgba(150, 150, 150, 0.4);
 }
 
 .emoji.happysmile {

@@ -141,6 +141,7 @@ export type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
+export type ReadOnlyListener = (isReadOnly: boolean) => void;
 
 export type CommandListenerEditorPriority = 0;
 export type CommandListenerLowPriority = 1;
@@ -162,6 +163,7 @@ type Listeners = {
   command: Array<Set<CommandListener>>,
   decorator: Set<DecoratorListener>,
   mutation: MutationListeners,
+  readonly: Set<ReadOnlyListener>,
   root: Set<RootListener>,
   textcontent: Set<TextContentListener>,
   update: Set<UpdateListener>,
@@ -334,6 +336,7 @@ class BaseLexicalEditor {
   _key: string;
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
+  _readOnly: boolean;
 
   constructor(
     editorState: EditorState,
@@ -362,6 +365,7 @@ class BaseLexicalEditor {
       command: [new Set(), new Set(), new Set(), new Set(), new Set()],
       decorator: new Set(),
       mutation: new Map(),
+      readonly: new Set(),
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
@@ -386,6 +390,7 @@ class BaseLexicalEditor {
     this._key = generateRandomKey();
     this._onError = onError;
     this._htmlConversions = htmlConversions;
+    this._readOnly = false;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -398,6 +403,7 @@ class BaseLexicalEditor {
       | RootListener
       | TextContentListener
       | CommandListener
+      | ReadOnlyListener
       | Class<LexicalNode>,
     arg2: MutationListener | CommandListenerPriority,
   ): () => void {
@@ -442,6 +448,7 @@ class BaseLexicalEditor {
         | DecoratorListener
         | RootListener
         | TextContentListener
+        | ReadOnlyListener
         // $FlowFixMe: TODO refine
         | CommandListener = arg1;
       // $FlowFixMe: TODO refine this from the above types
@@ -612,7 +619,6 @@ class BaseLexicalEditor {
       );
     }
   }
-
   blur(): void {
     const rootElement = this._rootElement;
     if (rootElement !== null) {
@@ -622,6 +628,13 @@ class BaseLexicalEditor {
     if (domSelection !== null) {
       domSelection.removeAllRanges();
     }
+  }
+  isReadOnly(): boolean {
+    return this._readOnly;
+  }
+  setReadOnly(isReadOnly: boolean): void {
+    this._readOnly = isReadOnly;
+    triggerListeners('readonly', getSelf(this), true, isReadOnly);
   }
 }
 
@@ -649,6 +662,7 @@ declare export class LexicalEditor {
   _parentEditor: null | LexicalEditor;
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _pendingEditorState: null | EditorState;
+  _readOnly: boolean;
   _rootElement: null | HTMLElement;
   _updates: Array<[() => void, void | EditorUpdateOptions]>;
   _updateTags: Set<string>;
@@ -681,8 +695,10 @@ declare export class LexicalEditor {
   getRootElement(): null | HTMLElement;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   isComposing(): boolean;
+  isReadOnly(): boolean;
   parseEditorState(stringifiedEditorState: string): EditorState;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
+  setReadOnly(isReadOnly: boolean): void;
   setRootElement(rootElement: null | HTMLElement): void;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
 }

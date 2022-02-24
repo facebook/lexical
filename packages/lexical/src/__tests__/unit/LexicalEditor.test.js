@@ -34,7 +34,6 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../utils';
-import DEPRECATED__useMLCLexicalBootstrap from '../utils/DEPRECATED__useLexicalBootstrap';
 
 describe('LexicalEditor tests', () => {
   let container = null;
@@ -883,7 +882,6 @@ describe('LexicalEditor tests', () => {
 
       function Test({divKey}) {
         editor = React.useMemo(() => createTestEditor(), []);
-        DEPRECATED__useMLCLexicalBootstrap(editor);
         DEPRECATED__useLexicalRichText(editor);
 
         React.useEffect(() => {
@@ -1658,5 +1656,17 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('created');
     expect(textNodeMutation3[0].size).toBe(1);
     expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('destroyed');
+  });
+
+  it('readonly listener', () => {
+    init();
+    const readOnlyFn = jest.fn();
+    editor.addListener('readonly', readOnlyFn);
+
+    expect(editor.isReadOnly()).toBe(false);
+    editor.setReadOnly(true);
+    expect(editor.isReadOnly()).toBe(true);
+    editor.setReadOnly(false);
+    expect(readOnlyFn.mock.calls).toEqual([[true], [false]]);
   });
 });

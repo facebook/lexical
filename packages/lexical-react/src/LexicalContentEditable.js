@@ -9,7 +9,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useCallback} from 'react';
+import {useCallback, useLayoutEffect, useState} from 'react';
 
 export type Props = $ReadOnly<{
   ariaActiveDescendantID?: string,
@@ -49,7 +49,6 @@ export default function LexicalContentEditable({
   autoComplete,
   autoCorrect,
   className,
-  readOnly = false,
   role = 'textbox',
   spellCheck = true,
   style,
@@ -57,35 +56,42 @@ export default function LexicalContentEditable({
   testid,
 }: Props): React.MixedElement {
   const [editor] = useLexicalComposerContext();
+  const [isReadOnly, setReadOnly] = useState(true);
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {
       editor.setRootElement(rootElement);
     },
     [editor],
   );
+  useLayoutEffect(() => {
+    setReadOnly(editor.isReadOnly());
+    return editor.addListener('readonly', (currentIsReadOnly) => {
+      setReadOnly(currentIsReadOnly);
+    });
+  }, [editor]);
 
   return (
     <div
-      aria-activedescendant={readOnly ? null : ariaActiveDescendantID}
-      aria-autocomplete={readOnly ? null : ariaAutoComplete}
-      aria-controls={readOnly ? null : ariaControls}
+      aria-activedescendant={isReadOnly ? null : ariaActiveDescendantID}
+      aria-autocomplete={isReadOnly ? null : ariaAutoComplete}
+      aria-controls={isReadOnly ? null : ariaControls}
       aria-describedby={ariaDescribedBy}
       aria-expanded={
-        readOnly ? null : role === 'combobox' ? !!ariaExpanded : null
+        isReadOnly ? null : role === 'combobox' ? !!ariaExpanded : null
       }
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
-      aria-owns={readOnly ? null : ariaOwneeID}
+      aria-owns={isReadOnly ? null : ariaOwneeID}
       aria-required={ariaRequired}
       autoCapitalize={autoCapitalize}
       autoComplete={autoComplete}
       autoCorrect={autoCorrect}
       className={className}
-      contentEditable={!readOnly}
+      contentEditable={!isReadOnly}
       data-testid={testid}
       ref={ref}
-      role={readOnly ? null : role}
+      role={isReadOnly ? null : role}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}

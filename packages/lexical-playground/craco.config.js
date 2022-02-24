@@ -86,7 +86,7 @@ module.exports = {
         'LexicalHashtagPlugin',
         'LexicalPlainTextPlugin',
         'LexicalRichTextPlugin',
-        'LexicalBootstrapPlugin',
+        'LexicalClearEditorPlugin',
         'LexicalCollaborationPlugin',
         'LexicalHistoryPlugin',
         'LexicalTablePlugin',

@@ -14,7 +14,6 @@ import {createRoot} from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
 import * as Y from 'yjs';
 
-import LexicalBootstrapPlugin from '../../LexicalBootstrapPlugin';
 import {
   CollaborationPlugin,
   useCollaborationContext,
@@ -37,7 +36,6 @@ function Editor({doc, provider, setEditor}) {
         providerFactory={() => provider}
         shouldBootstrap={true}
       />
-      <LexicalBootstrapPlugin />
       <LexicalRichTextPlugin
         contentEditable={<LexicalContentEditable />}
         placeholder={null}

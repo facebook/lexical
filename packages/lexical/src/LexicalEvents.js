@@ -491,11 +491,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   }
 }
 
-function isRootEditable(editor: LexicalEditor): boolean {
-  const rootElement = editor.getRootElement();
-  return rootElement !== null && rootElement.contentEditable === 'true';
-}
-
 function getRootElementRemoveHandles(
   rootElement: HTMLElement,
 ): RootElementRemoveHandles {
@@ -568,12 +563,12 @@ export function addRootElementEvents(
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {
-            if (isRootEditable(editor)) {
+            if (!editor.isReadOnly()) {
               onEvent(event, editor);
             }
           }
         : (event: Event) => {
-            if (isRootEditable(editor)) {
+            if (!editor.isReadOnly()) {
               editor.execCommand(eventName, event);
             }
           };

@@ -692,10 +692,10 @@ declare export class LexicalEditor {
   getDecorators(): {[NodeKey]: ReactNode};
   getEditorState(): EditorState;
   getElementByKey(key: NodeKey): null | HTMLElement;
-  getReadOnly(): boolean;
   getRootElement(): null | HTMLElement;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   isComposing(): boolean;
+  isReadOnly(): boolean;
   parseEditorState(stringifiedEditorState: string): EditorState;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
   setReadOnly(isReadOnly: boolean): void;

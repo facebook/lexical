@@ -542,12 +542,12 @@ export function addRootElementEvents(
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {
-            if (!editor.getReadOnly()) {
+            if (!editor.isReadOnly()) {
               onEvent(event, editor);
             }
           }
         : (event: Event) => {
-            if (!editor.getReadOnly()) {
+            if (!editor.isReadOnly()) {
               editor.execCommand(eventName, event);
             }
           };

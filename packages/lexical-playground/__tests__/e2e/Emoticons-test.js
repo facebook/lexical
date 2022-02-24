@@ -25,12 +25,12 @@ describe('Emoticons', () => {
       await page.keyboard.type('This is an emoji :)');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">This is an emoji </span><span class="emoji happysmile" data-lexical-text="true">🙂</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">This is an emoji </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
+        anchorPath: [0, 1, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 1, 0],
+        focusPath: [0, 1, 0, 0],
         focusOffset: 2,
       });
 
@@ -50,9 +50,9 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
+          anchorPath: [0, 1, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          focusPath: [0, 1, 0, 0],
           focusOffset: 0,
         });
       } else {
@@ -66,9 +66,9 @@ describe('Emoticons', () => {
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
+        anchorPath: [0, 1, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 1, 0],
+        focusPath: [0, 1, 0, 0],
         focusOffset: 2,
       });
 
@@ -93,12 +93,12 @@ describe('Emoticons', () => {
       await page.keyboard.type(':) :) <3 :(');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 6, 0],
+        anchorPath: [0, 6, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 6, 0],
+        focusPath: [0, 6, 0, 0],
         focusOffset: 2,
       });
 
@@ -107,7 +107,7 @@ describe('Emoticons', () => {
       await page.keyboard.up('Shift');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -119,12 +119,12 @@ describe('Emoticons', () => {
       await page.keyboard.type(':) :) <3 :(');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 14, 0],
+        anchorPath: [0, 14, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 14, 0],
+        focusPath: [0, 14, 0, 0],
         focusOffset: 2,
       });
 
@@ -132,7 +132,7 @@ describe('Emoticons', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -143,7 +143,7 @@ describe('Emoticons', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -157,23 +157,23 @@ describe('Emoticons', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 6, 0],
+          anchorPath: [1, 6, 0, 0],
           anchorOffset: 2,
-          focusPath: [1, 6, 0],
+          focusPath: [1, 6, 0, 0],
           focusOffset: 2,
         });
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span><br><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true">❤</span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true">🙁</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙁</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 22, 0],
+          anchorPath: [0, 22, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 22, 0],
+          focusPath: [0, 22, 0, 0],
           focusOffset: 2,
         });
       }
@@ -199,16 +199,16 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 4, 0],
+          anchorPath: [0, 4, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 4, 0],
+          focusPath: [0, 4, 0, 0],
           focusOffset: 0,
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 3, 0],
+          anchorPath: [0, 3, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 3, 0],
+          focusPath: [0, 3, 0, 0],
           focusOffset: 2,
         });
       }
@@ -216,16 +216,16 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 3, 0],
+          anchorPath: [0, 3, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 3, 0],
+          focusPath: [0, 3, 0, 0],
           focusOffset: 0,
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
+          anchorPath: [0, 2, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 2, 0],
+          focusPath: [0, 2, 0, 0],
           focusOffset: 2,
         });
       }
@@ -233,16 +233,16 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
+          anchorPath: [0, 2, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 2, 0],
+          focusPath: [0, 2, 0, 0],
           focusOffset: 0,
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
+          anchorPath: [0, 1, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 1, 0],
+          focusPath: [0, 1, 0, 0],
           focusOffset: 2,
         });
       }
@@ -250,32 +250,32 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
+          anchorPath: [0, 1, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          focusPath: [0, 1, 0, 0],
           focusOffset: 0,
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
+          anchorPath: [0, 0, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 0, 0],
+          focusPath: [0, 0, 0, 0],
           focusOffset: 2,
         });
       }
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
+        anchorPath: [0, 0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        focusPath: [0, 0, 0, 0],
         focusOffset: 0,
       });
 
       await page.keyboard.type('Hey');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hey</span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span class="emoji happysmile" data-lexical-text="true">🙂</span><span class="emoji happysmile" data-lexical-text="true">🙂</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hey</span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],

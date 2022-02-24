@@ -35,6 +35,20 @@ export class EmojiNode extends TextNode {
     dom.appendChild(inner);
     return dom;
   }
+
+  updateDOM<EditorContext>(
+    prevNode: TextNode,
+    dom: HTMLElement,
+    config: EditorConfig<EditorContext>,
+  ): boolean {
+    // $FlowFixMe: this will always be an element or null
+    const inner: null | HTMLElement = dom.firstChild;
+    if (inner === null) {
+      return true;
+    }
+    super.updateDOM(prevNode, inner, config);
+    return false;
+  }
 }
 
 export function $isEmojiNode(node: ?LexicalNode): boolean %checks {

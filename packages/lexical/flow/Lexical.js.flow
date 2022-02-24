@@ -37,7 +37,7 @@ type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
-export type ReadOnlyListener = (readOnly: boolean) => void;
+export type ReadOnlyListener = (isReadOnly: boolean) => void;
 
 //$FlowFixMe
 type CommandPayload = any;

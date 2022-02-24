@@ -31,7 +31,7 @@ export class EmojiNode extends TextNode {
     const dom = document.createElement('span');
     const inner = super.createDOM(config);
     dom.className = this.__className;
-    inner.style.setProperty('clip-path', 'circle(0% at 50% 50%)');
+    inner.className = 'emoji-inner';
     dom.appendChild(inner);
     return dom;
   }

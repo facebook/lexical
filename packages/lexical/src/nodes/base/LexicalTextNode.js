@@ -32,9 +32,9 @@ import {
   IS_TOKEN,
   IS_UNDERLINE,
   IS_UNMERGEABLE,
-  NO_BREAK_SPACE_CHAR,
   TEXT_MODE_TO_TYPE,
   TEXT_TYPE_TO_FORMAT,
+  ZERO_WIDTH_CHAR,
 } from '../../LexicalConstants';
 import {LexicalNode} from '../../LexicalNode';
 import {
@@ -185,7 +185,7 @@ function setTextContent(
   const firstChild: ?Text = dom.firstChild;
   const isComposing = node.isComposing();
   // Always add a suffix if we're composing a node
-  const suffix = isComposing ? NO_BREAK_SPACE_CHAR : '';
+  const suffix = isComposing ? ZERO_WIDTH_CHAR : '';
   const text = nextText + suffix;
 
   if (firstChild == null) {

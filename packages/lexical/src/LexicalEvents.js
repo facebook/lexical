@@ -20,14 +20,18 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isRootNode,
+  $isTextNode,
   $setCompositionKey,
 } from '.';
 import {
   $flushMutations,
+  $getNodeByKey,
   $isTokenOrInert,
   $setSelection,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,
+  $updateTextNodeFromDOMContent,
+  getDOMTextNode,
   getEditorsToPropagate,
   isBackspace,
   isBold,
@@ -374,7 +378,24 @@ function onCompositionEndInternal(
   editor: LexicalEditor,
 ): void {
   editor.update(() => {
+    const compositionKey = editor._compositionKey;
     $setCompositionKey(null);
+    // Handle termination of composition, as it can sometimes
+    // move to an adjacent DOM node when backspacing.
+    if (compositionKey !== null && event.data === '') {
+      const node = $getNodeByKey(compositionKey);
+      const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
+      if (textNode !== null && $isTextNode(node)) {
+        $updateTextNodeFromDOMContent(
+          node,
+          textNode.nodeValue,
+          null,
+          null,
+          true,
+        );
+      }
+      return;
+    }
     $updateSelectedTextFromDOM(editor, true);
   });
 }

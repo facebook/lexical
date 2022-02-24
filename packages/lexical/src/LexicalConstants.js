@@ -45,7 +45,7 @@ export const IS_ALIGN_RIGHT = 3;
 export const IS_ALIGN_JUSTIFY = 4;
 
 // Reconciliation
-export const NO_BREAK_SPACE_CHAR = '\u00A0';
+export const ZERO_WIDTH_CHAR = '\u200b';
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =

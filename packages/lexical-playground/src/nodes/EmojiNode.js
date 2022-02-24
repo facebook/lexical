@@ -28,8 +28,11 @@ export class EmojiNode extends TextNode {
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
-    const dom = super.createDOM(config);
+    const dom = document.createElement('span');
+    const inner = super.createDOM(config);
     dom.className = this.__className;
+    inner.style.setProperty('clip-path', 'circle(0% at 50% 50%)');
+    dom.appendChild(inner);
     return dom;
   }
 }

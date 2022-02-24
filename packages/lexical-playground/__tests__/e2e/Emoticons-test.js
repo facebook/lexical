@@ -50,9 +50,9 @@ describe('Emoticons', () => {
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
+          anchorPath: [0, 1, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          focusPath: [0, 1, 0, 0],
           focusOffset: 0,
         });
       } else {

@@ -9,6 +9,7 @@
 
 import type {
   CommandListenerEditorPriority,
+  EditorState,
   ElementFormatType,
   LexicalEditor,
   TextFormatType,
@@ -23,17 +24,22 @@ import {
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
 import {
+  $createParagraphNode,
+  $getRoot,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
 } from 'lexical';
-import {useEffect} from 'react';
+import {useLayoutEffect} from 'react';
 
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
-export function useRichTextSetup(editor: LexicalEditor): void {
-  useEffect(() => {
+export function useRichTextSetup(
+  editor: LexicalEditor,
+  initialEditorState: null | string | EditorState | (() => void),
+): void {
+  useLayoutEffect(() => {
     const removeListener = editor.addListener(
       'command',
       (type, payload): boolean => {
@@ -225,6 +231,41 @@ export function useRichTextSetup(editor: LexicalEditor): void {
       },
       (0: CommandListenerEditorPriority),
     );
+    if (initialEditorState === null) {
+      editor.update(() => {
+        const root = $getRoot();
+        const firstChild = root.getFirstChild();
+        if (firstChild === null) {
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          const activeElement = document.activeElement;
+          if (
+            $getSelection() !== null ||
+            (activeElement !== null &&
+              activeElement === editor.getRootElement())
+          ) {
+            paragraph.select();
+          }
+        }
+      });
+    } else {
+      switch (typeof initialEditorState) {
+        case 'string': {
+          const parsedEditorState = editor.parseEditorState(initialEditorState);
+          editor.setEditorState(parsedEditorState);
+          break;
+        }
+        case 'object': {
+          editor.setEditorState(initialEditorState);
+          break;
+        }
+        case 'function': {
+          editor.update(initialEditorState);
+          break;
+        }
+      }
+    }
+    // TODO Delete
     const bootstrapCommandHandled = editor.execCommand('bootstrapEditor');
     if (__DEV__ && !bootstrapCommandHandled) {
       console.warn(
@@ -232,6 +273,8 @@ export function useRichTextSetup(editor: LexicalEditor): void {
       );
     }
     return removeListener;
+    // We only do this for init
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
   useLexicalDragonSupport(editor);

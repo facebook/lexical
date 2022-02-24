@@ -123,6 +123,8 @@ declare export class LexicalEditor {
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
   blur(): void;
+  setReadOnly(readOnly: boolean): void;
+  getReadOnly(readOnly: boolean): boolean;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void,

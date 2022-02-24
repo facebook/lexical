@@ -24,6 +24,7 @@ type Props = {
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
     onError?: (Error) => void,
+    readOnly?: boolean,
     theme?: EditorThemeClasses,
   },
 };
@@ -43,6 +44,7 @@ export default function LexicalComposer({
         editor: initialEditor,
         nodes,
         onError,
+        readOnly,
       } = initialConfig;
 
       if (theme != null) {
@@ -70,6 +72,9 @@ export default function LexicalComposer({
           parentEditor,
           theme: composerTheme,
         });
+        if (readOnly != null) {
+          editor.setReadOnly(readOnly);
+        }
       }
 
       return [editor, context];

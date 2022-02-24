@@ -11,7 +11,7 @@ import * as React from 'react';
 
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
-import BootstrapPlugin from '@lexical/react/LexicalBootstrapPlugin';
+import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -47,6 +47,8 @@ import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
 
+const emptyFn = () => {};
+
 export default function Editor(): React$Node {
   const {historyState} = useSharedHistoryContext();
   const {
@@ -74,6 +76,7 @@ export default function Editor(): React$Node {
           !isRichText ? 'plain-text' : ''
         }`}>
         <AutoFocusPlugin />
+        <LexicalClearEditorPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
         <ExcalidrawPlugin />
@@ -82,7 +85,6 @@ export default function Editor(): React$Node {
         <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
-        <BootstrapPlugin />
         <CharacterStylesPopupPlugin />
         {isRichText ? (
           <>
@@ -98,6 +100,7 @@ export default function Editor(): React$Node {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
+              initialEditorState={isCollab ? emptyFn : null}
             />
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />

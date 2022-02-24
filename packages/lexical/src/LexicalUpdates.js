@@ -452,7 +452,6 @@ function triggerMutationListeners(
 
 export function triggerListeners(
   type: 'update' | 'root' | 'decorator' | 'textcontent',
-
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   // $FlowFixMe: needs refining

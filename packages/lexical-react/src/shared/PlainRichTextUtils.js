@@ -13,45 +13,51 @@ import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
+const options = {tag: 'history-merge'};
+const setEditorOptions: {
+  tag?: string,
+} = options;
+const updateOptions: {
+  onUpdate?: () => void,
+  skipTransforms?: true,
+  tag?: string,
+} = options;
+
 export function initializeEditor(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
-) {
+): void {
   if (initialEditorState === null) {
     return;
   } else if (initialEditorState === undefined) {
-    editor.update(
-      () => {
-        const root = $getRoot();
-        const firstChild = root.getFirstChild();
-        if (firstChild === null) {
-          const paragraph = $createParagraphNode();
-          root.append(paragraph);
-          const activeElement = document.activeElement;
-          if (
-            $getSelection() !== null ||
-            (activeElement !== null &&
-              activeElement === editor.getRootElement())
-          ) {
-            paragraph.select();
-          }
+    editor.update(() => {
+      const root = $getRoot();
+      const firstChild = root.getFirstChild();
+      if (firstChild === null) {
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const activeElement = document.activeElement;
+        if (
+          $getSelection() !== null ||
+          (activeElement !== null && activeElement === editor.getRootElement())
+        ) {
+          paragraph.select();
         }
-      },
-      {tag: 'history-merge'},
-    );
+      }
+    }, updateOptions);
   } else if (initialEditorState !== null) {
     switch (typeof initialEditorState) {
       case 'string': {
         const parsedEditorState = editor.parseEditorState(initialEditorState);
-        editor.setEditorState(parsedEditorState, {tag: 'history-merge'});
+        editor.setEditorState(parsedEditorState, setEditorOptions);
         break;
       }
       case 'object': {
-        editor.setEditorState(initialEditorState, {tag: 'history-merge'});
+        editor.setEditorState(initialEditorState, setEditorOptions);
         break;
       }
       case 'function': {
-        editor.update(initialEditorState, {tag: 'history-merge'});
+        editor.update(initialEditorState, updateOptions);
         break;
       }
     }

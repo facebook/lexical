@@ -571,7 +571,7 @@ export function $shouldPreventDefaultAndInsertText(
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
     // If the DOM selection element is not the same as the backing node
-    (backingAnchorElement !== null &&
+    (backingAnchorElement !== null && !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||

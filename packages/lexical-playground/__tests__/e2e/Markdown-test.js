@@ -39,12 +39,12 @@ describe('Markdown', () => {
     {
       isBlockTest: false,
       undoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">x*hello* y</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">x__hello__ y</span></p>',
       expectation:
         '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">x</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">hello</strong><span data-lexical-text="true"> y</span></p>',
-      markdownText: '*hello*', // bold.
+      markdownText: '__hello__', // bold.
       stylizedUndoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline o570zoyu">x*</span><span data-lexical-text="true">hello</span><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-lexical-text="true">* y</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline o570zoyu">x_</span><span data-lexical-text="true">_hello_</span><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-lexical-text="true">_ y</span></p>',
       stylizedExpectation:
         '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline o570zoyu">x</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">hello</strong><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-lexical-text="true"> y</span></p>',
     },
@@ -110,7 +110,7 @@ describe('Markdown', () => {
       expectation:
         '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
 
-      markdownText: '*** ', // Ordered.
+      markdownText: '*** ', // HR rule.
     },
     {
       isBlockTest: true,
@@ -118,7 +118,7 @@ describe('Markdown', () => {
       expectation:
         '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
 
-      markdownText: '--- ', // Ordered.
+      markdownText: '--- ', // HR Rule.
     },
   ];
 
@@ -232,6 +232,11 @@ describe('Markdown', () => {
 
             // Trigger markdown.
             await page.keyboard.type(' ');
+
+            await assertHTML(
+              page,
+              triggersAndExpectations[i].stylizedExpectation,
+            );
 
             await checkHTMLExpectationsIncludingUndoRedo(
               page,

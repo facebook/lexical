@@ -58,7 +58,11 @@ export type NodeTransformationKind =
   | 'paragraphOrderedList'
   | 'paragraphCodeBlock'
   | 'horizontalRule'
-  | 'textBold';
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'strikethrough'
+  | 'bold_italic';
 
 // The scanning context provides the overall data structure for
 // locating a auto formatting candidate and then transforming that candidate
@@ -194,16 +198,52 @@ const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
   regEx: /(?:--- )/,
 };
 
-const markdownBold: AutoFormatCriteria = {
+const markdownItalic: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'textBold',
-  // regEx: /(\*)(?:\s*\b)(?:[^\*]*)(?:\b\s*)(\*\s)$/, // The $ will find the target at the end of the string.
+  nodeTransformationKind: 'italic',
   regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
-  // Remove the first and last capture groups. Remeber, the 0th capture group is the entire string.
-  // e.g. "*Hello* " requires removing both "*" as well as bolding "Hello".
 };
 
-const allAutoFormatCriteriaForTextNodes = [markdownBold];
+const markdownBold: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'bold',
+  regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*\s)$/,
+};
+
+const markdownBoldWithUnderlines: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'bold',
+  regEx: /(__)(\s*)([^__]*)(\s*)(__\s)$/,
+};
+
+const markdownBoldItalic: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'bold_italic',
+  regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*\s)$/,
+};
+
+// Markdown does not support underline, but we can allow folks to use
+// the HTML tags for underline.
+const fakeMarkdownUnderline: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'underline',
+  regEx: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>\s)$/,
+};
+
+const markdownStrikethrough: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'strikethrough',
+  regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~\s)$/,
+};
+
+const allAutoFormatCriteriaForTextNodes = [
+  markdownBoldItalic,
+  markdownItalic,
+  markdownBold,
+  markdownBoldWithUnderlines,
+  fakeMarkdownUnderline,
+  markdownStrikethrough,
+];
 
 const allAutoFormatCriteria = [
   markdownHeader1,
@@ -338,12 +378,6 @@ function getMatchResultContextForText(
           scanningContext.textNodeWithOffset,
         );
       }
-      return getMatchResultContextWithRegEx(
-        scanningContext.joinedText,
-        false,
-        true,
-        autoFormatCriteria.regEx,
-      );
     } else {
       invariant(
         false,
@@ -352,8 +386,13 @@ function getMatchResultContextForText(
       );
     }
   }
-  // This is a placeholder function for following PR's related to character based transformations.
-  return null;
+
+  return getMatchResultContextWithRegEx(
+    scanningContext.joinedText,
+    false,
+    true,
+    autoFormatCriteria.regEx,
+  );
 }
 
 export function getMatchResultContextForCriteria(
@@ -482,33 +521,61 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   }
 }
 
+function getTextFormatType(
+  nodeTransformationKind: NodeTransformationKind,
+): null | Array<TextFormatType> {
+  switch (nodeTransformationKind) {
+    case 'italic':
+    case 'bold':
+    case 'underline':
+    case 'strikethrough':
+      return [nodeTransformationKind];
+    case 'bold_italic': {
+      return ['bold', 'italic'];
+    }
+    default:
+  }
+  return null;
+}
+
 function transformTextNodeForText(scanningContext: ScanningContext) {
   const autoFormatCriteria = scanningContext.autoFormatCriteria;
   const matchResultContext = scanningContext.matchResultContext;
 
   if (autoFormatCriteria.nodeTransformationKind != null) {
-    switch (autoFormatCriteria.nodeTransformationKind) {
-      case 'textBold': {
-        if (matchResultContext.regExCaptureGroups.length !== 6) {
-          // The expected reg ex pattern for bold should have 6 groups.
-          // If it does not, then break and fail silently.
-          // e2e tests validate the regEx pattern.
-          break;
-        }
-        matchResultContext.regExCaptureGroups =
-          getCaptureGroupsByResolvingAllDetails(scanningContext);
+    if (matchResultContext.regExCaptureGroups.length !== 6) {
+      // For BIUS and other formatts which have a pattern + text + pattern,
+      // the expected reg ex pattern should have 6 groups.
+      // If it does not, then break and fail silently.
+      // e2e tests validate the regEx pattern.
+      return;
+    }
+
+    const formatting = getTextFormatType(
+      autoFormatCriteria.nodeTransformationKind,
+    );
+    if (formatting != null) {
+      const captureGroupsToDelete = [1, 5];
+      const formatCaptureGroup = 3;
+      matchResultContext.regExCaptureGroups =
+        getCaptureGroupsByResolvingAllDetails(scanningContext);
+
+      if (captureGroupsToDelete.length > 0) {
         // Remove unwanted text in reg ex pattern.
-        removeTextInCaptureGroups([1, 5], matchResultContext);
-        formatTextInCaptureGroupIndex('bold', 3, matchResultContext);
-        makeCollapsedSelectionAtOffsetInJoinedText(
-          matchResultContext.offsetInJoinedTextForCollapsedSelection,
-          matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
-          scanningContext.textNodeWithOffset.node.getParentOrThrow(),
-        );
-        break;
+        removeTextInCaptureGroups(captureGroupsToDelete, matchResultContext);
       }
-      default:
-        break;
+
+      formatTextInCaptureGroupIndex(
+        formatting,
+        formatCaptureGroup,
+        matchResultContext,
+      );
+
+      makeCollapsedSelectionAtOffsetInJoinedText(
+        matchResultContext.offsetInJoinedTextForCollapsedSelection,
+        matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
+        scanningContext.textNodeWithOffset.node.getParentOrThrow(),
+      );
     }
   }
 }
@@ -684,7 +751,7 @@ function shiftCaptureGroupOffsets(
 }
 
 function formatTextInCaptureGroupIndex(
-  formatType: TextFormatType,
+  formatTypes: Array<TextFormatType>,
   captureGroupIndex: number,
   matchResultContext: MatchResultContext,
 ) {
@@ -721,7 +788,9 @@ function formatTextInCaptureGroupIndex(
     $setSelection(newSelection);
     const currentSelection = $getSelection();
     if ($isRangeSelection(currentSelection)) {
-      currentSelection.formatText(formatType);
+      for (let i = 0; i < formatTypes.length; i++) {
+        currentSelection.formatText(formatTypes[i]);
+      }
 
       const finalSelection = $createRangeSelection();
 

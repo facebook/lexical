@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {EditorState} from 'lexical';
+import type {InitialEditorStateType} from './shared/PlainRichTextUtils';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
@@ -20,11 +20,11 @@ export default function RichTextPlugin({
   contentEditable,
   placeholder,
   initialEditorState,
-}: {
+}: $ReadOnly<{
   contentEditable: React$Node,
-  initialEditorState: null | string | EditorState | (() => void),
+  initialEditorState?: InitialEditorStateType,
   placeholder: React$Node,
-}): React$Node {
+}>): React$Node {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
   useRichTextSetup(editor, initialEditorState);

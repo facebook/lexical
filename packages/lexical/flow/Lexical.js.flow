@@ -37,6 +37,7 @@ type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
+export type ReadOnlyListener = (readOnly: boolean) => void;
 
 //$FlowFixMe
 type CommandPayload = any;
@@ -100,6 +101,7 @@ declare export class LexicalEditor {
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
+  addListener(type: 'readOnly', listener: ReadOnlyListener): () => void;
   addListener(
     type: 'mutation',
     klass: Class<LexicalNode>,
@@ -123,8 +125,8 @@ declare export class LexicalEditor {
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
   blur(): void;
-  setReadOnly(readOnly: boolean): void;
-  getReadOnly(readOnly: boolean): boolean;
+  setReadOnly(isReadOnly: boolean): void;
+  getReadOnly(): boolean;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void,

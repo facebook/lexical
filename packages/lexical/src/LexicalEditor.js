@@ -336,7 +336,7 @@ class BaseLexicalEditor {
   _key: string;
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
-  _readOnly: boolean;
+  _isReadOnly: boolean;
 
   constructor(
     editorState: EditorState,
@@ -390,7 +390,7 @@ class BaseLexicalEditor {
     this._key = generateRandomKey();
     this._onError = onError;
     this._htmlConversions = htmlConversions;
-    this._readOnly = false;
+    this._isReadOnly = false;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -629,14 +629,12 @@ class BaseLexicalEditor {
       domSelection.removeAllRanges();
     }
   }
-  setReadOnly(readOnly: boolean): void {
-    this._readOnly = readOnly;
-    // TODO
-    // eslint-disable-next-line no-console
-    console.info('trigger readonly listeners', readOnly);
+  setReadOnly(isReadOnly: boolean): void {
+    this._isReadOnly = isReadOnly;
+    triggerListeners('readOnly', getSelf(this), true, isReadOnly);
   }
-  getReadOnly(readOnly: boolean): boolean {
-    return this._readOnly;
+  getReadOnly(): boolean {
+    return this._isReadOnly;
   }
 }
 
@@ -654,6 +652,7 @@ declare export class LexicalEditor {
   _dirtyType: 0 | 1 | 2;
   _editorState: EditorState;
   _htmlConversions: DOMConversionCache;
+  _isReadOnly: boolean;
   _key: string;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
@@ -664,7 +663,6 @@ declare export class LexicalEditor {
   _parentEditor: null | LexicalEditor;
   _pendingDecorators: null | {[NodeKey]: ReactNode};
   _pendingEditorState: null | EditorState;
-  _readOnly: boolean;
   _rootElement: null | HTMLElement;
   _updates: Array<[() => void, void | EditorUpdateOptions]>;
   _updateTags: Set<string>;
@@ -694,11 +692,13 @@ declare export class LexicalEditor {
   getDecorators(): {[NodeKey]: ReactNode};
   getEditorState(): EditorState;
   getElementByKey(key: NodeKey): null | HTMLElement;
+  getReadOnly(): boolean;
   getRootElement(): null | HTMLElement;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   isComposing(): boolean;
   parseEditorState(stringifiedEditorState: string): EditorState;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
+  setReadOnly(isReadOnly: boolean): void;
   setRootElement(rootElement: null | HTMLElement): void;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
 }

@@ -7,9 +7,9 @@
  * @flow strict
  */
 
+import type {InitialEditorStateType} from './PlainRichTextUtils';
 import type {
   CommandListenerEditorPriority,
-  EditorState,
   ElementFormatType,
   LexicalEditor,
   TextFormatType,
@@ -24,8 +24,6 @@ import {
 } from '@lexical/helpers/events';
 import {$moveCharacter} from '@lexical/helpers/selection';
 import {
-  $createParagraphNode,
-  $getRoot,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
@@ -33,11 +31,12 @@ import {
 } from 'lexical';
 import {useLayoutEffect} from 'react';
 
+import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
 export function useRichTextSetup(
   editor: LexicalEditor,
-  initialEditorState: null | string | EditorState | (() => void),
+  initialEditorState?: InitialEditorStateType,
 ): void {
   useLayoutEffect(() => {
     const removeListener = editor.addListener(
@@ -231,47 +230,7 @@ export function useRichTextSetup(
       },
       (0: CommandListenerEditorPriority),
     );
-    if (initialEditorState === null) {
-      editor.update(() => {
-        const root = $getRoot();
-        const firstChild = root.getFirstChild();
-        if (firstChild === null) {
-          const paragraph = $createParagraphNode();
-          root.append(paragraph);
-          const activeElement = document.activeElement;
-          if (
-            $getSelection() !== null ||
-            (activeElement !== null &&
-              activeElement === editor.getRootElement())
-          ) {
-            paragraph.select();
-          }
-        }
-      });
-    } else {
-      switch (typeof initialEditorState) {
-        case 'string': {
-          const parsedEditorState = editor.parseEditorState(initialEditorState);
-          editor.setEditorState(parsedEditorState);
-          break;
-        }
-        case 'object': {
-          editor.setEditorState(initialEditorState);
-          break;
-        }
-        case 'function': {
-          editor.update(initialEditorState);
-          break;
-        }
-      }
-    }
-    // TODO Delete
-    const bootstrapCommandHandled = editor.execCommand('bootstrapEditor');
-    if (__DEV__ && !bootstrapCommandHandled) {
-      console.warn(
-        'bootstrapEditor command was not handled. Did you forget to add <BootstrapPlugin />?',
-      );
-    }
+    initializeEditor(editor, initialEditorState);
     return removeListener;
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -47,8 +47,6 @@ import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
 
-const emptyFn = () => {};
-
 export default function Editor(): React$Node {
   const {historyState} = useSharedHistoryContext();
   const {
@@ -100,7 +98,7 @@ export default function Editor(): React$Node {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              initialEditorState={isCollab ? emptyFn : null}
+              initialEditorState={isCollab ? null : undefined}
             />
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />

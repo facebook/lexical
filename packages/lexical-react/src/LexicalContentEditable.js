@@ -9,7 +9,9 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useCallback} from 'react';
+import {useCallback, useLayoutEffect, useState} from 'react';
+// $FlowFixMe: Flow doesn't like this for some reason
+import {flushSync} from 'react-dom';
 
 export type Props = $ReadOnly<{
   ariaActiveDescendantID?: string,
@@ -49,7 +51,6 @@ export default function LexicalContentEditable({
   autoComplete,
   autoCorrect,
   className,
-  readOnly = false,
   role = 'textbox',
   spellCheck = true,
   style,
@@ -57,12 +58,20 @@ export default function LexicalContentEditable({
   testid,
 }: Props): React.MixedElement {
   const [editor] = useLexicalComposerContext();
+  const [readOnly, setReadOnly] = useState(() => editor.getReadOnly());
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {
       editor.setRootElement(rootElement);
     },
     [editor],
   );
+  useLayoutEffect(() => {
+    return editor.addListener('readOnly', (isReadOnly) => {
+      flushSync(() => {
+        setReadOnly(isReadOnly);
+      });
+    });
+  }, [editor]);
 
   return (
     <div

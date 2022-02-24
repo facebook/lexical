@@ -7,15 +7,9 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import * as React from 'react';
-import {useEffect, useState} from 'react';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import stylex from 'stylex';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 const styles = stylex.create({
   root: {
@@ -38,27 +32,7 @@ export default function ContentEditable({
 }: {
   className?: string,
 }): React$Node {
-  const [editor] = useLexicalComposerContext();
-  const [isReadOnly, setIsReadyOnly] = useState(false);
-
-  useEffect(() => {
-    return editor.addListener(
-      'command',
-      (type, payload) => {
-        if (type === 'readOnly') {
-          const readOnly = payload;
-          setIsReadyOnly(readOnly);
-        }
-        return false;
-      },
-      EditorPriority,
-    );
-  }, [editor]);
-
   return (
-    <LexicalContentEditable
-      className={className || stylex(styles.root)}
-      readOnly={isReadOnly}
-    />
+    <LexicalContentEditable className={className || stylex(styles.root)} />
   );
 }

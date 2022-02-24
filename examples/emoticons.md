@@ -266,7 +266,6 @@ export default function Editor() {
   return (
     <LexicalComposer initialConfig={{theme={ExampleTheme}, nodes: [EmoticonNode]}}>
       <div className="editor-container">
-        <LexicalBootstrapPlugin />
         <PlainTextPlugin
           contentEditable={<ContentEditable className="editor-input" />}
           placeholder={<Placeholder />}

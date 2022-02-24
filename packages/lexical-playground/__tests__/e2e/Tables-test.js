@@ -15,7 +15,6 @@ import {
   dragMouse,
   clickSelectors,
   IS_COLLAB,
-  E2E_BROWSER,
 } from '../utils';
 
 async function insertTable(page) {
@@ -44,11 +43,6 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('Tab');
   await page.keyboard.up('Shift');
   await page.keyboard.press('b');
-
-  if (E2E_BROWSER !== 'chromium') {
-    await page.click(`table:first-of-type > tr:nth-child(1) > td:nth-child(2)`);
-  }
-
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('d');
@@ -57,9 +51,6 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('f');
   await page.keyboard.press('ArrowUp');
-  if (E2E_BROWSER !== 'chromium') {
-    await page.click(`table:first-of-type > tr:nth-child(1) > td:nth-child(3)`);
-  }
   await page.keyboard.press('c');
 }
 

@@ -7,10 +7,11 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
+import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
+  $applyCustomTableHandlers,
   $createTableNodeWithDimensions,
   TableCellNode,
   TableNode,
@@ -18,9 +19,11 @@ import {
 } from '@lexical/table';
 import {
   $createParagraphNode,
+  $getNodeByKey,
   $getSelection,
   $isRangeSelection,
   $isRootNode,
+  ElementNode,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -74,6 +77,35 @@ export default function TablePlugin(): React$Node {
       },
       EditorPriority,
     );
+  }, [editor]);
+
+  useEffect(() => {
+    const listeners = new Map();
+
+    return editor.addListener('mutation', TableNode, (nodeMutations) => {
+      // eslint-disable-next-line no-for-of-loops/no-for-of-loops
+      for (const [nodeKey, mutation] of nodeMutations) {
+        if (mutation === 'created') {
+          editor.update(() => {
+            const tableElement = editor.getElementByKey(nodeKey);
+            const tableNode = $getNodeByKey(nodeKey);
+
+            if (tableElement && tableNode) {
+              const removeListeners = $applyCustomTableHandlers(
+                tableNode,
+                tableElement,
+                editor,
+              );
+
+              listeners.set(nodeKey, removeListeners);
+            }
+          });
+        } else if (mutation === 'destroyed') {
+          const cleanup = listeners.get(nodeKey);
+          if (cleanup) cleanup();
+        }
+      }
+    });
   }, [editor]);
 
   return null;

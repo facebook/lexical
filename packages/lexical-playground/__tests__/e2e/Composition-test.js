@@ -254,6 +254,42 @@ describe('Composition', () => {
           focusPath: [0, 1, 0],
           focusOffset: 6,
         });
+
+        await repeat(6, async () => {
+          await page.keyboard.press('Backspace');
+        });
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0, 0],
+          focusOffset: 2,
+        });
+
+        await page.keyboard.imeSetComposition('ｓ', 1, 1);
+        await page.keyboard.imeSetComposition('す', 1, 1);
+        await page.keyboard.imeSetComposition('すｓ', 2, 2);
+        await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+        await page.keyboard.imeSetComposition('すし', 2, 2);
+        await page.keyboard.imeSetComposition('す', 1, 1);
+        await page.keyboard.imeSetComposition('', 0, 0);
+        // Escape would fire here
+        await page.keyboard.insertText('');
+
+        await assertHTML(
+          page,
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span style="clip-path: circle(0% at 50% 50%);">🙂</span></span></p>',
+        );
+        await assertSelection(page, {
+          anchorPath: [0, 0, 0, 0],
+          anchorOffset: 2,
+          focusPath: [0, 0, 0, 0],
+          focusOffset: 2,
+        });
       });
 
       it('Can type Hiragana via IME at the end of a mention', async () => {

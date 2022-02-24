@@ -46,9 +46,9 @@ import {
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
-  NO_BREAK_SPACE_CHAR,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
+  ZERO_WIDTH_CHAR,
 } from './LexicalConstants';
 import {flushRootMutations} from './LexicalMutations';
 import {
@@ -465,13 +465,14 @@ export function $updateTextNodeFromDOMContent(
   compositionEnd: boolean,
 ): void {
   let node = textNode;
+
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
     let normalizedTextContent = textContent;
 
     if (
       (isComposing || compositionEnd) &&
-      textContent[textContent.length - 1] === NO_BREAK_SPACE_CHAR
+      textContent[textContent.length - 1] === ZERO_WIDTH_CHAR
     ) {
       normalizedTextContent = textContent.slice(0, -1);
     }

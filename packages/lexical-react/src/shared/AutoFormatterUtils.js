@@ -219,7 +219,7 @@ const markdownBoldWithUnderlines: AutoFormatCriteria = {
 const markdownBoldItalic: AutoFormatCriteria = {
   ...autoFormatBase,
   nodeTransformationKind: 'bold_italic',
-  regEx: /(__\*)(\s*\b)([^__\*]*)(\b\s*)(__\*\s)$/,
+  regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*\s)$/,
 };
 
 // Markdown does not support underline, but we can allow folks to use
@@ -237,9 +237,9 @@ const markdownStrikethrough: AutoFormatCriteria = {
 };
 
 const allAutoFormatCriteriaForTextNodes = [
+  markdownBoldItalic,
   markdownItalic,
   markdownBold,
-  markdownBoldItalic,
   markdownBoldWithUnderlines,
   fakeMarkdownUnderline,
   markdownStrikethrough,

@@ -1039,9 +1039,9 @@ describe('Keyboard Navigation', () => {
         });
       } else if (IS_WINDOWS) {
         await assertSelection(page, {
-          anchorPath: [0, 2, 0, 0],
+          anchorPath: [0, 2, 0],
           anchorOffset: 4,
-          focusPath: [0, 2, 0, 0],
+          focusPath: [0, 2, 0],
           focusOffset: 4,
         });
       } else {

@@ -34,7 +34,6 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../utils';
-import DEPRECATED__useMLCLexicalBootstrap from '../utils/DEPRECATED__useLexicalBootstrap';
 
 describe('LexicalEditor tests', () => {
   let container = null;
@@ -883,7 +882,6 @@ describe('LexicalEditor tests', () => {
 
       function Test({divKey}) {
         editor = React.useMemo(() => createTestEditor(), []);
-        DEPRECATED__useMLCLexicalBootstrap(editor);
         DEPRECATED__useLexicalRichText(editor);
 
         React.useEffect(() => {

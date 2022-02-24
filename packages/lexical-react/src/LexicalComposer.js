@@ -21,10 +21,10 @@ type Props = {
   children: React$Node,
   initialConfig?: {
     editor?: LexicalEditor | null,
+    isReadOnly?: boolean,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
     onError?: (Error) => void,
-    readOnly?: boolean,
     theme?: EditorThemeClasses,
   },
 };
@@ -44,7 +44,7 @@ export default function LexicalComposer({
         editor: initialEditor,
         nodes,
         onError,
-        readOnly,
+        isReadOnly,
       } = initialConfig;
 
       if (theme != null) {
@@ -72,8 +72,8 @@ export default function LexicalComposer({
           parentEditor,
           theme: composerTheme,
         });
-        if (readOnly != null) {
-          editor.setReadOnly(readOnly);
+        if (isReadOnly != null) {
+          editor.setReadOnly(isReadOnly);
         }
       }
 

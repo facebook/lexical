@@ -1,10 +1,10 @@
 import type {LexicalEditor} from 'lexical';
 
 import {
+  $getLexicalContent,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   getHtmlContent,
-  getLexicalContent,
 } from '@lexical/clipboard';
 import {$getSelection, $isRangeSelection} from 'lexical';
 
@@ -45,9 +45,9 @@ export function onCopyForPlainText(
     const selection = $getSelection();
     if (selection !== null) {
       if (clipboardData != null) {
-        const htmlString = getHtmlContent();
+        const htmlString = getHtmlContent(editor);
         if (htmlString !== null) {
-          clipboardData.setData('text/html', getHtmlContent(editor));
+          clipboardData.setData('text/html', htmlString);
         }
         clipboardData.setData('text/plain', selection.getTextContent());
       }
@@ -78,16 +78,13 @@ export function onCopyForRichText(
     const selection = $getSelection();
     if (selection !== null) {
       if (clipboardData != null) {
-        const htmlString = getHtmlContent();
-        const lexicalString = getLexicalContent();
+        const htmlString = getHtmlContent(editor);
+        const lexicalString = $getLexicalContent(editor);
         if (htmlString !== null) {
-          clipboardData.setData('text/html', getHtmlContent(editor));
+          clipboardData.setData('text/html', htmlString);
         }
         if (lexicalString !== null) {
-          clipboardData.setData(
-            'application/x-lexical-editor',
-            getLexicalContent(editor),
-          );
+          clipboardData.setData('application/x-lexical-editor', lexicalString);
         }
         clipboardData.setData('text/plain', selection.getTextContent());
       }

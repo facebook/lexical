@@ -10,6 +10,7 @@
 import type {InitialEditorStateType} from './PlainRichTextUtils';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 
+import {$insertDataTransferForPlainText} from '@lexical/clipboard';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -18,7 +19,6 @@ import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
 import {
-  $insertDataTransferForPlainText,
   onCopyForPlainText,
   onCutForPlainText,
   onPasteForPlainText,

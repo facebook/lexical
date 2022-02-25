@@ -12,6 +12,7 @@
     "@lexical/list": "0.1.11",
     "@lexical/table": "0.1.11",
     "@lexical/file": "0.1.11",
+    "@lexical/clipboard": "0.1.11",
     "link-preview-generator": "1.0.7",
     "@craco/craco": "6.1.2",
     "@excalidraw/excalidraw": "0.11.0",

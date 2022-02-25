@@ -15,6 +15,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
+import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -28,7 +29,6 @@ import {
 import {useLayoutEffect} from 'react';
 
 import {
-  $insertDataTransferForRichText,
   onCopyForRichText,
   onCutForRichText,
   onPasteForRichText,

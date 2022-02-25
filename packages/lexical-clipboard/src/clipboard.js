@@ -42,15 +42,13 @@ export function getHtmlContent(editor: LexicalEditor): string | null {
   return null;
 }
 
-export function getLexicalContent(editor: LexicalEditor): string | null {
-  return editor.getEditorState().read(() => {
-    const selection = $getSelection();
-    if (selection !== null) {
-      const namespace = editor._config.namespace;
-      return JSON.stringify({namespace, state: $cloneContents(selection)});
-    }
-    return null;
-  });
+export function $getLexicalContent(editor: LexicalEditor): string | null {
+  const selection = $getSelection();
+  if (selection !== null) {
+    const namespace = editor._config.namespace;
+    return JSON.stringify({namespace, state: $cloneContents(selection)});
+  }
+  return null;
 }
 
 export function $insertDataTransferForPlainText(

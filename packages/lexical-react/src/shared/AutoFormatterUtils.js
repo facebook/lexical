@@ -178,7 +178,7 @@ const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphCodeBlock',
   // regEx: /(```)(js|javascript|py|hack|)/,
-  regEx: /^(```)([^\s]*)( )/,
+  regEx: /^(```)([a-z]*)( )/,
 };
 
 const markdownOrderedList: AutoFormatCriteria = {

@@ -4,7 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
-declare export default function LexicalHashtagPlugin(): React$Node;
+import type {LexicalEditor} from 'lexical';
+export default function useLexicalIsTextContentEmpty(
+  editor: LexicalEditor,
+  trim?: boolean,
+): boolean;

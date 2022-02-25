@@ -4,7 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
-declare export default function LexicalHashtagPlugin(): React$Node;
+import type {EditorState, LexicalEditor} from 'lexical';
+export default function OnChangePlugin(arg0: {
+  onChange: (editorState: EditorState, editor: LexicalEditor) => void;
+}): null;

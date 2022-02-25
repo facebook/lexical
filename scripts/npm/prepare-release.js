@@ -120,6 +120,11 @@ async function prepareDefaultPackages() {
     await exec(`rm -rf ./packages/${pkg}/npm`);
     await exec(`mkdir ./packages/${pkg}/npm`);
     await exec(`cp -R ./packages/${pkg}/dist/*.js ./packages/${pkg}/npm`);
+    try {
+      await exec(`cp -R ./packages/${pkg}/flow/*.flow ./packages/${pkg}/npm`);
+    } catch {
+      console.error(`Missing Flow type definitions for package ${pkg}`);
+    }
     await exec(`cp -R ./packages/${pkg}/package.json ./packages/${pkg}/npm`);
     await exec(`cp -R LICENSE ./packages/${pkg}/npm`);
     await exec(`cp -R ./packages/${pkg}/README.md ./packages/${pkg}/npm`);

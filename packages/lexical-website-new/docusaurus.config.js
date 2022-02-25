@@ -87,7 +87,7 @@ const config = {
           },
           {
             // Please do not remove the privacy and terms, it's a legal requirement.
-items: [
+            items: [
               {
                 href: 'https://opensource.facebook.com/legal/privacy/',
                 label: 'Privacy',
@@ -101,7 +101,7 @@ items: [
                 target: '_blank',
               },
             ],
-            
+
             title: 'Legal',
           },
         ],

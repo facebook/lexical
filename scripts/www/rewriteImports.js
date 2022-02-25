@@ -31,7 +31,8 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
       const result = data
         .replaceAll("from 'lexical'", "from 'Lexical'")
         .replaceAll("from 'lexical/", "from 'Lexical")
-        .replaceAll("from '@lexical/react/", "from 'Lexical");
+        .replaceAll("from '@lexical/react/", "from 'Lexical")
+        .replaceAll(' * @flow strict', ' * @flow strict\n * @generated');
 
       const distDirectory = file.replace('/flow/', '/dist/');
 

@@ -23,7 +23,7 @@ export type UserState = {
 
 export type ProviderAwareness = {
   getLocalState: () => UserState,
-  getStates: () => Array<UserState>,
+  getStates: () => Map<number, UserState>,
   off: (type: 'update', cb: () => void) => void,
   on: (type: 'update', cb: () => void) => void,
   setLocalState: (UserState) => void,

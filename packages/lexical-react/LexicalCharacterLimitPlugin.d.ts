@@ -4,7 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
-declare export default function LexicalHashtagPlugin(): React$Node;
+export default function LexicalCharacterLimitPlugin(props: {
+  charset: 'UTF-8' | 'UTF-16';
+}): React.ReactNode;

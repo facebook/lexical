@@ -458,6 +458,9 @@ function reconcileNode(
     }
     return dom;
   }
+  if (prevNode !== nextNode && isDirty) {
+    setMutatedNode(mutatedNodes, activeEditorNodes, nextNode, 'updated');
+  }
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
     const replacementDOM = createNode(key, null, null);
@@ -466,6 +469,7 @@ function reconcileNode(
     }
     parentDOM.replaceChild(replacementDOM, dom);
     destroyNode(key, null);
+
     return replacementDOM;
   }
 

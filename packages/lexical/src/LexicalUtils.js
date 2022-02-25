@@ -836,9 +836,16 @@ export function setMutatedNode(
   node: LexicalNode,
   mutation: NodeMutation,
 ) {
-  const registeredNode = registeredNodes.get(node.__type);
+  const editor = getActiveEditor();
+  const listeners = editor._listeners.mutation;
+  if (listeners.size === 0) {
+    return;
+  }
+  const nodeType = node.__type;
+  const nodeKey = node.__key;
+  const registeredNode = registeredNodes.get(nodeType);
   if (registeredNode === undefined) {
-    invariant(false, 'Type %s not in registeredNodes', node.__type);
+    invariant(false, 'Type %s not in registeredNodes', nodeType);
   }
   const klass = registeredNode.klass;
   let mutatedNodesByType = mutatedNodes.get(klass);
@@ -846,7 +853,9 @@ export function setMutatedNode(
     mutatedNodesByType = new Map();
     mutatedNodes.set(klass, mutatedNodesByType);
   }
-  mutatedNodesByType.set(node.__key, mutation);
+  if (!mutatedNodesByType.has(nodeKey)) {
+    mutatedNodesByType.set(nodeKey, mutation);
+  }
 }
 
 export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T> {

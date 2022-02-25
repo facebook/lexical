@@ -93,7 +93,7 @@ const styles = stylex.create({
     marginTop: 8,
     marginBottom: 8,
     tabSize: 2,
-    whiteSpace: 'nowrap',
+    whiteSpace: 'pre',
     overflowX: 'scroll',
   },
   table: {

@@ -34,7 +34,7 @@ import {useLayoutEffect} from 'react';
 import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
-export function useRichTextSetup(
+export default function useRichTextSetup(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): void {

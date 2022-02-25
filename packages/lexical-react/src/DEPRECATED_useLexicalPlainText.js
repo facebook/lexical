@@ -8,7 +8,7 @@
  */
 
 import type {HistoryState} from './DEPRECATED_useLexicalHistory';
-import type {LexicalEditor} from 'lexical';
+import type {EditorState, LexicalEditor} from 'lexical';
 
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
 import usePlainTextSetup from './shared/usePlainTextSetup';
@@ -16,7 +16,8 @@ import usePlainTextSetup from './shared/usePlainTextSetup';
 export default function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
+  initialEditorState?: null | string | EditorState | (() => void),
 ): void {
-  usePlainTextSetup(editor);
+  usePlainTextSetup(editor, initialEditorState);
   useLexicalHistory(editor, externalHistoryState);
 }

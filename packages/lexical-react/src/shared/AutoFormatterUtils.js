@@ -141,43 +141,44 @@ const paragraphStartBase: AutoFormatCriteria = {
 const markdownHeader1: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphH1',
-  regEx: /(?:# )/,
+  regEx: /^(?:# )/,
 };
 
 const markdownHeader2: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphH2',
-  regEx: /(?:## )/,
+  regEx: /^(?:## )/,
 };
 
 const markdownHeader3: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphH2',
-  regEx: /(?:### )/,
+  regEx: /^(?:### )/,
 };
 
 const markdownBlockQuote: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphBlockQuote',
-  regEx: /(?:> )/,
+  regEx: /^(?:> )/,
 };
 
 const markdownUnorderedListDash: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphUnorderedList',
-  regEx: /(?:- )/,
+  regEx: /^(?:- )/,
 };
 
 const markdownUnorderedListAsterisk: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphUnorderedList',
-  regEx: /(?:\* )/,
+  regEx: /^(?:\* )/,
 };
 
 const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphCodeBlock',
-  regEx: /(```)(js|javascript|py|hack|)/,
+  // regEx: /(```)(js|javascript|py|hack|)/,
+  regEx: /^(```)([^\s]*)( )/,
 };
 
 const markdownOrderedList: AutoFormatCriteria = {
@@ -189,13 +190,13 @@ const markdownOrderedList: AutoFormatCriteria = {
 const markdownHorizontalRule: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'horizontalRule',
-  regEx: /(?:\*\*\* )/,
+  regEx: /^(?:\*\*\* )/,
 };
 
 const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'horizontalRule',
-  regEx: /(?:--- )/,
+  regEx: /^(?:--- )/,
 };
 
 const markdownItalic: AutoFormatCriteria = {

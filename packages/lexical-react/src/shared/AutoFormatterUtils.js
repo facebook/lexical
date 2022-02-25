@@ -141,43 +141,43 @@ const paragraphStartBase: AutoFormatCriteria = {
 const markdownHeader1: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphH1',
-  regEx: /(?:# )/,
+  regEx: /^(?:# )/,
 };
 
 const markdownHeader2: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphH2',
-  regEx: /(?:## )/,
+  regEx: /^(?:## )/,
 };
 
 const markdownHeader3: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphH2',
-  regEx: /(?:### )/,
+  regEx: /^(?:### )/,
 };
 
 const markdownBlockQuote: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphBlockQuote',
-  regEx: /(?:> )/,
+  regEx: /^(?:> )/,
 };
 
 const markdownUnorderedListDash: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphUnorderedList',
-  regEx: /(?:- )/,
+  regEx: /^(?:- )/,
 };
 
 const markdownUnorderedListAsterisk: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphUnorderedList',
-  regEx: /(?:\* )/,
+  regEx: /^(?:\* )/,
 };
 
 const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphCodeBlock',
-  regEx: /(?:``` )/,
+  regEx: /^(```)([a-z]*)( )/,
 };
 
 const markdownOrderedList: AutoFormatCriteria = {
@@ -189,13 +189,13 @@ const markdownOrderedList: AutoFormatCriteria = {
 const markdownHorizontalRule: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'horizontalRule',
-  regEx: /(?:\*\*\* )/,
+  regEx: /^(?:\*\*\* )/,
 };
 
 const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'horizontalRule',
-  regEx: /(?:--- )/,
+  regEx: /^(?:--- )/,
 };
 
 const markdownItalic: AutoFormatCriteria = {
@@ -472,6 +472,13 @@ function getNewNodeForCriteria(
           newNode = $createParagraphNode();
         } else {
           newNode = $createCodeNode();
+          const codingLanguage =
+            matchResultContext.regExCaptureGroups.length >= 3
+              ? matchResultContext.regExCaptureGroups[2].text
+              : null;
+          if (codingLanguage != null && codingLanguage.length > 0) {
+            newNode.setLanguage(codingLanguage);
+          }
         }
         newNode.append(...children);
         return newNode;

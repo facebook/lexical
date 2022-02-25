@@ -12,28 +12,26 @@ import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {GridCellNode} from 'lexical';
 
+export type TableCellHeaderStyles = Set<'row' | 'column'>;
+
 export class TableCellNode extends GridCellNode {
-  __isHeader: boolean;
+  __headerStyles: TableCellHeaderStyles;
 
   static getType(): 'tablecell' {
     return 'tablecell';
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(false, node.__colSpan, node.__key);
+    return new TableCellNode(node.__headerStyles, node.__colSpan, node.__key);
   }
 
   constructor(
-    isHeader?: boolean = false,
+    headerStyles?: TableCellHeaderStyles,
     colSpan?: number = 1,
     key?: NodeKey,
   ): void {
     super(colSpan, key);
-    this.__isHeader = isHeader;
-  }
-
-  getTag(): string {
-    return this.__isHeader ? 'th' : 'td';
+    this.__headerStyles = headerStyles || new Set();
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
@@ -42,14 +40,49 @@ export class TableCellNode extends GridCellNode {
     addClassNamesToElement(
       element,
       config.theme.tableCell,
-      this.__isHeader === true && config.theme.tableCellHeader,
+      this.hasHeader() && config.theme.TableCellHeaderStyles,
     );
 
     return element;
   }
 
-  updateDOM(): boolean {
-    return false;
+  getTag(): string {
+    return this.hasHeader() ? 'th' : 'td';
+  }
+
+  setHeaderStyles(headerStyles: TableCellHeaderStyles): TableCellHeaderStyles {
+    const self = this.getWritable();
+    self.__headerStyles = new Set(headerStyles.values());
+    return this.__headerStyles;
+  }
+
+  getHeaderStyles(): TableCellHeaderStyles {
+    return this.__headerStyles;
+  }
+
+  toggleHeaderStyle(key: 'row' | 'column'): TableCellNode {
+    const self = this.getWritable();
+
+    const newHeaderValue = new Set(this.getHeaderStyles().values());
+
+    if (newHeaderValue.has(key)) {
+      newHeaderValue.delete(key);
+    } else {
+      newHeaderValue.add(key);
+    }
+
+    self.__headerStyles = newHeaderValue;
+
+    return self;
+  }
+
+  hasHeader(): boolean {
+    const headerStyles = this.__headerStyles;
+    return headerStyles.size > 0;
+  }
+
+  updateDOM(prevNode: TableCellNode): boolean {
+    return prevNode.__headerStyles.size !== this.__headerStyles.size;
   }
 
   collapseAtStart(): true {
@@ -61,8 +94,10 @@ export class TableCellNode extends GridCellNode {
   }
 }
 
-export function $createTableCellNode(isHeader: boolean): TableCellNode {
-  return new TableCellNode(isHeader);
+export function $createTableCellNode(
+  headerStyles: TableCellHeaderStyles,
+): TableCellNode {
+  return new TableCellNode(headerStyles);
 }
 
 export function $isTableCellNode(node: ?LexicalNode): boolean %checks {

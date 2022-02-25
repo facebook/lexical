@@ -24,7 +24,7 @@
     "build": "node scripts/build.js --clean",
     "build-prod": "node scripts/build.js --prod --clean",
     "build-release": "node scripts/build.js --prod --release --clean",
-    "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod",
+    "build-www": "node scripts/build.js --clean --www && node scripts/build.js --www --prod && npm run prepare-www",
     "build-flow": "./scripts/build-flow.sh",
     "clean": "node scripts/build.js --clean",
     "extract-codes": "node scripts/build.js --codes",
@@ -81,6 +81,7 @@
     "prepare-release": "npm run build-release && node ./scripts/npm/prepare-release.js",
     "prepare": "husky install",
     "prepare-size-compare": "npm run build-prod && node ./scripts/npm/prepare-size-compare.js",
+    "prepare-www": "node scripts/www/rewriteImports.js",
     "release": "npm run prepare-release && node ./scripts/npm/release.js",
     "update-version": "node ./scripts/updateVersion"
   },

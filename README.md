@@ -297,3 +297,7 @@ Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 - `npm run debug-test-e2e:firefox` runs only firefox e2e tests in head mode for debugging.
 - `npm run test-e2e:webkit` runs only webkit e2e tests.
 - `npm run debug-test-e2e:webkit` runs only webkit e2e tests in head mode for debugging.
+
+### License
+
+Lexical is [MIT licensed](./LICENSE).

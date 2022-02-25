@@ -13,11 +13,11 @@
     "paste"
   ],
   "license": "MIT",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "main": "LexicalClipboard.js",
   "peerDependencies": {
-    "lexical": "0.1.10",
-    "@lexical/helpers": "0.1.10"
+    "lexical": "0.1.11",
+    "@lexical/helpers": "0.1.11"
   },
   "repository": {
     "type": "git",

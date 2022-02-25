@@ -7,4 +7,8 @@
  * @flow strict
  */
 
-declare export default function LexicalHashtagPlugin(): React$Node;
+import {$ReadOnly} from 'utility-types';
+type Props = $ReadOnly<{
+  onClear?: () => void;
+}>;
+export default function LexicalClearEditorPlugin(arg0: Props): React.ReactNode;

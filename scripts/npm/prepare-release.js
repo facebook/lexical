@@ -45,6 +45,10 @@ async function prepareLexicalPackage() {
   await exec(
     `cp -R ./packages/${LEXICAL_PKG}/README.md ./packages/${LEXICAL_PKG}/npm`,
   );
+  // TypeScript Types
+  await exec(
+    `cp -R ./packages/${LEXICAL_PKG}/*.d.ts ./packages/${LEXICAL_PKG}/npm`,
+  );
   // Flow Types
   await exec(
     `cp -R ./packages/${LEXICAL_PKG}/flow/*.flow ./packages/${LEXICAL_PKG}/npm`,
@@ -124,6 +128,11 @@ async function prepareDefaultPackages() {
       await exec(`cp -R ./packages/${pkg}/flow/*.flow ./packages/${pkg}/npm`);
     } catch {
       console.error(`Missing Flow type definitions for package ${pkg}`);
+    }
+    try {
+      await exec(`cp -R ./packages/${pkg}/*.d.ts ./packages/${pkg}/npm`);
+    } catch {
+      console.error(`Missing TypeScript type definitions for package ${pkg}`);
     }
     await exec(`cp -R ./packages/${pkg}/package.json ./packages/${pkg}/npm`);
     await exec(`cp -R LICENSE ./packages/${pkg}/npm`);

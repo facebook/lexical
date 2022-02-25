@@ -14,7 +14,7 @@ import * as React from 'react';
 
 import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
 import useDecorators from './shared/useDecorators';
-import {useRichTextSetup} from './shared/useRichTextSetup';
+import useRichTextSetup from './shared/useRichTextSetup';
 
 export default function RichTextPlugin({
   contentEditable,

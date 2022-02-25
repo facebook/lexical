@@ -63,10 +63,10 @@ type DOMConversionCache = Map<
 >;
 
 declare export class LexicalEditor {
-  _htmlConversions: DOMConversionCache;
   _parentEditor: null | LexicalEditor;
   _rootElement: null | HTMLElement;
   _editorState: EditorState;
+  _htmlConversions: DOMConversionCache;
   _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
@@ -92,7 +92,6 @@ declare export class LexicalEditor {
   _key: string;
   _readOnly: boolean;
   isComposing(): boolean;
-  addListener(type: 'error', listener: ErrorListener): () => void;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;
   addListener(type: 'decorator', listener: DecoratorListener): () => void;
@@ -266,6 +265,24 @@ declare export class EditorState {
  * LexicalNode
  */
 
+export type DOMConversion = {
+  conversion: DOMConversionFn,
+  priority: 0 | 1 | 2 | 3 | 4,
+};
+export type DOMConversionFn = (
+  element: Node,
+  parent?: Node,
+) => DOMConversionOutput;
+export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
+export type DOMConversionMap = {
+  [NodeName]: (node: Node) => DOMConversion | null,
+};
+type NodeName = string;
+export type DOMConversionOutput = {
+  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
+  forChild?: DOMChildConversion,
+  node: LexicalNode | null,
+};
 export type NodeKey = string;
 declare export class LexicalNode {
   __type: string;
@@ -273,6 +290,7 @@ declare export class LexicalNode {
   __parent: null | NodeKey;
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
+  static convertDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
   getType(): string;
   isAttached(): boolean;
@@ -700,7 +718,7 @@ declare export class TextNode extends LexicalNode {
     config: EditorConfig<EditorContext>,
   ): boolean;
   selectionTransform(
-    prevSelection: null | RangeSelection,
+    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
     nextSelection: RangeSelection,
   ): void;
   setFormat(format: number): this;
@@ -894,7 +912,6 @@ declare export function $isGridCellNode(
 /**
  * LexicalUtils
  */
-
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
@@ -907,29 +924,13 @@ declare export function $setCompositionKey(
 declare export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void;
-
-declare export var VERSION: string;
-
-export type DOMConversion = {
-  conversion: DOMConversionFn,
-  priority: 0 | 1 | 2 | 3 | 4,
-};
-export type DOMConversionFn = (
-  element: Node,
-  parent?: Node,
-) => DOMConversionOutput;
-export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
-export type DOMConversionMap = {
-  [NodeName]: (node: Node) => DOMConversion | null,
-};
-type NodeName = string;
-export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
-  forChild?: DOMChildConversion,
-  node: LexicalNode | null,
-};
-
+declare export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T>;
 declare export function $getDecoratorNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
+
+/**
+ * LexicalVersion
+ */
+declare export var VERSION: string;

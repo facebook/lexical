@@ -6,6 +6,7 @@
  *
  * @flow strict
  */
+
 import type {LexicalEditor, TextNode} from 'lexical';
 
 declare function getHashtagRegexStringChars(): $ReadOnly<{

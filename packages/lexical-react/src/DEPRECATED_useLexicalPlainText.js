@@ -16,7 +16,7 @@ import usePlainTextSetup from './shared/usePlainTextSetup';
 export default function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
-  initialEditorState: null | string | EditorState | (() => void),
+  initialEditorState?: null | string | EditorState | (() => void),
 ): void {
   usePlainTextSetup(editor, initialEditorState);
   useLexicalHistory(editor, externalHistoryState);

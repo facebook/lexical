@@ -6,6 +6,7 @@
  *
  * @flow strict
  */
+
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 
 type Props = {

@@ -18,7 +18,7 @@ export type LexicalComposerContextWithEditor = [
   LexicalComposerContextType,
 ];
 
-export let LexicalComposerContext: React$Context<?LexicalComposerContextWithEditor>;
+declare export var LexicalComposerContext: React$Context<?LexicalComposerContextWithEditor>;
 
 declare export function createLexicalComposerContext(
   parent: ?LexicalComposerContextWithEditor,

@@ -15,14 +15,11 @@ import type {
   TextFormatType,
 } from 'lexical';
 
+import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {
-  $insertDataTransferForRichText,
+  $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
-  onCopyForRichText,
-  onCutForRichText,
-  onPasteForRichText,
-} from '@lexical/helpers/events';
-import {$moveCharacter} from '@lexical/helpers/selection';
+} from '@lexical/helpers/selection';
 import {
   $getSelection,
   $isElementNode,
@@ -31,6 +28,11 @@ import {
 } from 'lexical';
 import {useLayoutEffect} from 'react';
 
+import {
+  onCopyForRichText,
+  onCutForRichText,
+  onPasteForRichText,
+} from './clipboardEvents';
 import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 

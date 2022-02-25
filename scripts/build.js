@@ -52,10 +52,12 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-list/dist'));
   fs.removeSync(path.resolve('./packages/lexical-table/dist'));
   fs.removeSync(path.resolve('./packages/lexical-file/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-clipboard/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
+  '@lexical/clipboard': 'LexicalClipboard',
   '@lexical/file': 'LexicalFile',
   '@lexical/list': 'LexicalList',
   '@lexical/table': 'LexicalTable',
@@ -107,6 +109,7 @@ const externals = [
   '@lexical/list',
   '@lexical/table',
   '@lexical/file',
+  '@lexical/clipboard',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -186,12 +189,6 @@ async function build(name, inputFile, outputFile, isProd) {
             find: '@lexical/helpers/text',
             replacement: path.resolve(
               'packages/lexical-helpers/src/LexicalTextHelpers',
-            ),
-          },
-          {
-            find: '@lexical/helpers/events',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalEventHelpers',
             ),
           },
           {
@@ -364,6 +361,17 @@ const packages = [
     name: 'Lexical File',
     outputPath: './packages/lexical-file/dist/',
     sourcePath: './packages/lexical-file/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalClipboard',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical File',
+    outputPath: './packages/lexical-clipboard/dist/',
+    sourcePath: './packages/lexical-clipboard/src/',
   },
   {
     modules: lexicalNodes.map((module) => ({

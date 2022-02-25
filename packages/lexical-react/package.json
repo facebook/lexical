@@ -18,6 +18,7 @@
     "@lexical/helpers": "0.1.11",
     "@lexical/table": "0.1.11",
     "@lexical/yjs": "0.1.11",
+    "@lexical/clipboard": "0.1.11",
     "react": ">=17.x",
     "react-dom": ">=17.x"
   },

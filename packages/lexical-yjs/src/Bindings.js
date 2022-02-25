@@ -20,7 +20,7 @@ import {XmlText} from 'yjs';
 
 import {$createCollabElementNode} from './CollabElementNode';
 
-export type ClientID = string;
+export type ClientID = number;
 
 export type Binding = {
   clientID: number,

@@ -17,7 +17,7 @@ const options = {};
 // reference lower case 'lexical' -> 'Lexical' and package references,
 // such as 'lexical/Foo' -> 'LexicalFoo' and '@lexical/react/Foo' ->
 // 'LexicalFoo'. Lastly, it creates these files in the 'dist' directory
-// for each package so they can easily be copied to www,
+// for each package so they can easily be copied to www.
 
 glob('packages/**/flow/*.flow', options, function (error1, files) {
   if (error1) {

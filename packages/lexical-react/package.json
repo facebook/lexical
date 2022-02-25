@@ -12,12 +12,12 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "peerDependencies": {
-    "lexical": "0.1.10",
-    "@lexical/helpers": "0.1.10",
-    "@lexical/table": "0.1.10",
-    "@lexical/yjs": "0.1.10",
+    "lexical": "0.1.11",
+    "@lexical/helpers": "0.1.11",
+    "@lexical/table": "0.1.11",
+    "@lexical/yjs": "0.1.11",
     "react": ">=17.x",
     "react-dom": ">=17.x"
   },

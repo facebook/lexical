@@ -477,7 +477,7 @@ function getNewNodeForCriteria(
             matchResultContext.regExCaptureGroups.length >= 3
               ? matchResultContext.regExCaptureGroups[2].text
               : null;
-          if (codingLanguage != null) {
+          if (codingLanguage != null && codingLanguage.length > 0) {
             newNode.setLanguage(codingLanguage);
           }
         }

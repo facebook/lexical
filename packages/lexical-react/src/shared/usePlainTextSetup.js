@@ -10,17 +10,19 @@
 import type {InitialEditorStateType} from './PlainRichTextUtils';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 
+import {$insertDataTransferForPlainText} from '@lexical/clipboard';
 import {
-  $insertDataTransferForPlainText,
+  $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
-  onCopyForPlainText,
-  onCutForPlainText,
-  onPasteForPlainText,
-} from '@lexical/helpers/events';
-import {$moveCharacter} from '@lexical/helpers/selection';
+} from '@lexical/helpers/selection';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
+import {
+  onCopyForPlainText,
+  onCutForPlainText,
+  onPasteForPlainText,
+} from './clipboardEvents';
 import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 

@@ -28,7 +28,6 @@ module.exports = {
       '@lexical/helpers/nodes': '@lexical/helpers/dist/LexicalNodeHelpers',
       '@lexical/helpers/elements':
         '@lexical/helpers/dist/LexicalElementHelpers',
-      '@lexical/helpers/events': '@lexical/helpers/dist/LexicalEventHelpers',
       '@lexical/helpers/file': '@lexical/helpers/dist/LexicalFileHelpers',
       '@lexical/helpers/offsets': '@lexical/helpers/dist/LexicalOffsetHelpers',
       '@lexical/helpers/root': '@lexical/helpers/dist/LexicalRootHelpers',
@@ -37,6 +36,7 @@ module.exports = {
       '@lexical/list': '@lexical/list/dist/LexicalList.js',
       '@lexical/table': '@lexical/table/dist/LexicalTable.js',
       '@lexical/file': '@lexical/file/dist/LexicalFile.js',
+      '@lexical/clipboard': '@lexical/clipboard/dist/LexicalClipboard.js',
 
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',

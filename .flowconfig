@@ -36,7 +36,6 @@ module.name_mapper='^@lexical/helpers/selection' -> '<PROJECT_ROOT>/packages/lex
 module.name_mapper='^@lexical/helpers/text' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalTextHelpers.js'
 module.name_mapper='^@lexical/helpers/nodes' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalNodeHelpers.js'
 module.name_mapper='^@lexical/helpers/elements' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalElementHelpers.js'
-module.name_mapper='^@lexical/helpers/events' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalEventHelpers.js'
 module.name_mapper='^@lexical/helpers/offsets' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalOffsetHelpers.js'
 module.name_mapper='^@lexical/helpers/root' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalRootHelpers.js'
 

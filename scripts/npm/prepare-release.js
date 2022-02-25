@@ -94,9 +94,6 @@ async function prepareLexicalHelpersPackage() {
     `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalTextHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/text.js`,
   );
   await exec(
-    `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalEventHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/events.js`,
-  );
-  await exec(
     `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalOffsetHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/offsets.js`,
   );
   await exec(

@@ -24,69 +24,43 @@ import {
   $createParagraphNode,
   $getSelection,
   $isElementNode,
-  $isRangeSelection,
 } from 'lexical';
 
-import {$insertDataTransferForPlainText} from './plainText';
-
-export function onCutForRichText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void {
-  onCopyForRichText(event, editor);
-  editor.update(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    }
-  });
+export function getHtmlContent(editor: LexicalEditor): string | null {
+  const domSelection = window.getSelection();
+  // If we haven't selected a range, then don't copy anything
+  if (domSelection.isCollapsed) {
+    return null;
+  }
+  const range = domSelection.getRangeAt(0);
+  if (range) {
+    const container = document.createElement('div');
+    const frag = range.cloneContents();
+    container.appendChild(frag);
+    return container.innerHTML;
+  }
+  return null;
 }
 
-export function onCopyForRichText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void {
-  event.preventDefault();
-  editor.update(() => {
-    const clipboardData = event.clipboardData;
+export function getLexicalContent(editor: LexicalEditor): string | null {
+  return editor.getEditorState().read(() => {
     const selection = $getSelection();
     if (selection !== null) {
-      if (clipboardData != null) {
-        const domSelection = window.getSelection();
-        // If we haven't selected a range, then don't copy anything
-        if (domSelection.isCollapsed) {
-          return;
-        }
-        const range = domSelection.getRangeAt(0);
-        if (range) {
-          const container = document.createElement('div');
-          const frag = range.cloneContents();
-          container.appendChild(frag);
-          clipboardData.setData('text/html', container.innerHTML);
-        }
-        clipboardData.setData('text/plain', selection.getTextContent());
-        const namespace = editor._config.namespace;
-        clipboardData.setData(
-          'application/x-lexical-editor',
-          JSON.stringify({namespace, state: $cloneContents(selection)}),
-        );
-      }
+      const namespace = editor._config.namespace;
+      return JSON.stringify({namespace, state: $cloneContents(selection)});
     }
+    return null;
   });
 }
 
-export function onPasteForRichText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
+export function $insertDataTransferForPlainText(
+  dataTransfer: DataTransfer,
+  selection: RangeSelection,
 ): void {
-  event.preventDefault();
-  editor.update(() => {
-    const selection = $getSelection();
-    const clipboardData = event.clipboardData;
-    if (clipboardData != null && $isRangeSelection(selection)) {
-      $insertDataTransferForRichText(clipboardData, selection, editor);
-    }
-  });
+  const text = dataTransfer.getData('text/plain');
+  if (text != null) {
+    selection.insertRawText(text);
+  }
 }
 
 export function $insertDataTransferForRichText(

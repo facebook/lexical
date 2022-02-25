@@ -16,12 +16,6 @@ import type {
 } from 'lexical';
 
 import {
-  $insertDataTransferForRichText,
-  onCopyForRichText,
-  onCutForRichText,
-  onPasteForRichText,
-} from '@lexical/clipboard';
-import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/helpers/selection';
@@ -33,6 +27,12 @@ import {
 } from 'lexical';
 import {useLayoutEffect} from 'react';
 
+import {
+  $insertDataTransferForRichText,
+  onCopyForRichText,
+  onCutForRichText,
+  onPasteForRichText,
+} from './clipboardEvents';
 import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 

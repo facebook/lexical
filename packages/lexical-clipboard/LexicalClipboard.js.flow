@@ -16,20 +16,6 @@
 * Rich Text
 */
 
-declare export function onCutForRichText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void;
-
-declare export function onCopyForRichText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void;
-
-declare export function onPasteForRichText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void;
 
 declare export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
@@ -37,26 +23,13 @@ declare export function $insertDataTransferForRichText(
   editor: LexicalEditor,
 ): void;
 
+declare export function getHtmlContent(editor: LexicalEditor): string;
+declare export function getLexicalContent(editor: LexicalEditor): string;
+
 /*
 * Plain Text
 */
 
-
-declare export function onCutForPlainText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void;
-
-
-declare export function onCopyForPlainText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void;
-
-declare export function onPasteForPlainText(
-  event: ClipboardEvent,
-  editor: LexicalEditor,
-): void;
 
 declare export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,

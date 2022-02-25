@@ -9,24 +9,14 @@
 
 import {
   $insertDataTransferForPlainText,
-  onCopyForPlainText,
-  onCutForPlainText,
-  onPasteForPlainText,
-} from './plainText';
-import {
   $insertDataTransferForRichText,
-  onCopyForRichText,
-  onCutForRichText,
-  onPasteForRichText,
-} from './richText';
+  getHtmlContent,
+  getLexicalContent,
+} from './clipboard';
 
 export {
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
-  onCopyForPlainText,
-  onCopyForRichText,
-  onCutForPlainText,
-  onCutForRichText,
-  onPasteForPlainText,
-  onPasteForRichText,
+  getHtmlContent,
+  getLexicalContent,
 };

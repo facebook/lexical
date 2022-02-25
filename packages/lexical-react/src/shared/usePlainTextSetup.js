@@ -11,18 +11,18 @@ import type {InitialEditorStateType} from './PlainRichTextUtils';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 
 import {
-  $insertDataTransferForPlainText,
-  onCopyForPlainText,
-  onCutForPlainText,
-  onPasteForPlainText,
-} from '@lexical/clipboard';
-import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/helpers/selection';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
+import {
+  $insertDataTransferForPlainText,
+  onCopyForPlainText,
+  onCutForPlainText,
+  onPasteForPlainText,
+} from './clipboardEvents';
 import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 

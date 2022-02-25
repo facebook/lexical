@@ -1,0 +1,20 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+import type {LexicalEditor, TextNode} from 'lexical';
+
+declare function getHashtagRegexStringChars(): $ReadOnly<{
+  alpha: string,
+  alphanumeric: string,
+  hashChars: string,
+}>;
+
+declare function getHashtagRegexString(): string;
+declare function textNodeTransform(node: TextNode): void;
+declare function useHashtags(editor: LexicalEditor): void;
+declare export default function LexicalHashtagPlugin(): React$Node;

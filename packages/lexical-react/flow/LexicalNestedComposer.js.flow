@@ -1,0 +1,21 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
+
+declare export default function LexicalNestedComposer({
+  initialConfig?: {
+    namespace?: string,
+    decoratorEditor: DecoratorEditor,
+    nodes?: Array<Class<LexicalNode>>,
+    theme?: EditorThemeClasses,
+    onError?: (Error) => void,
+  },
+  children?: React$Node,
+}): React$Node;

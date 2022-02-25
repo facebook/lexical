@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
+import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -23,7 +23,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $isRootNode,
-  ElementNode,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';

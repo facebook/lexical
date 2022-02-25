@@ -177,7 +177,6 @@ const markdownUnorderedListAsterisk: AutoFormatCriteria = {
 const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
   nodeTransformationKind: 'paragraphCodeBlock',
-  // regEx: /(```)(js|javascript|py|hack|)/,
   regEx: /^(```)([a-z]*)( )/,
 };
 

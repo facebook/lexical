@@ -26,6 +26,9 @@ function App(): React$Node {
     namespace: 'PlaygroundEditor',
     theme: PlaygroundEditorTheme,
     nodes: [...PlaygroundNodes],
+    onError: (error) => {
+      throw error;
+    },
   };
 
   return (

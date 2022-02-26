@@ -116,7 +116,7 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
-export type ErrorHandler = (error: Error, editor: LexicalEditor) => void;
+export type ErrorHandler = (error: Error) => void;
 export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
 export type NodeMutation = 'created' | 'destroyed';

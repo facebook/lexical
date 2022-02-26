@@ -22,7 +22,7 @@ Lexical version:
 <!--
   Your bug will get fixed much faster if we can run your code and it doesn't
   have dependencies other than Lexical. Issues without reproduction steps or
-  code examples may be immediately closed as not actionable.
+  code examples may be closed as not actionable.
 -->
 
 Link to code example:

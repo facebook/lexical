@@ -484,8 +484,16 @@ export function $createRangeSelection(): RangeSelection;
 export function $createNodeSelection(): NodeSelection;
 export function $createGridSelection(): GridSelection;
 export function $isRangeSelection(x: unknown | null | undefined): boolean;
-export function $getSelection(): null | RangeSelection;
-export function $getPreviousSelection(): null | RangeSelection;
+export function $getSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection;
+export function $getPreviousSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection;
 
 /**
  * Decorator State

@@ -85,6 +85,25 @@ const config = {
             ],
             title: 'More',
           },
+          {
+            // Please do not remove the privacy and terms, it's a legal requirement.
+            items: [
+              {
+                href: 'https://opensource.facebook.com/legal/privacy/',
+                label: 'Privacy',
+                rel: 'noreferrer noopener',
+                target: '_blank',
+              },
+              {
+                href: 'https://opensource.facebook.com/legal/terms/',
+                label: 'Terms',
+                rel: 'noreferrer noopener',
+                target: '_blank',
+              },
+            ],
+
+            title: 'Legal',
+          },
         ],
         style: 'dark',
       },

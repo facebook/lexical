@@ -74,14 +74,14 @@ function MyCustomAutoFocusPlugin() {
 // or throw them as needed. If you don't throw them, Lexical will
 // try to recover gracefully without losing user data.
 function onError(error) {
-  throw error;
+  console.error(error);
 }
 
 function Editor() {
-  const initialConfig = {
+  const initialConfig = useMemo({
     theme,
     onError,
-  };
+  }, []);
 
   return (
     <LexicalComposer initialConfig={initialConfig}>

@@ -116,7 +116,7 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 
-export type ErrorHandler = (error: Error) => void;
+export type ErrorHandler = (error: Error, editor: LexicalEditor) => void;
 export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
 export type NodeMutation = 'created' | 'destroyed';
@@ -249,7 +249,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   editorState?: EditorState,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
-  onError?: ErrorHandler,
+  onError: ErrorHandler,
   parentEditor?: LexicalEditor,
   theme?: EditorThemeClasses,
 }): LexicalEditor {
@@ -268,11 +268,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     ParagraphNode,
     ...(config.nodes || []),
   ];
-
-  const defaultOnError = (e: Error, log) => {
-    throw e;
-  };
-  const onError = config.onError || defaultOnError;
+  const onError = config.onError;
 
   const registeredNodes = new Map();
   for (let i = 0; i < nodes.length; i++) {

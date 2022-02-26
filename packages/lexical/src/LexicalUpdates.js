@@ -368,7 +368,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     }
   } catch (error) {
     // Report errors
-    editor._onError(error);
+    editor._onError(error, editor);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
       resetEditor(editor, null, rootElement, pendingEditorState);
@@ -638,7 +638,7 @@ function beginUpdate(
     }
   } catch (error) {
     // Report errors
-    editor._onError(error);
+    editor._onError(error, editor);
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;
     editor._dirtyType = FULL_RECONCILE;

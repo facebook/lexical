@@ -536,8 +536,16 @@ declare export function $createGridSelection(): GridSelection;
 declare export function $isRangeSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof RangeSelection);
-declare export function $getSelection(): null | RangeSelection;
-declare export function $getPreviousSelection(): null | RangeSelection;
+declare export function $getSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection;
+declare export function $getPreviousSelection():
+  | null
+  | RangeSelection
+  | NodeSelection
+  | GridSelection;
 
 /**
  * Decorator State
@@ -936,7 +944,6 @@ export type EventHandler = (
   event: Object,
   editor: LexicalEditor,
 ) => void;
-
 
 /**
  * LexicalVersion

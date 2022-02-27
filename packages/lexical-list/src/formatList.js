@@ -326,7 +326,11 @@ export function outdentList(): boolean {
 
 export function $handleListInsertParagraph(): boolean {
   const selection = $getSelection();
-  if (selection === null || !selection.isCollapsed()) {
+  if (
+    selection === null ||
+    !$isRangeSelection(selection) ||
+    !selection.isCollapsed()
+  ) {
     return false;
   }
   // Only run this code on empty list items

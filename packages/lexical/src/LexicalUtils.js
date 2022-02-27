@@ -100,11 +100,30 @@ export function isSelectionWithinEditor(
     return (
       rootElement !== null &&
       rootElement.contains(anchorDOM) &&
-      rootElement.contains(focusDOM)
+      rootElement.contains(focusDOM) &&
+      // Ignore if selection is within nested editor
+      anchorDOM !== null &&
+      getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {
     return false;
   }
+}
+
+export function getNearestEditorFromDOMNode(
+  node: Node | null,
+): LexicalEditor | null {
+  let currentNode = node;
+  while (currentNode != null) {
+    // $FlowFixMe: internal field
+    const editor: LexicalEditor = currentNode.__lexicalEditor;
+    if (editor != null && !editor.isReadOnly()) {
+      return editor;
+    }
+    currentNode = currentNode.parentNode;
+  }
+
+  return null;
 }
 
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
@@ -567,7 +586,8 @@ export function $shouldPreventDefaultAndInsertText(
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
     // If the DOM selection element is not the same as the backing node
-    (backingAnchorElement !== null && !anchorNode.isComposing() &&
+    (backingAnchorElement !== null &&
+      !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||

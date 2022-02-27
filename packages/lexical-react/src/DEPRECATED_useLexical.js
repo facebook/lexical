@@ -23,6 +23,7 @@ export default function useLexical<EditorContext>(editorConfig: {
   context?: EditorContext,
   disableEvents?: boolean,
   editorState?: EditorState,
+  isReadOnly?: boolean,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
   onError: (error: Error) => void,

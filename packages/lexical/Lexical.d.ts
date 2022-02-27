@@ -28,6 +28,7 @@ type RootListener = (
   element2: null | HTMLElement,
 ) => void;
 type TextContentListener = (text: string) => void;
+type ErrorHandler = (error: Error) => void;
 type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 type CommandListener = (
   type: string,
@@ -81,6 +82,7 @@ export declare class LexicalEditor {
   _observer: null | MutationObserver;
   _key: string;
   _readOnly: boolean;
+  _onError: ErrorHandler;
   isComposing(): boolean;
   addListener(type: 'update', listener: UpdateListener): () => void;
   addListener(type: 'root', listener: RootListener): () => void;

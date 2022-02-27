@@ -19,7 +19,6 @@ export type LexicalNestedComposerProps = {
     decoratorEditor: DecoratorEditor;
     namespace?: string;
     nodes?: Array<Class<LexicalNode>>;
-    onError: (error: Error, editor: LexicalEditor) => void;
     theme?: EditorThemeClasses;
   };
 };

@@ -7,17 +7,14 @@
  * @flow strict
  */
 
-import type {
-  DecoratorEditor,
-  EditorThemeClasses,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
+import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
 
 import LexicalComposer from '@lexical/react/LexicalComposer';
+import {LexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useContext, useEffect, useState} from 'react';
+import invariant from 'shared/invariant';
 
 export type LexicalNestedComposerProps = $ReadOnly<{
   children?: React$Node,
@@ -25,7 +22,6 @@ export type LexicalNestedComposerProps = $ReadOnly<{
     decoratorEditor: DecoratorEditor,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
-    onError: (error: Error, editor: LexicalEditor) => void,
     theme?: EditorThemeClasses,
   },
 }>;
@@ -34,8 +30,12 @@ export default function LexicalNestedComposer({
   initialConfig = {},
   children,
 }: LexicalNestedComposerProps): React$Node {
+  const parentContext = useContext(LexicalComposerContext);
+  if (parentContext == null) {
+    invariant(false, 'Unexpected parent context null on a nested composer');
+  }
   const [nestedEditor, setNestedEditor] = useState(null);
-  const {decoratorEditor, namespace, theme, nodes, onError} = initialConfig;
+  const {decoratorEditor, namespace, theme, nodes} = initialConfig;
 
   useEffect(() => {
     if (!decoratorEditor.isEmpty() && nestedEditor !== null) {
@@ -62,7 +62,7 @@ export default function LexicalNestedComposer({
         editor: decoratorEditor.editor,
         namespace,
         nodes,
-        onError,
+        onError: parentContext[0]._onError,
         theme,
       }}>
       <LexicalOnChangePlugin onChange={onChange} />

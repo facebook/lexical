@@ -33,6 +33,7 @@ import {
   $updateTextNodeFromDOMContent,
   getDOMTextNode,
   getEditorsToPropagate,
+  getNearestEditorFromDOMNode,
   isBackspace,
   isBold,
   isDelete,
@@ -509,37 +510,32 @@ function getRootElementRemoveHandles(
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 
 function onDocumentSelectionChange(event: Event): void {
-  const sel = window.getSelection();
-  let node = sel.anchorNode;
-  while (node != null) {
-    if (node.contentEditable === 'true') {
-      const nextActiveEditor = node.__lexicalEditor;
-      if (nextActiveEditor !== undefined) {
-        // When editor receives selection change event, we're checking if
-        // it has any sibling editors (within same parent editor) that were active
-        // before, and trigger selection change on it to nullify selection.
-        const editors = getEditorsToPropagate(nextActiveEditor);
-        const rootEditor = editors[editors.length - 1];
-        const rootEditorKey = rootEditor._key;
-        const activeNestedEditor = activeNestedEditorsMap.get(rootEditorKey);
-        const prevActiveEditor = activeNestedEditor || rootEditor;
+  const selection = window.getSelection();
+  const nextActiveEditor = getNearestEditorFromDOMNode(selection.anchorNode);
+  if (nextActiveEditor === null) {
+    return;
+  }
 
-        if (prevActiveEditor !== nextActiveEditor) {
-          onSelectionChange(prevActiveEditor, false);
-        }
+  // When editor receives selection change event, we're checking if
+  // it has any sibling editors (within same parent editor) that were active
+  // before, and trigger selection change on it to nullify selection.
+  const editors = getEditorsToPropagate(nextActiveEditor);
+  const rootEditor = editors[editors.length - 1];
+  const rootEditorKey = rootEditor._key;
+  const activeNestedEditor = activeNestedEditorsMap.get(rootEditorKey);
+  const prevActiveEditor = activeNestedEditor || rootEditor;
 
-        onSelectionChange(nextActiveEditor, true);
+  if (prevActiveEditor !== nextActiveEditor) {
+    onSelectionChange(prevActiveEditor, false);
+  }
 
-        // If newly selected editor is nested, then add it to the map, clean map otherwise
-        if (nextActiveEditor !== rootEditor) {
-          activeNestedEditorsMap.set(rootEditorKey, nextActiveEditor);
-        } else if (activeNestedEditor) {
-          activeNestedEditorsMap.delete(rootEditorKey);
-        }
-        return;
-      }
-    }
-    node = node.parentNode;
+  onSelectionChange(nextActiveEditor, true);
+
+  // If newly selected editor is nested, then add it to the map, clean map otherwise
+  if (nextActiveEditor !== rootEditor) {
+    activeNestedEditorsMap.set(rootEditorKey, nextActiveEditor);
+  } else if (activeNestedEditor) {
+    activeNestedEditorsMap.delete(rootEditorKey);
   }
 }
 

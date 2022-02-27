@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
-import {useLayoutEffect} from 'react';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 type Props = $ReadOnly<{
   onClear?: () => void,

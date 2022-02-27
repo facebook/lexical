@@ -14,6 +14,7 @@ import type {ParsedSelection} from './LexicalParsing';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
 
+import getDOMSelection from 'shared/getSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -1385,33 +1386,36 @@ export class RangeSelection implements BaseSelection {
       }
     }
 
-    const domSelection = window.getSelection();
-    // We use the DOM selection.modify API here to "tell" us what the selection
-    // will be. We then use it to update the Lexical selection accordingly. This
-    // is much more reliable than waiting for a beforeinput and using the ranges
-    // from getTargetRanges(), and is also better than trying to do it ourselves
-    // using Intl.Segmenter or other workarounds that struggle with word segments
-    // and line segments (especially with word wrapping and non-Roman languages).
-    $moveNativeSelection(
-      domSelection,
-      alter,
-      isBackward ? 'backward' : 'forward',
-      granularity,
-    );
-    // Guard against no ranges
-    if (domSelection.rangeCount > 0) {
-      const range = domSelection.getRangeAt(0);
-      // Apply the DOM selection to our Lexical selection.
-      this.applyDOMRange(range);
-      // Because a range works on start and end, we might need to flip
-      // the anchor and focus points to match what the DOM has, not what
-      // the range has specifically.
-      if (
-        !collapse &&
-        (domSelection.anchorNode !== range.startContainer ||
-          domSelection.anchorOffset !== range.startOffset)
-      ) {
-        $swapPoints(this);
+    if (getDOMSelection !== null) {
+      const domSelection = getDOMSelection();
+      // We use the DOM selection.modify API here to "tell" us what the selection
+      // will be. We then use it to update the Lexical selection accordingly. This
+      // is much more reliable than waiting for a beforeinput and using the ranges
+      // from getTargetRanges(), and is also better than trying to do it ourselves
+      // using Intl.Segmenter or other workarounds that struggle with word segments
+      // and line segments (especially with word wrapping and non-Roman languages).
+      $moveNativeSelection(
+        domSelection,
+        alter,
+        isBackward ? 'backward' : 'forward',
+        granularity,
+      );
+      // Guard against no ranges
+      if (domSelection.rangeCount > 0) {
+        const range = domSelection.getRangeAt(0);
+        // Apply the DOM selection to our Lexical selection.
+        // $FlowFixMe[incompatible-call]
+        this.applyDOMRange(range);
+        // Because a range works on start and end, we might need to flip
+        // the anchor and focus points to match what the DOM has, not what
+        // the range has specifically.
+        if (
+          !collapse &&
+          (domSelection.anchorNode !== range.startContainer ||
+            domSelection.anchorOffset !== range.startOffset)
+        ) {
+          $swapPoints(this);
+        }
       }
     }
   }
@@ -1519,6 +1523,7 @@ function $moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
+  // $FlowFixMe[prop-missing]
   domSelection.modify(alter, direction, granularity);
 }
 
@@ -1837,7 +1842,7 @@ export function $createEmptyGridSelection(): GridSelection {
 }
 
 function getActiveEventType(): string | void {
-  const event = window.event;
+  const event = window && window.event;
   return event && event.type;
 }
 
@@ -1846,7 +1851,7 @@ export function internalCreateSelection(
 ): null | RangeSelection | NodeSelection | GridSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection !== null ? getDOMSelection() : null;
 
   if ($isNodeSelection(lastSelection)) {
     return lastSelection.clone();

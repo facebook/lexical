@@ -28,6 +28,7 @@ import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
 import type {Node as ReactNode} from 'react';
 
 import {IS_APPLE} from 'shared/environment';
+import getDOMSelection from 'shared/getSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -83,12 +84,15 @@ export function getRegisteredNodeOrThrow(
 
 export const isArray = Array.isArray;
 
-const NativePromise = window.Promise;
+// Intentional no window prefix. Proper Flow typing + compatible with SSR
+const NativePromise = Promise;
 
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
-    : (fn) => NativePromise.resolve().then(fn);
+    : (fn) => {
+        NativePromise.resolve().then(fn);
+      };
 
 export function isSelectionWithinEditor(
   editor: LexicalEditor,
@@ -436,8 +440,11 @@ export function $updateSelectedTextFromDOM(
   editor: LexicalEditor,
   compositionEnd: boolean,
 ): void {
+  if (getDOMSelection === null) {
+    invariant(false, 'Unexpected getDOMSelection to be null');
+  }
   // Update the text content with the latest composition text
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection();
   if (domSelection === null) {
     return;
   }
@@ -552,10 +559,13 @@ export function $shouldPreventDefaultAndInsertText(
   text: string,
   isBeforeInput: boolean,
 ): boolean {
+  if (getDOMSelection === null) {
+    invariant(false, 'Unexpected getDOMSelection to be null');
+  }
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection();
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = getActiveEditor().getElementByKey(anchorKey);
@@ -571,7 +581,8 @@ export function $shouldPreventDefaultAndInsertText(
     // been changed (thus is dirty).
     ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
     // If the DOM selection element is not the same as the backing node
-    (backingAnchorElement !== null && !anchorNode.isComposing() &&
+    (backingAnchorElement !== null &&
+      !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||

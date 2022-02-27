@@ -23,6 +23,8 @@ import type {
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {Node as ReactNode} from 'react';
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
+import getDOMSelection from 'shared/getSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -683,13 +685,14 @@ export function updateEditorState(
 ): null | MutatedNodes {
   const observer = editor._observer;
   let reconcileMutatedNodes = null;
-
-  if (needsUpdate && observer !== null) {
+  if (needsUpdate && (!CAN_USE_DOM || observer !== null)) {
     const dirtyType = editor._dirtyType;
     const dirtyElements = editor._dirtyElements;
     const dirtyLeaves = editor._dirtyLeaves;
 
-    observer.disconnect();
+    if (observer !== null) {
+      observer.disconnect();
+    }
     try {
       reconcileMutatedNodes = reconcileRoot(
         currentEditorState,
@@ -700,25 +703,29 @@ export function updateEditorState(
         dirtyLeaves,
       );
     } finally {
-      observer.observe(rootElement, {
-        characterData: true,
-        childList: true,
-        subtree: true,
-      });
+      if (observer !== null) {
+        observer.observe(rootElement, {
+          characterData: true,
+          childList: true,
+          subtree: true,
+        });
+      }
     }
   }
 
-  const domSelection: null | Selection = window.getSelection();
-  if (
-    domSelection !== null &&
-    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
-  ) {
-    reconcileSelection(
-      currentSelection,
-      pendingSelection,
-      editor,
-      domSelection,
-    );
+  if (getDOMSelection !== null) {
+    const domSelection = getDOMSelection();
+    if (
+      domSelection !== null &&
+      (needsUpdate || pendingSelection === null || pendingSelection.dirty)
+    ) {
+      reconcileSelection(
+        currentSelection,
+        pendingSelection,
+        editor,
+        domSelection,
+      );
+    }
   }
 
   return reconcileMutatedNodes;

@@ -18,6 +18,7 @@ import type {ParsedEditorState} from './LexicalEditorState';
 import type {LexicalNode} from './LexicalNode';
 import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
 import {$isTextNode} from '.';
@@ -660,7 +661,7 @@ function beginUpdate(
     editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
-    if (pendingEditorState._flushSync) {
+    if (!CAN_USE_DOM || pendingEditorState._flushSync) {
       pendingEditorState._flushSync = false;
       commitPendingUpdates(editor);
     } else if (editorStateWasCloned) {

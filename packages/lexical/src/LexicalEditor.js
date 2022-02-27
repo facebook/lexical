@@ -11,6 +11,8 @@ import type {EditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
+import getDOMSelection from 'shared/getSelection';
 import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';
@@ -386,7 +388,7 @@ class BaseLexicalEditor {
     this._key = generateRandomKey();
     this._onError = onError;
     this._htmlConversions = htmlConversions;
-    this._readOnly = false;
+    this._readOnly = !CAN_USE_DOM;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -533,11 +535,13 @@ class BaseLexicalEditor {
         style.overflowWrap = 'break-word';
         nextRootElement.setAttribute('data-lexical-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
-        initMutationObserver(getSelf(this));
+        if (CAN_USE_DOM) {
+          initMutationObserver(getSelf(this));
+        }
         this._updateTags.add('history-merge');
         commitPendingUpdates(getSelf(this));
         // TODO: remove this flag once we no longer use UEv2 internally
-        if (!this._config.disableEvents) {
+        if (!this._config.disableEvents && CAN_USE_DOM) {
           addRootElementEvents(nextRootElement, getSelf(this));
         }
       }
@@ -620,9 +624,11 @@ class BaseLexicalEditor {
     if (rootElement !== null) {
       rootElement.blur();
     }
-    const domSelection = window.getSelection();
-    if (domSelection !== null) {
-      domSelection.removeAllRanges();
+    if (getDOMSelection !== null) {
+      const domSelection = getDOMSelection();
+      if (domSelection !== null) {
+        domSelection.removeAllRanges();
+      }
     }
   }
   isReadOnly(): boolean {

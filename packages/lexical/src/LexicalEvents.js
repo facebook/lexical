@@ -13,6 +13,8 @@ import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextNode} from './nodes/base/LexicalTextNode';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+import getDOMSelection from 'shared/getSelection';
+import invariant from 'shared/invariant';
 
 import {
   $getRoot,
@@ -135,8 +137,12 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         anchor.getNode().getTopLevelElementOrThrow().isEmpty()
       ) {
         const lastSelection = editor.getEditorState()._selection;
-        if (lastSelection !== null && selection.is(lastSelection)) {
-          window.getSelection().removeAllRanges();
+        if (
+          lastSelection !== null &&
+          selection.is(lastSelection) &&
+          getDOMSelection !== null
+        ) {
+          getDOMSelection().removeAllRanges();
           selection.dirty = true;
         }
       }
@@ -509,10 +515,15 @@ function getRootElementRemoveHandles(
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 
 function onDocumentSelectionChange(event: Event): void {
-  const sel = window.getSelection();
+  if (getDOMSelection === null) {
+    invariant(false, 'Unexpected getDOMSelection to be null');
+  }
+  const sel = getDOMSelection();
   let node = sel.anchorNode;
   while (node != null) {
+    // $FlowFixMe[prop-missing]
     if (node.contentEditable === 'true') {
+      // $FlowFixMe[prop-missing]
       const nextActiveEditor = node.__lexicalEditor;
       if (nextActiveEditor !== undefined) {
         // When editor receives selection change event, we're checking if

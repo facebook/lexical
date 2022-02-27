@@ -78,10 +78,10 @@ function onError(error) {
 }
 
 function Editor() {
-  const initialConfig = useMemo({
+  const initialConfig = {
     theme,
     onError,
-  }, []);
+  };
 
   return (
     <LexicalComposer initialConfig={initialConfig}>

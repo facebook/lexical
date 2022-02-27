@@ -33,10 +33,10 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from 'lexical'/g, "from 'Lexical'")
         .replace(/from 'lexical'/g, "from 'Lexical'")
         .replace(/from '@lexical\/react\/'/g, "from 'Lexical")
-        .replace(/from 'lexical\/LinkNode'/g, "from 'LinkNode'")
+        .replace(/from 'lexical\/LinkNode'/g, "from 'LexicalLinkNode'")
         .replace(
           /from 'lexical\/CodeHighlightNode'/g,
-          "from 'CodeHighlightNode'",
+          "from 'LexicalCodeHighlightNode'",
         );
 
       const distDirectory = file.replace('/flow/', '/dist/');

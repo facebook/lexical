@@ -247,6 +247,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   context?: EditorContext,
   disableEvents?: boolean,
   editorState?: EditorState,
+  isReadOnly?: boolean,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
   onError: ErrorHandler,
@@ -269,6 +270,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     ...(config.nodes || []),
   ];
   const onError = config.onError;
+  const isReadOnly = config.isReadOnly || false;
 
   const registeredNodes = new Map();
   for (let i = 0; i < nodes.length; i++) {
@@ -294,6 +296,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     },
     onError,
     initializeConversionCache(registeredNodes),
+    isReadOnly,
   );
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -341,6 +344,7 @@ class BaseLexicalEditor {
     config: EditorConfig<{...}>,
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
+    isReadOnly: boolean,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor

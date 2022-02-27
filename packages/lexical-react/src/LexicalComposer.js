@@ -65,13 +65,13 @@ export default function LexicalComposer({
       if (editor === null) {
         const newEditor = createEditor<LexicalComposerContextType>({
           context,
+          isReadOnly: true,
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
           parentEditor,
           theme: composerTheme,
         });
-        newEditor.setReadOnly(true);
         editor = newEditor;
       }
 

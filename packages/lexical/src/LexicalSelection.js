@@ -1191,7 +1191,8 @@ export class RangeSelection implements BaseSelection {
               prevParentClone.append(sibling);
               target.insertAfter(prevParentClone);
             } else {
-              target.insertAfter(sibling);
+              target.insertBefore(sibling);
+              target = sibling;
             }
           }
           // Check if the prev parent is empty, as it might need

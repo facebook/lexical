@@ -18,9 +18,10 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {$getSelection, $isRangeSelection} from 'lexical';
-import React, {useCallback, useLayoutEffect, useRef} from 'react';
+import React, {useCallback, useRef} from 'react';
 import {startTransition, useEffect, useState} from 'react';
 import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 type MentionMatch = {
   leadOffset: number,

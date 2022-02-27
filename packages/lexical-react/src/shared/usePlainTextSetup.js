@@ -16,7 +16,7 @@ import {
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/helpers/selection';
 import {$getSelection, $isRangeSelection} from 'lexical';
-import {useEffect} from 'react';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {
   onCopyForPlainText,
@@ -30,7 +30,7 @@ export default function usePlainTextSetup(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): void {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const removeListener = editor.addListener(
       'command',
       (type, payload): boolean => {

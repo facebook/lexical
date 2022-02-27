@@ -15,7 +15,8 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {createEditor} from 'lexical';
-import React, {useContext, useLayoutEffect, useMemo} from 'react';
+import React, {useContext, useMemo} from 'react';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 type Props = {
   children: React$Node,

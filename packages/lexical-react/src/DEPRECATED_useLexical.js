@@ -19,7 +19,7 @@ import {useMemo} from 'react';
 
 import useLexicalEditor from './DEPRECATED_useLexicalEditor';
 
-export default function useLexical<EditorContext>(editorConfig?: {
+export default function useLexical<EditorContext>(editorConfig: {
   context?: EditorContext,
   disableEvents?: boolean,
   editorState?: EditorState,
@@ -29,12 +29,12 @@ export default function useLexical<EditorContext>(editorConfig?: {
   parentEditor?: LexicalEditor,
   theme?: EditorThemeClasses,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {
-  const editor = useMemo(() => {
-    if (editorConfig !== undefined) {
-      return createEditor(editorConfig);
-    }
-    return createEditor(editorConfig);
-  }, [editorConfig]);
+  const editor = useMemo(
+    () => createEditor(editorConfig),
+    // Init
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const [rootElementRef, showPlaceholder] = useLexicalEditor(editor);
 
   return [editor, rootElementRef, showPlaceholder];

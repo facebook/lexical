@@ -205,7 +205,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   context?: EditorContext;
   parentEditor?: LexicalEditor;
   nodes?: Array<Class<LexicalNode>>;
-  onError?: (error: Error) => void;
+  onError: (error: Error) => void;
   disableEvents?: boolean;
 }): LexicalEditor;
 

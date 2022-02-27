@@ -13,7 +13,8 @@ import * as React from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 import {$createTextNode, $getRoot, $createParagraphNode} from 'lexical';
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import useLayoutEffect from 'shared/useLayoutEffect';
 import {IS_APPLE} from 'shared/environment';
 
 const copy = (text: string | null) => {

@@ -26,7 +26,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
 } from 'lexical';
-import {useLayoutEffect} from 'react';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 import {
   onCopyForRichText,

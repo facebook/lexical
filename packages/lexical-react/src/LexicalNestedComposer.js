@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
+import type {
+  DecoratorEditor,
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
@@ -23,7 +28,7 @@ export default function LexicalNestedComposer({
     decoratorEditor: DecoratorEditor,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
-    onError?: (Error) => void,
+    onError: (error: Error, editor: LexicalEditor) => void,
     theme?: EditorThemeClasses,
   },
 }): React$Node {

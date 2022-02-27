@@ -15,7 +15,8 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {createEditor} from 'lexical';
-import React, {useContext, useLayoutEffect, useMemo} from 'react';
+import React, {useContext, useMemo} from 'react';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 type Props = {
   children: React$Node,
@@ -24,7 +25,7 @@ type Props = {
     isReadOnly?: boolean,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
-    onError?: (Error) => void,
+    onError: (error: Error, editor: LexicalEditor) => void,
     theme?: EditorThemeClasses,
   },
 };
@@ -63,15 +64,16 @@ export default function LexicalComposer({
       let editor = initialEditor || null;
 
       if (editor === null) {
-        editor = createEditor<LexicalComposerContextType>({
+        const newEditor = createEditor<LexicalComposerContextType>({
           context,
           namespace,
           nodes,
-          onError,
+          onError: (error) => onError(error, newEditor),
           parentEditor,
           theme: composerTheme,
         });
-        editor.setReadOnly(true);
+        newEditor.setReadOnly(true);
+        editor = newEditor;
       }
 
       return [editor, context];

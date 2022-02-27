@@ -26,6 +26,7 @@ import {
   $isRangeSelection,
   $setSelection,
 } from 'lexical';
+import getDOMSelection from 'shared/getDOMSelection';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 
@@ -245,14 +246,12 @@ export function $applyCustomTableHandlers(
         const cellY = cell.y;
         if (!isHighlightingCells && (startX !== cellX || startY !== cellY)) {
           event.preventDefault();
-          const windowSelection = window.getSelection();
-          // Collapse the selection
-          windowSelection.setBaseAndExtent(
-            windowSelection.anchorNode,
-            0,
-            windowSelection.anchorNode,
-            0,
-          );
+          const domSelection = getDOMSelection();
+          const anchorNode = domSelection.anchorNode;
+          if (anchorNode !== null) {
+            // Collapse the selection
+            domSelection.setBaseAndExtent(anchorNode, 0, anchorNode, 0);
+          }
           isHighlightingCells = true;
           if (document.body) {
             document.body.appendChild(removeHighlightStyle);

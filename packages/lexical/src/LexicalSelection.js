@@ -14,6 +14,7 @@ import type {ParsedSelection} from './LexicalParsing';
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextFormatType} from './nodes/base/LexicalTextNode';
 
+import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -1385,7 +1386,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
 
-    const domSelection = window.getSelection();
+    const domSelection = getDOMSelection();
     // We use the DOM selection.modify API here to "tell" us what the selection
     // will be. We then use it to update the Lexical selection accordingly. This
     // is much more reliable than waiting for a beforeinput and using the ranges
@@ -1402,6 +1403,7 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
+      // $FlowFixMe[incompatible-call]
       this.applyDOMRange(range);
       // Because a range works on start and end, we might need to flip
       // the anchor and focus points to match what the DOM has, not what
@@ -1519,6 +1521,7 @@ function $moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
+  // $FlowFixMe[prop-missing]
   domSelection.modify(alter, direction, granularity);
 }
 
@@ -1857,7 +1860,7 @@ export function internalCreateSelection(
 ): null | RangeSelection | NodeSelection | GridSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection();
 
   if ($isNodeSelection(lastSelection)) {
     return lastSelection.clone();

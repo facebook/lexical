@@ -13,6 +13,7 @@ import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {TextNode} from './nodes/base/LexicalTextNode';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
 
 import {
   $getRoot,
@@ -137,7 +138,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
       ) {
         const lastSelection = editor.getEditorState()._selection;
         if (lastSelection !== null && selection.is(lastSelection)) {
-          window.getSelection().removeAllRanges();
+          getDOMSelection().removeAllRanges();
           selection.dirty = true;
         }
       }
@@ -510,7 +511,7 @@ function getRootElementRemoveHandles(
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 
 function onDocumentSelectionChange(event: Event): void {
-  const selection = window.getSelection();
+  const selection = getDOMSelection();
   const nextActiveEditor = getNearestEditorFromDOMNode(selection.anchorNode);
   if (nextActiveEditor === null) {
     return;

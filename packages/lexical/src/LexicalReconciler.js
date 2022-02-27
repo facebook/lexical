@@ -23,6 +23,7 @@ import type {
 import type {ElementNode} from './nodes/base/LexicalElementNode';
 import type {Node as ReactNode} from 'react';
 
+import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -683,7 +684,6 @@ export function updateEditorState(
 ): null | MutatedNodes {
   const observer = editor._observer;
   let reconcileMutatedNodes = null;
-
   if (needsUpdate && observer !== null) {
     const dirtyType = editor._dirtyType;
     const dirtyElements = editor._dirtyElements;
@@ -708,7 +708,7 @@ export function updateEditorState(
     }
   }
 
-  const domSelection: null | Selection = window.getSelection();
+  const domSelection = getDOMSelection();
   if (
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)

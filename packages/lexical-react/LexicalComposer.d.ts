@@ -15,7 +15,7 @@ type Props = {
     namespace?: string;
     nodes?: Array<Class<LexicalNode>>;
     theme?: EditorThemeClasses;
-    onError?: (arg0: Error) => void;
+    onError: (error: Error, editor: LexicalEditor) => void;
   };
   children: React.ReactNode;
 };

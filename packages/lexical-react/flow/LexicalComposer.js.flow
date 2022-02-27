@@ -9,16 +9,18 @@
 
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 
-type Props = {
+export type LexicalComposerProps = $ReadOnly<{
+  children: React$Node,
   initialConfig?: {
     editor?: LexicalEditor | null,
     isReadOnly?: boolean,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
-    theme?: EditorThemeClasses,
     onError: (error: Error, editor: LexicalEditor) => void,
+    theme?: EditorThemeClasses,
   },
-  children: React$Node,
-};
+}>;
 
-declare export default function LexicalComposer(Props): React$MixedElement;
+declare export default function LexicalComposer(
+  LexicalComposerProps,
+): React$MixedElement;

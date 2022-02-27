@@ -7,14 +7,22 @@
  */
 
 import {Class} from 'utility-types';
-import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
-export default function LexicalNestedComposer(arg0: {
-  initialConfig?: {
-    namespace?: string;
-    decoratorEditor: DecoratorEditor;
-    nodes?: Array<Class<LexicalNode>>;
-    theme?: EditorThemeClasses;
-    onError?: (arg0: Error) => void;
-  };
+import type {
+  DecoratorEditor,
+  EditorThemeClasses,
+  LexicalNode,
+  LexicalEditor,
+} from 'lexical';
+export type LexicalNestedComposerProps = {
   children?: React.ReactNode;
-}): React.ReactNode;
+  initialConfig?: {
+    decoratorEditor: DecoratorEditor;
+    namespace?: string;
+    nodes?: Array<Class<LexicalNode>>;
+    onError: (error: Error, editor: LexicalEditor) => void;
+    theme?: EditorThemeClasses;
+  };
+};
+export default function LexicalNestedComposer(
+  LexicalNestedComposerProps,
+): React.ReactNode;

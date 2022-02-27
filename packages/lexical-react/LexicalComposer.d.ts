@@ -8,15 +8,15 @@
 
 import {Class} from 'utility-types';
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
-type Props = {
+export type LexicalComposerProps = {
+  children: React.ReactNode;
   initialConfig?: {
     editor?: LexicalEditor | null;
     isReadOnly?: boolean;
     namespace?: string;
     nodes?: Array<Class<LexicalNode>>;
-    theme?: EditorThemeClasses;
     onError: (error: Error, editor: LexicalEditor) => void;
+    theme?: EditorThemeClasses;
   };
-  children: React.ReactNode;
 };
-export default function LexicalComposer(arg0: Props): React.ReactNode;
+export default function LexicalComposer(LexicalComposerProps): React.ReactNode;

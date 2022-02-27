@@ -17,7 +17,7 @@ import {
 import {createEditor} from 'lexical';
 import React, {useContext, useLayoutEffect, useMemo} from 'react';
 
-type Props = {
+export type LexicalComposerProps = {
   children: React$Node,
   initialConfig?: {
     editor?: LexicalEditor | null,
@@ -32,7 +32,7 @@ type Props = {
 export default function LexicalComposer({
   initialConfig = {},
   children,
-}: Props): React$MixedElement {
+}: LexicalComposerProps): React$MixedElement {
   const parentContext = useContext(LexicalComposerContext);
   const composerContext = useMemo(
     () => {

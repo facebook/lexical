@@ -19,10 +19,7 @@ import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
-export default function LexicalNestedComposer({
-  initialConfig = {},
-  children,
-}: {
+export type LexicalNestedComposerProps = $ReadOnly<{
   children?: React$Node,
   initialConfig?: {
     decoratorEditor: DecoratorEditor,
@@ -31,7 +28,12 @@ export default function LexicalNestedComposer({
     onError: (error: Error, editor: LexicalEditor) => void,
     theme?: EditorThemeClasses,
   },
-}): React$Node {
+}>;
+
+export default function LexicalNestedComposer({
+  initialConfig = {},
+  children,
+}: LexicalNestedComposerProps): React$Node {
   const [nestedEditor, setNestedEditor] = useState(null);
   const {decoratorEditor, namespace, theme, nodes, onError} = initialConfig;
 

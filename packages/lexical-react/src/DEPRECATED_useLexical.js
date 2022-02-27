@@ -25,7 +25,7 @@ export default function useLexical<EditorContext>(editorConfig?: {
   editorState?: EditorState,
   namespace?: string,
   nodes?: Array<Class<LexicalNode>>,
-  onError?: (error: Error) => void,
+  onError: (error: Error) => void,
   parentEditor?: LexicalEditor,
   theme?: EditorThemeClasses,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {

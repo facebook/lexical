@@ -29,10 +29,15 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         throw error2;
       }
       const result = data
-        .replaceAll("from 'lexical'", "from 'Lexical'")
-        .replaceAll("from 'lexical/", "from 'Lexical")
-        .replaceAll("from '@lexical/react/", "from 'Lexical")
-        .replaceAll(' * @flow strict', ' * @flow strict\n * @generated');
+        .replace(/ \* @flow strict/g, ' * @flow strict\n * @generated')
+        .replace(/from 'lexical'/g, "from 'Lexical'")
+        .replace(/from 'lexical'/g, "from 'Lexical'")
+        .replace(/from '@lexical\/react\/'/g, "from 'Lexical")
+        .replace(/from 'lexical\/LinkNode'/g, "from 'LinkNode'")
+        .replace(
+          /from 'lexical\/CodeHighlightNode'/g,
+          "from 'CodeHighlightNode'",
+        );
 
       const distDirectory = file.replace('/flow/', '/dist/');
 

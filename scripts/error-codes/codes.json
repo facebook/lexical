@@ -67,5 +67,6 @@
   "67": "The text content string length does not correlate with insertions/deletions of new text.",
   "68": "TODO",
   "69": "insertNode: topLevelElement is root node",
-  "70": "getTopLevelElementOrThrow: root nodes are not top level elements"
+  "70": "getTopLevelElementOrThrow: root nodes are not top level elements",
+  "71": "Unexpected getDOMSelection to be null"
 }

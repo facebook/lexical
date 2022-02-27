@@ -21,10 +21,10 @@ type Props = {
   children: React$Node,
   initialConfig?: {
     editor?: LexicalEditor | null,
-    isReadOnly?: boolean,
     namespace?: string,
     nodes?: Array<Class<LexicalNode>>,
     onError: (error: Error, editor: LexicalEditor) => void,
+    readOnly?: boolean,
     theme?: EditorThemeClasses,
   },
 };
@@ -65,11 +65,11 @@ export default function LexicalComposer({
       if (editor === null) {
         const newEditor = createEditor<LexicalComposerContextType>({
           context,
-          isReadOnly: true,
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
           parentEditor,
+          readOnly: true,
           theme: composerTheme,
         });
         editor = newEditor;
@@ -84,7 +84,7 @@ export default function LexicalComposer({
   );
 
   useLayoutEffect(() => {
-    const isReadOnly = initialConfig.isReadOnly;
+    const isReadOnly = initialConfig.readOnly;
     const [editor] = composerContext;
     editor.setReadOnly(isReadOnly || false);
     // We only do this for init

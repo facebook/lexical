@@ -141,7 +141,7 @@ export type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
-export type ReadOnlyListener = (isReadOnly: boolean) => void;
+export type ReadOnlyListener = (readOnly: boolean) => void;
 
 export type CommandListenerEditorPriority = 0;
 export type CommandListenerLowPriority = 1;
@@ -251,6 +251,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   nodes?: Array<Class<LexicalNode>>,
   onError: ErrorHandler,
   parentEditor?: LexicalEditor,
+  readOnly?: boolean,
   theme?: EditorThemeClasses,
 }): LexicalEditor {
   const config = editorConfig || {};
@@ -269,6 +270,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     ...(config.nodes || []),
   ];
   const onError = config.onError;
+  const isReadOnly = config.readOnly || false;
 
   const registeredNodes = new Map();
   for (let i = 0; i < nodes.length; i++) {
@@ -294,6 +296,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     },
     onError,
     initializeConversionCache(registeredNodes),
+    isReadOnly,
   );
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -341,6 +344,7 @@ class BaseLexicalEditor {
     config: EditorConfig<{...}>,
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
+    readOnly: boolean,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -628,9 +632,9 @@ class BaseLexicalEditor {
   isReadOnly(): boolean {
     return this._readOnly;
   }
-  setReadOnly(isReadOnly: boolean): void {
-    this._readOnly = isReadOnly;
-    triggerListeners('readonly', getSelf(this), true, isReadOnly);
+  setReadOnly(readOnly: boolean): void {
+    this._readOnly = readOnly;
+    triggerListeners('readonly', getSelf(this), true, readOnly);
   }
 }
 
@@ -694,7 +698,7 @@ declare export class LexicalEditor {
   isReadOnly(): boolean;
   parseEditorState(stringifiedEditorState: string): EditorState;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
-  setReadOnly(isReadOnly: boolean): void;
+  setReadOnly(readOnly: boolean): void;
   setRootElement(rootElement: null | HTMLElement): void;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
 }

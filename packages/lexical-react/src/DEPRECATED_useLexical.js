@@ -27,6 +27,7 @@ export default function useLexical<EditorContext>(editorConfig: {
   nodes?: Array<Class<LexicalNode>>,
   onError: (error: Error) => void,
   parentEditor?: LexicalEditor,
+  readOnly?: boolean,
   theme?: EditorThemeClasses,
 }): [LexicalEditor, (null | HTMLElement) => void, boolean] {
   const editor = useMemo(

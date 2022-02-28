@@ -37,7 +37,7 @@ type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
-export type ReadOnlyListener = (isReadOnly: boolean) => void;
+export type ReadOnlyListener = (readOnly: boolean) => void;
 
 //$FlowFixMe
 type CommandPayload = any;
@@ -126,7 +126,7 @@ declare export class LexicalEditor {
   focus(callbackFn?: () => void): void;
   blur(): void;
   isReadOnly(): boolean;
-  setReadOnly(isReadOnly: boolean): void;
+  setReadOnly(readOnly: boolean): void;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void,
@@ -219,6 +219,7 @@ declare export function createEditor<EditorContext>(editorConfig?: {
   nodes?: Array<Class<LexicalNode>>,
   onError: (error: Error) => void,
   disableEvents?: boolean,
+  readOnly?: boolean,
 }): LexicalEditor;
 
 /**

@@ -34,7 +34,7 @@ type CommandListener = (
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
-export type ReadOnlyListener = (isReadOnly: boolean) => void;
+export type ReadOnlyListener = (readOnly: boolean) => void;
 
 type CommandPayload = any;
 type Listeners = {
@@ -114,7 +114,7 @@ export declare class LexicalEditor {
   focus(callbackFn?: () => void): void;
   blur(): void;
   isReadOnly(): boolean;
-  setReadOnly(isReadOnly: boolean): void;
+  setReadOnly(readOnly: boolean): void;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void;
@@ -207,6 +207,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   nodes?: Array<Class<LexicalNode>>;
   onError: (error: Error) => void;
   disableEvents?: boolean;
+  readOnly?: boolean;
 }): LexicalEditor;
 
 /**

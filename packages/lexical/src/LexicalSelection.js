@@ -1175,12 +1175,17 @@ export class RangeSelection implements BaseSelection {
         for (let i = siblings.length - 1; i >= 0; i--) {
           const sibling = siblings[i];
           const prevParent = sibling.getParentOrThrow();
-
           if ($isElementNode(target) && !$isElementNode(sibling)) {
             target.append(sibling);
             target = sibling;
           } else {
-            if ($isElementNode(sibling) && !sibling.canInsertAfter(target)) {
+            if (!$isElementNode(target) && !$isElementNode(sibling)) {
+              target.insertBefore(sibling);
+              target = sibling;
+            } else if (
+              $isElementNode(sibling) &&
+              !sibling.canInsertAfter(target)
+            ) {
               const prevParentClone = prevParent.constructor.clone(prevParent);
               if (!$isElementNode(prevParentClone)) {
                 invariant(
@@ -1190,9 +1195,6 @@ export class RangeSelection implements BaseSelection {
               }
               prevParentClone.append(sibling);
               target.insertAfter(prevParentClone);
-            } else if (!$isElementNode(sibling)) {
-              target.insertBefore(sibling);
-              target = sibling;
             } else {
               target.insertAfter(sibling);
             }

@@ -36,10 +36,12 @@ describe('History', () => {
         await page.keyboard.type(', again and');
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world, again and again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [1, 0, 0],
             anchorOffset: 22,
@@ -47,10 +49,13 @@ describe('History', () => {
             focusOffset: 22,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><span data-lexical-text="true">hello world, again and again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <span data-lexical-text="true">hello world, again and again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0, 2, 0],
             anchorOffset: 22,
@@ -62,10 +67,10 @@ describe('History', () => {
         await undo(page);
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p dir="ltr"><span data-lexical-text="true">hello world again</span></p>
+          `);
           await assertSelection(page, {
             anchorPath: [1, 0, 0],
             anchorOffset: 11,
@@ -73,10 +78,13 @@ describe('History', () => {
             focusOffset: 11,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><span data-lexical-text="true">hello world again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <span data-lexical-text="true">hello world again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0, 2, 0],
             anchorOffset: 11,
@@ -88,10 +96,10 @@ describe('History', () => {
         await undo(page);
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><br></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p dir="ltr"><br /></p>
+          `);
           await assertSelection(page, {
             anchorPath: [1],
             anchorOffset: 0,
@@ -99,10 +107,13 @@ describe('History', () => {
             focusOffset: 0,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><br></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <br />
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0],
             anchorOffset: 2,
@@ -113,9 +124,8 @@ describe('History', () => {
 
         await undo(page);
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+        await expect(page).toMatchEditorInlineSnapshot(
+          `<p dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -126,9 +136,8 @@ describe('History', () => {
 
         await undo(page);
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello</span></p>',
+        await expect(page).toMatchEditorInlineSnapshot(
+          `<p dir="ltr"><span data-lexical-text="true">hello</span></p>`,
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -139,10 +148,7 @@ describe('History', () => {
 
         await undo(page);
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-        );
+        await expect(page).toMatchEditorInlineSnapshot(`<p><br /></p>`);
         await assertSelection(page, {
           anchorPath: [0],
           anchorOffset: 0,
@@ -152,9 +158,8 @@ describe('History', () => {
 
         await redo(page);
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello</span></p>',
+        await expect(page).toMatchEditorInlineSnapshot(
+          `<p dir="ltr"><span data-lexical-text="true">hello</span></p>`,
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -165,9 +170,8 @@ describe('History', () => {
 
         await redo(page);
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+        await expect(page).toMatchEditorInlineSnapshot(
+          `<p dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -179,10 +183,10 @@ describe('History', () => {
         await redo(page);
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p><br /></p>
+          `);
           await assertSelection(page, {
             anchorPath: [1],
             anchorOffset: 0,
@@ -190,10 +194,13 @@ describe('History', () => {
             focusOffset: 0,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><br></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <br />
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0],
             anchorOffset: 2,
@@ -205,10 +212,10 @@ describe('History', () => {
         await redo(page);
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p dir="ltr"><span data-lexical-text="true">hello world again</span></p>
+          `);
           await assertSelection(page, {
             anchorPath: [1, 0, 0],
             anchorOffset: 17,
@@ -216,10 +223,13 @@ describe('History', () => {
             focusOffset: 17,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><span data-lexical-text="true">hello world again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <span data-lexical-text="true">hello world again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0, 2, 0],
             anchorOffset: 17,
@@ -231,10 +241,12 @@ describe('History', () => {
         await redo(page);
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world, again and again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [1, 0, 0],
             anchorOffset: 22,
@@ -242,10 +254,13 @@ describe('History', () => {
             focusOffset: 22,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><span data-lexical-text="true">hello world, again and again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <span data-lexical-text="true">hello world, again and again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0, 2, 0],
             anchorOffset: 22,
@@ -259,10 +274,10 @@ describe('History', () => {
         });
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world, again again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p dir="ltr"><span data-lexical-text="true">hello world, again again</span></p>
+          `);
           await assertSelection(page, {
             anchorPath: [1, 0, 0],
             anchorOffset: 18,
@@ -270,10 +285,13 @@ describe('History', () => {
             focusOffset: 18,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><span data-lexical-text="true">hello world, again again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <span data-lexical-text="true">hello world, again again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0, 2, 0],
             anchorOffset: 18,
@@ -285,10 +303,12 @@ describe('History', () => {
         await undo(page);
 
         if (isRichText) {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world, again and again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [1, 0, 0],
             anchorOffset: 22,
@@ -296,10 +316,13 @@ describe('History', () => {
             focusOffset: 22,
           });
         } else {
-          await assertHTML(
-            page,
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span><br><span data-lexical-text="true">hello world, again and again</span></p>',
-          );
+          await expect(page).toMatchEditorInlineSnapshot(`
+            <p dir="ltr">
+              <span data-lexical-text="true">hello world</span>
+              <br />
+              <span data-lexical-text="true">hello world, again and again</span>
+            </p>
+          `);
           await assertSelection(page, {
             anchorPath: [0, 2, 0],
             anchorOffset: 22,

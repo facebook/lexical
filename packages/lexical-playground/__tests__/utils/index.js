@@ -11,8 +11,9 @@ import type {Settings as AppSettings} from '../../src/appSettings';
 import {chromium, firefox, webkit} from 'playwright';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
+import prettier from 'prettier';
+import {toMatchInlineSnapshot} from 'jest-snapshot';
 import {selectAll} from '../keyboardShortcuts';
-
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
@@ -538,3 +539,38 @@ export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
   );
   await page.mouse.up();
 }
+
+expect.extend({
+  async toMatchEditorInlineSnapshot(pageOrParentElement, ...args) {
+    // Setting error field allows jest to know where the matcher was called
+    // to populate inline snapshot during update cycle
+    this.error = new Error();
+    const editorElement = await pageOrParentElement.$(
+      'div[contenteditable="true"]',
+    );
+    const html = await editorElement.innerHTML();
+    return toMatchInlineSnapshot.call(this, new HtmlForPrettier(html), ...args);
+  },
+});
+
+// Wrapper around HTML string that is used as indicator for snapshot serializer
+// that it should use own formatter (below)
+class HtmlForPrettier {
+  constructor(html) {
+    this.html = html;
+  }
+}
+
+expect.addSnapshotSerializer({
+  test: (value) => {
+    return value instanceof HtmlForPrettier;
+  },
+  print: (value) => {
+    return prettier
+      .format(value.html.replace(/\sclass="([^"]*)"/g, ''), {
+        parser: 'html',
+        htmlWhitespaceSensitivity: 'ignore',
+      })
+      .trim();
+  },
+});

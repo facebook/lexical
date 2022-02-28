@@ -16,7 +16,9 @@
   "version": "0.1.12",
   "main": "LexicalClipboard.js",
   "peerDependencies": {
-    "lexical": "0.1.12",
+    "lexical": "0.1.12"
+  },
+  "dependencies": {
     "@lexical/helpers": "0.1.12"
   },
   "repository": {

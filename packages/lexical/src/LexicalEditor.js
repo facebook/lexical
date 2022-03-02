@@ -11,6 +11,7 @@ import type {EditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 
+import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';
@@ -624,7 +625,7 @@ class BaseLexicalEditor {
     if (rootElement !== null) {
       rootElement.blur();
     }
-    const domSelection = window.getSelection();
+    const domSelection = getDOMSelection();
     if (domSelection !== null) {
       domSelection.removeAllRanges();
     }

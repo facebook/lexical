@@ -15,6 +15,8 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 
+import getDOMSelection from 'shared/getDOMSelection';
+
 import {
   $getSelection,
   $isDecoratorNode,
@@ -78,7 +80,7 @@ function handleTextMutation(
   node: TextNode,
   editor: LexicalEditor,
 ): void {
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection();
   let anchorOffset = null;
   let focusOffset = null;
   if (domSelection !== null && domSelection.anchorNode === target) {

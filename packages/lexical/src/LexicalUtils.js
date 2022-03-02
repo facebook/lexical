@@ -28,6 +28,7 @@ import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
 import type {Node as ReactNode} from 'react';
 
 import {IS_APPLE} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -453,7 +454,7 @@ export function $updateSelectedTextFromDOM(
   compositionEnd: boolean,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection();
   if (domSelection === null) {
     return;
   }
@@ -571,7 +572,7 @@ export function $shouldPreventDefaultAndInsertText(
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection();
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = getActiveEditor().getElementByKey(anchorKey);

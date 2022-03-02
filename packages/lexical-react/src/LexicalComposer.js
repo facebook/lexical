@@ -20,7 +20,7 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 
 type Props = {
   children: React$Node,
-  initialConfig?: $ReadOnly<{
+  initialConfig: $ReadOnly<{
     editor?: LexicalEditor | null,
     namespace?: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
@@ -31,7 +31,7 @@ type Props = {
 };
 
 export default function LexicalComposer({
-  initialConfig = {},
+  initialConfig,
   children,
 }: Props): React$MixedElement {
   const parentContext = useContext(LexicalComposerContext);

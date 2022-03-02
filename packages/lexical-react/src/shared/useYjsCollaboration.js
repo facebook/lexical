@@ -22,7 +22,7 @@ import {
 } from '@lexical/yjs';
 import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
@@ -37,9 +37,11 @@ export function useYjsCollaboration(
   color: string,
   shouldBootstrap: boolean,
 ): [React$Node, Binding] {
+  const isReloadingDoc = useRef(false);
+  const [doc, setDoc] = useState(docMap.get(id));
   const binding = useMemo(
-    () => createBinding(editor, provider, id, docMap),
-    [editor, provider, id, docMap],
+    () => createBinding(editor, provider, id, doc, docMap),
+    [editor, provider, id, docMap, doc],
   );
 
   const connect = useCallback(() => {
@@ -67,10 +69,12 @@ export function useYjsCollaboration(
         shouldBootstrap &&
         isSynced &&
         root.isEmpty() &&
-        root._xmlText._length === 0
+        root._xmlText._length === 0 &&
+        isReloadingDoc.current === false
       ) {
         initializeEditor(editor);
       }
+      isReloadingDoc.current = false;
     };
 
     const onAwarenessUpdate = () => {
@@ -90,6 +94,14 @@ export function useYjsCollaboration(
       document.activeElement === editor.getRootElement(),
     );
 
+    const onProviderDocReload = (ydoc) => {
+      clearEditorSkipCollab(editor);
+      setDoc(ydoc);
+      docMap.set(id, ydoc);
+      isReloadingDoc.current = true;
+    };
+    provider.on('reload', onProviderDocReload);
+
     provider.on('status', onStatus);
     provider.on('sync', onSync);
     awareness.on('update', onAwarenessUpdate);
@@ -105,25 +117,30 @@ export function useYjsCollaboration(
         normalizedNodes,
         tags,
       }) => {
-        syncLexicalUpdateToYjs(
-          binding,
-          provider,
-          prevEditorState,
-          editorState,
-          dirtyElements,
-          dirtyLeaves,
-          normalizedNodes,
-          tags,
-        );
+        if (tags.has('skip-collab') === false) {
+          syncLexicalUpdateToYjs(
+            binding,
+            provider,
+            prevEditorState,
+            editorState,
+            dirtyElements,
+            dirtyLeaves,
+            normalizedNodes,
+            tags,
+          );
+        }
       },
     );
 
     connect();
 
     return () => {
-      disconnect();
+      if (isReloadingDoc.current === false) {
+        disconnect();
+      }
       provider.off('sync', onSync);
       provider.off('status', onStatus);
+      provider.off('reload', onProviderDocReload);
       awareness.off('update', onAwarenessUpdate);
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
       removeListener();
@@ -133,7 +150,9 @@ export function useYjsCollaboration(
     color,
     connect,
     disconnect,
+    docMap,
     editor,
+    id,
     name,
     provider,
     shouldBootstrap,
@@ -250,6 +269,19 @@ function initializeEditor(editor: LexicalEditor): void {
     },
     {
       tag: 'history-merge',
+    },
+  );
+}
+
+function clearEditorSkipCollab(editor) {
+  editor.update(
+    () => {
+      const root = $getRoot();
+      root.clear();
+      root.select();
+    },
+    {
+      tag: 'skip-collab',
     },
   );
 }

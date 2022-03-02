@@ -248,7 +248,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   disableEvents?: boolean,
   editorState?: EditorState,
   namespace?: string,
-  nodes?: Array<Class<LexicalNode>>,
+  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
   onError: ErrorHandler,
   parentEditor?: LexicalEditor,
   readOnly?: boolean,

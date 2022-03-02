@@ -24,7 +24,7 @@ export default function useLexical<EditorContext>(editorConfig: {
   disableEvents?: boolean,
   editorState?: EditorState,
   namespace?: string,
-  nodes?: Array<Class<LexicalNode>>,
+  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
   onError: (error: Error) => void,
   parentEditor?: LexicalEditor,
   readOnly?: boolean,

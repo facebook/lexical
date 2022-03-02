@@ -31,6 +31,7 @@ type RootListener = (
   element: null | HTMLElement,
 ) => void;
 type TextContentListener = (text: string) => void;
+type ErrorHandler = (error: Error) => void;
 type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 type CommandListener = (
   type: string,
@@ -75,6 +76,7 @@ declare export class LexicalEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _nodes: RegisteredNodes;
+  _onError: ErrorHandler;
   _decorators: {
     [NodeKey]: mixed,
   };

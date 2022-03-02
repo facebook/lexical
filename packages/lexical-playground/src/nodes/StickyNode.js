@@ -276,7 +276,6 @@ function StickyComponent({
       </button>
       <LexicalNestedComposer
         initialConfig={{
-          namespace: 'PlaygroundStickyEditor',
           theme: StickyEditorTheme,
           decoratorEditor: decoratorEditor,
         }}>

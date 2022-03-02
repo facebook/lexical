@@ -6,15 +6,12 @@
  *
  */
 
-import {Class} from 'utility-types';
-import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
+import type {DecoratorEditor, EditorThemeClasses} from 'lexical';
+
 export default function LexicalNestedComposer(arg0: {
-  initialConfig?: {
-    namespace?: string;
+  initialConfig: {
     decoratorEditor: DecoratorEditor;
-    nodes?: Array<Class<LexicalNode>>;
     theme?: EditorThemeClasses;
-    onError?: (arg0: Error) => void;
   };
   children: React.ReactNode;
 }): React.ReactNode;

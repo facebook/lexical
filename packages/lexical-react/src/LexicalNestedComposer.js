@@ -7,33 +7,32 @@
  * @flow strict
  */
 
-import type {
-  DecoratorEditor,
-  EditorThemeClasses,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
+import type {DecoratorEditor, EditorThemeClasses} from 'lexical';
 
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import invariant from 'shared/invariant';
+
+import {LexicalComposerContext} from './LexicalComposerContext';
 
 export default function LexicalNestedComposer({
   initialConfig = {},
   children,
 }: {
   children: React$Node,
-  initialConfig?: $ReadOnly<{
+  initialConfig: $ReadOnly<{
     decoratorEditor: DecoratorEditor,
-    namespace?: string,
-    nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-    onError: (error: Error, editor: LexicalEditor) => void,
     theme?: EditorThemeClasses,
   }>,
 }): React$Node {
+  const parentContext = useContext(LexicalComposerContext);
+  if (parentContext == null) {
+    invariant(false, 'Unexpected parent context null on a nested composer');
+  }
   const [nestedEditor, setNestedEditor] = useState(null);
-  const {decoratorEditor, namespace, theme, nodes, onError} = initialConfig;
+  const {decoratorEditor, theme} = initialConfig;
 
   useEffect(() => {
     if (!decoratorEditor.isEmpty() && nestedEditor !== null) {
@@ -56,13 +55,20 @@ export default function LexicalNestedComposer({
 
   return (
     <LexicalComposer
-      initialConfig={{
-        editor: decoratorEditor.editor,
-        namespace,
-        nodes,
-        onError,
-        theme,
-      }}>
+      initialConfig={useMemo(() => {
+        const [parentEditor] = parentContext;
+        return {
+          editor: decoratorEditor.editor,
+          namespace: parentEditor._config.namespace,
+          nodes: Array.from(parentEditor._nodes.values()).map(
+            (registeredNode) => registeredNode.klass,
+          ),
+          onError: parentEditor._onError,
+          theme,
+        };
+        // We only do this for init
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [])}>
       <LexicalOnChangePlugin onChange={onChange} />
       {children}
     </LexicalComposer>

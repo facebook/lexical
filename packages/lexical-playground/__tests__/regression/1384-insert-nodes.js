@@ -8,10 +8,7 @@
 
 import {
   initializeE2E,
-  assertHTML,
-  assertSelection,
   focusEditor,
-  waitForSelector,
   copyToClipboard,
   pasteFromClipboard,
 } from '../utils';

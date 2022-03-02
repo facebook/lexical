@@ -1,3 +1,9 @@
+## 0.1.13 (March 02, 2022)
+
+- Moved appropriate NPM peer dependencies to dependencies. I.e. @lexical/clipboard will now be fetched automatically when using @lexical/react.
+- Simplified LexicalNestedComposer props to inherit parent when possible.
+- SSR fixes.
+
 ## 0.1.12 (February 28, 2022)
 
 - Added TypeScript definitions for lexical and @lexical/react

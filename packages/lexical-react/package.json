@@ -12,16 +12,16 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "dependencies": {
-    "@lexical/helpers": "0.1.12",
-    "@lexical/clipboard": "0.1.12",
-    "@lexical/list": "0.1.12",
-    "@lexical/table": "0.1.12",
-    "@lexical/yjs": "0.1.12"
+    "@lexical/helpers": "0.1.13",
+    "@lexical/clipboard": "0.1.13",
+    "@lexical/list": "0.1.13",
+    "@lexical/table": "0.1.13",
+    "@lexical/yjs": "0.1.13"
   },
   "peerDependencies": {
-    "lexical": "0.1.12",
+    "lexical": "0.1.13",
     "react": ">=17.x",
     "react-dom": ">=17.x"
   },

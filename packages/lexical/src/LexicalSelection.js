@@ -1178,14 +1178,11 @@ export class RangeSelection implements BaseSelection {
           if ($isElementNode(target) && !$isElementNode(sibling)) {
             target.append(sibling);
             target = sibling;
+          } else if (!$isElementNode(target) && !$isElementNode(sibling)) {
+            target.insertBefore(sibling);
+            target = sibling;
           } else {
-            if (!$isElementNode(target) && !$isElementNode(sibling)) {
-              target.insertBefore(sibling);
-              target = sibling;
-            } else if (
-              $isElementNode(sibling) &&
-              !sibling.canInsertAfter(target)
-            ) {
+            if ($isElementNode(sibling) && !sibling.canInsertAfter(target)) {
               const prevParentClone = prevParent.constructor.clone(prevParent);
               if (!$isElementNode(prevParentClone)) {
                 invariant(

@@ -22,7 +22,11 @@ export class TableCellNode extends GridCellNode {
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(node.__headerStyles, node.__colSpan, node.__key);
+    return new TableCellNode(
+      new Set(node.__headerStyles),
+      node.__colSpan,
+      node.__key,
+    );
   }
 
   constructor(
@@ -57,13 +61,13 @@ export class TableCellNode extends GridCellNode {
   }
 
   getHeaderStyles(): TableCellHeaderStyles {
-    return this.__headerStyles;
+    return this.getLatest().__headerStyles;
   }
 
   toggleHeaderStyle(key: 'row' | 'column'): TableCellNode {
     const self = this.getWritable();
 
-    const newHeaderValue = new Set(this.getHeaderStyles().values());
+    const newHeaderValue = self.getHeaderStyles();
 
     if (newHeaderValue.has(key)) {
       newHeaderValue.delete(key);
@@ -77,7 +81,7 @@ export class TableCellNode extends GridCellNode {
   }
 
   hasHeader(): boolean {
-    const headerStyles = this.__headerStyles;
+    const headerStyles = this.getLatest().__headerStyles;
     return headerStyles.size > 0;
   }
 

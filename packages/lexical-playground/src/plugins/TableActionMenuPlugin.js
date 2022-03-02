@@ -338,14 +338,14 @@ function TableActionMenu({
       <hr />
       <button className="item" onClick={() => toggleTableRowIsHeader()}>
         <span className="text">
-          {tableCellNode.getHeaderStyles().has('row') ? 'Remove' : 'Add'} row
+          {tableCellNode.__headerStyles.has('row') ? 'Remove' : 'Add'} row
           header
         </span>
       </button>
       <button className="item" onClick={() => toggleTableColumnIsHeader()}>
         <span className="text">
-          {tableCellNode.getHeaderStyles().has('column') ? 'Remove' : 'Add'}{' '}
-          column header
+          {tableCellNode.__headerStyles.has('column') ? 'Remove' : 'Add'} column
+          header
         </span>
       </button>
     </div>,

@@ -10,12 +10,11 @@
 import type {DecoratorEditor, EditorThemeClasses} from 'lexical';
 
 import LexicalComposer from '@lexical/react/LexicalComposer';
+import {LexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import * as React from 'react';
 import {useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import invariant from 'shared/invariant';
-
-import {LexicalComposerContext} from './LexicalComposerContext';
 
 export default function LexicalNestedComposer({
   initialConfig = {},

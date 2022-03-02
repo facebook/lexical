@@ -11,6 +11,7 @@ import {Class, $ReadOnly} from 'utility-types';
 /**
  * LexicalEditor
  */
+type ErrorHandler = (error: Error) => void;
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type NodeMutation = 'created' | 'destroyed';
 export type ErrorListener = (error: Error) => void;
@@ -69,6 +70,7 @@ export declare class LexicalEditor {
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
   _nodes: RegisteredNodes;
+  _onError: ErrorHandler;
   _decorators: Record<NodeKey, unknown>;
   _pendingDecorators: null | Record<NodeKey, unknown>;
   _config: EditorConfig<{}>;

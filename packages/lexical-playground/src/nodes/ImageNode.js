@@ -448,16 +448,7 @@ function ImageComponent({
           <div className="image-caption-container">
             <LexicalNestedComposer
               initialConfig={{
-                namespace: 'PlaygroundImageEditor',
                 decoratorEditor: decoratorEditor,
-                nodes: [
-                  ...ExtendedNodes,
-                  ImageNode,
-                  MentionNode,
-                  EmojiNode,
-                  TypeaheadNode,
-                  KeywordNode,
-                ],
               }}>
               <MentionsPlugin />
               <TablesPlugin />

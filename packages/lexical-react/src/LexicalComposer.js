@@ -21,7 +21,7 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 type Props = {
   children: React$Node,
   initialConfig: $ReadOnly<{
-    editor?: LexicalEditor | null,
+    editor__DEPRECATED?: LexicalEditor | null,
     namespace?: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     onError: (error: Error, editor: LexicalEditor) => void,
@@ -42,7 +42,7 @@ export default function LexicalComposer({
       const {
         theme,
         namespace,
-        editor: initialEditor,
+        editor__DEPRECATED: initialEditor,
         nodes,
         onError,
       } = initialConfig;

@@ -4,7 +4,8 @@ import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import React from 'react';
 
-import HomepageFeatures from '../components/HomepageFeatures';
+import HomepageExamples from '../components/homepage-examples/HomepageExamples';
+import HomepageFeatures from '../components/homepage-features/HomepageFeatures';
 import styles from './index.module.css';
 
 function HomepageHeader() {
@@ -24,9 +25,14 @@ function HomepageHeader() {
         </p>
         <div className={styles.buttons}>
           <Link
-            className="button button--secondary button--lg"
+            className="button button--secondary margin-right--sm"
             to="/docs/intro">
             Get Started
+          </Link>
+          <Link
+            className="button button--outline margin-left--sm"
+            to="/docs/intro">
+            Learn More
           </Link>
         </div>
       </div>
@@ -41,6 +47,7 @@ export default function Home() {
       <HomepageHeader />
       <main>
         <HomepageFeatures />
+        <HomepageExamples />
       </main>
     </Layout>
   );

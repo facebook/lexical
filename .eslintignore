@@ -10,4 +10,5 @@ packages/babel-plugin-transform-stylex
 packages/eslint-plugin-stylex
 packages/stylex
 packages/**/vite.config.js
+packages/lexical-website-new/build
 **/node_modules

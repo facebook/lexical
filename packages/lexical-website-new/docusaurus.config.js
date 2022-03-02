@@ -6,7 +6,7 @@ const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 const TITLE = 'Lexical';
-const GITHUB_REPO_URL = 'https://github.com/facebook/outline'; // TODO: Update when repo name updated
+const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -79,7 +79,7 @@ const config = {
                 to: '/blog',
               },
               {
-                href: 'https://github.com/facebook/outline',
+                href: 'https://github.com/facebook/lexical',
                 label: 'GitHub',
               },
             ],
@@ -136,7 +136,7 @@ const config = {
 
   title: TITLE,
 
-  url: 'https://outline.dev',
+  url: 'https://lexical.dev',
 };
 
 module.exports = config;

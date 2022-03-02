@@ -102,6 +102,7 @@ module.exports = {
         {},
       ),
       //Shared
+      'shared/getDOMSelection': 'shared/dist/getDOMSelection',
       'shared/environment': 'shared/dist/environment',
       'shared/useLayoutEffect': 'shared/dist/useLayoutEffect',
       'shared/canUseDOM': 'shared/dist/canUseDOM',

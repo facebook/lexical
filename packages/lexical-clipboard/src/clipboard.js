@@ -25,9 +25,10 @@ import {
   $getSelection,
   $isElementNode,
 } from 'lexical';
+import getDOMSelection from 'shared/getDOMSelection';
 
 export function getHtmlContent(editor: LexicalEditor): string | null {
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection();
   // If we haven't selected a range, then don't copy anything
   if (domSelection.isCollapsed) {
     return null;

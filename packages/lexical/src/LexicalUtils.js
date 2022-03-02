@@ -27,6 +27,7 @@ import type {RootNode} from './nodes/base/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
 import type {Node as ReactNode} from 'react';
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -83,12 +84,14 @@ export function getRegisteredNodeOrThrow(
 
 export const isArray = Array.isArray;
 
-const NativePromise = window.Promise;
+const NativePromise = CAN_USE_DOM ? window.Promise : undefined;
 
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
-    : (fn) => NativePromise.resolve().then(fn);
+    : NativePromise !== undefined
+    ? (fn) => NativePromise.resolve().then(fn)
+    : (fn) => fn();
 
 export function isSelectionWithinEditor(
   editor: LexicalEditor,

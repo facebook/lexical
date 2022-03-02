@@ -10,12 +10,12 @@
 import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
 
 declare export default function LexicalNestedComposer({
-  initialConfig?: {
+  initialConfig?: $ReadOnly<{
     namespace?: string,
     decoratorEditor: DecoratorEditor,
     nodes?: Array<Class<LexicalNode>>,
     theme?: EditorThemeClasses,
     onError?: (Error) => void,
-  },
-  children?: React$Node,
+  }>,
+  children: React$Node,
 }): React$Node;

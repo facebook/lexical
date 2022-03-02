@@ -216,7 +216,7 @@ declare export function createEditor<EditorContext>(editorConfig?: {
   theme?: EditorThemeClasses,
   context?: EditorContext,
   parentEditor?: LexicalEditor,
-  nodes?: Array<Class<LexicalNode>>,
+  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   readOnly?: boolean,

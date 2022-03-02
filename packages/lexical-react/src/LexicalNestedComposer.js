@@ -23,14 +23,14 @@ export default function LexicalNestedComposer({
   initialConfig = {},
   children,
 }: {
-  children?: React$Node,
-  initialConfig?: {
+  children: React$Node,
+  initialConfig?: $ReadOnly<{
     decoratorEditor: DecoratorEditor,
     namespace?: string,
-    nodes?: Array<Class<LexicalNode>>,
+    nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     onError: (error: Error, editor: LexicalEditor) => void,
     theme?: EditorThemeClasses,
-  },
+  }>,
 }): React$Node {
   const [nestedEditor, setNestedEditor] = useState(null);
   const {decoratorEditor, namespace, theme, nodes, onError} = initialConfig;

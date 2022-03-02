@@ -16,5 +16,5 @@ export default function LexicalNestedComposer(arg0: {
     theme?: EditorThemeClasses;
     onError?: (arg0: Error) => void;
   };
-  children?: React.ReactNode;
+  children: React.ReactNode;
 }): React.ReactNode;

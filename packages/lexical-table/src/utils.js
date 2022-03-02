@@ -10,8 +10,8 @@ import type {LexicalNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 import {$createParagraphNode, $createTextNode} from 'lexical';
+import invariant from 'shared/invariant';
 
-import invariant from '../../shared/src/invariant';
 import {
   $createTableCellNode,
   $isTableCellNode,

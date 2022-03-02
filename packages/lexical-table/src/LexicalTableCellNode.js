@@ -56,7 +56,7 @@ export class TableCellNode extends GridCellNode {
 
   setHeaderStyles(headerStyles: TableCellHeaderStyles): TableCellHeaderStyles {
     const self = this.getWritable();
-    self.__headerStyles = new Set(headerStyles.values());
+    self.__headerStyles = new Set(headerStyles);
     return this.__headerStyles;
   }
 
@@ -75,7 +75,7 @@ export class TableCellNode extends GridCellNode {
       newHeaderValue.add(key);
     }
 
-    self.__headerStyles = newHeaderValue;
+    self.__headerStyles = new Set(newHeaderValue);
 
     return self;
   }

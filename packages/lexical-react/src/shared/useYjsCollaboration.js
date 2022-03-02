@@ -22,7 +22,7 @@ import {
 } from '@lexical/yjs';
 import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
@@ -54,8 +54,6 @@ export function useYjsCollaboration(
     }
   }, [provider]);
 
-  const bootstrapPropagationRef = useRef(true);
-
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
@@ -71,7 +69,6 @@ export function useYjsCollaboration(
         root.isEmpty() &&
         root._xmlText._length === 0
       ) {
-        bootstrapPropagationRef.current = false;
         initializeEditor(editor);
       }
     };

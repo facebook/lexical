@@ -1,5 +1,7 @@
 import React, {useState} from 'react';
 
+import styles from './HomepageExamples.module.css';
+
 function Pills({pills, activeIndex, onClick}) {
   return (
     <ul className="pills">
@@ -9,12 +11,14 @@ function Pills({pills, activeIndex, onClick}) {
           classNames.push('pills__item--active');
         }
         return (
-          <li
-            className={classNames.join(' ')}
-            onClick={() => {
-              onClick(index);
-            }}>
-            {pill.label}
+          <li className={classNames.join(' ')}>
+            <a
+              className={styles.tabAnchor}
+              onClick={() => {
+                onClick(index);
+              }}>
+              {pill.label}
+            </a>
           </li>
         );
       })}

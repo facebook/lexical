@@ -83,12 +83,13 @@ export function getRegisteredNodeOrThrow(
 
 export const isArray = Array.isArray;
 
-const NativePromise = window.Promise;
-
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
-    : (fn) => NativePromise.resolve().then(fn);
+    : (fn) => {
+        // No window prefix intended (#1400)
+        Promise.resolve().then(fn);
+      };
 
 export function isSelectionWithinEditor(
   editor: LexicalEditor,

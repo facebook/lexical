@@ -11,6 +11,7 @@ import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   MutatedNodes,
+  MutationListeners,
   NodeMutation,
   RegisteredNode,
   RegisteredNodes,
@@ -835,10 +836,9 @@ export function setMutatedNode(
   registeredNodes: RegisteredNodes,
   node: LexicalNode,
   mutation: NodeMutation,
+  mutationListeners: MutationListeners,
 ) {
-  const editor = getActiveEditor();
-  const listeners = editor._listeners.mutation;
-  if (listeners.size === 0) {
+  if (mutationListeners.size === 0) {
     return;
   }
   const nodeType = node.__type;

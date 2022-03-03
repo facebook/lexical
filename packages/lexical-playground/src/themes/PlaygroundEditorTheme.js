@@ -195,11 +195,13 @@ const theme: EditorThemeClasses = {
   },
   list: {
     ul: stylex(styles.ul),
-    ol1: stylex(styles.ol1),
-    ol2: stylex(styles.ol2),
-    ol3: stylex(styles.ol3),
-    ol4: stylex(styles.ol4),
-    ol5: stylex(styles.ol5),
+    olDepth: [
+      stylex(styles.ol1),
+      stylex(styles.ol2),
+      stylex(styles.ol3),
+      stylex(styles.ol4),
+      stylex(styles.ol5),
+    ],
     listitem: stylex(styles.listItem),
     nested: {
       listitem: stylex(styles.nestedListItem),

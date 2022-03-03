@@ -20,7 +20,7 @@ function Pills({pills, activeIndex, onClick}) {
             aria-selected={isSelected}
             tabIndex="0"
             role="tab"
-            id={`example-tab-${index}`}
+            id={`${pill.id}-tab`}
             onClick={() => {
               onClick(index);
             }}>

@@ -14,7 +14,6 @@ import {Class, $ReadOnly} from 'utility-types';
 type ErrorHandler = (error: Error) => void;
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type NodeMutation = 'created' | 'destroyed';
-export type ErrorListener = (error: Error) => void;
 type UpdateListener = (arg0: {
   tags: Set<string>;
   prevEditorState: EditorState;
@@ -40,7 +39,6 @@ export type ReadOnlyListener = (readOnly: boolean) => void;
 type CommandPayload = any;
 type Listeners = {
   decorator: Set<DecoratorListener>;
-  error: Set<ErrorListener>;
   mutation: MutationListeners;
   textcontent: Set<TextContentListener>;
   root: Set<RootListener>;

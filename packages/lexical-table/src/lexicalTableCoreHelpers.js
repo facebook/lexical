@@ -444,11 +444,13 @@ export function $applyCustomTableHandlers(
         const isForward = direction === 'forward';
 
         if (x !== (isForward ? grid.columns - 1 : 0)) {
-          tableNode.getCellNodeFromCords(x + (isForward ? 1 : -1), y).select();
+          tableNode
+            .getCellNodeFromCordsOrThrow(x + (isForward ? 1 : -1), y)
+            .select();
         } else {
           if (y !== (isForward ? grid.rows - 1 : 0)) {
             tableNode
-              .getCellNodeFromCords(
+              .getCellNodeFromCordsOrThrow(
                 isForward ? 0 : grid.columns - 1,
                 y + (isForward ? 1 : -1),
               )
@@ -464,7 +466,7 @@ export function $applyCustomTableHandlers(
 
       case 'up': {
         if (y !== 0) {
-          tableNode.getCellNodeFromCords(x, y - 1).select();
+          tableNode.getCellNodeFromCordsOrThrow(x, y - 1).select();
         } else {
           tableNode.selectPrevious();
         }
@@ -473,7 +475,7 @@ export function $applyCustomTableHandlers(
 
       case 'down': {
         if (y !== grid.rows - 1) {
-          tableNode.getCellNodeFromCords(x, y + 1).select();
+          tableNode.getCellNodeFromCordsOrThrow(x, y + 1).select();
         } else {
           tableNode.selectNext();
         }

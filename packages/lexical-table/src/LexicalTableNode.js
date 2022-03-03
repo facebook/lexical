@@ -33,13 +33,13 @@ export class TableNode extends GridNode {
   ): TableNode {
     // TODO: selectionShape and grid aren't being deeply cloned?
     // They shouldn't really be on the table node IMO.
-    return new TableNode(node.__key, node.__selectionShape, node.__grid);
+    return new TableNode(node.__selectionShape, node.__grid, node.__key);
   }
 
   constructor(
-    key?: NodeKey,
     selectionShape: ?SelectionShape,
     grid: ?Grid,
+    key?: NodeKey,
   ): void {
     super(key);
 
@@ -122,7 +122,7 @@ export class TableNode extends GridNode {
     throw new Error('Cell not found in table.');
   }
 
-  getCellNodeFromCords(x: number, y: number): TableCellNode {
+  getCellNodeFromCords(x: number, y: number): ?TableCellNode {
     const grid = this.getGrid();
 
     invariant(grid, 'Grid not found.');
@@ -132,13 +132,13 @@ export class TableNode extends GridNode {
     const row = cells[y];
 
     if (row == null) {
-      throw new Error(`Table row x:"${y}" not found.`);
+      return null;
     }
 
     const cell = row[x];
 
     if (cell == null) {
-      throw new Error(`Table cell y:"${x}" in row x:"${y}" not found.`);
+      return null;
     }
 
     const node = $getNearestNodeFromDOMNode(cell.elem);
@@ -147,7 +147,17 @@ export class TableNode extends GridNode {
       return node;
     }
 
-    throw new Error('Node at cords not TableCellNode.');
+    return null;
+  }
+
+  getCellNodeFromCordsOrThrow(x: number, y: number): TableCellNode {
+    const node = this.getCellNodeFromCords(x, y);
+
+    if (!node) {
+      throw new Error('Node at cords not TableCellNode.');
+    }
+
+    return node;
   }
 
   setGrid(grid: ?Grid): TableNode {

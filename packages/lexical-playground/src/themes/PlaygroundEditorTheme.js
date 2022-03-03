@@ -104,12 +104,13 @@ const styles = stylex.create({
   },
   tableCell: {
     border: '1px solid black',
+    padding: 8,
     height: 40,
     minWidth: 75,
-    paddingStart: 10,
-    paddingEnd: 10,
+    verticalAlign: 'top',
+    textAlign: 'start',
   },
-  tableCellHeader: {
+  TableCellHeaderStyles: {
     backgroundColor: '#F2F3F5',
     textAlign: 'start',
   },
@@ -251,7 +252,7 @@ const theme: EditorThemeClasses = {
   characterLimit: stylex(styles.characterLimit),
   table: stylex(styles.table),
   tableCell: stylex(styles.tableCell),
-  tableCellHeader: stylex(styles.tableCellHeader),
+  TableCellHeaderStyles: stylex(styles.TableCellHeaderStyles),
 };
 
 export default theme;

@@ -256,8 +256,8 @@ function InsertTableDialog({
   activeEditor: LexicalEditor,
   onClose: () => void,
 }): React$Node {
-  const [rows, setRows] = useState('3');
-  const [columns, setColumns] = useState('3');
+  const [rows, setRows] = useState('5');
+  const [columns, setColumns] = useState('5');
 
   const onClick = () => {
     activeEditor.execCommand('insertTable', {rows, columns});

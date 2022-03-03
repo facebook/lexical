@@ -10,6 +10,7 @@ import type {LexicalNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/helpers/nodes';
 import {$createParagraphNode, $createTextNode} from 'lexical';
+import invariant from 'shared/invariant';
 
 import {
   $createTableCellNode,
@@ -26,7 +27,7 @@ import {
 export function $createTableNodeWithDimensions(
   rowCount: number,
   columnCount: number,
-  includeHeader?: boolean = true,
+  includeHeaders?: boolean = true,
 ): TableNode {
   const tableNode = $createTableNode();
 
@@ -34,7 +35,15 @@ export function $createTableNodeWithDimensions(
     const tableRowNode = $createTableRowNode();
 
     for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const tableCellNode = $createTableCellNode(iRow === 0 && includeHeader);
+      const headerStyles = new Set();
+
+      if (includeHeaders) {
+        if (iRow === 0) headerStyles.add('row');
+        if (iColumn === 0) headerStyles.add('column');
+      }
+
+      const tableCellNode = $createTableCellNode(headerStyles);
+
       const paragraphNode = $createParagraphNode();
       paragraphNode.append($createTextNode());
 
@@ -102,6 +111,28 @@ export function $getTableColumnIndexFromTableCellNode(
   return tableRowNode.getChildren().findIndex((n) => n.is(tableCellNode));
 }
 
+export type TableCellSiblings = {
+  above: ?TableCellNode,
+  below: ?TableCellNode,
+  left: ?TableCellNode,
+  right: ?TableCellNode,
+};
+
+export function $getTableCellSiblingsFromTableCellNode(
+  tableCellNode: TableCellNode,
+): TableCellSiblings {
+  const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+
+  const {x, y} = tableNode.getCordsFromCellNode(tableCellNode);
+
+  return {
+    above: tableNode.getCellNodeFromCords(x, y - 1),
+    below: tableNode.getCellNodeFromCords(x, y + 1),
+    left: tableNode.getCellNodeFromCords(x - 1, y),
+    right: tableNode.getCellNodeFromCords(x + 1, y),
+  };
+}
+
 export function $removeTableRowAtIndex(
   tableNode: TableNode,
   indexToDelete: number,
@@ -132,14 +163,36 @@ export function $insertTableRow(
   }
 
   const targetRowNode = tableRows[targetIndex];
+
   if ($isTableRowNode(targetRowNode)) {
-    for (let i = 0; i < rowCount; i++) {
-      const tableColumnCount = targetRowNode.getChildren().length;
+    for (let r = 0; r < rowCount; r++) {
+      const tableRowCells = targetRowNode.getChildren();
+      const tableColumnCount = tableRowCells.length;
 
       const newTableRowNode = $createTableRowNode();
 
-      for (let j = 0; j < tableColumnCount; j++) {
-        const tableCellNode = $createTableCellNode(false);
+      for (let c = 0; c < tableColumnCount; c++) {
+        const tableCellFromTargetRow = tableRowCells[c];
+
+        invariant(
+          $isTableCellNode(tableCellFromTargetRow),
+          'Expected table cell',
+        );
+
+        const {above, below} = $getTableCellSiblingsFromTableCellNode(
+          tableCellFromTargetRow,
+        );
+
+        const headerStyles = new Set();
+
+        if (
+          (above && above.getHeaderStyles().has('column')) ||
+          (below && below.getHeaderStyles().has('column'))
+        ) {
+          headerStyles.add('column');
+        }
+
+        const tableCellNode = $createTableCellNode(headerStyles);
 
         tableCellNode.append($createParagraphNode());
         newTableRowNode.append(tableCellNode);
@@ -166,11 +219,17 @@ export function $insertTableColumn(
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
-  for (let i = 0; i < tableRows.length; i++) {
-    const currentTableRowNode = tableRows[i];
+  for (let r = 0; r < tableRows.length; r++) {
+    const currentTableRowNode = tableRows[r];
     if ($isTableRowNode(currentTableRowNode)) {
-      for (let j = 0; j < columnCount; j++) {
-        const newTableCell = $createTableCellNode(i === 0);
+      for (let c = 0; c < columnCount; c++) {
+        const headerStyles = new Set();
+
+        if (r === 0) {
+          headerStyles.add('row');
+        }
+
+        const newTableCell = $createTableCellNode(headerStyles);
 
         newTableCell.append($createParagraphNode());
 

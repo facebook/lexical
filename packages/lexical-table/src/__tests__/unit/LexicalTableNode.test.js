@@ -12,9 +12,9 @@ import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   theme: {
+    TableCellHeaderStyles: 'test-table-row-class',
     table: 'test-table-class',
     tableCell: 'test-table-cell-class',
-    tableCellHeader: 'test-table-row-class',
   },
 });
 

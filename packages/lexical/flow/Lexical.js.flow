@@ -175,7 +175,7 @@ export type EditorThemeClasses = {
   table?: EditorThemeClassName,
   tableRow?: EditorThemeClassName,
   tableCell?: EditorThemeClassName,
-  tableCellHeader?: EditorThemeClassName,
+  TableCellHeaderStyles?: EditorThemeClassName,
   link?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   code?: EditorThemeClassName,

@@ -7,6 +7,6 @@
  * @flow strict
  */
 
-const getSelection: () => Selection = window.getSelection;
+const getSelection = (): Selection => window.getSelection();
 
 export default getSelection;

@@ -319,13 +319,14 @@ export class ElementNode extends LexicalNode {
     start: number,
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
-  ): ElementNode {
+  ): Array<LexicalNode> {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
     const nodesToInsertLength = nodesToInsert.length;
     const nodesToInsertKeys = [];
+    const removedNodes = [];
 
     // Remove nodes to insert from their previous parent
     for (let i = 0; i < nodesToInsertLength; i++) {
@@ -419,6 +420,7 @@ export class ElementNode extends LexicalNode {
           if (nodeToRemove != null) {
             const writableNodeToRemove = nodeToRemove.getWritable();
             writableNodeToRemove.__parent = null;
+            removedNodes.push(writableNodeToRemove);
           }
         }
 
@@ -433,8 +435,48 @@ export class ElementNode extends LexicalNode {
       }
     }
 
-    return writableSelf;
+    return removedNodes;
   }
+
+  splitNode(index: number): [ElementNode, LexicalNode, ElementNode] {
+    const splitChild = this.getChildAtIndex(index);
+    if (splitChild == null) {
+      invariant(false, 'cannot split node, the child is out of bound');
+    }
+
+    const childrenLength = this.getChildrenSize();
+    const parent = this.getParent();
+    if (parent == null) {
+      invariant(false, 'cannot split node without parent');
+    }
+    const writableParent = parent.getWritable();
+    const children = writableParent.__children;
+    const thisIndex = children.indexOf(this.__key);
+    if (thisIndex === -1) {
+      invariant(false, 'Node is not a child of its parent');
+    }
+
+    const beforeNode = this;
+    const beforeNodeWritable = beforeNode.getWritable();
+
+    // create a node of the same type
+    const afterNode = new this.constructor();
+    const afterNodeWritable = afterNode.getWritable();
+
+    // Add the node right after the node we are splitting
+    writableParent.splice(thisIndex + 1, 0, [afterNodeWritable]);
+
+    // remove elements after a split point and save them to the variable
+    const nodesToMove = beforeNodeWritable.splice(
+      index,
+      childrenLength - index,
+      [],
+    );
+    afterNodeWritable.append(...nodesToMove);
+
+    return [beforeNode, splitChild, afterNode];
+  }
+
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(selection: RangeSelection): null | LexicalNode {
     return null;

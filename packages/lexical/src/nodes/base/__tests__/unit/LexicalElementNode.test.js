@@ -216,6 +216,20 @@ describe('LexicalElementNode tests', () => {
     });
   });
 
+  describe('splitNode', () => {
+    it('splits element node into two', async () => {
+      await update(() => {
+        const block = $getRoot().getFirstChild();
+        expect(block.getChildren()).toHaveLength(3);
+        expect($getRoot().getChildren()).toHaveLength(1);
+        block.splitNode(1);
+        expect($getRoot().getChildren()).toHaveLength(2);
+        expect(block.getChildren()).toHaveLength(1);
+        expect($getRoot().getChildAtIndex(1).getChildren()).toHaveLength(2);
+      });
+    });
+  });
+
   describe('splice', () => {
     let block;
 

@@ -1,3 +1,28 @@
+
 .tabAnchor {
     color: var(--ifm-font-color-base);
+}
+
+.tabSelected{
+    color: var(--ifm-pills-color-active);
+}
+
+.tabAnchor:hover {
+    text-decoration: none;
+    color: var(--ifm-font-color-base);
+}
+
+.tabContent {
+    min-height: 400px;
+}
+
+.codesandbox {
+    height: 500px;
+    width: 750px;
+    /* display: none; */
+    overflow: hidden;
+}
+
+.active {
+    display: block;
 }

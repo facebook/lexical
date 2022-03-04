@@ -7,11 +7,16 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, LexicalNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TextNode} from 'lexical';
-import {$toggleHashtag} from 'lexical/HashtagNode';
+import {
+  $createTextNode,
+  $isLineBreakNode,
+  $isTextNode,
+  TextNode,
+} from 'lexical';
+import {$isHashtagNode, $toggleHashtag, HashtagNode} from 'lexical/HashtagNode';
 import {useEffect} from 'react';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
@@ -247,6 +252,20 @@ function getHashtagRegexString(): string {
 
 const REGEX = new RegExp(getHashtagRegexString(), 'ig');
 
+function isValidCharacter(character: string): boolean {
+  return (
+    character === '' || character.search(/[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/) > -1
+  );
+}
+
+function startsWithValidChar(string: string): boolean {
+  return isValidCharacter(string[0]);
+}
+
+function endsWithValidChar(string: string): boolean {
+  return isValidCharacter(string[string.length - 1]);
+}
+
 function textNodeTransform(node: TextNode): void {
   if (!node.isSimpleText()) {
     return;
@@ -258,11 +277,31 @@ function textNodeTransform(node: TextNode): void {
   while (true) {
     const matchArr = REGEX.exec(text);
     if (matchArr === null) {
+      if (currentNode != null) {
+        const nextSibling = currentNode.getNextSibling();
+        if (
+          $isHashtagNode(nextSibling) &&
+          !endsWithValidChar(text) &&
+          !isNextNodeValid(currentNode)
+        ) {
+          $toggleHashtag(nextSibling);
+        }
+      }
       return;
     }
     const hashtagLength = matchArr[3].length + 1;
     const startOffset = matchArr.index + matchArr[1].length - adjustedOffset;
     const endOffset = startOffset + hashtagLength;
+    const prevChar = text[startOffset - 1] || '';
+    const nextChar = text[endOffset] || '';
+
+    if (
+      (startOffset === 0 && $isHashtagNode(currentNode.getPreviousSibling())) ||
+      !isValidCharacter(prevChar) ||
+      !isValidCharacter(nextChar)
+    ) {
+      continue;
+    }
     let targetNode;
 
     if (startOffset === 0) {
@@ -278,9 +317,56 @@ function textNodeTransform(node: TextNode): void {
   }
 }
 
+function isPreviousNodeValid(node: LexicalNode): boolean {
+  const previousNode = node.getPreviousSibling();
+  return (
+    previousNode === null ||
+    $isLineBreakNode(previousNode) ||
+    ($isTextNode(previousNode) &&
+      !$isHashtagNode(previousNode) &&
+      endsWithValidChar(previousNode.getTextContent()))
+  );
+}
+
+function isNextNodeValid(node: LexicalNode): boolean {
+  const nextNode = node.getNextSibling();
+  return (
+    nextNode === null ||
+    $isLineBreakNode(nextNode) ||
+    ($isTextNode(nextNode) &&
+      !$isHashtagNode(nextNode) &&
+      startsWithValidChar(nextNode.getTextContent()))
+  );
+}
+
+function $hashtagToPlainTextTransform(hashtagNode: HashtagNode): void {
+  // Check neighbors
+  if (!isPreviousNodeValid(hashtagNode) || !isNextNodeValid(hashtagNode)) {
+    $convertHashtagNodeToPlainTextNode(hashtagNode);
+    return;
+  }
+}
+
+function $convertHashtagNodeToPlainTextNode(node: HashtagNode): void {
+  const textNode = $createTextNode(node.getTextContent());
+  node.replace(textNode);
+}
+
 function useHashtags(editor: LexicalEditor): void {
   useEffect(() => {
-    return editor.addTransform(TextNode, textNodeTransform);
+    const removePlainTextTransform = editor.addTransform(
+      TextNode,
+      textNodeTransform,
+    );
+    const removeHashtagToPlainTextTransform = editor.addTransform(
+      HashtagNode,
+      $hashtagToPlainTextTransform,
+    );
+
+    return () => {
+      removePlainTextTransform();
+      removeHashtagToPlainTextTransform();
+    };
   }, [editor]);
 }
 

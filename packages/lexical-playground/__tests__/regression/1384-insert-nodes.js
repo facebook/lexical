@@ -27,9 +27,10 @@ describe('Regression test #1384', () => {
       await page.keyboard.type('alert(3);');
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
-      await selectCharacters(page, 'left', 9);
+      await page.keyboard.press('ArrowLeft');
+      await selectCharacters(page, 'left', 8);
       const clipboard = await copyToClipboard(page);
-      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowLeft');
       await pasteFromClipboard(page, clipboard);
       await expect(page).toMatchEditorInlineSnapshot(`
         <code spellcheck="false" dir="ltr">
@@ -37,7 +38,6 @@ describe('Regression test #1384', () => {
           <span data-lexical-text="true">(</span>
           <span data-lexical-text="true">1</span>
           <span data-lexical-text="true">)</span>
-          <span data-lexical-text="true">;</span>
           <span data-lexical-text="true">alert</span>
           <span data-lexical-text="true">(</span>
           <span data-lexical-text="true">1</span>

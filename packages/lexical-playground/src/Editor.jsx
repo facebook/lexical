@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import AutoFocusPlugin from '@lexical/react/AutoFocusPlugin';
 import AutoScrollPlugin from '@lexical/react/LexicalAutoScrollPlugin';
 import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
 import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
@@ -27,7 +28,6 @@ import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
-import AutoFocusPlugin from './plugins/AutoFocusPlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';

@@ -554,14 +554,14 @@ declare export function $getPreviousSelection():
 
 export type DecoratorStateValue =
   | DecoratorMap
-  | DecoratorEditor
+  | DecoratorEditorState
   | DecoratorArray
   | null
   | boolean
   | number
   | string;
 
-declare export class DecoratorEditor {
+declare export class DecoratorEditorState {
   id: string;
   editorState: null | EditorState | string;
   editor: null | LexicalEditor;
@@ -617,14 +617,14 @@ declare export class DecoratorMap {
   }>;
 }
 
-declare export function createDecoratorEditor(
+declare export function createDecoratorEditorState(
   id?: string,
   editorState?: string | EditorState,
-): DecoratorEditor;
+): DecoratorEditorState;
 
-declare export function isDecoratorEditor(
+declare export function isDecoratorEditorState(
   obj: ?mixed,
-): boolean %checks(obj instanceof DecoratorEditor);
+): boolean %checks(obj instanceof DecoratorEditorState);
 
 declare export function createDecoratorMap(
   editor: LexicalEditor,

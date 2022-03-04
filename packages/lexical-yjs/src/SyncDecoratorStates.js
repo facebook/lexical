@@ -13,10 +13,10 @@ import type {DecoratorArray, DecoratorMap, DecoratorStateValue} from 'lexical';
 
 import {
   createDecoratorArray,
-  createDecoratorEditor,
+  createDecoratorEditorState,
   createDecoratorMap,
   isDecoratorArray,
-  isDecoratorEditor,
+  isDecoratorEditorState,
   isDecoratorMap,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -118,7 +118,7 @@ export function syncLexicalDecoratorMapKeyToYjs(
         observeDecoratorMap(binding, collabNode, lexicalValue, yjsValue);
       }
       syncLexicalDecoratorMapToYjs(binding, collabNode, lexicalValue, yjsValue);
-    } else if (isDecoratorEditor(lexicalValue)) {
+    } else if (isDecoratorEditorState(lexicalValue)) {
       let doc;
       if (yjsValue === undefined) {
         yjsValue = new YMap();
@@ -189,7 +189,7 @@ function syncLexicalDecoratorArrayValueToYjs(
         observeDecoratorMap(binding, collabNode, lexicalValue, yjsValue);
       }
       syncLexicalDecoratorMapToYjs(binding, collabNode, lexicalValue, yjsValue);
-    } else if (isDecoratorEditor(lexicalValue)) {
+    } else if (isDecoratorEditorState(lexicalValue)) {
       let doc;
       if (yjsValue === undefined) {
         yjsValue = new YMap();
@@ -295,7 +295,7 @@ function syncYjsDecoratorMapKeyToLexical(
           const yjsDocMap = binding.docMap;
           const id = yjsValue.get('id');
           const doc = yjsValue.get('doc');
-          nextValue = createDecoratorEditor(id);
+          nextValue = createDecoratorEditorState(id);
           yjsValue._lexicalValue = nextValue;
           yjsValue._collabNode = collabNode;
           yjsDocMap.set(id, doc);
@@ -355,7 +355,7 @@ export function syncYjsDecoratorArrayValueToLexical(
           const yjsDocMap = binding.docMap;
           const id = yjsValue.get('id');
           const doc = yjsValue.get('doc');
-          nextValue = createDecoratorEditor(id);
+          nextValue = createDecoratorEditorState(id);
           yjsValue._lexicalValue = nextValue;
           yjsValue._collabNode = collabNode;
           yjsDocMap.set(id, doc);

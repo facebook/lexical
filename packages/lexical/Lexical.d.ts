@@ -501,13 +501,13 @@ export function $getPreviousSelection():
  */
 export type DecoratorStateValue =
   | DecoratorMap
-  | DecoratorEditor
+  | DecoratorEditorState
   | DecoratorArray
   | null
   | boolean
   | number
   | string;
-export declare class DecoratorEditor {
+export declare class DecoratorEditorState {
   id: string;
   editorState: null | EditorState | string;
   editor: null | LexicalEditor;
@@ -544,11 +544,13 @@ export declare class DecoratorMap {
     map: Array<[string, DecoratorStateValue]>;
   };
 }
-export function createDecoratorEditor(
+export function createDecoratorEditorState(
   id?: string,
   editorState?: string | EditorState,
-): DecoratorEditor;
-export function isDecoratorEditor(obj: unknown | null | undefined): boolean;
+): DecoratorEditorState;
+export function isDecoratorEditorState(
+  obj: unknown | null | undefined,
+): boolean;
 export function createDecoratorMap(
   editor: LexicalEditor,
   map?: Map<string, DecoratorStateValue>,

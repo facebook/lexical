@@ -12,7 +12,7 @@ import type {
   LexicalNode,
   LexicalEditor,
   DecoratorMap,
-  DecoratorEditor,
+  DecoratorEditorState,
   NodeKey,
 } from 'lexical';
 
@@ -22,7 +22,7 @@ import {
   DecoratorNode,
   $getNodeByKey,
   $setSelection,
-  createDecoratorEditor,
+  createDecoratorEditorState,
 } from 'lexical';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -117,10 +117,10 @@ function StickyComponent({
   });
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
-  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditor>(
+  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditorState>(
     decoratorStateMap,
     'caption',
-    () => createDecoratorEditor(),
+    () => createDecoratorEditorState(),
   );
 
   useEffect(() => {

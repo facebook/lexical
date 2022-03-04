@@ -8,7 +8,7 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {DecoratorEditor, EditorThemeClasses} from 'lexical';
+import type {DecoratorEditorState, EditorThemeClasses} from 'lexical';
 
 import {
   createLexicalComposerContext,
@@ -26,7 +26,7 @@ export default function LexicalNestedComposer({
 }: {
   children: React$Node,
   initialConfig: $ReadOnly<{
-    decoratorEditor: DecoratorEditor,
+    decoratorEditor: DecoratorEditorState,
     theme?: EditorThemeClasses,
   }>,
 }): React$Node {

@@ -7,11 +7,15 @@
  * @flow strict
  */
 
-import type {DecoratorEditor, EditorThemeClasses, LexicalNode} from 'lexical';
+import type {
+  DecoratorEditorState,
+  EditorThemeClasses,
+  LexicalNode,
+} from 'lexical';
 
 declare export default function LexicalNestedComposer({
   initialConfig: $ReadOnly<{
-    decoratorEditor: DecoratorEditor,
+    decoratorEditor: DecoratorEditorState,
     theme?: EditorThemeClasses,
   }>,
   children: React$Node,

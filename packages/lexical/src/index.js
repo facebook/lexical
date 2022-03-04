@@ -33,7 +33,7 @@ import {VERSION} from './LexicalVersion';
 import {
   $isDecoratorNode,
   createDecoratorArray,
-  createDecoratorEditor,
+  createDecoratorEditorState,
   createDecoratorMap,
   DecoratorNode,
   isDecoratorArray,
@@ -91,7 +91,7 @@ export {
   $setCompositionKey,
   $setSelection,
   createDecoratorArray,
-  createDecoratorEditor,
+  createDecoratorEditorState,
   createDecoratorMap,
   createEditor,
   DecoratorNode,

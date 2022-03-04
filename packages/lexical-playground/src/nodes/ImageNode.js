@@ -13,7 +13,7 @@ import type {
   LexicalNode,
   LexicalEditor,
   DecoratorMap,
-  DecoratorEditor,
+  DecoratorEditorState,
   CommandListenerLowPriority,
 } from 'lexical';
 
@@ -21,7 +21,7 @@ import * as React from 'react';
 import {
   DecoratorNode,
   $getNodeByKey,
-  createDecoratorEditor,
+  createDecoratorEditorState,
   $getSelection,
   $isNodeSelection,
 } from 'lexical';
@@ -332,10 +332,10 @@ function ImageComponent({
   const {yjsDocMap} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
-  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditor>(
+  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditorState>(
     state,
     'caption',
-    () => createDecoratorEditor(),
+    () => createDecoratorEditorState(),
   );
   const [selection, setSelection] = useState(null);
 

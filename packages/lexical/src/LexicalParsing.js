@@ -25,7 +25,7 @@ import {
 } from './LexicalUpdates';
 import {
   createDecoratorArray,
-  createDecoratorEditor,
+  createDecoratorEditorState,
   createDecoratorMap,
 } from './nodes/base/LexicalDecoratorNode';
 
@@ -114,7 +114,10 @@ function createDecoratorValueFromParse(
   } else if (typeof parsedValue === 'object') {
     const bindingType = parsedValue.type;
     if (bindingType === 'editor') {
-      value = createDecoratorEditor(parsedValue.id, parsedValue.editorState);
+      value = createDecoratorEditorState(
+        parsedValue.id,
+        parsedValue.editorState,
+      );
     } else if (bindingType === 'array') {
       value = createDecoratorArrayFromParse(editor, parsedValue);
     } else {

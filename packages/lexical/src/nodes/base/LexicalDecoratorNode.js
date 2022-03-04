@@ -20,7 +20,7 @@ import {createUID} from '../../LexicalUtils';
 
 export type DecoratorStateValue =
   | DecoratorMap
-  | DecoratorEditor
+  | DecoratorEditorState
   | DecoratorArray
   | null
   | boolean
@@ -44,15 +44,13 @@ function isStringified(
   return typeof editorState === 'string';
 }
 
-export class DecoratorEditor {
+export class DecoratorEditorState {
   id: string;
   editorState: null | EditorState | string;
-  editor: null | LexicalEditor;
 
   constructor(id?: string, editorState?: string | EditorState) {
     this.id = id || createUID();
     this.editorState = editorState || null;
-    this.editor = null;
   }
 
   init(editor: LexicalEditor): void {
@@ -69,7 +67,6 @@ export class DecoratorEditor {
   }
 
   set(editor: LexicalEditor): void {
-    this.editor = editor;
     this.editorState = editor.getEditorState();
   }
 
@@ -94,15 +91,15 @@ export class DecoratorEditor {
   }
 }
 
-export function createDecoratorEditor(
+export function createDecoratorEditorState(
   id?: string,
   editorState?: string | EditorState,
-): DecoratorEditor {
-  return new DecoratorEditor(id, editorState);
+): DecoratorEditorState {
+  return new DecoratorEditorState(id, editorState);
 }
 
 export function isDecoratorEditor(x?: mixed): boolean %checks {
-  return x instanceof DecoratorEditor;
+  return x instanceof DecoratorEditorState;
 }
 
 export class DecoratorMap {

@@ -277,12 +277,15 @@ function textNodeTransform(node: TextNode): void {
   while (true) {
     const matchArr = REGEX.exec(text);
     if (matchArr === null) {
-      if (
-        $isHashtagNode(currentNode) &&
-        !endsWithValidChar(text) &&
-        !isNextNodeValid(currentNode)
-      ) {
-        $toggleHashtag(currentNode);
+      if (currentNode != null) {
+        const nextSibling = currentNode.getNextSibling();
+        if (
+          $isHashtagNode(nextSibling) &&
+          !endsWithValidChar(text) &&
+          !isNextNodeValid(currentNode)
+        ) {
+          $toggleHashtag(nextSibling);
+        }
       }
       return;
     }

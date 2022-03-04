@@ -12,8 +12,7 @@
  */
 
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
-export type NodeMutation = 'created' | 'updated' | 'destroyed';
-export type ErrorListener = (error: Error) => void;
+export type NodeMutation = 'created' | 'destroyed';
 type UpdateListener = ({
   tags: Set<string>,
   prevEditorState: EditorState,

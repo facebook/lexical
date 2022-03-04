@@ -11,7 +11,6 @@ import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   MutatedNodes,
-  MutationListeners,
   NodeMutation,
   RegisteredNode,
   RegisteredNodes,
@@ -848,16 +847,10 @@ export function setMutatedNode(
   registeredNodes: RegisteredNodes,
   node: LexicalNode,
   mutation: NodeMutation,
-  mutationListeners: MutationListeners,
 ) {
-  if (mutationListeners.size === 0) {
-    return;
-  }
-  const nodeType = node.__type;
-  const nodeKey = node.__key;
-  const registeredNode = registeredNodes.get(nodeType);
+  const registeredNode = registeredNodes.get(node.__type);
   if (registeredNode === undefined) {
-    invariant(false, 'Type %s not in registeredNodes', nodeType);
+    invariant(false, 'Type %s not in registeredNodes', node.__type);
   }
   const klass = registeredNode.klass;
   let mutatedNodesByType = mutatedNodes.get(klass);
@@ -865,9 +858,7 @@ export function setMutatedNode(
     mutatedNodesByType = new Map();
     mutatedNodes.set(klass, mutatedNodesByType);
   }
-  if (!mutatedNodesByType.has(nodeKey)) {
-    mutatedNodesByType.set(nodeKey, mutation);
-  }
+  mutatedNodesByType.set(node.__key, mutation);
 }
 
 export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T> {

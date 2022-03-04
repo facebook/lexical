@@ -285,7 +285,7 @@ describe('CopyAndPaste', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#not</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#</span><span data-lexical-text="true">foo</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#not</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#foo</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 5, 0],
@@ -318,12 +318,21 @@ describe('CopyAndPaste', () => {
             focusOffset: 2,
           });
         } else {
-          await assertSelection(page, {
-            anchorPath: [0, 0, 0],
-            anchorOffset: 0,
-            focusPath: [1, 6, 0],
-            focusOffset: 3,
-          });
+          if (E2E_BROWSER === 'firefox') {
+            await assertSelection(page, {
+              anchorPath: [0, 0, 0],
+              anchorOffset: 0,
+              focusPath: [1, 5, 0],
+              focusOffset: 3,
+            });
+          } else {
+            await assertSelection(page, {
+              anchorPath: [0, 0, 0],
+              anchorOffset: 0,
+              focusPath: [1, 5, 0],
+              focusOffset: 4,
+            });
+          }
         }
       } else {
         if (E2E_BROWSER === 'firefox') {

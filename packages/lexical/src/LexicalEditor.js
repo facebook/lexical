@@ -96,7 +96,7 @@ export type EditorThemeClasses = {
   rtl?: EditorThemeClassName,
   table?: EditorThemeClassName,
   tableCell?: EditorThemeClassName,
-  tableCellHeader?: EditorThemeClassName,
+  TableCellHeaderStyles?: EditorThemeClassName,
   tableRow?: EditorThemeClassName,
   text?: TextNodeThemeClasses,
   // Handle other generic values

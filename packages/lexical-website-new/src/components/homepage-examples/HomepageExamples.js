@@ -1,33 +1,34 @@
+import Link from '@docusaurus/Link';
 import React, {useState} from 'react';
 
 import styles from './HomepageExamples.module.css';
 
 function Pills({pills, activeIndex, onClick}) {
   return (
-    <ul className="pills" role="tablist">
+    <div role="tablist" className="pills">
       {pills.map((pill, index) => {
         const classNames = ['pills__item'];
         const isSelected = activeIndex === index;
         if (isSelected) {
           classNames.push('pills__item--active');
+          classNames.push(styles.tabSelected);
         }
         return (
-          <li className={classNames.join(' ')}>
-            <a
-              className={styles.tabAnchor}
-              aria-selected={isSelected}
-              href=""
-              role="tab"
-              id={`example-tab-${index}`}
-              onClick={() => {
-                onClick(index);
-              }}>
-              {pill.label}
-            </a>
-          </li>
+          <a
+            key={pill.id}
+            className={`${classNames.join(' ')} ${styles.tabAnchor}`}
+            aria-selected={isSelected}
+            tabIndex="0"
+            role="tab"
+            id={`${pill.id}-tab`}
+            onClick={() => {
+              onClick(index);
+            }}>
+            {pill.label}
+          </a>
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -35,19 +36,28 @@ export default function HomepageExamples() {
   const [activeIndex, setActiveIndex] = useState(0);
   const pills = [
     {
-      content: 'Feature 1 content',
+      content: `Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content
+      Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 contentFeature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content
+      Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 contentFeature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content Feature 1 content`,
       id: 'example-feature-1',
-      label: 'Feature 1',
+      label: 'Easy Setup',
+      src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark&view=editor',
     },
     {
-      content: 'Feature 2 content',
+      content: `Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content
+      Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 contentFeature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content
+      Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 contentFeature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content Feature 2 content`,
       id: 'example-feature-2',
-      label: 'Feature 2',
+      label: 'Powerful Transforms',
+      src: 'https://codesandbox.io/embed/lexical-plain-text-example-forked-qdxhy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEmoticonPlugin.js&theme=dark&view=editor',
     },
     {
-      content: 'Feature 3 content',
+      content: `Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content
+      Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 contentFeature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content
+      Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 contentFeature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content Feature 3 content`,
       id: 'example-feature-3',
-      label: 'Feature 3',
+      label: 'Works Anywhere',
+      src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark&view=editor',
     },
   ];
   const activePill = pills[activeIndex];
@@ -61,12 +71,26 @@ export default function HomepageExamples() {
         />
       </div>
       <div
-        className="row"
+        className={`row margin-vert--lg ${styles.tabContent}`}
         id={activePill.id}
         role="tabpanel"
         aria-labelledby={`example-tab-${activeIndex}`}>
-        <div className="col">{activePill.content}</div>
-        <div className="col">CodeSandbox</div>
+        <div className="col col--4">
+          {activePill.content}
+          <Link
+            className="button button--primary margin-top--md"
+            to="/docs/intro">
+            Get Started
+          </Link>
+        </div>
+        <div className="col col--8">
+          <iframe
+            className={styles.codesandbox}
+            src={activePill.src}
+            title="lexical-plain-text-example"
+            sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+          />
+        </div>
       </div>
     </div>
   );

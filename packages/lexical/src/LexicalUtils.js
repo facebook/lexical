@@ -451,23 +451,35 @@ export function createUID(): string {
 
 export function $updateSelectedTextFromDOM(
   editor: LexicalEditor,
-  compositionEnd: boolean,
+  compositionEndEvent: null | CompositionEvent,
 ): void {
   // Update the text content with the latest composition text
   const domSelection = getDOMSelection();
   if (domSelection === null) {
     return;
   }
-  const {anchorNode, anchorOffset, focusOffset} = domSelection;
+  const anchorNode = domSelection.anchorNode;
+  let {anchorOffset, focusOffset} = domSelection;
   if (anchorNode !== null && anchorNode.nodeType === DOM_TEXT_TYPE) {
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if ($isTextNode(node)) {
+      let textContent = anchorNode.nodeValue;
+      const data = compositionEndEvent !== null && compositionEndEvent.data;
+
+      // Data is intentionally truthy, as we check for boolean, null and empty string.
+      if (textContent === ZERO_WIDTH_CHAR && data) {
+        const offset = data.length;
+        textContent = data;
+        anchorOffset = offset;
+        focusOffset = offset;
+      }
+
       $updateTextNodeFromDOMContent(
         node,
-        anchorNode.nodeValue,
+        textContent,
         anchorOffset,
         focusOffset,
-        compositionEnd,
+        compositionEndEvent !== null,
       );
     }
   }

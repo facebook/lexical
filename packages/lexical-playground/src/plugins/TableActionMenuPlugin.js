@@ -21,6 +21,8 @@ import {
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn,
   $insertTableRow,
+  $isTableRowNode,
+  $isTableCellNode,
   $removeTableRowAtIndex,
   TableCellNode,
 } from '@lexical/table';
@@ -34,21 +36,28 @@ type TableCellActionMenuProps = $ReadOnly<{
 
 function TableActionMenu({
   onClose,
-  tableCellNode,
+  tableCellNode: _tableCellNode,
   setIsMenuOpen,
   contextRef,
 }: TableCellActionMenuProps) {
   const [editor] = useLexicalComposerContext();
   const dropDownRef = useRef();
-
+  const [tableCellNode, updateTableCellNode] = useState(_tableCellNode);
   const [selectionCounts, updateSelectionCounts] = useState({
     rows: 1,
     columns: 1,
   });
 
   useEffect(() => {
-    editor.update(() => {
+    editor.getEditorState().read(() => {
+      updateTableCellNode(_tableCellNode.getLatest());
+    });
+  }, [editor, _tableCellNode]);
+
+  useEffect(() => {
+    editor.getEditorState().read(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+
       const selectionState = tableNode.getSelectionState();
 
       updateSelectionCounts({
@@ -106,6 +115,8 @@ function TableActionMenu({
 
       tableNode.setSelectionState(null);
       tableNode.markDirty();
+
+      updateTableCellNode(tableCellNode.getLatest());
       $setSelection(null);
     });
   }, [editor, tableCellNode]);
@@ -129,7 +140,7 @@ function TableActionMenu({
         onClose();
       });
     },
-    [editor, onClose, clearTableSelection, selectionCounts.rows, tableCellNode],
+    [editor, tableCellNode, selectionCounts.rows, clearTableSelection, onClose],
   );
 
   const insertTableColumnAtSelection = useCallback(
@@ -153,10 +164,10 @@ function TableActionMenu({
     },
     [
       editor,
-      onClose,
-      clearTableSelection,
-      selectionCounts.columns,
       tableCellNode,
+      selectionCounts.columns,
+      clearTableSelection,
+      onClose,
     ],
   );
 
@@ -171,7 +182,7 @@ function TableActionMenu({
 
       onClose();
     });
-  }, [editor, onClose, clearTableSelection, tableCellNode]);
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
   const deleteTableAtSelection = useCallback(() => {
     editor.update(() => {
@@ -181,7 +192,7 @@ function TableActionMenu({
       clearTableSelection();
       onClose();
     });
-  }, [editor, onClose, clearTableSelection, tableCellNode]);
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update(() => {
@@ -195,7 +206,80 @@ function TableActionMenu({
       clearTableSelection();
       onClose();
     });
-  }, [editor, onClose, clearTableSelection, tableCellNode]);
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
+
+  const toggleTableRowIsHeader = useCallback(
+    (isHeader) => {
+      editor.update(() => {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+
+        const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+
+        const tableRows = tableNode.getChildren();
+
+        if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
+          throw new Error('Expected table cell to be inside of table row.');
+        }
+
+        const tableRow = tableRows[tableRowIndex];
+
+        if (!$isTableRowNode(tableRow)) {
+          throw new Error('Expected table row');
+        }
+
+        tableRow.getChildren().forEach((tableCell) => {
+          if (!$isTableCellNode(tableCell)) {
+            throw new Error('Expected table cell');
+          }
+
+          tableCell.toggleHeaderStyle('row');
+        });
+
+        clearTableSelection();
+        onClose();
+      });
+    },
+    [editor, tableCellNode, clearTableSelection, onClose],
+  );
+
+  const toggleTableColumnIsHeader = useCallback(
+    (isHeader) => {
+      editor.update(() => {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+
+        const tableColumnIndex =
+          $getTableColumnIndexFromTableCellNode(tableCellNode);
+
+        const tableRows = tableNode.getChildren();
+
+        for (let r = 0; r < tableRows.length; r++) {
+          const tableRow = tableRows[r];
+
+          if (!$isTableRowNode(tableRow)) {
+            throw new Error('Expected table row');
+          }
+
+          const tableCells = tableRow.getChildren();
+
+          if (tableColumnIndex >= tableCells.length || tableColumnIndex < 0) {
+            throw new Error('Expected table cell to be inside of table row.');
+          }
+
+          const tableCell = tableCells[tableColumnIndex];
+
+          if (!$isTableCellNode(tableCell)) {
+            throw new Error('Expected table cell');
+          }
+
+          tableCell.toggleHeaderStyle('column');
+        }
+
+        clearTableSelection();
+        onClose();
+      });
+    },
+    [editor, tableCellNode, clearTableSelection, onClose],
+  );
 
   return createPortal(
     <div
@@ -204,19 +288,13 @@ function TableActionMenu({
       onClick={(e) => {
         e.stopPropagation();
       }}>
-      {!tableCellNode.__isHeader && (
-        <button
-          className="item"
-          onClick={() => insertTableRowAtSelection(false)}>
-          <span className="text">
-            Insert{' '}
-            {selectionCounts.rows === 1
-              ? 'row'
-              : `${selectionCounts.rows} rows`}{' '}
-            above
-          </span>
-        </button>
-      )}
+      <button className="item" onClick={() => insertTableRowAtSelection(false)}>
+        <span className="text">
+          Insert{' '}
+          {selectionCounts.rows === 1 ? 'row' : `${selectionCounts.rows} rows`}{' '}
+          above
+        </span>
+      </button>
       <button className="item" onClick={() => insertTableRowAtSelection(true)}>
         <span className="text">
           Insert{' '}
@@ -256,6 +334,19 @@ function TableActionMenu({
       </button>
       <button className="item" onClick={() => deleteTableAtSelection()}>
         <span className="text">Delete table</span>
+      </button>
+      <hr />
+      <button className="item" onClick={() => toggleTableRowIsHeader()}>
+        <span className="text">
+          {tableCellNode.__headerStyles.has('row') ? 'Remove' : 'Add'} row
+          header
+        </span>
+      </button>
+      <button className="item" onClick={() => toggleTableColumnIsHeader()}>
+        <span className="text">
+          {tableCellNode.__headerStyles.has('column') ? 'Remove' : 'Add'} column
+          header
+        </span>
       </button>
     </div>,
     document.body,

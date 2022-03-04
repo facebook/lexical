@@ -51,7 +51,7 @@ export class HashtagNode extends TextNode {
         if (indexOfInvalidChar === 0) {
           targetNode = $toggleHashtag(targetNode);
         } else if (indexOfInvalidChar > 0) {
-          [targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
+          [, targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
           targetNode = $toggleHashtag(targetNode);
         }
       }

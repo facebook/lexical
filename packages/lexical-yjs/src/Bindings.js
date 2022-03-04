@@ -45,10 +45,10 @@ export function createBinding(
   editor: LexicalEditor,
   provider: Provider,
   id: string,
+  doc: ?Doc,
   docMap: Map<string, Doc>,
 ): Binding {
-  const doc = docMap.get(id);
-  if (doc === undefined) {
+  if (doc === undefined || doc === null) {
     throw new Error('Should never happen');
   }
 

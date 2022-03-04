@@ -8,7 +8,7 @@
  */
 
 import type {Binding} from './Bindings';
-import type {RelativePosition, UndoManager, XmlText} from 'yjs';
+import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
 
 // $FlowFixMe: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
@@ -22,7 +22,7 @@ export type UserState = {
 };
 
 export type ProviderAwareness = {
-  getLocalState: () => UserState,
+  getLocalState: () => UserState | null,
   getStates: () => Map<number, UserState>,
   off: (type: 'update', cb: () => void) => void,
   on: (type: 'update', cb: () => void) => void,
@@ -37,10 +37,12 @@ declare interface Provider {
   // $FlowFixMe: temp
   off(type: 'update', cb: (any) => void): void;
   off(type: 'status', cb: ({status: string}) => void): void;
+  off(type: 'reload', cb: (doc: Doc) => void): void;
   on(type: 'sync', cb: (isSynced: boolean) => void): void;
   on(type: 'status', cb: ({status: string}) => void): void;
   // $FlowFixMe: temp
   on(type: 'update', cb: (any) => void): void;
+  on(type: 'reload', cb: (doc: Doc) => void): void;
 }
 
 export type Operation = {
@@ -83,12 +85,25 @@ export function initLocalState(
   });
 }
 
-export function setLocalStateFocus(provider: Provider, focusing: boolean) {
+export function setLocalStateFocus(
+  provider: Provider,
+  name: string,
+  color: string,
+  focusing: boolean,
+) {
   const {awareness} = provider;
-  awareness.setLocalState({
-    ...awareness.getLocalState(),
-    focusing,
-  });
+  let localState = awareness.getLocalState();
+  if (localState === null) {
+    localState = {
+      anchorPos: null,
+      color,
+      focusPos: null,
+      focusing: focusing,
+      name,
+    };
+  }
+  localState.focusing = focusing;
+  awareness.setLocalState(localState);
 }
 
 export {syncCursorPositions} from './SyncCursors';

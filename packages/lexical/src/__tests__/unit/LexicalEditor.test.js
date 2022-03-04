@@ -10,6 +10,13 @@ import type {LexicalEditor} from 'lexical';
 
 import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
+  $createTableCellNode,
+  $createTableNode,
+  $createTableRowNode,
+  TableCellNode,
+  TableRowNode,
+} from '@lexical/table';
+import {
   $createGridSelection,
   $createNodeSelection,
   $createParagraphNode,
@@ -1497,9 +1504,10 @@ describe('LexicalEditor tests', () => {
 
   it('mutation listener', async () => {
     init();
-    const paragraphMutations = jest.fn();
+    const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
-    editor.addListener('mutation', ParagraphNode, paragraphMutations);
+
+    editor.addListener('mutation', ParagraphNode, paragraphNodeMutations);
     editor.addListener('mutation', TextNode, textNodeMutations);
 
     const paragraphKeys = [];
@@ -1529,17 +1537,22 @@ describe('LexicalEditor tests', () => {
     await editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
-      root.append(paragraph);
+
       paragraphKeys.push(paragraph.getKey());
-      // Created and deleted in the same update
+
+      // Created and deleted in the same update (not attached to node)
       textNodeKeys.push($createTextNode('zzz').getKey());
+
+      root.append(paragraph);
     });
-    expect(paragraphMutations.mock.calls.length).toBe(3);
+
+    expect(paragraphNodeMutations.mock.calls.length).toBe(3);
     expect(textNodeMutations.mock.calls.length).toBe(2);
 
     const [paragraphMutation1, paragraphMutation2, paragraphMutation3] =
-      paragraphMutations.mock.calls;
+      paragraphNodeMutations.mock.calls;
     const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
+
     expect(paragraphMutation1[0].size).toBe(1);
     expect(paragraphMutation1[0].get(paragraphKeys[0])).toBe('created');
     expect(paragraphMutation1[0].size).toBe(1);
@@ -1608,16 +1621,16 @@ describe('LexicalEditor tests', () => {
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
-    const paragraphMutations = jest.fn();
+    const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
-    editor.addListener('mutation', ParagraphNode, paragraphMutations);
+    editor.addListener('mutation', ParagraphNode, paragraphNodeMutations);
     editor.addListener('mutation', TextNode, textNodeMutations);
 
     await editor.update(() => {
       $getRoot().append($createParagraphNode());
     });
 
-    expect(paragraphMutations.mock.calls.length).toBe(1);
+    expect(paragraphNodeMutations.mock.calls.length).toBe(1);
     expect(textNodeMutations.mock.calls.length).toBe(0);
   });
 
@@ -1650,12 +1663,118 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutations.mock.calls.length).toBe(3);
     const [textNodeMutation1, textNodeMutation2, textNodeMutation3] =
       textNodeMutations.mock.calls;
+
     expect(textNodeMutation1[0].size).toBe(1);
     expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
     expect(textNodeMutation2[0].size).toBe(1);
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('created');
-    expect(textNodeMutation3[0].size).toBe(1);
+    expect(textNodeMutation3[0].size).toBe(2);
+    expect(textNodeMutation3[0].get(textNodeKeys[0])).toBe('updated');
     expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('destroyed');
+  });
+
+  it('mutation "update" listener', async () => {
+    init();
+    const paragraphNodeMutations = jest.fn();
+    const textNodeMutations = jest.fn();
+
+    editor.addListener('mutation', ParagraphNode, paragraphNodeMutations);
+    editor.addListener('mutation', TextNode, textNodeMutations);
+
+    const paragraphNodeKeys = [];
+    const textNodeKeys = [];
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const textNode1 = $createTextNode('foo');
+      textNodeKeys.push(textNode1.getKey());
+      paragraphNodeKeys.push(paragraph.getKey());
+      root.append(paragraph);
+      paragraph.append(textNode1);
+    });
+
+    expect(paragraphNodeMutations.mock.calls.length).toBe(1);
+    const [paragraphNodeMutation1] = paragraphNodeMutations.mock.calls;
+
+    expect(textNodeMutations.mock.calls.length).toBe(1);
+    const [textNodeMutation1] = textNodeMutations.mock.calls;
+
+    expect(textNodeMutation1[0].size).toBe(1);
+    expect(paragraphNodeMutation1[0].size).toBe(1);
+
+    // Change first text node's content.
+    await editor.update(() => {
+      const textNode1 = $getNodeByKey(textNodeKeys[0]);
+      textNode1.setTextContent('Test'); // Normalize with foobar
+    });
+
+    // Append text node to paragraph.
+    await editor.update(() => {
+      const paragraphNode1 = $getNodeByKey(paragraphNodeKeys[0]);
+      const textNode1 = $createTextNode('foo');
+      paragraphNode1.append(textNode1);
+    });
+
+    expect(textNodeMutations.mock.calls.length).toBe(3);
+    const textNodeMutation2 = textNodeMutations.mock.calls[1];
+
+    // Show TextNode was updated when text content changed.
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('updated');
+
+    expect(paragraphNodeMutations.mock.calls.length).toBe(2);
+    const paragraphNodeMutation2 = paragraphNodeMutations.mock.calls[1];
+
+    // Show ParagraphNode was updated when new text node was appended.
+    expect(paragraphNodeMutation2[0].get(paragraphNodeKeys[0])).toBe('updated');
+
+    let tableCellKey;
+    let tableRowKey;
+
+    const tableCellMutations = jest.fn();
+    const tableRowMutations = jest.fn();
+    editor.addListener('mutation', TableCellNode, tableCellMutations);
+    editor.addListener('mutation', TableRowNode, tableRowMutations);
+
+    // Create Table
+    await editor.update(() => {
+      const root = $getRoot();
+      const tableCell = $createTableCellNode();
+      const tableRow = $createTableRowNode();
+      const table = $createTableNode();
+
+      tableRow.append(tableCell);
+      table.append(tableRow);
+      root.append(table);
+
+      tableRowKey = tableRow.getKey();
+      tableCellKey = tableCell.getKey();
+    });
+
+    // Add New Table Cell To Row
+    await editor.update(() => {
+      const tableRow = $getNodeByKey(tableRowKey);
+      const tableCell = $createTableCellNode();
+      tableRow.append(tableCell);
+    });
+
+    // Update Table Cell
+    await editor.update(() => {
+      const tableCell = $getNodeByKey(tableCellKey);
+      tableCell.toggleHeaderStyle('row');
+    });
+
+    expect(tableCellMutations.mock.calls.length).toBe(3);
+    const tableCellMutation3 = tableCellMutations.mock.calls[2];
+
+    // Show table cell is updated when header value changes.
+    expect(tableCellMutation3[0].get(tableCellKey)).toBe('updated');
+
+    expect(tableRowMutations.mock.calls.length).toBe(2);
+    const tableRowMutation2 = tableRowMutations.mock.calls[1];
+
+    // Show row is updated when a new child is added.
+    expect(tableRowMutation2[0].get(tableRowKey)).toBe('updated');
   });
 
   it('readonly listener', () => {

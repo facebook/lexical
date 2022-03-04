@@ -92,6 +92,15 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
+function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
+  const activeElement = document.activeElement;
+  const nodeName = activeElement !== null ? activeElement.nodeName : null;
+  return (
+    !$isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) ||
+    (nodeName !== 'INPUT' && nodeName !== 'TEXTAREA')
+  );
+}
+
 export function isSelectionWithinEditor(
   editor: LexicalEditor,
   anchorDOM: null | Node,
@@ -105,6 +114,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
+      isSelectionCapturedInDecoratorInput(anchorDOM) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {

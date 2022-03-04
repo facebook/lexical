@@ -17,6 +17,7 @@ import {ELEMENT_TYPE_TO_FORMAT} from '../../LexicalConstants';
 import {LexicalNode} from '../../LexicalNode';
 import {
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   internalMakeRangeSelection,
   moveSelectionPointToSibling,
@@ -473,6 +474,16 @@ export class ElementNode extends LexicalNode {
       [],
     );
     afterNodeWritable.append(...nodesToMove);
+
+    // handle selection
+    const selection = $getSelection();
+
+    // if the element was selected we want to add the split node into selection as well
+    if ($isNodeSelection(selection)) {
+      if (selection.has(this.getKey())) {
+        selection.add(afterNode.getKey());
+      }
+    }
 
     return [beforeNode, splitChild, afterNode];
   }

@@ -193,21 +193,26 @@ export function useYjsCollaboration(
   return [cursorsContainer, binding];
 }
 
-export function useYjsFocusTracking(editor: LexicalEditor, provider: Provider) {
+export function useYjsFocusTracking(
+  editor: LexicalEditor,
+  provider: Provider,
+  name: string,
+  color: string,
+) {
   useEffect(() => {
     return editor.addListener(
       'command',
       (type, payload) => {
         if (type === 'focus') {
-          setLocalStateFocus(provider, true);
+          setLocalStateFocus(provider, name, color, true);
         } else if (type === 'blur') {
-          setLocalStateFocus(provider, false);
+          setLocalStateFocus(provider, name, color, false);
         }
         return false;
       },
       EditorPriority,
     );
-  }, [editor, provider]);
+  }, [color, editor, name, provider]);
 }
 
 export function useYjsHistory(

@@ -22,7 +22,7 @@ export type UserState = {
 };
 
 export type ProviderAwareness = {
-  getLocalState: () => UserState,
+  getLocalState: () => UserState | null,
   getStates: () => Map<number, UserState>,
   off: (type: 'update', cb: () => void) => void,
   on: (type: 'update', cb: () => void) => void,
@@ -85,12 +85,25 @@ export function initLocalState(
   });
 }
 
-export function setLocalStateFocus(provider: Provider, focusing: boolean) {
+export function setLocalStateFocus(
+  provider: Provider,
+  name: string,
+  color: string,
+  focusing: boolean,
+) {
   const {awareness} = provider;
-  awareness.setLocalState({
-    ...awareness.getLocalState(),
-    focusing,
-  });
+  let localState = awareness.getLocalState();
+  if (localState === null) {
+    localState = {
+      anchorPos: null,
+      color,
+      focusPos: null,
+      focusing: focusing,
+      name,
+    };
+  }
+  localState.focusing = focusing;
+  awareness.setLocalState(localState);
 }
 
 export {syncCursorPositions} from './SyncCursors';

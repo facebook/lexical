@@ -75,7 +75,7 @@ export function CollaborationPlugin({
   );
   collabContext.clientID = binding.clientID;
   useYjsHistory(editor, binding);
-  useYjsFocusTracking(editor, provider);
+  useYjsFocusTracking(editor, provider, name, color);
 
   return cursors;
 }

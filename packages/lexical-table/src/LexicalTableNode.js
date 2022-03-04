@@ -16,7 +16,7 @@ import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
-import {updateCells} from './lexicalTableCoreHelpers';
+import {getTableGrid, updateCells} from './lexicalTableCoreHelpers';
 
 export class TableNode extends GridNode {
   __selectionShape: ?SelectionShape;
@@ -26,25 +26,16 @@ export class TableNode extends GridNode {
     return 'table';
   }
 
-  static clone(
-    node: TableNode,
-    selectionShape: ?SelectionShape,
-    grid: ?Grid,
-  ): TableNode {
+  static clone(node: TableNode, selectionShape: ?SelectionShape): TableNode {
     // TODO: selectionShape and grid aren't being deeply cloned?
     // They shouldn't really be on the table node IMO.
-    return new TableNode(node.__selectionShape, node.__grid, node.__key);
+    return new TableNode(node.__selectionShape, node.__key);
   }
 
-  constructor(
-    selectionShape: ?SelectionShape,
-    grid: ?Grid,
-    key?: NodeKey,
-  ): void {
+  constructor(selectionShape: ?SelectionShape, key?: NodeKey): void {
     super(key);
 
     this.__selectionShape = selectionShape;
-    this.__grid = grid;
   }
 
   createDOM<EditorContext>(
@@ -70,14 +61,10 @@ export class TableNode extends GridNode {
     return false;
   }
 
-  setSelectionState(selectionShape: ?SelectionShape): Array<Cell> {
+  setSelectionState(selectionShape: ?SelectionShape, grid: Grid): Array<Cell> {
     const self = this.getWritable();
 
     self.__selectionShape = selectionShape;
-
-    const grid = this.getGrid();
-
-    if (grid == null) return [];
 
     if (!selectionShape) {
       return updateCells(-1, -1, -1, -1, grid.cells);
@@ -96,9 +83,10 @@ export class TableNode extends GridNode {
     return this.getLatest().__selectionShape;
   }
 
-  getCordsFromCellNode(tableCellNode: TableCellNode): {x: number, y: number} {
-    const grid = this.getGrid();
-
+  getCordsFromCellNode(
+    tableCellNode: TableCellNode,
+    grid: Grid,
+  ): {x: number, y: number} {
     invariant(grid, 'Grid not found.');
 
     const {rows, cells} = grid;
@@ -122,9 +110,7 @@ export class TableNode extends GridNode {
     throw new Error('Cell not found in table.');
   }
 
-  getCellNodeFromCords(x: number, y: number): ?TableCellNode {
-    const grid = this.getGrid();
-
+  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode {
     invariant(grid, 'Grid not found.');
 
     const {cells} = grid;
@@ -150,8 +136,8 @@ export class TableNode extends GridNode {
     return null;
   }
 
-  getCellNodeFromCordsOrThrow(x: number, y: number): TableCellNode {
-    const node = this.getCellNodeFromCords(x, y);
+  getCellNodeFromCordsOrThrow(x: number, y: number, grid: Grid): TableCellNode {
+    const node = this.getCellNodeFromCords(x, y, grid);
 
     if (!node) {
       throw new Error('Node at cords not TableCellNode.');
@@ -160,19 +146,22 @@ export class TableNode extends GridNode {
     return node;
   }
 
-  setGrid(grid: ?Grid): TableNode {
-    const self = this.getWritable();
-    self.__grid = grid;
-    return self;
-  }
-
-  getGrid(): ?Grid {
-    return this.getLatest().__grid;
-  }
-
   canSelectBefore(): true {
     return true;
   }
+}
+
+export function $getElementGridForTableNode(
+  editor: LexicalEditor,
+  tableNode: TableNode,
+): Grid {
+  const tableElement = editor.getElementByKey(tableNode.getKey());
+
+  if (tableElement == null) {
+    throw new Error('Table Element Not Found');
+  }
+
+  return getTableGrid(tableElement);
 }
 
 export function $createTableNode(): TableNode {

@@ -15,7 +15,7 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {createEditor} from 'lexical';
-import React, {useContext, useMemo} from 'react';
+import React, {useMemo} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 type Props = {
@@ -34,11 +34,8 @@ export default function LexicalComposer({
   initialConfig,
   children,
 }: Props): React$MixedElement {
-  const parentContext = useContext(LexicalComposerContext);
   const composerContext = useMemo(
     () => {
-      let composerTheme: void | EditorThemeClasses;
-      let parentEditor;
       const {
         theme,
         namespace,
@@ -47,19 +44,9 @@ export default function LexicalComposer({
         onError,
       } = initialConfig;
 
-      if (theme != null) {
-        composerTheme = theme;
-      } else if (parentContext != null) {
-        parentEditor = parentContext[0];
-        const parentTheme = parentContext[1].getTheme();
-        if (parentTheme != null) {
-          composerTheme = parentTheme;
-        }
-      }
-
       const context: LexicalComposerContextType = createLexicalComposerContext(
-        parentContext,
-        composerTheme,
+        null,
+        theme,
       );
       let editor = initialEditor || null;
 
@@ -69,9 +56,8 @@ export default function LexicalComposer({
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
-          parentEditor,
           readOnly: true,
-          theme: composerTheme,
+          theme,
         });
         editor = newEditor;
       }

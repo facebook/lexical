@@ -84,7 +84,13 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     destroyChildren(children, 0, children.length - 1, null);
   }
   if (node !== undefined) {
-    setMutatedNode(mutatedNodes, activeEditorNodes, node, 'destroyed');
+    setMutatedNode(
+      mutatedNodes,
+      activeEditorNodes,
+      node,
+      'destroyed',
+      activeEditor._listeners.mutation,
+    );
   }
 }
 
@@ -213,7 +219,13 @@ function createNode(
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
   }
-  setMutatedNode(mutatedNodes, activeEditorNodes, node, 'created');
+  setMutatedNode(
+    mutatedNodes,
+    activeEditorNodes,
+    node,
+    'created',
+    activeEditor._listeners.mutation,
+  );
   return dom;
 }
 
@@ -458,6 +470,15 @@ function reconcileNode(
     }
     return dom;
   }
+  if (prevNode !== nextNode && isDirty) {
+    setMutatedNode(
+      mutatedNodes,
+      activeEditorNodes,
+      nextNode,
+      'updated',
+      activeEditor._listeners.mutation,
+    );
+  }
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
     const replacementDOM = createNode(key, null, null);
@@ -466,6 +487,7 @@ function reconcileNode(
     }
     parentDOM.replaceChild(replacementDOM, dom);
     destroyNode(key, null);
+
     return replacementDOM;
   }
 

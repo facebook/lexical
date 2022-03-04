@@ -26,7 +26,7 @@ describe('History', () => {
 
         await page.focus('div[contenteditable="true"]');
         await page.keyboard.type('hello');
-        await sleep(1001); // default merge interval is 1000
+        await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
         await page.keyboard.type(' world');
         await page.keyboard.press('Enter');
         await page.keyboard.type('hello world again');

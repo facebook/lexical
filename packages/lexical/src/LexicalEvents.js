@@ -343,7 +343,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     ) {
       editor.execCommand('insertText', data);
     } else {
-      $updateSelectedTextFromDOM(editor, false);
+      $updateSelectedTextFromDOM(editor, null);
     }
     // Also flush any other mutations that might have occured
     // since the change.
@@ -398,7 +398,7 @@ function onCompositionEndInternal(
       }
       return;
     }
-    $updateSelectedTextFromDOM(editor, true);
+    $updateSelectedTextFromDOM(editor, event);
   });
 }
 

@@ -27,12 +27,16 @@ const editorConfig = Object.freeze({
       ol3: 'my-ol-list-class-3',
       ol4: 'my-ol-list-class-4',
       ol5: 'my-ol-list-class-5',
+      ol6: 'my-ol-list-class-6',
+      ol7: 'my-ol-list-class-7',
       ul: 'my-ul-list-class',
       ul1: 'my-ul-list-class-1',
       ul2: 'my-ul-list-class-2',
       ul3: 'my-ul-list-class-3',
       ul4: 'my-ul-list-class-4',
       ul5: 'my-ul-list-class-5',
+      ul6: 'my-ul-list-class-6',
+      ul7: 'my-ul-list-class-7',
     },
   },
 });
@@ -82,6 +86,8 @@ describe('LexicalListNode tests', () => {
         const listNode3 = $createListNode('ul');
         const listNode4 = $createListNode('ul');
         const listNode5 = $createListNode('ul');
+        const listNode6 = $createListNode('ul');
+        const listNode7 = $createListNode('ul');
         const listItem1 = $createListItemNode();
         const listItem2 = $createListItemNode();
         const listItem3 = $createListItemNode();
@@ -93,7 +99,9 @@ describe('LexicalListNode tests', () => {
         listNode3.append(listItem3);
         listItem3.append(listNode4);
         listNode4.append(listItem4);
-        listItem4.append(listNode5);
+        listNode4.append(listNode5);
+        listNode5.append(listNode6);
+        listNode6.append(listNode7);
         expect(listNode1.createDOM(editorConfig).outerHTML).toBe(
           '<ul class="my-ul-list-class my-ul-list-class-1"></ul>',
         );
@@ -112,6 +120,12 @@ describe('LexicalListNode tests', () => {
         );
         expect(listNode5.createDOM(editorConfig).outerHTML).toBe(
           '<ul class="my-ul-list-class my-ul-list-class-5"></ul>',
+        );
+        expect(listNode6.createDOM(editorConfig).outerHTML).toBe(
+          '<ul class="my-ul-list-class my-ul-list-class-6"></ul>',
+        );
+        expect(listNode7.createDOM(editorConfig).outerHTML).toBe(
+          '<ul class="my-ul-list-class my-ul-list-class-7"></ul>',
         );
       });
     });

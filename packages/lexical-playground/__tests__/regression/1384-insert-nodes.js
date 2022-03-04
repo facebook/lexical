@@ -29,7 +29,7 @@ describe('Regression test #1384', () => {
       await page.keyboard.press('ArrowUp');
       await selectCharacters(page, 'left', 9);
       const clipboard = await copyToClipboard(page);
-      page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowRight');
       await pasteFromClipboard(page, clipboard);
       await expect(page).toMatchEditorInlineSnapshot(`
         <code spellcheck="false" dir="ltr">

@@ -44,7 +44,7 @@ export class TableCellNode extends GridCellNode {
     addClassNamesToElement(
       element,
       config.theme.tableCell,
-      this.hasHeader() && config.theme.TableCellHeaderStyles,
+      this.hasHeader() && config.theme.tableCellHeader,
     );
 
     return element;

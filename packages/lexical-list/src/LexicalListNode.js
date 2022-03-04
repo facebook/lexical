@@ -120,8 +120,8 @@ function setListThemeClassNames(
   const listTheme = editorThemeClasses.list;
   if (listTheme !== undefined) {
     const listDepth = $getListDepth(node);
-    const normalizedListDepth = listDepth % 5;
-    const listThemeLevel = normalizedListDepth === 0 ? 5 : normalizedListDepth;
+    const normalizedListDepth = listDepth % 7;
+    const listThemeLevel = normalizedListDepth === 0 ? 7 : normalizedListDepth;
     const listThemeLevelClassName = node.__tag + listThemeLevel;
     const listLevelClassName = listTheme[listThemeLevelClassName];
     const listClassName = listTheme[node.__tag];

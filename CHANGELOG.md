@@ -1,3 +1,10 @@
+## 0.1.14 (March 04, 2022)
+
+- Added TableCellHeaderStyles to enable table header customization.
+- Fixes to composition for WebKit.
+- Fixes to HashtagPlugin destroy behavior.
+- SSR fixes.
+
 ## 0.1.13 (March 02, 2022)
 
 - Moved appropriate NPM peer dependencies to dependencies. I.e. @lexical/clipboard will now be fetched automatically when using @lexical/react.

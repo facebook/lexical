@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import AutoFocusPlugin from '@lexical/react/AutoFocusPlugin';
+import AutoFocusPlugin from '@lexical/react/LexicalAutoFocusPlugin';
 import AutoScrollPlugin from '@lexical/react/LexicalAutoScrollPlugin';
 import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
 import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
@@ -79,7 +79,8 @@ export default function Editor(): React$Node {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}
-        ref={scrollRef}>
+        ref={scrollRef}
+      >
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />

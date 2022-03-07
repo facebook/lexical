@@ -23,6 +23,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $setSelection,
 } from 'lexical';
@@ -448,33 +449,22 @@ export function $applyCustomTableHandlers(
         const isForward = direction === 'forward';
 
         if (x !== (isForward ? grid.columns - 1 : 0)) {
-          const tableCell = tableNode.getCellNodeFromCordsOrThrow(
-            x + (isForward ? 1 : -1),
-            y,
-            grid,
+          selectTableCellNode(
+            tableNode.getCellNodeFromCordsOrThrow(
+              x + (isForward ? 1 : -1),
+              y,
+              grid,
+            ),
           );
-
-          const possibleParagraph = tableCell.getFirstChild();
-
-          if (possibleParagraph !== null) {
-            possibleParagraph.select();
-          } else {
-            tableCell.select();
-          }
         } else {
           if (y !== (isForward ? grid.rows - 1 : 0)) {
-            const tableCell = tableNode.getCellNodeFromCordsOrThrow(
-              isForward ? 0 : grid.columns - 1,
-              y + (isForward ? 1 : -1),
-              grid,
+            selectTableCellNode(
+              tableNode.getCellNodeFromCordsOrThrow(
+                isForward ? 0 : grid.columns - 1,
+                y + (isForward ? 1 : -1),
+                grid,
+              ),
             );
-            const possibleParagraph = tableCell.getFirstChild();
-
-            if (possibleParagraph !== null) {
-              possibleParagraph.select();
-            } else {
-              tableCell.select();
-            }
           } else if (!isForward) {
             tableNode.selectPrevious();
           } else {
@@ -486,7 +476,9 @@ export function $applyCustomTableHandlers(
 
       case 'up': {
         if (y !== 0) {
-          tableNode.getCellNodeFromCordsOrThrow(x, y - 1, grid).select();
+          selectTableCellNode(
+            tableNode.getCellNodeFromCordsOrThrow(x, y - 1, grid),
+          );
         } else {
           tableNode.selectPrevious();
         }
@@ -495,7 +487,9 @@ export function $applyCustomTableHandlers(
 
       case 'down': {
         if (y !== grid.rows - 1) {
-          tableNode.getCellNodeFromCordsOrThrow(x, y + 1, grid).select();
+          selectTableCellNode(
+            tableNode.getCellNodeFromCordsOrThrow(x, y + 1, grid),
+          );
         } else {
           tableNode.selectNext();
         }
@@ -637,4 +631,16 @@ export function $applyCustomTableHandlers(
     Array.from(editorListeners).forEach((removeListener) =>
       removeListener ? removeListener() : null,
     );
+}
+
+function selectTableCellNode(tableCell) {
+  const possibleParagraph = tableCell
+    .getChildren()
+    .find((n) => $isParagraphNode(n));
+
+  if ($isParagraphNode(possibleParagraph)) {
+    possibleParagraph.selectEnd();
+  } else {
+    tableCell.selectEnd();
+  }
 }

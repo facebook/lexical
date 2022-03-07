@@ -1,6 +1,6 @@
 ## 0.1.14 (March 04, 2022)
 
-- Added TableCellHeaderStyles to enable table header customization.
+- Added TableCellHeaderStates to enable table header customization.
 - Fixes to composition for WebKit.
 - Fixes to HashtagPlugin destroy behavior.
 - SSR fixes.

@@ -6,6 +6,7 @@
  *
  * @flow strict
  */
+import type {Grid} from './lexicalTableCoreHelpers';
 import type {LexicalNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/helpers/nodes';
@@ -15,6 +16,7 @@ import invariant from 'shared/invariant';
 import {
   $createTableCellNode,
   $isTableCellNode,
+  TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
 import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
@@ -35,14 +37,14 @@ export function $createTableNodeWithDimensions(
     const tableRowNode = $createTableRowNode();
 
     for (let iColumn = 0; iColumn < columnCount; iColumn++) {
-      const headerStyles = new Set();
+      let headerState = TableCellHeaderStates.NO_STATUS;
 
       if (includeHeaders) {
-        if (iRow === 0) headerStyles.add('row');
-        if (iColumn === 0) headerStyles.add('column');
+        if (iRow === 0) headerState |= TableCellHeaderStates.ROW;
+        if (iColumn === 0) headerState |= TableCellHeaderStates.COLUMN;
       }
 
-      const tableCellNode = $createTableCellNode(headerStyles);
+      const tableCellNode = $createTableCellNode(headerState);
 
       const paragraphNode = $createParagraphNode();
       paragraphNode.append($createTextNode());
@@ -120,16 +122,17 @@ export type TableCellSiblings = {
 
 export function $getTableCellSiblingsFromTableCellNode(
   tableCellNode: TableCellNode,
+  grid: Grid,
 ): TableCellSiblings {
   const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
-  const {x, y} = tableNode.getCordsFromCellNode(tableCellNode);
+  const {x, y} = tableNode.getCordsFromCellNode(tableCellNode, grid);
 
   return {
-    above: tableNode.getCellNodeFromCords(x, y - 1),
-    below: tableNode.getCellNodeFromCords(x, y + 1),
-    left: tableNode.getCellNodeFromCords(x - 1, y),
-    right: tableNode.getCellNodeFromCords(x + 1, y),
+    above: tableNode.getCellNodeFromCords(x, y - 1, grid),
+    below: tableNode.getCellNodeFromCords(x, y + 1, grid),
+    left: tableNode.getCellNodeFromCords(x - 1, y, grid),
+    right: tableNode.getCellNodeFromCords(x + 1, y, grid),
   };
 }
 
@@ -153,8 +156,9 @@ export function $removeTableRowAtIndex(
 export function $insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
-  shouldInsertAfter?: boolean = true,
+  shouldInsertAfter: boolean = true,
   rowCount: number,
+  grid: Grid,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
@@ -181,18 +185,19 @@ export function $insertTableRow(
 
         const {above, below} = $getTableCellSiblingsFromTableCellNode(
           tableCellFromTargetRow,
+          grid,
         );
 
-        const headerStyles = new Set();
+        let headerState = TableCellHeaderStates.NO_STATUS;
 
         if (
-          (above && above.getHeaderStyles().has('column')) ||
-          (below && below.getHeaderStyles().has('column'))
+          (above && above.hasHeaderState(TableCellHeaderStates.COLUMN)) ||
+          (below && below.hasHeaderState(TableCellHeaderStates.COLUMN))
         ) {
-          headerStyles.add('column');
+          headerState |= TableCellHeaderStates.COLUMN;
         }
 
-        const tableCellNode = $createTableCellNode(headerStyles);
+        const tableCellNode = $createTableCellNode(headerState);
 
         tableCellNode.append($createParagraphNode());
         newTableRowNode.append(tableCellNode);
@@ -223,13 +228,13 @@ export function $insertTableColumn(
     const currentTableRowNode = tableRows[r];
     if ($isTableRowNode(currentTableRowNode)) {
       for (let c = 0; c < columnCount; c++) {
-        const headerStyles = new Set();
+        let headerState = TableCellHeaderStates.NO_STATUS;
 
         if (r === 0) {
-          headerStyles.add('row');
+          headerState |= TableCellHeaderStates.ROW;
         }
 
-        const newTableCell = $createTableCellNode(headerStyles);
+        const newTableCell = $createTableCellNode(headerState);
 
         newTableCell.append($createParagraphNode());
 

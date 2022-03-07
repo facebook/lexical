@@ -25,6 +25,8 @@ import {
   $isTableCellNode,
   $removeTableRowAtIndex,
   TableCellNode,
+  TableCellHeaderStates,
+  $getElementGridForTableNode,
 } from '@lexical/table';
 
 type TableCellActionMenuProps = $ReadOnly<{
@@ -113,7 +115,10 @@ function TableActionMenu({
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
-      tableNode.setSelectionState(null);
+      tableNode.setSelectionState(
+        null,
+        $getElementGridForTableNode(editor, tableNode),
+      );
       tableNode.markDirty();
 
       updateTableCellNode(tableCellNode.getLatest());
@@ -128,11 +133,14 @@ function TableActionMenu({
 
         const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
 
+        const grid = $getElementGridForTableNode(editor, tableNode);
+
         $insertTableRow(
           tableNode,
           tableRowIndex,
           shouldInsertAfter,
           selectionCounts.rows,
+          grid,
         );
 
         clearTableSelection();
@@ -232,7 +240,7 @@ function TableActionMenu({
             throw new Error('Expected table cell');
           }
 
-          tableCell.toggleHeaderStyle('row');
+          tableCell.toggleHeaderStyle(TableCellHeaderStates.ROW);
         });
 
         clearTableSelection();
@@ -271,7 +279,7 @@ function TableActionMenu({
             throw new Error('Expected table cell');
           }
 
-          tableCell.toggleHeaderStyle('column');
+          tableCell.toggleHeaderStyle(TableCellHeaderStates.COLUMN);
         }
 
         clearTableSelection();
@@ -338,14 +346,20 @@ function TableActionMenu({
       <hr />
       <button className="item" onClick={() => toggleTableRowIsHeader()}>
         <span className="text">
-          {tableCellNode.__headerStyles.has('row') ? 'Remove' : 'Add'} row
-          header
+          {(tableCellNode.__headerState & TableCellHeaderStates.ROW) ===
+          TableCellHeaderStates.ROW
+            ? 'Remove'
+            : 'Add'}{' '}
+          row header
         </span>
       </button>
       <button className="item" onClick={() => toggleTableColumnIsHeader()}>
         <span className="text">
-          {tableCellNode.__headerStyles.has('column') ? 'Remove' : 'Add'} column
-          header
+          {(tableCellNode.__headerState & TableCellHeaderStates.COLUMN) ===
+          TableCellHeaderStates.COLUMN
+            ? 'Remove'
+            : 'Add'}{' '}
+          column header
         </span>
       </button>
     </div>,

@@ -451,6 +451,19 @@ export async function focusEditor(page, parentSelector = '.editor-shell') {
   }
 }
 
+export async function getEditorElement(page, parentSelector = '.editor-shell') {
+  const selector = `${parentSelector} div[contenteditable="true"]`;
+
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await leftFrame.waitForSelector(selector);
+    return leftFrame.$(selector);
+  } else {
+    await page.waitForSelector(selector);
+    return page.$(selector);
+  }
+}
+
 export async function waitForSelector(page, selector, options) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
@@ -545,9 +558,8 @@ expect.extend({
     // Setting error field allows jest to know where the matcher was called
     // to populate inline snapshot during update cycle
     this.error = new Error();
-    const editorElement = await pageOrParentElement.$(
-      'div[contenteditable="true"]',
-    );
+
+    const editorElement = await getEditorElement(pageOrParentElement);
     const html = await editorElement.innerHTML();
     return toMatchInlineSnapshot.call(this, new HtmlForPrettier(html), ...args);
   },

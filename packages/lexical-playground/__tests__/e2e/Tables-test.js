@@ -8,7 +8,6 @@
 
 import {
   initializeE2E,
-  assertHTML,
   focusEditor,
   waitForSelector,
   click,
@@ -94,17 +93,101 @@ describe('Tables', () => {
 
         await focusEditor(page);
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-        );
+        await expect(page).toMatchEditorInlineSnapshot(`<p><br /></p>`);
 
         await insertTable(page);
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><table class="PlaygroundEditorTheme__table b2p7l5pb l068gjig gvxzyvdx efm7ts3d c2b2pakg mfclru0v"><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-        );
+        await expect(page).toMatchEditorInlineSnapshot(`
+                <p><br /></p>
+                <table>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+                <p><br /></p>
+              `);
       },
     );
 
@@ -116,10 +199,97 @@ describe('Tables', () => {
 
       await page.keyboard.type('abc');
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><table class="PlaygroundEditorTheme__table b2p7l5pb l068gjig gvxzyvdx efm7ts3d c2b2pakg mfclru0v"><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">abc</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-      );
+      await expect(page).toMatchEditorInlineSnapshot(`
+              <p><br /></p>
+              <table>
+                <tr>
+                  <th>
+                    <p dir="ltr"><span data-lexical-text="true">abc</span></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            `);
     });
 
     it.skipIf(e2e.isPlainText, `Can navigate table with keyboard`, async () => {
@@ -130,10 +300,97 @@ describe('Tables', () => {
 
       await fillTablePartiallyWithText(page);
 
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><table class="PlaygroundEditorTheme__table b2p7l5pb l068gjig gvxzyvdx efm7ts3d c2b2pakg mfclru0v"><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">a</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">bb</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">d</span></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">e</span></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-      );
+      await expect(page).toMatchEditorInlineSnapshot(`
+              <p><br /></p>
+              <table>
+                <tr>
+                  <th>
+                    <p dir="ltr"><span data-lexical-text="true">a</span></p>
+                  </th>
+                  <th>
+                    <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+                  </th>
+                  <th>
+                    <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p dir="ltr"><span data-lexical-text="true">d</span></p>
+                  </th>
+                  <td>
+                    <p dir="ltr"><span data-lexical-text="true">e</span></p>
+                  </td>
+                  <td>
+                    <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            `);
     });
 
     it.skipIf(
@@ -148,11 +405,190 @@ describe('Tables', () => {
         await fillTablePartiallyWithText(page);
         await selectCellsFromTableCords(page, {x: 0, y: 0}, {x: 1, y: 1});
 
+        await expect(page).toMatchEditorInlineSnapshot(`
+                <p><br /></p>
+                <table>
+                  <tr>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">a</span></p>
+                    </th>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+                    </th>
+                    <th>
+                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">d</span></p>
+                    </th>
+                    <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">e</span></p>
+                    </td>
+                    <td>
+                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+                <p><br /></p>
+              `);
+
         // Check that the highlight styles are applied.
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><table class="PlaygroundEditorTheme__table b2p7l5pb l068gjig gvxzyvdx efm7ts3d c2b2pakg mfclru0v"><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">a</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">bb</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">d</span></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">e</span></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-        );
+        await expect(page).toMatchEditorInlineSnapshot(`
+                <p><br /></p>
+                <table>
+                  <tr>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">a</span></p>
+                    </th>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+                    </th>
+                    <th>
+                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">d</span></p>
+                    </th>
+                    <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><span data-lexical-text="true">e</span></p>
+                    </td>
+                    <td>
+                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+                <p><br /></p>
+              `);
       },
     );
 
@@ -176,10 +612,97 @@ describe('Tables', () => {
         ]);
 
         // Check that the character styles are applied.
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><table class="PlaygroundEditorTheme__table b2p7l5pb l068gjig gvxzyvdx efm7ts3d c2b2pakg mfclru0v"><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c PlaygroundEditorTheme__textItalic qp0gn4il PlaygroundEditorTheme__textUnderlineStrikethrough kf6cyplv" data-lexical-text="true">a</strong></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c PlaygroundEditorTheme__textItalic qp0gn4il PlaygroundEditorTheme__textUnderlineStrikethrough kf6cyplv" data-lexical-text="true">bb</strong></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c PlaygroundEditorTheme__textItalic qp0gn4il PlaygroundEditorTheme__textUnderlineStrikethrough kf6cyplv" data-lexical-text="true">d</strong></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c PlaygroundEditorTheme__textItalic qp0gn4il PlaygroundEditorTheme__textUnderlineStrikethrough kf6cyplv" data-lexical-text="true">e</strong></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-        );
+        await expect(page).toMatchEditorInlineSnapshot(`
+                <p><br /></p>
+                <table>
+                  <tr>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
+                    </th>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
+                    </th>
+                    <th>
+                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><strong data-lexical-text="true">d</strong></p>
+                    </th>
+                    <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                      <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
+                    </td>
+                    <td>
+                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+                <p><br /></p>
+              `);
       },
     );
 
@@ -198,10 +721,97 @@ describe('Tables', () => {
         await page.keyboard.press('Backspace');
 
         // Check that the text was cleared.
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><table class="PlaygroundEditorTheme__table b2p7l5pb l068gjig gvxzyvdx efm7ts3d c2b2pakg mfclru0v"><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></th><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td><td class="PlaygroundEditorTheme__tableCell hfn9ay4j o16r2wbc e22jxqte gpza54hc q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze nq2b4knc jl13m0i8 gewbibgg ztn2w49o"><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
-        );
+        await expect(page).toMatchEditorInlineSnapshot(`
+                <p><br /></p>
+                <table>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <p><br /></p>
+                    </th>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                    <td>
+                      <p><br /></p>
+                    </td>
+                  </tr>
+                </table>
+                <p><br /></p>
+              `);
       },
     );
   });

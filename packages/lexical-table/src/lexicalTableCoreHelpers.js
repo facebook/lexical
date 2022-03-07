@@ -23,6 +23,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $setSelection,
 } from 'lexical';
@@ -78,11 +79,7 @@ export function getCellFromTarget(node: Node): Cell | null {
   return null;
 }
 
-export function trackTableGrid(
-  tableNode: TableNode,
-  tableElement: HTMLElement,
-  editor: LexicalEditor,
-): Grid {
+export function getTableGrid(tableElement: HTMLElement): Grid {
   const cells: Cells = [];
   const grid = {
     cells,
@@ -90,60 +87,65 @@ export function trackTableGrid(
     rows: 0,
   };
 
-  const calcSize = () => {
-    let currentNode = tableElement.firstChild;
-    let x = 0;
-    let y = 0;
+  let currentNode = tableElement.firstChild;
+  let x = 0;
+  let y = 0;
 
-    cells.length = 0;
+  cells.length = 0;
 
-    while (currentNode != null) {
-      const nodeMame = currentNode.nodeName;
-      if (nodeMame === 'TD' || nodeMame === 'TH') {
-        // $FlowFixMe: TD is always an HTMLElement
-        const elem: HTMLElement = currentNode;
-        const cell = {
-          elem,
-          highlighted: false,
-          x,
-          y,
-        };
-        // $FlowFixMe: internal field
-        currentNode._cell = cell;
-        if (cells[y] === undefined) {
-          cells[y] = [];
-        }
-        cells[y][x] = cell;
-      } else {
-        const child = currentNode.firstChild;
-        if (child != null) {
-          currentNode = child;
-          continue;
-        }
+  while (currentNode != null) {
+    const nodeMame = currentNode.nodeName;
+    if (nodeMame === 'TD' || nodeMame === 'TH') {
+      // $FlowFixMe: TD is always an HTMLElement
+      const elem: HTMLElement = currentNode;
+      const cell = {
+        elem,
+        highlighted: false,
+        x,
+        y,
+      };
+      // $FlowFixMe: internal field
+      currentNode._cell = cell;
+      if (cells[y] === undefined) {
+        cells[y] = [];
       }
-      const sibling = currentNode.nextSibling;
-      if (sibling != null) {
-        x++;
-        currentNode = sibling;
+      cells[y][x] = cell;
+    } else {
+      const child = currentNode.firstChild;
+      if (child != null) {
+        currentNode = child;
         continue;
       }
-      const parent = currentNode.parentNode;
-      if (parent != null) {
-        const parentSibling = parent.nextSibling;
-        if (parentSibling == null) {
-          break;
-        }
-        y++;
-        x = 0;
-        currentNode = parentSibling;
-      }
     }
-    grid.columns = x + 1;
-    grid.rows = y + 1;
+    const sibling = currentNode.nextSibling;
+    if (sibling != null) {
+      x++;
+      currentNode = sibling;
+      continue;
+    }
+    const parent = currentNode.parentNode;
+    if (parent != null) {
+      const parentSibling = parent.nextSibling;
+      if (parentSibling == null) {
+        break;
+      }
+      y++;
+      x = 0;
+      currentNode = parentSibling;
+    }
+  }
+  grid.columns = x + 1;
+  grid.rows = y + 1;
 
-    tableNode.setGrid(grid);
-  };
+  return grid;
+}
 
+export function trackTableGrid(
+  tableNode: TableNode,
+  tableElement: HTMLElement,
+  editor: LexicalEditor,
+  cb: (grid: Grid) => void,
+): Grid {
   const observer = new MutationObserver((records) => {
     editor.update(() => {
       let gridNeedsRedraw = false;
@@ -160,7 +162,9 @@ export function trackTableGrid(
         return;
       }
 
-      calcSize();
+      const grid = getTableGrid(tableElement);
+
+      cb(grid);
     });
   });
 
@@ -169,9 +173,7 @@ export function trackTableGrid(
     subtree: true,
   });
 
-  calcSize();
-
-  return grid;
+  return getTableGrid(tableElement);
 }
 
 export function updateCells(
@@ -219,9 +221,9 @@ export function $applyCustomTableHandlers(
     throw new Error('No root element.');
   }
 
-  trackTableGrid(tableNode, tableElement, editor);
-
-  const grid = tableNode.getGrid();
+  let grid = trackTableGrid(tableNode, tableElement, editor, (g) => {
+    grid = g;
+  });
 
   let isSelected = false;
   let isHighlightingCells = false;
@@ -284,7 +286,7 @@ export function $applyCustomTableHandlers(
                       });
                     }
                   });
-                  tableNode.setSelectionState(null);
+                  tableNode.setSelectionState(null, grid);
                   $setSelection(null);
                   return true;
                 } else if (type === 'formatText') {
@@ -314,12 +316,15 @@ export function $applyCustomTableHandlers(
           const toY = Math.max(startY, currentY);
 
           editor.update(() => {
-            highlightedCells = tableNode.setSelectionState({
-              fromX,
-              fromY,
-              toX,
-              toY,
-            });
+            highlightedCells = tableNode.setSelectionState(
+              {
+                fromX,
+                fromY,
+                toX,
+                toY,
+              },
+              grid,
+            );
           });
         }
       }
@@ -336,7 +341,7 @@ export function $applyCustomTableHandlers(
       currentY = -1;
 
       editor.update(() => {
-        tableNode.setSelectionState(null);
+        tableNode.setSelectionState(null, grid);
       });
 
       highlightedCells = [];
@@ -428,7 +433,7 @@ export function $applyCustomTableHandlers(
       rootElement.contains(e.target)
     ) {
       editor.update(() => {
-        tableNode.setSelectionState(null);
+        tableNode.setSelectionState(null, grid);
       });
     }
   });
@@ -444,17 +449,22 @@ export function $applyCustomTableHandlers(
         const isForward = direction === 'forward';
 
         if (x !== (isForward ? grid.columns - 1 : 0)) {
-          tableNode
-            .getCellNodeFromCordsOrThrow(x + (isForward ? 1 : -1), y)
-            .select();
+          selectTableCellNode(
+            tableNode.getCellNodeFromCordsOrThrow(
+              x + (isForward ? 1 : -1),
+              y,
+              grid,
+            ),
+          );
         } else {
           if (y !== (isForward ? grid.rows - 1 : 0)) {
-            tableNode
-              .getCellNodeFromCordsOrThrow(
+            selectTableCellNode(
+              tableNode.getCellNodeFromCordsOrThrow(
                 isForward ? 0 : grid.columns - 1,
                 y + (isForward ? 1 : -1),
-              )
-              .select();
+                grid,
+              ),
+            );
           } else if (!isForward) {
             tableNode.selectPrevious();
           } else {
@@ -466,7 +476,9 @@ export function $applyCustomTableHandlers(
 
       case 'up': {
         if (y !== 0) {
-          tableNode.getCellNodeFromCordsOrThrow(x, y - 1).select();
+          selectTableCellNode(
+            tableNode.getCellNodeFromCordsOrThrow(x, y - 1, grid),
+          );
         } else {
           tableNode.selectPrevious();
         }
@@ -475,7 +487,9 @@ export function $applyCustomTableHandlers(
 
       case 'down': {
         if (y !== grid.rows - 1) {
-          tableNode.getCellNodeFromCordsOrThrow(x, y + 1).select();
+          selectTableCellNode(
+            tableNode.getCellNodeFromCordsOrThrow(x, y + 1, grid),
+          );
         } else {
           tableNode.selectNext();
         }
@@ -519,7 +533,10 @@ export function $applyCustomTableHandlers(
         const event: KeyboardEvent = payload;
 
         if (selection.isCollapsed() && highlightedCells.length === 0) {
-          const currentCords = tableNode.getCordsFromCellNode(tableCellNode);
+          const currentCords = tableNode.getCordsFromCellNode(
+            tableCellNode,
+            grid,
+          );
           event.preventDefault();
 
           selectGridNodeInDirection(
@@ -532,29 +549,70 @@ export function $applyCustomTableHandlers(
         }
       }
 
-      if (type === 'keyArrowDown' || type === 'keyArrowUp') {
+      if (
+        type === 'keyArrowDown' ||
+        type === 'keyArrowUp' ||
+        type === 'keyArrowLeft' ||
+        type === 'keyArrowRight'
+      ) {
         const event: KeyboardEvent = payload;
 
         if (selection.isCollapsed() && highlightedCells.length === 0) {
-          const currentCords = tableNode.getCordsFromCellNode(tableCellNode);
+          const currentCords = tableNode.getCordsFromCellNode(
+            tableCellNode,
+            grid,
+          );
           const elementParentNode = $findMatchingParent(
             selection.anchor.getNode(),
             (n) => $isElementNode(n),
           );
 
+          if (elementParentNode == null) {
+            throw new Error('Expected BlockNode Parent');
+          }
+
+          const firstChild = tableCellNode.getFirstChild();
+          const lastChild = tableCellNode.getLastChild();
+
+          const isSelectionInFirstBlock =
+            (firstChild && elementParentNode.isParentOf(firstChild)) ||
+            elementParentNode === firstChild;
+
+          const isSelectionInLastBlock =
+            (lastChild && elementParentNode.isParentOf(lastChild)) ||
+            elementParentNode === lastChild;
+
           if (
-            (type === 'keyArrowUp' &&
-              elementParentNode === tableCellNode.getFirstChild()) ||
-            (type === 'keyArrowDown' &&
-              elementParentNode === tableCellNode.getLastChild())
+            (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
+            (type === 'keyArrowDown' && isSelectionInLastBlock)
           ) {
             event.preventDefault();
             event.stopImmediatePropagation();
+            event.stopPropagation();
 
             selectGridNodeInDirection(
               currentCords.x,
               currentCords.y,
               type === 'keyArrowUp' ? 'up' : 'down',
+            );
+
+            return true;
+          }
+
+          if (
+            (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
+            (type === 'keyArrowRight' &&
+              selection.anchor.offset ===
+                selection.anchor.getNode().getTextContentSize())
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            event.stopPropagation();
+
+            selectGridNodeInDirection(
+              currentCords.x,
+              currentCords.y,
+              type === 'keyArrowLeft' ? 'backward' : 'forward',
             );
 
             return true;
@@ -573,4 +631,16 @@ export function $applyCustomTableHandlers(
     Array.from(editorListeners).forEach((removeListener) =>
       removeListener ? removeListener() : null,
     );
+}
+
+function selectTableCellNode(tableCell) {
+  const possibleParagraph = tableCell
+    .getChildren()
+    .find((n) => $isParagraphNode(n));
+
+  if ($isParagraphNode(possibleParagraph)) {
+    possibleParagraph.selectEnd();
+  } else {
+    tableCell.selectEnd();
+  }
 }

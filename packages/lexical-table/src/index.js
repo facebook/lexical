@@ -10,10 +10,16 @@
 import {
   $createTableCellNode,
   $isTableCellNode,
+  TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
 import {$applyCustomTableHandlers} from './lexicalTableCoreHelpers';
-import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
+import {
+  $createTableNode,
+  $getElementGridForTableNode,
+  $isTableNode,
+  TableNode,
+} from './LexicalTableNode';
 import {
   $createTableRowNode,
   $isTableRowNode,
@@ -39,6 +45,7 @@ export {
   $createTableNodeWithDimensions,
   $createTableRowNode,
   $deleteTableColumn,
+  $getElementGridForTableNode,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
@@ -50,6 +57,7 @@ export {
   $isTableNode,
   $isTableRowNode,
   $removeTableRowAtIndex,
+  TableCellHeaderStates,
   TableCellNode,
   TableNode,
   TableRowNode,

@@ -448,18 +448,33 @@ export function $applyCustomTableHandlers(
         const isForward = direction === 'forward';
 
         if (x !== (isForward ? grid.columns - 1 : 0)) {
-          tableNode
-            .getCellNodeFromCordsOrThrow(x + (isForward ? 1 : -1), y, grid)
-            .select();
+          const tableCell = tableNode.getCellNodeFromCordsOrThrow(
+            x + (isForward ? 1 : -1),
+            y,
+            grid,
+          );
+
+          const possibleParagraph = tableCell.getFirstChild();
+
+          if (possibleParagraph !== null) {
+            possibleParagraph.select();
+          } else {
+            tableCell.select();
+          }
         } else {
           if (y !== (isForward ? grid.rows - 1 : 0)) {
-            tableNode
-              .getCellNodeFromCordsOrThrow(
-                isForward ? 0 : grid.columns - 1,
-                y + (isForward ? 1 : -1),
-                grid,
-              )
-              .select();
+            const tableCell = tableNode.getCellNodeFromCordsOrThrow(
+              isForward ? 0 : grid.columns - 1,
+              y + (isForward ? 1 : -1),
+              grid,
+            );
+            const possibleParagraph = tableCell.getFirstChild();
+
+            if (possibleParagraph !== null) {
+              possibleParagraph.select();
+            } else {
+              tableCell.select();
+            }
           } else if (!isForward) {
             tableNode.selectPrevious();
           } else {
@@ -540,7 +555,12 @@ export function $applyCustomTableHandlers(
         }
       }
 
-      if (type === 'keyArrowDown' || type === 'keyArrowUp') {
+      if (
+        type === 'keyArrowDown' ||
+        type === 'keyArrowUp' ||
+        type === 'keyArrowLeft' ||
+        type === 'keyArrowRight'
+      ) {
         const event: KeyboardEvent = payload;
 
         if (selection.isCollapsed() && highlightedCells.length === 0) {
@@ -553,19 +573,52 @@ export function $applyCustomTableHandlers(
             (n) => $isElementNode(n),
           );
 
+          if (elementParentNode == null) {
+            throw new Error('Expected BlockNode Parent');
+          }
+
+          const firstChild = tableCellNode.getFirstChild();
+          const lastChild = tableCellNode.getLastChild();
+
+          const isSelectionInFirstBlock =
+            (firstChild && elementParentNode.isParentOf(firstChild)) ||
+            elementParentNode === firstChild;
+
+          const isSelectionInLastBlock =
+            (lastChild && elementParentNode.isParentOf(lastChild)) ||
+            elementParentNode === lastChild;
+
           if (
-            (type === 'keyArrowUp' &&
-              elementParentNode === tableCellNode.getFirstChild()) ||
-            (type === 'keyArrowDown' &&
-              elementParentNode === tableCellNode.getLastChild())
+            (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
+            (type === 'keyArrowDown' && isSelectionInLastBlock)
           ) {
             event.preventDefault();
             event.stopImmediatePropagation();
+            event.stopPropagation();
 
             selectGridNodeInDirection(
               currentCords.x,
               currentCords.y,
               type === 'keyArrowUp' ? 'up' : 'down',
+            );
+
+            return true;
+          }
+
+          if (
+            (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
+            (type === 'keyArrowRight' &&
+              selection.anchor.offset ===
+                selection.anchor.getNode().getTextContentSize())
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            event.stopPropagation();
+
+            selectGridNodeInDirection(
+              currentCords.x,
+              currentCords.y,
+              type === 'keyArrowLeft' ? 'backward' : 'forward',
             );
 
             return true;

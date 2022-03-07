@@ -1,3 +1,4 @@
+/* eslint-disable sort-keys-fix/sort-keys-fix */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -12,30 +13,33 @@ import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 import {addClassNamesToElement} from '@lexical/helpers/elements';
 import {GridCellNode} from 'lexical';
 
-export type TableCellHeaderStyles = Set<'row' | 'column'>;
+export const TableCellHeaderStates = {
+  NO_STATUS: 0,
+  ROW: 1,
+  COLUMN: 2,
+  BOTH: 3,
+};
+
+export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
 export class TableCellNode extends GridCellNode {
-  __headerStyles: TableCellHeaderStyles;
+  __headerState: TableCellHeaderState;
 
   static getType(): 'tablecell' {
     return 'tablecell';
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(
-      new Set(node.__headerStyles),
-      node.__colSpan,
-      node.__key,
-    );
+    return new TableCellNode(node.__headerState, node.__colSpan, node.__key);
   }
 
   constructor(
-    headerStyles?: TableCellHeaderStyles,
+    headerState?: TableCellHeaderState = TableCellHeaderStates.NO_STATUS,
     colSpan?: number = 1,
     key?: NodeKey,
   ): void {
     super(colSpan, key);
-    this.__headerStyles = headerStyles || new Set();
+    this.__headerState = headerState;
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
@@ -54,39 +58,40 @@ export class TableCellNode extends GridCellNode {
     return this.hasHeader() ? 'th' : 'td';
   }
 
-  setHeaderStyles(headerStyles: TableCellHeaderStyles): TableCellHeaderStyles {
+  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState {
     const self = this.getWritable();
-    self.__headerStyles = new Set(headerStyles);
-    return this.__headerStyles;
+    self.__headerState = headerState;
+    return this.__headerState;
   }
 
-  getHeaderStyles(): TableCellHeaderStyles {
-    return this.getLatest().__headerStyles;
+  getHeaderStyles(): TableCellHeaderState {
+    return this.getLatest().__headerState;
   }
 
-  toggleHeaderStyle(key: 'row' | 'column'): TableCellNode {
+  toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
     const self = this.getWritable();
 
-    const newHeaderValue = self.getHeaderStyles();
-
-    if (newHeaderValue.has(key)) {
-      newHeaderValue.delete(key);
+    if ((self.__headerState & headerStateToToggle) === headerStateToToggle) {
+      self.__headerState -= headerStateToToggle;
     } else {
-      newHeaderValue.add(key);
+      self.__headerState += headerStateToToggle;
     }
 
-    self.__headerStyles = new Set(newHeaderValue);
+    self.__headerState = self.__headerState;
 
     return self;
   }
 
+  hasHeaderState(headerState: TableCellHeaderState): boolean {
+    return (this.getHeaderStyles() & headerState) === headerState;
+  }
+
   hasHeader(): boolean {
-    const headerStyles = this.getLatest().__headerStyles;
-    return headerStyles.size > 0;
+    return this.getLatest().__headerState !== TableCellHeaderStates.NO_STATUS;
   }
 
   updateDOM(prevNode: TableCellNode): boolean {
-    return prevNode.__headerStyles.size !== this.__headerStyles.size;
+    return prevNode.__headerState !== this.__headerState;
   }
 
   collapseAtStart(): true {
@@ -99,9 +104,9 @@ export class TableCellNode extends GridCellNode {
 }
 
 export function $createTableCellNode(
-  headerStyles: TableCellHeaderStyles,
+  headerState: TableCellHeaderState,
 ): TableCellNode {
-  return new TableCellNode(headerStyles);
+  return new TableCellNode(headerState);
 }
 
 export function $isTableCellNode(node: ?LexicalNode): boolean %checks {

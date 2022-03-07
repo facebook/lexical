@@ -20,10 +20,12 @@ import {
   ListItemNode,
 } from './LexicalListItemNode';
 import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
+import {$getListDepth} from './utils';
 
 export {
   $createListItemNode,
   $createListNode,
+  $getListDepth,
   $handleListInsertParagraph,
   $isListItemNode,
   $isListNode,

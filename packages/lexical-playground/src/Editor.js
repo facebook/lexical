@@ -25,6 +25,7 @@ import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import ListPlugin from '@lexical/react/LexicalListPlugin';
+import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
@@ -103,6 +104,7 @@ export default function Editor(): React$Node {
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
+            <ListMaxIndentLevelPlugin maxDepth={7} />
             <TablesPlugin />
             <TableCellActionMenuPlugin />
             <ImagesPlugin />

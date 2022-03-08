@@ -51,10 +51,17 @@ function TableActionMenu({
   });
 
   useEffect(() => {
-    editor.getEditorState().read(() => {
-      updateTableCellNode(_tableCellNode.getLatest());
+    return editor.addListener('mutation', TableCellNode, (nodeMutations) => {
+      const nodeUpdated =
+        nodeMutations.get(tableCellNode.getKey()) === 'updated';
+
+      if (nodeUpdated) {
+        editor.getEditorState().read(() => {
+          updateTableCellNode(tableCellNode.getLatest());
+        });
+      }
     });
-  }, [editor, _tableCellNode]);
+  }, [editor, tableCellNode]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
@@ -121,7 +128,6 @@ function TableActionMenu({
       );
       tableNode.markDirty();
 
-      updateTableCellNode(tableCellNode.getLatest());
       $setSelection(null);
     });
   }, [editor, tableCellNode]);
@@ -187,7 +193,6 @@ function TableActionMenu({
       $removeTableRowAtIndex(tableNode, tableRowIndex);
 
       clearTableSelection();
-
       onClose();
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);

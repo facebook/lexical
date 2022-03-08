@@ -8,17 +8,31 @@ import type {
   LexicalEditor,
 } from 'lexical';
 
+export enum TableCellHeaderState {
+  NO_STATUS = 0,
+  ROW = 1,
+  COLUMN = 2,
+  BOTH = 3,
+}
+
 /**
  * LexicalTableCellNode
  */
 
-export type TableCellHeaderStyles = Set<'row' | 'column'>;
+export const TableCellHeaderStates = {
+  NO_STATUS: 0,
+  ROW: 1,
+  COLUMN: 2,
+  BOTH: 3,
+};
+
+export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
 export declare class TableCellNode extends ElementNode {
   static getType(): string;
   static clone(node: TableCellNode): TableCellNode;
   constructor(
-    headerStyles?: TableCellHeaderStyles,
+    headerState?: TableCellHeaderState,
     colSpan?: number,
     key?: NodeKey,
   );
@@ -30,9 +44,9 @@ export declare class TableCellNode extends ElementNode {
   canInsertTab(): true;
   collapseAtStart(): true;
   getTag(): string;
-  setHeaderStyles(headerStyles: TableCellHeaderStyles): TableCellHeaderStyles;
-  getHeaderStyles(): TableCellHeaderStyles;
-  toggleHeaderStyle(key: 'row' | 'column'): TableCellNode;
+  setHeaderState(headerState: TableCellHeaderState): TableCellHeaderState;
+  getHeaderState(): TableCellHeaderState;
+  toggleHeaderState(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;
   collapseAtStart(): true;
@@ -111,7 +125,7 @@ export type SelectionShape = {
   toY: number;
 };
 
-declare function $applyCustomTableHandlers(
+declare function $applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
@@ -157,6 +171,7 @@ declare function $insertTableRow(
   targetIndex: number,
   shouldInsertAfter: boolean,
   rowCount: number,
+  grid: Grid,
 ): TableNode;
 
 declare function $insertTableColumn(

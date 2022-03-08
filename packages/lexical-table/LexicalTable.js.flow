@@ -15,23 +15,31 @@ import type {
   RangeSelection,
   LexicalEditor,
 } from 'lexical';
+
 import {ElementNode} from 'lexical';
 
 /**
  * LexicalTableCellNode
  */
 
-export type TableCellHeaderStyles = Set<'row' | 'column'>;
+export const TableCellHeaderStates = {
+  NO_STATUS: 0,
+  ROW: 1,
+  COLUMN: 2,
+  BOTH: 3,
+};
+
+export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
 declare export class TableCellNode extends ElementNode {
   static getType(): string;
   static clone(node: TableCellNode): TableCellNode;
   constructor(
-    headerStyles?: TableCellHeaderStyles,
+    headerState?: TableCellHeaderState,
     colSpan?: number,
     key?: NodeKey,
   ): void;
-  __headerStyles: TableCellHeaderStyles;
+  __headerState: TableCellHeaderState;
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
   insertNewAfter(
@@ -40,9 +48,9 @@ declare export class TableCellNode extends ElementNode {
   canInsertTab(): true;
   collapseAtStart(): true;
   getTag(): string;
-  setHeaderStyles(headerStyles: TableCellHeaderStyles): TableCellHeaderStyles;
-  getHeaderStyles(): TableCellHeaderStyles;
-  toggleHeaderStyle(key: 'row' | 'column'): TableCellNode;
+  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
+  getHeaderStyles(): TableCellHeaderState;
+  toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;
   collapseAtStart(): true;
@@ -70,11 +78,14 @@ declare export class TableNode extends ElementNode {
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   canInsertTab(): true;
   collapseAtStart(): true;
-  setSelectionState(selectionShape: ?SelectionShape): Array<Cell>;
+  setSelectionState(selectionShape: ?SelectionShape, grid: Grid): Array<Cell>;
   getSelectionState(): ?SelectionShape;
-  getCordsFromCellNode(tableCellNode: TableCellNode): {x: number, y: number};
-  getCellNodeFromCords(x: number, y: number): ?TableCellNode;
-  getCellNodeFromCordsOrThrow(x: number, y: number): TableCellNode;
+  getCordsFromCellNode(
+    tableCellNode: TableCellNode,
+    grid: Grid,
+  ): {x: number, y: number};
+  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode;
+  getCellNodeFromCordsOrThrow(x: number, y: number, grid: Grid): TableCellNode;
   setGrid(grid: ?Grid): TableNode;
   getGrid(): ?Grid;
   canSelectBefore(): true;
@@ -131,11 +142,16 @@ export type SelectionShape = {
   toY: number,
 };
 
-declare export function $applyCustomTableHandlers(
+declare export function $applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
 ): () => void;
+
+declare export function $getElementGridForTableNode(
+  editor: LexicalEditor,
+  tableNode: TableNode,
+): Grid;
 
 /**
  * LexicalTableUtils
@@ -177,6 +193,7 @@ declare export function $insertTableRow(
   targetIndex: number,
   shouldInsertAfter?: boolean,
   rowCount: number,
+  grid: Grid,
 ): TableNode;
 
 declare export function $insertTableColumn(

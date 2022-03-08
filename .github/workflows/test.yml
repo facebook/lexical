@@ -27,7 +27,7 @@ jobs:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -45,7 +45,6 @@ jobs:
         node-version: [16.8]
     env:
       CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -58,7 +57,7 @@ jobs:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -74,7 +73,6 @@ jobs:
         events-mode: ['legacy-events', 'modern-events']
     env:
       CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
@@ -89,7 +87,7 @@ jobs:
           path: |
             node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -106,7 +104,6 @@ jobs:
         events-mode: ['legacy-events', 'modern-events']
     env:
       CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
@@ -125,7 +122,7 @@ jobs:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -142,7 +139,6 @@ jobs:
         events-mode: ['legacy-events', 'modern-events']
     env:
       CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
@@ -157,7 +153,7 @@ jobs:
           path: |
             node_modules
             %USERPROFILE%\AppData\Local\ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -185,7 +181,7 @@ jobs:
           path: |
             node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -217,7 +213,7 @@ jobs:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -232,7 +228,6 @@ jobs:
         browser: ['chromium', 'firefox']
     env:
       CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -245,7 +240,7 @@ jobs:
           path: |
             node_modules
             %USERPROFILE%\AppData\Local\ms-playwright
-          key: ${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci

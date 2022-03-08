@@ -25,10 +25,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run lint
       - run: npm run flow
@@ -54,10 +56,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-unit
 
@@ -83,10 +87,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            ~/Library/Caches/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -117,10 +123,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -147,10 +155,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            %USERPROFILE%\AppData\Local\ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -173,10 +183,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            ~/Library/Caches/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
@@ -203,10 +215,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
@@ -229,10 +243,12 @@ jobs:
       - uses: actions/cache@v2
         id: cache
         with:
-          path: 'node_modules'
+          path: |
+            node_modules
+            %USERPROFILE%\AppData\Local\ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        #if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}

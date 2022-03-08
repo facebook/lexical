@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $applyCustomTableHandlers,
+  $applyTableHandlers,
   $createTableNodeWithDimensions,
   TableCellNode,
   TableNode,
@@ -90,7 +90,7 @@ export default function TablePlugin(): React$Node {
             const tableNode = $getNodeByKey(nodeKey);
 
             if (tableElement && tableNode) {
-              const removeListeners = $applyCustomTableHandlers(
+              const removeListeners = $applyTableHandlers(
                 tableNode,
                 tableElement,
                 editor,

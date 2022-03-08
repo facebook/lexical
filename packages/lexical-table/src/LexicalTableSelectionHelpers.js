@@ -210,7 +210,7 @@ export function updateCells(
   return highlighted;
 }
 
-export function $applyCustomTableHandlers(
+export function $applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,

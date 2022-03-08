@@ -8,7 +8,7 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {Cell, Grid, SelectionShape} from './lexicalTableCoreHelpers';
+import type {Cell, Grid, SelectionShape} from './LexicalTableSelectionHelpers';
 import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
@@ -16,7 +16,7 @@ import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
-import {getTableGrid, updateCells} from './lexicalTableCoreHelpers';
+import {getTableGrid, updateCells} from './LexicalTableSelectionHelpers';
 
 export class TableNode extends GridNode {
   __selectionShape: ?SelectionShape;

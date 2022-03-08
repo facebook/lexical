@@ -29,8 +29,8 @@ jobs:
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run lint
       - run: npm run flow
       - run: npm run build
@@ -60,8 +60,8 @@ jobs:
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run test-unit
 
   e2e-mac:
@@ -91,8 +91,8 @@ jobs:
             ~/Library/Caches/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
@@ -127,8 +127,8 @@ jobs:
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
@@ -159,8 +159,8 @@ jobs:
             %USERPROFILE%\AppData\Local\ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
@@ -187,8 +187,8 @@ jobs:
             ~/Library/Caches/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
 
@@ -219,8 +219,8 @@ jobs:
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
 
@@ -247,7 +247,7 @@ jobs:
             %USERPROFILE%\AppData\Local\ms-playwright
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        #if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci && npx playwright install
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}

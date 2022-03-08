@@ -11,8 +11,6 @@ import type {EditorConfig, LexicalNode} from 'lexical';
 
 import {TextNode} from 'lexical';
 
-// addTransform -> addListener('dirty')
-
 export class KeywordNode extends TextNode {
   static getType(): string {
     return 'keyword';

@@ -23,10 +23,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run lint
       - run: npm run flow
       - run: npm run build
@@ -49,10 +52,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run test-unit
 
   e2e-mac:
@@ -75,10 +81,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
@@ -106,10 +115,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install xvfb
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
@@ -133,10 +145,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
@@ -156,10 +171,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
 
@@ -183,10 +201,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install xvfb
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
 
@@ -206,9 +227,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: actions/cache@v2
+        id: cache
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}

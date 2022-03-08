@@ -120,13 +120,18 @@ function TableActionMenu({
 
   const clearTableSelection = useCallback(() => {
     editor.update(() => {
-      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      if (tableCellNode.isAttached()) {
+        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
-      tableNode.setSelectionState(
-        null,
-        $getElementGridForTableNode(editor, tableNode),
-      );
-      tableNode.markDirty();
+        tableNode.setSelectionState(
+          null,
+          $getElementGridForTableNode(editor, tableNode),
+        );
+
+        tableNode.markDirty();
+
+        updateTableCellNode(tableCellNode.getLatest());
+      }
 
       $setSelection(null);
     });

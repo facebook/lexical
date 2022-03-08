@@ -12,6 +12,7 @@ import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   MutatedNodes,
+  MutationListeners,
   RegisteredNodes,
 } from './LexicalEditor';
 import type {NodeKey, NodeMap} from './LexicalNode';
@@ -59,6 +60,7 @@ let activeEditor: LexicalEditor;
 let activeEditorNodes: RegisteredNodes;
 let treatAllNodesAsDirty: boolean = false;
 let activeEditorStateReadOnly: boolean = false;
+let activeMutationListeners: MutationListeners;
 let activeTextDirection = null;
 let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
@@ -84,7 +86,13 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     destroyChildren(children, 0, children.length - 1, null);
   }
   if (node !== undefined) {
-    setMutatedNode(mutatedNodes, activeEditorNodes, node, 'destroyed');
+    setMutatedNode(
+      mutatedNodes,
+      activeEditorNodes,
+      activeMutationListeners,
+      node,
+      'destroyed',
+    );
   }
 }
 
@@ -213,7 +221,13 @@ function createNode(
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
   }
-  setMutatedNode(mutatedNodes, activeEditorNodes, node, 'created');
+  setMutatedNode(
+    mutatedNodes,
+    activeEditorNodes,
+    activeMutationListeners,
+    node,
+    'created',
+  );
   return dom;
 }
 
@@ -458,6 +472,15 @@ function reconcileNode(
     }
     return dom;
   }
+  if (prevNode !== nextNode && isDirty) {
+    setMutatedNode(
+      mutatedNodes,
+      activeEditorNodes,
+      activeMutationListeners,
+      nextNode,
+      'updated',
+    );
+  }
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
     const replacementDOM = createNode(key, null, null);
@@ -466,6 +489,7 @@ function reconcileNode(
     }
     parentDOM.replaceChild(replacementDOM, dom);
     destroyNode(key, null);
+
     return replacementDOM;
   }
 
@@ -637,6 +661,7 @@ function reconcileRoot(
   activeEditor = editor;
   activeEditorConfig = editor._config;
   activeEditorNodes = editor._nodes;
+  activeMutationListeners = activeEditor._listeners.mutation;
   activeDirtyElements = dirtyElements;
   activeDirtyLeaves = dirtyLeaves;
   activePrevNodeMap = prevEditorState._nodeMap;

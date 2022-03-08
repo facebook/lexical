@@ -20,6 +20,8 @@ export class KeywordNode extends TextNode {
     return new KeywordNode(node.__text, node.__key);
   }
 
+  static onDirty(node: KeywordNode) {}
+
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.cursor = 'default';

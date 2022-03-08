@@ -455,6 +455,7 @@ export class TextNode extends LexicalNode {
     self.__detail ^= IS_UNMERGEABLE;
     return self;
   }
+
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
     const self = this.getWritable();

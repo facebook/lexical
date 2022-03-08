@@ -11,6 +11,8 @@ import type {EditorConfig, LexicalNode} from 'lexical';
 
 import {TextNode} from 'lexical';
 
+// addTransform -> addListener('dirty')
+
 export class KeywordNode extends TextNode {
   static getType(): string {
     return 'keyword';
@@ -19,8 +21,6 @@ export class KeywordNode extends TextNode {
   static clone(node: KeywordNode): KeywordNode {
     return new KeywordNode(node.__text, node.__key);
   }
-
-  static onDirty(node: KeywordNode) {}
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const dom = super.createDOM(config);

@@ -13,7 +13,6 @@ import {
   TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
-import {$applyCustomTableHandlers} from './lexicalTableCoreHelpers';
 import {
   $createTableNode,
   $getElementGridForTableNode,
@@ -25,6 +24,7 @@ import {
   $isTableRowNode,
   TableRowNode,
 } from './LexicalTableRowNode';
+import {$applyTableHandlers} from './LexicalTableSelectionHelpers';
 import {
   $createTableNodeWithDimensions,
   $deleteTableColumn,
@@ -36,10 +36,10 @@ import {
   $insertTableColumn,
   $insertTableRow,
   $removeTableRowAtIndex,
-} from './utils';
+} from './LexicalTableUtils';
 
 export {
-  $applyCustomTableHandlers,
+  $applyTableHandlers,
   $createTableCellNode,
   $createTableNode,
   $createTableNodeWithDimensions,

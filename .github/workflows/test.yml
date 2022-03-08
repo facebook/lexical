@@ -14,7 +14,6 @@ jobs:
         node-version: [16.8]
     env:
       CI: true
-      PLAYWRIGHT_BROWSERS_PATH: 0
       GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
     steps:
       - uses: actions/checkout@v2

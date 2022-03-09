@@ -82,7 +82,8 @@
     "prepare-size-compare": "npm run build-prod && node ./scripts/npm/prepare-size-compare.js",
     "prepare-www": "node scripts/www/rewriteImports.js",
     "release": "npm run prepare-release && node ./scripts/npm/release.js",
-    "update-version": "node ./scripts/updateVersion"
+    "update-version": "node ./scripts/updateVersion",
+    "cleanup-test-artifacts": " node ./scripts/tasks/cleanupTestArtifacts"
   },
   "devDependencies": {
     "@babel/plugin-transform-flow-strip-types": "^7.14.5",

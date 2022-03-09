@@ -92,6 +92,15 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - name: Clean Up Artifacts
+        run: npm run cleanup-test-artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: Videos
+          path: e2e-videos/
+          retention-days: 7
 
   e2e-linux:
     runs-on: ubuntu-latest
@@ -126,6 +135,15 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
+            - name: Clean Up Artifacts
+        run: npm run cleanup-test-artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: Videos
+          path: e2e-videos/
+          retention-days: 7
 
   e2e-windows:
     runs-on: windows-latest
@@ -156,6 +174,15 @@ jobs:
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - name: Clean Up Artifacts
+        run: npm run cleanup-test-artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: Videos
+          path: e2e-videos/
+          retention-days: 7
 
   e2e-collab-mac:
     runs-on: macos-latest
@@ -182,6 +209,15 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - name: Clean Up Artifacts
+        run: npm run cleanup-test-artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: Videos
+          path: e2e-videos/
+          retention-days: 7
 
   e2e-collab-linux:
     runs-on: ubuntu-latest
@@ -212,6 +248,15 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - name: Clean Up Artifacts
+        run: npm run cleanup-test-artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: Videos
+          path: e2e-videos/
+          retention-days: 7
 
   e2e-collab-windows:
     runs-on: windows-latest
@@ -238,3 +283,12 @@ jobs:
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - name: Clean Up Artifacts
+        run: npm run cleanup-test-artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: Videos
+          path: e2e-videos/
+          retention-days: 7

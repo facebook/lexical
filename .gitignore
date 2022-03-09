@@ -15,5 +15,6 @@ npm
 .env.test.local
 .env.production.local
 e2e-screenshots
+e2e-videos
 
 npm-debug.log*

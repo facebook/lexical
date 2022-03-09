@@ -20,15 +20,23 @@ import {selectAll} from '../keyboardShortcuts';
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
-export const IS_MAC = process.platform === 'darwin';
-export const IS_WINDOWS = process.platform === 'win32';
+export const E2E_EVENTS_MODE = process.env.E2E_EVENTS_MODE || 'modern-events';
+export const PLATFORM = process.platform;
+export const IS_MAC = PLATFORM === 'darwin';
+export const IS_WINDOWS = PLATFORM === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
-export const IS_COLLAB =
-  process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+export const E2E_EDITOR_MODE = process.env.E2E_EDITOR_MODE || 'rich-text';
+export const IS_COLLAB = E2E_EDITOR_MODE === 'rich-text-with-collab';
+export const IS_CI = process.env.CI;
 
 jest.setTimeout(60000);
 
-const retryCount = 20;
+const retryCount = 1;
+const recordVideo = IS_CI
+  ? {
+      dir: './e2e-videos',
+    }
+  : undefined;
 
 type Config = $ReadOnly<{
   appSettings?: AppSettings,
@@ -54,16 +62,12 @@ async function attemptToLaunchBrowser(attempt = 0) {
 export function initializeE2E(runTests, config: Config = {}) {
   const {appSettings = {}} = config;
   if (appSettings.isRichText === undefined) {
-    appSettings.isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
+    appSettings.isRichText = E2E_EDITOR_MODE !== 'plain-text';
   }
   if (appSettings.disableBeforeInput === undefined) {
-    appSettings.disableBeforeInput =
-      process.env.E2E_EVENTS_MODE === 'legacy-events';
+    appSettings.disableBeforeInput = E2E_EVENTS_MODE === 'legacy-events';
   }
-  if (IS_COLLAB) {
-    appSettings.isCollab =
-      process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
-  }
+  appSettings.isCollab = IS_COLLAB;
   if (appSettings.showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;
   }
@@ -88,6 +92,14 @@ export function initializeE2E(runTests, config: Config = {}) {
       const path =
         'e2e-screenshots/' + currentTest.replace(/\s/g, '_') + '.png';
       await e2e.page.screenshot({path});
+    async saveVideo(attempt) {
+      const currentTest = expect.getState().currentTestName;
+      const testName = currentTest.replace(/\s/g, '_');
+      e2e.page
+        .video()
+        .saveAs(
+          `./e2e-videos/FAILED-${testName}-${PLATFORM}-${E2E_EDITOR_MODE}-${E2E_EVENTS_MODE}-${E2E_BROWSER}.webm`,
+        );
     },
   };
 
@@ -102,7 +114,10 @@ export function initializeE2E(runTests, config: Config = {}) {
     const url = `http://localhost:${E2E_PORT}/${
       IS_COLLAB ? 'split/' : ''
     }?${urlParams.toString()}`;
-    const context = await e2e.browser.newContext({acceptDownloads: true});
+    const context = await e2e.browser.newContext({
+      acceptDownloads: true,
+      recordVideo,
+    });
     const page = await context.newPage();
     await page.goto(url, {timeout: 60000});
     e2e.page = page;
@@ -128,11 +143,13 @@ export function initializeE2E(runTests, config: Config = {}) {
         async function attempt() {
           try {
             // test attempt
-            return await test();
+            await test();
           } catch (err) {
             // test failed
+            await e2e.saveVideo(count + 1);
             if (count < retryCount) {
               count++;
+              console.log(`Attempt #${count + 1} - ${description}`);
               // Close and re-open page
               await e2e.page.close();
               if (IS_COLLAB) {
@@ -144,6 +161,7 @@ export function initializeE2E(runTests, config: Config = {}) {
               }?${urlParams.toString()}`;
               const context = await e2e.browser.newContext({
                 acceptDownloads: true,
+                recordVideo,
               });
               const page = await context.newPage();
               await page.goto(url);
@@ -159,7 +177,7 @@ export function initializeE2E(runTests, config: Config = {}) {
             }
           }
         }
-        return await attempt();
+        return attempt();
       });
       return result;
     };

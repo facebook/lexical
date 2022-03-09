@@ -168,6 +168,7 @@ export type ListenerType =
   | 'decorator'
   | 'textcontent'
   | 'mutation'
+  | 'readonly'
   | 'command';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';

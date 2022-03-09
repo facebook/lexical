@@ -95,11 +95,15 @@ export function initializeE2E(runTests, config: Config = {}) {
     async saveVideo(attempt) {
       const currentTest = expect.getState().currentTestName;
       const testName = currentTest.replace(/\s/g, '_');
-      e2e.page
-        .video()
-        .saveAs(
-          `./e2e-videos/FAILED-${testName}-${PLATFORM}-${E2E_EDITOR_MODE}-${E2E_EVENTS_MODE}-${E2E_BROWSER}.webm`,
-        );
+      const page = e2e.page;
+      if (page != null) {
+        const video = await page.video();
+        if (video != null) {
+          await video.saveAs(
+            `./e2e-videos/FAILED-${testName}-${PLATFORM}-${E2E_EDITOR_MODE}-${E2E_EVENTS_MODE}-${E2E_BROWSER}.webm`,
+          );
+        }
+      }
     },
   };
 
@@ -143,7 +147,7 @@ export function initializeE2E(runTests, config: Config = {}) {
         async function attempt() {
           try {
             // test attempt
-            await test();
+            return await test();
           } catch (err) {
             // test failed
             await e2e.saveVideo(count + 1);
@@ -177,7 +181,7 @@ export function initializeE2E(runTests, config: Config = {}) {
             }
           }
         }
-        return attempt();
+        return await attempt();
       });
       return result;
     };

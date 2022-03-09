@@ -18,11 +18,7 @@
     "@excalidraw/excalidraw": "0.11.0",
     "yjs": ">=13.5.22",
     "y-websocket": ">=1.3.x",
-    "stylex": "1.0.0",
     "prismjs": "1.25.0"
-  },
-  "devDependencies": {
-    "babel-plugin-transform-stylex": "1.0.0"
   },
   "scripts": {
     "start": "craco start",

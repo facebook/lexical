@@ -10,18 +10,11 @@
 import type {EditorThemeClasses} from 'lexical';
 
 import baseTheme from './PlaygroundEditorTheme';
-import stylex from 'stylex';
-
-const styles = stylex.create({
-  paragraph: {
-    margin: 0,
-    position: 'relative',
-  },
-});
+import './StickyEditorTheme.css';
 
 const theme: EditorThemeClasses = {
   ...baseTheme,
-  paragraph: stylex(styles.paragraph),
+  paragraph: 'StickyEditorTheme__paragraph',
 };
 
 export default theme;

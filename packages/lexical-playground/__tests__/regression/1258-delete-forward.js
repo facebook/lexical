@@ -22,14 +22,14 @@ describe('Regression test #1258', () => {
       await page.keyboard.type('hello world');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
       );
 
       await moveToLineBeginning(page);
       await deleteForward(page);
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">ello world</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">ello world</span></p>',
       );
     });
   });

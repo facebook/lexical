@@ -119,11 +119,10 @@ function setListThemeClassNames(
   const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
   if (listTheme !== undefined) {
-    const listDepth = $getListDepth(node);
-    const normalizedListDepth = listDepth % 7;
-    const listThemeLevel = normalizedListDepth === 0 ? 7 : normalizedListDepth;
-    const listThemeLevelClassName = node.__tag + listThemeLevel;
-    const listLevelClassName = listTheme[listThemeLevelClassName];
+    const listLevelsClassNames = listTheme[node.__tag + 'Depth'] || [];
+    const listDepth = $getListDepth(node) - 1;
+    const normalizedListDepth = listDepth % listLevelsClassNames.length;
+    const listLevelClassName = listLevelsClassNames[normalizedListDepth];
     const listClassName = listTheme[node.__tag];
     let nestedListClassName;
     const nestedListTheme = listTheme.nested;
@@ -138,7 +137,7 @@ function setListThemeClassNames(
     if (listLevelClassName !== undefined) {
       const listItemClasses = listLevelClassName.split(' ');
       classesToAdd.push(...listItemClasses);
-      for (let i = 1; i < 6; i++) {
+      for (let i = 0; i < listLevelsClassNames.length; i++) {
         if (i !== normalizedListDepth) {
           classesToRemove.push(node.__tag + i);
         }

@@ -61,8 +61,8 @@ describe('LexicalEventHelpers', () => {
             image: 'editor-image',
             list: {
               listitem: 'editor-listitem',
-              ol1: 'editor-list-ol',
-              ul1: 'editor-list-ul',
+              olDepth: ['editor-list-ol'],
+              ulDepth: ['editor-list-ul'],
             },
             paragraph: 'editor-paragraph',
             placeholder: 'editor-placeholder',

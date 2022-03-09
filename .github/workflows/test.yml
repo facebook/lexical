@@ -93,9 +93,10 @@ jobs:
         run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Clean Up Artifacts
-        if: always()
+        if: failure()
         run: npm run cleanup-test-artifacts
       - name: Upload Artifacts
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: Videos
@@ -136,9 +137,10 @@ jobs:
         run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Clean Up Artifacts
-        if: always()
+        if: failure()
         run: npm run cleanup-test-artifacts
       - name: Upload Artifacts
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: Videos
@@ -175,9 +177,10 @@ jobs:
       - run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Clean Up Artifacts
-        if: always()
+        if: failure()
         run: npm run cleanup-test-artifacts
       - name: Upload Artifacts
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: Videos
@@ -210,9 +213,10 @@ jobs:
         run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Clean Up Artifacts
-        if: always()
+        if: failure()
         run: npm run cleanup-test-artifacts
       - name: Upload Artifacts
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: Videos
@@ -249,9 +253,10 @@ jobs:
         run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Clean Up Artifacts
-        if: always()
+        if: failure()
         run: npm run cleanup-test-artifacts
       - name: Upload Artifacts
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: Videos
@@ -284,9 +289,10 @@ jobs:
       - run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Clean Up Artifacts
-        if: always()
+        if: failure()
         run: npm run cleanup-test-artifacts
       - name: Upload Artifacts
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: Videos

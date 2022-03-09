@@ -31,7 +31,7 @@ export const IS_CI = process.env.CI;
 
 jest.setTimeout(60000);
 
-const retryCount = 1;
+const retryCount = 20;
 const recordVideo = IS_CI
   ? {
       dir: './e2e-videos',
@@ -147,7 +147,7 @@ export function initializeE2E(runTests, config: Config = {}) {
           } catch (err) {
             // test failed
             await e2e.saveVideo(count + 1);
-            if (count < retryCount) {
+            if (count < 5) {
               count++;
               console.log(`Attempt #${count + 1} - ${description}`);
               // Close and re-open page

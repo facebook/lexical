@@ -21,6 +21,7 @@ import {PollNode} from './PollNode';
 import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode.jsx';
 import {TypeaheadNode} from './TypeaheadNode';
+import {EquationNode} from './EquationNode';
 
 const PlaygroundNodes: Array<Class<LexicalNode>> = [
   ...ExtendedNodes,
@@ -30,6 +31,7 @@ const PlaygroundNodes: Array<Class<LexicalNode>> = [
   MentionNode,
   EmojiNode,
   ExcalidrawNode,
+  EquationNode,
   TypeaheadNode,
   KeywordNode,
   HorizontalRuleNode,

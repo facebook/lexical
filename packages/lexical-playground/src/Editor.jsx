@@ -45,6 +45,7 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
+import EquationsPlugin from './plugins/EquationsPlugin';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
@@ -87,6 +88,7 @@ export default function Editor(): React$Node {
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         <CharacterStylesPopupPlugin />
+        <EquationsPlugin />
         {isRichText ? (
           <>
             {isCollab ? (

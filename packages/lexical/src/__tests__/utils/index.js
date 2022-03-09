@@ -25,6 +25,9 @@ type TestEnv = {
 export function createTestEditor(config = {}): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
+    onError: (e) => {
+      throw e;
+    },
     ...config,
     nodes: [
       ...ExtendedNodes,

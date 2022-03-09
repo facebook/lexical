@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$createParagraphNode, $getRoot, $isRootNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $isRootNode,
+} from 'lexical';
 
 import {
   $createTestDecoratorNode,
@@ -68,6 +74,50 @@ describe('LexicalRootNode tests', () => {
           return $getRoot().getTextContent();
         }),
       ).toBe('Hello world');
+    });
+
+    test('RootNode.clear() to handle selection update', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const text = $createTextNode('Hello');
+        paragraph.append(text);
+        text.select();
+      });
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+      });
+      await editor.update(() => {
+        const root = $getRoot();
+        const selection = $getSelection();
+        expect(selection.anchor.getNode()).toBe(root);
+        expect(selection.focus.getNode()).toBe(root);
+      });
+    });
+
+    test('RootNode is selected when its only child removed', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const text = $createTextNode('Hello');
+        paragraph.append(text);
+        text.select();
+      });
+      await editor.update(() => {
+        const root = $getRoot();
+        root.getFirstChild().remove();
+      });
+      await editor.update(() => {
+        const root = $getRoot();
+        const selection = $getSelection();
+        expect(selection.anchor.getNode()).toBe(root);
+        expect(selection.focus.getNode()).toBe(root);
+      });
     });
   });
 });

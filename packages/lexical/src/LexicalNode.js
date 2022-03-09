@@ -97,9 +97,12 @@ export function removeNode(
     parent !== null &&
     !$isRootNode(parent) &&
     !parent.canBeEmpty() &&
-    parent.getChildrenSize() === 0
+    parent.isEmpty()
   ) {
     removeNode(parent, restoreSelection);
+  }
+  if (parent !== null && $isRootNode(parent) && parent.isEmpty()) {
+    parent.selectEnd();
   }
 }
 

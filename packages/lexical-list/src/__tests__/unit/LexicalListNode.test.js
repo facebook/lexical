@@ -22,21 +22,25 @@ const editorConfig = Object.freeze({
   theme: {
     list: {
       ol: 'my-ol-list-class',
-      ol1: 'my-ol-list-class-1',
-      ol2: 'my-ol-list-class-2',
-      ol3: 'my-ol-list-class-3',
-      ol4: 'my-ol-list-class-4',
-      ol5: 'my-ol-list-class-5',
-      ol6: 'my-ol-list-class-6',
-      ol7: 'my-ol-list-class-7',
+      olDepth: [
+        'my-ol-list-class-1',
+        'my-ol-list-class-2',
+        'my-ol-list-class-3',
+        'my-ol-list-class-4',
+        'my-ol-list-class-5',
+        'my-ol-list-class-6',
+        'my-ol-list-class-7',
+      ],
       ul: 'my-ul-list-class',
-      ul1: 'my-ul-list-class-1',
-      ul2: 'my-ul-list-class-2',
-      ul3: 'my-ul-list-class-3',
-      ul4: 'my-ul-list-class-4',
-      ul5: 'my-ul-list-class-5',
-      ul6: 'my-ul-list-class-6',
-      ul7: 'my-ul-list-class-7',
+      ulDepth: [
+        'my-ul-list-class-1',
+        'my-ul-list-class-2',
+        'my-ul-list-class-3',
+        'my-ul-list-class-4',
+        'my-ul-list-class-5',
+        'my-ul-list-class-6',
+        'my-ul-list-class-7',
+      ],
     },
   },
 });
@@ -127,6 +131,20 @@ describe('LexicalListNode tests', () => {
         expect(listNode7.createDOM(editorConfig).outerHTML).toBe(
           '<ul class="my-ul-list-class my-ul-list-class-7"></ul>',
         );
+        expect(
+          listNode5.createDOM({
+            theme: {
+              list: {
+                ...editorConfig.theme.list,
+                ulDepth: [
+                  'my-ul-list-class-1',
+                  'my-ul-list-class-2',
+                  'my-ul-list-class-3',
+                ],
+              },
+            },
+          }).outerHTML,
+        ).toBe('<ul class="my-ul-list-class my-ul-list-class-2"></ul>');
       });
     });
 

@@ -62,6 +62,8 @@ function InlineEquationEditor({
         className="EquationEditor_inlineEditor"
         value={equation}
         onChange={onChange}
+        autoFocus={true}
+        ref={inputRef}
       />
       <span className="EquationEditor_dollarSign">$</span>
     </span>
@@ -80,6 +82,7 @@ function BlockEquationEditor({
         className="EquationEditor_blockEditor"
         value={equation}
         onChange={onChange}
+        ref={inputRef}
       />
       <span className="EquationEditor_dollarSign">{'\n$$'}</span>
     </div>

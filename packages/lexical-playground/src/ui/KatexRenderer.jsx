@@ -10,6 +10,7 @@
 // $FlowFixMe
 import katex from 'katex';
 import * as React from 'react';
+import {useRef, useEffect} from 'react';
 
 export default function KatexRenderer({
   equation,
@@ -20,18 +21,18 @@ export default function KatexRenderer({
   inline: boolean,
   onClick: () => void,
 }>): React$Node {
-  return (
-    <span
-      onClick={onClick}
-      dangerouslySetInnerHTML={{
-        __html: katex.renderToString(equation, {
-          displayMode: !inline, // true === block display //
-          throwOnError: false,
-          errorColor: '#cc0000',
-          strict: 'warn',
-          output: 'html',
-          trust: false,
-        }),
-      }}></span>
-  );
+  const katexElementRef = useRef(null);
+
+  useEffect(() => {
+    katex.render(equation, katexElementRef.current, {
+      displayMode: !inline, // true === block display //
+      throwOnError: false,
+      errorColor: '#cc0000',
+      strict: 'warn',
+      output: 'html',
+      trust: false,
+    });
+  }, [equation, katexElementRef, inline]);
+
+  return <span onClick={onClick} ref={katexElementRef}></span>;
 }

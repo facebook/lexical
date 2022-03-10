@@ -41,13 +41,23 @@ export default function KatexEquationAlterer({
       </div>
       <div className="KatexEquationAlterer_defaultRow">Equation </div>
       <div className="KatexEquationAlterer_centerRow">
-        <textarea
-          onChange={(event) => {
-            setEquation(event.target.value);
-          }}
-          value={equation}
-          className="KatexEquationAlterer_textArea"
-        />
+        {inline ? (
+          <input
+            onChange={(event) => {
+              setEquation(event.target.value);
+            }}
+            value={equation}
+            className="KatexEquationAlterer_textArea"
+          />
+        ) : (
+          <textarea
+            onChange={(event) => {
+              setEquation(event.target.value);
+            }}
+            value={equation}
+            className="KatexEquationAlterer_textArea"
+          />
+        )}
       </div>
       <div className="KatexEquationAlterer_defaultRow">Visualization </div>
       <div className="KatexEquationAlterer_centerRow">

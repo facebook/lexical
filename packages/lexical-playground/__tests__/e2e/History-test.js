@@ -348,13 +348,13 @@ describe('History', () => {
         await page.keyboard.type('baz');
 
         const step1HTML =
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">foo</strong><span data-lexical-text="true">bar</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">baz</strong></p>';
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">foo</strong><span data-lexical-text="true">bar</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">baz</strong></p>';
         const step2HTML =
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">foo</strong><span data-lexical-text="true">bar</span></p>';
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">foo</strong><span data-lexical-text="true">bar</span></p>';
         const step3HTML =
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">foo</strong></p>';
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">foo</strong></p>';
         const step4HTML =
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br /></p>';
+          '<p class="PlaygroundEditorTheme__paragraph"><br /></p>';
 
         await assertHTML(page, step1HTML);
         await undo(page);

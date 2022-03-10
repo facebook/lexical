@@ -28,7 +28,7 @@ describe('Auto Links', () => {
         );
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="http://example.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">http://example.com</span></a><span data-lexical-text="true"> and </span><a href="https://example.com/path?with=query#and-hash" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">https://example.com/path?with=query#and-hash</span></a><span data-lexical-text="true"> and </span><a href="www.example.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">www.example.com</span></a></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="http://example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com</span></a><span data-lexical-text="true"> and </span><a href="https://example.com/path?with=query#and-hash" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">https://example.com/path?with=query#and-hash</span></a><span data-lexical-text="true"> and </span><a href="www.example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">www.example.com</span></a></p>',
         );
       },
     );
@@ -39,7 +39,7 @@ describe('Auto Links', () => {
       async () => {
         const {page} = e2e;
         const htmlWithLink =
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><a href="http://example.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">http://example.com</span></a></p>';
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="http://example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com</span></a></p>';
 
         await focusEditor(page);
         await page.keyboard.type('http://example.com');
@@ -49,7 +49,7 @@ describe('Auto Links', () => {
         await page.keyboard.type('!');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">http://example.com!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com!</span></p>',
         );
         await page.keyboard.press('Backspace');
         await assertHTML(page, htmlWithLink);
@@ -59,7 +59,7 @@ describe('Auto Links', () => {
         await page.keyboard.type('!');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">!http://example.com</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">!http://example.com</span></p>',
         );
         await page.keyboard.press('Backspace');
         await assertHTML(page, htmlWithLink);
@@ -70,7 +70,7 @@ describe('Auto Links', () => {
         await assertHTML(
           page,
           htmlWithLink +
-            '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br /></p>',
+            '<p class="PlaygroundEditorTheme__paragraph"><br /></p>',
         );
         await page.keyboard.press('Backspace');
         await assertHTML(page, htmlWithLink);
@@ -89,7 +89,7 @@ describe('Auto Links', () => {
         });
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><a href="http://example.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">http://example.com</span></a><span data-lexical-text="true"> and </span><a href="https://example.com/path?with=query#and-hash" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">https://example.com/path?with=query#and-hash</span></a><span data-lexical-text="true"> and </span><a href="www.example.com" class="PlaygroundEditorTheme__link ec0vvsmr rn8ck1ys PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">www.example.com</span></a></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="http://example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com</span></a><span data-lexical-text="true"> and </span><a href="https://example.com/path?with=query#and-hash" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">https://example.com/path?with=query#and-hash</span></a><span data-lexical-text="true"> and </span><a href="www.example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">www.example.com</span></a></p>',
         );
       },
     );

@@ -48,44 +48,11 @@ import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import TableCellActionMenuPlugin from '../plugins/TableActionMenuPlugin';
 import ImagesPlugin from '../plugins/ImagesPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
-import stylex from 'stylex';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import {useSettings} from '../context/SettingsContext';
+import './ImageNode.css';
 
 const LowPriority: CommandListenerLowPriority = 1;
-
-const styles = stylex.create({
-  contentEditable: {
-    minHeight: 0,
-    border: 0,
-    resize: 'none',
-    cursor: 'text',
-    caretColor: 'rgb(5, 5, 5)',
-    display: 'block',
-    position: 'relative',
-    tabSize: 1,
-    outline: 0,
-    padding: 10,
-    userSelect: 'text',
-    fontSize: 12,
-    width: 'calc(100% - 20px)',
-    whiteSpace: 'pre-wrap',
-    overflowWrap: 'break-word',
-  },
-  placeholder: {
-    fontSize: 12,
-    color: '#888',
-    overflow: 'hidden',
-    position: 'absolute',
-    textOverflow: 'ellipsis',
-    top: 10,
-    left: 10,
-    userSelect: 'none',
-    whiteSpace: 'nowrap',
-    display: 'inline-block',
-    pointerEvents: 'none',
-  },
-});
 
 const imageCache = new Set();
 
@@ -464,10 +431,10 @@ function ImageComponent({
               )}
               <RichTextPlugin
                 contentEditable={
-                  <ContentEditable className={stylex(styles.contentEditable)} />
+                  <ContentEditable className="ImageNode__contentEditable" />
                 }
                 placeholder={
-                  <Placeholder className={stylex(styles.placeholder)}>
+                  <Placeholder className="ImageNode__placeholder">
                     Enter a caption...
                   </Placeholder>
                 }

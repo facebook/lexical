@@ -1,0 +1,27 @@
+.ExcalidrawModal__actions {
+  text-align: end;
+  position: absolute;
+  right: 40px;
+  top: 35px;
+  z-index: 1;
+}
+.ExcalidrawModal__row {
+  position: relative;
+  padding: 20px;
+  width: 70vw;
+  height: 70vh;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.ExcalidrawModal__modal {
+  position: fixed;
+  z-index: 2;
+  top: 10px;
+  width: 100%;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #eee;
+}

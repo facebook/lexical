@@ -9,60 +9,7 @@
 
 import * as React from 'react';
 import {Suspense} from 'react';
-import stylex from 'stylex';
-
-const glimmerAnimation = stylex.keyframes({
-  '0%': {
-    background: '#f9f9f9',
-  },
-  '50%': {
-    background: '#eeeeee',
-  },
-  '100%': {
-    background: '#f9f9f9',
-  },
-});
-
-const styles = stylex.create({
-  container: {
-    paddingBottom: 12,
-  },
-  imageWrapper: {
-    textAlign: 'center',
-  },
-  image: {
-    maxWidth: '100%',
-    maxHeight: 250,
-    margin: 'auto',
-  },
-  title: {
-    marginHorizontal: 12,
-    marginTop: 4,
-  },
-  description: {
-    color: '#999',
-    fontSize: '90%',
-    marginHorizontal: 12,
-    marginTop: 4,
-  },
-  domain: {
-    color: '#999',
-    fontSize: '90%',
-    marginHorizontal: 12,
-    marginTop: 4,
-  },
-  glimmer: {
-    background: '#f9f9f9',
-    borderRadius: 8,
-    height: 18,
-    marginBottom: 8,
-    marginHorizontal: 12,
-    animationDuration: '3s',
-    animationIterationCount: 'infinite',
-    animationTimingFunction: 'linear',
-    animationName: glimmerAnimation,
-  },
-});
+import './LinkPreview.css';
 
 // Cached responses or running request promises
 const PREVIEW_CACHE = {};
@@ -108,24 +55,24 @@ function LinkPreviewContent({
     return null;
   }
   return (
-    <div className={stylex(styles.container)}>
+    <div className="LinkPreview__container">
       {preview.img && (
-        <div className={stylex(styles.imageWrapper)}>
+        <div className="LinkPreview__imageWrapper">
           <img
             src={preview.img}
             alt={preview.title}
-            className={stylex(styles.image)}
+            className="LinkPreview__image"
           />
         </div>
       )}
       {preview.domain && (
-        <div className={stylex(styles.domain)}>{preview.domain}</div>
+        <div className="LinkPreview__domain">{preview.domain}</div>
       )}
       {preview.title && (
-        <div className={stylex(styles.title)}>{preview.title}</div>
+        <div className="LinkPreview__title">{preview.title}</div>
       )}
       {preview.description && (
-        <div className={stylex(styles.description)}>{preview.description}</div>
+        <div className="LinkPreview__description">{preview.description}</div>
       )}
     </div>
   );
@@ -134,7 +81,7 @@ function LinkPreviewContent({
 function Glimmer(props): React$Node {
   return (
     <div
-      className={stylex(styles.glimmer)}
+      className="LinkPreview__glimmer"
       {...props}
       style={{animationDelay: (props.index || 0) * 300, ...(props.style || {})}}
     />

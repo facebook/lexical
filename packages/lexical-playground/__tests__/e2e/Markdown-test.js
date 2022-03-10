@@ -39,28 +39,26 @@ describe('Markdown', () => {
     {
       isBlockTest: false,
       undoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">x__hello__ y</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x__hello__ y</span></p>',
       expectation:
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">x</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">hello</strong><span data-lexical-text="true"> y</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span data-lexical-text="true"> y</span></p>',
       markdownText: '__hello__', // bold.
       stylizedUndoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline o570zoyu">x_</span><span data-lexical-text="true">_hello_</span><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-lexical-text="true">_ y</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline">x_</span><span data-lexical-text="true">_hello_</span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">_ y</span></p>',
       stylizedExpectation:
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline o570zoyu">x</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">hello</strong><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-lexical-text="true"> y</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true"> y</span></p>',
     },
     {
       isBlockTest: true,
       undoHTML: '',
-      expectation:
-        '<h1 class="PlaygroundEditorTheme__h1 qntmu8s7 ftqqwnbv tes86rjd m8h3af8h l7ghb35v kmwttqpk qjfq86k5 srn514ro oxkhqvkx rl78xhln nch0832m"><br></h1>',
+      expectation: '<h1 class="PlaygroundEditorTheme__h1"><br></h1>',
 
       markdownText: '# ', // H1.
     },
     {
       isBlockTest: true,
       undoHTML: '',
-      expectation:
-        '<h2 class="PlaygroundEditorTheme__h2 k1z55t6l cu002yh1 o48pnaf2 l7ghb35v kjdc1dyq kmwttqpk jenc4j3g srn514ro oxkhqvkx rl78xhln nch0832m sxswz4zx"><br></h2>',
+      expectation: '<h2 class="PlaygroundEditorTheme__h2"><br></h2>',
 
       markdownText: '## ', // H2.
     },
@@ -68,7 +66,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<code class="PlaygroundEditorTheme__code igcfgt1w ne4oaoub b6ax4al1 q46jt4gp b0eko5f3 r5g9zsuq fwlpnqze l9mvetk9 f6xnxolp l7ghb35v kmwttqpk th51lws0 mfn553m3 fxyi2ncp" spellcheck="false"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" spellcheck="false"><br></code>',
 
       markdownText: '``` ', // Code block.
     },
@@ -76,7 +74,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<blockquote class="PlaygroundEditorTheme__quote m8h3af8h l7ghb35v kjdc1dyq mswf2hbd k1z55t6l cu002yh1 nqdvql63 iv31pflw bf1zulr9 gt60zsk1"><br></blockquote>',
+        '<blockquote class="PlaygroundEditorTheme__quote"><br></blockquote>',
 
       markdownText: '> ', // Block quote.
     },
@@ -84,7 +82,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul>',
 
       markdownText: '* ', // Unordered.
     },
@@ -92,7 +90,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul>',
 
       markdownText: '- ', // Unordered.
     },
@@ -100,7 +98,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<ol start="321" class="PlaygroundEditorTheme__ol1 srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="321" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><br></li></ol>',
+        '<ol start="321" class="PlaygroundEditorTheme__ol1"><li value="321" class="PlaygroundEditorTheme__listItem"><br></li></ol>',
 
       markdownText: '321. ', // Ordered.
     },
@@ -108,7 +106,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
 
       markdownText: '*** ', // HR rule.
     },
@@ -116,7 +114,7 @@ describe('Markdown', () => {
       isBlockTest: true,
       undoHTML: '',
       expectation:
-        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
 
       markdownText: '--- ', // HR Rule.
     },
@@ -260,7 +258,7 @@ describe('Markdown', () => {
 
             const forwardHTML = triggersAndExpectations[i].expectation;
 
-            const undoHTML = `<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">${markdownText}</span></p>`;
+            const undoHTML = `<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">${markdownText}</span></p>`;
 
             await checkHTMLExpectationsIncludingUndoRedo(
               page,

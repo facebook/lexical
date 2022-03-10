@@ -24,13 +24,13 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     await page.keyboard.type('12345');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span></p>',
+      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p>',
     );
 
     await page.keyboard.type('6789');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span></p><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6789</span></div><p></p>',
+      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6789</span></div><p></p>',
     );
     await assertSelection(page, {
       anchorPath: [0, 1, 0, 0],
@@ -44,7 +44,7 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">01234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">5</span></div><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6789</span></div></p>',
+      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">01234</span><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">5</span></div><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6789</span></div></p>',
     );
     await assertSelection(page, {
       anchorPath: [0, 0, 0],
@@ -66,13 +66,13 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     await page.keyboard.type('1234:)56');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">1234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">56</span></div></p>',
+      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">1234</span><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">56</span></div></p>',
     );
 
     await repeat(3, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">1234</span></p>',
+      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">1234</span></p>',
     );
   });
 
@@ -86,19 +86,19 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></div></p><p class="PlaygroundEditorTheme__paragraph"><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></div></p>',
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span><br><span data-lexical-text="true">7</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span><br><span data-lexical-text="true">7</span></div></p>',
       );
     }
 
     await repeat(3, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span></p>',
+      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p>',
     );
   });
 
@@ -118,12 +118,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">23456</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">23456</span></p><p class="PlaygroundEditorTheme__paragraph"><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></div></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">23456</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><br><span data-lexical-text="true">7</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">23456</span><div class="PlaygroundEditorTheme__characterLimit"><br><span data-lexical-text="true">7</span></div></p>',
         );
       }
 
@@ -131,12 +131,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">3456</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">7</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">3456</span></p><p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">7</span></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">3456</span><br><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">3456</span><br><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></div></p>',
         );
       }
     },
@@ -157,12 +157,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       if (charset === 'UTF-16') {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">56</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">234</span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">56</span></div></p>',
         );
       } else if (charset === 'UTF-8') {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">234</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">56</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">234</span><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">56</span></div></p>',
         );
       }
     },
@@ -182,13 +182,13 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       await page.keyboard.type('7');
       await assertHTML(
         page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></li><li value="3" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">7</span></div></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">5</span><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></div></li><li value="3" class="PlaygroundEditorTheme__listItem"><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></div></li></ul>',
       );
 
       await repeat(3, async () => await page.keyboard.press('Backspace'));
       await assertHTML(
         page,
-        '<ul class="PlaygroundEditorTheme__ul srn514ro oxkhqvkx rl78xhln nch0832m m8h3af8h l7ghb35v kjdc1dyq p9ctufpz"><li value="1" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem th51lws0 r26s8xbz mfn553m3 gug11x0k"><span data-lexical-text="true">5</span></li></ul',
+        '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">5</span></li></ul',
       );
     },
   );
@@ -205,14 +205,14 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       await page.keyboard.type('6');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p><p class="PlaygroundEditorTheme__paragraph"><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></div></p>',
       );
 
       await page.keyboard.press('ArrowLeft');
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai"><span data-lexical-text="true">6</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></div></p>',
       );
     },
   );
@@ -226,12 +226,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (charset === 'UTF-16') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">ààààà</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">à</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">ààààà</span><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">à</span></div></p>',
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">àà</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">àààà</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">àà</span><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">àààà</span></div></p>',
       );
     }
   });
@@ -244,18 +244,18 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     if (['chromium', 'webkit'].includes(E2E_BROWSER)) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">👨‍👩‍👦‍👦</span></div></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">👨‍👩‍👦‍👦</span></div></p>',
       );
     } else {
       if (charset === 'UTF-16') {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">👨‍👩</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">‍👦‍👦</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">👨‍👩</span><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">‍👦‍👦</span></div></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">👨</span><div class="PlaygroundEditorTheme__characterLimit rse6dlih c49fpdai PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">‍👩‍👦‍👦</span></div></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">👨</span><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">‍👩‍👦‍👦</span></div></p>',
         );
       }
     }

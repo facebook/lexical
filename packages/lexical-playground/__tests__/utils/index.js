@@ -25,7 +25,7 @@ export const IS_COLLAB =
 
 jest.setTimeout(60000);
 
-const retryCount = 20;
+const retryCount = 2;
 
 type Config = $ReadOnly<{
   appSettings?: AppSettings,

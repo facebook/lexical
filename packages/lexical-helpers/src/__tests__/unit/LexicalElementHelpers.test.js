@@ -46,7 +46,7 @@ describe('LexicalElementHelpers tests', () => {
       expect(element.className).toEqual('');
     });
 
-    test('space separated (i.e. stylex)', async () => {
+    test('space separated', async () => {
       const element = document.createElement('div');
 
       addClassNamesToElement(element, 'a b c');

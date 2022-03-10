@@ -48,16 +48,6 @@ import {createPortal} from 'react-dom';
 import useModal from '../hooks/useModal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
-import stylex from 'stylex';
-
-const styles = stylex.create({
-  dialogActions: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'right',
-    marginTop: 20,
-  },
-});
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -269,7 +259,7 @@ function InsertTableDialog({
       <Input label="No of rows" onChange={setRows} value={rows} />
       <Input label="No of columns" onChange={setColumns} value={columns} />
       <div
-        className={stylex(styles.dialogActions)}
+        className="ToolbarPlugin__dialogActions"
         data-test-id="table-model-confirm-insert">
         <Button onClick={onClick}>Confirm</Button>
       </div>
@@ -294,7 +284,7 @@ function InsertPollDialog({
   return (
     <>
       <Input label="Poll Question" onChange={setQuestion} value={question} />
-      <div className={stylex(styles.dialogActions)}>
+      <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm
         </Button>

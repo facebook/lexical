@@ -8,37 +8,8 @@
  */
 
 import * as React from 'react';
-import stylex from 'stylex';
-
-const styles = stylex.create({
-  root: {
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 15,
-    paddingRight: 15,
-    border: 0,
-    backgroundColor: '#eee',
-    borderRadius: 5,
-    cursor: 'pointer',
-    ':hover': {
-      backgroundColor: '#ddd',
-    },
-    fontSize: 14,
-  },
-  small: {
-    paddingTop: 5,
-    paddingBottom: 5,
-    paddingLeft: 10,
-    paddingRight: 10,
-    fontSize: 13,
-  },
-  disabled: {
-    cursor: 'not-allowed',
-    ':hover': {
-      backgroundColor: '#eee',
-    },
-  },
-});
+import './Button.css';
+import joinClasses from '../utils/join-classes';
 
 export default function Button({
   children,
@@ -54,10 +25,10 @@ export default function Button({
   return (
     <button
       disabled={disabled}
-      className={stylex(
-        styles.root,
-        disabled && styles.disabled,
-        small && styles.small,
+      className={joinClasses(
+        'Button__root',
+        disabled && 'Button__disabled',
+        small && 'Button__small',
       )}
       onClick={onClick}>
       {children}

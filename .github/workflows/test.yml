@@ -147,16 +147,16 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
-      - uses: actions/cache@v2
-        id: cache
-        with:
-          path: |
-            node_modules
-            C:\Users\runneradmin\AppData\Local\ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+      # - uses: actions/cache@v2
+      #   id: cache
+      #   with:
+      #     path: |
+      #       node_modules
+      #       C:\Users\runneradmin\AppData\Local\ms-playwright
+      #     key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+      # - name: Install dependencies
+      #   if: steps.cache.outputs.cache-hit != 'true'
+      - run: npm ci
       - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
@@ -239,8 +239,8 @@ jobs:
             node_modules
             C:\Users\runneradmin\AppData\Local\ms-playwright
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+      # - name: Install dependencies
+      #   if: steps.cache.outputs.cache-hit != 'true'
+      - run: npm ci
       - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}

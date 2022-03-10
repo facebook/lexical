@@ -17,7 +17,7 @@ import {
 async function validateContent(page) {
   await assertHTML(
     page,
-    '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#world</span><span data-lexical-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#should</span><span data-lexical-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#intact</span><span data-lexical-text="true">.</span></p>',
+    '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#world</span><span data-lexical-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#should</span><span data-lexical-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#intact</span><span data-lexical-text="true">.</span></p>',
   );
   await assertSelection(page, {
     anchorPath: [0, 6, 0],
@@ -229,7 +229,7 @@ describe('Mutations', () => {
       });
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Bonjour </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#world</span><span data-lexical-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#should</span><span data-lexical-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag bx9fcus2 o5sf49vg" data-lexical-text="true">#intact</span><span data-lexical-text="true">.</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Bonjour </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#world</span><span data-lexical-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#should</span><span data-lexical-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#intact</span><span data-lexical-text="true">.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 6, 0],

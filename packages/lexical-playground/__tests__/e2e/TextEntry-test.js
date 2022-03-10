@@ -28,7 +28,7 @@ describe('TextEntry', () => {
       await page.keyboard.type(targetText);
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello Lexical</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello Lexical</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -52,7 +52,7 @@ describe('TextEntry', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Foo</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Foo</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -76,7 +76,7 @@ describe('TextEntry', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true"> </span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true"> </span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -118,7 +118,7 @@ describe('TextEntry', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello World.</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello World.</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
         );
         await assertSelection(page, {
           anchorPath: [1, 1, 0, 0],
@@ -129,7 +129,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello World.</span><br><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello World.</span><br><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 3, 0, 0],
@@ -153,7 +153,7 @@ describe('TextEntry', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Delete some of these characte</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Delete some of these characte</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -177,7 +177,7 @@ describe('TextEntry', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello lolbar.</span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello lolbar.</span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -216,7 +216,7 @@ describe('TextEntry', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Delete some of these </span></p>',
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Delete some of these </span></p>',
       );
       await assertSelection(page, {
         anchorPath: [0, 0, 0],
@@ -240,7 +240,7 @@ describe('TextEntry', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">  </span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -251,7 +251,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">  </span><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -268,7 +268,7 @@ describe('TextEntry', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -279,7 +279,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><span data-lexical-text="true">  </span><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -304,7 +304,7 @@ describe('TextEntry', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br><br><br><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -330,7 +330,7 @@ describe('TextEntry', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br><br><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -341,7 +341,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br><br><br><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><br><br><br><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -357,12 +357,12 @@ describe('TextEntry', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__rtl fmqehaac" dir="rtl"><span data-lexical-text="true">هَ</span></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br><br><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span></p><p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
         );
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__rtl fmqehaac" dir="rtl"><span data-lexical-text="true">هَ</span><br><br><br><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span><br><br><br><br><br></p>',
         );
       }
 
@@ -384,7 +384,7 @@ describe('TextEntry', () => {
       if (isRichText) {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [1],
@@ -395,7 +395,7 @@ describe('TextEntry', () => {
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br><br></p>',
+          '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
         );
         await assertSelection(page, {
           anchorPath: [0],
@@ -442,7 +442,7 @@ describe('TextEntry', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -457,7 +457,7 @@ describe('TextEntry', () => {
       await page.keyboard.up('Shift');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -469,7 +469,7 @@ describe('TextEntry', () => {
       await page.keyboard.press('ArrowLeft');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],
@@ -482,7 +482,7 @@ describe('TextEntry', () => {
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y"><br></p>',
+        '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
         anchorPath: [0],

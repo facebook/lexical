@@ -9,23 +9,7 @@
 
 import * as React from 'react';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
-import stylex from 'stylex';
-
-const styles = stylex.create({
-  root: {
-    minHeight: 150,
-    border: 0,
-    resize: 'none',
-    cursor: 'text',
-    fontSize: 15,
-    caretColor: 'rgb(5, 5, 5)',
-    display: 'block',
-    position: 'relative',
-    tabSize: 1,
-    outline: 0,
-    padding: 10,
-  },
-});
+import './ContentEditable.css';
 
 export default function ContentEditable({
   className,
@@ -33,6 +17,6 @@ export default function ContentEditable({
   className?: string,
 }): React$Node {
   return (
-    <LexicalContentEditable className={className || stylex(styles.root)} />
+    <LexicalContentEditable className={className || 'ContentEditable__root'} />
   );
 }

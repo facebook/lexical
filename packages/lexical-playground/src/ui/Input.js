@@ -9,32 +9,7 @@
 
 import * as React from 'react';
 
-import stylex from 'stylex';
-
-const styles = stylex.create({
-  wrapper: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  label: {
-    display: 'flex',
-    flex: 1,
-    color: '#666',
-  },
-  input: {
-    display: 'flex',
-    flex: 2,
-    border: '1px solid #999',
-    paddingTop: 7,
-    paddingBottom: 7,
-    paddingLeft: 10,
-    paddingRight: 10,
-    fontSize: 16,
-    borderRadius: 5,
-  },
-});
+import './Input.css';
 
 export default function Input({
   label,
@@ -46,11 +21,11 @@ export default function Input({
   value: string,
 }): React$Node {
   return (
-    <div className={stylex(styles.wrapper)}>
-      <label className={stylex(styles.label)}>{label}</label>
+    <div className="Input__wrapper">
+      <label className="Input__label">{label}</label>
       <input
         type="text"
-        className={stylex(styles.input)}
+        className="Input__input"
         value={value}
         onChange={(e) => {
           onChange(e.target.value);

@@ -37,7 +37,7 @@ describe('TextFormatting', () => {
         await page.keyboard.type(' World');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true"> World</strong></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true"> World</strong></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -52,7 +52,7 @@ describe('TextFormatting', () => {
         await page.keyboard.type('!');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true"> World</strong><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true"> World</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -77,7 +77,7 @@ describe('TextFormatting', () => {
         await page.keyboard.type(' World');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-lexical-text="true"> World</em></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true"> World</em></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -92,7 +92,7 @@ describe('TextFormatting', () => {
         await page.keyboard.type('!');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-lexical-text="true"> World</em><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true"> World</em><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -129,7 +129,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">world</strong><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">world</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -143,7 +143,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -183,7 +183,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">hello world</strong></p><p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello world</strong></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
         );
       },
     );
@@ -214,7 +214,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-lexical-text="true">world</em><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">world</em><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -228,7 +228,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -265,7 +265,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -279,7 +279,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -297,7 +297,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderlineStrikethrough kf6cyplv" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -311,7 +311,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline o570zoyu" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -349,7 +349,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 10px;">world</span><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 10px;">world</span><span data-lexical-text="true">!</span></p>',
         );
 
         await assertSelection(page, {
@@ -388,7 +388,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 10px;">world</span><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 10px;">world</span><span data-lexical-text="true">!</span></p>',
         );
 
         await assertSelection(page, {
@@ -403,7 +403,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 10px; font-family: Georgia;">world</span><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 10px; font-family: Georgia;">world</span><span data-lexical-text="true">!</span></p>',
         );
 
         await assertSelection(page, {
@@ -418,7 +418,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 20px; font-family: Georgia;">world</span><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span data-lexical-text="true" style="font-size: 20px; font-family: Georgia;">world</span><span data-lexical-text="true">!</span></p>',
         );
 
         await assertSelection(page, {
@@ -456,7 +456,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">world</strong><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">world</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 1, 0],
@@ -483,7 +483,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">w</strong><strong class="PlaygroundEditorTheme__textBold igjjae4c PlaygroundEditorTheme__textItalic qp0gn4il" data-lexical-text="true">or</strong><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">ld</strong><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">w</strong><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic" data-lexical-text="true">or</strong><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">ld</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -497,7 +497,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">w</strong><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-lexical-text="true">or</em><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">ld</strong><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">w</strong><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">or</em><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">ld</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 2, 0],
@@ -525,7 +525,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello w</span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-lexical-text="true">or</em><span data-lexical-text="true">ld!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello w</span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">or</em><span data-lexical-text="true">ld!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -539,7 +539,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic qp0gn4il" data-lexical-text="true">world</em><span data-lexical-text="true">!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">world</em><span data-lexical-text="true">!</span></p>',
         );
 
         if (E2E_BROWSER === 'webkit') {
@@ -563,7 +563,7 @@ describe('TextFormatting', () => {
         await keyUpCtrlOrMeta(page);
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
           anchorPath: [0, 0, 0],
@@ -615,7 +615,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">123</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">456</strong><span data-lexical-text="true">789</span><br><span data-lexical-text="true">abc</span><strong class="PlaygroundEditorTheme__textBold igjjae4c" data-lexical-text="true">def</strong><span data-lexical-text="true">ghi</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">123</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">456</strong><span data-lexical-text="true">789</span><br><span data-lexical-text="true">abc</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">def</strong><span data-lexical-text="true">ghi</span></p>',
         );
 
         await assertSelection(page, {
@@ -642,7 +642,7 @@ describe('TextFormatting', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph m8h3af8h l7ghb35v kmwttqpk mfn553m3 om3e55n1 gjezrb0y PlaygroundEditorTheme__ltr gkum2dnh" dir="ltr"><span data-lexical-text="true">12c</span></p>',
+          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">12c</span></p>',
         );
 
         await assertSelection(page, {

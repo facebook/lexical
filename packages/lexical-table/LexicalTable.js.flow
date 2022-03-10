@@ -14,6 +14,7 @@ import type {
   ParagraphNode,
   RangeSelection,
   LexicalEditor,
+  TextFormatType,
 } from 'lexical';
 
 import {ElementNode} from 'lexical';
@@ -142,11 +143,11 @@ export type SelectionShape = {
   toY: number,
 };
 
-declare export function $applyTableHandlers(
+declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
-): () => void;
+): TableSelection;
 
 declare export function $getElementGridForTableNode(
   editor: LexicalEditor,
@@ -207,3 +208,31 @@ declare export function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
 ): TableNode;
+
+/**
+ * LexicalTableSelection.js
+ */
+declare export class TableSelection {
+  currentX: number;
+  currentY: number;
+  listenersToRemove: Set<() => void>;
+  domListeners: Set<() => void>;
+  grid: Grid;
+  highlightedCells: Array<Cell>;
+  isHighlightingCells: boolean;
+  isSelecting: boolean;
+  startX: number;
+  startY: number;
+  nodeKey: string;
+  editor: LexicalEditor;
+  constructor(editor: LexicalEditor, nodeKey: string): void;
+  getGrid(): Grid;
+  hasHighlightedCells(): boolean;
+  removeListeners(): void;
+  trackTableGrid(): void;
+  clearHighlight(): void;
+  addCellToSelection(cell: Cell): void;
+  startSelecting(cell: Cell): void;
+  formatCells(type: TextFormatType): void;
+  clearText(): void;
+}

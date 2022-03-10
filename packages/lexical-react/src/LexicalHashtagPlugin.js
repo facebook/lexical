@@ -277,16 +277,17 @@ function textNodeTransform(node: TextNode): void {
 
   while (true) {
     const matchArr = REGEX.exec(text);
+    if (currentNode == null) {
+      return;
+    }
+    const nextSibling = currentNode.getNextSibling();
     if (matchArr === null) {
-      if (currentNode != null) {
-        const nextSibling = currentNode.getNextSibling();
-        if (
-          $isHashtagNode(nextSibling) &&
-          !endsWithValidChar(text) &&
-          !isNextNodeValid(currentNode)
-        ) {
-          $toggleHashtag(nextSibling);
-        }
+      if (
+        $isHashtagNode(nextSibling) &&
+        !endsWithValidChar(text) &&
+        !isNextNodeValid(currentNode)
+      ) {
+        $toggleHashtag(nextSibling);
       }
       return;
     }
@@ -299,7 +300,10 @@ function textNodeTransform(node: TextNode): void {
     if (
       (startOffset === 0 && $isHashtagNode(currentNode.getPreviousSibling())) ||
       !isValidCharacter(prevChar) ||
-      !isValidCharacter(nextChar)
+      !isValidCharacter(nextChar) ||
+      (nextChar === '' &&
+        $isTextNode(nextSibling) &&
+        !nextSibling.isSimpleText())
     ) {
       continue;
     }

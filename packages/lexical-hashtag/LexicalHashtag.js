@@ -9,4 +9,4 @@
 
 'use strict';
 
-module.exports = require('./dist/LexicalToken.js');
+module.exports = require('./dist/LexicalHashtag.js');

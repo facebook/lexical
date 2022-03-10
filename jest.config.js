@@ -24,6 +24,7 @@ module.exports = {
         '^@lexical/clipboard$':
           '<rootDir>/packages/lexical-clipboard/src/index.js',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
+        '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.js',
         '^@lexical/helpers/elements$':
           '<rootDir>/packages/lexical-helpers/src/LexicalElementHelpers.js',
         '^@lexical/helpers/nodes$':
@@ -59,7 +60,9 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
         '^@lexical/react/withSubscriptions$':
           '<rootDir>/packages/lexical-react/src/withSubscriptions.js',
+        '^@lexical/selection$': '<rootDir>/packages/lexical-selection/src/index.js',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
+        '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.js',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
         '^lexical$': '<rootDir>/packages/lexical/src/index.js',
         '^lexical/AutoLinkNode$':

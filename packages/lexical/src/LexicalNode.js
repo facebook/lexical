@@ -106,6 +106,18 @@ export function removeNode(
   }
 }
 
+export function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N {
+  const node = $getNodeByKey<N>(key);
+  if (node === null) {
+    invariant(
+      false,
+      "Expected node with key %s to exist but it's not in the nodeMap.",
+      key,
+    );
+  }
+  return node;
+}
+
 export type DOMConversion = {
   conversion: DOMConversionFn,
   priority: 0 | 1 | 2 | 3 | 4,
@@ -741,18 +753,6 @@ export class LexicalNode {
   markDirty(): void {
     this.getWritable();
   }
-}
-
-function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N {
-  const node = $getNodeByKey<N>(key);
-  if (node === null) {
-    invariant(
-      false,
-      "Expected node with key %s to exist but it's not in the nodeMap.",
-      key,
-    );
-  }
-  return node;
 }
 
 function errorOnTypeKlassMismatch(

@@ -29,6 +29,16 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import invariant from 'shared/invariant';
 
+/*
+How to add a new syntax to capture and transform.
+1. Create a new enumeration by adding to NodeTransformationKind.
+2. Add a new criteria with a regEx pattern. See markdownStrikethrough as an example.
+3. Add your block criteria (e.g. '# ') to allAutoFormatCriteria or 
+   your text criteria (e.g. *MyItalic*) to allAutoFormatCriteriaForTextNodes.
+4. Add your Lexical block specific transforming code here: transformTextNodeForText.   
+   Add your Lexical text specific transforming code here: transformTextNodeForText.   
+*/
+
 // The trigger state helps to capture EditorState information
 // from the prior and current EditorState.
 // This is then used to determined if an auto format has been triggered.
@@ -62,7 +72,8 @@ export type NodeTransformationKind =
   | 'italic'
   | 'underline'
   | 'strikethrough'
-  | 'bold_italic';
+  | 'bold_italic'
+  | 'link';
 
 // The scanning context provides the overall data structure for
 // locating a auto formatting candidate and then transforming that candidate
@@ -127,6 +138,7 @@ export const TRIGGER_STRING = '\u0020'; // The space key triggers markdown.
 const TRIGGER_STRING_LENGTH = TRIGGER_STRING.length;
 const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused unicode character to separate text and non-text nodes.
 
+// Todo: speed up performance by having non-capture group variations of the regex.
 const autoFormatBase: AutoFormatCriteria = {
   nodeTransformationKind: null,
   regEx: /(?:)/,
@@ -236,6 +248,12 @@ const markdownStrikethrough: AutoFormatCriteria = {
   regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~\s)$/,
 };
 
+const markdownLink: AutoFormatCriteria = {
+  ...autoFormatBase,
+  nodeTransformationKind: 'link',
+  regEx: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))(\s)$/,
+};
+
 const allAutoFormatCriteriaForTextNodes = [
   markdownBoldItalic,
   markdownItalic,
@@ -243,6 +261,7 @@ const allAutoFormatCriteriaForTextNodes = [
   markdownBoldWithUnderlines,
   fakeMarkdownUnderline,
   markdownStrikethrough,
+  markdownLink,
 ];
 
 const allAutoFormatCriteria = [
@@ -497,14 +516,6 @@ function getNewNodeForCriteria(
   return newNode;
 }
 
-function updateTextNode(node: TextNode, count: number): void {
-  const textNode = node.spliceText(0, count, '', true);
-  if (textNode.getTextContent() === '') {
-    textNode.selectPrevious();
-    textNode.remove();
-  }
-}
-
 export function transformTextNodeForAutoFormatCriteria(
   scanningContext: ScanningContext,
 ) {
@@ -519,14 +530,112 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const element = textNodeWithOffset.node.getParentOrThrow();
   const text = scanningContext.matchResultContext.regExCaptureGroups[0].text;
-  updateTextNode(textNodeWithOffset.node, text.length);
 
+  // Remove the text which we matched.
+  const textNode = textNodeWithOffset.node.spliceText(0, text.length, '', true);
+  if (textNode.getTextContent() === '') {
+    textNode.selectPrevious();
+    textNode.remove();
+  }
+
+  // Transform the current element kind to the new element kind.
   const elementNode = getNewNodeForCriteria(scanningContext, element);
 
   if (elementNode !== null) {
     element.replace(elementNode);
   }
 }
+
+function transformTextNodeForText(scanningContext: ScanningContext) {
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+
+  if (autoFormatCriteria.nodeTransformationKind != null) {
+    const formatting = getTextFormatType(
+      autoFormatCriteria.nodeTransformationKind,
+    );
+
+    if (formatting != null) {
+      transformTextNodeWithFormatting(formatting, scanningContext);
+      return;
+    }
+
+    if (autoFormatCriteria.nodeTransformationKind === 'link') {
+      transformTextNodeWithLink(scanningContext);
+    }
+  }
+}
+
+function transformTextNodeWithFormatting(
+  formatting: Array<TextFormatType>,
+  scanningContext: ScanningContext,
+) {
+  const matchResultContext = scanningContext.matchResultContext;
+  if (matchResultContext.regExCaptureGroups.length !== 6) {
+    // For BIUS and similar formats which have a pattern + text + pattern:
+    // given *italic* below are the capture groups by index:
+    // 0. *italic*
+    // 1. *
+    // 2. whitespace
+    // 3. italic
+    // 4. whitespace
+    // 5. *
+    return;
+  }
+
+  const formatCaptureGroup = 3;
+  matchResultContext.regExCaptureGroups =
+    getCaptureGroupsByResolvingAllDetails(scanningContext);
+
+  // Remove unwanted text in reg ex pattern.
+
+  // Remove group 5.
+  removeCaptureGroupsWithAnchorAndFocusIndexes(5, 5, matchResultContext);
+  // Remove group 1.
+  removeCaptureGroupsWithAnchorAndFocusIndexes(1, 1, matchResultContext);
+
+  formatTextInCaptureGroupIndex(
+    formatting,
+    formatCaptureGroup,
+    matchResultContext,
+  );
+
+  makeCollapsedSelectionAtOffsetInJoinedText(
+    matchResultContext.offsetInJoinedTextForCollapsedSelection,
+    matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
+    scanningContext.textNodeWithOffset.node.getParentOrThrow(),
+  );
+}
+
+function transformTextNodeWithLink(scanningContext: ScanningContext) {
+  const matchResultContext = scanningContext.matchResultContext;
+  if (matchResultContext.regExCaptureGroups.length !== 7) {
+    // For links and similar formats which have: pattern + text + pattern + pattern2 text2 + pattern2:
+    // Given [title](url), below are the capture groups by index:
+    // 0. [title](url)
+    // 1. [
+    // 2. title
+    // 3. ](
+    // 4. url
+    // 5. )
+    // 6. whitespace
+
+    return;
+  }
+
+  matchResultContext.regExCaptureGroups =
+    getCaptureGroupsByResolvingAllDetails(scanningContext);
+
+  // Remove the initial pattern through to the final pattern.
+  removeCaptureGroupsWithAnchorAndFocusIndexes(1, 5, matchResultContext);
+
+  makeCollapsedSelectionAtOffsetInJoinedText(
+    matchResultContext.offsetInJoinedTextForCollapsedSelection,
+    matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
+    scanningContext.textNodeWithOffset.node.getParentOrThrow(),
+  );
+}
+
+// Below are lower level helper functions.
 
 function getTextFormatType(
   nodeTransformationKind: NodeTransformationKind,
@@ -543,48 +652,6 @@ function getTextFormatType(
     default:
   }
   return null;
-}
-
-function transformTextNodeForText(scanningContext: ScanningContext) {
-  const autoFormatCriteria = scanningContext.autoFormatCriteria;
-  const matchResultContext = scanningContext.matchResultContext;
-
-  if (autoFormatCriteria.nodeTransformationKind != null) {
-    if (matchResultContext.regExCaptureGroups.length !== 6) {
-      // For BIUS and other formatts which have a pattern + text + pattern,
-      // the expected reg ex pattern should have 6 groups.
-      // If it does not, then break and fail silently.
-      // e2e tests validate the regEx pattern.
-      return;
-    }
-
-    const formatting = getTextFormatType(
-      autoFormatCriteria.nodeTransformationKind,
-    );
-    if (formatting != null) {
-      const captureGroupsToDelete = [1, 5];
-      const formatCaptureGroup = 3;
-      matchResultContext.regExCaptureGroups =
-        getCaptureGroupsByResolvingAllDetails(scanningContext);
-
-      if (captureGroupsToDelete.length > 0) {
-        // Remove unwanted text in reg ex pattern.
-        removeTextInCaptureGroups(captureGroupsToDelete, matchResultContext);
-      }
-
-      formatTextInCaptureGroupIndex(
-        formatting,
-        formatCaptureGroup,
-        matchResultContext,
-      );
-
-      makeCollapsedSelectionAtOffsetInJoinedText(
-        matchResultContext.offsetInJoinedTextForCollapsedSelection,
-        matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
-        scanningContext.textNodeWithOffset.node.getParentOrThrow(),
-      );
-    }
-  }
 }
 
 // Some Capture Group Details were left lazily unresolved as their calculation
@@ -641,73 +708,130 @@ function getCaptureGroupsByResolvingAllDetails(
   return regExCaptureGroups;
 }
 
-function removeTextInCaptureGroups(
-  regExCaptureGroupsToDelete: Array<number>,
+function createSelectionForCaptureGroups(
+  anchorCaptureGroup: CaptureGroupDetail,
+  focusCaptureGroup: CaptureGroupDetail,
+): null | RangeSelection {
+  const anchorTextNodeWithOffset = anchorCaptureGroup.anchorTextNodeWithOffset;
+  const focusTextNodeWithOffset = focusCaptureGroup.focusTextNodeWithOffset;
+
+  if (anchorTextNodeWithOffset != null && focusTextNodeWithOffset != null) {
+    const selection = $createRangeSelection();
+
+    selection.anchor.set(
+      anchorTextNodeWithOffset.node.getKey(),
+      anchorTextNodeWithOffset.offset,
+      'text',
+    );
+
+    selection.focus.set(
+      focusTextNodeWithOffset.node.getKey(),
+      focusTextNodeWithOffset.offset,
+      'text',
+    );
+    return selection;
+  }
+  return null;
+}
+
+function removeCaptureGroupsWithAnchorAndFocusIndexes(
+  anchorCaptureGroupIndex,
+  focusCaptureGroupIndex,
   matchResultContext: MatchResultContext,
 ) {
   const regExCaptureGroups = matchResultContext.regExCaptureGroups;
   const regExCaptureGroupsCount = regExCaptureGroups.length;
-  for (let i = regExCaptureGroupsToDelete.length - 1; i >= 0; i--) {
-    if (i < regExCaptureGroupsCount) {
-      const captureGroupIndex = regExCaptureGroupsToDelete[i];
-      const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
-      const anchorTextNodeWithOffset =
-        captureGroupDetail.anchorTextNodeWithOffset;
-      const focusTextNodeWithOffset =
-        captureGroupDetail.focusTextNodeWithOffset;
+
+  if (
+    anchorCaptureGroupIndex < regExCaptureGroupsCount &&
+    focusCaptureGroupIndex < regExCaptureGroupsCount
+  ) {
+    const anchorCaptureGroupDetail =
+      regExCaptureGroups[anchorCaptureGroupIndex];
+    const focusCaptureGroupDetail = regExCaptureGroups[focusCaptureGroupIndex];
+
+    const anchorTextNodeWithOffset =
+      anchorCaptureGroupDetail.anchorTextNodeWithOffset;
+    const focusTextNodeWithOffset =
+      focusCaptureGroupDetail.focusTextNodeWithOffset;
+
+    const newSelection = createSelectionForCaptureGroups(
+      anchorCaptureGroupDetail,
+      focusCaptureGroupDetail,
+    );
+
+    if (
+      newSelection != null &&
+      anchorTextNodeWithOffset != null &&
+      focusTextNodeWithOffset != null
+    ) {
+      $setSelection(newSelection);
+      const currentSelection = $getSelection();
       if (
-        anchorTextNodeWithOffset != null &&
-        focusTextNodeWithOffset != null &&
-        captureGroupDetail.textLength > 0
+        currentSelection != null &&
+        $isRangeSelection(currentSelection) &&
+        currentSelection.isCollapsed() === false
       ) {
-        const newSelection = $createRangeSelection();
+        currentSelection.removeText();
 
-        newSelection.anchor.set(
-          anchorTextNodeWithOffset.node.getKey(),
-          anchorTextNodeWithOffset.offset,
-          'text',
-        );
+        // Shift the capture group anchor and focus node offsets as well as offsetInJoinedTextForCollapsedSelection.
+        for (
+          let i = focusCaptureGroupIndex;
+          i >= anchorCaptureGroupIndex;
+          i--
+        ) {
+          const captureGroupDetail = regExCaptureGroups[i];
 
-        newSelection.focus.set(
-          focusTextNodeWithOffset.node.getKey(),
-          focusTextNodeWithOffset.offset,
-          'text',
-        );
+          /*
+              An explanation of this code.
+              Start with "BigRedDog" where each node is formatted differently (bold, italic, underline).
+              Next, delete the letter i through the letter o leaving "Bg".
+              We can say we have 3 nodes that were affected by the deletion:
+              1. TextNode1 for Big lost all text after offset 1
+              2. TextNode2 for Red lost all text technically after offset 0.
+              3. TextNode3 for Dog lost all text from offset 0 through offset 2
 
-        $setSelection(newSelection);
-        const currentSelection = $getSelection();
-        if ($isRangeSelection(currentSelection)) {
-          currentSelection.removeText();
+              Each capture group has an anchor and focus that refers to the 3 textNodes.
+              The TextNode1 captureGroup1.anchor.offset remains the same, but its captureGroup1.focus.offset is reduced by 2 ("ig").
+              The TextNode2 captureGroup2.anchor.offset is already 0, but its captureGroup2.focus.offset is reduced by 3 and thus becomes 0 ("Red").
+              The TextNode3 captureGroup3.anchor.offset is already 0, but its captureGroup3.focus.offset is reduced by 2 and thus becomes 0 ("do").
+              
+              The shifting code maintains the offsets for each capture group, even when the capture group is deleted. When this happens, its
+              anchor and offset values collapse to 0.
 
-          // Shift offsets for capture groups which are within the same node
-          if (
-            anchorTextNodeWithOffset.node.getKey() ===
-            focusTextNodeWithOffset.node.getKey()
-          ) {
-            const delta =
+              The shifting code also updates offsetInJoinedTextForCollapsedSelection.  This value is used for placing
+              The collapsed selection after the trigger.
+            */
+
+          let delta = 0;
+          let node = null;
+          let atOrAfterOffset = 0;
+          if (i === anchorCaptureGroupIndex && i === focusCaptureGroupIndex) {
+            delta =
               focusTextNodeWithOffset.offset - anchorTextNodeWithOffset.offset;
-            invariant(
-              delta > 0,
-              'Expected anchor and focus offsets to have ascending character order.',
-            );
+            node = anchorTextNodeWithOffset.node;
+            atOrAfterOffset = focusTextNodeWithOffset.offset;
+          } else if (i === anchorCaptureGroupIndex) {
+            if (captureGroupDetail.anchorTextNodeWithOffset != null) {
+              delta =
+                captureGroupDetail.textLength -
+                captureGroupDetail.anchorTextNodeWithOffset.offset;
+              atOrAfterOffset = anchorTextNodeWithOffset.offset;
+            }
+          } else if (i === focusCaptureGroupIndex) {
+            delta = focusTextNodeWithOffset.offset;
+            node = focusTextNodeWithOffset.node;
+            atOrAfterOffset = focusTextNodeWithOffset.offset;
+          }
+
+          if (delta > 0) {
             shiftCaptureGroupOffsets(
               -delta,
-              focusTextNodeWithOffset.offset,
-              anchorTextNodeWithOffset.node,
-              captureGroupIndex,
+              node,
+              atOrAfterOffset,
+              focusCaptureGroupIndex,
               matchResultContext,
             );
-          } else {
-            const focusDelta = focusTextNodeWithOffset.offset;
-            if (focusDelta > 0) {
-              shiftCaptureGroupOffsets(
-                -focusDelta,
-                focusDelta,
-                focusTextNodeWithOffset.node,
-                captureGroupIndex,
-                matchResultContext,
-              );
-            }
           }
         }
       }
@@ -717,8 +841,8 @@ function removeTextInCaptureGroups(
 
 function shiftCaptureGroupOffsets(
   delta: number,
+  applyAtOrAfterNode: null | TextNode,
   applyAtOrAfterOffset: number,
-  node: TextNode,
   startingCaptureGroupIndex: number,
   matchResultContext: MatchResultContext,
 ) {
@@ -728,31 +852,33 @@ function shiftCaptureGroupOffsets(
     'The text content string length does not correlate with insertions/deletions of new text.',
   );
 
-  const regExCaptureGroups = matchResultContext.regExCaptureGroups;
-  const regExCaptureGroupsCount = regExCaptureGroups.length;
-  for (
-    let captureGroupIndex = startingCaptureGroupIndex + 1;
-    captureGroupIndex < regExCaptureGroupsCount;
-    captureGroupIndex++
-  ) {
-    const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
-
-    if (
-      captureGroupDetail.anchorTextNodeWithOffset != null &&
-      captureGroupDetail.anchorTextNodeWithOffset.offset >=
-        applyAtOrAfterOffset &&
-      captureGroupDetail.anchorTextNodeWithOffset.node.is(node)
+  if (applyAtOrAfterNode != null) {
+    const regExCaptureGroups = matchResultContext.regExCaptureGroups;
+    const regExCaptureGroupsCount = regExCaptureGroups.length;
+    for (
+      let captureGroupIndex = startingCaptureGroupIndex + 1;
+      captureGroupIndex < regExCaptureGroupsCount;
+      captureGroupIndex++
     ) {
-      captureGroupDetail.anchorTextNodeWithOffset.offset += delta;
-    }
+      const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
 
-    if (
-      captureGroupDetail.focusTextNodeWithOffset != null &&
-      captureGroupDetail.focusTextNodeWithOffset.offset >=
-        applyAtOrAfterOffset &&
-      captureGroupDetail.focusTextNodeWithOffset.node.is(node)
-    ) {
-      captureGroupDetail.focusTextNodeWithOffset.offset += delta;
+      if (
+        captureGroupDetail.anchorTextNodeWithOffset != null &&
+        captureGroupDetail.anchorTextNodeWithOffset.offset >=
+          applyAtOrAfterOffset &&
+        captureGroupDetail.anchorTextNodeWithOffset.node.is(applyAtOrAfterNode)
+      ) {
+        captureGroupDetail.anchorTextNodeWithOffset.offset += delta;
+      }
+
+      if (
+        captureGroupDetail.focusTextNodeWithOffset != null &&
+        captureGroupDetail.focusTextNodeWithOffset.offset >=
+          applyAtOrAfterOffset &&
+        captureGroupDetail.focusTextNodeWithOffset.node.is(applyAtOrAfterNode)
+      ) {
+        captureGroupDetail.focusTextNodeWithOffset.offset += delta;
+      }
     }
   }
 }

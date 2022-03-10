@@ -9,6 +9,7 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import {$isHashtagNode, $toggleHashtag, HashtagNode} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTextNode,
@@ -16,7 +17,6 @@ import {
   $isTextNode,
   TextNode,
 } from 'lexical';
-import {$isHashtagNode, $toggleHashtag, HashtagNode} from 'lexical/HashtagNode';
 import {$isOverflowNode} from 'lexical/OverflowNode';
 import {useEffect} from 'react';
 

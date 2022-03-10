@@ -7,15 +7,15 @@
  * @flow strict
  */
 
-import type {TextNodeWithOffset} from '@lexical/helpers/text';
+import type {TextNodeWithOffset} from '@lexical/text';
 import type {ElementNode, NodeKey, TextFormatType, TextNode} from 'lexical';
 
+import {$createListItemNode, $createListNode} from '@lexical/list';
+import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
   $findNodeWithOffsetFromJoinedText,
   $joinTextNodesInElementNode,
-} from '@lexical/helpers/text';
-import {$createListItemNode, $createListNode} from '@lexical/list';
-import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
+} from '@lexical/text';
 import {
   $createParagraphNode,
   $createRangeSelection,

@@ -20,6 +20,9 @@ const DEFAULT_PKGS = [
   'lexical-table',
   'lexical-file',
   'lexical-clipboard',
+  'lexical-hashtag',
+  'lexical-selection',
+  'lexical-text',
 ];
 
 module.exports = {

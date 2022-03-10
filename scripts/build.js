@@ -54,6 +54,8 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-file/dist'));
   fs.removeSync(path.resolve('./packages/lexical-clipboard/dist'));
   fs.removeSync(path.resolve('./packages/lexical-hashtag/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-selection/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-text/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 

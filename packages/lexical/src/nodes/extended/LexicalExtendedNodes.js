@@ -11,10 +11,10 @@ import type {LexicalNode} from 'lexical';
 
 import {ListItemNode, ListNode} from '@lexical/list';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {HashtagNode} from '@lexical/token';
 import {AutoLinkNode} from 'lexical/AutoLinkNode';
 import {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 import {CodeNode} from 'lexical/CodeNode';
-import {HashtagNode} from 'lexical/HashtagNode';
 import {HeadingNode} from 'lexical/HeadingNode';
 import {LinkNode} from 'lexical/LinkNode';
 import {OverflowNode} from 'lexical/OverflowNode';

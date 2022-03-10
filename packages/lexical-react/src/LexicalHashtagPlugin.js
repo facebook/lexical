@@ -10,13 +10,13 @@
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$isHashtagNode, $toggleHashtag, HashtagNode} from '@lexical/token';
 import {
   $createTextNode,
   $isLineBreakNode,
   $isTextNode,
   TextNode,
 } from 'lexical';
-import {$isHashtagNode, $toggleHashtag, HashtagNode} from 'lexical/HashtagNode';
 import {$isOverflowNode} from 'lexical/OverflowNode';
 import {useEffect} from 'react';
 

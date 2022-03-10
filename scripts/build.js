@@ -53,6 +53,7 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-table/dist'));
   fs.removeSync(path.resolve('./packages/lexical-file/dist'));
   fs.removeSync(path.resolve('./packages/lexical-clipboard/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-token/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
@@ -61,6 +62,7 @@ const wwwMappings = {
   '@lexical/file': 'LexicalFile',
   '@lexical/list': 'LexicalList',
   '@lexical/table': 'LexicalTable',
+  '@lexical/token': 'LexicalToken',
   '@lexical/yjs': 'LexicalYjs',
   lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
@@ -102,14 +104,12 @@ const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
 });
 
 const externals = [
-  // Note: do not add stylex here, as we can't export and sync
-  // modules that use Stylex to www (the babel plugin on www
-  // is different to that of the OSS version).
   'lexical',
   '@lexical/list',
   '@lexical/table',
   '@lexical/file',
   '@lexical/clipboard',
+  '@lexical/token',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -372,6 +372,17 @@ const packages = [
     name: 'Lexical File',
     outputPath: './packages/lexical-clipboard/dist/',
     sourcePath: './packages/lexical-clipboard/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalToken',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical File',
+    outputPath: './packages/lexical-token/dist/',
+    sourcePath: './packages/lexical-token/src/',
   },
   {
     modules: lexicalNodes.map((module) => ({

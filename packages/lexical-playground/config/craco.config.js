@@ -17,7 +17,6 @@ module.exports = {
       'lexical/CodeNode': 'lexical/dist/LexicalCodeNode',
       'lexical/LinkNode': 'lexical/dist/LexicalLinkNode',
       'lexical/AutoLinkNode': 'lexical/dist/LexicalAutoLinkNode',
-      'lexical/HashtagNode': 'lexical/dist/LexicalHashtagNode',
       'lexical/CodeHighlightNode': 'lexical/dist/LexicalCodeHighlightNode',
       'lexical/OverflowNode': 'lexical/dist/LexicalOverflowNode',
       'lexical/ExtendedNodes': 'lexical/dist/LexicalExtendedNodes',
@@ -37,6 +36,7 @@ module.exports = {
       '@lexical/table': '@lexical/table/dist/LexicalTable.js',
       '@lexical/file': '@lexical/file/dist/LexicalFile.js',
       '@lexical/clipboard': '@lexical/clipboard/dist/LexicalClipboard.js',
+      '@lexical/token': '@lexical/token/dist/LexicalToken.js',
 
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',

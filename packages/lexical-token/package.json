@@ -1,0 +1,27 @@
+{
+  "name": "@lexical/token",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "This package contains the functionality for various pre-made Lexical tokens.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "table",
+    "hashtag",
+    "mention"
+  ],
+  "license": "MIT",
+  "version": "0.1.14",
+  "main": "LexicalToken.js",
+  "peerDependencies": {
+    "lexical": "0.1.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-token"
+  }
+}

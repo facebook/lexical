@@ -10,21 +10,20 @@
 import React from 'react';
 import {useCallback} from 'react';
 import './EquationEditor.css';
+
 type BaseEquationEditorProps = {
   equation: string,
   setEquation: (string) => void,
-};
-
-type EquationEditorProps = {
-  ...BaseEquationEditorProps,
   inline: boolean,
+  inputRef: {current: null | HTMLElement},
 };
 
 export default function EquationEditor({
   equation,
   setEquation,
   inline,
-}: EquationEditorProps): React$Node {
+  inputRef,
+}: BaseEquationEditorProps): React$Node {
   const onChange = useCallback(
     (event) => {
       setEquation(event.target.value);
@@ -35,6 +34,7 @@ export default function EquationEditor({
   const props = {
     equation,
     onChange,
+    inputRef,
   };
 
   return inline ? (
@@ -47,11 +47,13 @@ export default function EquationEditor({
 type EquationEditorImplProps = {
   equation: string,
   onChange: (SyntheticInputEvent<HTMLInputElement>) => void,
+  inputRef: {current: null | HTMLElement},
 };
 
 function InlineEquationEditor({
   equation,
   onChange,
+  inputRef,
 }: EquationEditorImplProps): React$Node {
   return (
     <span className="EquationEditor_inputBackground">
@@ -69,6 +71,7 @@ function InlineEquationEditor({
 function BlockEquationEditor({
   equation,
   onChange,
+  inputRef,
 }: EquationEditorImplProps): React$Node {
   return (
     <div className="EquationEditor_inputBackground">

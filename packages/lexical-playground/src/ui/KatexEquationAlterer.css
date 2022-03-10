@@ -28,4 +28,5 @@
 .KatexEquationAlterer_textArea {
   width: 100%;
   resize: none;
+  padding: 7;
 }

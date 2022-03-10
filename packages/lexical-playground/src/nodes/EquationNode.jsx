@@ -18,8 +18,14 @@ import type {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNodeByKey, DecoratorNode} from 'lexical';
 import * as React from 'react';
+<<<<<<< HEAD
 import {useCallback, useEffect, useState} from 'react';
 
+=======
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import KatexRenderer from '../ui/KatexRenderer';
+>>>>>>> 020ff1d6 (Fix selection bug + Flow errors)
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';
 
@@ -39,6 +45,7 @@ function EquationComponent({
   const [editor] = useLexicalComposerContext();
   const [equationValue, setEquationValue] = useState(equation);
   const [showEquationEditor, setShowEquationEditor] = useState<boolean>(false);
+  const inputRef = useRef(null);
 
   const onHide = useCallback(() => {
     setShowEquationEditor(false);
@@ -46,11 +53,13 @@ function EquationComponent({
       const node = $getNodeByKey(nodeKey);
       if ($isEquationNode(node)) {
         node.setEquation(equationValue);
+        node.selectNext(0, 0);
       }
     });
   }, [editor, equationValue, nodeKey]);
 
   useEffect(() => {
+<<<<<<< HEAD
     return editor.registerCommandListener((type, payload) => {
       if (type === 'selectionChange' && showEquationEditor) {
         onHide();
@@ -58,6 +67,27 @@ function EquationComponent({
 
       return false;
     }, HighPriority);
+=======
+    if (showEquationEditor) {
+      return editor.addListener(
+        'command',
+        (type, payload) => {
+          const activeElement = document.activeElement;
+          const inputElem = inputRef.current;
+
+          if (type === 'selectionChange' && inputElem !== activeElement) {
+            onHide();
+          } else if (type === 'keyEscape' && inputElem === activeElement) {
+            onHide();
+            return true;
+          }
+
+          return false;
+        },
+        HighPriority,
+      );
+    }
+>>>>>>> 020ff1d6 (Fix selection bug + Flow errors)
   }, [editor, onHide, showEquationEditor]);
 
   return (
@@ -67,6 +97,7 @@ function EquationComponent({
           equation={equationValue}
           setEquation={setEquationValue}
           inline={inline}
+          inputRef={inputRef}
         />
       ) : (
         <KatexRenderer
@@ -113,8 +144,9 @@ export class EquationNode extends DecoratorNode<React$Node> {
     return document.createElement(this.__inline ? 'span' : 'div');
   }
 
-  updateDOM(): false {
-    return false;
+  updateDOM(prevNode: EquationNode): boolean {
+    // If the inline property changes, replace the element
+    return this.__inline !== prevNode.__inline;
   }
 
   setEquation(equation: string): void {

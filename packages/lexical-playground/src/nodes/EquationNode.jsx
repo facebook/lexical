@@ -47,13 +47,15 @@ function EquationComponent({
   const [showEquationEditor, setShowEquationEditor] = useState<boolean>(false);
   const inputRef = useRef(null);
 
-  const onHide = useCallback(() => {
+  const onHide = useCallback((restoreSelection?: boolean) => {
     setShowEquationEditor(false);
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isEquationNode(node)) {
         node.setEquation(equationValue);
-        node.selectNext(0, 0);
+        if (restoreSelection) {
+          node.selectNext(0, 0);
+        }
       }
     });
   }, [editor, equationValue, nodeKey]);
@@ -78,7 +80,7 @@ function EquationComponent({
           if (type === 'selectionChange' && inputElem !== activeElement) {
             onHide();
           } else if (type === 'keyEscape' && inputElem === activeElement) {
-            onHide();
+            onHide(true);
             return true;
           }
 

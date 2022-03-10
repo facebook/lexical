@@ -13,6 +13,8 @@
     "@lexical/table": "0.1.14",
     "@lexical/file": "0.1.14",
     "@lexical/clipboard": "0.1.14",
+    "@lexical/hashtag": "0.1.14",
+    "@lexical/selection": "0.1.14",
     "link-preview-generator": "1.0.7",
     "@craco/craco": "6.1.2",
     "@excalidraw/excalidraw": "0.11.0",

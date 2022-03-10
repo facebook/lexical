@@ -14,7 +14,7 @@ import {$insertDataTransferForPlainText} from '@lexical/clipboard';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
-} from '@lexical/helpers/selection';
+} from '@lexical/selection';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 

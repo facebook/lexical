@@ -1,30 +1,26 @@
 {
-  "name": "@lexical/clipboard",
+  "name": "@lexical/selection",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "This package provides the copy/paste functionality for Lexical.",
+  "description": "This package contains utilities and helpers for handling Lexical selection.",
   "keywords": [
     "lexical",
     "editor",
     "rich-text",
-    "copy",
-    "paste"
+    "list",
+    "selection"
   ],
   "license": "MIT",
   "version": "0.1.14",
-  "main": "LexicalClipboard.js",
+  "main": "LexicalSelection.js",
   "peerDependencies": {
     "lexical": "0.1.14"
-  },
-  "dependencies": {
-    "@lexical/helpers": "0.1.14",
-    "@lexical/selection": "0.1.14"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
-    "directory": "packages/lexical-clipboard"
+    "directory": "packages/lexical-selection"
   }
 }

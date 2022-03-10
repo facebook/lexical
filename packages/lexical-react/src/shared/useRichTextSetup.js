@@ -19,7 +19,7 @@ import {$insertDataTransferForRichText} from '@lexical/clipboard';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
-} from '@lexical/helpers/selection';
+} from '@lexical/selection';
 import {
   $getSelection,
   $isElementNode,

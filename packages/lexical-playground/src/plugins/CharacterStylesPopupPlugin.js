@@ -17,7 +17,7 @@ import {$isLinkNode} from 'lexical/LinkNode';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 
-import {$isAtNodeEnd} from '@lexical/helpers/selection';
+import {$isAtNodeEnd} from '@lexical/selection';
 
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 

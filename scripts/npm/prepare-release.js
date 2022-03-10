@@ -29,9 +29,6 @@ async function prepareLexicalPackage() {
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalQuoteNode.js ./packages/${LEXICAL_PKG}/npm/QuoteNode.js`,
   );
   await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalHashtagNode.js ./packages/${LEXICAL_PKG}/npm/HashtagNode.js`,
-  );
-  await exec(
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalLinkNode.js ./packages/${LEXICAL_PKG}/npm/LinkNode.js`,
   );
   await exec(
@@ -73,9 +70,6 @@ async function prepareLexicalPackage() {
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalQuoteNode.js.flow ./packages/${LEXICAL_PKG}/npm/QuoteNode.js.flow`,
   );
   await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalHashtagNode.js.flow ./packages/${LEXICAL_PKG}/npm/HashtagNode.js.flow`,
-  );
-  await exec(
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalLinkNode.js.flow ./packages/${LEXICAL_PKG}/npm/LinkNode.js.flow`,
   );
   await exec(
@@ -102,9 +96,6 @@ async function prepareLexicalHelpersPackage() {
     `cp -R ./packages/${LEXICAL_HELPERS_PKG}/dist/*.js ./packages/${LEXICAL_HELPERS_PKG}/npm`,
   );
   // Remap the helper packages to their short versions
-  await exec(
-    `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalSelectionHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/selection.js`,
-  );
   await exec(
     `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalTextHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/text.js`,
   );

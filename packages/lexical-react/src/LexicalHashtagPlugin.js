@@ -10,14 +10,8 @@
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  $createTextNode,
-  $isLineBreakNode,
-  $isTextNode,
-  TextNode,
-} from 'lexical';
+import {$createTextNode, $isTextNode, TextNode} from 'lexical';
 import {$isHashtagNode, $toggleHashtag, HashtagNode} from 'lexical/HashtagNode';
-import {$isOverflowNode} from 'lexical/OverflowNode';
 import {useEffect} from 'react';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
@@ -320,25 +314,21 @@ function textNodeTransform(node: TextNode): void {
 
 function isPreviousNodeValid(node: LexicalNode): boolean {
   const previousNode = node.getPreviousSibling();
+  const previousTextNodeIsValid =
+    $isTextNode(previousNode) &&
+    endsWithValidChar(previousNode.getTextContent());
   return (
-    previousNode === null ||
-    $isLineBreakNode(previousNode) ||
-    $isOverflowNode(previousNode) ||
-    ($isTextNode(previousNode) &&
-      !$isHashtagNode(previousNode) &&
-      endsWithValidChar(previousNode.getTextContent()))
+    (!$isTextNode(previousNode) && !$isHashtagNode(previousNode)) ||
+    previousTextNodeIsValid
   );
 }
 
 function isNextNodeValid(node: LexicalNode): boolean {
   const nextNode = node.getNextSibling();
+  const nextTextNodeIsValid =
+    $isTextNode(nextNode) && startsWithValidChar(nextNode.getTextContent());
   return (
-    nextNode === null ||
-    $isLineBreakNode(nextNode) ||
-    $isOverflowNode(nextNode) ||
-    ($isTextNode(nextNode) &&
-      !$isHashtagNode(nextNode) &&
-      startsWithValidChar(nextNode.getTextContent()))
+    (!$isTextNode(nextNode) && !$isHashtagNode(nextNode)) || nextTextNodeIsValid
   );
 }
 

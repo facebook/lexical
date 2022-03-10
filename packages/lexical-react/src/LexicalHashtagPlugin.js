@@ -17,7 +17,6 @@ import {
   TextNode,
 } from 'lexical';
 import {$isHashtagNode, $toggleHashtag, HashtagNode} from 'lexical/HashtagNode';
-import {$isOverflowNode} from 'lexical/OverflowNode';
 import {useEffect} from 'react';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
@@ -299,7 +298,9 @@ function textNodeTransform(node: TextNode): void {
     if (
       (startOffset === 0 && $isHashtagNode(currentNode.getPreviousSibling())) ||
       !isValidCharacter(prevChar) ||
-      !isValidCharacter(nextChar)
+      !isValidCharacter(nextChar) ||
+      !isPreviousNodeValid(currentNode) ||
+      !isNextNodeValid(currentNode)
     ) {
       continue;
     }
@@ -323,9 +324,8 @@ function isPreviousNodeValid(node: LexicalNode): boolean {
   return (
     previousNode === null ||
     $isLineBreakNode(previousNode) ||
-    $isOverflowNode(previousNode) ||
     ($isTextNode(previousNode) &&
-      !$isHashtagNode(previousNode) &&
+      previousNode.isSimpleText() &&
       endsWithValidChar(previousNode.getTextContent()))
   );
 }
@@ -335,9 +335,9 @@ function isNextNodeValid(node: LexicalNode): boolean {
   return (
     nextNode === null ||
     $isLineBreakNode(nextNode) ||
-    $isOverflowNode(nextNode) ||
     ($isTextNode(nextNode) &&
       !$isHashtagNode(nextNode) &&
+      nextNode.isSimpleText() &&
       startsWithValidChar(nextNode.getTextContent()))
   );
 }

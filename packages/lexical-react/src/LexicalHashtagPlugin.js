@@ -277,6 +277,9 @@ function textNodeTransform(node: TextNode): void {
 
   while (true) {
     const matchArr = REGEX.exec(text);
+    if (currentNode == null) {
+      return;
+    }
     const nextSibling = currentNode.getNextSibling();
     if (matchArr === null) {
       if (
@@ -316,9 +319,6 @@ function textNodeTransform(node: TextNode): void {
     }
     adjustedOffset += endOffset;
     $toggleHashtag(targetNode);
-    if (!currentNode) {
-      return;
-    }
   }
 }
 

@@ -30,10 +30,10 @@ module.name_mapper='^lexical/ExtendedNodes' -> '<PROJECT_ROOT>/packages/lexical/
 module.name_mapper='^@lexical/list' -> '<PROJECT_ROOT>/packages/lexical-list/src/index.js'
 module.name_mapper='^@lexical/table' -> '<PROJECT_ROOT>/packages/lexical-table/LexicalTable.js.flow'
 module.name_mapper='^@lexical/file' -> '<PROJECT_ROOT>/packages/lexical-file/src/index.js'
-module.name_mapper='^@lexical/token' -> '<PROJECT_ROOT>/packages/lexical-token/src/index.js'
+module.name_mapper='^@lexical/hashtag' -> '<PROJECT_ROOT>/packages/lexical-hashtag/src/index.js'
+module.name_mapper='^@lexical/selection' -> '<PROJECT_ROOT>/packages/lexical-selection/src/index.js'
+module.name_mapper='^@lexical/text' -> '<PROJECT_ROOT>/packages/lexical-text/src/index.js'
 
-module.name_mapper='^@lexical/helpers/selection' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalSelectionHelpers.js'
-module.name_mapper='^@lexical/helpers/text' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalTextHelpers.js'
 module.name_mapper='^@lexical/helpers/nodes' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalNodeHelpers.js'
 module.name_mapper='^@lexical/helpers/elements' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalElementHelpers.js'
 module.name_mapper='^@lexical/helpers/offsets' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalOffsetHelpers.js'

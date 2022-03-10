@@ -53,16 +53,18 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-table/dist'));
   fs.removeSync(path.resolve('./packages/lexical-file/dist'));
   fs.removeSync(path.resolve('./packages/lexical-clipboard/dist'));
-  fs.removeSync(path.resolve('./packages/lexical-token/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-hashtag/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
   '@lexical/clipboard': 'LexicalClipboard',
   '@lexical/file': 'LexicalFile',
+  '@lexical/hashtag': 'LexicalHashtag',
   '@lexical/list': 'LexicalList',
+  '@lexical/selection': 'LexicalSelection',
   '@lexical/table': 'LexicalTable',
-  '@lexical/token': 'LexicalToken',
+  '@lexical/text': 'LexicalText',
   '@lexical/yjs': 'LexicalYjs',
   lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
@@ -109,7 +111,9 @@ const externals = [
   '@lexical/table',
   '@lexical/file',
   '@lexical/clipboard',
-  '@lexical/token',
+  '@lexical/hashtag',
+  '@lexical/selection',
+  '@lexical/text',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -168,12 +172,6 @@ async function build(name, inputFile, outputFile, isProd) {
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
           // We inline both these helpers to improve the bundle size of the lexical-react modules
           {
-            find: '@lexical/helpers/selection',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalSelectionHelpers',
-            ),
-          },
-          {
             find: '@lexical/helpers/nodes',
             replacement: path.resolve(
               'packages/lexical-helpers/src/LexicalNodeHelpers',
@@ -183,12 +181,6 @@ async function build(name, inputFile, outputFile, isProd) {
             find: '@lexical/helpers/elements',
             replacement: path.resolve(
               'packages/lexical-helpers/src/LexicalElementHelpers',
-            ),
-          },
-          {
-            find: '@lexical/helpers/text',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalTextHelpers',
             ),
           },
           {
@@ -376,13 +368,35 @@ const packages = [
   {
     modules: [
       {
-        outputFileName: 'LexicalToken',
+        outputFileName: 'LexicalHashtag',
         sourceFileName: 'index.js',
       },
     ],
-    name: 'Lexical File',
-    outputPath: './packages/lexical-token/dist/',
-    sourcePath: './packages/lexical-token/src/',
+    name: 'Lexical Hashtag',
+    outputPath: './packages/lexical-hashtag/dist/',
+    sourcePath: './packages/lexical-hashtag/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalSelection',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Selection',
+    outputPath: './packages/lexical-selection/dist/',
+    sourcePath: './packages/lexical-selection/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalText',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Text',
+    outputPath: './packages/lexical-text/dist/',
+    sourcePath: './packages/lexical-text/src/',
   },
   {
     modules: lexicalNodes.map((module) => ({

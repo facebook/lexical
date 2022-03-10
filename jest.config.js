@@ -32,10 +32,6 @@ module.exports = {
           '<rootDir>/packages/lexical-helpers/src/LexicalOffsetHelpers.js',
         '^@lexical/helpers/root$':
           '<rootDir>/packages/lexical-helpers/src/LexicalRootHelpers.js',
-        '^@lexical/helpers/selection$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalSelectionHelpers.js',
-        '^@lexical/helpers/text$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalTextHelpers.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
@@ -74,8 +70,6 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeNode.js',
         '^lexical/ExtendedNodes$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalExtendedNodes.js',
-        '^lexical/HashtagNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalHashtagNode.js',
         '^lexical/HeadingNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalHeadingNode.js',
         '^lexical/LinkNode$':

@@ -9,9 +9,9 @@
 
 import type {LexicalNode} from 'lexical';
 
+import {HashtagNode} from '@lexical/hashtag';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {HashtagNode} from '@lexical/token';
 import {AutoLinkNode} from 'lexical/AutoLinkNode';
 import {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 import {CodeNode} from 'lexical/CodeNode';

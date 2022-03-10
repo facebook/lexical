@@ -21,9 +21,6 @@ module.exports = {
       'lexical/OverflowNode': 'lexical/dist/LexicalOverflowNode',
       'lexical/ExtendedNodes': 'lexical/dist/LexicalExtendedNodes',
       // Lexical Helpers
-      '@lexical/helpers/selection':
-        '@lexical/helpers/dist/LexicalSelectionHelpers',
-      '@lexical/helpers/text': '@lexical/helpers/dist/LexicalTextHelpers',
       '@lexical/helpers/nodes': '@lexical/helpers/dist/LexicalNodeHelpers',
       '@lexical/helpers/elements':
         '@lexical/helpers/dist/LexicalElementHelpers',
@@ -36,7 +33,9 @@ module.exports = {
       '@lexical/table': '@lexical/table/dist/LexicalTable.js',
       '@lexical/file': '@lexical/file/dist/LexicalFile.js',
       '@lexical/clipboard': '@lexical/clipboard/dist/LexicalClipboard.js',
-      '@lexical/token': '@lexical/token/dist/LexicalToken.js',
+      '@lexical/hashtag': '@lexical/hashtag/dist/LexicalHashtag.js',
+      '@lexical/selection': '@lexical/selection/dist/LexicalSelection.js',
+      '@lexical/text': '@lexical/text/dist/LexicalText.js',
 
       // Lexical React
       '@lexical/react/LexicalTreeView': '@lexical/react/dist/LexicalTreeView',

@@ -13,7 +13,7 @@ import type {
   AutoFormatTriggerState,
   ScanningContext,
 } from './AutoFormatterUtils.js';
-import type {TextNodeWithOffset} from '@lexical/helpers/text';
+import type {TextNodeWithOffset} from '@lexical/text';
 import type {
   EditorState,
   GridSelection,

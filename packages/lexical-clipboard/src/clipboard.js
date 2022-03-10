@@ -18,7 +18,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {$cloneContents} from '@lexical/helpers/selection';
+import {$cloneContents} from '@lexical/selection';
 import {
   $createNodeFromParse,
   $createParagraphNode,

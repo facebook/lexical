@@ -37,7 +37,7 @@ import {
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
   $isParentElementRTL,
-} from '@lexical/helpers/selection';
+} from '@lexical/selection';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
 import LinkPreview from '../components/LinkPreview';

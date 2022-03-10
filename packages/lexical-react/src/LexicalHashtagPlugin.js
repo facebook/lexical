@@ -9,8 +9,8 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import {$isHashtagNode, $toggleHashtag, HashtagNode} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$isHashtagNode, $toggleHashtag, HashtagNode} from '@lexical/token';
 import {
   $createTextNode,
   $isLineBreakNode,

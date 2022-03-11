@@ -22,9 +22,10 @@ import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 
 function App(): React$Node {
   const {settings} = useSettings();
-  const {measureTypingPerf} = settings;
+  const {measureTypingPerf, isCollab} = settings;
 
   const initialConfig = {
+    editorState: isCollab ? null : undefined,
     namespace: 'PlaygroundEditor',
     nodes: [...PlaygroundNodes],
     onError: (error) => {

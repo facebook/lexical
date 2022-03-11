@@ -8,7 +8,12 @@
  */
 
 import type {LexicalComposerContextType} from './LexicalComposerContext';
-import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  EditorState,
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
 import {
   createLexicalComposerContext,
@@ -18,10 +23,15 @@ import {createEditor} from 'lexical';
 import React, {useContext, useMemo} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
+import initializeEditor from './shared/initializeEditor';
+
+export type InitialEditorStateType = null | string | EditorState | (() => void);
+
 type Props = {
   children: React$Node,
   initialConfig: $ReadOnly<{
     editor?: LexicalEditor | null,
+    editorState?: InitialEditorStateType,
     namespace?: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     onError: (error: Error, editor: LexicalEditor) => void,
@@ -45,6 +55,7 @@ export default function LexicalComposer({
         editor: initialEditor,
         nodes,
         onError,
+        editorState,
       } = initialConfig;
 
       if (theme != null) {
@@ -73,6 +84,7 @@ export default function LexicalComposer({
           readOnly: true,
           theme: composerTheme,
         });
+        initializeEditor(newEditor, editorState);
         editor = newEditor;
       }
 

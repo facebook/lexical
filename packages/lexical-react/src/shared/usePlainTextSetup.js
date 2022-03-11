@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {InitialEditorStateType} from './PlainRichTextUtils';
+import type {InitialEditorStateType} from '@lexical/react/LexicalComposer';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 
 import {$insertDataTransferForPlainText} from '@lexical/clipboard';
@@ -23,7 +23,6 @@ import {
   onCutForPlainText,
   onPasteForPlainText,
 } from './clipboardEvents';
-import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
 export default function usePlainTextSetup(
@@ -151,7 +150,6 @@ export default function usePlainTextSetup(
       },
       (0: CommandListenerEditorPriority),
     );
-    initializeEditor(editor, initialEditorState);
     return removeListener;
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps

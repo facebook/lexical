@@ -8,6 +8,7 @@
 
 import {Class} from 'utility-types';
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
+export type InitialEditorStateType = null | string | EditorState | (() => void);
 type Props = {
   initialConfig: {
     editor?: LexicalEditor | null;
@@ -16,6 +17,7 @@ type Props = {
     nodes?: Array<Class<LexicalNode>>;
     theme?: EditorThemeClasses;
     onError: (error: Error, editor: LexicalEditor) => void;
+    initialEditorState?: InitialEditorStateType;
   };
   children: React.ReactNode;
 };

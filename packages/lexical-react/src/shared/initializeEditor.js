@@ -7,11 +7,10 @@
  * @flow strict
  */
 
-import type {EditorState, LexicalEditor} from 'lexical';
+import type {InitialEditorStateType} from '@lexical/react/LexicalComposer';
+import type {LexicalEditor} from 'lexical';
 
 import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
-
-export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 // Convoluted logic to make this work with Flow. Order matters.
 const options = {tag: 'history-merge'};
@@ -24,7 +23,7 @@ const updateOptions: {
   tag?: string,
 } = options;
 
-export function initializeEditor(
+export default function initializeEditor(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): void {

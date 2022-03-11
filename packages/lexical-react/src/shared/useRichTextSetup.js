@@ -7,7 +7,6 @@
  * @flow strict
  */
 
-import type {InitialEditorStateType} from './PlainRichTextUtils';
 import type {
   CommandListenerEditorPriority,
   ElementFormatType,
@@ -33,13 +32,9 @@ import {
   onCutForRichText,
   onPasteForRichText,
 } from './clipboardEvents';
-import {initializeEditor} from './PlainRichTextUtils';
 import useLexicalDragonSupport from './useLexicalDragonSupport';
 
-export default function useRichTextSetup(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): void {
+export default function useRichTextSetup(editor: LexicalEditor): void {
   useLayoutEffect(() => {
     const removeListener = editor.registerCommandListener(
       (type, payload): boolean => {
@@ -231,7 +226,6 @@ export default function useRichTextSetup(
       },
       (0: CommandListenerEditorPriority),
     );
-    initializeEditor(editor, initialEditorState);
     return removeListener;
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps

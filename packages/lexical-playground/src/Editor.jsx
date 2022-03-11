@@ -100,7 +100,6 @@ export default function Editor(): React$Node {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              initialEditorState={isCollab ? null : undefined}
             />
             <AutoFormatterPlugin />
             <CodeHighlightPlugin />

@@ -7,7 +7,14 @@
  * @flow strict
  */
 
-import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+  EditorState,
+} from 'lexical';
+
+export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 type Props = {
   initialConfig: $ReadOnly<{
@@ -17,6 +24,7 @@ type Props = {
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     theme?: EditorThemeClasses,
     onError: (error: Error, editor: LexicalEditor) => void,
+    editorState?: InitialEditorStateType,
   }>,
   children: React$Node,
 };

@@ -6,10 +6,7 @@
  *
  */
 
-import type {EditorState} from 'lexical';
-type InitialEditorStateType = null | string | EditorState | (() => void);
 export default function RichTextPlugin(arg0: {
   contentEditable: React.ReactNode;
-  initialEditorState?: InitialEditorStateType;
   placeholder: React.ReactNode;
 }): React.ReactNode;

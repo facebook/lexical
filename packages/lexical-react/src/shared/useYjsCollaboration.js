@@ -295,16 +295,20 @@ function clearEditorSkipCollab(editor, binding) {
     return;
   }
 
+  const cursorsContainer = binding.cursorsContainer;
+  if (cursorsContainer == null) {
+    return;
+  }
+
   // reset cursors in dom
   const cursors = Array.from(binding.cursors.values());
   for (let i = 0; i < cursors.length; i++) {
     const cursor = cursors[i];
-    if (cursor.selection != null && cursor.selection.selections != null) {
-      const selections = cursor.selection.selections;
+    const selection = cursor.selection;
+    if (selection && selection.selections != null) {
+      const selections = selection.selections;
       for (let j = 0; j < selections.length; j++) {
-        if (binding.cursorsContainer != null) {
-          binding.cursorsContainer.removeChild(selections[i]);
-        }
+        cursorsContainer.removeChild(selections[i]);
       }
     }
   }

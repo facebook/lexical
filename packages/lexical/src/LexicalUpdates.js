@@ -368,6 +368,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     }
   } catch (error) {
     // Report errors
+    editor.execCommand('logError', error);
     editor._onError(error);
     // Reset editor and restore incoming editor state to the DOM
     if (!isAttemptingToRecoverFromReconcilerError) {
@@ -638,6 +639,7 @@ function beginUpdate(
     }
   } catch (error) {
     // Report errors
+    editor.execCommand('logError', error);
     editor._onError(error);
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;

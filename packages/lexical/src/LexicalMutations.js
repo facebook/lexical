@@ -22,7 +22,6 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from '.';
@@ -151,10 +150,17 @@ export function $flushMutations(
             const addedDOM = addedDOMs[s];
             const node = getNodeFromDOMNode(addedDOM);
             const parentDOM = addedDOM.parentNode;
-            if (parentDOM != null && node === null) {
+            if (
+              parentDOM != null &&
+              node === null &&
+              (addedDOM.nodeName !== 'BR' ||
+                !isManagedLineBreak(addedDOM, parentDOM, editor))
+            ) {
               if (IS_FIREFOX) {
-                possibleTextForFirefoxPaste +=
-                  addedDOM.innerText || addedDOM.nodeValue;
+                const possibleText = addedDOM.innerText || addedDOM.nodeValue;
+                if (possibleText) {
+                  possibleTextForFirefoxPaste += possibleText;
+                }
               }
               parentDOM.removeChild(addedDOM);
             }
@@ -249,7 +255,7 @@ export function $flushMutations(
         observer.takeRecords();
       }
       const selection = $getSelection() || getLastSelection(editor);
-      if ($isRangeSelection(selection)) {
+      if (selection !== null) {
         if (shouldRevertSelection) {
           selection.dirty = true;
           $setSelection(selection);

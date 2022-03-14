@@ -94,7 +94,7 @@ export function initializeE2E(runTests, config: Config = {}) {
       await e2e.page.screenshot({path});
     async saveVideo(attempt) {
       const currentTest = expect.getState().currentTestName;
-      const testName = currentTest.replace(/\s/g, '_');
+      const testName = currentTest.replace(/\s|\?|\:|<|>|\*|\"|\|/g, '_');
       const page = e2e.page;
       if (page != null) {
         const video = await page.video();
@@ -123,6 +123,9 @@ export function initializeE2E(runTests, config: Config = {}) {
       recordVideo,
     });
     const page = await context.newPage();
+    page.on('pageerror', (err) => {
+      console.log(err.message);
+    });
     await page.goto(url, {timeout: 60000});
     e2e.page = page;
   });
@@ -168,7 +171,10 @@ export function initializeE2E(runTests, config: Config = {}) {
                 recordVideo,
               });
               const page = await context.newPage();
-              await page.goto(url);
+              page.on('pageerror', (err) => {
+                console.log(err.message);
+              });
+              await page.goto(url, {timeout: 60000});
               e2e.page = page;
               // retry
               return await attempt();

@@ -273,7 +273,7 @@ export class NodeSelection implements BaseSelection {
     return this.getNodes();
   }
 
-  insertRawText(): void {
+  insertRawText(text: string): void {
     // Do nothing?
   }
 
@@ -356,7 +356,7 @@ export class GridSelection implements BaseSelection {
     return this.getNodes();
   }
 
-  insertRawText(): void {
+  insertRawText(text: string): void {
     // Do nothing?
   }
 

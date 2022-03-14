@@ -554,35 +554,128 @@ export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
 }
 
 expect.extend({
-  async toMatchEditorInlineSnapshot(pageOrParentElement, ...args) {
+  async toMatchEditorInlineSnapshot(pageOrOptions, ...args) {
     // Setting error field allows jest to know where the matcher was called
     // to populate inline snapshot during update cycle
     this.error = new Error();
+    let html;
 
-    const editorElement = await getEditorElement(pageOrParentElement);
-    const html = await editorElement.innerHTML();
-    return toMatchInlineSnapshot.call(this, new HtmlForPrettier(html), ...args);
+    const {
+      page,
+      ignoreSecondFrame,
+      ignoreClasses,
+      ignoreInlineStyles,
+      parentSelector,
+    } = isElement(pageOrOptions)
+      ? {
+          page: pageOrOptions,
+          ignoreSecondFrame: false,
+          ignoreClasses: true,
+          ignoreInlineStyles: true,
+          parentSelector: '.editor-shell',
+        }
+      : {
+          page: pageOrOptions.page,
+          ignoreSecondFrame: pageOrOptions.ignoreSecondFrame === true,
+          ignoreClasses: pageOrOptions.ignoreClasses !== false,
+          ignoreInlineStyles: pageOrOptions.ignoreInlineStyles !== false,
+          parentSelector: pageOrOptions.parentSelector || '.editor-shell',
+        };
+
+    const editorSelector = `${parentSelector} div[contenteditable="true"]`;
+
+    if (!isElement(page)) {
+      throw new Error(
+        'toMatchEditorInlineSnapshot expects page or options object with page property',
+      );
+    }
+
+    if (IS_COLLAB) {
+      // For collab we make sure that left and right sides are matching each other
+      // and then asserting it to the snapshot
+      const leftFrame = await page.frame('left');
+      const leftFrameEditor = await leftFrame.$(editorSelector);
+      const leftFrameHTML = new PrettyHTML(await leftFrameEditor.innerHTML(), {
+        ignoreClasses,
+        ignoreInlineStyles,
+      }).prettify();
+
+      if (!ignoreSecondFrame) {
+        let attempts = 5;
+
+        while (attempts--) {
+          const rightFrame = await page.frame('right');
+          const rightFrameEditor = await rightFrame.$(editorSelector);
+          const rightFrameHTML = new PrettyHTML(
+            await rightFrameEditor.innerHTML(),
+            {ignoreClasses, ignoreInlineStyles},
+          ).prettify();
+
+          if (rightFrameHTML === leftFrameHTML) {
+            break;
+          }
+
+          if (!attempts) {
+            // Returning as a matcher for a nicer left vs right diff formatting
+            return expect(leftFrameHTML).toBe(rightFrameHTML);
+          }
+
+          await sleep(500);
+        }
+      }
+
+      html = leftFrameHTML;
+    } else {
+      const editor = await page.$(editorSelector);
+      html = await editor.innerHTML();
+    }
+
+    return toMatchInlineSnapshot.call(
+      this,
+      new PrettyHTML(html, {ignoreClasses, ignoreInlineStyles}),
+      ...args,
+    );
   },
 });
 
+function isElement(element) {
+  return element && typeof element.$ === 'function';
+}
+
 // Wrapper around HTML string that is used as indicator for snapshot serializer
 // that it should use own formatter (below)
-class HtmlForPrettier {
-  constructor(html) {
+class PrettyHTML {
+  constructor(html, {ignoreClasses, ignoreInlineStyles}) {
     this.html = html;
+    this.ignoreClasses = ignoreClasses;
+    this.ignoreInlineStyles = ignoreInlineStyles;
+  }
+
+  prettify() {
+    let html = this.html;
+
+    if (this.ignoreClasses) {
+      html = html.replace(/\sclass="([^"]*)"/g, '');
+    }
+
+    if (this.ignoreInlineStyles) {
+      html = html.replace(/\sstyle="([^"]*)"/g, '');
+    }
+
+    return prettier
+      .format(html, {
+        parser: 'html',
+        htmlWhitespaceSensitivity: 'ignore',
+      })
+      .trim();
   }
 }
 
 expect.addSnapshotSerializer({
   test: (value) => {
-    return value instanceof HtmlForPrettier;
+    return value instanceof PrettyHTML;
   },
   print: (value) => {
-    return prettier
-      .format(value.html.replace(/\sclass="([^"]*)"/g, ''), {
-        parser: 'html',
-        htmlWhitespaceSensitivity: 'ignore',
-      })
-      .trim();
+    return value.prettify();
   },
 });

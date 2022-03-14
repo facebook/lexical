@@ -52,12 +52,14 @@ export function CollaborationPlugin({
   id,
   providerFactory,
   shouldBootstrap,
+  username,
 }: {
   id: string,
   providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider,
   shouldBootstrap: boolean,
+  username?: string,
 }): React$Node {
-  const collabContext = useCollaborationContext();
+  const collabContext = useCollaborationContext(username);
   const {yjsDocMap, name, color} = collabContext;
   const [editor] = useLexicalComposerContext();
   const provider = useMemo(
@@ -88,6 +90,12 @@ export const CollaborationContext: React$Context<CollaborationContextType> =
     yjsDocMap: new Map(),
   });
 
-export function useCollaborationContext(): CollaborationContextType {
-  return useContext(CollaborationContext);
+export function useCollaborationContext(
+  username?: string,
+): CollaborationContextType {
+  const collabContext = useContext(CollaborationContext);
+  if (username != null) {
+    collabContext.name = username;
+  }
+  return collabContext;
 }

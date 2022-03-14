@@ -7,12 +7,17 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority, ElementNode} from 'lexical';
+import type {TableSelection} from '@lexical/table';
+import type {
+  CommandListenerEditorPriority,
+  ElementNode,
+  NodeKey,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $applyTableHandlers,
   $createTableNodeWithDimensions,
+  applyTableHandlers,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -79,7 +84,7 @@ export default function TablePlugin(): React$Node {
   }, [editor]);
 
   useEffect(() => {
-    const listeners = new Map();
+    const tableSelections = new Map<NodeKey, TableSelection>();
 
     return editor.addListener('mutation', TableNode, (nodeMutations) => {
       // eslint-disable-next-line no-for-of-loops/no-for-of-loops
@@ -90,18 +95,18 @@ export default function TablePlugin(): React$Node {
             const tableNode = $getNodeByKey(nodeKey);
 
             if (tableElement && tableNode) {
-              const removeListeners = $applyTableHandlers(
+              const tableSelection = applyTableHandlers(
                 tableNode,
                 tableElement,
                 editor,
               );
 
-              listeners.set(nodeKey, removeListeners);
+              tableSelections.set(nodeKey, tableSelection);
             }
           });
         } else if (mutation === 'destroyed') {
-          const cleanup = listeners.get(nodeKey);
-          if (cleanup) cleanup();
+          const tableSelection = tableSelections.get(nodeKey);
+          if (tableSelection) tableSelection.removeListeners();
         }
       }
     });

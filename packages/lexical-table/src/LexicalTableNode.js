@@ -8,7 +8,7 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {Cell, Grid, SelectionShape} from './LexicalTableSelectionHelpers';
+import type {Cell, Grid, SelectionShape} from './LexicalTableSelection';
 import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';

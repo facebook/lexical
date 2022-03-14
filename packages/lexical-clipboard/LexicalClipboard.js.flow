@@ -7,15 +7,11 @@
  * @flow strict
  */
 
- import type {
-  LexicalEditor,
-  RangeSelection,
-} from "lexical";
+import type {LexicalEditor, RangeSelection} from 'lexical';
 
 /*
-* Rich Text
-*/
-
+ * Rich Text
+ */
 
 declare export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
@@ -27,9 +23,8 @@ declare export function getHtmlContent(editor: LexicalEditor): string;
 declare export function $getLexicalContent(editor: LexicalEditor): string;
 
 /*
-* Plain Text
-*/
-
+ * Plain Text
+ */
 
 declare export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,

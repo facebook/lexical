@@ -6,9 +6,8 @@
  *
  */
 
-import {initializeE2E, assertHTML, focusEditor} from '../utils';
-
 import {undo} from '../keyboardShortcuts';
+import {assertHTML, focusEditor, initializeE2E} from '../utils';
 
 describe('Regression test #1055', () => {
   initializeE2E((e2e) => {

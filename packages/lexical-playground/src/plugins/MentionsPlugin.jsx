@@ -8,20 +8,25 @@
  */
 
 import type {
+  CommandListenerLowPriority,
   LexicalEditor,
   RangeSelection,
-  CommandListenerLowPriority,
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-
+import {$getSelection, $isRangeSelection} from 'lexical';
+import React, {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {$getSelection, $isRangeSelection} from 'lexical';
-import React, {useCallback, useRef} from 'react';
-import {startTransition, useEffect, useState} from 'react';
-import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
 import useLayoutEffect from 'shared/useLayoutEffect';
+
+import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
 
 type MentionMatch = {
   leadOffset: number,
@@ -39,8 +44,8 @@ const PUNCTUATION =
 const NAME = '\\b[A-Z][^\\s' + PUNCTUATION + ']';
 
 const DocumentMentionsRegex = {
-  PUNCTUATION,
   NAME,
+  PUNCTUATION,
 };
 
 const CapitalizedNameMentionsRegex = new RegExp(
@@ -563,11 +568,11 @@ function MentionsTypeaheadItem({
 }: {
   index: number,
   isHovered: boolean,
+  isSelected: boolean,
   onClick: () => void,
   onMouseEnter: () => void,
   onMouseLeave: () => void,
   result: string,
-  isSelected: boolean,
 }) {
   const liRef = useRef(null);
 

@@ -9,20 +9,20 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-
-import {
-  $isTextNode,
-  $isElementNode,
-  TextNode,
-  $getNodeByKey,
-  $getSelection,
-  $getRoot,
-  $isRangeSelection,
-} from 'lexical';
-import {TypeaheadNode, $createTypeaheadNode} from '../nodes/TypeaheadNode';
-import {useEffect, useRef, useState, useCallback, useMemo} from 'react';
 import {$textContentCurry} from '@lexical/helpers/root';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {
+  $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isTextNode,
+  TextNode,
+} from 'lexical';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+
+import {$createTypeaheadNode, TypeaheadNode} from '../nodes/TypeaheadNode';
 
 function useTypeahead(editor: LexicalEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
@@ -213,8 +213,8 @@ function useTypeahead(editor: LexicalEditor): void {
 function useTypeaheadSuggestion(
   text: string,
   query: (text: string) => {
-    promise: () => Promise<string | null>,
     cancel: () => void,
+    promise: () => Promise<string | null>,
   },
 ) {
   const cancelRequest = useRef<() => void>(() => {});
@@ -224,7 +224,7 @@ function useTypeaheadSuggestion(
     setSuggestion(null);
     cancelRequest.current();
     (async () => {
-      let time = Date.now();
+      const time = Date.now();
       requestTime.current = time;
       try {
         const request = await query(text);
@@ -241,32 +241,32 @@ function useTypeaheadSuggestion(
 
 class TypeaheadServer {
   DATABASE = {
-    he: 'llo',
-    hel: 'lo',
-    hell: 'o',
-    He: 'llo',
-    Hel: 'lo',
-    Hell: 'o',
-    'happy ': 'birthday',
-    'happy b': 'irthday',
-    'happy bi': 'rthday',
     'Happy ': 'birthday',
     'Happy b': 'irthday',
     'Happy bi': 'rthday',
-    'hello ': 'world',
-    'hello w': 'orld',
-    'hello wo': 'rld',
-    'hello wor': 'ld',
+    He: 'llo',
+    Hel: 'lo',
+    Hell: 'o',
     'Hello ': 'world',
     'Hello w': 'orld',
     'Hello wo': 'rld',
     'Hello wor': 'ld',
+    'happy ': 'birthday',
+    'happy b': 'irthday',
+    'happy bi': 'rthday',
+    he: 'llo',
+    hel: 'lo',
+    hell: 'o',
+    'hello ': 'world',
+    'hello w': 'orld',
+    'hello wo': 'rld',
+    'hello wor': 'ld',
   };
   LATENCY = 200;
 
   query = (
     text: string,
-  ): ({promise: () => Promise<string | null>, cancel: () => void}) => {
+  ): ({cancel: () => void, promise: () => Promise<string | null>}) => {
     let isCancelled = false;
 
     const promise = () =>
@@ -286,8 +286,8 @@ class TypeaheadServer {
     };
 
     return {
-      promise,
       cancel,
+      promise,
     };
   };
 }

@@ -16,6 +16,7 @@ import type {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
+
 import useReport from '../hooks/useReport';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -23,14 +24,14 @@ const EditorPriority: CommandListenerEditorPriority = 0;
 const VOICE_COMMANDS: $ReadOnly<{
   [string]: ({editor: LexicalEditor, selection: RangeSelection}) => void,
 }> = {
-  undo: ({editor}) => {
-    editor.execCommand('undo');
+  '\n': ({selection}) => {
+    selection.insertParagraph();
   },
   redo: ({editor}) => {
     editor.execCommand('redo');
   },
-  '\n': ({selection}) => {
-    selection.insertParagraph();
+  undo: ({editor}) => {
+    editor.execCommand('undo');
   },
 };
 

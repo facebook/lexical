@@ -1,12 +1,12 @@
 # NOTE: In general this should be kept in sync with .eslintignore
 
 packages/**/dist/*.js
+packages/**/build/*.js
 packages/**/config/*.js
 packages/playwright
 packages/playwright-core
 packages/babel-plugin-transform-stylex
 packages/eslint-plugin-stylex
 packages/stylex
-packages/**/vite.config.js
 **/node_modules
 flow-typed

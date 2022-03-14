@@ -8,11 +8,31 @@
  */
 
 import './setupEnv';
+import './index.css';
+
 import React from 'react';
 // $FlowFixMe: Flow doesn't understand react-dom
 import {createRoot} from 'react-dom';
-import './index.css';
+
 import App from './App';
+
+// Handle runtime errors
+const showErrorOverlay = (err) => {
+  const ErrorOverlay = customElements.get('vite-error-overlay');
+  if (!ErrorOverlay) {
+    return;
+  }
+  const overlay = new ErrorOverlay(err);
+  const body = document.body;
+  if (body !== null) {
+    body.appendChild(overlay);
+  }
+};
+
+window.addEventListener('error', showErrorOverlay);
+window.addEventListener('unhandledrejection', ({reason}) =>
+  showErrorOverlay(reason),
+);
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

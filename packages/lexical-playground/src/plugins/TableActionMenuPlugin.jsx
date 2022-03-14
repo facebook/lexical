@@ -7,33 +7,33 @@
  * @flow strict
  */
 
-import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-// $FlowFixMe
-import {createPortal} from 'react-dom';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $setSelection, $isRangeSelection} from 'lexical';
 import {
   $deleteTableColumn,
+  $getElementGridForTableNode,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn,
   $insertTableRow,
-  $isTableRowNode,
   $isTableCellNode,
+  $isTableRowNode,
   $removeTableRowAtIndex,
-  TableCellNode,
   TableCellHeaderStates,
-  $getElementGridForTableNode,
+  TableCellNode,
 } from '@lexical/table';
+import {$getSelection, $isRangeSelection, $setSelection} from 'lexical';
+import * as React from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+// $FlowFixMe
+import {createPortal} from 'react-dom';
 
 type TableCellActionMenuProps = $ReadOnly<{
-  onClose: () => void,
-  tableCellNode: TableCellNode,
-  setIsMenuOpen: (boolean) => void,
   contextRef: {current: null | HTMLElement},
+  onClose: () => void,
+  setIsMenuOpen: (boolean) => void,
+  tableCellNode: TableCellNode,
 }>;
 
 function TableActionMenu({
@@ -46,8 +46,8 @@ function TableActionMenu({
   const dropDownRef = useRef();
   const [tableCellNode, updateTableCellNode] = useState(_tableCellNode);
   const [selectionCounts, updateSelectionCounts] = useState({
-    rows: 1,
     columns: 1,
+    rows: 1,
   });
 
   useEffect(() => {
@@ -70,14 +70,14 @@ function TableActionMenu({
       const selectionState = tableNode.getSelectionState();
 
       updateSelectionCounts({
-        rows:
-          selectionState == null
-            ? 1
-            : selectionState.toY - selectionState.fromY + 1,
         columns:
           selectionState == null
             ? 1
             : selectionState.toX - selectionState.fromX + 1,
+        rows:
+          selectionState == null
+            ? 1
+            : selectionState.toY - selectionState.fromY + 1,
       });
     });
   }, [editor, tableCellNode]);

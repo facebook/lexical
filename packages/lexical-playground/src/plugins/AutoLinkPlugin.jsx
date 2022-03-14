@@ -7,9 +7,8 @@
  * @flow strict
  */
 
-import * as React from 'react';
-
 import LexicalAutoLinkPlugin from '@lexical/react/LexicalAutoLinkPlugin';
+import * as React from 'react';
 
 const URL_MATCHER =
   /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
@@ -22,9 +21,9 @@ const MATCHERS = [
     const match = URL_MATCHER.exec(text);
     return (
       match && {
-        text: match[0],
-        length: match[0].length,
         index: match.index,
+        length: match[0].length,
+        text: match[0],
         url: match[0],
       }
     );
@@ -33,9 +32,9 @@ const MATCHERS = [
     const match = EMAIL_MATCHER.exec(text);
     return (
       match && {
-        text: match[0],
-        length: match[0].length,
         index: match.index,
+        length: match[0].length,
+        text: match[0],
         url: `mailto:${match[0]}`,
       }
     );

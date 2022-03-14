@@ -7,12 +7,12 @@
  */
 
 import {
-  initializeE2E,
-  assertSelection,
   assertHTML,
+  assertSelection,
   E2E_BROWSER,
-  focusEditor,
   evaluate,
+  focusEditor,
+  initializeE2E,
 } from '../utils';
 
 describe('Extensions', () => {
@@ -33,10 +33,10 @@ describe('Extensions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 3,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 3,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -59,9 +59,9 @@ describe('Extensions', () => {
               dataTransfer.setData('text/plain', text);
               target.dispatchEvent(
                 new ClipboardEvent('paste', {
-                  clipboardData: dataTransfer,
                   bubbles: true,
                   cancelable: true,
+                  clipboardData: dataTransfer,
                 }),
               );
               dataTransfer.clearData();
@@ -80,10 +80,10 @@ describe('Extensions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 3,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 3,
+        focusPath: [0, 0, 0],
       });
 
       await evaluate(page, () => {
@@ -93,9 +93,9 @@ describe('Extensions', () => {
             dataTransfer.setData('text/plain', text);
             target.dispatchEvent(
               new ClipboardEvent('paste', {
-                clipboardData: dataTransfer,
                 bubbles: true,
                 cancelable: true,
+                clipboardData: dataTransfer,
               }),
             );
             dataTransfer.clearData();
@@ -112,10 +112,10 @@ describe('Extensions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foobar</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 6,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 6,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -129,9 +129,9 @@ describe('Extensions', () => {
         dataTransfer.setData('text/plain', 'foo');
         editor.dispatchEvent(
           new ClipboardEvent('paste', {
-            clipboardData: dataTransfer,
             bubbles: true,
             cancelable: true,
+            clipboardData: dataTransfer,
           }),
         );
         document.execCommand('InsertText', false, 'bar');
@@ -145,10 +145,10 @@ describe('Extensions', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 3,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 3,
+          focusPath: [0, 0, 0],
         });
       } else {
         await assertHTML(
@@ -156,10 +156,10 @@ describe('Extensions', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foobar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
       }
     });

@@ -8,10 +8,10 @@
 
 import {moveToEditorBeginning} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
   focusEditor,
+  initializeE2E,
   waitForSelector,
 } from '../utils';
 
@@ -28,10 +28,10 @@ describe('Regression test #379', () => {
         '<p class="PlaygroundEditorTheme__paragraph"></span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 14,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 14,
+        focusPath: [0, 0, 0],
       });
       await moveToEditorBeginning(page);
       await page.keyboard.press('Enter');
@@ -41,10 +41,10 @@ describe('Regression test #379', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
     });
   });

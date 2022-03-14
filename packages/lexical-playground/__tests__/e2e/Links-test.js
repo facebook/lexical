@@ -7,20 +7,20 @@
  */
 
 import {
-  selectAll,
-  selectCharacters,
   moveLeft,
   moveToLineEnd,
+  selectAll,
+  selectCharacters,
 } from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
-  focusEditor,
-  waitForSelector,
   click,
+  E2E_BROWSER,
   focus,
+  focusEditor,
+  initializeE2E,
+  waitForSelector,
 } from '../utils';
 
 describe('Links', () => {
@@ -50,10 +50,10 @@ describe('Links', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 0, 0, 0],
+          anchorPath: [0, 0, 0, 0],
           focusOffset: 5,
+          focusPath: [0, 0, 0, 0],
         });
 
         await selectAll(page);
@@ -72,10 +72,10 @@ describe('Links', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 0, 0, 0],
+          anchorPath: [0, 0, 0, 0],
           focusOffset: 5,
+          focusPath: [0, 0, 0, 0],
         });
 
         // unlink
@@ -88,10 +88,10 @@ describe('Links', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 5,
+          focusPath: [0, 0, 0],
         });
       },
     );
@@ -120,10 +120,10 @@ describe('Links', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 5,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 5,
+          focusPath: [0, 0, 0],
         });
       },
     );
@@ -184,17 +184,17 @@ describe('Links', () => {
         );
         if (E2E_BROWSER === 'webkit') {
           await assertSelection(page, {
-            anchorPath: [0, 1, 0, 0],
             anchorOffset: 0,
-            focusPath: [0, 1, 0, 0],
+            anchorPath: [0, 1, 0, 0],
             focusOffset: 5,
+            focusPath: [0, 1, 0, 0],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 6,
-            focusPath: [0, 1, 0, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 5,
+            focusPath: [0, 1, 0, 0],
           });
         }
 
@@ -212,17 +212,17 @@ describe('Links', () => {
 
         if (E2E_BROWSER === 'webkit') {
           await assertSelection(page, {
-            anchorPath: [0, 1, 0, 0],
             anchorOffset: 0,
-            focusPath: [0, 1, 0, 0],
+            anchorPath: [0, 1, 0, 0],
             focusOffset: 5,
+            focusPath: [0, 1, 0, 0],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 6,
-            focusPath: [0, 1, 0, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 5,
+            focusPath: [0, 1, 0, 0],
           });
         }
 
@@ -236,10 +236,10 @@ describe('Links', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
       },
     );
@@ -271,17 +271,17 @@ describe('Links', () => {
 
         if (E2E_BROWSER === 'webkit') {
           await assertSelection(page, {
-            anchorPath: [0, 1, 0, 0],
             anchorOffset: 5,
-            focusPath: [0, 1, 0, 0],
+            anchorPath: [0, 1, 0, 0],
             focusOffset: 0,
+            focusPath: [0, 1, 0, 0],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 1, 0, 0],
             anchorOffset: 5,
-            focusPath: [0, 0, 0],
+            anchorPath: [0, 1, 0, 0],
             focusOffset: 6,
+            focusPath: [0, 0, 0],
           });
         }
 
@@ -299,17 +299,17 @@ describe('Links', () => {
 
         if (E2E_BROWSER === 'webkit') {
           await assertSelection(page, {
-            anchorPath: [0, 1, 0, 0],
             anchorOffset: 5,
-            focusPath: [0, 1, 0, 0],
+            anchorPath: [0, 1, 0, 0],
             focusOffset: 0,
+            focusPath: [0, 1, 0, 0],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 1, 0, 0],
             anchorOffset: 5,
-            focusPath: [0, 0, 0],
+            anchorPath: [0, 1, 0, 0],
             focusOffset: 6,
+            focusPath: [0, 0, 0],
           });
         }
 
@@ -323,10 +323,10 @@ describe('Links', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
       },
     );

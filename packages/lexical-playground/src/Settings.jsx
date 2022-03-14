@@ -9,8 +9,9 @@
 
 import * as React from 'react';
 import {useMemo, useState} from 'react';
-import Switch from './ui/Switch';
+
 import {useSettings} from './context/SettingsContext';
+import Switch from './ui/Switch';
 
 export default function Settings(): React$Node {
   const windowLocation = window.location;
@@ -29,12 +30,12 @@ export default function Settings(): React$Node {
   } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
   const [port, isSplitScreen, search] = useMemo(() => {
-    const port = windowLocation.port;
+    const _port = windowLocation.port;
     const parentWindow = window.parent;
-    const search = windowLocation.search;
-    const isSplitScreen =
+    const _search = windowLocation.search;
+    const _isSplitScreen =
       parentWindow && parentWindow.location.pathname === '/split/';
-    return [port, isSplitScreen, search];
+    return [_port, _isSplitScreen, _search];
   }, [windowLocation]);
 
   return (

@@ -7,13 +7,13 @@
  */
 
 import {
-  initializeE2E,
-  focusEditor,
-  waitForSelector,
   click,
-  dragMouse,
   clickSelectors,
+  dragMouse,
+  focusEditor,
+  initializeE2E,
   IS_COLLAB,
+  waitForSelector,
 } from '../utils';
 
 async function insertTable(page) {
@@ -406,9 +406,9 @@ describe('Tables', () => {
         await selectCellsFromTableCords(page, {x: 0, y: 0}, {x: 1, y: 1});
 
         await expect({
-          page,
-          ignoreSecondFrame: true,
           ignoreInlineStyles: false,
+          ignoreSecondFrame: true,
+          page,
         }).toMatchEditorInlineSnapshot(`
             <p><br /></p>
             <table>
@@ -617,9 +617,9 @@ describe('Tables', () => {
 
         // Check that the character styles are applied.
         await expect({
-          page,
-          ignoreSecondFrame: true,
           ignoreInlineStyles: false,
+          ignoreSecondFrame: true,
+          page,
         }).toMatchEditorInlineSnapshot(`
             <p><br /></p>
             <table>

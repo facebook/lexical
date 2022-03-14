@@ -8,12 +8,12 @@
 
 import {redo, toggleBold, undo} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
+  focusEditor,
+  initializeE2E,
   repeat,
   sleep,
-  focusEditor,
 } from '../utils';
 
 describe('History', () => {
@@ -43,10 +43,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [1, 0, 0],
             anchorOffset: 22,
-            focusPath: [1, 0, 0],
+            anchorPath: [1, 0, 0],
             focusOffset: 22,
+            focusPath: [1, 0, 0],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -57,10 +57,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0, 2, 0],
             anchorOffset: 22,
-            focusPath: [0, 2, 0],
+            anchorPath: [0, 2, 0],
             focusOffset: 22,
+            focusPath: [0, 2, 0],
           });
         }
 
@@ -72,10 +72,10 @@ describe('History', () => {
             <p dir="ltr"><span data-lexical-text="true">hello world again</span></p>
           `);
           await assertSelection(page, {
-            anchorPath: [1, 0, 0],
             anchorOffset: 11,
-            focusPath: [1, 0, 0],
+            anchorPath: [1, 0, 0],
             focusOffset: 11,
+            focusPath: [1, 0, 0],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -86,10 +86,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0, 2, 0],
             anchorOffset: 11,
-            focusPath: [0, 2, 0],
+            anchorPath: [0, 2, 0],
             focusOffset: 11,
+            focusPath: [0, 2, 0],
           });
         }
 
@@ -101,10 +101,10 @@ describe('History', () => {
             <p dir="ltr"><br /></p>
           `);
           await assertSelection(page, {
-            anchorPath: [1],
             anchorOffset: 0,
-            focusPath: [1],
+            anchorPath: [1],
             focusOffset: 0,
+            focusPath: [1],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -115,10 +115,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0],
             anchorOffset: 2,
-            focusPath: [0],
+            anchorPath: [0],
             focusOffset: 2,
+            focusPath: [0],
           });
         }
 
@@ -128,10 +128,10 @@ describe('History', () => {
           `<p dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
 
         await undo(page);
@@ -140,20 +140,20 @@ describe('History', () => {
           `<p dir="ltr"><span data-lexical-text="true">hello</span></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 5,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 5,
+          focusPath: [0, 0, 0],
         });
 
         await undo(page);
 
         await expect(page).toMatchEditorInlineSnapshot(`<p><br /></p>`);
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await redo(page);
@@ -162,10 +162,10 @@ describe('History', () => {
           `<p dir="ltr"><span data-lexical-text="true">hello</span></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 5,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 5,
+          focusPath: [0, 0, 0],
         });
 
         await redo(page);
@@ -174,10 +174,10 @@ describe('History', () => {
           `<p dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
 
         await redo(page);
@@ -188,10 +188,10 @@ describe('History', () => {
             <p><br /></p>
           `);
           await assertSelection(page, {
-            anchorPath: [1],
             anchorOffset: 0,
-            focusPath: [1],
+            anchorPath: [1],
             focusOffset: 0,
+            focusPath: [1],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -202,10 +202,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0],
             anchorOffset: 2,
-            focusPath: [0],
+            anchorPath: [0],
             focusOffset: 2,
+            focusPath: [0],
           });
         }
 
@@ -217,10 +217,10 @@ describe('History', () => {
             <p dir="ltr"><span data-lexical-text="true">hello world again</span></p>
           `);
           await assertSelection(page, {
-            anchorPath: [1, 0, 0],
             anchorOffset: 17,
-            focusPath: [1, 0, 0],
+            anchorPath: [1, 0, 0],
             focusOffset: 17,
+            focusPath: [1, 0, 0],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -231,10 +231,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0, 2, 0],
             anchorOffset: 17,
-            focusPath: [0, 2, 0],
+            anchorPath: [0, 2, 0],
             focusOffset: 17,
+            focusPath: [0, 2, 0],
           });
         }
 
@@ -248,10 +248,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [1, 0, 0],
             anchorOffset: 22,
-            focusPath: [1, 0, 0],
+            anchorPath: [1, 0, 0],
             focusOffset: 22,
+            focusPath: [1, 0, 0],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -262,10 +262,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0, 2, 0],
             anchorOffset: 22,
-            focusPath: [0, 2, 0],
+            anchorPath: [0, 2, 0],
             focusOffset: 22,
+            focusPath: [0, 2, 0],
           });
         }
 
@@ -279,10 +279,10 @@ describe('History', () => {
             <p dir="ltr"><span data-lexical-text="true">hello world, again again</span></p>
           `);
           await assertSelection(page, {
-            anchorPath: [1, 0, 0],
             anchorOffset: 18,
-            focusPath: [1, 0, 0],
+            anchorPath: [1, 0, 0],
             focusOffset: 18,
+            focusPath: [1, 0, 0],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -293,10 +293,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0, 2, 0],
             anchorOffset: 18,
-            focusPath: [0, 2, 0],
+            anchorPath: [0, 2, 0],
             focusOffset: 18,
+            focusPath: [0, 2, 0],
           });
         }
 
@@ -310,10 +310,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [1, 0, 0],
             anchorOffset: 22,
-            focusPath: [1, 0, 0],
+            anchorPath: [1, 0, 0],
             focusOffset: 22,
+            focusPath: [1, 0, 0],
           });
         } else {
           await expect(page).toMatchEditorInlineSnapshot(`
@@ -324,10 +324,10 @@ describe('History', () => {
             </p>
           `);
           await assertSelection(page, {
-            anchorPath: [0, 2, 0],
             anchorOffset: 22,
-            focusPath: [0, 2, 0],
+            anchorPath: [0, 2, 0],
             focusOffset: 22,
+            focusPath: [0, 2, 0],
           });
         }
       },

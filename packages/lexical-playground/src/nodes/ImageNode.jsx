@@ -8,49 +8,51 @@
  */
 
 import type {
-  EditorConfig,
-  NodeKey,
-  LexicalNode,
-  LexicalEditor,
-  DecoratorMap,
-  DecoratorEditor,
   CommandListenerLowPriority,
+  DecoratorEditor,
+  DecoratorMap,
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
 } from 'lexical';
 
-import * as React from 'react';
+import './ImageNode.css';
+
 import {
-  DecoratorNode,
-  $getNodeByKey,
-  createDecoratorEditor,
-  $getSelection,
-  $isNodeSelection,
-} from 'lexical';
+  CollaborationPlugin,
+  useCollaborationContext,
+} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
+import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
+import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import TablesPlugin from '@lexical/react/LexicalTablePlugin';
+import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
 import {
-  useCollaborationContext,
-  CollaborationPlugin,
-} from '@lexical/react/LexicalCollaborationPlugin';
-import {Suspense, useCallback, useRef, useState, useEffect} from 'react';
-import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
-import Placeholder from '../ui/Placeholder';
-import ContentEditable from '../ui/ContentEditable';
+  $getNodeByKey,
+  $getSelection,
+  $isNodeSelection,
+  createDecoratorEditor,
+  DecoratorNode,
+} from 'lexical';
+import * as React from 'react';
+import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
+
 import {createWebsocketProvider} from '../collaboration';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {useSharedHistoryContext} from '../context/SharedHistoryContext';
-import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
-import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
-import MentionsPlugin from '../plugins/MentionsPlugin';
-import EmojisPlugin from '../plugins/EmojisPlugin';
-import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
-import KeywordsPlugin from '../plugins/KeywordsPlugin';
-import TablesPlugin from '@lexical/react/LexicalTablePlugin';
-import TableCellActionMenuPlugin from '../plugins/TableActionMenuPlugin';
-import ImagesPlugin from '../plugins/ImagesPlugin';
-import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
-import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import {useSettings} from '../context/SettingsContext';
-import './ImageNode.css';
+import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import EmojisPlugin from '../plugins/EmojisPlugin';
+import ImagesPlugin from '../plugins/ImagesPlugin';
+import KeywordsPlugin from '../plugins/KeywordsPlugin';
+import MentionsPlugin from '../plugins/MentionsPlugin';
+import TableCellActionMenuPlugin from '../plugins/TableActionMenuPlugin';
+import TreeViewPlugin from '../plugins/TreeViewPlugin';
+import ContentEditable from '../ui/ContentEditable';
+import Placeholder from '../ui/Placeholder';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -80,11 +82,11 @@ function LazyImage({
 }: {
   altText: string,
   className: ?string,
+  height: 'inherit' | number,
   imageRef: {current: null | HTMLElement},
+  maxWidth: number,
   src: string,
   width: 'inherit' | number,
-  height: 'inherit' | number,
-  maxWidth: number,
 }): React.Node {
   useSuspenseImage(src);
   return (
@@ -94,9 +96,9 @@ function LazyImage({
       alt={altText}
       ref={imageRef}
       style={{
-        width,
         height,
         maxWidth,
+        width,
       }}
     />
   );
@@ -110,34 +112,34 @@ function ImageResizer({
   showCaption,
   setShowCaption,
 }: {
-  onResizeStart: () => void,
-  onResizeEnd: ('inherit' | number, 'inherit' | number) => void,
-  imageRef: {current: null | HTMLElement},
   editor: LexicalEditor,
-  showCaption: boolean,
+  imageRef: {current: null | HTMLElement},
+  onResizeEnd: ('inherit' | number, 'inherit' | number) => void,
+  onResizeStart: () => void,
   setShowCaption: (boolean) => void,
+  showCaption: boolean,
 }): React.Node {
   const buttonRef = useRef(null);
   const positioningRef = useRef<{
-    currentWidth: 'inherit' | number,
     currentHeight: 'inherit' | number,
-    ratio: number,
-    startWidth: number,
-    startHeight: number,
-    startX: number,
-    startY: number,
+    currentWidth: 'inherit' | number,
     direction: 0 | 1 | 2 | 3,
     isResizing: boolean,
+    ratio: number,
+    startHeight: number,
+    startWidth: number,
+    startX: number,
+    startY: number,
   }>({
-    currentWidth: 0,
     currentHeight: 0,
-    ratio: 0,
-    startWidth: 0,
-    startHeight: 0,
-    startX: 0,
-    startY: 0,
+    currentWidth: 0,
     direction: 0,
     isResizing: false,
+    ratio: 0,
+    startHeight: 0,
+    startWidth: 0,
+    startX: 0,
+    startY: 0,
   });
   const editorRootElement = editor.getRootElement();
   // Find max width, accounting for editor padding.
@@ -282,15 +284,15 @@ function ImageComponent({
   showCaption,
   state,
 }: {
-  src: string,
   altText: string,
-  nodeKey: NodeKey,
-  width: 'inherit' | number,
   height: 'inherit' | number,
   maxWidth: number,
+  nodeKey: NodeKey,
   resizable: boolean,
   showCaption: boolean,
+  src: string,
   state: DecoratorMap,
+  width: 'inherit' | number,
 }): React.Node {
   const ref = useRef(null);
   const [isSelected, setSelected, clearSelection] =

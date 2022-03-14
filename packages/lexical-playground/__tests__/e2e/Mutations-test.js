@@ -7,11 +7,11 @@
  */
 
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
   evaluate,
   focusEditor,
+  initializeE2E,
 } from '../utils';
 
 async function validateContent(page) {
@@ -20,10 +20,10 @@ async function validateContent(page) {
     '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#world</span><span data-lexical-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#should</span><span data-lexical-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#intact</span><span data-lexical-text="true">.</span></p>',
   );
   await assertSelection(page, {
-    anchorPath: [0, 6, 0],
     anchorOffset: 1,
-    focusPath: [0, 6, 0],
+    anchorPath: [0, 6, 0],
     focusOffset: 1,
+    focusPath: [0, 6, 0],
   });
 }
 
@@ -232,10 +232,10 @@ describe('Mutations', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Bonjour </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#world</span><span data-lexical-text="true">. This content </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#should</span><span data-lexical-text="true"> remain </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#intact</span><span data-lexical-text="true">.</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 6, 0],
         anchorOffset: 1,
-        focusPath: [0, 6, 0],
+        anchorPath: [0, 6, 0],
         focusOffset: 1,
+        focusPath: [0, 6, 0],
       });
     });
   });

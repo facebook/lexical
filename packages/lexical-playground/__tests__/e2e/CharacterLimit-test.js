@@ -7,14 +7,14 @@
  * @flow strict
  */
 
+import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  repeat,
   E2E_BROWSER,
+  initializeE2E,
+  repeat,
 } from '../utils';
-import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts';
 
 function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   it.skipIf(e2e.isCollab, 'displays overflow on text', async () => {
@@ -33,10 +33,10 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6789</span></div><p></p>',
     );
     await assertSelection(page, {
-      anchorPath: [0, 1, 0, 0],
       anchorOffset: 4,
-      focusPath: [0, 1, 0, 0],
+      anchorPath: [0, 1, 0, 0],
       focusOffset: 4,
+      focusPath: [0, 1, 0, 0],
     });
 
     await moveToLineBeginning(page);
@@ -47,10 +47,10 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
       '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">01234</span><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">5</span></div><div class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6789</span></div></p>',
     );
     await assertSelection(page, {
-      anchorPath: [0, 0, 0],
       anchorOffset: 1,
-      focusPath: [0, 0, 0],
+      anchorPath: [0, 0, 0],
       focusOffset: 1,
+      focusPath: [0, 0, 0],
     });
   });
 

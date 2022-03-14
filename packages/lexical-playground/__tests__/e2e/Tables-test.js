@@ -98,96 +98,96 @@ describe('Tables', () => {
         await insertTable(page);
 
         await expect(page).toMatchEditorInlineSnapshot(`
-                <p><br /></p>
-                <table>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                </table>
-                <p><br /></p>
-              `);
+            <p><br /></p>
+            <table>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+            </table>
+            <p><br /></p>
+        `);
       },
     );
 
@@ -200,96 +200,96 @@ describe('Tables', () => {
       await page.keyboard.type('abc');
 
       await expect(page).toMatchEditorInlineSnapshot(`
-              <p><br /></p>
-              <table>
-                <tr>
-                  <th>
-                    <p dir="ltr"><span data-lexical-text="true">abc</span></p>
-                  </th>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-              </table>
-              <p><br /></p>
-            `);
+          <p><br /></p>
+          <table>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">abc</span></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+      `);
     });
 
     it.skipIf(e2e.isPlainText, `Can navigate table with keyboard`, async () => {
@@ -301,96 +301,96 @@ describe('Tables', () => {
       await fillTablePartiallyWithText(page);
 
       await expect(page).toMatchEditorInlineSnapshot(`
-              <p><br /></p>
-              <table>
-                <tr>
-                  <th>
-                    <p dir="ltr"><span data-lexical-text="true">a</span></p>
-                  </th>
-                  <th>
-                    <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-                  </th>
-                  <th>
-                    <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-                  </th>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                </tr>
-                <tr>
-                  <th>
-                    <p dir="ltr"><span data-lexical-text="true">d</span></p>
-                  </th>
-                  <td>
-                    <p dir="ltr"><span data-lexical-text="true">e</span></p>
-                  </td>
-                  <td>
-                    <p dir="ltr"><span data-lexical-text="true">f</span></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
-                  </th>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                  <td>
-                    <p><br /></p>
-                  </td>
-                </tr>
-              </table>
-              <p><br /></p>
-            `);
+          <p><br /></p>
+          <table>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+      `);
     });
 
     it.skipIf(
@@ -405,190 +405,194 @@ describe('Tables', () => {
         await fillTablePartiallyWithText(page);
         await selectCellsFromTableCords(page, {x: 0, y: 0}, {x: 1, y: 1});
 
-        await expect(page).toMatchEditorInlineSnapshot(`
-                <p><br /></p>
-                <table>
-                  <tr>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">a</span></p>
-                    </th>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-                    </th>
-                    <th>
-                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">d</span></p>
-                    </th>
-                    <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">e</span></p>
-                    </td>
-                    <td>
-                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                </table>
-                <p><br /></p>
-              `);
+        await expect({
+          page,
+          ignoreSecondFrame: true,
+          ignoreInlineStyles: false,
+        }).toMatchEditorInlineSnapshot(`
+            <p><br /></p>
+            <table>
+              <tr>
+                <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><span data-lexical-text="true">a</span></p>
+                </th>
+                <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+                </th>
+                <th>
+                  <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+              </tr>
+              <tr>
+                <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><span data-lexical-text="true">d</span></p>
+                </th>
+                <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><span data-lexical-text="true">e</span></p>
+                </td>
+                <td>
+                  <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+            </table>
+            <p><br /></p>
+        `);
 
         // Check that the highlight styles are applied.
         await expect(page).toMatchEditorInlineSnapshot(`
+          <p><br /></p>
+          <table>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">a</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+              </th>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+              </th>
+              <th>
                 <p><br /></p>
-                <table>
-                  <tr>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">a</span></p>
-                    </th>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-                    </th>
-                    <th>
-                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">d</span></p>
-                    </th>
-                    <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><span data-lexical-text="true">e</span></p>
-                    </td>
-                    <td>
-                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                </table>
+              </th>
+              <th>
                 <p><br /></p>
-              `);
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p dir="ltr"><span data-lexical-text="true">d</span></p>
+              </th>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">e</span></p>
+              </td>
+              <td>
+                <p dir="ltr"><span data-lexical-text="true">f</span></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `);
       },
     );
 
@@ -612,97 +616,101 @@ describe('Tables', () => {
         ]);
 
         // Check that the character styles are applied.
-        await expect(page).toMatchEditorInlineSnapshot(`
-                <p><br /></p>
-                <table>
-                  <tr>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
-                    </th>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
-                    </th>
-                    <th>
-                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><strong data-lexical-text="true">d</strong></p>
-                    </th>
-                    <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
-                      <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
-                    </td>
-                    <td>
-                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                </table>
-                <p><br /></p>
-              `);
+        await expect({
+          page,
+          ignoreSecondFrame: true,
+          ignoreInlineStyles: false,
+        }).toMatchEditorInlineSnapshot(`
+            <p><br /></p>
+            <table>
+              <tr>
+                <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
+                </th>
+                <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
+                </th>
+                <th>
+                  <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+              </tr>
+              <tr>
+                <th style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><strong data-lexical-text="true">d</strong></p>
+                </th>
+                <td style="background-color: rgb(163, 187, 255); caret-color: transparent">
+                  <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
+                </td>
+                <td>
+                  <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+            </table>
+            <p><br /></p>
+        `);
       },
     );
 
@@ -722,96 +730,96 @@ describe('Tables', () => {
 
         // Check that the text was cleared.
         await expect(page).toMatchEditorInlineSnapshot(`
-                <p><br /></p>
-                <table>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p dir="ltr"><span data-lexical-text="true">f</span></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
-                    </th>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                    <td>
-                      <p><br /></p>
-                    </td>
-                  </tr>
-                </table>
-                <p><br /></p>
-              `);
+            <p><br /></p>
+            <table>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+                <th>
+                  <p><br /></p>
+                </th>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p dir="ltr"><span data-lexical-text="true">f</span></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+              <tr>
+                <th>
+                  <p><br /></p>
+                </th>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+                <td>
+                  <p><br /></p>
+                </td>
+              </tr>
+            </table>
+            <p><br /></p>
+        `);
       },
     );
   });

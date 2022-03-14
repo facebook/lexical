@@ -95,7 +95,7 @@ export function useYjsCollaboration(
     );
 
     const onProviderDocReload = (ydoc) => {
-      clearEditorSkipCollab(editor);
+      clearEditorSkipCollab(editor, binding);
       setDoc(ydoc);
       docMap.set(id, ydoc);
       isReloadingDoc.current = true;
@@ -278,7 +278,8 @@ function initializeEditor(editor: LexicalEditor): void {
   );
 }
 
-function clearEditorSkipCollab(editor) {
+function clearEditorSkipCollab(editor, binding) {
+  // reset editor state
   editor.update(
     () => {
       const root = $getRoot();
@@ -289,4 +290,26 @@ function clearEditorSkipCollab(editor) {
       tag: 'skip-collab',
     },
   );
+
+  if (binding.cursors == null) {
+    return;
+  }
+
+  const cursorsContainer = binding.cursorsContainer;
+  if (cursorsContainer == null) {
+    return;
+  }
+
+  // reset cursors in dom
+  const cursors = Array.from(binding.cursors.values());
+  for (let i = 0; i < cursors.length; i++) {
+    const cursor = cursors[i];
+    const selection = cursor.selection;
+    if (selection && selection.selections != null) {
+      const selections = selection.selections;
+      for (let j = 0; j < selections.length; j++) {
+        cursorsContainer.removeChild(selections[i]);
+      }
+    }
+  }
 }

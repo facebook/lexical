@@ -60,7 +60,8 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
         '^@lexical/react/withSubscriptions$':
           '<rootDir>/packages/lexical-react/src/withSubscriptions.js',
-        '^@lexical/selection$': '<rootDir>/packages/lexical-selection/src/index.js',
+        '^@lexical/selection$':
+          '<rootDir>/packages/lexical-selection/src/index.js',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.js',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',

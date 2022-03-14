@@ -97,11 +97,11 @@ function updateAutoFormatting(
 }
 
 function findScanningContextWithValidMatch(
-  editorState: EditorState,
+  editor: LexicalEditor,
   currentTriggerState: AutoFormatTriggerState,
 ): null | ScanningContext {
   let scanningContext = null;
-  editorState.read(() => {
+  editor.getEditorState().read(() => {
     const textNodeWithOffset = getTextNodeForAutoFormatting($getSelection());
 
     if (textNodeWithOffset === null) {
@@ -110,6 +110,7 @@ function findScanningContextWithValidMatch(
 
     // Please see the declaration of ScanningContext for a detailed explanation.
     const initialScanningContext = getInitialScanningContext(
+      editor,
       textNodeWithOffset,
       currentTriggerState,
     );
@@ -139,7 +140,7 @@ function findScanningContextWithValidMatch(
 }
 
 function findScanningContext(
-  editorState: EditorState,
+  editor: LexicalEditor,
   currentTriggerState: null | AutoFormatTriggerState,
   priorTriggerState: null | AutoFormatTriggerState,
 ): null | ScanningContext {
@@ -172,7 +173,7 @@ function findScanningContext(
     return null;
   }
 
-  return findScanningContextWithValidMatch(editorState, currentTriggerState);
+  return findScanningContextWithValidMatch(editor, currentTriggerState);
 }
 
 function getTriggerState(
@@ -219,13 +220,12 @@ export default function useAutoFormatter(editor: LexicalEditor): void {
     return editor.addListener('update', ({tags}) => {
       // Examine historic so that we are not running autoformatting within markdown.
       if (tags.has('historic') === false) {
-        const editorState = editor.getEditorState();
-        const currentTriggerState = getTriggerState(editorState);
+        const currentTriggerState = getTriggerState(editor.getEditorState());
         const scanningContext =
           currentTriggerState == null
             ? null
             : findScanningContext(
-                editorState,
+                editor,
                 currentTriggerState,
                 priorTriggerState,
               );

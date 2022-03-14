@@ -761,7 +761,25 @@ function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
     } else if (rect.top < 0) {
       element.scrollIntoView();
     } else if (rootElement) {
-      const rootRect = rootElement.getBoundingClientRect();
+      const elementFromPoint = document.elementFromPoint(rect.left, rect.top);
+      if (elementFromPoint === element) {
+        return;
+      }
+
+      let scrollableElement = rootElement;
+      while (
+        scrollableElement &&
+        scrollableElement.scrollHeight <= scrollableElement.clientHeight
+      ) {
+        scrollableElement = scrollableElement.parentElement;
+      }
+
+      // Fallback if hasn't found scrollable parent node up in a tree
+      if (scrollableElement == null) {
+        scrollableElement = rootElement;
+      }
+
+      const rootRect = scrollableElement.getBoundingClientRect();
       if (rect.bottom > rootRect.bottom) {
         element.scrollIntoView(false);
       } else if (rect.top < rootRect.top) {

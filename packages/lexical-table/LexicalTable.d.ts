@@ -7,6 +7,7 @@ import type {
   ElementNode,
   LexicalEditor,
 } from 'lexical';
+import {TableSelection} from './src/TableSelection';
 
 export enum TableCellHeaderState {
   NO_STATUS = 0,
@@ -125,11 +126,11 @@ export type SelectionShape = {
   toY: number;
 };
 
-declare function $applyTableHandlers(
+declare function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
-): () => void;
+): TableSelection;
 
 /**
  * LexicalTableUtils
@@ -185,3 +186,31 @@ declare function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
 ): TableNode;
+
+/**
+ * LexicalTableSelection.js
+ */
+declare class TableSelection {
+  currentX: number;
+  currentY: number;
+  listenersToRemove: Set<() => void>;
+  domListeners: Set<() => void>;
+  grid: Grid;
+  highlightedCells: Array<Cell>;
+  isHighlightingCells: boolean;
+  isSelecting: boolean;
+  startX: number;
+  startY: number;
+  nodeKey: string;
+  editor: LexicalEditor;
+  constructor(editor: LexicalEditor, nodeKey: string): void;
+  getGrid(): Grid;
+  hasHighlightedCells(): boolean;
+  removeListeners(): void;
+  trackTableGrid(): void;
+  clearHighlight(): void;
+  addCellToSelection(cell: Cell): void;
+  startSelecting(cell: Cell): void;
+  formatCells(type: TextFormatType): void;
+  clearText(): void;
+}

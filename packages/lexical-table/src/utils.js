@@ -6,7 +6,7 @@
  *
  * @flow strict
  */
-import type {Grid} from './LexicalTableSelectionHelpers';
+import type {Grid} from './LexicalTableSelection';
 import type {LexicalNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/helpers/nodes';

@@ -15,6 +15,7 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 
+import {IS_FIREFOX} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
@@ -31,6 +32,7 @@ import {
   $updateTextNodeFromDOMContent,
   getNodeFromDOMNode,
   internalGetRoot,
+  isFirefoxClipboardEvents,
 } from './LexicalUtils';
 
 // The time between a text entry event and the mutation observer firing.
@@ -107,6 +109,7 @@ export function $flushMutations(
       // actually "on screen".
       const currentEditorState = editor._editorState;
       let shouldRevertSelection = false;
+      let possibleTextForFirefoxPaste = '';
 
       for (let i = 0; i < mutations.length; i++) {
         const mutation = mutations[i];
@@ -147,7 +150,18 @@ export function $flushMutations(
             const addedDOM = addedDOMs[s];
             const node = getNodeFromDOMNode(addedDOM);
             const parentDOM = addedDOM.parentNode;
-            if (parentDOM != null && node === null) {
+            if (
+              parentDOM != null &&
+              node === null &&
+              (addedDOM.nodeName !== 'BR' ||
+                !isManagedLineBreak(addedDOM, parentDOM, editor))
+            ) {
+              if (IS_FIREFOX) {
+                const possibleText = addedDOM.innerText || addedDOM.nodeValue;
+                if (possibleText) {
+                  possibleTextForFirefoxPaste += possibleText;
+                }
+              }
               parentDOM.removeChild(addedDOM);
             }
           }
@@ -240,11 +254,14 @@ export function $flushMutations(
         // Clear any of those removal mutations
         observer.takeRecords();
       }
-      if (shouldRevertSelection) {
-        const selection = $getSelection() || getLastSelection(editor);
-        if (selection !== null) {
+      const selection = $getSelection() || getLastSelection(editor);
+      if (selection !== null) {
+        if (shouldRevertSelection) {
           selection.dirty = true;
           $setSelection(selection);
+        }
+        if (IS_FIREFOX && isFirefoxClipboardEvents()) {
+          selection.insertRawText(possibleTextForFirefoxPaste);
         }
       }
     });

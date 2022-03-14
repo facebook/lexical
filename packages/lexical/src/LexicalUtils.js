@@ -949,3 +949,12 @@ export function $getDecoratorNode(
   }
   return null;
 }
+
+export function isFirefoxClipboardEvents(): boolean {
+  const event = window.event;
+  const inputType = event && event.inputType;
+  return (
+    inputType === 'insertFromPaste' ||
+    inputType === 'insertFromPasteAsQuotation'
+  );
+}

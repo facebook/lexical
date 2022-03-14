@@ -15,12 +15,14 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 
+import {IS_FIREFOX} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from '.';
@@ -31,6 +33,7 @@ import {
   $updateTextNodeFromDOMContent,
   getNodeFromDOMNode,
   internalGetRoot,
+  isFirefoxClipboardEvents,
 } from './LexicalUtils';
 
 // The time between a text entry event and the mutation observer firing.
@@ -107,6 +110,7 @@ export function $flushMutations(
       // actually "on screen".
       const currentEditorState = editor._editorState;
       let shouldRevertSelection = false;
+      let possibleTextForFirefoxPaste = '';
 
       for (let i = 0; i < mutations.length; i++) {
         const mutation = mutations[i];
@@ -148,6 +152,10 @@ export function $flushMutations(
             const node = getNodeFromDOMNode(addedDOM);
             const parentDOM = addedDOM.parentNode;
             if (parentDOM != null && node === null) {
+              if (IS_FIREFOX) {
+                possibleTextForFirefoxPaste +=
+                  addedDOM.innerText || addedDOM.nodeValue;
+              }
               parentDOM.removeChild(addedDOM);
             }
           }
@@ -240,11 +248,14 @@ export function $flushMutations(
         // Clear any of those removal mutations
         observer.takeRecords();
       }
-      if (shouldRevertSelection) {
-        const selection = $getSelection() || getLastSelection(editor);
-        if (selection !== null) {
+      const selection = $getSelection() || getLastSelection(editor);
+      if ($isRangeSelection(selection)) {
+        if (shouldRevertSelection) {
           selection.dirty = true;
           $setSelection(selection);
+        }
+        if (IS_FIREFOX && isFirefoxClipboardEvents()) {
+          selection.insertRawText(possibleTextForFirefoxPaste);
         }
       }
     });

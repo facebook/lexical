@@ -18,6 +18,7 @@ import type {
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
+  $createTextNode,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
@@ -79,6 +80,7 @@ function handleTextMutation(
   target: Text,
   node: TextNode,
   editor: LexicalEditor,
+  compositionEnd?: boolean,
 ): void {
   const domSelection = getDOMSelection();
   let anchorOffset = null;
@@ -88,7 +90,13 @@ function handleTextMutation(
     focusOffset = domSelection.focusOffset;
   }
   const text = target.nodeValue;
-  $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
+  $updateTextNodeFromDOMContent(
+    node,
+    text,
+    anchorOffset,
+    focusOffset,
+    compositionEnd || false,
+  );
 }
 
 export function $flushMutations(
@@ -99,8 +107,11 @@ export function $flushMutations(
   isProcessingMutations = true;
   const shouldFlushTextMutations =
     performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
+  console.info(mutations);
+  console.info(mutations[0]);
   try {
     updateEditor(editor, () => {
+      // debugger;
       const badDOMTargets = new Map();
       const rootElement = editor.getRootElement();
       // We use the current edtior state, as that reflects what is
@@ -172,6 +183,31 @@ export function $flushMutations(
                 targetNode = internalGetRoot(currentEditorState);
               }
               badDOMTargets.set(targetDOM, targetNode);
+            }
+          }
+
+          // characterData mutation on an empty Element
+          if (
+            addedDOMs.length === 1 &&
+            addedDOMs[0].nodeType === DOM_TEXT_TYPE
+          ) {
+            if (
+              shouldFlushTextMutations &&
+              targetDOM.nodeType === 1 &&
+              $isElementNode(targetNode) &&
+              targetNode.isAttached()
+            ) {
+              const textNode = $createTextNode('');
+              targetNode.append(textNode);
+              // debugger;
+              handleTextMutation(
+                // $FlowFixMe: nodeType === DOM_TEXT_TYPE is a Text DOM node
+                ((addedDOMs[0]: any): Text),
+                textNode,
+                editor,
+                true, // Ignore dirtinesss
+              );
+              textNode.select();
             }
           }
         }

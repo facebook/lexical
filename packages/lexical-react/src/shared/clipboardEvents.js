@@ -105,10 +105,13 @@ export function onPasteForRichText(
   event: ClipboardEvent,
   editor: LexicalEditor,
 ): void {
+  const clipboardData = event.clipboardData;
+  if (clipboardData === undefined) {
+    return;
+  }
   event.preventDefault();
   editor.update(() => {
     const selection = $getSelection();
-    const clipboardData = event.clipboardData;
     if (clipboardData != null && $isRangeSelection(selection)) {
       $insertDataTransferForRichText(clipboardData, selection, editor);
     }

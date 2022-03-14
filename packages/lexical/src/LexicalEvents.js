@@ -229,6 +229,12 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         editor.execCommand('insertText', data);
       }
       return;
+    } else if (
+      inputType === 'insertFromPaste' ||
+      inputType === 'insertFromPasteAsQuotation'
+    ) {
+      editor.execCommand('paste', event);
+      return;
     }
 
     // Prevent the browser from carrying out
@@ -259,11 +265,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         // Used for Android
         $setCompositionKey(null);
         editor.execCommand('insertParagraph');
-        break;
-      }
-      case 'insertFromPaste':
-      case 'insertFromPasteAsQuotation': {
-        editor.execCommand('paste', event);
         break;
       }
       case 'deleteByComposition': {

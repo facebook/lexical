@@ -19,7 +19,8 @@
     "lexical": "0.1.14"
   },
   "dependencies": {
-    "@lexical/helpers": "0.1.14"
+    "@lexical/helpers": "0.1.14",
+    "@lexical/selection": "0.1.14"
   },
   "repository": {
     "type": "git",

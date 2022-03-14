@@ -42,10 +42,12 @@ type CollaborationContextType = {
   name: string;
   yjsDocMap: Map<string, Doc>;
 };
+export type ProviderFactory = (id: string, yjsDocMap: Map<string, Doc>) => Provider;
 export function CollaborationPlugin(arg0: {
   id: string;
-  providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider;
+  providerFactory: ProviderFactory;
   shouldBootstrap: boolean;
+  username?: string;
 }): React.ReactNode;
 export declare var CollaborationContext: React.Context<CollaborationContextType>;
 export function useCollaborationContext(): CollaborationContextType;

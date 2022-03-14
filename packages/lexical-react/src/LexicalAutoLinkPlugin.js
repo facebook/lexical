@@ -223,7 +223,7 @@ function useAutoLink(
     };
 
     return withSubscriptions(
-      editor.addTransform(TextNode, (textNode: TextNode) => {
+      editor.addNodeTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
         if ($isAutoLinkNode(parent)) {
           handleLinkEdit(parent, matchers, onChangeWrapped);
@@ -234,7 +234,7 @@ function useAutoLink(
           handleBadNeighbors(textNode, onChangeWrapped);
         }
       }),
-      editor.addTransform(AutoLinkNode, (linkNode: AutoLinkNode) => {
+      editor.addNodeTransform(AutoLinkNode, (linkNode: AutoLinkNode) => {
         handleLinkEdit(linkNode, matchers, onChangeWrapped);
       }),
     );

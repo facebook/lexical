@@ -8,23 +8,7 @@
  */
 
 import * as React from 'react';
-import stylex from 'stylex';
-
-const styles = stylex.create({
-  root: {
-    fontSize: 15,
-    color: '#999',
-    overflow: 'hidden',
-    position: 'absolute',
-    textOverflow: 'ellipsis',
-    top: 10,
-    left: 10,
-    userSelect: 'none',
-    whiteSpace: 'nowrap',
-    display: 'inline-block',
-    pointerEvents: 'none',
-  },
-});
+import './Placeholder.css';
 
 export default function Placeholder({
   children,
@@ -33,5 +17,5 @@ export default function Placeholder({
   children: string,
   className?: string,
 }): React$Node {
-  return <div className={className || stylex(styles.root)}>{children}</div>;
+  return <div className={className || 'Placeholder__root'}>{children}</div>;
 }

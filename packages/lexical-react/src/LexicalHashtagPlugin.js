@@ -9,6 +9,7 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import {$isHashtagNode, $toggleHashtag, HashtagNode} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTextNode,
@@ -16,7 +17,6 @@ import {
   $isTextNode,
   TextNode,
 } from 'lexical';
-import {$isHashtagNode, $toggleHashtag, HashtagNode} from 'lexical/HashtagNode';
 import {$isOverflowNode} from 'lexical/OverflowNode';
 import {useEffect} from 'react';
 
@@ -277,16 +277,17 @@ function textNodeTransform(node: TextNode): void {
 
   while (true) {
     const matchArr = REGEX.exec(text);
+    if (currentNode == null) {
+      return;
+    }
+    const nextSibling = currentNode.getNextSibling();
     if (matchArr === null) {
-      if (currentNode != null) {
-        const nextSibling = currentNode.getNextSibling();
-        if (
-          $isHashtagNode(nextSibling) &&
-          !endsWithValidChar(text) &&
-          !isNextNodeValid(currentNode)
-        ) {
-          $toggleHashtag(nextSibling);
-        }
+      if (
+        $isHashtagNode(nextSibling) &&
+        !endsWithValidChar(text) &&
+        !isNextNodeValid(currentNode)
+      ) {
+        $toggleHashtag(nextSibling);
       }
       return;
     }
@@ -299,7 +300,10 @@ function textNodeTransform(node: TextNode): void {
     if (
       (startOffset === 0 && $isHashtagNode(currentNode.getPreviousSibling())) ||
       !isValidCharacter(prevChar) ||
-      !isValidCharacter(nextChar)
+      !isValidCharacter(nextChar) ||
+      (nextChar === '' &&
+        $isTextNode(nextSibling) &&
+        !nextSibling.isSimpleText())
     ) {
       continue;
     }
@@ -357,11 +361,11 @@ function $convertHashtagNodeToPlainTextNode(node: HashtagNode): void {
 
 function useHashtags(editor: LexicalEditor): void {
   useEffect(() => {
-    const removePlainTextTransform = editor.addTransform(
+    const removePlainTextTransform = editor.addNodeTransform(
       TextNode,
       textNodeTransform,
     );
-    const removeHashtagToPlainTextTransform = editor.addTransform(
+    const removeHashtagToPlainTextTransform = editor.addNodeTransform(
       HashtagNode,
       $hashtagToPlainTextTransform,
     );

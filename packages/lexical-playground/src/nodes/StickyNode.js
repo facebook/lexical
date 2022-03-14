@@ -41,40 +41,7 @@ import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
-import stylex from 'stylex';
-
-const styles = stylex.create({
-  contentEditable: {
-    minHeight: 0,
-    border: 0,
-    resize: 'none',
-    cursor: 'text',
-    fontSize: 24,
-    caretColor: 'rgb(5, 5, 5)',
-    display: 'block',
-    position: 'relative',
-    tabSize: 1,
-    outline: 0,
-    padding: 10,
-    userSelect: 'text',
-    whiteSpace: 'pre-wrap',
-    overflowWrap: 'break-word',
-  },
-  placeholder: {
-    fontSize: 24,
-    color: '#999',
-    overflow: 'hidden',
-    position: 'absolute',
-    textOverflow: 'ellipsis',
-    top: 30,
-    left: 20,
-    width: 120,
-    userSelect: 'none',
-    whiteSpace: 'nowrap',
-    display: 'inline-block',
-    pointerEvents: 'none',
-  },
-});
+import './StickyNode.css';
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -290,10 +257,10 @@ function StickyComponent({
         )}
         <PlainTextPlugin
           contentEditable={
-            <ContentEditable className={stylex(styles.contentEditable)} />
+            <ContentEditable className="StickyNode__contentEditable" />
           }
           placeholder={
-            <Placeholder className={stylex(styles.placeholder)}>
+            <Placeholder className="StickyNode__placeholder">
               What's up?
             </Placeholder>
           }

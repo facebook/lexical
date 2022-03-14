@@ -474,7 +474,7 @@ describe('LexicalElementNode tests', () => {
       const transforms = new Set();
       const expectedTransforms = [];
 
-      const removeTransform = editor.addTransform(TextNode, (node) => {
+      const removeTransform = editor.addNodeTransform(TextNode, (node) => {
         transforms.add(node.__key);
       });
 

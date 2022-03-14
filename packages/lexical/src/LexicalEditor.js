@@ -465,7 +465,7 @@ class BaseLexicalEditor {
       };
     }
   }
-  addTransform(
+  addNodeTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T: LexicalNode> in the
     // declaration below guarantees these are LexicalNodes.
     klass: Class<LexicalNode>,
@@ -676,7 +676,7 @@ declare export class LexicalEditor {
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
-  addTransform<T: LexicalNode>(
+  addNodeTransform<T: LexicalNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;

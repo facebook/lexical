@@ -224,11 +224,11 @@ function useKeywords(editor: LexicalEditor): void {
       throw new Error('KeywordsPlugin: KeywordNode not registered on editor');
     }
 
-    const removePlainTextTransform = editor.addTransform(
+    const removePlainTextTransform = editor.addNodeTransform(
       TextNode,
       $plainTextTransform,
     );
-    const removeKeywordToPlainTextTransform = editor.addTransform(
+    const removeKeywordToPlainTextTransform = editor.addNodeTransform(
       KeywordNode,
       $keywordToPlainTextTransform,
     );

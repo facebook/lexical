@@ -97,7 +97,7 @@ export declare class LexicalEditor {
     klass: Class<LexicalNode>,
     listener: MutationListener,
   ): () => void;
-  addTransform<T extends LexicalNode>(
+  addNodeTransform<T extends LexicalNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
@@ -144,9 +144,9 @@ export type EditorThemeClasses = {
   //@ts-expect-error
   list?: {
     ul?: EditorThemeClassName;
-    ulDepth?: Array<EditorThemeClassName>,
+    ulDepth?: Array<EditorThemeClassName>;
     ol?: EditorThemeClassName;
-    olDepth?: Array<EditorThemeClassName>,
+    olDepth?: Array<EditorThemeClassName>;
     listitem?: EditorThemeClassName;
     nested?: {
       list?: EditorThemeClassName;

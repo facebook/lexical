@@ -361,11 +361,11 @@ function $convertHashtagNodeToPlainTextNode(node: HashtagNode): void {
 
 function useHashtags(editor: LexicalEditor): void {
   useEffect(() => {
-    const removePlainTextTransform = editor.addTransform(
+    const removePlainTextTransform = editor.addNodeTransform(
       TextNode,
       textNodeTransform,
     );
-    const removeHashtagToPlainTextTransform = editor.addTransform(
+    const removeHashtagToPlainTextTransform = editor.addNodeTransform(
       HashtagNode,
       $hashtagToPlainTextTransform,
     );

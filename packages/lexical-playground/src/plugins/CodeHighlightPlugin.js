@@ -70,9 +70,13 @@ export default function CodeHighlightPlugin(): React$Node {
     }
 
     return withSubscriptions(
-      editor.addTransform(CodeNode, (node) => codeNodeTransform(node, editor)),
-      editor.addTransform(TextNode, (node) => textNodeTransform(node, editor)),
-      editor.addTransform(CodeHighlightNode, (node) =>
+      editor.addNodeTransform(CodeNode, (node) =>
+        codeNodeTransform(node, editor),
+      ),
+      editor.addNodeTransform(TextNode, (node) =>
+        textNodeTransform(node, editor),
+      ),
+      editor.addNodeTransform(CodeHighlightNode, (node) =>
         textNodeTransform(node, editor),
       ),
       editor.addListener(

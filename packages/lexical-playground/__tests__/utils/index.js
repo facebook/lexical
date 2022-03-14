@@ -94,7 +94,7 @@ export function initializeE2E(runTests, config: Config = {}) {
       await e2e.page.screenshot({path});
     async saveVideo(attempt) {
       const currentTest = expect.getState().currentTestName;
-      const testName = currentTest.replace(/\s|\?|\:|<|>|\*|\"|\|/g, '_');
+      const testName = currentTest.replace(/\s|\?|:|<|>|\*|"|\|/g, '_');
       const page = e2e.page;
       if (page != null) {
         const video = await page.video();

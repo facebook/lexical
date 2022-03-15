@@ -574,18 +574,11 @@ function transformTextNodeWithFormatting(
   // Remove group 1.
   removeTextByCaptureGroups(1, 1, scanningContext);
 
+  // Apply the formatting.
   formatTextInCaptureGroupIndex(formatting, 3, scanningContext);
 
-  const lastGroupIndex = groupCount - 1;
-  const collapsedOffsetInParent =
-    patternMatchResults.regExCaptureGroups[lastGroupIndex].offsetInParent +
-    patternMatchResults.regExCaptureGroups[lastGroupIndex].text.length;
-
-  makeCollapsedSelectionAtOffsetInJoinedText(
-    collapsedOffsetInParent,
-    getJoinedTextLength(patternMatchResults),
-    getParent(scanningContext),
-  );
+  // Place caret at end of final capture group.
+  selectAfterFinalCaptureGroup(scanningContext);
 }
 
 function transformTextNodeWithLink(scanningContext: ScanningContext) {
@@ -620,18 +613,24 @@ function transformTextNodeWithLink(scanningContext: ScanningContext) {
     scanningContext,
   );
 
+  const newSelectionForLink = createSelectionWithCaptureGroups(
+    1,
+    1,
+    false,
+    true,
+    scanningContext,
+  );
+
+  if (newSelectionForLink == null) {
+    return;
+  }
+
+  $setSelection(newSelectionForLink);
+
   scanningContext.editor.execCommand('toggleLink', url);
 
-  const lastGroupIndex = groupCount - 1;
-  const collapsedOffsetInParent =
-    patternMatchResults.regExCaptureGroups[lastGroupIndex].offsetInParent +
-    patternMatchResults.regExCaptureGroups[lastGroupIndex].text.length;
-
-  makeCollapsedSelectionAtOffsetInJoinedText(
-    collapsedOffsetInParent,
-    getJoinedTextLength(patternMatchResults),
-    getParent(scanningContext),
-  );
+  // Place caret at end of final capture group.
+  selectAfterFinalCaptureGroup(scanningContext);
 }
 
 // Below are lower level helper functions.
@@ -672,31 +671,13 @@ function getTextFormatType(
   return null;
 }
 
-function createSelectionForCaptureGroups(
-  anchorTextNodeWithOffset: TextNodeWithOffset,
-  focusTextNodeWithOffset: TextNodeWithOffset,
-): RangeSelection {
-  const selection = $createRangeSelection();
-
-  selection.anchor.set(
-    anchorTextNodeWithOffset.node.getKey(),
-    anchorTextNodeWithOffset.offset,
-    'text',
-  );
-
-  selection.focus.set(
-    focusTextNodeWithOffset.node.getKey(),
-    focusTextNodeWithOffset.offset,
-    'text',
-  );
-  return selection;
-}
-
-function removeTextByCaptureGroups(
-  anchorCaptureGroupIndex,
-  focusCaptureGroupIndex,
+function createSelectionWithCaptureGroups(
+  anchorCaptureGroupIndex: number,
+  focusCaptureGroupIndex: number,
+  startAtEndOfAnchor: boolean,
+  finishAtEndOfFocus: boolean,
   scanningContext: ScanningContext,
-) {
+): null | RangeSelection {
   const patternMatchResults = scanningContext.patternMatchResults;
   const regExCaptureGroups = patternMatchResults.regExCaptureGroups;
   const regExCaptureGroupsCount = regExCaptureGroups.length;
@@ -705,7 +686,7 @@ function removeTextByCaptureGroups(
     anchorCaptureGroupIndex >= regExCaptureGroupsCount ||
     focusCaptureGroupIndex >= regExCaptureGroupsCount
   ) {
-    return;
+    return null;
   }
 
   const parentElementNode = getParent(scanningContext);
@@ -714,10 +695,15 @@ function removeTextByCaptureGroups(
   const anchorCaptureGroupDetail = regExCaptureGroups[anchorCaptureGroupIndex];
   const focusCaptureGroupDetail = regExCaptureGroups[focusCaptureGroupIndex];
 
-  const anchorLocation = anchorCaptureGroupDetail.offsetInParent;
-  const focusLocation =
-    focusCaptureGroupDetail.offsetInParent +
-    focusCaptureGroupDetail.text.length;
+  const anchorLocation = startAtEndOfAnchor
+    ? anchorCaptureGroupDetail.offsetInParent +
+      anchorCaptureGroupDetail.text.length
+    : anchorCaptureGroupDetail.offsetInParent;
+
+  const focusLocation = finishAtEndOfFocus
+    ? focusCaptureGroupDetail.offsetInParent +
+      focusCaptureGroupDetail.text.length
+    : focusCaptureGroupDetail.offsetInParent;
 
   const anchorTextNodeWithOffset = $findNodeWithOffsetFromJoinedText(
     anchorLocation,
@@ -734,15 +720,43 @@ function removeTextByCaptureGroups(
   );
 
   if (anchorTextNodeWithOffset == null || focusTextNodeWithOffset == null) {
-    return;
+    return null;
   }
 
-  const newSelection = createSelectionForCaptureGroups(
-    anchorTextNodeWithOffset,
-    focusTextNodeWithOffset,
+  const selection = $createRangeSelection();
+
+  selection.anchor.set(
+    anchorTextNodeWithOffset.node.getKey(),
+    anchorTextNodeWithOffset.offset,
+    'text',
   );
 
-  if (anchorTextNodeWithOffset != null && focusTextNodeWithOffset != null) {
+  selection.focus.set(
+    focusTextNodeWithOffset.node.getKey(),
+    focusTextNodeWithOffset.offset,
+    'text',
+  );
+
+  return selection;
+}
+
+function removeTextByCaptureGroups(
+  anchorCaptureGroupIndex,
+  focusCaptureGroupIndex,
+  scanningContext: ScanningContext,
+) {
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const regExCaptureGroups = patternMatchResults.regExCaptureGroups;
+
+  const newSelection = createSelectionWithCaptureGroups(
+    anchorCaptureGroupIndex,
+    focusCaptureGroupIndex,
+    false,
+    true,
+    scanningContext,
+  );
+
+  if (newSelection != null) {
     $setSelection(newSelection);
     const currentSelection = $getSelection();
     if (
@@ -790,41 +804,32 @@ function insertTextPriorToCaptureGroup(
     text,
   };
 
-  const parentElementNode = getParent(scanningContext);
-  const joinedTextLength = getJoinedTextLength(patternMatchResults);
-
-  const anchorTextNodeWithOffset = $findNodeWithOffsetFromJoinedText(
-    newCaptureGroupDetail.offsetInParent,
-    joinedTextLength,
-    SEPARATOR_LENGTH,
-    parentElementNode,
+  const newSelection = createSelectionWithCaptureGroups(
+    captureGroupIndex,
+    captureGroupIndex,
+    false,
+    false,
+    scanningContext,
   );
 
-  if (anchorTextNodeWithOffset == null) {
-    return;
-  }
+  if (newSelection != null) {
+    $setSelection(newSelection);
+    const currentSelection = $getSelection();
+    if (
+      currentSelection != null &&
+      $isRangeSelection(currentSelection) &&
+      currentSelection.isCollapsed()
+    ) {
+      currentSelection.insertText(newCaptureGroupDetail.text);
 
-  const newSelection = createSelectionForCaptureGroups(
-    anchorTextNodeWithOffset,
-    anchorTextNodeWithOffset,
-  );
-
-  $setSelection(newSelection);
-  const currentSelection = $getSelection();
-  if (
-    currentSelection != null &&
-    $isRangeSelection(currentSelection) &&
-    currentSelection.isCollapsed()
-  ) {
-    currentSelection.insertText(newCaptureGroupDetail.text);
-
-    // Update the capture groups.
-    regExCaptureGroups.splice(captureGroupIndex, 0, newCaptureGroupDetail);
-    const textLength = newCaptureGroupDetail.text.length;
-    const newGroupCount = regExCaptureGroups.length;
-    for (let i = captureGroupIndex + 1; i < newGroupCount; i++) {
-      const currentCaptureGroupDetail = regExCaptureGroups[i];
-      currentCaptureGroupDetail.offsetInParent += textLength;
+      // Update the capture groups.
+      regExCaptureGroups.splice(captureGroupIndex, 0, newCaptureGroupDetail);
+      const textLength = newCaptureGroupDetail.text.length;
+      const newGroupCount = regExCaptureGroups.length;
+      for (let i = captureGroupIndex + 1; i < newGroupCount; i++) {
+        const currentCaptureGroupDetail = regExCaptureGroups[i];
+        currentCaptureGroupDetail.offsetInParent += textLength;
+      }
     }
   }
 }
@@ -843,80 +848,49 @@ function formatTextInCaptureGroupIndex(
     'The capture group count in the RegEx does match the actual capture group count.',
   );
 
-  const parentElementNode = getParent(scanningContext);
-  const joinedTextLength = getJoinedTextLength(patternMatchResults);
   const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
   if (captureGroupDetail.text.length === 0) {
     return;
   }
 
-  const anchorLocation = captureGroupDetail.offsetInParent;
-  const focusLocation =
-    captureGroupDetail.offsetInParent + captureGroupDetail.text.length;
-
-  const anchorTextNodeWithOffset = $findNodeWithOffsetFromJoinedText(
-    anchorLocation,
-    joinedTextLength,
-    SEPARATOR_LENGTH,
-    parentElementNode,
+  const newSelection = createSelectionWithCaptureGroups(
+    captureGroupIndex,
+    captureGroupIndex,
+    false,
+    true,
+    scanningContext,
   );
 
-  const focusTextNodeWithOffset = $findNodeWithOffsetFromJoinedText(
-    focusLocation,
-    joinedTextLength,
-    SEPARATOR_LENGTH,
-    parentElementNode,
-  );
-
-  if (anchorTextNodeWithOffset != null && focusTextNodeWithOffset != null) {
-    const newSelection = createSelectionForCaptureGroups(
-      anchorTextNodeWithOffset,
-      focusTextNodeWithOffset,
-    );
-
+  if (newSelection != null) {
     $setSelection(newSelection);
     const currentSelection = $getSelection();
     if ($isRangeSelection(currentSelection)) {
       for (let i = 0; i < formatTypes.length; i++) {
         currentSelection.formatText(formatTypes[i]);
       }
-
-      const finalSelection = $createRangeSelection();
-
-      finalSelection.anchor.set(
-        focusTextNodeWithOffset.node.getKey(),
-        focusTextNodeWithOffset.offset + 1,
-        'text',
-      );
-
-      finalSelection.focus.set(
-        focusTextNodeWithOffset.node.getKey(),
-        focusTextNodeWithOffset.offset + 1,
-        'text',
-      );
-      $setSelection(finalSelection);
     }
   }
 }
 
-function makeCollapsedSelectionAtOffsetInJoinedText(
-  offsetInJoinedText: number,
-  joinedTextLength: number,
-  parentElementNode: ElementNode,
-) {
-  const textNodeWithOffset = $findNodeWithOffsetFromJoinedText(
-    offsetInJoinedText,
-    joinedTextLength,
-    SEPARATOR_LENGTH,
-    parentElementNode,
+// Place caret at end of final capture group.
+function selectAfterFinalCaptureGroup(scanningContext: ScanningContext) {
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const groupCount = patternMatchResults.regExCaptureGroups.length;
+  if (groupCount < 2) {
+    // Ignore capture group 0, as regEx defaults the 0th one to the entire matched string.
+    return;
+  }
+  const lastGroupIndex = groupCount - 1;
+
+  const newSelection = createSelectionWithCaptureGroups(
+    lastGroupIndex,
+    lastGroupIndex,
+    true,
+    true,
+    scanningContext,
   );
 
-  if (textNodeWithOffset != null) {
-    const newSelection = createSelectionForCaptureGroups(
-      textNodeWithOffset,
-      textNodeWithOffset,
-    );
-
+  if (newSelection != null) {
     $setSelection(newSelection);
   }
 }

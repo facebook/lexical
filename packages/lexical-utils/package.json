@@ -1,19 +1,19 @@
 {
-  "name": "@lexical/helpers",
+  "name": "@lexical/utils",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "This package provides Lexical helpers and utilities for Lexical.",
+  "description": "This package contains misc utilities for Lexical.",
   "keywords": [
-    "react",
     "lexical",
     "editor",
-    "helpers",
-    "rich-text"
+    "rich-text",
+    "utils"
   ],
   "license": "MIT",
   "version": "0.1.14",
+  "main": "LexicalUtils.js",
   "peerDependencies": {
     "lexical": "0.1.14"
   },
@@ -24,6 +24,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
-    "directory": "packages/lexical-helpers"
+    "directory": "packages/lexical-utils"
   }
 }

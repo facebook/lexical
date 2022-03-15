@@ -14,13 +14,13 @@
   "license": "MIT",
   "version": "0.1.14",
   "dependencies": {
-    "@lexical/helpers": "0.1.14",
     "@lexical/clipboard": "0.1.14",
     "@lexical/list": "0.1.14",
     "@lexical/table": "0.1.14",
     "@lexical/yjs": "0.1.14",
     "@lexical/hashtag": "0.1.14",
-    "@lexical/selection": "0.1.14"
+    "@lexical/selection": "0.1.14",
+    "@lexical/utils": "0.1.14"
   },
   "peerDependencies": {
     "lexical": "0.1.14",

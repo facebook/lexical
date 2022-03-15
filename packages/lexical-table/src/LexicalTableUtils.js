@@ -9,7 +9,7 @@
 import type {Grid} from './LexicalTableSelection';
 import type {LexicalNode} from 'lexical';
 
-import {$findMatchingParent} from '@lexical/helpers/nodes';
+import {$findMatchingParent} from '@lexical/utils';
 import {$createParagraphNode, $createTextNode} from 'lexical';
 import invariant from 'shared/invariant';
 

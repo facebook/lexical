@@ -17,15 +17,15 @@ import {
   Selection,
 } from 'lexical';
 import {$createLinkNode} from 'lexical/LinkNode';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import ReactTestUtils from 'react-dom/test-utils';
-
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
-} from '../../../../lexical/src/__tests__/utils';
+} from 'lexical/src/__tests__/utils';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import ReactTestUtils from 'react-dom/test-utils';
+
 import {
   applySelectionInputs,
   convertToImmutableNode,

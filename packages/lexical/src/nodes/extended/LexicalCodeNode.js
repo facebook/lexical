@@ -18,7 +18,7 @@ import type {
 } from 'lexical';
 import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
-import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {addClassNamesToElement} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,

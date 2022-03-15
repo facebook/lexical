@@ -8,18 +8,17 @@
  */
 
 import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import {
+  applySelectionInputs,
+  pasteHTML,
+  setNativeSelectionWithPaths,
+} from '@lexical/selection/src/__tests__/utils';
 import {createEditor} from 'lexical';
 import ExtendedNodes from 'lexical/ExtendedNodes';
 import {LinkNode} from 'lexical/LinkNode';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ReactTestUtils from 'react-dom/test-utils';
-
-import {
-  applySelectionInputs,
-  pasteHTML,
-  setNativeSelectionWithPaths,
-} from '../utils';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');

@@ -9,7 +9,7 @@
 
 import type {EditorConfig, LexicalNode, NodeKey, ParagraphNode} from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {addClassNamesToElement} from '@lexical/utils';
 import {$createParagraphNode, ElementNode} from 'lexical';
 
 export class QuoteNode extends ElementNode {

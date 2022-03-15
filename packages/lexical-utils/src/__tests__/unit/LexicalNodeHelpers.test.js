@@ -7,11 +7,8 @@
  * @flow strict
  */
 
-import {
-  $areSiblingsNullOrSpace,
-  $getNearestNodeOfType,
-} from '@lexical/helpers/nodes';
 import {$createListItemNode, $createListNode, ListNode} from '@lexical/list';
+import {$areSiblingsNullOrSpace, $getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -21,12 +18,12 @@ import {
   NodeKey,
   State,
 } from 'lexical';
-
 import {
   $createTestElementNode,
   initializeUnitTest,
-} from '../../../../lexical/src/__tests__/utils';
-import {$dfs} from '../../LexicalNodeHelpers';
+} from 'lexical/src/__tests__/utils';
+
+import {$dfs} from '../..';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest((testEnv) => {

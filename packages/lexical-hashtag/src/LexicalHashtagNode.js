@@ -9,7 +9,7 @@
 
 import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {addClassNamesToElement} from '@lexical/utils';
 import {$createTextNode, $isTextNode, TextNode} from 'lexical';
 
 export class HashtagNode extends TextNode {

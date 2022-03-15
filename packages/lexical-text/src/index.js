@@ -9,7 +9,7 @@
 
 import type {ElementNode, RootNode, TextNode} from 'lexical';
 
-import {$isElementNode, $isTextNode} from 'lexical';
+import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 import invariant from 'shared/invariant';
 
 export type TextNodeWithOffset = {
@@ -154,4 +154,69 @@ export function $findNodeWithOffsetFromJoinedText(
     isPriorNodeTextNode = isChildNodeTestNode;
   }
   return null;
+}
+
+export function $isRootTextContentEmpty(
+  isEditorComposing: boolean,
+  trim?: boolean = true,
+): boolean {
+  if (isEditorComposing) {
+    return false;
+  }
+  let text = $rootTextContentCurry();
+  if (trim) {
+    text = text.trim();
+  }
+  return text === '';
+}
+
+export function $isRootTextContentEmptyCurry(
+  isEditorComposing: boolean,
+  trim?: boolean,
+): () => boolean {
+  return () => $isRootTextContentEmpty(isEditorComposing, trim);
+}
+
+export function $rootTextContentCurry(): string {
+  const root = $getRoot();
+  return root.getTextContent();
+}
+
+export function $canShowPlaceholder(isComposing: boolean): boolean {
+  if (!$isRootTextContentEmpty(isComposing, false)) {
+    return false;
+  }
+  const root = $getRoot();
+  const children = root.getChildren();
+  const childrenLength = children.length;
+  if (childrenLength > 1) {
+    return false;
+  }
+  for (let i = 0; i < childrenLength; i++) {
+    const topBlock = children[i];
+
+    if ($isElementNode(topBlock)) {
+      if (topBlock.__type !== 'paragraph') {
+        return false;
+      }
+      if (topBlock.__indent !== 0) {
+        return false;
+      }
+      const topBlockChildren = topBlock.getChildren();
+      const topBlockChildrenLength = topBlockChildren.length;
+      for (let s = 0; s < topBlockChildrenLength; s++) {
+        const child = topBlockChildren[i];
+        if (!$isTextNode(child)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+export function $canShowPlaceholderCurry(
+  isEditorComposing: boolean,
+): () => boolean {
+  return () => $canShowPlaceholder(isEditorComposing);
 }

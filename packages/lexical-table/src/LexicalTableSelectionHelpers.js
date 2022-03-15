@@ -15,7 +15,7 @@ import type {
   LexicalEditor,
 } from 'lexical';
 
-import {$findMatchingParent} from '@lexical/helpers/nodes';
+import {$findMatchingParent} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,

@@ -15,7 +15,6 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 import {$isListNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
@@ -26,6 +25,7 @@ import {
   $patchStyleText,
   $wrapLeafNodesInElements,
 } from '@lexical/selection';
+import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,

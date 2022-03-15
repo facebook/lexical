@@ -16,11 +16,11 @@ import type {
   NodeKey,
 } from 'lexical';
 
+import {$createListItemNode, $isListItemNode} from '@lexical/list';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
-} from '@lexical/helpers/elements';
-import {$createListItemNode, $isListItemNode} from '@lexical/list';
+} from '@lexical/utils';
 import {$createTextNode, ElementNode} from 'lexical';
 
 import {$getListDepth} from './utils';

@@ -9,9 +9,9 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
-import {$dfs} from '@lexical/helpers/nodes';
-import {$textContentCurry} from '@lexical/helpers/root';
 import withSubscriptions from '@lexical/react/withSubscriptions';
+import {$rootTextContentCurry} from '@lexical/text';
+import {$dfs} from '@lexical/utils';
 import {
   $getSelection,
   $isLeafNode,
@@ -52,7 +52,7 @@ export function useCharacterLimit(
   }, [editor]);
 
   useEffect(() => {
-    let text = editor.getEditorState().read($textContentCurry);
+    let text = editor.getEditorState().read($rootTextContentCurry);
     let lastComputedTextLength = 0;
 
     return withSubscriptions(

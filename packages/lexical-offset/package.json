@@ -1,29 +1,25 @@
 {
-  "name": "@lexical/hashtag",
+  "name": "@lexical/offset",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "This package contains the functionality for Lexical hashtags.",
+  "description": "This package contains selection offset helpers for Lexical.",
   "keywords": [
     "lexical",
     "editor",
     "rich-text",
-    "table",
-    "hashtag"
+    "offset"
   ],
   "license": "MIT",
   "version": "0.1.14",
-  "main": "LexicalHashtag.js",
+  "main": "LexicalOffset.js",
   "peerDependencies": {
     "lexical": "0.1.14"
-  },
-  "dependencies": {
-    "@lexical/utils": "0.1.14"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
-    "directory": "packages/lexical-hashtag"
+    "directory": "packages/lexical-offset"
   }
 }

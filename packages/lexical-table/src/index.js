@@ -25,7 +25,10 @@ import {
   TableRowNode,
 } from './LexicalTableRowNode';
 import {TableSelection} from './LexicalTableSelection';
-import {applyTableHandlers} from './LexicalTableSelectionHelpers';
+import {
+  applyTableHandlers,
+  getTableSelectionFromTableElement,
+} from './LexicalTableSelectionHelpers';
 import {
   $createTableNodeWithDimensions,
   $deleteTableColumn,
@@ -58,6 +61,7 @@ export {
   $isTableRowNode,
   $removeTableRowAtIndex,
   applyTableHandlers,
+  getTableSelectionFromTableElement,
   TableCellHeaderStates,
   TableCellNode,
   TableNode,

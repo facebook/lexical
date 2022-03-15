@@ -379,33 +379,33 @@ interface BaseSelection {
   insertRawText(text: string): void;
   is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
 }
-
+export type GridSelectionShape = {
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+};
 declare export class GridSelection implements BaseSelection {
   gridKey: NodeKey;
   anchorCellKey: NodeKey;
+  anchor: PointType;
   focusCellKey: NodeKey;
+  focus: PointType;
   dirty: boolean;
-
   constructor(
     gridKey: NodeKey,
     anchorCellKey: NodeKey,
     focusCellKey: NodeKey,
   ): void;
-
   is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
-
   set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
-
   clone(): GridSelection;
-
   extract(): Array<LexicalNode>;
-
   insertRawText(): void;
-
   insertText(): void;
-
+  isCollapsed(): false;
+  getShape(): GridSelectionShape;
   getNodes(): Array<LexicalNode>;
-
   getTextContent(): string;
 }
 

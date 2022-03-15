@@ -69,18 +69,12 @@ declare export function $isTableCellNode(
 declare export class TableNode extends ElementNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
-  constructor(
-    selectionShape: ?SelectionShape,
-    grid: ?Grid,
-    key?: NodeKey,
-  ): void;
+  constructor(grid: ?Grid, key?: NodeKey): void;
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   canInsertTab(): true;
   collapseAtStart(): true;
-  setSelectionState(selectionShape: ?SelectionShape, grid: Grid): Array<Cell>;
-  getSelectionState(): ?SelectionShape;
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
     grid: Grid,
@@ -136,13 +130,6 @@ export type Grid = {
   rows: number,
 };
 
-export type SelectionShape = {
-  fromX: number,
-  fromY: number,
-  toX: number,
-  toY: number,
-};
-
 declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
@@ -153,6 +140,10 @@ declare export function $getElementGridForTableNode(
   editor: LexicalEditor,
   tableNode: TableNode,
 ): Grid;
+
+declare export function getTableSelectionFromTableElement(
+  tableElement: HTMLElement,
+): TableSelection;
 
 /**
  * LexicalTableUtils
@@ -218,21 +209,19 @@ declare export class TableSelection {
   listenersToRemove: Set<() => void>;
   domListeners: Set<() => void>;
   grid: Grid;
-  highlightedCells: Array<Cell>;
   isHighlightingCells: boolean;
-  isSelecting: boolean;
+  isMouseDown: boolean;
   startX: number;
   startY: number;
   nodeKey: string;
   editor: LexicalEditor;
   constructor(editor: LexicalEditor, nodeKey: string): void;
   getGrid(): Grid;
-  hasHighlightedCells(): boolean;
   removeListeners(): void;
   trackTableGrid(): void;
   clearHighlight(): void;
-  addCellToSelection(cell: Cell): void;
-  startSelecting(cell: Cell): void;
+  adjustFocusCellForSelection(cell: Cell): void;
+  setAnchorCellForSelection(cell: Cell): void;
   formatCells(type: TextFormatType): void;
   clearText(): void;
 }

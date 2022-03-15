@@ -9,7 +9,7 @@
 
 import type {
   AutoFormatCriteriaArray,
-  AutoFormatCriteriaWithMatchResultContext,
+  AutoFormatCriteriaWithPatternMatchResults,
   AutoFormatTriggerState,
   ScanningContext,
 } from './AutoFormatterUtils.js';
@@ -31,40 +31,40 @@ import {
   getAllAutoFormatCriteria,
   getAllAutoFormatCriteriaForTextNodes,
   getInitialScanningContext,
-  getMatchResultContextForCriteria,
+  getPatternMatchResultsForCriteria,
   transformTextNodeForAutoFormatCriteria,
   TRIGGER_STRING,
 } from './AutoFormatterUtils.js';
 
-function getCriteriaWithMatchResultContext(
+function getCriteriaWithPatternMatchResults(
   autoFormatCriteriaArray: AutoFormatCriteriaArray,
   scanningContext: ScanningContext,
-): AutoFormatCriteriaWithMatchResultContext {
+): AutoFormatCriteriaWithPatternMatchResults {
   const currentTriggerState = scanningContext.triggerState;
 
   const count = autoFormatCriteriaArray.length;
   for (let i = 0; i < count; i++) {
     const autoFormatCriteria = autoFormatCriteriaArray[i];
 
-    // Skip code block nodes, unless the nodeTransformationKind calls for toggling the code block.
+    // Skip code block nodes, unless the autoFormatKind calls for toggling the code block.
     if (
       (currentTriggerState != null &&
         currentTriggerState.isCodeBlock === false) ||
-      autoFormatCriteria.nodeTransformationKind === 'paragraphCodeBlock'
+      autoFormatCriteria.autoFormatKind === 'paragraphCodeBlock'
     ) {
-      const matchResultContext = getMatchResultContextForCriteria(
+      const patternMatchResults = getPatternMatchResultsForCriteria(
         autoFormatCriteria,
         scanningContext,
       );
-      if (matchResultContext != null) {
+      if (patternMatchResults != null) {
         return {
           autoFormatCriteria: autoFormatCriteria,
-          matchResultContext,
+          patternMatchResults,
         };
       }
     }
   }
-  return {autoFormatCriteria: null, matchResultContext: null};
+  return {autoFormatCriteria: null, patternMatchResults: null};
 }
 
 function getTextNodeForAutoFormatting(
@@ -97,11 +97,11 @@ function updateAutoFormatting(
 }
 
 function findScanningContextWithValidMatch(
-  editorState: EditorState,
+  editor: LexicalEditor,
   currentTriggerState: AutoFormatTriggerState,
 ): null | ScanningContext {
   let scanningContext = null;
-  editorState.read(() => {
+  editor.getEditorState().read(() => {
     const textNodeWithOffset = getTextNodeForAutoFormatting($getSelection());
 
     if (textNodeWithOffset === null) {
@@ -110,11 +110,12 @@ function findScanningContextWithValidMatch(
 
     // Please see the declaration of ScanningContext for a detailed explanation.
     const initialScanningContext = getInitialScanningContext(
+      editor,
       textNodeWithOffset,
       currentTriggerState,
     );
 
-    const criteriaWithMatchResultContext = getCriteriaWithMatchResultContext(
+    const criteriaWithPatternMatchResults = getCriteriaWithPatternMatchResults(
       // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.
       currentTriggerState.isParentAListItemNode === false
         ? getAllAutoFormatCriteria()
@@ -123,23 +124,23 @@ function findScanningContextWithValidMatch(
     );
 
     if (
-      criteriaWithMatchResultContext.autoFormatCriteria === null ||
-      criteriaWithMatchResultContext.matchResultContext === null
+      criteriaWithPatternMatchResults.autoFormatCriteria === null ||
+      criteriaWithPatternMatchResults.patternMatchResults === null
     ) {
       return;
     }
     scanningContext = initialScanningContext;
     // Lazy fill-in the particular format criteria and any matching result information.
     scanningContext.autoFormatCriteria =
-      criteriaWithMatchResultContext.autoFormatCriteria;
-    scanningContext.matchResultContext =
-      criteriaWithMatchResultContext.matchResultContext;
+      criteriaWithPatternMatchResults.autoFormatCriteria;
+    scanningContext.patternMatchResults =
+      criteriaWithPatternMatchResults.patternMatchResults;
   });
   return scanningContext;
 }
 
 function findScanningContext(
-  editorState: EditorState,
+  editor: LexicalEditor,
   currentTriggerState: null | AutoFormatTriggerState,
   priorTriggerState: null | AutoFormatTriggerState,
 ): null | ScanningContext {
@@ -172,7 +173,7 @@ function findScanningContext(
     return null;
   }
 
-  return findScanningContextWithValidMatch(editorState, currentTriggerState);
+  return findScanningContextWithValidMatch(editor, currentTriggerState);
 }
 
 function getTriggerState(
@@ -219,13 +220,12 @@ export default function useAutoFormatter(editor: LexicalEditor): void {
     return editor.addListener('update', ({tags}) => {
       // Examine historic so that we are not running autoformatting within markdown.
       if (tags.has('historic') === false) {
-        const editorState = editor.getEditorState();
-        const currentTriggerState = getTriggerState(editorState);
+        const currentTriggerState = getTriggerState(editor.getEditorState());
         const scanningContext =
           currentTriggerState == null
             ? null
             : findScanningContext(
-                editorState,
+                editor,
                 currentTriggerState,
                 priorTriggerState,
               );

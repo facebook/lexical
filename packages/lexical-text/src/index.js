@@ -110,10 +110,10 @@ export function $joinTextNodesInElementNode(
 // The return values would be {TextNode1, 1} or {TextNode2,2}, respectively.
 
 export function $findNodeWithOffsetFromJoinedText(
-  elementNode: ElementNode,
-  joinedTextLength: number,
   offsetInJoinedText: number,
+  joinedTextLength: number,
   separatorLength: number,
+  elementNode: ElementNode,
 ): ?TextNodeWithOffset {
   const children = elementNode.getChildren();
   const childrenLength = children.length;

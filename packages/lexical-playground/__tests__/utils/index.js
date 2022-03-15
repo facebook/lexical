@@ -158,8 +158,6 @@ export function initializeE2E(runTests, config: Config = {}) {
             await e2e.saveVideo(count + 1);
             if (count < retryCount) {
               count++;
-              // eslint-disable-next-line no-console
-              console.log(`Attempt #${count + 1} - ${description}`);
               // Close and re-open page
               await e2e.page.close();
               if (IS_COLLAB) {

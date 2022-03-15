@@ -17,7 +17,7 @@ import type {
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
-} from '@lexical/helpers/elements';
+} from '@lexical/utils';
 import {TextNode} from 'lexical';
 
 export class CodeHighlightNode extends TextNode {

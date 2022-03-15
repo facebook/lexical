@@ -17,6 +17,9 @@
   "license": "MIT",
   "version": "0.1.14",
   "main": "LexicalYjs.js",
+  "dependencies": {
+    "@lexical/offset": "0.1.14"
+  },
   "peerDependencies": {
     "lexical": "0.1.14",
     "yjs": ">=13.5.22"

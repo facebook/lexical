@@ -10,7 +10,6 @@
 import type {ListNode} from '@lexical/list';
 import type {ElementNode, LexicalEditor} from 'lexical';
 
-import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 import {
   $createListItemNode,
   $createListNode,
@@ -18,6 +17,7 @@ import {
   $isListNode,
   ListItemNode,
 } from '@lexical/list';
+import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getSelection,

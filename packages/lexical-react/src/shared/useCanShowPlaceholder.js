@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {$canShowPlaceholderCurry} from '@lexical/helpers/root';
+import {$canShowPlaceholderCurry} from '@lexical/text';
 import {useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 

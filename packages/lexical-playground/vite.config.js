@@ -46,26 +46,16 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-table/src/index.js'),
   },
   {
+    find: '@lexical/offset',
+    replacement: path.resolve('../lexical-offset/src/index.js'),
+  },
+  {
+    find: '@lexical/utils',
+    replacement: path.resolve('../lexical-utils/src/index.js'),
+  },
+  {
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
-  },
-  {
-    find: '@lexical/helpers/nodes',
-    replacement: path.resolve('../lexical-helpers/src/LexicalNodeHelpers.js'),
-  },
-  {
-    find: '@lexical/helpers/root',
-    replacement: path.resolve('../lexical-helpers/src/LexicalRootHelpers.js'),
-  },
-  {
-    find: '@lexical/helpers/offsets',
-    replacement: path.resolve('../lexical-helpers/src/LexicalOffsetHelpers.js'),
-  },
-  {
-    find: '@lexical/helpers/elements',
-    replacement: path.resolve(
-      '../lexical-helpers/src/LexicalElementHelpers.js',
-    ),
   },
   {find: 'shared', replacement: path.resolve('../shared/src')},
 ];

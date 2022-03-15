@@ -11,7 +11,7 @@ import type {TableCellNode} from './LexicalTableCellNode';
 import type {Grid} from './LexicalTableSelection';
 import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {addClassNamesToElement} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
 import invariant from 'shared/invariant';
 

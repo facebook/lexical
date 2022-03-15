@@ -14,7 +14,7 @@ import type {
   NodeKey,
 } from 'lexical';
 
-import {$createOffsetView} from '@lexical/helpers/offsets';
+import {$createOffsetView} from '@lexical/offset';
 import {
   $createParagraphNode,
   $getNodeByKey,

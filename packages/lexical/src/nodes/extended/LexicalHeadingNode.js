@@ -16,7 +16,7 @@ import type {
   ParagraphNode,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {addClassNamesToElement} from '@lexical/utils';
 import {$createParagraphNode, ElementNode} from 'lexical';
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';

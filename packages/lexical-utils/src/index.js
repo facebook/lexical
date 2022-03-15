@@ -11,6 +11,26 @@ import type {LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
+export function addClassNamesToElement(
+  element: HTMLElement,
+  ...classNames: Array<typeof undefined | boolean | null | string>
+): void {
+  classNames.forEach((className) => {
+    if (className != null && typeof className === 'string') {
+      element.classList.add(...className.split(' '));
+    }
+  });
+}
+
+export function removeClassNamesFromElement(
+  element: HTMLElement,
+  ...classNames: Array<string>
+): void {
+  classNames.forEach((className) => {
+    element.classList.remove(...className.split(' '));
+  });
+}
+
 export function $dfs(
   startingNode?: LexicalNode,
   endingNode?: LexicalNode,

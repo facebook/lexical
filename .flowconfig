@@ -33,11 +33,8 @@ module.name_mapper='^@lexical/file' -> '<PROJECT_ROOT>/packages/lexical-file/src
 module.name_mapper='^@lexical/hashtag' -> '<PROJECT_ROOT>/packages/lexical-hashtag/src/index.js'
 module.name_mapper='^@lexical/selection' -> '<PROJECT_ROOT>/packages/lexical-selection/src/index.js'
 module.name_mapper='^@lexical/text' -> '<PROJECT_ROOT>/packages/lexical-text/src/index.js'
-
-module.name_mapper='^@lexical/helpers/nodes' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalNodeHelpers.js'
-module.name_mapper='^@lexical/helpers/elements' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalElementHelpers.js'
-module.name_mapper='^@lexical/helpers/offsets' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalOffsetHelpers.js'
-module.name_mapper='^@lexical/helpers/root' -> '<PROJECT_ROOT>/packages/lexical-helpers/src/LexicalRootHelpers.js'
+module.name_mapper='^@lexical/offset' -> '<PROJECT_ROOT>/packages/lexical-offset/src/index.js'
+module.name_mapper='^@lexical/utils' -> '<PROJECT_ROOT>/packages/lexical-utils/src/index.js'
 
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalEditor' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalEditor.js'
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalRichText' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js'

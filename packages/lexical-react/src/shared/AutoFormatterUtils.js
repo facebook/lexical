@@ -8,7 +8,13 @@
  */
 
 import type {TextNodeWithOffset} from '@lexical/text';
-import type {ElementNode, NodeKey, TextFormatType} from 'lexical';
+import type {
+  ElementNode,
+  LexicalEditor,
+  NodeKey,
+  RangeSelection,
+  TextFormatType,
+} from 'lexical';
 
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
@@ -23,8 +29,6 @@ import {
   $isElementNode,
   $isRangeSelection,
   $setSelection,
-  LexicalEditor,
-  RangeSelection,
 } from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';

@@ -62,7 +62,6 @@ module.exports = {
     'no-function-declare-after-return',
     'react',
     'no-only-tests',
-    'eslint-plugin-stylex',
   ],
 
   // Stop ESLint from looking for a configuration file in parent folders

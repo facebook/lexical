@@ -24,6 +24,7 @@ import {
   $isRangeSelection,
   $setSelection,
   LexicalEditor,
+  RangeSelection,
 } from 'lexical';
 import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';

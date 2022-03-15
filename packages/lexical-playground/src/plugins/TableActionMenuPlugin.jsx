@@ -20,10 +20,16 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $removeTableRowAtIndex,
+  getTableSelectionFromTableElement,
   TableCellHeaderStates,
   TableCellNode,
 } from '@lexical/table';
-import {$getSelection, $isRangeSelection, $setSelection} from 'lexical';
+import {
+  $getSelection,
+  $isGridSelection,
+  $isRangeSelection,
+  $setSelection,
+} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
@@ -65,22 +71,18 @@ function TableActionMenu({
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+      const selection = $getSelection();
 
-      const selectionState = tableNode.getSelectionState();
+      if ($isGridSelection(selection)) {
+        const selectionShape = selection.getShape();
 
-      updateSelectionCounts({
-        columns:
-          selectionState == null
-            ? 1
-            : selectionState.toX - selectionState.fromX + 1,
-        rows:
-          selectionState == null
-            ? 1
-            : selectionState.toY - selectionState.fromY + 1,
-      });
+        updateSelectionCounts({
+          columns: selectionShape.toX - selectionShape.fromX + 1,
+          rows: selectionShape.toY - selectionShape.fromY + 1,
+        });
+      }
     });
-  }, [editor, tableCellNode]);
+  }, [editor]);
 
   useEffect(() => {
     const menuButtonElement = contextRef.current;
@@ -122,14 +124,16 @@ function TableActionMenu({
     editor.update(() => {
       if (tableCellNode.isAttached()) {
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+        const tableElement = editor.getElementByKey(tableNode.getKey());
 
-        tableNode.setSelectionState(
-          null,
-          $getElementGridForTableNode(editor, tableNode),
-        );
+        if (!tableElement) {
+          throw new Error('Expected to find tableElement in DOM');
+        }
+
+        const tableSelection = getTableSelectionFromTableElement(tableElement);
+        tableSelection.clearHighlight();
 
         tableNode.markDirty();
-
         updateTableCellNode(tableCellNode.getLatest());
       }
 
@@ -140,9 +144,20 @@ function TableActionMenu({
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update(() => {
+        const selection = $getSelection();
+
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
-        const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+        let tableRowIndex;
+
+        if ($isGridSelection(selection)) {
+          const selectionShape = selection.getShape();
+          tableRowIndex = shouldInsertAfter
+            ? selectionShape.toY
+            : selectionShape.fromY;
+        } else {
+          tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+        }
 
         const grid = $getElementGridForTableNode(editor, tableNode);
 
@@ -165,9 +180,21 @@ function TableActionMenu({
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter) => {
       editor.update(() => {
+        const selection = $getSelection();
+
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-        const tableColumnIndex =
-          $getTableColumnIndexFromTableCellNode(tableCellNode);
+
+        let tableColumnIndex;
+
+        if ($isGridSelection(selection)) {
+          const selectionShape = selection.getShape();
+          tableColumnIndex = shouldInsertAfter
+            ? selectionShape.toX
+            : selectionShape.fromX;
+        } else {
+          tableColumnIndex =
+            $getTableColumnIndexFromTableCellNode(tableCellNode);
+        }
 
         $insertTableColumn(
           tableNode,
@@ -300,6 +327,7 @@ function TableActionMenu({
   );
 
   return createPortal(
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       className="dropdown"
       ref={dropDownRef}

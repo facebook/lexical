@@ -23,6 +23,9 @@ import {
   $createTextNode,
   $isDecoratorNode,
   $isElementNode,
+  $isGridCellNode,
+  $isGridNode,
+  $isGridRowNode,
   $isLeafNode,
   $isLineBreakNode,
   $isRootNode,
@@ -307,10 +310,19 @@ export function $isRangeSelection(x: ?mixed): boolean %checks {
   return x instanceof RangeSelection;
 }
 
+export type GridSelectionShape = {
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+};
+
 export class GridSelection implements BaseSelection {
   gridKey: NodeKey;
   anchorCellKey: NodeKey;
   focusCellKey: NodeKey;
+  anchor: PointType;
+  focus: PointType;
   dirty: boolean;
 
   constructor(
@@ -320,7 +332,9 @@ export class GridSelection implements BaseSelection {
   ): void {
     this.gridKey = gridKey;
     this.anchorCellKey = anchorCellKey;
+    this.anchor = $createPoint(anchorCellKey, 0, 'element');
     this.focusCellKey = focusCellKey;
+    this.focus = $createPoint(focusCellKey, 0, 'element');
     this.dirty = false;
   }
 
@@ -352,6 +366,10 @@ export class GridSelection implements BaseSelection {
     );
   }
 
+  isCollapsed(): boolean {
+    return false;
+  }
+
   extract(): Array<LexicalNode> {
     return this.getNodes();
   }
@@ -364,9 +382,60 @@ export class GridSelection implements BaseSelection {
     // Do nothing?
   }
 
+  getShape(): GridSelectionShape {
+    const anchorCellNode = $getNodeByKey(this.anchorCellKey);
+    invariant(anchorCellNode, 'getNodes: expected to find AnchorNode');
+    const anchorCellNodeIndex = anchorCellNode.getIndexWithinParent();
+    const anchorCelRoweIndex = anchorCellNode
+      .getParentOrThrow()
+      .getIndexWithinParent();
+
+    const focusCellNode = $getNodeByKey(this.focusCellKey);
+    invariant(focusCellNode, 'getNodes: expected to find FocusNode');
+    const focusCellNodeIndex = focusCellNode.getIndexWithinParent();
+    const focusCellRowIndex = focusCellNode
+      .getParentOrThrow()
+      .getIndexWithinParent();
+
+    const startX = Math.min(anchorCellNodeIndex, focusCellNodeIndex);
+    const stopX = Math.max(anchorCellNodeIndex, focusCellNodeIndex);
+
+    const startY = Math.min(anchorCelRoweIndex, focusCellRowIndex);
+    const stopY = Math.max(anchorCelRoweIndex, focusCellRowIndex);
+
+    return {
+      fromX: Math.min(startX, stopX),
+      fromY: Math.min(startY, stopY),
+      toX: Math.max(startX, stopX),
+      toY: Math.max(startY, stopY),
+    };
+  }
+
   getNodes(): Array<LexicalNode> {
     const nodes = [];
-    // TODO
+
+    const {fromX, fromY, toX, toY} = this.getShape();
+
+    const gridNode = $getNodeByKey(this.gridKey);
+    if (!$isGridNode(gridNode)) {
+      invariant(false, 'getNodes: expected to find GridNode');
+    }
+    const gridRowNodes = gridNode.getChildren();
+    for (let r = fromY; r <= toY; r++) {
+      const gridRowNode = gridRowNodes[r];
+      if (!$isGridRowNode(gridRowNode)) {
+        invariant(false, 'getNodes: expected to find GridRowNode');
+      }
+      const gridCellNodes = gridRowNode.getChildren();
+      for (let c = fromX; c <= toX; c++) {
+        const gridCellNode = gridCellNodes[c];
+        if (!$isGridCellNode(gridCellNode)) {
+          invariant(false, 'getNodes: expected to find GridCellNode');
+        }
+        nodes.push(gridCellNode);
+      }
+    }
+
     return nodes;
   }
 
@@ -1864,7 +1933,7 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection();
 
-  if ($isNodeSelection(lastSelection)) {
+  if ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) {
     return lastSelection.clone();
   }
 

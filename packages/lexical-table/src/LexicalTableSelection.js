@@ -7,9 +7,15 @@
  * @flow strict
  */
 
-import type {LexicalEditor, TextFormatType} from 'lexical';
+import type {
+  GridSelection,
+  LexicalEditor,
+  NodeKey,
+  TextFormatType,
+} from 'lexical';
 
 import {
+  $createGridSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -17,13 +23,18 @@ import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
-  $isRangeSelection,
+  $isGridSelection,
   $setSelection,
 } from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
+import invariant from 'shared/invariant';
 
+import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
-import {getTableGrid} from './LexicalTableSelectionHelpers';
+import {
+  $updateDOMForSelection,
+  getTableGrid,
+} from './LexicalTableSelectionHelpers';
 
 export type Cell = {
   elem: HTMLElement,
@@ -40,13 +51,6 @@ export type Grid = {
   rows: number,
 };
 
-export type SelectionShape = {
-  fromX: number,
-  fromY: number,
-  toX: number,
-  toY: number,
-};
-
 const removeHighlightStyle = document.createElement('style');
 
 removeHighlightStyle.appendChild(
@@ -59,36 +63,36 @@ export class TableSelection {
   listenersToRemove: Set<() => void>;
   domListeners: Set<() => void>;
   grid: Grid;
-  highlightedCells: Array<Cell>;
   isHighlightingCells: boolean;
-  isSelecting: boolean;
+  isMouseDown: boolean;
   startX: number;
   startY: number;
-  nodeKey: string;
+  tableNodeKey: NodeKey;
+  anchorCellNodeKey: NodeKey | null;
+  focusCellNodeKey: NodeKey | null;
   editor: LexicalEditor;
+  gridSelection: GridSelection | null;
 
-  constructor(editor: LexicalEditor, nodeKey: string) {
-    this.isSelecting = false;
+  constructor(editor: LexicalEditor, tableNodeKey: string) {
+    this.isMouseDown = false;
     this.isHighlightingCells = false;
     this.startX = -1;
     this.startY = -1;
     this.currentX = -1;
     this.currentY = -1;
-    this.highlightedCells = [];
     this.listenersToRemove = new Set();
-    this.nodeKey = nodeKey;
+    this.tableNodeKey = tableNodeKey;
     this.editor = editor;
     this.grid = {cells: [], columns: 0, rows: 0};
+    this.gridSelection = null;
+    this.anchorCellNodeKey = null;
+    this.focusCellNodeKey = null;
 
     this.trackTableGrid();
   }
 
   getGrid(): Grid {
     return this.grid;
-  }
-
-  hasHighlightedCells(): boolean {
-    return this.highlightedCells.length > 0;
   }
 
   removeListeners() {
@@ -114,7 +118,7 @@ export class TableSelection {
           return;
         }
 
-        const tableElement = this.editor.getElementByKey(this.nodeKey);
+        const tableElement = this.editor.getElementByKey(this.tableNodeKey);
         if (!tableElement) {
           throw new Error('Expected to find TableElement in DOM');
         }
@@ -123,7 +127,7 @@ export class TableSelection {
     });
 
     this.editor.update(() => {
-      const tableElement = this.editor.getElementByKey(this.nodeKey);
+      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
       if (!tableElement) {
         throw new Error('Expected to find TableElement in DOM');
       }
@@ -139,12 +143,12 @@ export class TableSelection {
 
   clearHighlight() {
     this.editor.update(() => {
-      const tableNode = $getNodeByKey(this.nodeKey);
+      const tableNode = $getNodeByKey(this.tableNodeKey);
       if (!$isTableNode(tableNode)) {
         throw new Error('Expected TableNode.');
       }
 
-      const tableElement = this.editor.getElementByKey(this.nodeKey);
+      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
       if (!tableElement) {
         throw new Error('Expected to find TableElement in DOM');
       }
@@ -152,15 +156,15 @@ export class TableSelection {
       const grid = getTableGrid(tableElement);
 
       this.isHighlightingCells = false;
-      this.isSelecting = false;
+      this.isMouseDown = false;
       this.startX = -1;
       this.startY = -1;
       this.currentX = -1;
       this.currentY = -1;
 
-      tableNode.setSelectionState(null, grid);
-
-      this.highlightedCells = [];
+      $updateDOMForSelection(grid, null);
+      this.gridSelection = null;
+      $setSelection(null);
 
       const parent = removeHighlightStyle.parentNode;
       if (parent != null) {
@@ -169,14 +173,16 @@ export class TableSelection {
     });
   }
 
-  addCellToSelection(cell: Cell) {
+  adjustFocusCellForSelection(cell: Cell) {
     this.editor.update(() => {
-      const tableNode = $getNodeByKey(this.nodeKey);
+      this.isMouseDown = true;
+
+      const tableNode = $getNodeByKey(this.tableNodeKey);
       if (!$isTableNode(tableNode)) {
         throw new Error('Expected TableNode.');
       }
 
-      const tableElement = this.editor.getElementByKey(this.nodeKey);
+      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
       if (!tableElement) {
         throw new Error('Expected to find TableElement in DOM');
       }
@@ -204,33 +210,50 @@ export class TableSelection {
       this.currentY = cellY;
 
       if (this.isHighlightingCells) {
-        const fromX = Math.min(this.startX, this.currentX);
-        const toX = Math.max(this.startX, this.currentX);
-        const fromY = Math.min(this.startY, this.currentY);
-        const toY = Math.max(this.startY, this.currentY);
+        const focusTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
-        this.highlightedCells = tableNode.setSelectionState(
-          {
-            fromX,
-            fromY,
-            toX,
-            toY,
-          },
-          this.grid,
-        );
+        if (
+          this.gridSelection != null &&
+          this.anchorCellNodeKey != null &&
+          $isTableCellNode(focusTableCellNode)
+        ) {
+          const focusNodeKey = focusTableCellNode.getKey();
+          this.gridSelection = $createGridSelection();
+          this.focusCellNodeKey = focusNodeKey;
+
+          this.gridSelection.set(
+            this.tableNodeKey,
+            // $FlowFixMe This is not null, as you can see in the statement above.
+            this.anchorCellNodeKey,
+            this.focusCellNodeKey,
+          );
+
+          $setSelection(this.gridSelection);
+          $updateDOMForSelection(this.grid, this.gridSelection);
+        }
       }
     });
   }
 
-  startSelecting(cell: Cell) {
-    this.isSelecting = true;
-    this.startX = cell.x;
-    this.startY = cell.y;
+  setAnchorCellForSelection(cell: Cell) {
+    this.editor.update(() => {
+      this.startX = cell.x;
+      this.startY = cell.y;
+      this.isMouseDown = true;
+
+      const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
+
+      if ($isTableCellNode(anchorTableCellNode)) {
+        const anchorNodeKey = anchorTableCellNode.getKey();
+        this.gridSelection = $createGridSelection();
+        this.anchorCellNodeKey = anchorNodeKey;
+      }
+    });
 
     document.addEventListener(
       'mouseup',
       () => {
-        this.isSelecting = false;
+        this.isMouseDown = false;
       },
       {
         capture: true,
@@ -241,54 +264,50 @@ export class TableSelection {
 
   formatCells(type: TextFormatType) {
     this.editor.update(() => {
-      let selection = $getSelection();
-      if (!$isRangeSelection(selection)) {
-        selection = $createRangeSelection();
+      const selection = $getSelection();
+      if (!$isGridSelection(selection)) {
+        invariant(false, 'Expected grid selection');
       }
+
       // This is to make Flow play ball.
-      const formatSelection = selection;
+      const formatSelection = $createRangeSelection();
       const anchor = formatSelection.anchor;
       const focus = formatSelection.focus;
-      this.highlightedCells.forEach((highlightedCell) => {
-        const cellNode = $getNearestNodeFromDOMNode(highlightedCell.elem);
+      selection.getNodes().forEach((cellNode) => {
         if ($isElementNode(cellNode) && cellNode.getTextContentSize() !== 0) {
           anchor.set(cellNode.getKey(), 0, 'element');
           focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
           formatSelection.formatText(type);
         }
       });
-      // Collapse selection
-      selection.anchor.set(
-        selection.anchor.key,
-        selection.anchor.offset,
-        selection.anchor.type,
-      );
-      selection.focus.set(
-        selection.anchor.key,
-        selection.anchor.offset,
-        selection.anchor.type,
-      );
+
       $setSelection(selection);
     });
   }
 
   clearText() {
     this.editor.update(() => {
-      const tableNode = $getNodeByKey(this.nodeKey);
+      const tableNode = $getNodeByKey(this.tableNodeKey);
       if (!$isTableNode(tableNode)) {
         throw new Error('Expected TableNode.');
       }
 
-      if (this.highlightedCells.length === this.grid.columns * this.grid.rows) {
+      const selection = $getSelection();
+
+      if (!$isGridSelection(selection)) {
+        invariant(false, 'Expected grid selection');
+      }
+
+      const selectedNodes = selection.getNodes();
+
+      if (selectedNodes.length === this.grid.columns * this.grid.rows) {
         tableNode.selectPrevious();
         // Delete entire table
         tableNode.remove();
         this.clearHighlight();
         return;
       }
-      this.highlightedCells.forEach(({elem}) => {
-        const cellNode = $getNearestNodeFromDOMNode(elem);
-
+      selectedNodes.forEach((cellNode) => {
         if ($isElementNode(cellNode)) {
           const paragraphNode = $createParagraphNode();
           const textNode = $createTextNode();
@@ -302,7 +321,7 @@ export class TableSelection {
           });
         }
       });
-      tableNode.setSelectionState(null, this.grid);
+      $updateDOMForSelection(this.grid, null);
       $setSelection(null);
     });
   }

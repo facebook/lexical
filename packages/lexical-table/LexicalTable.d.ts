@@ -63,14 +63,12 @@ export declare function $isTableCellNode(node?: LexicalNode): boolean;
 export declare class TableNode extends ElementNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
-  constructor(selectionShape?: SelectionShape, grid?: Grid, key?: NodeKey);
+  constructor(grid?: Grid, key?: NodeKey);
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   canInsertTab(): true;
   collapseAtStart(): true;
-  setSelectionState(selectionShape?: SelectionShape): Array<Cell>;
-  getSelectionState(): SelectionShape | null;
   getCordsFromCellNode(tableCellNode: TableCellNode): {x: number; y: number};
   getCellNodeFromCords(x: number, y: number): TableCellNode | null;
   getCellNodeFromCordsOrThrow(x: number, y: number): TableCellNode;
@@ -119,17 +117,19 @@ export type Grid = {
   rows: number;
 };
 
-export type SelectionShape = {
-  fromX: number;
-  fromY: number;
-  toX: number;
-  toY: number;
-};
-
 declare function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
+): TableSelection;
+
+declare function $getElementGridForTableNode(
+  editor: LexicalEditor,
+  tableNode: TableNode,
+): Grid;
+
+declare function getTableSelectionFromTableElement(
+  tableElement: HTMLElement,
 ): TableSelection;
 
 /**
@@ -196,21 +196,19 @@ declare class TableSelection {
   listenersToRemove: Set<() => void>;
   domListeners: Set<() => void>;
   grid: Grid;
-  highlightedCells: Array<Cell>;
   isHighlightingCells: boolean;
-  isSelecting: boolean;
+  isMouseDown: boolean;
   startX: number;
   startY: number;
   nodeKey: string;
   editor: LexicalEditor;
   constructor(editor: LexicalEditor, nodeKey: string): void;
   getGrid(): Grid;
-  hasHighlightedCells(): boolean;
   removeListeners(): void;
   trackTableGrid(): void;
   clearHighlight(): void;
-  addCellToSelection(cell: Cell): void;
-  startSelecting(cell: Cell): void;
+  adjustFocusCellForSelection(cell: Cell): void;
+  setAnchorCellForSelection(cell: Cell): void;
   formatCells(type: TextFormatType): void;
   clearText(): void;
 }

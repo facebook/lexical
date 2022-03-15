@@ -8,7 +8,7 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {Cell, Grid, SelectionShape} from './LexicalTableSelection';
+import type {Grid} from './LexicalTableSelection';
 import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/helpers/elements';
@@ -16,26 +16,21 @@ import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
-import {getTableGrid, updateCells} from './LexicalTableSelectionHelpers';
+import {getTableGrid} from './LexicalTableSelectionHelpers';
 
 export class TableNode extends GridNode {
-  __selectionShape: ?SelectionShape;
   __grid: ?Grid;
 
   static getType(): 'table' {
     return 'table';
   }
 
-  static clone(node: TableNode, selectionShape: ?SelectionShape): TableNode {
-    // TODO: selectionShape and grid aren't being deeply cloned?
-    // They shouldn't really be on the table node IMO.
-    return new TableNode(node.__selectionShape, node.__key);
+  static clone(node: TableNode): TableNode {
+    return new TableNode(node.__key);
   }
 
-  constructor(selectionShape: ?SelectionShape, key?: NodeKey): void {
+  constructor(key?: NodeKey): void {
     super(key);
-
-    this.__selectionShape = selectionShape;
   }
 
   createDOM<EditorContext>(
@@ -59,28 +54,6 @@ export class TableNode extends GridNode {
 
   canBeEmpty(): false {
     return false;
-  }
-
-  setSelectionState(selectionShape: ?SelectionShape, grid: Grid): Array<Cell> {
-    const self = this.getWritable();
-
-    self.__selectionShape = selectionShape;
-
-    if (!selectionShape) {
-      return updateCells(-1, -1, -1, -1, grid.cells);
-    }
-
-    return updateCells(
-      selectionShape.fromX,
-      selectionShape.toX,
-      selectionShape.fromY,
-      selectionShape.toY,
-      grid.cells,
-    );
-  }
-
-  getSelectionState(): ?SelectionShape {
-    return this.getLatest().__selectionShape;
   }
 
   getCordsFromCellNode(

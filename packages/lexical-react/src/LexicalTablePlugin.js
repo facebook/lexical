@@ -106,7 +106,10 @@ export default function TablePlugin(): React$Node {
           });
         } else if (mutation === 'destroyed') {
           const tableSelection = tableSelections.get(nodeKey);
-          if (tableSelection) tableSelection.removeListeners();
+          if (tableSelection) {
+            tableSelection.removeListeners();
+            tableSelections.delete(nodeKey);
+          }
         }
       }
     });

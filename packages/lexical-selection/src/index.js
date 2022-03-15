@@ -247,7 +247,7 @@ function $patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
 }
 
 export function $patchStyleText(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
   patch: {[string]: string},
 ): void {
   const selectedNodes = selection.getNodes();
@@ -255,7 +255,6 @@ export function $patchStyleText(
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
-
   if (selection.isCollapsed()) {
     return;
   }

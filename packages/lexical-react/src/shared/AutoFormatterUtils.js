@@ -8,7 +8,13 @@
  */
 
 import type {TextNodeWithOffset} from '@lexical/text';
-import type {ElementNode, NodeKey, TextFormatType, TextNode} from 'lexical';
+import type {
+  ElementNode,
+  LexicalEditor,
+  NodeKey,
+  RangeSelection,
+  TextFormatType,
+} from 'lexical';
 
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
@@ -29,6 +35,16 @@ import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import invariant from 'shared/invariant';
 
+/*
+How to add a new syntax to capture and transform.
+1. Create a new enumeration by adding to AutoFormatKind.
+2. Add a new criteria with a regEx pattern. See markdownStrikethrough as an example.
+3. Add your block criteria (e.g. '# ') to allAutoFormatCriteria or 
+   your text criteria (e.g. *MyItalic*) to allAutoFormatCriteriaForTextNodes.
+4. Add your Lexical block specific transforming code here: transformTextNodeForText.   
+   Add your Lexical text specific transforming code here: transformTextNodeForText.   
+*/
+
 // The trigger state helps to capture EditorState information
 // from the prior and current EditorState.
 // This is then used to determined if an auto format has been triggered.
@@ -48,7 +64,7 @@ export type AutoFormatTriggerState = $ReadOnly<{
 // 1. Convert the paragraph formatting: e.g. "# " converts to Heading1.
 // 2. Convert the text formatting: e.g. "**hello**" converts to bold "hello".
 
-export type NodeTransformationKind =
+export type AutoFormatKind =
   | 'noTransformation'
   | 'paragraphH1'
   | 'paragraphH2'
@@ -62,7 +78,8 @@ export type NodeTransformationKind =
   | 'italic'
   | 'underline'
   | 'strikethrough'
-  | 'bold_italic';
+  | 'bold_italic'
+  | 'link';
 
 // The scanning context provides the overall data structure for
 // locating a auto formatting candidate and then transforming that candidate
@@ -72,8 +89,9 @@ export type NodeTransformationKind =
 // ultimately gets deposited into the joinedText field.
 export type ScanningContext = {
   autoFormatCriteria: AutoFormatCriteria,
+  editor: LexicalEditor,
   joinedText: ?string,
-  matchResultContext: MatchResultContext,
+  patternMatchResults: PatternMatchResults,
   textNodeWithOffset: TextNodeWithOffset,
   triggerState: AutoFormatTriggerState,
 };
@@ -91,44 +109,38 @@ export type ScanningContext = {
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
 export type AutoFormatCriteria = $ReadOnly<{
-  nodeTransformationKind: ?NodeTransformationKind,
+  autoFormatKind: ?AutoFormatKind,
   regEx: RegExp,
   requiresParagraphStart: ?boolean,
 }>;
 
 // RegEx returns the discovered pattern matches in an array of capture groups.
-// Using this array, we can extract the sub-string per pattern, determine its
-// offset within the parent (except for non-textNode children) within the overall string and determine its length. Typically the length
-// is the textLength of the sub-string, however, at the very end, we need to subtract
-// the TRIGGER_STRING.
+// Each CaptureGroupDetail contains the relevant regEx information.
 type CaptureGroupDetail = {
-  anchorTextNodeWithOffset: ?TextNodeWithOffset,
-  focusTextNodeWithOffset: ?TextNodeWithOffset,
   offsetInParent: number,
   text: string,
-  textLength: number,
 };
 
 // This type stores the result details when a particular
 // match is found.
-export type MatchResultContext = {
-  offsetInJoinedTextForCollapsedSelection: number, // The expected location for the blinking caret.
+export type PatternMatchResults = {
   regExCaptureGroups: Array<CaptureGroupDetail>,
 };
 
-export type AutoFormatCriteriaWithMatchResultContext = {
+export type AutoFormatCriteriaWithPatternMatchResults = {
   autoFormatCriteria: null | AutoFormatCriteria,
-  matchResultContext: null | MatchResultContext,
+  patternMatchResults: null | PatternMatchResults,
 };
 
 export type AutoFormatCriteriaArray = Array<AutoFormatCriteria>;
 
 export const TRIGGER_STRING = '\u0020'; // The space key triggers markdown.
-const TRIGGER_STRING_LENGTH = TRIGGER_STRING.length;
 const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused unicode character to separate text and non-text nodes.
+const SEPARATOR_LENGTH = SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES.length;
 
+// Todo: speed up performance by having non-capture group variations of the regex.
 const autoFormatBase: AutoFormatCriteria = {
-  nodeTransformationKind: null,
+  autoFormatKind: null,
   regEx: /(?:)/,
   requiresParagraphStart: false,
 };
@@ -140,100 +152,106 @@ const paragraphStartBase: AutoFormatCriteria = {
 
 const markdownHeader1: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphH1',
+  autoFormatKind: 'paragraphH1',
   regEx: /^(?:# )/,
 };
 
 const markdownHeader2: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphH2',
+  autoFormatKind: 'paragraphH2',
   regEx: /^(?:## )/,
 };
 
 const markdownHeader3: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphH2',
+  autoFormatKind: 'paragraphH2',
   regEx: /^(?:### )/,
 };
 
 const markdownBlockQuote: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphBlockQuote',
+  autoFormatKind: 'paragraphBlockQuote',
   regEx: /^(?:> )/,
 };
 
 const markdownUnorderedListDash: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphUnorderedList',
+  autoFormatKind: 'paragraphUnorderedList',
   regEx: /^(?:- )/,
 };
 
 const markdownUnorderedListAsterisk: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphUnorderedList',
+  autoFormatKind: 'paragraphUnorderedList',
   regEx: /^(?:\* )/,
 };
 
 const markdownCodeBlock: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphCodeBlock',
+  autoFormatKind: 'paragraphCodeBlock',
   regEx: /^(```)([a-z]*)( )/,
 };
 
 const markdownOrderedList: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'paragraphOrderedList',
+  autoFormatKind: 'paragraphOrderedList',
   regEx: /^(\d+)\.\s/,
 };
 
 const markdownHorizontalRule: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'horizontalRule',
+  autoFormatKind: 'horizontalRule',
   regEx: /^(?:\*\*\* )/,
 };
 
 const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
   ...paragraphStartBase,
-  nodeTransformationKind: 'horizontalRule',
+  autoFormatKind: 'horizontalRule',
   regEx: /^(?:--- )/,
 };
 
 const markdownItalic: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'italic',
-  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*\s)$/,
+  autoFormatKind: 'italic',
+  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)(\s)$/,
 };
 
 const markdownBold: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'bold',
-  regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*\s)$/,
+  autoFormatKind: 'bold',
+  regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)(\s)$/,
 };
 
 const markdownBoldWithUnderlines: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'bold',
-  regEx: /(__)(\s*)([^__]*)(\s*)(__\s)$/,
+  autoFormatKind: 'bold',
+  regEx: /(__)(\s*)([^__]*)(\s*)(__)(\s)$/,
 };
 
 const markdownBoldItalic: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'bold_italic',
-  regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*\s)$/,
+  autoFormatKind: 'bold_italic',
+  regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)(\s)$/,
 };
 
 // Markdown does not support underline, but we can allow folks to use
 // the HTML tags for underline.
 const fakeMarkdownUnderline: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'underline',
-  regEx: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>\s)$/,
+  autoFormatKind: 'underline',
+  regEx: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>)(\s)$/,
 };
 
 const markdownStrikethrough: AutoFormatCriteria = {
   ...autoFormatBase,
-  nodeTransformationKind: 'strikethrough',
-  regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~\s)$/,
+  autoFormatKind: 'strikethrough',
+  regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)(\s)$/,
+};
+
+const markdownLink: AutoFormatCriteria = {
+  ...autoFormatBase,
+  autoFormatKind: 'link',
+  regEx: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))(\s)$/,
 };
 
 const allAutoFormatCriteriaForTextNodes = [
@@ -243,6 +261,7 @@ const allAutoFormatCriteriaForTextNodes = [
   markdownBoldWithUnderlines,
   fakeMarkdownUnderline,
   markdownStrikethrough,
+  markdownLink,
 ];
 
 const allAutoFormatCriteria = [
@@ -268,18 +287,19 @@ export function getAllAutoFormatCriteria(): AutoFormatCriteriaArray {
 }
 
 export function getInitialScanningContext(
+  editor: LexicalEditor,
   textNodeWithOffset: TextNodeWithOffset,
   triggerState: AutoFormatTriggerState,
 ): ScanningContext {
   return {
     autoFormatCriteria: {
-      nodeTransformationKind: 'noTransformation',
+      autoFormatKind: 'noTransformation',
       regEx: /(?:)/, // Empty reg ex will do until the precise criteria is discovered.
       requiresParagraphStart: null,
     },
+    editor,
     joinedText: null,
-    matchResultContext: {
-      offsetInJoinedTextForCollapsedSelection: 0,
+    patternMatchResults: {
       regExCaptureGroups: [],
     },
     textNodeWithOffset,
@@ -287,14 +307,13 @@ export function getInitialScanningContext(
   };
 }
 
-function getMatchResultContextWithRegEx(
+function getPatternMatchResultsWithRegEx(
   textToSearch: string,
   matchMustAppearAtStartOfString: boolean,
   matchMustAppearAtEndOfString: boolean,
   regEx: RegExp,
-): null | MatchResultContext {
-  const matchResultContext: MatchResultContext = {
-    offsetInJoinedTextForCollapsedSelection: 0,
+): null | PatternMatchResults {
+  const patternMatchResults: PatternMatchResults = {
     regExCaptureGroups: [],
   };
 
@@ -306,8 +325,6 @@ function getMatchResultContextWithRegEx(
     (matchMustAppearAtEndOfString === false ||
       regExMatches.index + regExMatches[0].length === textToSearch.length)
   ) {
-    matchResultContext.offsetInJoinedTextForCollapsedSelection =
-      textToSearch.length;
     const captureGroupsCount = regExMatches.length;
     let runningLength = regExMatches.index;
     for (
@@ -316,16 +333,9 @@ function getMatchResultContextWithRegEx(
       captureGroupIndex++
     ) {
       const textContent = regExMatches[captureGroupIndex];
-      matchResultContext.regExCaptureGroups.push({
-        anchorTextNodeWithOffset: null,
-        focusTextNodeWithOffset: null,
+      patternMatchResults.regExCaptureGroups.push({
         offsetInParent: runningLength,
         text: textContent,
-        textLength:
-          textContent.length -
-          (captureGroupIndex + 1 === captureGroupsCount
-            ? TRIGGER_STRING_LENGTH
-            : 0),
       });
 
       // The 0th capture group is special in that it's text contents is
@@ -335,23 +345,23 @@ function getMatchResultContextWithRegEx(
         runningLength += textContent.length;
       }
     }
-    return matchResultContext;
+    return patternMatchResults;
   }
 
   return null;
 }
 
-function getMatchResultContextForParagraphs(
+function getPatternMatchResultsForParagraphs(
   autoFormatCriteria: AutoFormatCriteria,
   scanningContext: ScanningContext,
-): null | MatchResultContext {
+): null | PatternMatchResults {
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
 
   // At start of paragraph.
   if (textNodeWithOffset.node.getPreviousSibling() === null) {
     const textToSearch =
       scanningContext.textNodeWithOffset.node.getTextContent();
-    return getMatchResultContextWithRegEx(
+    return getPatternMatchResultsWithRegEx(
       textToSearch,
       true,
       false,
@@ -362,13 +372,12 @@ function getMatchResultContextForParagraphs(
   return null;
 }
 
-function getMatchResultContextForText(
+function getPatternMatchResultsForText(
   autoFormatCriteria: AutoFormatCriteria,
   scanningContext: ScanningContext,
-): null | MatchResultContext {
+): null | PatternMatchResults {
   if (scanningContext.joinedText == null) {
-    const parentNode =
-      scanningContext.textNodeWithOffset.node.getParentOrThrow();
+    const parentNode = getParent(scanningContext);
     if ($isElementNode(parentNode)) {
       if (scanningContext.joinedText == null) {
         // Lazy calculate the text to search.
@@ -387,7 +396,7 @@ function getMatchResultContextForText(
     }
   }
 
-  return getMatchResultContextWithRegEx(
+  return getPatternMatchResultsWithRegEx(
     scanningContext.joinedText,
     false,
     true,
@@ -395,20 +404,20 @@ function getMatchResultContextForText(
   );
 }
 
-export function getMatchResultContextForCriteria(
+export function getPatternMatchResultsForCriteria(
   autoFormatCriteria: AutoFormatCriteria,
   scanningContext: ScanningContext,
-): null | MatchResultContext {
+): null | PatternMatchResults {
   if (
     autoFormatCriteria.requiresParagraphStart !== null &&
     autoFormatCriteria.requiresParagraphStart === true
   ) {
-    return getMatchResultContextForParagraphs(
+    return getPatternMatchResultsForParagraphs(
       autoFormatCriteria,
       scanningContext,
     );
   }
-  return getMatchResultContextForText(autoFormatCriteria, scanningContext);
+  return getPatternMatchResultsForText(autoFormatCriteria, scanningContext);
 }
 
 function getNewNodeForCriteria(
@@ -419,9 +428,9 @@ function getNewNodeForCriteria(
 
   const children = element.getChildren();
   const autoFormatCriteria = scanningContext.autoFormatCriteria;
-  const matchResultContext = scanningContext.matchResultContext;
-  if (autoFormatCriteria.nodeTransformationKind != null) {
-    switch (autoFormatCriteria.nodeTransformationKind) {
+  const patternMatchResults = scanningContext.patternMatchResults;
+  if (autoFormatCriteria.autoFormatKind != null) {
+    switch (autoFormatCriteria.autoFormatKind) {
       case 'paragraphH1': {
         newNode = $createHeadingNode('h1');
         newNode.append(...children);
@@ -451,9 +460,9 @@ function getNewNodeForCriteria(
       }
       case 'paragraphOrderedList': {
         const startAsString =
-          matchResultContext.regExCaptureGroups.length > 1
-            ? matchResultContext.regExCaptureGroups[
-                matchResultContext.regExCaptureGroups.length - 1
+          patternMatchResults.regExCaptureGroups.length > 1
+            ? patternMatchResults.regExCaptureGroups[
+                patternMatchResults.regExCaptureGroups.length - 1
               ].text
             : '1';
         const start = parseInt(startAsString, 10);
@@ -473,8 +482,8 @@ function getNewNodeForCriteria(
         } else {
           newNode = $createCodeNode();
           const codingLanguage =
-            matchResultContext.regExCaptureGroups.length >= 3
-              ? matchResultContext.regExCaptureGroups[2].text
+            patternMatchResults.regExCaptureGroups.length >= 3
+              ? patternMatchResults.regExCaptureGroups[2].text
               : null;
           if (codingLanguage != null && codingLanguage.length > 0) {
             newNode.setLanguage(codingLanguage);
@@ -497,14 +506,6 @@ function getNewNodeForCriteria(
   return newNode;
 }
 
-function updateTextNode(node: TextNode, count: number): void {
-  const textNode = node.spliceText(0, count, '', true);
-  if (textNode.getTextContent() === '') {
-    textNode.selectPrevious();
-    textNode.remove();
-  }
-}
-
 export function transformTextNodeForAutoFormatCriteria(
   scanningContext: ScanningContext,
 ) {
@@ -518,9 +519,16 @@ export function transformTextNodeForAutoFormatCriteria(
 function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const element = textNodeWithOffset.node.getParentOrThrow();
-  const text = scanningContext.matchResultContext.regExCaptureGroups[0].text;
-  updateTextNode(textNodeWithOffset.node, text.length);
+  const text = scanningContext.patternMatchResults.regExCaptureGroups[0].text;
 
+  // Remove the text which we matched.
+  const textNode = textNodeWithOffset.node.spliceText(0, text.length, '', true);
+  if (textNode.getTextContent() === '') {
+    textNode.selectPrevious();
+    textNode.remove();
+  }
+
+  // Transform the current element kind to the new element kind.
   const elementNode = getNewNodeForCriteria(scanningContext, element);
 
   if (elementNode !== null) {
@@ -528,15 +536,138 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   }
 }
 
+function transformTextNodeForText(scanningContext: ScanningContext) {
+  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+
+  if (autoFormatCriteria.autoFormatKind != null) {
+    const formatting = getTextFormatType(autoFormatCriteria.autoFormatKind);
+
+    if (formatting != null) {
+      transformTextNodeWithFormatting(formatting, scanningContext);
+      return;
+    }
+
+    if (autoFormatCriteria.autoFormatKind === 'link') {
+      transformTextNodeWithLink(scanningContext);
+    }
+  }
+}
+
+function transformTextNodeWithFormatting(
+  formatting: Array<TextFormatType>,
+  scanningContext: ScanningContext,
+) {
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const groupCount = patternMatchResults.regExCaptureGroups.length;
+  if (groupCount !== 7) {
+    // For BIUS and similar formats which have a pattern + text + pattern:
+    // given '*italic* ' below are the capture groups by index:
+    // 0. '*italic* '
+    // 1. '*'
+    // 2. whitespace  // typically this is "".
+    // 3. 'italic'
+    // 4. whitespace  // typicallly this is "".
+    // 5. '*'
+    // 6. ' '
+    return;
+  }
+
+  // Remove unwanted text in reg ex pattern.
+
+  // Remove group 5.
+  removeTextByCaptureGroups(5, 5, scanningContext);
+  // Remove group 1.
+  removeTextByCaptureGroups(1, 1, scanningContext);
+
+  // Apply the formatting.
+  formatTextInCaptureGroupIndex(formatting, 3, scanningContext);
+
+  // Place caret at end of final capture group.
+  selectAfterFinalCaptureGroup(scanningContext);
+}
+
+function transformTextNodeWithLink(scanningContext: ScanningContext) {
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const regExCaptureGroups = patternMatchResults.regExCaptureGroups;
+  const groupCount = regExCaptureGroups.length;
+  if (groupCount !== 7) {
+    // For links and similar formats which have: pattern + text + pattern + pattern2 text2 + pattern2:
+    // Given '[title](url) ', below are the capture groups by index:
+    // 0. '[title](url) '
+    // 1. '['
+    // 2. 'title'
+    // 3. ']('
+    // 4. 'url'
+    // 5. ')'
+    // 6. ' '
+
+    return;
+  }
+
+  const title = regExCaptureGroups[2].text;
+  const url = regExCaptureGroups[4].text;
+  if (title.length === 0 || url.length === 0) {
+    return;
+  }
+
+  // Remove the initial pattern through to the final pattern.
+  removeTextByCaptureGroups(1, 5, scanningContext);
+  insertTextPriorToCaptureGroup(
+    1, // Insert at the beginning of the meaningful capture groups, namely index 1. Index 0 refers to the whole matched string.
+    title,
+    scanningContext,
+  );
+
+  const newSelectionForLink = createSelectionWithCaptureGroups(
+    1,
+    1,
+    false,
+    true,
+    scanningContext,
+  );
+
+  if (newSelectionForLink == null) {
+    return;
+  }
+
+  $setSelection(newSelectionForLink);
+
+  scanningContext.editor.execCommand('toggleLink', url);
+
+  // Place caret at end of final capture group.
+  selectAfterFinalCaptureGroup(scanningContext);
+}
+
+// Below are lower level helper functions.
+
+function getParent(scanningContext: ScanningContext): ElementNode {
+  return scanningContext.textNodeWithOffset.node.getParentOrThrow();
+}
+
+function getJoinedTextLength(patternMatchResults: PatternMatchResults): number {
+  const groupCount = patternMatchResults.regExCaptureGroups.length;
+  if (groupCount < 2) {
+    // Ignore capture group 0, as regEx defaults the 0th one to the entire matched string.
+    return 0;
+  }
+
+  const lastGroupIndex = groupCount - 1;
+
+  return (
+    patternMatchResults.regExCaptureGroups[lastGroupIndex].offsetInParent +
+    patternMatchResults.regExCaptureGroups[lastGroupIndex].text.length
+  );
+}
+
 function getTextFormatType(
-  nodeTransformationKind: NodeTransformationKind,
+  autoFormatKind: AutoFormatKind,
 ): null | Array<TextFormatType> {
-  switch (nodeTransformationKind) {
+  switch (autoFormatKind) {
     case 'italic':
     case 'bold':
     case 'underline':
     case 'strikethrough':
-      return [nodeTransformationKind];
+      return [autoFormatKind];
     case 'bold_italic': {
       return ['bold', 'italic'];
     }
@@ -545,214 +676,165 @@ function getTextFormatType(
   return null;
 }
 
-function transformTextNodeForText(scanningContext: ScanningContext) {
-  const autoFormatCriteria = scanningContext.autoFormatCriteria;
-  const matchResultContext = scanningContext.matchResultContext;
-
-  if (autoFormatCriteria.nodeTransformationKind != null) {
-    if (matchResultContext.regExCaptureGroups.length !== 6) {
-      // For BIUS and other formatts which have a pattern + text + pattern,
-      // the expected reg ex pattern should have 6 groups.
-      // If it does not, then break and fail silently.
-      // e2e tests validate the regEx pattern.
-      return;
-    }
-
-    const formatting = getTextFormatType(
-      autoFormatCriteria.nodeTransformationKind,
-    );
-    if (formatting != null) {
-      const captureGroupsToDelete = [1, 5];
-      const formatCaptureGroup = 3;
-      matchResultContext.regExCaptureGroups =
-        getCaptureGroupsByResolvingAllDetails(scanningContext);
-
-      if (captureGroupsToDelete.length > 0) {
-        // Remove unwanted text in reg ex pattern.
-        removeTextInCaptureGroups(captureGroupsToDelete, matchResultContext);
-      }
-
-      formatTextInCaptureGroupIndex(
-        formatting,
-        formatCaptureGroup,
-        matchResultContext,
-      );
-
-      makeCollapsedSelectionAtOffsetInJoinedText(
-        matchResultContext.offsetInJoinedTextForCollapsedSelection,
-        matchResultContext.offsetInJoinedTextForCollapsedSelection + 1,
-        scanningContext.textNodeWithOffset.node.getParentOrThrow(),
-      );
-    }
-  }
-}
-
-// Some Capture Group Details were left lazily unresolved as their calculation
-// was not necessary during the scanning phase. Now that the nodeTransformationKind is
-// known, the details may be fully resolved without incurring unwasted performance cost.
-function getCaptureGroupsByResolvingAllDetails(
+function createSelectionWithCaptureGroups(
+  anchorCaptureGroupIndex: number,
+  focusCaptureGroupIndex: number,
+  startAtEndOfAnchor: boolean,
+  finishAtEndOfFocus: boolean,
   scanningContext: ScanningContext,
-): Array<CaptureGroupDetail> {
-  const autoFormatCriteria = scanningContext.autoFormatCriteria;
-  const matchResultContext = scanningContext.matchResultContext;
+): null | RangeSelection {
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const regExCaptureGroups = patternMatchResults.regExCaptureGroups;
+  const regExCaptureGroupsCount = regExCaptureGroups.length;
 
-  const textNodeWithOffset = scanningContext.textNodeWithOffset;
-  const regExCaptureGroups = matchResultContext.regExCaptureGroups;
-  const captureGroupsCount = regExCaptureGroups.length;
-  const parentElementNode = textNodeWithOffset.node.getParentOrThrow();
-
-  if (scanningContext.joinedText == null) {
-    invariant(false, 'joinedText was not calculated');
-  }
-  const joinedTextLength = scanningContext.joinedText.length;
-
-  for (
-    let captureGroupIndex = 1;
-    captureGroupIndex < captureGroupsCount;
-    captureGroupIndex++
+  if (
+    anchorCaptureGroupIndex >= regExCaptureGroupsCount ||
+    focusCaptureGroupIndex >= regExCaptureGroupsCount
   ) {
-    const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
-
-    captureGroupDetail.anchorTextNodeWithOffset =
-      $findNodeWithOffsetFromJoinedText(
-        parentElementNode,
-        joinedTextLength,
-        captureGroupDetail.offsetInParent,
-        TRIGGER_STRING_LENGTH,
-      );
-
-    captureGroupDetail.focusTextNodeWithOffset =
-      $findNodeWithOffsetFromJoinedText(
-        parentElementNode,
-        joinedTextLength,
-        captureGroupDetail.offsetInParent + captureGroupDetail.textLength,
-        TRIGGER_STRING_LENGTH,
-      );
-
-    if (captureGroupDetail.textLength < 0) {
-      invariant(
-        false,
-        'Bad regEx pattern found for %s',
-        autoFormatCriteria.nodeTransformationKind,
-      );
-    }
+    return null;
   }
 
-  return regExCaptureGroups;
+  const parentElementNode = getParent(scanningContext);
+  const joinedTextLength = getJoinedTextLength(patternMatchResults);
+
+  const anchorCaptureGroupDetail = regExCaptureGroups[anchorCaptureGroupIndex];
+  const focusCaptureGroupDetail = regExCaptureGroups[focusCaptureGroupIndex];
+
+  const anchorLocation = startAtEndOfAnchor
+    ? anchorCaptureGroupDetail.offsetInParent +
+      anchorCaptureGroupDetail.text.length
+    : anchorCaptureGroupDetail.offsetInParent;
+
+  const focusLocation = finishAtEndOfFocus
+    ? focusCaptureGroupDetail.offsetInParent +
+      focusCaptureGroupDetail.text.length
+    : focusCaptureGroupDetail.offsetInParent;
+
+  const anchorTextNodeWithOffset = $findNodeWithOffsetFromJoinedText(
+    anchorLocation,
+    joinedTextLength,
+    SEPARATOR_LENGTH,
+    parentElementNode,
+  );
+
+  const focusTextNodeWithOffset = $findNodeWithOffsetFromJoinedText(
+    focusLocation,
+    joinedTextLength,
+    SEPARATOR_LENGTH,
+    parentElementNode,
+  );
+
+  if (anchorTextNodeWithOffset == null || focusTextNodeWithOffset == null) {
+    return null;
+  }
+
+  const selection = $createRangeSelection();
+
+  selection.anchor.set(
+    anchorTextNodeWithOffset.node.getKey(),
+    anchorTextNodeWithOffset.offset,
+    'text',
+  );
+
+  selection.focus.set(
+    focusTextNodeWithOffset.node.getKey(),
+    focusTextNodeWithOffset.offset,
+    'text',
+  );
+
+  return selection;
 }
 
-function removeTextInCaptureGroups(
-  regExCaptureGroupsToDelete: Array<number>,
-  matchResultContext: MatchResultContext,
+function removeTextByCaptureGroups(
+  anchorCaptureGroupIndex,
+  focusCaptureGroupIndex,
+  scanningContext: ScanningContext,
 ) {
-  const regExCaptureGroups = matchResultContext.regExCaptureGroups;
-  const regExCaptureGroupsCount = regExCaptureGroups.length;
-  for (let i = regExCaptureGroupsToDelete.length - 1; i >= 0; i--) {
-    if (i < regExCaptureGroupsCount) {
-      const captureGroupIndex = regExCaptureGroupsToDelete[i];
-      const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
-      const anchorTextNodeWithOffset =
-        captureGroupDetail.anchorTextNodeWithOffset;
-      const focusTextNodeWithOffset =
-        captureGroupDetail.focusTextNodeWithOffset;
-      if (
-        anchorTextNodeWithOffset != null &&
-        focusTextNodeWithOffset != null &&
-        captureGroupDetail.textLength > 0
-      ) {
-        const newSelection = $createRangeSelection();
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const regExCaptureGroups = patternMatchResults.regExCaptureGroups;
 
-        newSelection.anchor.set(
-          anchorTextNodeWithOffset.node.getKey(),
-          anchorTextNodeWithOffset.offset,
-          'text',
-        );
+  const newSelection = createSelectionWithCaptureGroups(
+    anchorCaptureGroupIndex,
+    focusCaptureGroupIndex,
+    false,
+    true,
+    scanningContext,
+  );
 
-        newSelection.focus.set(
-          focusTextNodeWithOffset.node.getKey(),
-          focusTextNodeWithOffset.offset,
-          'text',
-        );
+  if (newSelection != null) {
+    $setSelection(newSelection);
+    const currentSelection = $getSelection();
+    if (
+      currentSelection != null &&
+      $isRangeSelection(currentSelection) &&
+      currentSelection.isCollapsed() === false
+    ) {
+      currentSelection.removeText();
 
-        $setSelection(newSelection);
-        const currentSelection = $getSelection();
-        if ($isRangeSelection(currentSelection)) {
-          currentSelection.removeText();
+      // Shift all group offsets and clear out group text.
+      let runningLength = 0;
+      const groupCount = regExCaptureGroups.length;
+      for (let i = anchorCaptureGroupIndex; i < groupCount; i++) {
+        const captureGroupDetail = regExCaptureGroups[i];
 
-          // Shift offsets for capture groups which are within the same node
-          if (
-            anchorTextNodeWithOffset.node.getKey() ===
-            focusTextNodeWithOffset.node.getKey()
-          ) {
-            const delta =
-              focusTextNodeWithOffset.offset - anchorTextNodeWithOffset.offset;
-            invariant(
-              delta > 0,
-              'Expected anchor and focus offsets to have ascending character order.',
-            );
-            shiftCaptureGroupOffsets(
-              -delta,
-              focusTextNodeWithOffset.offset,
-              anchorTextNodeWithOffset.node,
-              captureGroupIndex,
-              matchResultContext,
-            );
-          } else {
-            const focusDelta = focusTextNodeWithOffset.offset;
-            if (focusDelta > 0) {
-              shiftCaptureGroupOffsets(
-                -focusDelta,
-                focusDelta,
-                focusTextNodeWithOffset.node,
-                captureGroupIndex,
-                matchResultContext,
-              );
-            }
-          }
+        if (i > anchorCaptureGroupIndex) {
+          captureGroupDetail.offsetInParent -= runningLength;
+        }
+
+        if (i <= focusCaptureGroupIndex) {
+          runningLength += captureGroupDetail.text.length;
+          captureGroupDetail.text = '';
         }
       }
     }
   }
 }
 
-function shiftCaptureGroupOffsets(
-  delta: number,
-  applyAtOrAfterOffset: number,
-  node: TextNode,
-  startingCaptureGroupIndex: number,
-  matchResultContext: MatchResultContext,
+function insertTextPriorToCaptureGroup(
+  captureGroupIndex: number,
+  text: string,
+  scanningContext: ScanningContext,
 ) {
-  matchResultContext.offsetInJoinedTextForCollapsedSelection += delta;
-  invariant(
-    matchResultContext.offsetInJoinedTextForCollapsedSelection > 0,
-    'The text content string length does not correlate with insertions/deletions of new text.',
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const regExCaptureGroups = patternMatchResults.regExCaptureGroups;
+  const regExCaptureGroupsCount = regExCaptureGroups.length;
+  if (captureGroupIndex >= regExCaptureGroupsCount) {
+    return;
+  }
+
+  const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
+
+  const newCaptureGroupDetail = {
+    offsetInParent: captureGroupDetail.offsetInParent,
+    text,
+  };
+
+  const newSelection = createSelectionWithCaptureGroups(
+    captureGroupIndex,
+    captureGroupIndex,
+    false,
+    false,
+    scanningContext,
   );
 
-  const regExCaptureGroups = matchResultContext.regExCaptureGroups;
-  const regExCaptureGroupsCount = regExCaptureGroups.length;
-  for (
-    let captureGroupIndex = startingCaptureGroupIndex + 1;
-    captureGroupIndex < regExCaptureGroupsCount;
-    captureGroupIndex++
-  ) {
-    const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
-
+  if (newSelection != null) {
+    $setSelection(newSelection);
+    const currentSelection = $getSelection();
     if (
-      captureGroupDetail.anchorTextNodeWithOffset != null &&
-      captureGroupDetail.anchorTextNodeWithOffset.offset >=
-        applyAtOrAfterOffset &&
-      captureGroupDetail.anchorTextNodeWithOffset.node.is(node)
+      currentSelection != null &&
+      $isRangeSelection(currentSelection) &&
+      currentSelection.isCollapsed()
     ) {
-      captureGroupDetail.anchorTextNodeWithOffset.offset += delta;
-    }
+      currentSelection.insertText(newCaptureGroupDetail.text);
 
-    if (
-      captureGroupDetail.focusTextNodeWithOffset != null &&
-      captureGroupDetail.focusTextNodeWithOffset.offset >=
-        applyAtOrAfterOffset &&
-      captureGroupDetail.focusTextNodeWithOffset.node.is(node)
-    ) {
-      captureGroupDetail.focusTextNodeWithOffset.offset += delta;
+      // Update the capture groups.
+      regExCaptureGroups.splice(captureGroupIndex, 0, newCaptureGroupDetail);
+      const textLength = newCaptureGroupDetail.text.length;
+      const newGroupCount = regExCaptureGroups.length;
+      for (let i = captureGroupIndex + 1; i < newGroupCount; i++) {
+        const currentCaptureGroupDetail = regExCaptureGroups[i];
+        currentCaptureGroupDetail.offsetInParent += textLength;
+      }
     }
   }
 }
@@ -760,9 +842,10 @@ function shiftCaptureGroupOffsets(
 function formatTextInCaptureGroupIndex(
   formatTypes: Array<TextFormatType>,
   captureGroupIndex: number,
-  matchResultContext: MatchResultContext,
+  scanningContext: ScanningContext,
 ) {
-  const regExCaptureGroups = matchResultContext.regExCaptureGroups;
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const regExCaptureGroups = patternMatchResults.regExCaptureGroups;
   const regExCaptureGroupsCount = regExCaptureGroups.length;
 
   invariant(
@@ -771,79 +854,48 @@ function formatTextInCaptureGroupIndex(
   );
 
   const captureGroupDetail = regExCaptureGroups[captureGroupIndex];
-  const anchorTextNodeWithOffset = captureGroupDetail.anchorTextNodeWithOffset;
-  const focusTextNodeWithOffset = captureGroupDetail.focusTextNodeWithOffset;
-  if (
-    anchorTextNodeWithOffset != null &&
-    focusTextNodeWithOffset != null &&
-    captureGroupDetail.textLength > 0
-  ) {
-    const newSelection = $createRangeSelection();
+  if (captureGroupDetail.text.length === 0) {
+    return;
+  }
 
-    newSelection.anchor.set(
-      anchorTextNodeWithOffset.node.getKey(),
-      anchorTextNodeWithOffset.offset,
-      'text',
-    );
+  const newSelection = createSelectionWithCaptureGroups(
+    captureGroupIndex,
+    captureGroupIndex,
+    false,
+    true,
+    scanningContext,
+  );
 
-    newSelection.focus.set(
-      focusTextNodeWithOffset.node.getKey(),
-      focusTextNodeWithOffset.offset,
-      'text',
-    );
-
+  if (newSelection != null) {
     $setSelection(newSelection);
     const currentSelection = $getSelection();
     if ($isRangeSelection(currentSelection)) {
       for (let i = 0; i < formatTypes.length; i++) {
         currentSelection.formatText(formatTypes[i]);
       }
-
-      const finalSelection = $createRangeSelection();
-
-      finalSelection.anchor.set(
-        focusTextNodeWithOffset.node.getKey(),
-        focusTextNodeWithOffset.offset + 1,
-        'text',
-      );
-
-      finalSelection.focus.set(
-        focusTextNodeWithOffset.node.getKey(),
-        focusTextNodeWithOffset.offset + 1,
-        'text',
-      );
-      $setSelection(finalSelection);
     }
   }
 }
 
-function makeCollapsedSelectionAtOffsetInJoinedText(
-  offsetInJoinedText: number,
-  joinedTextLength: number,
-  parentElementNode: ElementNode,
-) {
-  const textNodeWithOffset = $findNodeWithOffsetFromJoinedText(
-    parentElementNode,
-    joinedTextLength,
-    offsetInJoinedText,
-    TRIGGER_STRING_LENGTH,
+// Place caret at end of final capture group.
+function selectAfterFinalCaptureGroup(scanningContext: ScanningContext) {
+  const patternMatchResults = scanningContext.patternMatchResults;
+  const groupCount = patternMatchResults.regExCaptureGroups.length;
+  if (groupCount < 2) {
+    // Ignore capture group 0, as regEx defaults the 0th one to the entire matched string.
+    return;
+  }
+  const lastGroupIndex = groupCount - 1;
+
+  const newSelection = createSelectionWithCaptureGroups(
+    lastGroupIndex,
+    lastGroupIndex,
+    true,
+    true,
+    scanningContext,
   );
 
-  if (textNodeWithOffset != null) {
-    const newSelection = $createRangeSelection();
-
-    newSelection.anchor.set(
-      textNodeWithOffset.node.getKey(),
-      textNodeWithOffset.offset,
-      'text',
-    );
-
-    newSelection.focus.set(
-      textNodeWithOffset.node.getKey(),
-      textNodeWithOffset.offset,
-      'text',
-    );
-
+  if (newSelection != null) {
     $setSelection(newSelection);
   }
 }

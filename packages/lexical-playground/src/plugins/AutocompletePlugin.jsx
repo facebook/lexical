@@ -9,8 +9,8 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {$textContentCurry} from '@lexical/helpers/root';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$rootTextContentCurry} from '@lexical/text';
 import {
   $getNodeByKey,
   $getRoot,
@@ -27,7 +27,7 @@ import {$createTypeaheadNode, TypeaheadNode} from '../nodes/TypeaheadNode';
 function useTypeahead(editor: LexicalEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
   const [text, setText] = useState<string>(
-    editor.getEditorState().read($textContentCurry),
+    editor.getEditorState().read($rootTextContentCurry),
   );
   const [selectionCollapsed, $setSelectionCollapsed] = useState<boolean>(false);
   const server = useMemo(() => new TypeaheadServer(), []);
@@ -51,8 +51,8 @@ function useTypeahead(editor: LexicalEditor): void {
         'AutocompletePlugin: TypeaheadNode not registered on editor',
       );
     }
-    return editor.addListener('textcontent', (text) => {
-      setText(text);
+    return editor.addListener('textcontent', (_text) => {
+      setText(_text);
     });
   }, [editor]);
 

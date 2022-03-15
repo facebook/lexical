@@ -10,7 +10,7 @@
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
-} from '@lexical/helpers/elements';
+} from '@lexical/utils';
 
 describe('LexicalElementHelpers tests', () => {
   describe('addClassNamesToElement() and removeClassNamesFromElement()', () => {

@@ -25,15 +25,8 @@ module.exports = {
           '<rootDir>/packages/lexical-clipboard/src/index.js',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
         '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.js',
-        '^@lexical/helpers/elements$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalElementHelpers.js',
-        '^@lexical/helpers/nodes$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalNodeHelpers.js',
-        '^@lexical/helpers/offsets$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalOffsetHelpers.js',
-        '^@lexical/helpers/root$':
-          '<rootDir>/packages/lexical-helpers/src/LexicalRootHelpers.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
+        '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.js',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
         '^@lexical/react/LexicalAutoLinkPlugin$':
@@ -64,6 +57,7 @@ module.exports = {
           '<rootDir>/packages/lexical-selection/src/index.js',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.js',
+        '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.js',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
         '^lexical$': '<rootDir>/packages/lexical/src/index.js',
         '^lexical/AutoLinkNode$':

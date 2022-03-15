@@ -48,7 +48,6 @@ const closureOptions = {
 if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical/dist'));
   fs.removeSync(path.resolve('./packages/lexical-react/dist'));
-  fs.removeSync(path.resolve('./packages/lexical-helpers/dist'));
   fs.removeSync(path.resolve('./packages/lexical-list/dist'));
   fs.removeSync(path.resolve('./packages/lexical-table/dist'));
   fs.removeSync(path.resolve('./packages/lexical-file/dist'));
@@ -56,6 +55,8 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-hashtag/dist'));
   fs.removeSync(path.resolve('./packages/lexical-selection/dist'));
   fs.removeSync(path.resolve('./packages/lexical-text/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-offset/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-utils/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
@@ -64,9 +65,11 @@ const wwwMappings = {
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
   '@lexical/list': 'LexicalList',
+  '@lexical/offset': 'LexicalOffset',
   '@lexical/selection': 'LexicalSelection',
   '@lexical/table': 'LexicalTable',
   '@lexical/text': 'LexicalText',
+  '@lexical/utils': 'LexicalUtils',
   '@lexical/yjs': 'LexicalYjs',
   lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
@@ -85,11 +88,6 @@ const lexicalNodesExternals = lexicalNodes.map((node) => {
 const lexicalShared = fs
   .readdirSync(path.resolve('./packages/shared/src'))
   .map((str) => path.basename(str, '.js'));
-
-const lexicalHelpers = fs
-  .readdirSync(path.resolve('./packages/lexical-helpers/src'))
-  .map((str) => path.basename(str, '.js'))
-  .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
 
 const lexicalReactModules = fs
   .readdirSync(path.resolve('./packages/lexical-react/src'))
@@ -116,6 +114,8 @@ const externals = [
   '@lexical/hashtag',
   '@lexical/selection',
   '@lexical/text',
+  '@lexical/offset',
+  '@lexical/utils',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -172,31 +172,6 @@ async function build(name, inputFile, outputFile, isProd) {
       alias({
         entries: [
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
-          // We inline both these helpers to improve the bundle size of the lexical-react modules
-          {
-            find: '@lexical/helpers/nodes',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalNodeHelpers',
-            ),
-          },
-          {
-            find: '@lexical/helpers/elements',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalElementHelpers',
-            ),
-          },
-          {
-            find: '@lexical/helpers/offsets',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalOffsetHelpers',
-            ),
-          },
-          {
-            find: '@lexical/helpers/root',
-            replacement: path.resolve(
-              'packages/lexical-helpers/src/LexicalRootHelpers',
-            ),
-          },
         ],
       }),
       // Extract error codes from invariant() messages into a file.
@@ -403,6 +378,28 @@ const packages = [
     sourcePath: './packages/lexical-text/src/',
   },
   {
+    modules: [
+      {
+        outputFileName: 'LexicalOffset',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Offset',
+    outputPath: './packages/lexical-offset/dist/',
+    sourcePath: './packages/lexical-offset/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalUtils',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Utils',
+    outputPath: './packages/lexical-utils/dist/',
+    sourcePath: './packages/lexical-utils/src/',
+  },
+  {
     modules: lexicalNodes.map((module) => ({
       name: module,
       outputFileName: module,
@@ -411,16 +408,6 @@ const packages = [
     name: 'Lexical Core Nodes',
     outputPath: './packages/lexical/dist/',
     sourcePath: './packages/lexical/src/nodes/extended/',
-  },
-  {
-    modules: lexicalHelpers.map((module) => ({
-      name: module,
-      outputFileName: module,
-      sourceFileName: module,
-    })),
-    name: 'Lexical Helpers',
-    outputPath: './packages/lexical-helpers/dist/',
-    sourcePath: './packages/lexical-helpers/src/',
   },
   {
     modules: lexicalShared.map((module) => ({

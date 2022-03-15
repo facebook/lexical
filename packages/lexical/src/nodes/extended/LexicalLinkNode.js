@@ -16,7 +16,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/helpers/elements';
+import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
 
 export class LinkNode extends ElementNode {

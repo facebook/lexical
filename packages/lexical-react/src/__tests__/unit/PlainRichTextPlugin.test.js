@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import {$textContentCurry} from '@lexical/helpers/root';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import {$rootTextContentCurry} from '@lexical/text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import ExtendedNodes from 'lexical/ExtendedNodes';
 import React from 'react';
@@ -80,7 +80,7 @@ describe('LexicalNodeHelpers tests', () => {
         reactRoot.render(<App />);
       });
 
-      const text = editor.getEditorState().read($textContentCurry);
+      const text = editor.getEditorState().read($rootTextContentCurry);
       expect(text).toBe('foo');
     });
   }

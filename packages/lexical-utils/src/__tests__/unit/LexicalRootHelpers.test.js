@@ -10,29 +10,27 @@
 import type {State} from 'lexical';
 
 import {
-  $isTextContentEmpty,
-  $isTextContentEmptyCurry,
-  $textContent,
-  $textContentCurry,
-} from '@lexical/helpers/root';
+  $isRootTextContentEmpty,
+  $isRootTextContentEmptyCurry,
+  $rootTextContentCurry,
+} from '@lexical/text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
-
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 describe('LexicalRootHelpers tests', () => {
   initializeUnitTest((testEnv) => {
     it('textContent', async () => {
       const editor = testEnv.editor;
-      expect(editor.getEditorState().read($textContentCurry)).toBe('');
+      expect(editor.getEditorState().read($rootTextContentCurry)).toBe('');
       await editor.update((state: State) => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         const text = $createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
-        expect($textContent()).toBe('foo');
+        expect($rootTextContentCurry()).toBe('foo');
       });
-      expect(editor.getEditorState().read($textContentCurry)).toBe('foo');
+      expect(editor.getEditorState().read($rootTextContentCurry)).toBe('foo');
     });
 
     it('isBlank', async () => {
@@ -40,7 +38,7 @@ describe('LexicalRootHelpers tests', () => {
       expect(
         editor
           .getEditorState()
-          .read($isTextContentEmptyCurry(editor.isComposing())),
+          .read($isRootTextContentEmptyCurry(editor.isComposing())),
       ).toBe(true);
       await editor.update((state: State) => {
         const root = $getRoot();
@@ -48,12 +46,12 @@ describe('LexicalRootHelpers tests', () => {
         const text = $createTextNode('foo');
         root.append(paragraph);
         paragraph.append(text);
-        expect($isTextContentEmpty(editor.isComposing())).toBe(false);
+        expect($isRootTextContentEmpty(editor.isComposing())).toBe(false);
       });
       expect(
         editor
           .getEditorState()
-          .read($isTextContentEmptyCurry(editor.isComposing())),
+          .read($isRootTextContentEmptyCurry(editor.isComposing())),
       ).toBe(false);
     });
   });

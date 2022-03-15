@@ -18,11 +18,11 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {$createListNode, $isListNode} from '@lexical/list';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
-} from '@lexical/helpers/elements';
-import {$createListNode, $isListNode} from '@lexical/list';
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,

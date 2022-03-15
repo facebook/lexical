@@ -18,12 +18,11 @@ import {
   TextNode,
 } from 'lexical';
 import {$createHeadingNode} from 'lexical/HeadingNode';
-
 import {
   $createTestElementNode,
   $createTestExcludeFromCopyElementNode,
   createTestEditor,
-} from '../../../../lexical/src/__tests__/utils';
+} from 'lexical/src/__tests__/utils';
 
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = $createParagraphNode();

@@ -8,46 +8,44 @@
  */
 
 import type {
-  LexicalEditor,
   CommandListenerLowPriority,
   ElementNode,
-  TextNode,
+  LexicalEditor,
   RangeSelection,
+  TextNode,
 } from 'lexical';
 
-import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$isHeadingNode} from 'lexical/HeadingNode';
-import {$createHeadingNode} from 'lexical/HeadingNode';
+import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
 import {$isListNode, ListNode} from '@lexical/list';
-import {$createQuoteNode} from 'lexical/QuoteNode';
-import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
-  $getNodeByKey,
-  $getSelection,
-  $createParagraphNode,
-  $isRangeSelection,
-} from 'lexical';
-import {$isLinkNode} from 'lexical/LinkNode';
-import {
-  $wrapLeafNodesInElements,
-  $patchStyleText,
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
   $isParentElementRTL,
+  $patchStyleText,
+  $wrapLeafNodesInElements,
 } from '@lexical/selection';
-import withSubscriptions from '@lexical/react/withSubscriptions';
-import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
-import LinkPreview from '../components/LinkPreview';
-
-import {$getNearestNodeOfType} from '@lexical/helpers/nodes';
+import {
+  $createParagraphNode,
+  $getNodeByKey,
+  $getSelection,
+  $isRangeSelection,
+} from 'lexical';
+import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
+import {$createHeadingNode, $isHeadingNode} from 'lexical/HeadingNode';
+import {$isLinkNode} from 'lexical/LinkNode';
+import {$createQuoteNode} from 'lexical/QuoteNode';
+import * as React from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+
 import useModal from '../hooks/useModal';
-import Input from '../ui/Input';
 import Button from '../ui/Button';
+import Input from '../ui/Input';
+import LinkPreview from '../ui/LinkPreview';
+import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -62,16 +60,16 @@ const supportedBlockTypes = new Set([
 ]);
 
 const blockTypeToBlockName = {
-  paragraph: 'Normal',
-  quote: 'Quote',
   code: 'Code Block',
   h1: 'Large Heading',
   h2: 'Small Heading',
   h3: 'Heading',
   h4: 'Heading',
   h5: 'Heading',
-  ul: 'Bulleted List',
   ol: 'Numbered List',
+  paragraph: 'Normal',
+  quote: 'Quote',
+  ul: 'Bulleted List',
 };
 
 function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
@@ -250,7 +248,7 @@ function InsertTableDialog({
   const [columns, setColumns] = useState('5');
 
   const onClick = () => {
-    activeEditor.execCommand('insertTable', {rows, columns});
+    activeEditor.execCommand('insertTable', {columns, rows});
     onClose();
   };
 
@@ -299,10 +297,10 @@ function BlockOptionsDropdownList({
   toolbarRef,
   setShowBlockOptionsDropDown,
 }: {
-  editor: LexicalEditor,
   blockType: string,
-  toolbarRef: {current: null | HTMLElement},
+  editor: LexicalEditor,
   setShowBlockOptionsDropDown: (boolean) => void,
+  toolbarRef: {current: null | HTMLElement},
 }): React$Node {
   const dropDownRef = useRef<HTMLElement | null>(null);
 
@@ -463,7 +461,7 @@ function BlockOptionsDropdownList({
 }
 
 function Divider(): React$Node {
-  return <div className="divider"></div>;
+  return <div className="divider" />;
 }
 
 function Select({
@@ -472,8 +470,8 @@ function Select({
   options,
   value,
 }: {
-  onChange: (event: {target: {value: string}}) => void,
   className: string,
+  onChange: (event: {target: {value: string}}) => void,
   options: Array<string>,
   value: string,
 }): React$Node {
@@ -574,10 +572,10 @@ export default function ToolbarPlugin(): React$Node {
   useEffect(() => {
     const removeCommandListener = editor.addListener(
       'command',
-      (type, payload, editor) => {
+      (type, payload, _editor) => {
         if (type === 'selectionChange') {
           updateToolbar();
-          setActiveEditor(editor);
+          setActiveEditor(_editor);
         } else if (type === 'canUndo') {
           setCanUndo(payload);
         } else if (type === 'canRedo') {

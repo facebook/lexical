@@ -6,15 +6,15 @@
  *
  */
 
-import {
-  initializeE2E,
-  assertHTML,
-  focusEditor,
-  waitForSelector,
-  click,
-  repeat,
-} from '../utils';
 import {moveToLineEnd, selectAll} from '../keyboardShortcuts';
+import {
+  assertHTML,
+  click,
+  focusEditor,
+  initializeE2E,
+  repeat,
+  waitForSelector,
+} from '../utils';
 
 describe('Regression test #1083', () => {
   initializeE2E((e2e) => {

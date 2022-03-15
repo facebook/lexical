@@ -91,7 +91,6 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
   e2e-linux:
@@ -126,7 +125,6 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
   e2e-windows:
@@ -157,7 +155,6 @@ jobs:
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
-      - run: npm run build
       - run: npm run test-e2e-ci:${{ matrix.browser }}
 
   e2e-collab-mac:
@@ -184,7 +181,6 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
 
   e2e-collab-linux:
@@ -215,7 +211,6 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
 
   e2e-collab-windows:
@@ -242,5 +237,4 @@ jobs:
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
-      - run: npm run build
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}

@@ -7,24 +7,24 @@
  */
 
 import {
-  moveToPrevWord,
-  selectAll,
   moveToLineBeginning,
   moveToLineEnd,
+  moveToPrevWord,
+  selectAll,
 } from '../keyboardShortcuts';
 import {
-  initializeE2E,
-  assertSelection,
   assertHTML,
+  assertSelection,
+  click,
   copyToClipboard,
-  pasteFromClipboard,
   E2E_BROWSER,
+  focus,
+  focusEditor,
+  initializeE2E,
   IS_LINUX,
   IS_WINDOWS,
-  focusEditor,
+  pasteFromClipboard,
   waitForSelector,
-  click,
-  focus,
 } from '../utils';
 
 describe('CopyAndPaste', () => {
@@ -45,10 +45,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [2, 0, 0],
           anchorOffset: 12,
-          focusPath: [2, 0, 0],
+          anchorPath: [2, 0, 0],
           focusOffset: 12,
+          focusPath: [2, 0, 0],
         });
       } else {
         await assertHTML(
@@ -56,10 +56,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 3, 0],
           anchorOffset: 12,
-          focusPath: [0, 3, 0],
+          anchorPath: [0, 3, 0],
           focusOffset: 12,
+          focusPath: [0, 3, 0],
         });
       }
 
@@ -72,17 +72,17 @@ describe('CopyAndPaste', () => {
         );
         if (E2E_BROWSER === 'firefox') {
           await assertSelection(page, {
-            anchorPath: [],
             anchorOffset: 0,
-            focusPath: [],
+            anchorPath: [],
             focusOffset: 3,
+            focusPath: [],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 0,
-            focusPath: [2, 0, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 12,
+            focusPath: [2, 0, 0],
           });
         }
       } else {
@@ -92,17 +92,17 @@ describe('CopyAndPaste', () => {
         );
         if (E2E_BROWSER === 'firefox') {
           await assertSelection(page, {
-            anchorPath: [],
             anchorOffset: 0,
-            focusPath: [],
+            anchorPath: [],
             focusOffset: 1,
+            focusPath: [],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 0,
-            focusPath: [0, 3, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 12,
+            focusPath: [0, 3, 0],
           });
         }
       }
@@ -130,10 +130,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [4, 0, 0],
           anchorOffset: 12,
-          focusPath: [4, 0, 0],
+          anchorPath: [4, 0, 0],
           focusOffset: 12,
+          focusPath: [4, 0, 0],
         });
       } else {
         await assertHTML(
@@ -141,10 +141,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 6, 0],
           anchorOffset: 12,
-          focusPath: [0, 6, 0],
+          anchorPath: [0, 6, 0],
           focusOffset: 12,
+          focusPath: [0, 6, 0],
         });
       }
     });
@@ -165,10 +165,10 @@ describe('CopyAndPaste', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [1, 5, 0],
           anchorOffset: 4,
-          focusPath: [1, 5, 0],
+          anchorPath: [1, 5, 0],
           focusOffset: 4,
+          focusPath: [1, 5, 0],
         });
       } else {
         await assertHTML(
@@ -176,10 +176,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span><br><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 12, 0],
           anchorOffset: 4,
-          focusPath: [0, 12, 0],
+          anchorPath: [0, 12, 0],
           focusOffset: 4,
+          focusPath: [0, 12, 0],
         });
       }
 
@@ -189,33 +189,33 @@ describe('CopyAndPaste', () => {
       if (isRichText) {
         if (E2E_BROWSER === 'firefox') {
           await assertSelection(page, {
-            anchorPath: [],
             anchorOffset: 0,
-            focusPath: [],
+            anchorPath: [],
             focusOffset: 2,
+            focusPath: [],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 0,
-            focusPath: [1, 5, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 4,
+            focusPath: [1, 5, 0],
           });
         }
       } else {
         if (E2E_BROWSER === 'firefox') {
           await assertSelection(page, {
-            anchorPath: [],
             anchorOffset: 0,
-            focusPath: [],
+            anchorPath: [],
             focusOffset: 1,
+            focusPath: [],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 0,
-            focusPath: [0, 12, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 4,
+            focusPath: [0, 12, 0],
           });
         }
       }
@@ -232,10 +232,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 5, 0],
           anchorOffset: 4,
-          focusPath: [1, 5, 0],
+          anchorPath: [1, 5, 0],
           focusOffset: 4,
+          focusPath: [1, 5, 0],
         });
       } else {
         await assertHTML(
@@ -243,10 +243,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span><br><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 12, 0],
           anchorOffset: 4,
-          focusPath: [0, 12, 0],
+          anchorPath: [0, 12, 0],
           focusOffset: 4,
+          focusPath: [0, 12, 0],
         });
       }
 
@@ -262,17 +262,17 @@ describe('CopyAndPaste', () => {
 
       if (isRichText) {
         await assertSelection(page, {
-          anchorPath: [1, 5, 0],
           anchorOffset: 1,
-          focusPath: [0, 2, 0],
+          anchorPath: [1, 5, 0],
           focusOffset: 1,
+          focusPath: [0, 2, 0],
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 12, 0],
           anchorOffset: 1,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 12, 0],
           focusOffset: 1,
+          focusPath: [0, 2, 0],
         });
       }
 
@@ -288,10 +288,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 5, 0],
           anchorOffset: 1,
-          focusPath: [1, 5, 0],
+          anchorPath: [1, 5, 0],
           focusOffset: 1,
+          focusPath: [1, 5, 0],
         });
       } else {
         await assertHTML(
@@ -299,10 +299,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span><br><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 12, 0],
           anchorOffset: 1,
-          focusPath: [0, 12, 0],
+          anchorPath: [0, 12, 0],
           focusOffset: 1,
+          focusPath: [0, 12, 0],
         });
       }
 
@@ -312,42 +312,42 @@ describe('CopyAndPaste', () => {
       if (isRichText) {
         if (E2E_BROWSER === 'firefox') {
           await assertSelection(page, {
-            anchorPath: [],
             anchorOffset: 0,
-            focusPath: [],
+            anchorPath: [],
             focusOffset: 2,
+            focusPath: [],
           });
         } else {
           if (E2E_BROWSER === 'firefox') {
             await assertSelection(page, {
-              anchorPath: [0, 0, 0],
               anchorOffset: 0,
-              focusPath: [1, 5, 0],
+              anchorPath: [0, 0, 0],
               focusOffset: 3,
+              focusPath: [1, 5, 0],
             });
           } else {
             await assertSelection(page, {
-              anchorPath: [0, 0, 0],
               anchorOffset: 0,
-              focusPath: [1, 5, 0],
+              anchorPath: [0, 0, 0],
               focusOffset: 4,
+              focusPath: [1, 5, 0],
             });
           }
         }
       } else {
         if (E2E_BROWSER === 'firefox') {
           await assertSelection(page, {
-            anchorPath: [],
             anchorOffset: 0,
-            focusPath: [],
+            anchorPath: [],
             focusOffset: 1,
+            focusPath: [],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 0,
-            focusPath: [0, 12, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 4,
+            focusPath: [0, 12, 0],
           });
         }
       }
@@ -358,10 +358,10 @@ describe('CopyAndPaste', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
     });
 
@@ -391,10 +391,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 10,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 10,
+          focusPath: [1, 0, 0],
         });
 
         await page.keyboard.down('Shift');
@@ -405,10 +405,10 @@ describe('CopyAndPaste', () => {
         await page.keyboard.up('Shift');
 
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 10,
-          focusPath: [0, 2, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 3,
+          focusPath: [0, 2, 0, 0],
         });
 
         // Copy the partial list item and paragraph
@@ -424,10 +424,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         // Paste
@@ -439,10 +439,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">ee</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 10,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 10,
+          focusPath: [1, 0, 0],
         });
       },
     );
@@ -473,10 +473,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 10,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 10,
+          focusPath: [1, 0, 0],
         });
 
         await page.keyboard.down('Shift');
@@ -487,10 +487,10 @@ describe('CopyAndPaste', () => {
         await page.keyboard.up('Shift');
 
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 10,
-          focusPath: [0, 2, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 3,
+          focusPath: [0, 2, 0, 0],
         });
 
         // Copy the partial list item and paragraph
@@ -511,10 +511,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><br></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1],
           anchorOffset: 0,
-          focusPath: [0, 1],
+          anchorPath: [0, 1],
           focusOffset: 0,
+          focusPath: [0, 1],
         });
 
         await pasteFromClipboard(page, clipboard);
@@ -524,10 +524,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">ee</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some text.</span></p><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some text.</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 10,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 10,
+          focusPath: [1, 0, 0],
         });
       },
     );
@@ -564,10 +564,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 3, 0, 0],
+          anchorPath: [0, 2, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 3, 0, 0],
         });
 
         const clipboard = await copyToClipboard(page);
@@ -579,10 +579,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem"><br></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2],
           anchorOffset: 0,
-          focusPath: [0, 2],
+          anchorPath: [0, 2],
           focusOffset: 0,
+          focusPath: [0, 2],
         });
 
         await pasteFromClipboard(page, clipboard);
@@ -592,10 +592,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 3, 0, 0],
           anchorOffset: 4,
-          focusPath: [0, 3, 0, 0],
+          anchorPath: [0, 3, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 3, 0, 0],
         });
       },
     );
@@ -632,10 +632,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 3, 0, 0],
+          anchorPath: [0, 2, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 3, 0, 0],
         });
 
         const clipboard = await copyToClipboard(page);
@@ -647,10 +647,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 3, 0, 0],
           anchorOffset: 4,
-          focusPath: [0, 3, 0, 0],
+          anchorPath: [0, 3, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 3, 0, 0],
         });
 
         await pasteFromClipboard(page, clipboard);
@@ -660,10 +660,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">fourthree</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="6" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 4, 0, 0],
           anchorOffset: 4,
-          focusPath: [0, 4, 0, 0],
+          anchorPath: [0, 4, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 4, 0, 0],
         });
       },
     );
@@ -709,10 +709,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 3, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 3, 0, 0],
+          anchorPath: [0, 3, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 3, 0, 0],
         });
 
         await pasteFromClipboard(page, clipboard);
@@ -722,10 +722,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foHello</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Worldur</span></p><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li></ul>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 5,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 5,
+          focusPath: [1, 0, 0],
         });
       },
     );
@@ -766,10 +766,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li><li value="6" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">World</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 5,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 5,
+          focusPath: [1, 0, 0],
         });
 
         await pasteFromClipboard(page, clipboard);
@@ -779,10 +779,10 @@ describe('CopyAndPaste', () => {
           '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">four</span></li><li value="5" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">five</span></li><li value="6" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li></ul><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">WorldHello</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">World</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [2, 0, 0],
           anchorOffset: 5,
-          focusPath: [2, 0, 0],
+          anchorPath: [2, 0, 0],
           focusOffset: 5,
+          focusPath: [2, 0, 0],
         });
       },
     );
@@ -840,10 +840,10 @@ describe('CopyAndPaste', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
       },
     );
@@ -866,10 +866,10 @@ describe('CopyAndPaste', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1],
+          anchorPath: [1],
           focusOffset: 0,
+          focusPath: [1],
         });
       },
     );
@@ -894,10 +894,10 @@ describe('CopyAndPaste', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0, 0],
           anchorOffset: 9,
-          focusPath: [0, 0, 0, 0],
+          anchorPath: [0, 0, 0, 0],
           focusOffset: 9,
+          focusPath: [0, 0, 0, 0],
         });
 
         await selectAll(page);
@@ -939,10 +939,10 @@ describe('CopyAndPaste', () => {
       );
 
       await assertSelection(page, {
-        anchorPath: [0, 1, 0, 0],
         anchorOffset: 6,
-        focusPath: [0, 1, 0, 0],
+        anchorPath: [0, 1, 0, 0],
         focusOffset: 6,
+        focusPath: [0, 1, 0, 0],
       });
 
       await waitForSelector(page, '.indent');

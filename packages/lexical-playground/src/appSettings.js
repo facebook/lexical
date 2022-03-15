@@ -22,12 +22,12 @@ export type Settings = {[SettingName]: boolean};
 
 export const DEFAULT_SETTINGS: Settings = {
   disableBeforeInput: false,
-  measureTypingPerf: false,
-  isRichText: true,
-  isCollab: false,
+  isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
-  isAutocomplete: false,
-  showTreeView: true,
+  isCollab: false,
+  isRichText: true,
+  measureTypingPerf: false,
   showNestedEditorTreeView: false,
+  showTreeView: true,
 };

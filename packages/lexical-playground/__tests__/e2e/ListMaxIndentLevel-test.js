@@ -8,11 +8,11 @@
 
 import {selectAll} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
-  focusEditor,
-  waitForSelector,
   click,
+  focusEditor,
+  initializeE2E,
+  waitForSelector,
 } from '../utils';
 
 async function toggleBulletList(page) {

@@ -6,14 +6,13 @@
  *
  */
 
+import {selectCharacters} from '../keyboardShortcuts';
 import {
-  initializeE2E,
-  focusEditor,
   copyToClipboard,
+  focusEditor,
+  initializeE2E,
   pasteFromClipboard,
 } from '../utils';
-
-import {selectCharacters} from '../keyboardShortcuts';
 
 describe('Regression test #1384', () => {
   initializeE2E((e2e) => {

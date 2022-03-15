@@ -93,14 +93,14 @@ const lexicalHelpers = fs
 
 const lexicalReactModules = fs
   .readdirSync(path.resolve('./packages/lexical-react/src'))
-  .map((str) => path.basename(str, '.js'))
+  .map((str) => path.basename(path.basename(str, '.js'), '.jsx'))
   .filter(
     (str) =>
       !str.includes('__tests__') &&
       !str.includes('shared') &&
-      !str.includes('test-utils') &&
-      !str.includes('composer'),
+      !str.includes('test-utils'),
   );
+
 const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
   const external = `@lexical/react/${module}`;
   wwwMappings[external] = module;
@@ -207,7 +207,9 @@ async function build(name, inputFile, outputFile, isProd) {
           return source;
         },
       },
-      nodeResolve(),
+      nodeResolve({
+        extensions: ['.js', '.jsx'],
+      }),
       babel({
         babelHelpers: 'bundled',
         babelrc: false,
@@ -469,7 +471,7 @@ packages.forEach((pkg) => {
   const {name, sourcePath, outputPath, modules} = pkg;
   modules.forEach((module) => {
     const {sourceFileName, outputFileName} = module;
-    const inputFile = path.resolve(path.join(`${sourcePath}${sourceFileName}`));
+    let inputFile = path.resolve(path.join(`${sourcePath}${sourceFileName}`));
     build(
       `${name}${module.name ? '-' + module.name : ''}`,
       inputFile,

@@ -7,43 +7,42 @@
  * @flow strict
  */
 
-import * as React from 'react';
-
-import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
-import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import AutoFormatterPlugin from '@lexical/react/LexicalAutoFormatterPlugin';
+import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
 import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
-import MentionsPlugin from './plugins/MentionsPlugin';
-import EmojisPlugin from './plugins/EmojisPlugin';
-import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
-import AutocompletePlugin from './plugins/AutocompletePlugin';
 import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
-import KeywordsPlugin from './plugins/KeywordsPlugin';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
+import ListPlugin from '@lexical/react/LexicalListPlugin';
+import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import TablesPlugin from '@lexical/react/LexicalTablePlugin';
+import * as React from 'react';
+
+import {createWebsocketProvider} from './collaboration';
+import {useSettings} from './context/SettingsContext';
+import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
-import AutoFormatterPlugin from '@lexical/react/LexicalAutoFormatterPlugin';
+import AutocompletePlugin from './plugins/AutocompletePlugin';
+import AutoFocusPlugin from './plugins/AutoFocusPlugin';
+import AutoLinkPlugin from './plugins/AutoLinkPlugin';
+import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
+import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
+import EmojisPlugin from './plugins/EmojisPlugin';
+import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
+import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
+import ImagesPlugin from './plugins/ImagesPlugin';
+import KeywordsPlugin from './plugins/KeywordsPlugin';
+import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
+import MentionsPlugin from './plugins/MentionsPlugin';
+import PollPlugin from './plugins/PollPlugin';
+import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
+import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import TablesPlugin from '@lexical/react/LexicalTablePlugin';
-import ListPlugin from '@lexical/react/LexicalListPlugin';
-import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
-import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
-import ImagesPlugin from './plugins/ImagesPlugin';
-import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
-import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
-import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
-import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
-import Placeholder from './ui/Placeholder';
-import {createWebsocketProvider} from './collaboration';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ContentEditable from './ui/ContentEditable';
-import AutoLinkPlugin from './plugins/AutoLinkPlugin';
-import PollPlugin from './plugins/PollPlugin';
-import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
-
-import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
-import {useSettings} from './context/SettingsContext';
-import AutoFocusPlugin from './plugins/AutoFocusPlugin';
+import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;

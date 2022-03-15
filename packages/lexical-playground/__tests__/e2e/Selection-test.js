@@ -7,13 +7,13 @@
  */
 
 import {
-  initializeE2E,
-  sleep,
   click,
-  focusEditor,
-  insertImage,
-  evaluate,
   E2E_BROWSER,
+  evaluate,
+  focusEditor,
+  initializeE2E,
+  insertImage,
+  sleep,
 } from '../utils';
 
 describe('Selection', () => {
@@ -27,6 +27,8 @@ describe('Selection', () => {
           return document.activeElement === editorElement;
         });
       const {page} = e2e;
+
+      await focusEditor(page);
       await evaluate(page, () => {
         const editorElement = document.querySelector(
           'div[contenteditable="true"]',
@@ -47,10 +49,10 @@ describe('Selection', () => {
         const hasSelection = async (parentSelector) =>
           await evaluate(
             page,
-            (parentSelector) => {
+            (_parentSelector) => {
               return (
                 document
-                  .querySelector(`${parentSelector} > .tree-view-output pre`)
+                  .querySelector(`${_parentSelector} > .tree-view-output pre`)
                   .__lexicalEditor.getEditorState()._selection !== null
               );
             },

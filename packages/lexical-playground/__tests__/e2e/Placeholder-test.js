@@ -7,12 +7,12 @@
  */
 
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
   focusEditor,
-  textContent,
+  initializeE2E,
   IS_COLLAB,
+  textContent,
 } from '../utils';
 
 describe('Placeholder', () => {
@@ -35,10 +35,10 @@ describe('Placeholder', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
     });
   });

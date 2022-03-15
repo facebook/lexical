@@ -8,9 +8,9 @@
 
 import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   focusEditor,
+  initializeE2E,
   pasteFromClipboard,
 } from '../utils';
 

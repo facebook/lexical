@@ -6,8 +6,8 @@
  *
  */
 
-import {initializeE2E, assertHTML, focusEditor, IS_MAC} from '../utils';
-import {moveToLineBeginning, deleteForward} from '../keyboardShortcuts';
+import {deleteForward, moveToLineBeginning} from '../keyboardShortcuts';
+import {assertHTML, focusEditor, initializeE2E, IS_MAC} from '../utils';
 
 describe('Regression test #1258', () => {
   initializeE2E((e2e) => {

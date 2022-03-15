@@ -6,16 +6,16 @@
  *
  */
 
-import {undo, redo} from '../keyboardShortcuts';
+import {redo, undo} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
   focusEditor,
+  initializeE2E,
+  IS_COLLAB,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
-  IS_COLLAB,
 } from '../utils';
 
 describe('Markdown', () => {
@@ -37,86 +37,88 @@ describe('Markdown', () => {
 
   const triggersAndExpectations = [
     {
-      isBlockTest: false,
-      undoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x__hello__ y</span></p>',
       expectation:
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span data-lexical-text="true"> y</span></p>',
-      markdownText: '__hello__', // bold.
-      stylizedUndoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline">x_</span><span data-lexical-text="true">_hello_</span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">_ y</span></p>',
+      isBlockTest: false,
+      markdownText: '__hello__',
       stylizedExpectation:
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true"> y</span></p>',
+      // bold.
+      stylizedUndoHTML:
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline">x_</span><span data-lexical-text="true">_hello_</span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">_ y</span></p>',
+
+      undoHTML:
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x__hello__ y</span></p>',
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation: '<h1 class="PlaygroundEditorTheme__h1"><br></h1>',
+      isBlockTest: true,
+      markdownText: '# ',
 
-      markdownText: '# ', // H1.
+      undoHTML: '', // H1.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation: '<h2 class="PlaygroundEditorTheme__h2"><br></h2>',
+      isBlockTest: true,
+      markdownText: '## ',
 
-      markdownText: '## ', // H2.
+      undoHTML: '', // H2.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation:
         '<code class="PlaygroundEditorTheme__code" spellcheck="false"><br></code>',
+      isBlockTest: true,
+      markdownText: '``` ',
 
-      markdownText: '``` ', // Code block.
+      undoHTML: '', // Code block.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation:
         '<blockquote class="PlaygroundEditorTheme__quote"><br></blockquote>',
+      isBlockTest: true,
+      markdownText: '> ',
 
-      markdownText: '> ', // Block quote.
+      undoHTML: '', // Block quote.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation:
         '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul>',
+      isBlockTest: true,
+      markdownText: '* ',
 
-      markdownText: '* ', // Unordered.
+      undoHTML: '', // Unordered.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation:
         '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul>',
+      isBlockTest: true,
+      markdownText: '- ',
 
-      markdownText: '- ', // Unordered.
+      undoHTML: '', // Unordered.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation:
         '<ol start="321" class="PlaygroundEditorTheme__ol1"><li value="321" class="PlaygroundEditorTheme__listItem"><br></li></ol>',
+      isBlockTest: true,
+      markdownText: '321. ',
 
-      markdownText: '321. ', // Ordered.
+      undoHTML: '', // Ordered.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation:
         '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      isBlockTest: true,
+      markdownText: '*** ',
 
-      markdownText: '*** ', // HR rule.
+      undoHTML: '', // HR rule.
     },
     {
-      isBlockTest: true,
-      undoHTML: '',
       expectation:
         '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      isBlockTest: true,
+      markdownText: '--- ',
 
-      markdownText: '--- ', // HR Rule.
+      undoHTML: '', // HR Rule.
     },
   ];
 
@@ -143,10 +145,10 @@ describe('Markdown', () => {
               await page.keyboard.press('ArrowLeft');
             });
             await assertSelection(page, {
-              anchorPath: [0, 0, 0],
               anchorOffset: 0,
-              focusPath: [0, 0, 0],
+              anchorPath: [0, 0, 0],
               focusOffset: 0,
+              focusPath: [0, 0, 0],
             });
 
             await repeat(1 + markdownText.length, async () => {
@@ -178,10 +180,10 @@ describe('Markdown', () => {
               await page.keyboard.press('ArrowLeft');
             });
             await assertSelection(page, {
-              anchorPath: [0, 0, 0],
               anchorOffset: 0,
-              focusPath: [0, 0, 0],
+              anchorPath: [0, 0, 0],
               focusOffset: 0,
+              focusPath: [0, 0, 0],
             });
 
             // Select first 2 characters.

@@ -9,14 +9,15 @@
 
 import type {CommandListenerEditorPriority} from 'lexical';
 
-import * as React from 'react';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {exportFile, importFile} from '@lexical/file';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
-import {useCallback, useEffect, useState} from 'react';
-import {$createStickyNode} from '../nodes/StickyNode';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getRoot} from 'lexical';
+import * as React from 'react';
+import {useCallback, useEffect, useState} from 'react';
+
+import {$createStickyNode} from '../nodes/StickyNode';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
-import {importFile, exportFile} from '@lexical/file';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

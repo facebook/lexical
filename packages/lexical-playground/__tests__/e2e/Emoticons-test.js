@@ -6,15 +6,15 @@
  *
  */
 
+import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  repeat,
   E2E_BROWSER,
   focusEditor,
+  initializeE2E,
+  repeat,
 } from '../utils';
-import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts';
 
 describe('Emoticons', () => {
   initializeE2E((e2e) => {
@@ -28,10 +28,10 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is an emoji </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 1, 0, 0],
+        anchorPath: [0, 1, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 1, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -40,36 +40,36 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is an emoji </span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 17,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 17,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.type(':)');
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0, 0],
+          anchorPath: [0, 1, 0, 0],
           focusOffset: 0,
+          focusPath: [0, 1, 0, 0],
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 17,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 17,
+          focusPath: [0, 0, 0],
         });
       }
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
-        anchorPath: [0, 1, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 1, 0, 0],
+        anchorPath: [0, 1, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 1, 0, 0],
       });
 
       await page.keyboard.press('ArrowLeft');
@@ -79,10 +79,10 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is an emoji </span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 17,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 17,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -96,10 +96,10 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 6, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 6, 0, 0],
+        anchorPath: [0, 6, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 6, 0, 0],
       });
 
       await page.keyboard.down('Shift');
@@ -110,10 +110,10 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 8,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 8,
+        focusPath: [0],
       });
 
       await page.keyboard.type(':) :) <3 :(');
@@ -122,10 +122,10 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 14, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 14, 0, 0],
+        anchorPath: [0, 14, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 14, 0, 0],
       });
 
       await page.keyboard.press('Enter');
@@ -135,10 +135,10 @@ describe('Emoticons', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1],
+          anchorPath: [1],
           focusOffset: 0,
+          focusPath: [1],
         });
       } else {
         await assertHTML(
@@ -146,10 +146,10 @@ describe('Emoticons', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 16,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 16,
+          focusPath: [0],
         });
       }
 
@@ -160,10 +160,10 @@ describe('Emoticons', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 6, 0, 0],
           anchorOffset: 2,
-          focusPath: [1, 6, 0, 0],
+          anchorPath: [1, 6, 0, 0],
           focusOffset: 2,
+          focusPath: [1, 6, 0, 0],
         });
       } else {
         await assertHTML(
@@ -171,10 +171,10 @@ describe('Emoticons', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 22, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 22, 0, 0],
+          anchorPath: [0, 22, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 22, 0, 0],
         });
       }
 
@@ -189,87 +189,87 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       await page.keyboard.type(':):):):):)');
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
+          anchorOffset: 0,
           anchorPath: [0, 4, 0, 0],
-          anchorOffset: 0,
+          focusOffset: 0,
           focusPath: [0, 4, 0, 0],
-          focusOffset: 0,
         });
       } else {
         await assertSelection(page, {
+          anchorOffset: 2,
           anchorPath: [0, 3, 0, 0],
-          anchorOffset: 2,
-          focusPath: [0, 3, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 3, 0, 0],
         });
       }
 
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
+          anchorOffset: 0,
           anchorPath: [0, 3, 0, 0],
-          anchorOffset: 0,
+          focusOffset: 0,
           focusPath: [0, 3, 0, 0],
-          focusOffset: 0,
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 2, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 2, 0, 0],
+          anchorPath: [0, 2, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 2, 0, 0],
         });
       }
 
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 2, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 2, 0, 0],
+          anchorPath: [0, 2, 0, 0],
           focusOffset: 0,
+          focusPath: [0, 2, 0, 0],
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 1, 0, 0],
+          anchorPath: [0, 1, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 1, 0, 0],
         });
       }
 
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0, 0],
+          anchorPath: [0, 1, 0, 0],
           focusOffset: 0,
+          focusPath: [0, 1, 0, 0],
         });
       } else {
         await assertSelection(page, {
+          anchorOffset: 2,
           anchorPath: [0, 0, 0, 0],
-          anchorOffset: 2,
-          focusPath: [0, 0, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 0, 0, 0],
         });
       }
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0, 0],
+        anchorPath: [0, 0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0, 0],
       });
 
       await page.keyboard.type('Hey');
@@ -278,10 +278,10 @@ describe('Emoticons', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hey</span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 3,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 3,
+        focusPath: [0, 0, 0],
       });
     });
   });

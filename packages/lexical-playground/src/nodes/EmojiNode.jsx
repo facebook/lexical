@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {NodeKey, EditorConfig, LexicalNode} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {TextNode} from 'lexical';
 

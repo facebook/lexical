@@ -7,16 +7,18 @@
  * @flow strict
  */
 
-import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import LexicalComposer from '@lexical/react/LexicalComposer';
 import * as React from 'react';
+
+import {SettingsContext, useSettings} from './context/SettingsContext';
+import {SharedHistoryContext} from './context/SharedHistoryContext';
 import Editor from './Editor';
-import Settings from './Settings';
+import logo from './images/logo.svg';
+import PlaygroundNodes from './nodes/PlaygroundNodes';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
-import {SharedHistoryContext} from './context/SharedHistoryContext';
-import {SettingsContext, useSettings} from './context/SettingsContext';
-import LexicalComposer from '@lexical/react/LexicalComposer';
-import PlaygroundNodes from './nodes/PlaygroundNodes';
+import Settings from './Settings';
+import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 
 function App(): React$Node {
   const {settings} = useSettings();
@@ -24,18 +26,18 @@ function App(): React$Node {
 
   const initialConfig = {
     namespace: 'PlaygroundEditor',
-    theme: PlaygroundEditorTheme,
     nodes: [...PlaygroundNodes],
     onError: (error) => {
       throw error;
     },
+    theme: PlaygroundEditorTheme,
   };
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <SharedHistoryContext>
         <header>
-          <img src="logo.svg" alt="Lexical Logo" />
+          <img src={logo} alt="Lexical Logo" />
         </header>
         <div className="editor-shell">
           <Editor />

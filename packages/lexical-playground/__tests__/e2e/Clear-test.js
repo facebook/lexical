@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E, assertHTML, focusEditor, click} from '../utils';
+import {assertHTML, click, focusEditor, initializeE2E} from '../utils';
 
 describe('Clear', () => {
   initializeE2E((e2e) => {

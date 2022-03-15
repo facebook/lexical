@@ -6,17 +6,17 @@
  *
  */
 
+import {selectAll} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
-  focusEditor,
   click,
-  repeat,
+  focusEditor,
+  initializeE2E,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
+  repeat,
   sleep,
 } from '../utils';
-import {selectAll} from '../keyboardShortcuts';
 
 describe('File', () => {
   initializeE2E((e2e) => {

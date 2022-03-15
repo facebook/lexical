@@ -8,21 +8,18 @@
  */
 
 // $FlowFixMe: node modules are ignored by flow
-import Excalidraw from '@excalidraw/excalidraw';
+import './ExcalidrawModal.css';
 
+// $FlowFixMe: Flow doesn't have types for Excalidraw
+import Excalidraw from '@excalidraw/excalidraw';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
-import './ExcalidrawModal.css';
 
 type ExcalidrawElementFragment = {
   isDeleted?: boolean,
 };
 
 type Props = {
-  /**
-   * Callback when the save button is clicked
-   */
-  onSave: ($ReadOnlyArray<ExcalidrawElementFragment>) => mixed,
   /**
    * The initial set of elements to draw into the scene
    */
@@ -32,13 +29,17 @@ type Props = {
    */
   isShown?: boolean,
   /**
+   * Completely remove Excalidraw component
+   */
+  onDelete: () => boolean,
+  /**
    * Handle modal closing
    */
   onHide: () => mixed,
   /**
-   * Completely remove Excalidraw component
+   * Callback when the save button is clicked
    */
-  onDelete: () => boolean,
+  onSave: ($ReadOnlyArray<ExcalidrawElementFragment>) => mixed,
 };
 
 const DEFAULT_INITIAL_ELEMENTS = [];
@@ -86,8 +87,8 @@ export default function ExcalidrawModal({
         <Excalidraw
           onChange={onChange}
           initialData={{
-            elements: initialElements,
             appState: {isLoading: false},
+            elements: initialElements,
           }}
         />
         <div className="ExcalidrawModal__actions">

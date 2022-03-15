@@ -8,14 +8,14 @@
 
 import {selectAll} from '../keyboardShortcuts';
 import {
-  initializeE2E,
-  repeat,
-  assertSelection,
   assertHTML,
+  assertSelection,
+  E2E_BROWSER,
+  focusEditor,
+  initializeE2E,
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
-  focusEditor,
-  E2E_BROWSER,
+  repeat,
 } from '../utils';
 
 describe('TextEntry', () => {
@@ -31,10 +31,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello Lexical</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: targetText.length,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: targetText.length,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -55,10 +55,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Foo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 3,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 3,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -79,10 +79,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true"> </span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 1,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 1,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -97,17 +97,17 @@ describe('TextEntry', () => {
       await repeat(6, async () => await page.keyboard.down('ArrowLeft'));
       if (isRichText) {
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 22,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 16,
+          focusPath: [1, 0, 0],
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
           anchorOffset: 22,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 2, 0],
           focusOffset: 16,
+          focusPath: [0, 2, 0],
         });
       }
 
@@ -121,10 +121,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello World.</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 1, 0, 0],
           anchorOffset: 2,
-          focusPath: [1, 1, 0, 0],
+          anchorPath: [1, 1, 0, 0],
           focusOffset: 2,
+          focusPath: [1, 1, 0, 0],
         });
       } else {
         await assertHTML(
@@ -132,10 +132,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello World.</span><br><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 3, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 3, 0, 0],
+          anchorPath: [0, 3, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 3, 0, 0],
         });
       }
     });
@@ -156,10 +156,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Delete some of these characte</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: backspacedText.length,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: backspacedText.length,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -180,10 +180,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello lolbar.</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 9,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 9,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -206,10 +206,10 @@ describe('TextEntry', () => {
       await keyUpCtrlOrAlt(page);
       // Ensure the selection is now covering the whole word and period.
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: text.length,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: backspacedText.length,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -219,10 +219,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Delete some of these </span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: backspacedText.length,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: backspacedText.length,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -243,10 +243,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1],
+          anchorPath: [1],
           focusOffset: 0,
+          focusPath: [1],
         });
       } else {
         await assertHTML(
@@ -254,10 +254,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span><br><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 2,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 2,
+          focusPath: [0],
         });
       }
 
@@ -271,10 +271,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
       } else {
         await assertHTML(
@@ -282,10 +282,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span><br><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 0,
+          focusPath: [0, 0, 0],
         });
       }
     });
@@ -307,10 +307,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 3,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 3,
+        focusPath: [0],
       });
 
       // Move to top
@@ -318,10 +318,10 @@ describe('TextEntry', () => {
       await page.keyboard.press('ArrowUp');
       await page.keyboard.press('ArrowUp');
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       // Add paragraph
@@ -333,10 +333,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1],
+          anchorPath: [1],
           focusOffset: 0,
+          focusPath: [1],
         });
       } else {
         await assertHTML(
@@ -344,10 +344,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br><br><br><br><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 1,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 1,
+          focusPath: [0],
         });
       }
 
@@ -367,10 +367,10 @@ describe('TextEntry', () => {
       }
 
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -387,10 +387,10 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1],
+          anchorPath: [1],
           focusOffset: 0,
+          focusPath: [1],
         });
       } else {
         await assertHTML(
@@ -398,44 +398,44 @@ describe('TextEntry', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 1,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 1,
+          focusPath: [0],
         });
       }
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       await page.keyboard.press('ArrowRight');
       if (isRichText) {
         await assertSelection(page, {
-          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1],
+          anchorPath: [1],
           focusOffset: 0,
+          focusPath: [1],
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 1,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 1,
+          focusPath: [0],
         });
       }
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       // Remove paragraph
@@ -445,10 +445,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       // Add line break
@@ -460,10 +460,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 1,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 1,
+        focusPath: [0],
       });
 
       await page.keyboard.press('ArrowLeft');
@@ -472,10 +472,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       // Remove line break
@@ -485,10 +485,10 @@ describe('TextEntry', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
     });
   });

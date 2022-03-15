@@ -6,16 +6,16 @@
  *
  */
 
+import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  repeat,
   E2E_BROWSER,
   focusEditor,
+  initializeE2E,
+  repeat,
   waitForSelector,
 } from '../utils';
-import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
 describe('Hashtags', () => {
   initializeE2E((e2e) => {
@@ -32,10 +32,10 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 5,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -45,10 +45,10 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolonce</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 8,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 8,
+        focusPath: [0, 0, 0],
       });
 
       await repeat(10, async () => {
@@ -60,10 +60,10 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">yolonce</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -80,20 +80,20 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#hello</span><span data-lexical-text="true"> world</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 6,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 6,
+        focusPath: [0, 1, 0],
       });
 
       await repeat(5, async () => {
         await page.keyboard.press('ArrowLeft');
       });
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 1,
+        focusPath: [0, 1, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -102,10 +102,10 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#helloworld</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 6,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 6,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Space');
@@ -114,26 +114,26 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#hello</span><span data-lexical-text="true"> world</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 1,
+        focusPath: [0, 1, 0],
       });
 
       await page.keyboard.press('ArrowLeft');
       if (E2E_BROWSER === 'firefox') {
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 0,
+          focusPath: [0, 1, 0],
         });
       } else {
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
       }
 
@@ -143,10 +143,10 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#helloworld</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 6,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 6,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -165,19 +165,19 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#hello</span><span data-lexical-text="true"> world foo </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#lol</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#lol</span><span data-lexical-text="true"> asdasd </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#lol</span><span data-lexical-text="true"> test this </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#asdas</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#asdas</span><span data-lexical-text="true"> lasdasd asdasd</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 11, 0],
         anchorOffset: 15,
-        focusPath: [0, 11, 0],
+        anchorPath: [0, 11, 0],
         focusOffset: 15,
+        focusPath: [0, 11, 0],
       });
 
       await moveToEditorBeginning(page);
 
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await repeat(20, async () => {
@@ -188,10 +188,10 @@ describe('Hashtags', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
     });
   });

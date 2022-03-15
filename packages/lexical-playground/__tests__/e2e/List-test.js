@@ -7,21 +7,21 @@
  */
 
 import {
-  selectAll,
   moveLeft,
-  selectCharacters,
   moveToParagraphEnd,
-  undo,
   redo,
+  selectAll,
+  selectCharacters,
+  undo,
 } from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
-  focusEditor,
-  waitForSelector,
-  click,
   clearEditor,
+  click,
+  focusEditor,
+  initializeE2E,
   IS_COLLAB,
+  waitForSelector,
 } from '../utils';
 
 async function toggleBulletList(page) {

@@ -8,17 +8,17 @@
 
 import {moveToLineBeginning} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
+  click,
+  E2E_BROWSER,
+  focusEditor,
+  initializeE2E,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
-  E2E_BROWSER,
-  focusEditor,
-  waitForSelector,
   selectOption,
-  click,
+  waitForSelector,
 } from '../utils';
 
 describe('TextFormatting', () => {
@@ -40,10 +40,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true"> World</strong></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 6,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 6,
+          focusPath: [0, 1, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -55,10 +55,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true"> World</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
           anchorOffset: 1,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 2, 0],
           focusOffset: 1,
+          focusPath: [0, 2, 0],
         });
       },
     );
@@ -80,10 +80,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true"> World</em></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 6,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 6,
+          focusPath: [0, 1, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -95,10 +95,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true"> World</em><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
           anchorOffset: 1,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 2, 0],
           focusOffset: 1,
+          focusPath: [0, 2, 0],
         });
       },
     );
@@ -118,10 +118,10 @@ describe('TextFormatting', () => {
         });
         await page.keyboard.up('Shift');
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -132,10 +132,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">world</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -146,10 +146,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
       },
     );
@@ -203,10 +203,10 @@ describe('TextFormatting', () => {
         });
         await page.keyboard.up('Shift');
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -217,10 +217,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">world</em><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -231,10 +231,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
       },
     );
@@ -254,10 +254,10 @@ describe('TextFormatting', () => {
         });
         await page.keyboard.up('Shift');
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -268,10 +268,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -282,10 +282,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -300,10 +300,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
 
         await waitForSelector(page, '.strikethrough');
@@ -314,10 +314,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">world</span><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
       },
     );
@@ -338,10 +338,10 @@ describe('TextFormatting', () => {
         await page.keyboard.up('Shift');
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
 
         await waitForSelector(page, '.font-size');
@@ -353,10 +353,10 @@ describe('TextFormatting', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
       },
     );
@@ -377,10 +377,10 @@ describe('TextFormatting', () => {
         await page.keyboard.up('Shift');
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
 
         await waitForSelector(page, '.font-size');
@@ -392,10 +392,10 @@ describe('TextFormatting', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
 
         await waitForSelector(page, '.font-family');
@@ -407,10 +407,10 @@ describe('TextFormatting', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
 
         await waitForSelector(page, '.font-size');
@@ -422,10 +422,10 @@ describe('TextFormatting', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
       },
     );
@@ -445,10 +445,10 @@ describe('TextFormatting', () => {
         });
         await page.keyboard.up('Shift');
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -459,10 +459,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">world</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 5,
+          focusPath: [0, 1, 0],
         });
 
         await page.keyboard.press('ArrowLeft');
@@ -472,10 +472,10 @@ describe('TextFormatting', () => {
         await page.keyboard.press('ArrowRight');
         await page.keyboard.up('Shift');
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 1,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 3,
+          focusPath: [0, 1, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -486,10 +486,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">w</strong><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic" data-lexical-text="true">or</strong><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">ld</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
           anchorOffset: 0,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 2, 0],
           focusOffset: 2,
+          focusPath: [0, 2, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -500,10 +500,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">w</strong><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">or</em><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">ld</strong><span data-lexical-text="true">!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
           anchorOffset: 0,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 2, 0],
           focusOffset: 2,
+          focusPath: [0, 2, 0],
         });
 
         await page.keyboard.press('ArrowLeft');
@@ -514,10 +514,10 @@ describe('TextFormatting', () => {
         });
         await page.keyboard.up('Shift');
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 0,
-          focusPath: [0, 3, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 2,
+          focusPath: [0, 3, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -528,10 +528,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello w</span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">or</em><span data-lexical-text="true">ld!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 2, 0],
         });
 
         await keyDownCtrlOrMeta(page);
@@ -544,17 +544,17 @@ describe('TextFormatting', () => {
 
         if (E2E_BROWSER === 'webkit') {
           await assertSelection(page, {
-            anchorPath: [0, 1, 0],
             anchorOffset: 0,
-            focusPath: [0, 1, 0],
+            anchorPath: [0, 1, 0],
             focusOffset: 5,
+            focusPath: [0, 1, 0],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 6,
-            focusPath: [0, 1, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 5,
+            focusPath: [0, 1, 0],
           });
         }
 
@@ -566,10 +566,10 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
       },
     );
@@ -619,10 +619,10 @@ describe('TextFormatting', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 6, 0],
           anchorOffset: 3,
-          focusPath: [0, 6, 0],
+          anchorPath: [0, 6, 0],
           focusOffset: 3,
+          focusPath: [0, 6, 0],
         });
 
         await page.keyboard.press('ArrowUp');
@@ -646,10 +646,10 @@ describe('TextFormatting', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 3,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 3,
+          focusPath: [0, 0, 0],
         });
       },
     );

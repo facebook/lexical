@@ -7,13 +7,16 @@
  */
 
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  focusEditor,
-  waitForSelector,
   click,
+  E2E_PORT,
+  focusEditor,
+  initializeE2E,
+  waitForSelector,
 } from '../utils';
+
+const IMAGE_URL = E2E_PORT === 3000 ? '/src/images/yellow-flower.jpg' : '/assets/yellow-flower.bf6d0400.jpg';
 
 describe('Images', () => {
   initializeE2E((e2e) => {
@@ -33,30 +36,30 @@ describe('Images', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><br></p>',
+          `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 1,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 1,
+          focusPath: [0],
         });
 
         await focusEditor(page);
         await page.keyboard.press('ArrowLeft');
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await page.keyboard.press('ArrowRight');
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 1,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 1,
+          focusPath: [0],
         });
 
         await page.keyboard.press('ArrowRight');
@@ -67,10 +70,10 @@ describe('Images', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await click(page, 'button .image');
@@ -81,7 +84,7 @@ describe('Images', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;" class="focused"><button class="image-caption-button">Add Caption</button><div class="image-resizer-ne"></div><div class="image-resizer-se"></div><div class="image-resizer-sw"></div><div class="image-resizer-nw"></div></span><br></p>',
+          `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;" class="focused"><button class="image-caption-button">Add Caption</button><div class="image-resizer-ne"></div><div class="image-resizer-se"></div><div class="image-resizer-sw"></div><div class="image-resizer-nw"></div></span><br></p>`,
           true,
         );
 
@@ -102,13 +105,13 @@ describe('Images', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><br></p>',
+          `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 1,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 1,
+          focusPath: [0],
         });
 
         await page.keyboard.press('ArrowLeft');
@@ -120,10 +123,10 @@ describe('Images', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
       },
     );
@@ -150,25 +153,25 @@ describe('Images', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><br></p>',
+          `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await page.keyboard.press('Delete');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><br></p>',
+          `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await page.keyboard.press('Delete');
@@ -177,10 +180,10 @@ describe('Images', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await page.keyboard.type('Test');
@@ -193,24 +196,24 @@ describe('Images', () => {
 
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><br></p>',
+          `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 4,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 0, 0],
         });
         await page.keyboard.press('Delete');
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="/static/media/yellow-flower.95d22651.jpg" alt="Yellow flower in tilt shift lens" style="width: inherit; height: inherit; max-width: 500px;"></span><br></p>',
+          `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 4,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 0, 0],
         });
       },
     );

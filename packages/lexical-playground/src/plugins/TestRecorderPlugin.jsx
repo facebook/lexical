@@ -9,13 +9,12 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import * as React from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-
-import {$createTextNode, $getRoot, $createParagraphNode} from 'lexical';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
 import {IS_APPLE} from 'shared/environment';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 const copy = (text: string | null) => {
   const textArea = document.createElement('textarea');
@@ -35,7 +34,7 @@ const copy = (text: string | null) => {
 };
 
 const download = (filename: string, text: string | null) => {
-  var a = document.createElement('a');
+  const a = document.createElement('a');
   a.setAttribute(
     'href',
     'data:text/plain;charset=utf-8,' + encodeURIComponent(text || ''),
@@ -108,7 +107,7 @@ function sanitizeSelection(selection) {
   if (focusOffset !== 0) {
     focusOffset--;
   }
-  return {anchorNode, focusNode, anchorOffset, focusOffset};
+  return {anchorNode, anchorOffset, focusNode, focusOffset};
 }
 
 function getPathFromNodeToEditor(node: Node, rootElement) {
@@ -224,7 +223,7 @@ ${steps.map(formatStep).join(`\n`)}
           }
         }
         // could not group, just append a new one
-        return [...currentSteps, {name, value, count: 1}];
+        return [...currentSteps, {count: 1, name, value}];
       });
     },
     [steps, setSteps],
@@ -377,12 +376,12 @@ ${steps.map(formatStep).join(`\n`)}
       getCurrentEditor().getRootElement(),
     );
     pushStep('snapshot', {
-      anchorPath,
       anchorNode,
       anchorOffset,
-      focusPath,
+      anchorPath,
       focusNode,
       focusOffset,
+      focusPath,
     });
   }, [pushStep, isRecording, getCurrentEditor]);
 

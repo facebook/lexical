@@ -43,7 +43,7 @@ module.exports = {
         '^@lexical/react/LexicalComposerContext$':
           '<rootDir>/packages/lexical-react/src/LexicalComposerContext.js',
         '^@lexical/react/LexicalContentEditable$':
-          '<rootDir>/packages/lexical-react/src/LexicalContentEditable.js',
+          '<rootDir>/packages/lexical-react/src/LexicalContentEditable.jsx',
         '^@lexical/react/LexicalLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.js',
         '^@lexical/react/LexicalListPlugin$':

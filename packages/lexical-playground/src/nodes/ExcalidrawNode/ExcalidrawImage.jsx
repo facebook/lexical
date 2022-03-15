@@ -16,33 +16,33 @@ type ImageType = 'svg' | 'canvas';
 
 type Props = {
   /**
-   * The Excalidraw elements to be rendered as an image
+   * Configures the export setting for SVG/Canvas
    */
-  elements: $ReadOnlyArray<{...}>,
-  /**
-   * The type of image to be rendered
-   */
-  imageType?: ImageType,
+  appState?: mixed,
   /**
    * The css class applied to image to be rendered
    */
   className?: string,
   /**
+   * The Excalidraw elements to be rendered as an image
+   */
+  elements: $ReadOnlyArray<{...}>,
+  /**
    * The height of the image to be rendered
    */
   height?: number | null,
   /**
-   * The width of the image to be rendered
+   * The type of image to be rendered
    */
-  width?: number | null,
-  /**
-   * Configures the export setting for SVG/Canvas
-   */
-  appState?: mixed,
+  imageType?: ImageType,
   /**
    * The css class applied to the root element of this component
    */
   rootClassName?: string | null,
+  /**
+   * The width of the image to be rendered
+   */
+  width?: number | null,
 };
 
 // exportToSvg has fonts from excalidraw.com
@@ -71,8 +71,8 @@ export default function ExcalidrawImage({
   useEffect(() => {
     const setContent = async () => {
       const svg: Element = await exportToSvg({
-        elements,
         appState,
+        elements,
       });
       removeStyleFromSvg_HACK(svg);
       setSvg(svg);

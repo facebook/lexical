@@ -8,12 +8,15 @@
  */
 
 import type {Settings as AppSettings} from '../../src/appSettings';
+
+import {toMatchInlineSnapshot} from 'jest-snapshot';
 import {chromium, firefox, webkit} from 'playwright';
+import prettier from 'prettier';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
-import prettier from 'prettier';
-import {toMatchInlineSnapshot} from 'jest-snapshot';
+
 import {selectAll} from '../keyboardShortcuts';
+
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
@@ -33,7 +36,7 @@ type Config = $ReadOnly<{
 
 async function attemptToLaunchBrowser(attempt = 0) {
   try {
-    return await {chromium, webkit, firefox}[E2E_BROWSER].launch({
+    return await {chromium, firefox, webkit}[E2E_BROWSER].launch({
       headless: !E2E_DEBUG,
     });
   } catch (e) {
@@ -65,25 +68,26 @@ export function initializeE2E(runTests, config: Config = {}) {
     appSettings.showNestedEditorTreeView = true;
   }
   const e2e = {
-    isRichText: appSettings.isRichText,
-    isPlainText: !appSettings.isRichText,
-    isCollab: IS_COLLAB,
     browser: null,
+    isCollab: IS_COLLAB,
+    isPlainText: !appSettings.isRichText,
+    isRichText: appSettings.isRichText,
+    async logScreenshot() {
+      const currentTest = expect.getState().currentTestName;
+      const buffer = await e2e.page.screenshot();
+      // eslint-disable-next-line no-console
+      console.log(
+        `Screenshot "${currentTest}": \n\n` +
+          buffer.toString('base64') +
+          '\n\n',
+      );
+    },
     page: null,
     async saveScreenshot() {
       const currentTest = expect.getState().currentTestName;
       const path =
         'e2e-screenshots/' + currentTest.replace(/\s/g, '_') + '.png';
       await e2e.page.screenshot({path});
-    },
-    async logScreenshot() {
-      const currentTest = expect.getState().currentTestName;
-      const buffer = await e2e.page.screenshot();
-      console.log(
-        `Screenshot "${currentTest}": \n\n` +
-          buffer.toString('base64') +
-          '\n\n',
-      );
     },
   };
 
@@ -148,6 +152,7 @@ export function initializeE2E(runTests, config: Config = {}) {
               return await attempt();
             } else {
               // fail for real + log screenshot
+              // eslint-disable-next-line no-console
               console.log(`Flaky Test: ${description}:`);
               await e2e.saveScreenshot();
               throw err;
@@ -206,6 +211,7 @@ async function assertHTMLOnPageOrFrame(pageOrFrame, expectedHtml) {
   // Assert HTML of the editor matches the given html
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
   if (expectedHtml === '') {
+    // eslint-disable-next-line no-console
     console.log('Output HTML:\n\n' + actualHtml);
     throw new Error('Empty HTML assertion!');
   }
@@ -273,10 +279,10 @@ async function assertSelectionOnPageOrFrame(page, expected) {
       window.getSelection();
 
     return {
-      anchorPath: getPathFromNode(anchorNode),
       anchorOffset,
-      focusPath: getPathFromNode(focusNode),
+      anchorPath: getPathFromNode(anchorNode),
       focusOffset,
+      focusPath: getPathFromNode(focusNode),
     };
   }, expected);
   expect(selection.anchorPath).toEqual(expected.anchorPath);
@@ -384,7 +390,10 @@ export async function copyToClipboard(page) {
 async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
   const canUseBeforeInput = supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
-    async ({clipboardData, canUseBeforeInput}) => {
+    async ({
+      clipboardData: _clipboardData,
+      canUseBeforeInput: _canUseBeforeInput,
+    }) => {
       const editor = document.querySelector('div[contenteditable="true"]');
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
@@ -393,13 +402,13 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
       Object.defineProperty(pasteEvent, 'clipboardData', {
         value: {
           getData(type, value) {
-            return clipboardData[type];
+            return _clipboardData[type];
           },
         },
       });
       editor.dispatchEvent(pasteEvent);
       if (!pasteEvent.defaultPrevented) {
-        if (canUseBeforeInput) {
+        if (_canUseBeforeInput) {
           const inputEvent = new InputEvent('beforeinput', {
             bubbles: true,
             cancelable: true,
@@ -410,7 +419,7 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
           Object.defineProperty(inputEvent, 'dataTransfer', {
             value: {
               getData(type, value) {
-                return clipboardData[type];
+                return _clipboardData[type];
               },
             },
           });
@@ -418,7 +427,7 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
         }
       }
     },
-    {clipboardData, canUseBeforeInput},
+    {canUseBeforeInput, clipboardData},
   );
 }
 
@@ -568,17 +577,17 @@ expect.extend({
       parentSelector,
     } = isElement(pageOrOptions)
       ? {
-          page: pageOrOptions,
-          ignoreSecondFrame: false,
           ignoreClasses: true,
           ignoreInlineStyles: true,
+          ignoreSecondFrame: false,
+          page: pageOrOptions,
           parentSelector: '.editor-shell',
         }
       : {
-          page: pageOrOptions.page,
-          ignoreSecondFrame: pageOrOptions.ignoreSecondFrame === true,
           ignoreClasses: pageOrOptions.ignoreClasses !== false,
           ignoreInlineStyles: pageOrOptions.ignoreInlineStyles !== false,
+          ignoreSecondFrame: pageOrOptions.ignoreSecondFrame === true,
+          page: pageOrOptions.page,
           parentSelector: pageOrOptions.parentSelector || '.editor-shell',
         };
 
@@ -664,18 +673,18 @@ class PrettyHTML {
 
     return prettier
       .format(html, {
-        parser: 'html',
         htmlWhitespaceSensitivity: 'ignore',
+        parser: 'html',
       })
       .trim();
   }
 }
 
 expect.addSnapshotSerializer({
-  test: (value) => {
-    return value instanceof PrettyHTML;
-  },
   print: (value) => {
     return value.prettify();
+  },
+  test: (value) => {
+    return value instanceof PrettyHTML;
   },
 });

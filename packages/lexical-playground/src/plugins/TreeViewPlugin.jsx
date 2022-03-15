@@ -7,9 +7,9 @@
  * @flow strict
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalTreeView from '@lexical/react/LexicalTreeView';
 import * as React from 'react';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 export default function TreeViewPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();

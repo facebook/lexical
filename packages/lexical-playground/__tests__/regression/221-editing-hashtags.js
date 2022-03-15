@@ -7,10 +7,10 @@
  */
 
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
   focusEditor,
+  initializeE2E,
   waitForSelector,
 } from '../utils';
 
@@ -27,10 +27,10 @@ describe('Regression test #221', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 5,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('ArrowLeft');
@@ -41,10 +41,10 @@ describe('Regression test #221', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yo</span><span data-lexical-text="true"> lo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 1,
+        focusPath: [0, 1, 0],
       });
     });
 
@@ -59,10 +59,10 @@ describe('Regression test #221', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span><span data-lexical-text="true"> </span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 1,
+        focusPath: [0, 1, 0],
       });
 
       await page.keyboard.press('ArrowLeft');
@@ -72,10 +72,10 @@ describe('Regression test #221', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 5,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -90,10 +90,10 @@ describe('Regression test #221', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span><span data-lexical-text="true"> </span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 1,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 1,
+        focusPath: [0, 1, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -103,10 +103,10 @@ describe('Regression test #221', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yol</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
     });
   });

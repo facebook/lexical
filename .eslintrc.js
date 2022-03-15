@@ -17,7 +17,11 @@ module.exports = {
     {
       // We apply these settings to the source files that get compiled.
       // They can use all features including JSX (but shouldn't use `var`).
-      files: ['packages/*/src/**/*.js', 'packages/*/src/**/*.jsx'],
+      files: [
+        'packages/*/src/**/*.js',
+        'packages/*/__tests__/**/*.js',
+        'packages/*/src/**/*.jsx',
+      ],
       parser: 'babel-eslint',
       parserOptions: {
         ecmaVersion: 8,

@@ -6,17 +6,17 @@
  *
  */
 
+import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  IS_WINDOWS,
   E2E_BROWSER,
+  focusEditor,
+  initializeE2E,
+  IS_WINDOWS,
   repeat,
   waitForSelector,
-  focusEditor,
 } from '../utils';
-import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
 
 describe('Mentions', () => {
   initializeE2E((e2e) => {
@@ -26,10 +26,10 @@ describe('Mentions', () => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -44,36 +44,36 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 14,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 14,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '.mention');
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 13,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 13,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 14,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 14,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 14,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 14,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -83,10 +83,10 @@ describe('Mentions', () => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -101,20 +101,20 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 14,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 14,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '.mention');
 
       await page.keyboard.press('ArrowLeft');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 13,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 13,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Delete');
@@ -123,10 +123,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Delete');
@@ -135,10 +135,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
     });
 
@@ -148,10 +148,10 @@ describe('Mentions', () => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -166,10 +166,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 14,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 14,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '.mention');
@@ -180,10 +180,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -192,10 +192,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       await page.keyboard.type('abc  def');
@@ -209,10 +209,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc  def</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.type('Luke');
@@ -229,10 +229,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> def</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 14,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 14,
+        focusPath: [0, 1, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -241,10 +241,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span data-lexical-text="true"> def</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 4,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 4,
+        focusPath: [0, 1, 0],
       });
     });
 
@@ -254,10 +254,10 @@ describe('Mentions', () => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -297,19 +297,19 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 6, 0],
         anchorOffset: 14,
-        focusPath: [0, 6, 0],
+        anchorPath: [0, 6, 0],
         focusOffset: 14,
+        focusPath: [0, 6, 0],
       });
 
       await moveToEditorBeginning(page);
 
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await deleteNextWord(page);
@@ -326,10 +326,10 @@ describe('Mentions', () => {
         );
       }
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await deleteNextWord(page);
@@ -345,10 +345,10 @@ describe('Mentions', () => {
         );
       }
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await deleteNextWord(page);
@@ -364,10 +364,10 @@ describe('Mentions', () => {
         );
       }
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await deleteNextWord(page);
@@ -381,10 +381,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
     });
 
@@ -394,10 +394,10 @@ describe('Mentions', () => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 4,
+        focusPath: [0, 0, 0],
       });
 
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -412,10 +412,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> foo bar</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 8,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 8,
+        focusPath: [0, 1, 0],
       });
 
       await repeat(4, async () => {
@@ -423,10 +423,10 @@ describe('Mentions', () => {
       });
 
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 4,
-        focusPath: [0, 1, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 4,
+        focusPath: [0, 1, 0],
       });
 
       await page.keyboard.down('Shift');
@@ -436,10 +436,10 @@ describe('Mentions', () => {
       await page.keyboard.up('Shift');
 
       await assertSelection(page, {
-        anchorPath: [0, 1, 0],
         anchorOffset: 4,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 1, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -449,10 +449,10 @@ describe('Mentions', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true"> bar</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
     });
   });

@@ -7,27 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
+// eslint-disable-next-line simple-import-sort/imports
+import type {LexicalEditor, LexicalNode} from 'lexical';
 
-import {
-  CodeNode,
-  $isCodeNode,
-  getFirstCodeHighlightNodeOfLine,
-  getLastCodeHighlightNodeOfLine,
-} from 'lexical/CodeNode';
-import {
-  $createLineBreakNode,
-  $createTextNode,
-  LexicalNode,
-  TextNode,
-  $isTextNode,
-  $isLineBreakNode,
-  $getSelection,
-  $isRangeSelection,
-} from 'lexical';
-import {useEffect} from 'react';
-import withSubscriptions from '@lexical/react/withSubscriptions';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import Prism from 'prismjs/components/prism-core';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -40,12 +22,32 @@ import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
-import {Array} from 'yjs';
+
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import withSubscriptions from '@lexical/react/withSubscriptions';
+import {
+  $createLineBreakNode,
+  $createTextNode,
+  $getSelection,
+  $isLineBreakNode,
+  $isRangeSelection,
+  $isTextNode,
+  TextNode,
+} from 'lexical';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
   CodeHighlightNode,
 } from 'lexical/CodeHighlightNode';
+import {
+  $isCodeNode,
+  CodeNode,
+  getFirstCodeHighlightNodeOfLine,
+  getLastCodeHighlightNodeOfLine,
+} from 'lexical/CodeNode';
+
+import {useEffect} from 'react';
+import {Array} from 'yjs';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
@@ -132,10 +134,10 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
       });
     },
     {
-      skipTransforms: true,
       onUpdate: () => {
         isHighlighting = false;
       },
+      skipTransforms: true,
     },
   );
 }
@@ -206,9 +208,9 @@ function updateAndRetainSelection(
     const anchorNode = anchor.getNode();
     textOffset =
       anchorOffset +
-      anchorNode.getPreviousSiblings().reduce((offset, node) => {
+      anchorNode.getPreviousSiblings().reduce((offset, _node) => {
         return (
-          offset + ($isLineBreakNode(node) ? 0 : node.getTextContentSize())
+          offset + ($isLineBreakNode(_node) ? 0 : _node.getTextContentSize())
         );
       }, 0);
   }
@@ -227,11 +229,11 @@ function updateAndRetainSelection(
 
   // If it was non-element anchor then we walk through child nodes
   // and looking for a position of original text offset
-  node.getChildren().some((node) => {
-    if ($isTextNode(node)) {
-      const textContentSize = node.getTextContentSize();
+  node.getChildren().some((_node) => {
+    if ($isTextNode(_node)) {
+      const textContentSize = _node.getTextContentSize();
       if (textContentSize >= textOffset) {
-        node.select(textOffset, textOffset);
+        _node.select(textOffset, textOffset);
         return true;
       }
       textOffset -= textContentSize;
@@ -247,8 +249,8 @@ function getDiffRange(
   nextNodes: Array<LexicalNode>,
 ): {
   from: number,
-  to: number,
   nodesForReplacement: Array<LexicalNode>,
+  to: number,
 } {
   let leadingMatch = 0;
   while (leadingMatch < prevNodes.length) {
@@ -285,8 +287,8 @@ function getDiffRange(
   );
   return {
     from,
-    to,
     nodesForReplacement,
+    to,
   };
 }
 

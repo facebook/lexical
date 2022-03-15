@@ -11,6 +11,7 @@ import {DEFAULT_SETTINGS} from './appSettings';
 
 // override default options with query parameters if any
 const urlSearchParams = new URLSearchParams(window.location.search);
+// eslint-disable-next-line no-for-of-loops/no-for-of-loops
 for (const param of Object.keys(DEFAULT_SETTINGS)) {
   if (urlSearchParams.has(param)) {
     try {

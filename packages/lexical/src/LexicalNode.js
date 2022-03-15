@@ -482,8 +482,7 @@ export class LexicalNode {
   isComposing(): boolean {
     return this.__key === $getCompositionKey();
   }
-  // $FlowFixMe this is LexicalNode
-  getLatest<T: LexicalNode>(this: T): T {
+  getLatest(): this {
     const latest = $getNodeByKey(this.__key);
     if (latest === null) {
       invariant(false, 'getLatest: node not found');
@@ -491,7 +490,7 @@ export class LexicalNode {
     return latest;
   }
   // $FlowFixMe this is LexicalNode
-  getWritable<T: LexicalNode>(this: T): T {
+  getWritable(): this {
     errorOnReadOnly();
     const editorState = getActiveEditorState();
     const editor = getActiveEditor();
@@ -571,7 +570,7 @@ export class LexicalNode {
     errorOnReadOnly();
     removeNode(this, true);
   }
-  replace<N: LexicalNode>(replaceWith: N): N {
+  replace(replaceWith: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const toReplaceKey = this.__key;
     const writableReplaceWith = replaceWith.getWritable();

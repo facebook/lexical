@@ -44,6 +44,7 @@ export default function useReport(): (string) => TimeoutID {
 
   return useCallback(
     (content) => {
+      // eslint-disable-next-line no-console
       console.log(content);
       const element = getElement();
       clearTimeout(timer.current);

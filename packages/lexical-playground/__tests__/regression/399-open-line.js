@@ -7,12 +7,12 @@
  */
 
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  repeat,
-  IS_MAC,
   focusEditor,
+  initializeE2E,
+  IS_MAC,
+  repeat,
 } from '../utils';
 
 describe('Regression test #399', () => {
@@ -35,10 +35,10 @@ describe('Regression test #399', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1, 0, 0],
           anchorOffset: 3,
-          focusPath: [1, 0, 0],
+          anchorPath: [1, 0, 0],
           focusOffset: 3,
+          focusPath: [1, 0, 0],
         });
       } else {
         await assertHTML(
@@ -46,10 +46,10 @@ describe('Regression test #399', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span><br><span data-lexical-text="true">bar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 2, 0],
           anchorOffset: 3,
-          focusPath: [0, 2, 0],
+          anchorPath: [0, 2, 0],
           focusOffset: 3,
+          focusPath: [0, 2, 0],
         });
       }
 
@@ -63,10 +63,10 @@ describe('Regression test #399', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><br><span data-lexical-text="true">bar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [1],
           anchorOffset: 0,
-          focusPath: [1],
+          anchorPath: [1],
           focusOffset: 0,
+          focusPath: [1],
         });
       } else {
         await assertHTML(
@@ -74,10 +74,10 @@ describe('Regression test #399', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span><br><br><span data-lexical-text="true">bar</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 2,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 2,
+          focusPath: [0],
         });
       }
     });

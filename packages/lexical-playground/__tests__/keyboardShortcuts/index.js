@@ -7,14 +7,14 @@
  */
 
 import {
-  IS_MAC,
+  E2E_BROWSER,
+  evaluate,
   IS_LINUX,
+  IS_MAC,
   keyDownCtrlOrAlt,
   keyDownCtrlOrMeta,
   keyUpCtrlOrAlt,
   keyUpCtrlOrMeta,
-  E2E_BROWSER,
-  evaluate,
 } from '../utils';
 
 export async function moveToLineBeginning(page) {

@@ -92,6 +92,7 @@ export function initializeE2E(runTests, config: Config = {}) {
       const path =
         'e2e-screenshots/' + currentTest.replace(/\s/g, '_') + '.png';
       await e2e.page.screenshot({path});
+    },
     async saveVideo(attempt) {
       const currentTest = expect.getState().currentTestName;
       const testName = currentTest.replace(/\s|\?|:|<|>|\*|"|\|/g, '_');
@@ -124,6 +125,7 @@ export function initializeE2E(runTests, config: Config = {}) {
     });
     const page = await context.newPage();
     page.on('pageerror', (err) => {
+      // eslint-disable-next-line no-console
       console.log(err.message);
     });
     await page.goto(url, {timeout: 60000});
@@ -156,6 +158,7 @@ export function initializeE2E(runTests, config: Config = {}) {
             await e2e.saveVideo(count + 1);
             if (count < 5) {
               count++;
+              // eslint-disable-next-line no-console
               console.log(`Attempt #${count + 1} - ${description}`);
               // Close and re-open page
               await e2e.page.close();
@@ -171,8 +174,9 @@ export function initializeE2E(runTests, config: Config = {}) {
                 recordVideo,
               });
               const page = await context.newPage();
-              page.on('pageerror', (err) => {
-                console.log(err.message);
+              page.on('pageerror', (error) => {
+                // eslint-disable-next-line no-console
+                console.log(error.message);
               });
               await page.goto(url, {timeout: 60000});
               e2e.page = page;

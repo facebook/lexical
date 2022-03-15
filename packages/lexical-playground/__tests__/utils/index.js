@@ -156,7 +156,7 @@ export function initializeE2E(runTests, config: Config = {}) {
           } catch (err) {
             // test failed
             await e2e.saveVideo(count + 1);
-            if (count < 5) {
+            if (count < retryCount) {
               count++;
               // eslint-disable-next-line no-console
               console.log(`Attempt #${count + 1} - ${description}`);

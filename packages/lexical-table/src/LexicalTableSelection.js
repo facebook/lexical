@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {NodeKey, TextFormatType} from 'lexical';
+import type {
+  GridSelection,
+  LexicalEditor,
+  NodeKey,
+  TextFormatType,
+} from 'lexical';
 
 import {
   $createGridSelection,
@@ -20,8 +25,6 @@ import {
   $isElementNode,
   $isGridSelection,
   $setSelection,
-  GridSelection,
-  LexicalEditor,
 } from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';

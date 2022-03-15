@@ -9,16 +9,17 @@
 
 import type {LexicalNode} from 'lexical';
 
-import {PollNode} from './PollNode';
-import {StickyNode} from './StickyNode';
-import {MentionNode} from './MentionNode';
-import {EmojiNode} from './EmojiNode';
-import {TypeaheadNode} from './TypeaheadNode';
-import {ImageNode} from './ImageNode';
-import {KeywordNode} from './KeywordNode';
-import {ExcalidrawNode} from './ExcalidrawNode';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import ExtendedNodes from 'lexical/ExtendedNodes';
+
+import {EmojiNode} from './EmojiNode';
+import {ExcalidrawNode} from './ExcalidrawNode';
+import {ImageNode} from './ImageNode';
+import {KeywordNode} from './KeywordNode';
+import {MentionNode} from './MentionNode';
+import {PollNode} from './PollNode';
+import {StickyNode} from './StickyNode';
+import {TypeaheadNode} from './TypeaheadNode';
 
 const PlaygroundNodes: Array<Class<LexicalNode>> = [
   ...ExtendedNodes,

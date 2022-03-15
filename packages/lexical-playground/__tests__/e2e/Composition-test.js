@@ -8,12 +8,12 @@
 
 import {moveToLineBeginning} from '../keyboardShortcuts';
 import {
-  initializeE2E,
-  assertSelection,
   assertHTML,
+  assertSelection,
   E2E_BROWSER,
-  repeat,
   focusEditor,
+  initializeE2E,
+  repeat,
   waitForSelector,
 } from '../utils';
 
@@ -31,10 +31,10 @@ describe('Composition', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">も</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 1,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 1,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -44,10 +44,10 @@ describe('Composition', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0],
         anchorOffset: 0,
-        focusPath: [0],
+        anchorPath: [0],
         focusOffset: 0,
+        focusPath: [0],
       });
 
       await page.keyboard.type('もじ');
@@ -57,10 +57,10 @@ describe('Composition', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">もじ</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -75,10 +75,10 @@ describe('Composition', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -87,10 +87,10 @@ describe('Composition', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">ه</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 1,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 1,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Backspace');
@@ -106,18 +106,18 @@ describe('Composition', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 2,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 2,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('ArrowRight');
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 0,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 0,
+        focusPath: [0, 0, 0],
       });
 
       await page.keyboard.press('Delete');
@@ -126,10 +126,10 @@ describe('Composition', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">ه</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 1,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 1,
+        focusPath: [0, 0, 0],
       });
     });
 
@@ -163,10 +163,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">すし もじあ</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 6,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 6,
+          focusPath: [0, 0, 0],
         });
       });
 
@@ -209,10 +209,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><br><span data-lexical-text="true">すし もじあ</span><br><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 6,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 6,
+          focusPath: [0, 1, 0],
         });
       });
 
@@ -249,10 +249,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">すし もじあ</span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 6,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 6,
+          focusPath: [0, 1, 0],
         });
 
         await repeat(6, async () => {
@@ -264,10 +264,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 0, 0, 0],
+          anchorPath: [0, 0, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 0, 0, 0],
         });
 
         await page.keyboard.imeSetComposition('ｓ', 1, 1);
@@ -285,10 +285,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 0, 0, 0],
+          anchorPath: [0, 0, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 0, 0, 0],
         });
       });
 
@@ -327,10 +327,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true">すし もじあ</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 6,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 6,
+          focusPath: [0, 1, 0],
         });
       });
 
@@ -373,10 +373,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Luke すし もじあSkywalker</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 11,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 11,
+          focusPath: [0, 0, 0],
         });
       });
 
@@ -412,10 +412,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#すし</span><span data-lexical-text="true"> もじあ</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 1, 0],
           anchorOffset: 4,
-          focusPath: [0, 1, 0],
+          anchorPath: [0, 1, 0],
           focusOffset: 4,
+          focusPath: [0, 1, 0],
         });
 
         await moveToLineBeginning(page);
@@ -432,10 +432,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">すし#すし もじあ</span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 0, 0],
         });
       });
 
@@ -464,10 +464,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await page.keyboard.type(' ');
@@ -488,10 +488,10 @@ describe('Composition', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true"> </span></p>',
         );
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 0,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 0,
+          focusPath: [0, 0, 0],
         });
       });
     });

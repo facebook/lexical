@@ -9,10 +9,11 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
-import {useEffect} from 'react';
-import {TextNode} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {TextNode} from 'lexical';
+import {useEffect} from 'react';
+
+import {$createEmojiNode, EmojiNode} from '../nodes/EmojiNode';
 
 const emojis: Map<string, [string, string]> = new Map([
   [':)', ['emoji happysmile', '🙂']],

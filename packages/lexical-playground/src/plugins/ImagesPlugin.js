@@ -10,11 +10,11 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$getSelection, $isRangeSelection, $isRootNode} from 'lexical';
 import {useEffect} from 'react';
-import {$getSelection, $isRootNode, $isRangeSelection} from 'lexical';
-import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
-import yellowFlowerImage from '../images/image/yellow-flower.jpg';
+import yellowFlowerImage from '../images/yellow-flower.jpg';
+import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
 

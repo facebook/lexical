@@ -9,6 +9,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
+
 import {StickyNode} from '../nodes/StickyNode';
 
 export default function StickyPlugin(): React$Node {

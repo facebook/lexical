@@ -13,11 +13,10 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {$getListDepth, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-
-import {useEffect} from 'react';
 import {$getSelection, $isElementNode, $isRangeSelection} from 'lexical';
-import {$isListItemNode, $isListNode, $getListDepth} from '@lexical/list';
+import {useEffect} from 'react';
 
 type Props = $ReadOnly<{
   maxDepth: ?number,
@@ -54,6 +53,7 @@ function isIndentPermitted(maxDepth: number): boolean {
 
   let totalDepth = 0;
 
+  // eslint-disable-next-line no-for-of-loops/no-for-of-loops
   for (const elementNode of elementNodesInSelection) {
     if ($isListNode(elementNode)) {
       totalDepth = Math.max($getListDepth(elementNode) + 1, totalDepth);

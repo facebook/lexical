@@ -7,19 +7,16 @@
  * @flow strict
  */
 
-import type {RangeSelection, LexicalEditor, ElementNode} from 'lexical';
+import type {ElementNode, LexicalEditor, RangeSelection} from 'lexical';
 
-import {TextNode, $isTextNode, $getSelection, $isRangeSelection} from 'lexical';
-
-// $FlowFixMe
-import {createPortal} from 'react-dom';
-import {$isLinkNode} from 'lexical/LinkNode';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
-
 import {$isAtNodeEnd} from '@lexical/selection';
-
+import {$getSelection, $isRangeSelection, $isTextNode, TextNode} from 'lexical';
+import {$isLinkNode} from 'lexical/LinkNode';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
+// $FlowFixMe
+import {createPortal} from 'react-dom';
 
 function setPopupPosition(editor, rect) {
   if (rect === null) {
@@ -45,12 +42,12 @@ function FloatingCharacterStylesEditor({
   isStrikethrough,
 }: {
   editor: LexicalEditor,
-  isLink: boolean,
-  isItalic: boolean,
   isBold: boolean,
-  isUnderline: boolean,
   isCode: boolean,
+  isItalic: boolean,
+  isLink: boolean,
   isStrikethrough: boolean,
+  isUnderline: boolean,
 }): React$Node {
   const popupCharStylesEditorRef = useRef<HTMLElement | null>(null);
   const mouseDownRef = useRef(false);

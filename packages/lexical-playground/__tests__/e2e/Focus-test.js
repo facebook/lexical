@@ -6,7 +6,7 @@
  *
  */
 
-import {initializeE2E, focusEditor} from '../utils';
+import {focusEditor, initializeE2E} from '../utils';
 
 describe('Focus', () => {
   initializeE2E((e2e) => {

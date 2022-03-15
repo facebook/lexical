@@ -7,11 +7,11 @@
  */
 
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  repeat,
   focusEditor,
+  initializeE2E,
+  repeat,
   waitForSelector,
 } from '../utils';
 
@@ -33,10 +33,10 @@ describe('Regression test #230', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
       );
       await assertSelection(page, {
-        anchorPath: [0, 0, 0],
         anchorOffset: 1,
-        focusPath: [0, 0, 0],
+        anchorPath: [0, 0, 0],
         focusOffset: 1,
+        focusPath: [0, 0, 0],
       });
     });
   });

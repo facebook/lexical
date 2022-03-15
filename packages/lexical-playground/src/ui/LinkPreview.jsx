@@ -7,9 +7,10 @@
  * @flow strict
  */
 
+import './LinkPreview.css';
+
 import * as React from 'react';
 import {Suspense} from 'react';
-import './LinkPreview.css';
 
 // Cached responses or running request promises
 const PREVIEW_CACHE = {};

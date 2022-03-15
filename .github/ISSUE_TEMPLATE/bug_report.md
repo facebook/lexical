@@ -1,9 +1,8 @@
 ---
-name: "🐛 Bug Report"
+name: '🐛 Bug Report'
 about: Report a reproducible bug or regression.
 title: 'Bug: '
 labels: 'Status: Unconfirmed'
-
 ---
 
 <!--
@@ -36,6 +35,5 @@ Link to code example:
 -->
 
 ## The current behavior
-
 
 ## The expected behavior

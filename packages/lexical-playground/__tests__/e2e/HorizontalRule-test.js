@@ -8,16 +8,16 @@
 
 import {moveToLineBeginning, selectAll} from '../keyboardShortcuts';
 import {
-  initializeE2E,
   assertHTML,
   assertSelection,
-  focusEditor,
-  waitForSelector,
   click,
-  E2E_BROWSER,
-  repeat,
   copyToClipboard,
+  E2E_BROWSER,
+  focusEditor,
+  initializeE2E,
   pasteFromClipboard,
+  repeat,
+  waitForSelector,
 } from '../utils';
 
 describe('HorizontalRule', () => {
@@ -42,37 +42,37 @@ describe('HorizontalRule', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [2],
           anchorOffset: 0,
-          focusPath: [2],
+          anchorPath: [2],
           focusOffset: 0,
+          focusPath: [2],
         });
 
         await page.keyboard.press('ArrowUp');
 
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await page.keyboard.press('ArrowRight');
 
         await assertSelection(page, {
-          anchorPath: [2],
           anchorOffset: 0,
-          focusPath: [2],
+          anchorPath: [2],
           focusOffset: 0,
+          focusPath: [2],
         });
 
         await page.keyboard.press('ArrowLeft');
 
         await assertSelection(page, {
-          anchorPath: [0],
           anchorOffset: 0,
-          focusPath: [0],
+          anchorPath: [0],
           focusOffset: 0,
+          focusPath: [0],
         });
 
         await page.keyboard.type('Some text');
@@ -80,10 +80,10 @@ describe('HorizontalRule', () => {
         await page.keyboard.press('ArrowRight');
 
         await assertSelection(page, {
-          anchorPath: [2],
           anchorOffset: 0,
-          focusPath: [2],
+          anchorPath: [2],
           focusOffset: 0,
+          focusPath: [2],
         });
 
         await page.keyboard.type('Some more text');
@@ -99,17 +99,17 @@ describe('HorizontalRule', () => {
 
         if (E2E_BROWSER === 'webkit') {
           await assertSelection(page, {
-            anchorPath: [0, 0, 0],
             anchorOffset: 9,
-            focusPath: [0, 0, 0],
+            anchorPath: [0, 0, 0],
             focusOffset: 9,
+            focusPath: [0, 0, 0],
           });
         } else {
           await assertSelection(page, {
-            anchorPath: [0],
             anchorOffset: 1,
-            focusPath: [0],
+            anchorPath: [0],
             focusOffset: 1,
+            focusPath: [0],
           });
         }
 
@@ -123,10 +123,10 @@ describe('HorizontalRule', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [],
           anchorOffset: 0,
-          focusPath: [],
+          anchorPath: [],
           focusOffset: 0,
+          focusPath: [],
         });
       },
     );
@@ -142,10 +142,10 @@ describe('HorizontalRule', () => {
         await page.keyboard.type('Test');
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 4,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 0, 0],
         });
 
         await assertHTML(
@@ -165,10 +165,10 @@ describe('HorizontalRule', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [2],
           anchorOffset: 0,
-          focusPath: [2],
+          anchorPath: [2],
           focusOffset: 0,
+          focusPath: [2],
         });
       },
     );
@@ -184,10 +184,10 @@ describe('HorizontalRule', () => {
         await page.keyboard.type('Test');
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 4,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 4,
+          focusPath: [0, 0, 0],
         });
 
         await assertHTML(
@@ -199,10 +199,10 @@ describe('HorizontalRule', () => {
         await page.keyboard.press('ArrowLeft');
 
         await assertSelection(page, {
-          anchorPath: [0, 0, 0],
           anchorOffset: 2,
-          focusPath: [0, 0, 0],
+          anchorPath: [0, 0, 0],
           focusOffset: 2,
+          focusPath: [0, 0, 0],
         });
 
         await waitForSelector(page, 'button .horizontal-rule');
@@ -217,10 +217,10 @@ describe('HorizontalRule', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [2, 0, 0],
           anchorOffset: 0,
-          focusPath: [2, 0, 0],
+          anchorPath: [2, 0, 0],
           focusOffset: 0,
+          focusPath: [2, 0, 0],
         });
       },
     );
@@ -245,10 +245,10 @@ describe('HorizontalRule', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [2],
           anchorOffset: 0,
-          focusPath: [2],
+          anchorPath: [2],
           focusOffset: 0,
+          focusPath: [2],
         });
 
         // Select all the text
@@ -268,10 +268,10 @@ describe('HorizontalRule', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [2],
           anchorOffset: 0,
-          focusPath: [2],
+          anchorPath: [2],
           focusOffset: 0,
+          focusPath: [2],
         });
 
         await page.keyboard.press('ArrowUp');
@@ -285,10 +285,10 @@ describe('HorizontalRule', () => {
         );
 
         await assertSelection(page, {
-          anchorPath: [2],
           anchorOffset: 0,
-          focusPath: [2],
+          anchorPath: [2],
           focusOffset: 0,
+          focusPath: [2],
         });
       },
     );

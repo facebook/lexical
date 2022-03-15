@@ -9,8 +9,9 @@
 
 import type {EditorThemeClasses} from 'lexical';
 
-import baseTheme from './PlaygroundEditorTheme';
 import './StickyEditorTheme.css';
+
+import baseTheme from './PlaygroundEditorTheme';
 
 const theme: EditorThemeClasses = {
   ...baseTheme,

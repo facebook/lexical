@@ -382,7 +382,7 @@ function onCompositionStart(
   });
 }
 
-function onCompositionEndInternal(
+function onCompositionEnd(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
@@ -407,23 +407,6 @@ function onCompositionEndInternal(
     }
     $updateSelectedTextFromDOM(editor, event);
   });
-}
-
-function onCompositionEnd(
-  event: CompositionEvent,
-  editor: LexicalEditor,
-): void {
-  if (IS_FIREFOX) {
-    // The order of onInput and onCompositionEnd is different
-    // in FF. Given that onInput will fire after onCompositionEnd
-    // in FF, we need to defer the $logic for onCompositionEnd to
-    // ensure that any possible onInput events fire before.
-    setTimeout(() => {
-      onCompositionEndInternal(event, editor);
-    }, 0);
-  } else {
-    onCompositionEndInternal(event, editor);
-  }
 }
 
 function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {

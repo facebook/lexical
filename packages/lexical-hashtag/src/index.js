@@ -10,8 +10,7 @@
 import {
   $createHashtagNode,
   $isHashtagNode,
-  $toggleHashtag,
   HashtagNode,
 } from './LexicalHashtagNode';
 
-export {$createHashtagNode, $isHashtagNode, $toggleHashtag, HashtagNode};
+export {$createHashtagNode, $isHashtagNode, HashtagNode};

@@ -1553,7 +1553,6 @@ export class RangeSelection implements BaseSelection {
       }
     }
     this.removeText();
-    $updateCaretSelectionForAdjacentHashtags(this);
   }
 
   deleteLine(isBackward: boolean): void {
@@ -1596,39 +1595,6 @@ function $moveNativeSelection(
   domSelection.modify(alter, direction, granularity);
 }
 
-function $updateCaretSelectionForAdjacentHashtags(
-  selection: RangeSelection,
-): void {
-  const anchor = selection.anchor;
-  if (anchor.type !== 'text') {
-    return;
-  }
-  let anchorNode = anchor.getNode();
-  const textContent = anchorNode.getTextContent();
-  const anchorOffset = selection.anchor.offset;
-
-  if (anchorOffset === 0 && anchorNode.isSimpleText()) {
-    let sibling = anchorNode.getPreviousSibling();
-    if ($isTextNode(sibling) && sibling.getType() === 'hashtag') {
-      sibling.select();
-      const siblingTextContent = sibling.getTextContent();
-      sibling = sibling.setTextContent(siblingTextContent + textContent);
-      anchorNode.remove();
-    }
-  } else if (
-    $isTextNode(anchorNode) &&
-    anchorNode.getType() === 'hashtag' &&
-    anchorOffset === anchorNode.getTextContentSize()
-  ) {
-    const sibling = anchorNode.getNextSibling();
-    if ($isTextNode(sibling) && sibling.isSimpleText()) {
-      const siblingTextContent = sibling.getTextContent();
-      anchorNode = anchorNode.setTextContent(textContent + siblingTextContent);
-      sibling.remove();
-    }
-  }
-}
-
 function $updateCaretSelectionForUnicodeCharacter(
   selection: RangeSelection,
   isBackward: boolean,
@@ -1667,7 +1633,7 @@ function $updateCaretSelectionForUnicodeCharacter(
 }
 
 function $removeSegment(node: TextNode, isBackward: boolean): void {
-  let textNode = node;
+  const textNode = node;
   const textContent = textNode.getTextContent();
   const split = textContent.split(/\s/g);
 
@@ -1681,7 +1647,7 @@ function $removeSegment(node: TextNode, isBackward: boolean): void {
   if (nextTextContent === '') {
     textNode.remove();
   } else {
-    textNode = textNode.setTextContent(nextTextContent);
+    textNode.setTextContent(nextTextContent);
     if (isBackward) {
       textNode.select();
     } else {

@@ -190,6 +190,7 @@ export class LexicalNode {
   getType(): string {
     return this.__type;
   }
+
   isAttached(): boolean {
     let nodeKey = this.__key;
     while (nodeKey !== null) {
@@ -205,6 +206,7 @@ export class LexicalNode {
     }
     return false;
   }
+
   isSelected(): boolean {
     const selection = $getSelection();
     if (selection == null) {
@@ -229,10 +231,12 @@ export class LexicalNode {
     }
     return isSelected;
   }
+
   getKey(): NodeKey {
     // Key is stable between copies
     return this.__key;
   }
+
   getIndexWithinParent(): number {
     const parent = this.getParent();
     if (parent === null) {
@@ -241,6 +245,7 @@ export class LexicalNode {
     const children = parent.__children;
     return children.indexOf(this.__key);
   }
+
   getParent(): ElementNode | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
@@ -248,6 +253,7 @@ export class LexicalNode {
     }
     return $getNodeByKey<ElementNode>(parent);
   }
+
   getParentOrThrow(): ElementNode {
     const parent = this.getParent();
     if (parent === null) {
@@ -255,6 +261,7 @@ export class LexicalNode {
     }
     return parent;
   }
+
   getTopLevelElement(): null | ElementNode {
     let node = this;
     while (node !== null) {
@@ -266,6 +273,7 @@ export class LexicalNode {
     }
     return null;
   }
+
   getTopLevelElementOrThrow(): ElementNode {
     const parent = this.getTopLevelElement();
     if (parent === null) {
@@ -277,6 +285,7 @@ export class LexicalNode {
     }
     return parent;
   }
+
   getParents(): Array<ElementNode> {
     const parents = [];
     let node = this.getParent();
@@ -286,6 +295,7 @@ export class LexicalNode {
     }
     return parents;
   }
+
   getParentKeys(): Array<NodeKey> {
     const parents = [];
     let node = this.getParent();
@@ -295,6 +305,7 @@ export class LexicalNode {
     }
     return parents;
   }
+
   getPreviousSibling(): LexicalNode | null {
     const parent = this.getParent();
     if (parent === null) {
@@ -307,6 +318,7 @@ export class LexicalNode {
     }
     return $getNodeByKey<LexicalNode>(children[index - 1]);
   }
+
   getPreviousSiblings(): Array<LexicalNode> {
     const parent = this.getParent();
     if (parent === null) {
@@ -318,6 +330,7 @@ export class LexicalNode {
       .slice(0, index)
       .map((childKey) => $getNodeByKeyOrThrow<LexicalNode>(childKey));
   }
+
   getNextSibling(): LexicalNode | null {
     const parent = this.getParent();
     if (parent === null) {
@@ -331,6 +344,7 @@ export class LexicalNode {
     }
     return $getNodeByKey<LexicalNode>(children[index + 1]);
   }
+
   getNextSiblings(): Array<LexicalNode> {
     const parent = this.getParent();
     if (parent === null) {
@@ -342,6 +356,7 @@ export class LexicalNode {
       .slice(index + 1)
       .map((childKey) => $getNodeByKeyOrThrow<LexicalNode>(childKey));
   }
+
   getCommonAncestor(node: LexicalNode): ElementNode | null {
     const a = this.getParents();
     const b = node.getParents();
@@ -365,12 +380,14 @@ export class LexicalNode {
     }
     return null;
   }
+
   is(object: ?LexicalNode): boolean {
     if (object == null) {
       return false;
     }
     return this.getKey() === object.getKey();
   }
+
   isBefore(targetNode: LexicalNode): boolean {
     if (targetNode.isParentOf(this)) {
       return true;
@@ -401,6 +418,7 @@ export class LexicalNode {
     }
     return indexA < indexB;
   }
+
   isParentOf(targetNode: LexicalNode): boolean {
     const key = this.__key;
     if (key === targetNode.__key) {
@@ -415,6 +433,7 @@ export class LexicalNode {
     }
     return false;
   }
+
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode> {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
@@ -485,15 +504,18 @@ export class LexicalNode {
     }
     return nodes;
   }
+
   isDirty(): boolean {
     const editor = getActiveEditor();
     const dirtyLeaves = editor._dirtyLeaves;
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
+
   // TODO remove this and move to TextNode
   isComposing(): boolean {
     return this.__key === $getCompositionKey();
   }
+
   getLatest(): this {
     const latest = $getNodeByKey(this.__key);
     if (latest === null) {
@@ -582,6 +604,7 @@ export class LexicalNode {
     errorOnReadOnly();
     removeNode(this, true);
   }
+
   replace(replaceWith: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const toReplaceKey = this.__key;
@@ -625,6 +648,7 @@ export class LexicalNode {
     }
     return writableReplaceWith;
   }
+
   insertAfter(nodeToInsert: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
@@ -684,6 +708,7 @@ export class LexicalNode {
     }
     return nodeToInsert;
   }
+
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
@@ -719,6 +744,7 @@ export class LexicalNode {
     }
     return nodeToInsert;
   }
+
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const prevSibling = this.getPreviousSibling();
@@ -734,6 +760,7 @@ export class LexicalNode {
     }
     return prevSibling.select(anchorOffset, focusOffset);
   }
+  
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();

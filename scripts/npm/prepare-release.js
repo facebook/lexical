@@ -12,7 +12,7 @@
 'use strict';
 
 const {exec} = require('child-process-promise');
-const {LEXICAL_PKG, LEXICAL_HELPERS_PKG, DEFAULT_PKGS} = require('./packages');
+const {LEXICAL_PKG, DEFAULT_PKGS} = require('./packages');
 
 async function prepareLexicalPackage() {
   await exec(`rm -rf ./packages/${LEXICAL_PKG}/npm`);
@@ -89,38 +89,6 @@ async function prepareLexicalPackage() {
   );
 }
 
-async function prepareLexicalHelpersPackage() {
-  await exec(`rm -rf ./packages/${LEXICAL_HELPERS_PKG}/npm`);
-  await exec(`mkdir ./packages/${LEXICAL_HELPERS_PKG}/npm`);
-  await exec(
-    `cp -R ./packages/${LEXICAL_HELPERS_PKG}/dist/*.js ./packages/${LEXICAL_HELPERS_PKG}/npm`,
-  );
-  // Remap the helper packages to their short versions
-  await exec(
-    `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalTextHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/text.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalOffsetHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/offsets.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalNodeHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/nodes.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalElementHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/elements.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_HELPERS_PKG}/npm/LexicalRootHelpers.js ./packages/${LEXICAL_HELPERS_PKG}/npm/root.js`,
-  );
-  // Other bits
-  await exec(
-    `cp -R ./packages/${LEXICAL_HELPERS_PKG}/package.json ./packages/${LEXICAL_HELPERS_PKG}/npm`,
-  );
-  await exec(`cp -R LICENSE ./packages/${LEXICAL_HELPERS_PKG}/npm`);
-  await exec(
-    `cp -R ./packages/${LEXICAL_HELPERS_PKG}/README.md ./packages/${LEXICAL_HELPERS_PKG}/npm`,
-  );
-}
-
 async function prepareDefaultPackages() {
   for (let i = 0; i < DEFAULT_PKGS.length; i++) {
     const pkg = DEFAULT_PKGS[i];
@@ -144,5 +112,4 @@ async function prepareDefaultPackages() {
 }
 
 prepareLexicalPackage();
-prepareLexicalHelpersPackage();
 prepareDefaultPackages();

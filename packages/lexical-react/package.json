@@ -12,18 +12,18 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "dependencies": {
-    "@lexical/clipboard": "0.1.14",
-    "@lexical/list": "0.1.14",
-    "@lexical/table": "0.1.14",
-    "@lexical/yjs": "0.1.14",
-    "@lexical/hashtag": "0.1.14",
-    "@lexical/selection": "0.1.14",
-    "@lexical/utils": "0.1.14"
+    "@lexical/clipboard": "0.1.15",
+    "@lexical/list": "0.1.15",
+    "@lexical/table": "0.1.15",
+    "@lexical/yjs": "0.1.15",
+    "@lexical/hashtag": "0.1.15",
+    "@lexical/selection": "0.1.15",
+    "@lexical/utils": "0.1.15"
   },
   "peerDependencies": {
-    "lexical": "0.1.14",
+    "lexical": "0.1.15",
     "react": ">=17.x",
     "react-dom": ">=17.x"
   },

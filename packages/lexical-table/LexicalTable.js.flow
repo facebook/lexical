@@ -38,6 +38,7 @@ declare export class TableCellNode extends ElementNode {
   constructor(
     headerState?: TableCellHeaderState,
     colSpan?: number,
+    width?: ?number,
     key?: NodeKey,
   ): void;
   __headerState: TableCellHeaderState;
@@ -51,6 +52,8 @@ declare export class TableCellNode extends ElementNode {
   getTag(): string;
   setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
   getHeaderStyles(): TableCellHeaderState;
+  setWidth(width: number): ?number;
+  getWidth(): ?number;
   toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;
@@ -97,9 +100,11 @@ declare export function $isTableNode(
 declare export class TableRowNode extends ElementNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
-  constructor(key?: NodeKey): void;
+  constructor(height?: ?number, key?: NodeKey): void;
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
+  setHeight(height: number): ?number;
+  getHeight(): ?number;
   insertNewAfter(
     selection: RangeSelection,
   ): null | ParagraphNode | TableRowNode;
@@ -144,6 +149,8 @@ declare export function $getElementGridForTableNode(
 declare export function getTableSelectionFromTableElement(
   tableElement: HTMLElement,
 ): TableSelection;
+
+declare export function getCellFromTarget(node: Node): Cell | null;
 
 /**
  * LexicalTableUtils

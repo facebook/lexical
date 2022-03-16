@@ -39,6 +39,7 @@ import MentionsPlugin from './plugins/MentionsPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
+import TableCellResizer from './plugins/TableCellResizer';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import ContentEditable from './ui/ContentEditable';
@@ -106,6 +107,7 @@ export default function Editor(): React$Node {
             <ListMaxIndentLevelPlugin maxDepth={7} />
             <TablesPlugin />
             <TableCellActionMenuPlugin />
+            <TableCellResizer />
             <ImagesPlugin />
             <LinkPlugin />
             <PollPlugin />

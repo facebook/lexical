@@ -24,26 +24,38 @@ export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
 export class TableCellNode extends GridCellNode {
   __headerState: TableCellHeaderState;
+  __width: ?number;
 
   static getType(): 'tablecell' {
     return 'tablecell';
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(node.__headerState, node.__colSpan, node.__key);
+    return new TableCellNode(
+      node.__headerState,
+      node.__colSpan,
+      node.__width,
+      node.__key,
+    );
   }
 
   constructor(
     headerState?: TableCellHeaderState = TableCellHeaderStates.NO_STATUS,
     colSpan?: number = 1,
+    width?: ?number,
     key?: NodeKey,
   ): void {
     super(colSpan, key);
     this.__headerState = headerState;
+    this.__width = width;
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
     const element = document.createElement(this.getTag());
+
+    if (this.__width) {
+      element.style.width = `${this.__width}px`;
+    }
 
     addClassNamesToElement(
       element,
@@ -66,6 +78,16 @@ export class TableCellNode extends GridCellNode {
 
   getHeaderStyles(): TableCellHeaderState {
     return this.getLatest().__headerState;
+  }
+
+  setWidth(width: number): ?number {
+    const self = this.getWritable();
+    self.__width = width;
+    return this.__width;
+  }
+
+  getWidth(): ?number {
+    return this.getLatest().__width;
   }
 
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
@@ -91,7 +113,10 @@ export class TableCellNode extends GridCellNode {
   }
 
   updateDOM(prevNode: TableCellNode): boolean {
-    return prevNode.__headerState !== this.__headerState;
+    return (
+      prevNode.__headerState !== this.__headerState ||
+      prevNode.__width !== this.__width
+    );
   }
 
   collapseAtStart(): true {
@@ -105,8 +130,10 @@ export class TableCellNode extends GridCellNode {
 
 export function $createTableCellNode(
   headerState: TableCellHeaderState,
+  colSpan?: number = 1,
+  width?: ?number,
 ): TableCellNode {
-  return new TableCellNode(headerState);
+  return new TableCellNode(headerState, colSpan, width);
 }
 
 export function $isTableCellNode(node: ?LexicalNode): boolean %checks {

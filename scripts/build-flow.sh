@@ -5,7 +5,9 @@ for package in 'lexical-file' \
             'lexical-table' \
             'lexical-yjs' \
             'lexical-clipboard' \
-            'lexical'
+            'lexical' \
+            'lexical-selection' \
+            'lexical-text' 
 do
   gen-flow-files "./packages/${package}/src" --out-dir "./packages/${package}/dist"
 done

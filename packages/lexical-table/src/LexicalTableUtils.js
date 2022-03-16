@@ -190,6 +190,9 @@ export function $insertTableRow(
 
         let headerState = TableCellHeaderStates.NO_STATUS;
 
+        const width =
+          (above && above.getWidth()) || (below && below.getWidth()) || null;
+
         if (
           (above && above.hasHeaderState(TableCellHeaderStates.COLUMN)) ||
           (below && below.hasHeaderState(TableCellHeaderStates.COLUMN))
@@ -197,7 +200,7 @@ export function $insertTableRow(
           headerState |= TableCellHeaderStates.COLUMN;
         }
 
-        const tableCellNode = $createTableCellNode(headerState);
+        const tableCellNode = $createTableCellNode(headerState, 1, width);
 
         tableCellNode.append($createParagraphNode());
         newTableRowNode.append(tableCellNode);

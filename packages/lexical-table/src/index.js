@@ -27,6 +27,7 @@ import {
 import {TableSelection} from './LexicalTableSelection';
 import {
   applyTableHandlers,
+  getCellFromTarget,
   getTableSelectionFromTableElement,
 } from './LexicalTableSelectionHelpers';
 import {
@@ -61,6 +62,7 @@ export {
   $isTableRowNode,
   $removeTableRowAtIndex,
   applyTableHandlers,
+  getCellFromTarget,
   getTableSelectionFromTableElement,
   TableCellHeaderStates,
   TableCellNode,

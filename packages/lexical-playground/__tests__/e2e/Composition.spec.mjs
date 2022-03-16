@@ -6,22 +6,17 @@
  *
  */
 
-import {moveToLineBeginning} from '../keyboardShortcuts';
+import {moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   repeat,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('Composition', () => {
-  initializeE2E((e2e) => {
-    it('Handles Hiragana characters', async () => {
-      const {page} = e2e;
-
+test.describe('Composition', () => {
+    test('Handles Hiragana characters', async ({page}) => {
       await focusEditor(page);
 
       await page.keyboard.type('も');
@@ -64,8 +59,7 @@ describe('Composition', () => {
       });
     });
 
-    it('Handles Arabic characters with diacritics', async () => {
-      const {page} = e2e;
+    test('Handles Arabic characters with diacritics', async ({page}) => {
 
       await focusEditor(page);
 
@@ -133,12 +127,10 @@ describe('Composition', () => {
       });
     });
 
-    describe('IME', () => {
-      it('Can type Hiragana via IME', async () => {
-        const {page} = e2e;
-
+    test.describe('IME', () => {
+      test('Can type Hiragana via IME', async ({page, browserName}) => {
         // We don't yet support FF.
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           return;
         }
 
@@ -170,11 +162,10 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type Hiragana via IME between line breaks', async () => {
-        const {page} = e2e;
+      test('Can type Hiragana via IME between line breaks', async ({page, browserName}) => {
 
         // We don't yet support FF.
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           return;
         }
 
@@ -216,11 +207,9 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type Hiragana via IME between emojis', async () => {
-        const {page} = e2e;
-
+      test('Can type Hiragana via IME between emojis', async ({page, browserName}) => {
         // We don't yet support FF.
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           return;
         }
 
@@ -292,11 +281,9 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type Hiragana via IME at the end of a mention', async () => {
-        const {page} = e2e;
-
+      test('Can type Hiragana via IME at the end of a mention', async ({page, browserName}) => {
         // We don't yet support FF.
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           return;
         }
 
@@ -334,11 +321,9 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type Hiragana via IME part way through a mention', async () => {
-        const {page} = e2e;
-
+      test('Can type Hiragana via IME part way through a mention', async ({page, browserName}) => {
         // We don't yet support FF.
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           return;
         }
 
@@ -380,11 +365,9 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type Hiragana via IME with hashtags', async () => {
-        const {page} = e2e;
-
+      test('Can type Hiragana via IME with hashtags', async ({page, browserName}) => {
         // We don't yet support FF.
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           return;
         }
 
@@ -439,11 +422,9 @@ describe('Composition', () => {
         });
       });
 
-      it('Can type, delete and cancel Hiragana via IME', async () => {
-        const {page} = e2e;
-
+      test('Can type, delete and cancel Hiragana via IME', async ({page, browserName}) => {
         // We don't yet support FF.
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           return;
         }
 
@@ -495,5 +476,4 @@ describe('Composition', () => {
         });
       });
     });
-  });
 });

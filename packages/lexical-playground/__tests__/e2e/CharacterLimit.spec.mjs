@@ -7,18 +7,17 @@
  * @flow strict
  */
 
-import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts';
+import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
-  initializeE2E,
   repeat,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
-  it.skipIf(e2e.isCollab, 'displays overflow on text', async () => {
-    const {page} = e2e;
+function testSuite(charset) {
+  test('displays overflow on text', async ({page, isCollab}) => {
+    test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('12345');
@@ -54,13 +53,13 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     });
   });
 
-  it.skipIf(e2e.isCollab, 'displays overflow on immutable nodes', async () => {
+  test('displays overflow on immutable nodes', async ({page, isCollab}) => {
     // The smile emoji (S) is length 2, so for 1234S56:
     // - 1234 is non-overflow text
     // - S takes characters 5 and 6, since it's immutable and can't be split we count the whole
     //   node as overflowed
     // - 56 is overflowed
-    const {page} = e2e;
+    test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('1234:)56');
@@ -76,8 +75,8 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     );
   });
 
-  it.skipIf(e2e.isCollab, 'can type new lines inside overflow', async () => {
-    const {page, isRichText} = e2e;
+  test('can type new lines inside overflow', async ({page, isRichText, isCollab}) => {
+    test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('123456');
@@ -102,11 +101,10 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     );
   });
 
-  it.skipIf(
-    e2e.isCollab,
+  test(
     'can delete text in front and overflow is recomputed',
-    async () => {
-      const {page, isRichText} = e2e;
+    async ({page, isRichText, isCollab}) => {
+      test.skip(isCollab);
       await page.focus('div[contenteditable="true"]');
 
       await page.keyboard.type('123456');
@@ -142,12 +140,11 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     },
   );
 
-  it.skipIf(
-    e2e.isCollab,
+  test(
     'can delete text in front and overflow is recomputed (immutable nodes)',
-    async () => {
+    async ({page, isCollab}) => {
+      test.skip(isCollab);
       // See 'displays overflow on immutable nodes'
-      const {page} = e2e;
       await page.focus('div[contenteditable="true"]');
 
       await page.keyboard.type('1234:)56');
@@ -168,11 +165,10 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     },
   );
 
-  it.skipIf(
-    e2e.isCollab || e2e.isPlainText,
+  test(
     'can overflow in lists',
-    async () => {
-      const {page} = e2e;
+    async ({page, isCollab, isPlainText}) => {
+      test.skip(isCollab || isPlainText)
       await page.focus('div[contenteditable="true"]');
 
       await page.keyboard.type('- 1234');
@@ -193,11 +189,10 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     },
   );
 
-  it.skipIf(
-    e2e.isCollab || e2e.isPlainText,
+  test(
     'can delete an overflowed paragraph',
-    async () => {
-      const {page} = e2e;
+    async ({page, isCollab, isPlainText}) => {
+      test.skip(isCollab || isPlainText)
       await page.focus('div[contenteditable="true"]');
 
       await page.keyboard.type('12345');
@@ -217,8 +212,8 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     },
   );
 
-  it.skipIf(e2e.isCollab, 'handles accented characters', async () => {
-    const {page} = e2e;
+  test('handles accented characters', async ({page, isCollab}) => {
+    test.skip(isCollab)
     await page.focus('div[contenteditable="true"]');
 
     // Worth 1 byte in UTF-16, 2 bytes in UTF-8
@@ -236,12 +231,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
     }
   });
 
-  it.skipIf(e2e.isCollab, 'handles graphemes', async () => {
-    const {page} = e2e;
+  test('handles graphemes', async ({page, isCollab, browserName}) => {
+    test.skip(isCollab)
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('👨‍👩‍👦‍👦');
-    if (['chromium', 'webkit'].includes(E2E_BROWSER)) {
+    if (['chromium', 'webkit'].includes(browserName)) {
       await assertHTML(
         page,
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><div class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">👨‍👩‍👦‍👦</span></div></p>',
@@ -262,22 +257,12 @@ function testSuite(e2e, charset: 'UTF-8' | 'UTF-16') {
   });
 }
 
-describe('CharacterLimit', () => {
-  describe('UTF-16', () => {
-    initializeE2E(
-      (e2e) => {
-        testSuite(e2e, 'UTF-16');
-      },
-      {appSettings: {isCharLimit: true}},
-    );
+test.describe('CharacterLimit', () => {
+  test.describe('UTF-16', () => {
+    testSuite('UTF-16');
   });
 
-  describe('UTF-8', () => {
-    initializeE2E(
-      (e2e) => {
-        testSuite(e2e, 'UTF-8');
-      },
-      {appSettings: {isCharLimitUtf8: true}},
-    );
+  test.describe('UTF-8', () => {
+    testSuite('UTF-8');
   });
 });

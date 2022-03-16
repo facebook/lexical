@@ -6,22 +6,17 @@
  *
  */
 
-import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
+import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   repeat,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('Hashtags', () => {
-  initializeE2E((e2e) => {
-    it(`Can handle a single hashtag`, async () => {
-      const {page} = e2e;
-
+test.describe('Hashtags', () => {
+    test(`Can handle a single hashtag`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('#yolo');
 
@@ -67,9 +62,7 @@ describe('Hashtags', () => {
       });
     });
 
-    it(`Can handle adjacent hashtags`, async () => {
-      const {page} = e2e;
-
+    test(`Can handle adjacent hashtags`, async ({page, browserName}) => {
       await focusEditor(page);
       await page.keyboard.type('#hello world');
 
@@ -121,7 +114,7 @@ describe('Hashtags', () => {
       });
 
       await page.keyboard.press('ArrowLeft');
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 1, 0],
@@ -150,9 +143,7 @@ describe('Hashtags', () => {
       });
     });
 
-    it(`Can insert many hashtags mixed with text and delete them all correctly`, async () => {
-      const {page} = e2e;
-
+    test(`Can insert many hashtags mixed with text and delete them all correctly`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type(
         '#hello world foo #lol #lol asdasd #lol test this #asdas #asdas lasdasd asdasd',
@@ -194,5 +185,4 @@ describe('Hashtags', () => {
         focusPath: [0],
       });
     });
-  });
 });

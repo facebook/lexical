@@ -6,23 +6,21 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts';
+import {selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
   focusEditor,
-  initializeE2E,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
   sleep,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('File', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(e2e.isPlainText, `Can import/export`, async () => {
-      const {page} = e2e;
-
+test.describe('File', () => {
+    test(`Can import/export`, async ({page, isPlainText}) => {
+      test.skip(isPlainText);
       await focusEditor(page);
       await page.keyboard.type('Hello World');
       await page.keyboard.down('Shift');
@@ -69,5 +67,4 @@ describe('File', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">World</strong></p><ol class="PlaygroundEditorTheme__ol1"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">one</strong></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">two</strong></li></ol>',
       );
     });
-  });
 });

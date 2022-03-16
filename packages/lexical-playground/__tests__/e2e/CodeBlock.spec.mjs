@@ -6,20 +6,18 @@
  *
  */
 
-import {moveToEditorBeginning} from '../keyboardShortcuts';
+import {moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
   pasteFromClipboard,
   selectOption,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('CodeBlock', () => {
-  initializeE2E((e2e) => {
-    it('Can create code block with markdown', async () => {
-      const {page, isRichText} = e2e;
+test.describe('CodeBlock', () => {
+    test('Can create code block with markdown', async ({page, isRichText}) => {
       await focusEditor(page);
       await page.keyboard.type('``` alert(1);');
       if (isRichText) {
@@ -49,8 +47,7 @@ describe('CodeBlock', () => {
       }
     });
 
-    it('Can create code block with markdown and wrap existing text', async () => {
-      const {page, isRichText} = e2e;
+    test('Can create code block with markdown and wrap existing text', async ({page, isRichText}) => {
       await focusEditor(page);
       await page.keyboard.type('alert(1);');
       await moveToEditorBeginning(page);
@@ -74,8 +71,7 @@ describe('CodeBlock', () => {
       }
     });
 
-    it('Can switch highlighting language in a toolbar', async () => {
-      const {page, isRichText} = e2e;
+    test('Can switch highlighting language in a toolbar', async ({page, isRichText} ) => {
       await focusEditor(page);
       await page.keyboard.type('``` select * from users');
       if (isRichText) {
@@ -96,11 +92,10 @@ describe('CodeBlock', () => {
       }
     });
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Can maintain indent when creating new lines',
-      async () => {
-        const {page} = e2e;
+      async ({page, isRichText, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
         await page.keyboard.type('``` alert(1);');
         await page.keyboard.press('Enter');
@@ -114,11 +109,10 @@ describe('CodeBlock', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Can (un)indent multiple lines at once',
-      async () => {
-        const {page} = e2e;
+      async ({page, isRichText, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
         await page.keyboard.type('``` if (x) {');
         await page.keyboard.press('Enter');
@@ -159,57 +153,10 @@ describe('CodeBlock', () => {
       },
     );
 
-    it('Can move around lines with option+arrow keys', async () => {
-      const {page, isRichText} = e2e;
-      if (!isRichText) {
-        return;
-      }
-      await focusEditor(page);
-      const abcHTML =
-        '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">a</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">b</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">c</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>';
-      const bcaHTML =
-        '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">b</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">c</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">a</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>';
-      const endOfFirstLine = {
-        anchorOffset: 1,
-        anchorPath: [0, 3, 0],
-        focusOffset: 1,
-        focusPath: [0, 3, 0],
-      };
-      const endOfLastLine = {
-        anchorOffset: 1,
-        anchorPath: [0, 13, 0],
-        focusOffset: 1,
-        focusPath: [0, 13, 0],
-      };
-      await page.keyboard.type('``` a();\nb();\nc();');
-      await assertHTML(page, abcHTML);
-      await assertSelection(page, endOfLastLine);
-      await page.keyboard.press('ArrowUp');
-      await page.keyboard.press('ArrowUp');
-      // Workaround for #1173: just insert and remove a space to fix Firefox losing the selection
-      await page.keyboard.type(' ');
-      await page.keyboard.press('Backspace');
-      await assertSelection(page, endOfFirstLine);
-      // End workaround
-      // Ensure attempting to move a line up at the top of a codeblock no-ops
-      await page.keyboard.down('Alt');
-      await page.keyboard.press('ArrowUp');
-      await assertSelection(page, endOfFirstLine);
-      await assertHTML(page, abcHTML);
-      await page.keyboard.press('ArrowDown');
-      await page.keyboard.press('ArrowDown');
-      await assertSelection(page, endOfLastLine);
-      // Can't move a line down and out of codeblock
-      await assertHTML(page, bcaHTML);
-      await page.keyboard.press('ArrowDown');
-      await assertSelection(page, endOfLastLine);
-      await assertHTML(page, bcaHTML);
-    });
-
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Can move around lines with option+arrow keys',
-      async () => {
+      async ({page, isPlainText} ) => {
+        test.skip(isPlainText);
         const abcHTML =
           '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">a</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">b</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">c</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>';
         const bcaHTML =
@@ -226,7 +173,6 @@ describe('CodeBlock', () => {
           focusOffset: 1,
           focusPath: [0, 13, 0],
         };
-        const {page} = e2e;
         await focusEditor(page);
         await page.keyboard.type('``` a();\nb();\nc();');
         await assertHTML(page, abcHTML);
@@ -264,11 +210,7 @@ describe('CodeBlock', () => {
      */
     const EXPECTED_HTML =
       '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">function</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">run</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span data-lexical-text="true">  </span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">return</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">[</span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">null</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">undefined</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">2</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">""</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">]</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span></code>';
-    const CODE_PASTING_TESTS: Array<{
-      expectedHTML: string,
-      name: String,
-      pastedHTML: String,
-    }> = [
+    const CODE_PASTING_TESTS = [
       {
         expectedHTML: EXPECTED_HTML,
         name: 'VS Code',
@@ -307,11 +249,10 @@ describe('CodeBlock', () => {
     ];
 
     CODE_PASTING_TESTS.forEach((testCase, i) => {
-      it.skipIf(
-        e2e.isPlainText,
+      test(
         `Code block html paste: ${testCase.name}`,
-        async () => {
-          const {page} = e2e;
+        async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
           await focusEditor(page);
           await pasteFromClipboard(page, {
@@ -321,5 +262,4 @@ describe('CodeBlock', () => {
         },
       );
     });
-  });
 });

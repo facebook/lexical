@@ -6,28 +6,23 @@
  *
  */
 
-import {moveToLineBeginning, selectAll} from '../keyboardShortcuts';
+import {moveToLineBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
   copyToClipboard,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   pasteFromClipboard,
   repeat,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('HorizontalRule', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('HorizontalRule', () => {
+    test(
       'Can create a horizontal rule and move selection around it',
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText, browserName}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         await waitForSelector(page, 'button .horizontal-rule');
@@ -97,7 +92,7 @@ describe('HorizontalRule', () => {
 
         await page.keyboard.press('ArrowLeft');
 
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 9,
             anchorPath: [0, 0, 0],
@@ -131,11 +126,10 @@ describe('HorizontalRule', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -173,12 +167,10 @@ describe('HorizontalRule', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Will add a horizontal rule and split a TextNode across 2 paragraphs if the carat is in the middle of the TextNode, moving selection to the start of the new ParagraphNode.',
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         await page.keyboard.type('Test');
@@ -225,11 +217,10 @@ describe('HorizontalRule', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Can copy and paste a horizontal rule',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -292,5 +283,4 @@ describe('HorizontalRule', () => {
         });
       },
     );
-  });
 });

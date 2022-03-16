@@ -6,24 +6,21 @@
  *
  */
 
-import {redo, toggleBold, undo} from '../keyboardShortcuts';
+import {redo, toggleBold, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
   repeat,
   sleep,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('History', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isCollab,
+test.describe('History', () => {
+    test(
       `Can type two paragraphs of text and correctly undo and redo`,
-      async () => {
-        const {isRichText, page} = e2e;
-
+      async ({isRichText, page, isCollab}) => {
+        test.skip(isCollab);
         await page.focus('div[contenteditable="true"]');
         await page.keyboard.type('hello');
         await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
@@ -333,11 +330,10 @@ describe('History', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isCollab || e2e.isPlainText,
+    test(
       'Can coalesce when switching inline styles (#1151)',
-      async () => {
-        const {page} = e2e;
+      async ({page, isCollab, isPlainText}) => {
+        test.skip(isCollab || isPlainText)
 
         await focusEditor(page);
         await toggleBold(page);
@@ -371,5 +367,4 @@ describe('History', () => {
         await assertHTML(page, step1HTML);
       },
     );
-  });
 });

@@ -12,20 +12,17 @@ import {
   click,
   E2E_PORT,
   focusEditor,
-  initializeE2E,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector
+} from '../utils/index.mjs';
 
 const IMAGE_URL = E2E_PORT === 3000 ? '/src/images/yellow-flower.jpg' : '/assets/yellow-flower.bf6d0400.jpg';
 
-describe('Images', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('Images', () => {
+    test(
       `Can create a decorator and move selection around it`,
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText)
         await focusEditor(page);
 
         await waitForSelector(page, 'button .image');
@@ -131,11 +128,10 @@ describe('Images', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Can add images and delete them correctly',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText)
 
         await focusEditor(page);
 
@@ -217,5 +213,4 @@ describe('Images', () => {
         });
       },
     );
-  });
 });

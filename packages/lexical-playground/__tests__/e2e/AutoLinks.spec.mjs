@@ -6,22 +6,19 @@
  *
  */
 
-import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts';
+import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   focusEditor,
-  initializeE2E,
   pasteFromClipboard,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('Auto Links', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('Auto Links', () => {
+    test(
       'Can convert url-like text into links',
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
         await page.keyboard.type(
           'Hello http://example.com and https://example.com/path?with=query#and-hash and www.example.com',
@@ -33,11 +30,10 @@ describe('Auto Links', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Can destruct links if add non-spacing text in front or right after it',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         const htmlWithLink =
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="http://example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com</span></a></p>';
 
@@ -77,11 +73,10 @@ describe('Auto Links', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Can create link when pasting text with urls',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
         await pasteFromClipboard(page, {
           'text/plain':
@@ -93,5 +88,4 @@ describe('Auto Links', () => {
         );
       },
     );
-  });
 });

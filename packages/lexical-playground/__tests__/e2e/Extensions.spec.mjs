@@ -9,16 +9,13 @@
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
   evaluate,
   focusEditor,
-  initializeE2E,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('Extensions', () => {
-  initializeE2E((e2e) => {
-    it(`document.execCommand("insertText")`, async () => {
-      const {page} = e2e;
+test.describe('Extensions', () => {
+    test(`document.execCommand("insertText")`, async ({page}) => {
       await focusEditor(page);
 
       await evaluate(
@@ -40,14 +37,12 @@ describe('Extensions', () => {
       });
     });
 
-    it(`ClipboardEvent("paste")`, async () => {
+    test(`ClipboardEvent("paste")`, async ({page, browserName}) => {
       // Pasting this way doesn't work in FF due to content
       // privacy reasons.
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         return;
       }
-
-      const {page} = e2e;
       await focusEditor(page);
 
       await evaluate(
@@ -119,8 +114,7 @@ describe('Extensions', () => {
       });
     });
 
-    it(`ClipboardEvent("paste") + document.execCommand("insertText")`, async () => {
-      const {page} = e2e;
+    test(`ClipboardEvent("paste") + document.execCommand("insertText")`, async ({page, browserName}) => {
       await focusEditor(page);
 
       await evaluate(page, () => {
@@ -139,7 +133,7 @@ describe('Extensions', () => {
 
       // Pasting this way doesn't work in FF due to content
       // privacy reasons. So we only look for the execCommand output.
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertHTML(
           page,
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bar</span></p>',
@@ -163,5 +157,4 @@ describe('Extensions', () => {
         });
       }
     });
-  });
 });

@@ -11,27 +11,23 @@ import {
   moveToLineEnd,
   moveToPrevWord,
   selectAll,
-} from '../keyboardShortcuts';
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
   copyToClipboard,
-  E2E_BROWSER,
   focus,
   focusEditor,
-  initializeE2E,
   IS_LINUX,
   IS_WINDOWS,
   pasteFromClipboard,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector
+} from '../utils/index.mjs';
 
-describe('CopyAndPaste', () => {
-  initializeE2E((e2e) => {
-    it('Basic copy + paste', async () => {
-      const {isRichText, page} = e2e;
-
+test.describe('CopyAndPaste', () => {
+    test('Basic copy + paste', async ({isRichText, page, browserName}) => {
       await focusEditor(page);
 
       // Add paragraph
@@ -70,7 +66,7 @@ describe('CopyAndPaste', () => {
           page,
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!</span></p>',
         );
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],
@@ -90,7 +86,7 @@ describe('CopyAndPaste', () => {
           page,
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!</span></p>',
         );
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],
@@ -149,9 +145,7 @@ describe('CopyAndPaste', () => {
       }
     });
 
-    it(`Copy and paste between sections`, async () => {
-      const {isRichText, page} = e2e;
-
+    test(`Copy and paste between sections`, async ({isRichText, page, browserName}) => {
       await focusEditor(page);
       await page.keyboard.type('Hello world #foobar test #foobar2 when #not');
 
@@ -187,7 +181,7 @@ describe('CopyAndPaste', () => {
       await selectAll(page);
 
       if (isRichText) {
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],
@@ -203,7 +197,7 @@ describe('CopyAndPaste', () => {
           });
         }
       } else {
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],
@@ -255,7 +249,7 @@ describe('CopyAndPaste', () => {
       await page.keyboard.press('ArrowUp');
       await moveToPrevWord(page);
       // Once more for linux on Chromium
-      if (IS_LINUX && E2E_BROWSER === 'chromium') {
+      if (IS_LINUX && browserName === 'chromium') {
         await moveToPrevWord(page);
       }
       await page.keyboard.up('Shift');
@@ -310,7 +304,7 @@ describe('CopyAndPaste', () => {
       await selectAll(page);
 
       if (isRichText) {
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],
@@ -318,7 +312,7 @@ describe('CopyAndPaste', () => {
             focusPath: [],
           });
         } else {
-          if (E2E_BROWSER === 'firefox') {
+          if (browserName === 'firefox') {
             await assertSelection(page, {
               anchorOffset: 0,
               anchorPath: [0, 0, 0],
@@ -335,7 +329,7 @@ describe('CopyAndPaste', () => {
           }
         }
       } else {
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [],
@@ -365,12 +359,10 @@ describe('CopyAndPaste', () => {
       });
     });
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Copy and paste of partial list items into an empty editor',
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         // Add three list items
@@ -447,11 +439,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Copy and paste of partial list items into the list',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText, browserName}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -499,7 +490,7 @@ describe('CopyAndPaste', () => {
         // Select all and remove content
         await page.keyboard.press('ArrowUp');
         await page.keyboard.press('ArrowUp');
-        if (!IS_WINDOWS && E2E_BROWSER === 'firefox') {
+        if (!IS_WINDOWS && browserName === 'firefox') {
           await page.keyboard.press('ArrowUp');
         }
         await moveToLineEnd(page);
@@ -532,11 +523,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Copy and paste of list items and paste back into list',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -600,11 +590,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Copy and paste of list items and paste back into list on an existing item',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -668,11 +657,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Copy and paste two paragraphs into list on an existing item',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         await page.keyboard.type('Hello');
@@ -730,11 +718,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Copy and paste two paragraphs at the end of a list',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -787,12 +774,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Copy and paste an inline element into a leaf node',
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         // Root
@@ -823,11 +808,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'HTML Copy + paste a plain DOM text node',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -848,11 +832,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'HTML Copy + paste a paragraph element',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -874,11 +857,10 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'HTML Copy + paste an anchor element',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
 
@@ -924,8 +906,8 @@ describe('CopyAndPaste', () => {
       },
     );
 
-    it.skipIf(e2e.isPlainText, 'HTML Copy + paste a list element', async () => {
-      const {page} = e2e;
+    test('HTML Copy + paste a list element', async ({page, isPlainText}) => {
+      test.skip(isPlainText);
 
       await focusEditor(page);
 
@@ -961,5 +943,4 @@ describe('CopyAndPaste', () => {
         '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world!</span></li></ul>',
       );
     });
-  });
 });

@@ -6,17 +6,12 @@
  *
  */
 
-import {focusEditor, initializeE2E} from '../utils';
+import {focusEditor, test} from '../utils/index.mjs';
 
-describe('Focus', () => {
-  initializeE2E((e2e) => {
-    it(`can tab out of the editor`, async () => {
-      const {page, isRichText} = e2e;
-      if (isRichText) {
-        return;
-      }
+test.describe('Focus', () => {
+    test(`can tab out of the editor`, async ({page, isRichText}) => {
+      test.skip(isRichText);
       await focusEditor(page);
-
       await page.keyboard.press('Tab');
       const isEditorFocused = await page.evaluate(() => {
         const editor = document.querySelector('div[contenteditable="true"]');
@@ -25,5 +20,4 @@ describe('Focus', () => {
 
       expect(isEditorFocused).toBe(false);
     });
-  });
 });

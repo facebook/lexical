@@ -6,21 +6,17 @@
  *
  */
 
-import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts';
+import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   repeat,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('Emoticons', () => {
-  initializeE2E((e2e) => {
-    it(`Can handle a single emoticon`, async () => {
-      const {page} = e2e;
-
+test.describe('Emoticons', () => {
+    test(`Can handle a single emoticon`, async ({page, browserName}) => {
       await focusEditor(page);
       await page.keyboard.type('This is an emoji :)');
       await assertHTML(
@@ -48,7 +44,7 @@ describe('Emoticons', () => {
 
       await page.keyboard.type(':)');
       await page.keyboard.press('ArrowLeft');
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 1, 0, 0],
@@ -86,9 +82,7 @@ describe('Emoticons', () => {
       });
     });
 
-    it(`Can enter multiple emoticons`, async () => {
-      const {isRichText, page} = e2e;
-
+    test(`Can enter multiple emoticons`, async ({isRichText, browserName, page}) => {
       await focusEditor(page);
       await page.keyboard.type(':) :) <3 :(');
       await assertHTML(
@@ -197,7 +191,7 @@ describe('Emoticons', () => {
 
       await page.keyboard.type(':):):):):)');
       await page.keyboard.press('ArrowLeft');
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 4, 0, 0],
@@ -214,7 +208,7 @@ describe('Emoticons', () => {
       }
 
       await page.keyboard.press('ArrowLeft');
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 3, 0, 0],
@@ -231,7 +225,7 @@ describe('Emoticons', () => {
       }
 
       await page.keyboard.press('ArrowLeft');
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 2, 0, 0],
@@ -248,7 +242,7 @@ describe('Emoticons', () => {
       }
 
       await page.keyboard.press('ArrowLeft');
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 1, 0, 0],
@@ -284,5 +278,4 @@ describe('Emoticons', () => {
         focusPath: [0, 0, 0],
       });
     });
-  });
 });

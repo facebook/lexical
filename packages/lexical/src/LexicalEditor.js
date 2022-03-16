@@ -11,6 +11,7 @@ import type {EditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 import type {Node as ReactNode} from 'react';
 
+import {IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -528,7 +529,11 @@ class BaseLexicalEditor {
         const style = nextRootElement.style;
         style.userSelect = 'text';
         style.whiteSpace = 'pre-wrap';
-        style.overflowWrap = 'anywhere';
+        if (IS_SAFARI) {
+          style.wordBreak = 'break-word';
+        } else {
+          style.overflowWrap = 'anywhere';
+        }
         nextRootElement.setAttribute('data-lexical-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));

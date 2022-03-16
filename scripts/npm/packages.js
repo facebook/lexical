@@ -12,7 +12,6 @@
 'use strict';
 
 const LEXICAL_PKG = 'lexical';
-const LEXICAL_HELPERS_PKG = 'lexical-helpers';
 const DEFAULT_PKGS = [
   'lexical-react',
   'lexical-yjs',
@@ -29,6 +28,5 @@ const DEFAULT_PKGS = [
 
 module.exports = {
   DEFAULT_PKGS,
-  LEXICAL_HELPERS_PKG,
   LEXICAL_PKG,
 };

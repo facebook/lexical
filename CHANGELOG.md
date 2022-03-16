@@ -1,3 +1,12 @@
+## 0.1.15 (March 16, 2022)
+
+- Improve composition on Firefox
+- Splits helper code into several smaller packages.
+- Fixes clipboard behavior on Firefox.
+- Fix hashtag with adjacent non-simple text node
+- Rename addTransform to addNodeTransform
+- Fix copy & paste issue
+
 ## 0.1.14 (March 04, 2022)
 
 - Added TableCellHeaderStates to enable table header customization.

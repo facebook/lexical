@@ -6,23 +6,19 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts';
+import {selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
   repeat,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('TextEntry', () => {
-  initializeE2E((e2e) => {
-    it(`Can type 'Hello Lexical' in the editor`, async () => {
-      const {page} = e2e;
-
+test.describe('TextEntry', () => {
+    test(`Can type 'Hello Lexical' in the editor`, async ({page}) => {
       const targetText = 'Hello Lexical';
       await focusEditor(page);
       await page.keyboard.type(targetText);
@@ -38,8 +34,7 @@ describe('TextEntry', () => {
       });
     });
 
-    it(`Can type 'Hello Lexical' in the editor and replace it with foo`, async () => {
-      const {page} = e2e;
+    test(`Can type 'Hello Lexical' in the editor and replace it with foo`, async ({ page }) => {
 
       const targetText = 'Hello Lexical';
       await focusEditor(page);
@@ -62,8 +57,7 @@ describe('TextEntry', () => {
       });
     });
 
-    it(`Can type 'Hello Lexical' in the editor and replace it with an empty space`, async () => {
-      const {page} = e2e;
+    test(`Can type 'Hello Lexical' in the editor and replace it with an empty space`, async ({ page }) => {
 
       const targetText = 'Hello Lexical';
       await focusEditor(page);
@@ -86,9 +80,7 @@ describe('TextEntry', () => {
       });
     });
 
-    it('Paragraphed text entry and selection', async () => {
-      const {isRichText, page} = e2e;
-
+    test('Paragraphed text entry and selection', async ({ page, isRichText }) => {
       await focusEditor(page);
       await page.keyboard.type('Hello World.');
       await page.keyboard.press('Enter');
@@ -140,9 +132,7 @@ describe('TextEntry', () => {
       }
     });
 
-    it(`Can delete characters after they're typed`, async () => {
-      const {page} = e2e;
-
+    test(`Can delete characters after they're typed`, async ({page, isRichText}) => {
       await focusEditor(page);
       const text = 'Delete some of these characters.';
       const backspacedText = 'Delete some of these characte';
@@ -163,9 +153,7 @@ describe('TextEntry', () => {
       });
     });
 
-    it(`Can type characters, and select and replace a part`, async () => {
-      const {page} = e2e;
-
+    test(`Can type characters, and select and replace a part`, async ({page, isRichText}) => {
       await focusEditor(page);
       const text = 'Hello foobar.';
       await page.keyboard.type(text);
@@ -187,9 +175,7 @@ describe('TextEntry', () => {
       });
     });
 
-    it(`Can select and delete a word`, async () => {
-      const {page} = e2e;
-
+    test(`Can select and delete a word`, async ({page, browserName, isRichText}) => {
       await focusEditor(page);
       const text = 'Delete some of these characters.';
       const backspacedText = 'Delete some of these ';
@@ -199,7 +185,7 @@ describe('TextEntry', () => {
       await page.keyboard.press('ArrowLeft');
       // Chrome stops words on punctuation, so we need to trigger
       // the left arrow key one more time.
-      if (E2E_BROWSER === 'chromium') {
+      if (browserName === 'chromium') {
         await page.keyboard.press('ArrowLeft');
       }
       await page.keyboard.up('Shift');
@@ -226,9 +212,7 @@ describe('TextEntry', () => {
       });
     });
 
-    it('First paragraph backspace handling', async () => {
-      const {isRichText, page} = e2e;
-
+    test('First paragraph backspace handling', async ({page, isRichText}) => {
       await focusEditor(page);
 
       // Add some trimmable text
@@ -290,9 +274,7 @@ describe('TextEntry', () => {
       }
     });
 
-    it('Mix of paragraphs and break points', async () => {
-      const {isRichText, page} = e2e;
-
+    test('Mix of paragraphs and break points', async ({page, isRichText}) => {
       await focusEditor(page);
 
       // Add some line breaks
@@ -374,18 +356,22 @@ describe('TextEntry', () => {
       });
     });
 
-    it('Empty paragraph and new line node selection', async () => {
-      const {isRichText, page} = e2e;
-
+    test('Empty paragraph and new line node selection', async ({isRichText, isCollab, page}) => {
       await focusEditor(page);
 
       // Add paragraph
       await page.keyboard.press('Enter');
+      if (isCollab) {
+        // I think this is a bug in Collab - focusing the editor does not ceate a Paragraph, so hitting enter once
+        // creates only one.
+        await page.keyboard.press('Enter');
+      }
       if (isRichText) {
         await assertHTML(
           page,
           '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
         );
+        await page.pause()
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [1],
@@ -491,5 +477,4 @@ describe('TextEntry', () => {
         focusPath: [0],
       });
     });
-  });
 });

@@ -6,28 +6,24 @@
  *
  */
 
-import {moveToLineBeginning} from '../keyboardShortcuts';
+import {moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
   selectOption,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('TextFormatting', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('TextFormatting', () => {
+    test(
       `Can create bold text using the shortcut`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello');
@@ -63,11 +59,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create italic text using the shortcut`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello');
@@ -103,11 +98,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can select text and boldify it with the shortcut`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello world!');
@@ -154,11 +148,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Should not format the text in the subsequent paragraph after a triple click selection event.',
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('hello world');
@@ -188,11 +181,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can select text and italicify it with the shortcut`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello world!');
@@ -239,11 +231,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can select text and underline+strikethrough`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello world!');
@@ -322,11 +313,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can select text and change the font-size`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello world!');
@@ -361,11 +351,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can select text and change the font-size and font-family`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello world!');
@@ -430,11 +419,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can select multiple text parts and format them with shortcuts`,
-      async () => {
-        const {page} = e2e;
+     async ({page, isPlainText, browserName}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('Hello world!');
@@ -542,7 +530,7 @@ describe('TextFormatting', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><em class="PlaygroundEditorTheme__textItalic" data-lexical-text="true">world</em><span data-lexical-text="true">!</span></p>',
         );
 
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [0, 1, 0],
@@ -574,11 +562,10 @@ describe('TextFormatting', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can insert range of formatted text and select part and replace with character`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await page.keyboard.type('123');
@@ -653,5 +640,4 @@ describe('TextFormatting', () => {
         });
       },
     );
-  });
 });

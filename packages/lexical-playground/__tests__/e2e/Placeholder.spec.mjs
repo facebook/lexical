@@ -9,20 +9,16 @@
 import {
   assertHTML,
   assertSelection,
+  expect,
   focusEditor,
-  initializeE2E,
-  IS_COLLAB,
-  textContent,
-} from '../utils';
+  test,
+  textContent} from '../utils/index.mjs';
 
-describe('Placeholder', () => {
-  initializeE2E((e2e) => {
-    it(`Displays a placeholder when no content is present`, async () => {
-      const {page, isRichText} = e2e;
-
+test.describe('Placeholder', () => {
+    test(`Displays a placeholder when no content is present`, async ({page, isRichText, isCollab}) => {
       await focusEditor(page);
       const content = await textContent(page, '.Placeholder__root');
-      if (IS_COLLAB) {
+      if (isCollab) {
         expect(content).toBe('Enter some collaborative rich text...');
       } else if (isRichText) {
         expect(content).toBe('Enter some rich text...');
@@ -41,5 +37,4 @@ describe('Placeholder', () => {
         focusPath: [0],
       });
     });
-  });
 });

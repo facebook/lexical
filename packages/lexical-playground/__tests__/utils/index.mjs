@@ -7,15 +7,15 @@
  * @flow strict
  */
 
-import type {Settings as AppSettings} from '../../src/appSettings';
-
-import {toMatchInlineSnapshot} from 'jest-snapshot';
-import {chromium, firefox, webkit} from 'playwright';
+import { expect,test as base } from '@playwright/test';
+import jestSnapshot from 'jest-snapshot';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
 
-import {selectAll} from '../keyboardShortcuts';
+import {selectAll} from '../keyboardShortcuts/index.mjs';
+
+const {toMatchInlineSnapshot} = jestSnapshot;
 
 export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
@@ -23,172 +23,49 @@ export const E2E_BROWSER = process.env.E2E_BROWSER;
 export const IS_MAC = process.platform === 'darwin';
 export const IS_WINDOWS = process.platform === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
-export const IS_COLLAB =
-  process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+export const IS_COLLAB = process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
+const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 
-jest.setTimeout(60000);
-
-const retryCount = 20;
-
-type Config = $ReadOnly<{
-  appSettings?: AppSettings,
-}>;
-
-async function attemptToLaunchBrowser(attempt = 0) {
-  try {
-    return await {chromium, firefox, webkit}[E2E_BROWSER].launch({
-      headless: !E2E_DEBUG,
-    });
-  } catch (e) {
-    if (attempt > retryCount) {
-      throw e;
-    }
-    return await new Promise((resolve) => {
-      setTimeout(async () => {
-        resolve(await attemptToLaunchBrowser(attempt + 1));
-      }, 1000);
-    });
-  }
-}
-
-export function initializeE2E(runTests, config: Config = {}) {
-  const {appSettings = {}} = config;
+base.beforeEach(async ({ page, isRichText, isPlainText, isCollab }) => {
+  page.exposeFunction('expectToBeEqual', (actual, expected) => {
+    return expect(actual).toEqual(expected);
+  });
+  const appSettings = {};
   if (appSettings.isRichText === undefined) {
-    appSettings.isRichText = process.env.E2E_EDITOR_MODE !== 'plain-text';
+    appSettings.isRichText = IS_RICH_TEXT;
   }
   if (appSettings.disableBeforeInput === undefined) {
     appSettings.disableBeforeInput =
       process.env.E2E_EVENTS_MODE === 'legacy-events';
   }
-  if (IS_COLLAB) {
-    appSettings.isCollab =
-      process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+  if (isCollab) {
+    appSettings.isCollab = isCollab;
+    appSettings.collabId = uuidv4();
   }
   if (appSettings.showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;
   }
-  const e2e = {
-    browser: null,
-    isCollab: IS_COLLAB,
-    isPlainText: !appSettings.isRichText,
-    isRichText: appSettings.isRichText,
-    async logScreenshot() {
-      const currentTest = expect.getState().currentTestName;
-      const buffer = await e2e.page.screenshot();
-      // eslint-disable-next-line no-console
-      console.log(
-        `Screenshot "${currentTest}": \n\n` +
-          buffer.toString('base64') +
-          '\n\n',
-      );
-    },
-    page: null,
-    async saveScreenshot() {
-      const currentTest = expect.getState().currentTestName;
-      const path =
-        'e2e-screenshots/' + currentTest.replace(/\s/g, '_') + '.png';
-      await e2e.page.screenshot({path});
-    },
-  };
+  const urlParams = appSettingsToURLParams(appSettings);
+  const url = `http://localhost:${E2E_PORT}/${
+    isCollab ? 'split/' : ''
+  }?${urlParams.toString()}`;
+  await page.goto(url);
+});
 
-  beforeAll(async () => {
-    e2e.browser = await attemptToLaunchBrowser();
-  });
-  beforeEach(async () => {
-    if (IS_COLLAB) {
-      appSettings.collabId = uuidv4();
-    }
-    const urlParams = appSettingsToURLParams(appSettings);
-    const url = `http://localhost:${E2E_PORT}/${
-      IS_COLLAB ? 'split/' : ''
-    }?${urlParams.toString()}`;
-    const context = await e2e.browser.newContext({acceptDownloads: true});
-    const page = await context.newPage();
-    await page.goto(url, {timeout: 60000});
-    e2e.page = page;
-  });
-  afterEach(async () => {
-    if (!E2E_DEBUG) {
-      await e2e.page.close();
-    }
-  });
-  afterAll(async () => {
-    if (!E2E_DEBUG) {
-      await e2e.browser.close();
-    }
-  });
+//base.use({launchOptions: {slowMo: 200}})
 
-  if (!E2E_DEBUG && !global.it._overridden) {
-    const it = global.it;
-    // if we mark the test as flaky, overwrite the original 'it' function
-    // to attempt the test 10 times before actually failing
-    const newIt = async (description, test) => {
-      const result = it(description, async () => {
-        let count = 0;
-        async function attempt() {
-          try {
-            // test attempt
-            return await test();
-          } catch (err) {
-            // test failed
-            if (count < retryCount) {
-              count++;
-              // Close and re-open page
-              await e2e.page.close();
-              if (IS_COLLAB) {
-                appSettings.collabId = uuidv4();
-              }
-              const urlParams = appSettingsToURLParams(appSettings);
-              const url = `http://localhost:${E2E_PORT}/${
-                IS_COLLAB ? 'split/' : ''
-              }?${urlParams.toString()}`;
-              const context = await e2e.browser.newContext({
-                acceptDownloads: true,
-              });
-              const page = await context.newPage();
-              await page.goto(url);
-              e2e.page = page;
-              // retry
-              return await attempt();
-            } else {
-              // fail for real + log screenshot
-              // eslint-disable-next-line no-console
-              console.log(`Flaky Test: ${description}:`);
-              await e2e.saveScreenshot();
-              throw err;
-            }
-          }
-        }
-        return await attempt();
-      });
-      return result;
-    };
-    global.it = newIt;
-    // Preventing from overridding global.it twice (in case test suite runs initializeE2E twice)
-    newIt._overridden = true;
-    newIt.skipIf = async (condition, description, test) => {
-      if (typeof condition === 'function' ? condition() : !!condition) {
-        it.skip(description, test);
-      } else {
-        newIt(description, test);
-      }
-    };
-  } else if (E2E_DEBUG) {
-    it.skipIf = async (condition, description, test) => {
-      if (typeof condition === 'function' ? condition() : !!condition) {
-        it.skip(description, test);
-      } else {
-        it(description, test);
-      }
-    };
-  }
+export const test = base.extend({
+  isCollab: IS_COLLAB,
+  isPlainText: IS_PLAIN_TEXT,
+  isRichText: IS_RICH_TEXT,
+});
 
-  runTests(e2e);
-}
+export { expect } from '@playwright/test';
 
-function appSettingsToURLParams(settings: AppSettings): URLSearchParams {
+function appSettingsToURLParams(appSettings) {
   const params = new URLSearchParams();
-  Object.entries(settings).forEach(([setting, value]) => {
+  Object.entries(appSettings).forEach(([setting, value]) => {
     params.append(setting, value);
   });
   return params;
@@ -207,35 +84,39 @@ export async function clickSelectors(page, selectors) {
   }
 }
 
-async function assertHTMLOnPageOrFrame(pageOrFrame, expectedHtml) {
-  // Assert HTML of the editor matches the given html
+async function assertHTMLOnPageOrFrame(page, pageOrFrame, expectedHtml) {
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
-  if (expectedHtml === '') {
-    // eslint-disable-next-line no-console
-    console.log('Output HTML:\n\n' + actualHtml);
-    throw new Error('Empty HTML assertion!');
-  }
-  // HTML might differ between browsers, so we use attach
-  // outputs to an element using JSDOM to normalize and prettify
-  // the output.
-  const actual = document.createElement('div');
-  actual.innerHTML = actualHtml;
-  const expected = document.createElement('div');
-  expected.innerHTML = expectedHtml;
-  expect(actual).toEqual(expected);
+  await page.evaluate(async (args) => {
+    const actualHtmlString = args.actualHtml;
+    const expectedHtmlString = args.expectedHtml;
+    // Assert HTML of the editor matches the given html
+    if (expectedHtmlString === '') {
+      // eslint-disable-next-line no-console
+      console.log('Output HTML:\n\n' + actualHtml);
+      throw new Error('Empty HTML assertion!');
+    }
+    // HTML might differ between browsers, so we use attach
+    // outputs to an element using JSDOM to normalize and prettify
+    // the output.
+    const actual = document.createElement('div');
+    actual.innerHTML = actualHtmlString;
+    const expected = document.createElement('div');
+    expected.innerHTML = expectedHtmlString;
+    await window.expectToBeEqual(actual, expected);
+  }, {actualHtml, expectedHtml});
 }
 
 export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
-    await assertHTMLOnPageOrFrame(leftFrame, expectedHtml);
+    await assertHTMLOnPageOrFrame(page, leftFrame, expectedHtml);
     if (!ignoreSecondFrame) {
       let attempts = 0;
       while (attempts < 4) {
         const rightFrame = await page.frame('right');
         let failed = false;
         try {
-          await assertHTMLOnPageOrFrame(rightFrame, expectedHtml);
+          await assertHTMLOnPageOrFrame(page, rightFrame, expectedHtml);
         } catch (e) {
           if (attempts === 5) {
             throw e;
@@ -250,7 +131,7 @@ export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
       }
     }
   } else {
-    await assertHTMLOnPageOrFrame(page, expectedHtml);
+    await assertHTMLOnPageOrFrame(page, page, expectedHtml);
   }
 }
 

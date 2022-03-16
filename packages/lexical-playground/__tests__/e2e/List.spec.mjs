@@ -13,16 +13,14 @@ import {
   selectAll,
   selectCharacters,
   undo,
-} from '../keyboardShortcuts';
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   clearEditor,
   click,
   focusEditor,
-  initializeE2E,
-  IS_COLLAB,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
 async function toggleBulletList(page) {
   await waitForSelector(page, '.block-controls');
@@ -52,11 +50,8 @@ async function clickOutdentButton(page, times = 1) {
   }
 }
 
-describe('Nested List', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(e2e.isPlainText, `Can toggle an empty list on/off`, async () => {
-      const {page} = e2e;
-
+test.describe('Nested List', () => {
+    test( `Can toggle an empty list on/off`, async({page}) => {
       await focusEditor(page);
 
       await assertHTML(
@@ -78,11 +73,10 @@ describe('Nested List', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
     });
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create a list and indent/outdent it`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
         await toggleBulletList(page);
@@ -141,11 +135,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'Should outdent if indented when the backspace key is pressed',
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
         await toggleBulletList(page);
@@ -176,11 +169,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can indent/outdent mutliple list nodes in a list with multiple levels of indentation`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -259,11 +251,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create a list and then toggle it back to original state.`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -338,11 +329,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create a list containing inline blocks and then toggle it back to original state.`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -389,11 +379,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create mutliple bullet lists and then toggle off the list.`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -448,11 +437,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create an unordered list and convert it to an ordered list `,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -481,11 +469,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create a single item unordered list with text and convert it to an ordered list `,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -509,11 +496,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create a multi-line unordered list and convert it to an ordered list `,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -550,11 +536,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create a multi-line unordered list and convert it to an ordered list when no nodes are in the selection`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -590,11 +575,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create an indented multi-line unordered list and convert it to an ordered list `,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -637,11 +621,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can create an indented multi-line unordered list and convert individual lists in the nested structure to a numbered list. `,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -717,11 +700,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Should merge selected nodes into existing list siblings of the same type when formatting to a list`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -760,11 +742,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Should NOT merge selected nodes into existing list siblings of a different type when formatting to a list`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -813,12 +794,9 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Should create list with start number markdown`,
-      async () => {
-        const {page} = e2e;
-
+      async({page, isCollab}) => {
         await focusEditor(page);
         // Trigger markdown using 321 digits followed by "." and a trigger of " ".
         await page.keyboard.type('321. ');
@@ -833,7 +811,7 @@ describe('Nested List', () => {
           '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">321. </span></p>';
 
         await assertHTML(page, forwardHTML);
-        if (IS_COLLAB) {
+        if (isCollab) {
           // Collab uses its own undo/redo
           return;
         }
@@ -844,11 +822,11 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
+
       `Should not process paragraph markdown inside list.`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
 
@@ -861,11 +839,11 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
+
       `Un-indents list empty list items when the user presses enter`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
+
 
         await focusEditor(page);
         await toggleBulletList(page);
@@ -890,5 +868,4 @@ describe('Nested List', () => {
         );
       },
     );
-  });
 });

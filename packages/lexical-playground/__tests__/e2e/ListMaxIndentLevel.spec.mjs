@@ -6,14 +6,13 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts';
+import {selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
   focusEditor,
-  initializeE2E,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
 async function toggleBulletList(page) {
   await waitForSelector(page, '.block-controls');
@@ -31,14 +30,11 @@ async function clickIndentButton(page, times = 1) {
 
 const MAX_INDENT_LEVEL = 6;
 
-describe('Nested List', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('Nested List', () => {
+   test(
       `Can only indent until the max depth when list is empty`,
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
         await toggleBulletList(page);
 
@@ -59,12 +55,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+   test(
       `Can only indent until the max depth when list has content`,
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
         await toggleBulletList(page);
         await page.keyboard.type('World');
@@ -86,11 +80,10 @@ describe('Nested List', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can only indent until the max depth a list with nested lists`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await toggleBulletList(page);
@@ -132,5 +125,4 @@ describe('Nested List', () => {
         );
       },
     );
-  });
 });

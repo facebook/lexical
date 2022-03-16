@@ -11,25 +11,20 @@ import {
   moveToLineEnd,
   selectAll,
   selectCharacters,
-} from '../keyboardShortcuts';
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
-  E2E_BROWSER,
   focus,
   focusEditor,
-  initializeE2E,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('Links', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('Links', () => {
+    test(
       `Can convert a text node into a link`,
-      async () => {
-        const {page} = e2e;
+      async({page}) => {
 
         await focusEditor(page);
         await page.keyboard.type('Hello');
@@ -96,12 +91,9 @@ describe('Links', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Does nothing if the selection is collapsed at the end of a text node.`,
-      async () => {
-        const {page} = e2e;
-
+      async({page}) => {
         await focusEditor(page);
         await page.keyboard.type('Hello');
 
@@ -128,9 +120,7 @@ describe('Links', () => {
       },
     );
 
-    it.skipIf(e2e.isPlainText, `Can type text before and after`, async () => {
-      const {page} = e2e;
-
+    test(`Can type text before and after`, async({page}) => {
       await focusEditor(page);
       await page.keyboard.type('An Awesome Website');
       await selectAll(page);
@@ -157,11 +147,9 @@ describe('Links', () => {
       );
     });
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can convert part of a text node into a link with forwards selection`,
-      async () => {
-        const {page} = e2e;
+      async({page, browserName}) => {
 
         await focusEditor(page);
         await page.keyboard.type('Hello world');
@@ -182,7 +170,7 @@ describe('Links', () => {
           page,
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
         );
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [0, 1, 0, 0],
@@ -210,7 +198,7 @@ describe('Links', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://facebook.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
         );
 
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [0, 1, 0, 0],
@@ -244,11 +232,9 @@ describe('Links', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can convert part of a text node into a link with backwards selection`,
-      async () => {
-        const {page} = e2e;
+      async({page, browserName}) => {
 
         await focusEditor(page);
         await page.keyboard.type('Hello world');
@@ -269,7 +255,7 @@ describe('Links', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
         );
 
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 5,
             anchorPath: [0, 1, 0, 0],
@@ -297,7 +283,7 @@ describe('Links', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="https://facebook.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world</span></a></p>',
         );
 
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 5,
             anchorPath: [0, 1, 0, 0],
@@ -330,5 +316,4 @@ describe('Links', () => {
         });
       },
     );
-  });
 });

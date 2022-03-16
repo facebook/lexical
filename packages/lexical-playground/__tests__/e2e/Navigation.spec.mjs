@@ -15,36 +15,32 @@ import {
   moveToParagraphBeginning,
   moveToParagraphEnd,
   moveToPrevWord,
-} from '../keyboardShortcuts';
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertSelection,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   IS_WINDOWS,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
-} from '../utils';
+  test} from '../utils/index.mjs';
 
-describe('Keyboard Navigation', () => {
-  initializeE2E((e2e) => {
-    async function typeParagraphs(page) {
-      await focusEditor(page);
-      await page.keyboard.type(
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-      );
-      await page.keyboard.press('Enter');
-      await page.keyboard.type(
-        'It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. ',
-      );
-      await page.keyboard.press('Enter');
-      await page.keyboard.type(
-        'It was popularised in the 1960s with the release of Letraset sheets containing lorem ipsum passages.',
-      );
-    }
+async function typeParagraphs(page) {
+  await focusEditor(page);
+  await page.keyboard.type(
+    'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+  );
+  await page.keyboard.press('Enter');
+  await page.keyboard.type(
+    'It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. ',
+  );
+  await page.keyboard.press('Enter');
+  await page.keyboard.type(
+    'It was popularised in the 1960s with the release of Letraset sheets containing lorem ipsum passages.',
+  );
+}
 
-    it('can type several paragraphs', async () => {
-      const {isRichText, page} = e2e;
+test.describe('Keyboard Navigation', () => {
+    test('can type several paragraphs', async ({isRichText, page}) => {
       await typeParagraphs(page);
       if (isRichText) {
         await assertSelection(page, {
@@ -63,8 +59,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can move to the beginning of the current line, then back to the end of the current line', async () => {
-      const {isRichText, page} = e2e;
+    test('can move to the beginning of the current line, then back to the end of the current line', async ({isRichText, page}) => {
       await typeParagraphs(page);
       await moveToLineBeginning(page);
       if (isRichText) {
@@ -100,8 +95,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can move to the top of the editor', async () => {
-      const {page} = e2e;
+    test('can move to the top of the editor', async ({page}) => {
       await typeParagraphs(page);
       await moveToEditorBeginning(page);
       await assertSelection(page, {
@@ -112,12 +106,11 @@ describe('Keyboard Navigation', () => {
       });
     });
 
-    it('can move one word to the right', async () => {
-      const {page} = e2e;
+    test('can move one word to the right', async ({page, browserName}) => {
       await typeParagraphs(page);
       await moveToEditorBeginning(page);
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 6,
@@ -150,13 +143,12 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can move to the beginning of the previous word', async () => {
-      const {isRichText, page} = e2e;
+    test('can move to the beginning of the previous word', async ({isRichText, page, browserName}) => {
       await typeParagraphs(page);
       await moveToPrevWord(page);
       // Chrome stops words on punctuation, so we need to trigger
       // the left arrow key one more time.
-      if (E2E_BROWSER === 'chromium') {
+      if (browserName === 'chromium') {
         await moveToPrevWord(page);
       }
       if (isRichText) {
@@ -192,8 +184,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can move to the bottom of the editor', async () => {
-      const {isRichText, page} = e2e;
+    test('can move to the bottom of the editor', async ({isRichText, page}) => {
       await typeParagraphs(page);
       await moveToEditorBeginning(page);
       await moveToEditorEnd(page);
@@ -214,8 +205,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can move to the beginning of the current paragraph', async () => {
-      const {isRichText, page} = e2e;
+    test('can move to the beginning of the current paragraph', async ({isRichText, page}) => {
       await typeParagraphs(page);
       await moveToParagraphBeginning(page);
       if (isRichText) {
@@ -235,8 +225,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can move to the top of the editor, then to the bottom of the current paragraph', async () => {
-      const {page} = e2e;
+    test('can move to the top of the editor, then to the bottom of the current paragraph', async ({page}) => {
       await typeParagraphs(page);
       await moveToEditorBeginning(page);
       await moveToParagraphEnd(page);
@@ -252,8 +241,7 @@ describe('Keyboard Navigation', () => {
       });
     });
 
-    it('can navigate through the plain text word by word', async () => {
-      const {page} = e2e;
+    test('can navigate through the plain text word by word', async ({page, browserName}) => {
       await focusEditor(page);
       // type sample text
       await page.keyboard.type('  123 abc 456  def  ');
@@ -306,7 +294,7 @@ describe('Keyboard Navigation', () => {
       });
       // 1 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 2,
@@ -339,7 +327,7 @@ describe('Keyboard Navigation', () => {
       }
       // 2 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 6,
@@ -372,7 +360,7 @@ describe('Keyboard Navigation', () => {
       }
       // 3 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 10,
@@ -405,7 +393,7 @@ describe('Keyboard Navigation', () => {
       }
       // 4 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 15,
@@ -438,7 +426,7 @@ describe('Keyboard Navigation', () => {
       }
       // 5 right
       await moveToNextWord(page);
-      if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
+      if (!IS_WINDOWS || browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 20,
           anchorPath: [0, 0, 0],
@@ -464,8 +452,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can navigate through the formatted text word by word', async () => {
-      const {isRichText, page} = e2e;
+    test('can navigate through the formatted text word by word', async ({isRichText, page, browserName}) => {
       await focusEditor(page);
       // type sample text
       await page.keyboard.type('  123 abc 456  def  ');
@@ -508,14 +495,14 @@ describe('Keyboard Navigation', () => {
         // navigate through the text
         // 1 left
         await moveToPrevWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 7,
             anchorPath: [0, 2, 0],
             focusOffset: 7,
             focusPath: [0, 2, 0],
           });
-        } else if (E2E_BROWSER === 'firefox') {
+        } else if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 7,
             anchorPath: [0, 2, 0],
@@ -532,7 +519,7 @@ describe('Keyboard Navigation', () => {
         }
         // 2 left
         await moveToPrevWord(page);
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 2,
             anchorPath: [0, 2, 0],
@@ -549,7 +536,7 @@ describe('Keyboard Navigation', () => {
         }
         // 3 left
         await moveToPrevWord(page);
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           await assertSelection(page, {
             anchorOffset: 6,
             anchorPath: [0, 0, 0],
@@ -582,14 +569,14 @@ describe('Keyboard Navigation', () => {
         });
         // 1 right
         await moveToNextWord(page);
-        if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
+        if (IS_WINDOWS && browserName === 'chromium') {
           await assertSelection(page, {
             anchorOffset: 2,
             anchorPath: [0, 0, 0],
             focusOffset: 2,
             focusPath: [0, 0, 0],
           });
-        } else if (E2E_BROWSER === 'firefox' && IS_WINDOWS) {
+        } else if (browserName === 'firefox' && IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 2,
             anchorPath: [0, 0, 0],
@@ -606,14 +593,14 @@ describe('Keyboard Navigation', () => {
         }
         // 2 right
         await moveToNextWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 1,
             anchorPath: [0, 2, 0],
             focusOffset: 1,
             focusPath: [0, 2, 0],
           });
-        } else if (E2E_BROWSER === 'firefox') {
+        } else if (browserName === 'firefox') {
           if (IS_WINDOWS) {
             await assertSelection(page, {
               anchorOffset: 0,
@@ -648,14 +635,14 @@ describe('Keyboard Navigation', () => {
         }
         // 3 right
         await moveToNextWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 5,
             anchorPath: [0, 2, 0],
             focusOffset: 5,
             focusPath: [0, 2, 0],
           });
-        } else if (E2E_BROWSER === 'firefox') {
+        } else if (browserName === 'firefox') {
           if (IS_WINDOWS) {
             await assertSelection(page, {
               anchorOffset: 2,
@@ -690,14 +677,14 @@ describe('Keyboard Navigation', () => {
         }
         // 4 right
         await moveToNextWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 1,
             anchorPath: [0, 4, 0],
             focusOffset: 1,
             focusPath: [0, 4, 0],
           });
-        } else if (E2E_BROWSER === 'firefox') {
+        } else if (browserName === 'firefox') {
           if (IS_WINDOWS) {
             await assertSelection(page, {
               anchorOffset: 0,
@@ -732,15 +719,15 @@ describe('Keyboard Navigation', () => {
         }
         // 5 right
         await moveToNextWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 3,
             anchorPath: [0, 4, 0],
             focusOffset: 3,
             focusPath: [0, 4, 0],
           });
-        } else if (!IS_WINDOWS || E2E_BROWSER === 'firefox') {
-          if (E2E_BROWSER === 'firefox') {
+        } else if (!IS_WINDOWS || browserName === 'firefox') {
+          if (browserName === 'firefox') {
             if (IS_WINDOWS) {
               await assertSelection(page, {
                 anchorOffset: 3,
@@ -792,8 +779,7 @@ describe('Keyboard Navigation', () => {
       }
     });
 
-    it('can navigate through the text with emoji word by word', async () => {
-      const {page} = e2e;
+    test('can navigate through the text with emoji word by word', async ({page, browserName}) => {
       await focusEditor(page);
       // type sample text
       await page.keyboard.type('123:)456 abc:):)de fg');
@@ -814,14 +800,14 @@ describe('Keyboard Navigation', () => {
       });
       // 2 left
       await moveToPrevWord(page);
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 4,
           anchorPath: [0, 2, 0],
           focusOffset: 4,
           focusPath: [0, 2, 0],
         });
-      } else if (E2E_BROWSER === 'webkit') {
+      } else if (browserName === 'webkit') {
         await assertSelection(page, {
           anchorOffset: 2,
           anchorPath: [0, 4, 0, 0],
@@ -838,14 +824,14 @@ describe('Keyboard Navigation', () => {
       }
       // 3 left
       await moveToPrevWord(page);
-      if (E2E_BROWSER === 'webkit') {
+      if (browserName === 'webkit') {
         await assertSelection(page, {
           anchorOffset: 4,
           anchorPath: [0, 2, 0],
           focusOffset: 4,
           focusPath: [0, 2, 0],
         });
-      } else if (E2E_BROWSER === 'firefox') {
+      } else if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 0, 0],
@@ -861,10 +847,10 @@ describe('Keyboard Navigation', () => {
         });
       }
       // Non-Firefox requires more arrow presses
-      if (E2E_BROWSER !== 'firefox') {
+      if (browserName !== 'firefox') {
         // 4 left
         await moveToPrevWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 2,
             anchorPath: [0, 1, 0, 0],
@@ -881,7 +867,7 @@ describe('Keyboard Navigation', () => {
         }
         // 5 left
         await moveToPrevWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [0, 0, 0],
@@ -898,14 +884,14 @@ describe('Keyboard Navigation', () => {
         }
         // 6 left
         await moveToPrevWord(page);
-        if (E2E_BROWSER === 'chromium') {
+        if (browserName === 'chromium') {
           await assertSelection(page, {
             anchorOffset: 3,
             anchorPath: [0, 0, 0],
             focusOffset: 3,
             focusPath: [0, 0, 0],
           });
-        } else if (E2E_BROWSER === 'webkit') {
+        } else if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [0, 0, 0],
@@ -923,7 +909,7 @@ describe('Keyboard Navigation', () => {
 
         // 7 left
         await moveToPrevWord(page);
-        if (E2E_BROWSER === 'chromium') {
+        if (browserName === 'chromium') {
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [0, 0, 0],
@@ -950,14 +936,14 @@ describe('Keyboard Navigation', () => {
       }
       // 1 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'webkit') {
+      if (browserName === 'webkit') {
         await assertSelection(page, {
           anchorOffset: 3,
           anchorPath: [0, 0, 0],
           focusOffset: 3,
           focusPath: [0, 0, 0],
         });
-      } else if (E2E_BROWSER === 'firefox') {
+      } else if (browserName === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 4,
@@ -983,14 +969,14 @@ describe('Keyboard Navigation', () => {
       }
       // 2 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'webkit') {
+      if (browserName === 'webkit') {
         await assertSelection(page, {
           anchorOffset: 3,
           anchorPath: [0, 2, 0],
           focusOffset: 3,
           focusPath: [0, 2, 0],
         });
-      } else if (E2E_BROWSER === 'firefox') {
+      } else if (browserName === 'firefox') {
         if (IS_WINDOWS) {
           await assertSelection(page, {
             anchorOffset: 3,
@@ -1025,14 +1011,14 @@ describe('Keyboard Navigation', () => {
       }
       // 3 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'webkit') {
+      if (browserName === 'webkit') {
         await assertSelection(page, {
           anchorOffset: 7,
           anchorPath: [0, 2, 0],
           focusOffset: 7,
           focusPath: [0, 2, 0],
         });
-      } else if (E2E_BROWSER === 'firefox') {
+      } else if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 5,
           anchorPath: [0, 5, 0],
@@ -1056,7 +1042,7 @@ describe('Keyboard Navigation', () => {
       }
       // 4 right
       await moveToNextWord(page);
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 5,
           anchorPath: [0, 5, 0],
@@ -1066,7 +1052,7 @@ describe('Keyboard Navigation', () => {
       } else {
         // 5 right
         await moveToNextWord(page);
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           await assertSelection(page, {
             anchorOffset: 5,
             anchorPath: [0, 5, 0],
@@ -1125,7 +1111,7 @@ describe('Keyboard Navigation', () => {
           });
         }
 
-        if (E2E_BROWSER === 'webkit') {
+        if (browserName === 'webkit') {
           // 6 right
           await moveToNextWord(page);
           await assertSelection(page, {
@@ -1137,5 +1123,4 @@ describe('Keyboard Navigation', () => {
         }
       }
     });
-  });
 });

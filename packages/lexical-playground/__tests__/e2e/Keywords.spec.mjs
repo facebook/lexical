@@ -9,24 +9,18 @@
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
-  IS_COLLAB,
   keyDownCtrlOrAlt,
   keyDownCtrlOrMeta,
   keyUpCtrlOrAlt,
   keyUpCtrlOrMeta,
   repeat,
+  test,
   waitForSelector,
-} from '../utils';
+} from '../utils/index.mjs';
 
-const config = {appSettings: {isRichText: true}};
-
-describe('Keywords', () => {
-  initializeE2E((e2e) => {
-    it(`Can create a decorator and move selection around it`, async () => {
-      const {page} = e2e;
+test.describe('Keywords', () => {
+    test(`Can create a decorator and move selection around it`, async({page, browserName}) => {
 
       await focusEditor(page);
       await page.keyboard.type('congrats');
@@ -85,10 +79,10 @@ describe('Keywords', () => {
         focusPath: [0, 2, 0],
       });
 
-      await repeat(8, async () => {
+      await repeat(8, async() => {
         await page.keyboard.press('ArrowLeft');
       });
-      if (E2E_BROWSER === 'firefox') {
+      if (browserName === 'firefox') {
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 2, 0],
@@ -131,8 +125,7 @@ describe('Keywords', () => {
       });
     });
 
-    it('Can type congrats[Team]!', async () => {
-      const {page} = e2e;
+    test('Can type congrats[Team]!', async({page}) => {
 
       await focusEditor(page);
       await page.keyboard.type('congrats[Team]!');
@@ -150,8 +143,7 @@ describe('Keywords', () => {
       });
     });
 
-    it('Can type "congrats Bob!" where " Bob!" is bold', async () => {
-      const {page} = e2e;
+    test('Can type "congrats Bob!" where " Bob!" is bold', async({page, browserName, isCollab}) => {
 
       await focusEditor(page);
       await page.keyboard.type('congrats');
@@ -186,7 +178,7 @@ describe('Keywords', () => {
         focusPath: [0, 1, 0],
       });
 
-      await repeat(4, async () => {
+      await repeat(4, async() => {
         await page.keyboard.press('ArrowLeft');
       });
 
@@ -212,7 +204,7 @@ describe('Keywords', () => {
 
       await page.keyboard.press('Space');
 
-      if (E2E_BROWSER === 'firefox' && !IS_COLLAB) {
+      if (browserName === 'firefox' && !isCollab) {
         await assertHTML(
           page,
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span style="cursor: default;" class="keyword" data-lexical-text="true">congrats</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true"> Bob!</strong></p>',
@@ -232,8 +224,7 @@ describe('Keywords', () => {
       });
     });
 
-    it('Can type "Everyone congrats!" where "Everyone " and "!" are bold', async () => {
-      const {page} = e2e;
+    test('Can type "Everyone congrats!" where "Everyone " and "!" are bold', async({page}) => {
 
       await focusEditor(page);
 
@@ -357,5 +348,4 @@ describe('Keywords', () => {
         focusPath: [0, 0, 0],
       });
     });
-  }, config);
 });

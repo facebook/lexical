@@ -6,35 +6,35 @@
  *
  */
 
-import {redo, undo} from '../keyboardShortcuts';
+import {redo, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
-  IS_COLLAB,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('Markdown', () => {
-  async function checkHTMLExpectationsIncludingUndoRedo(
-    page: any,
-    forwardHTML: String,
-    undoHTML: string,
-  ) {
-    await assertHTML(page, forwardHTML);
-    if (IS_COLLAB) {
-      // Collab uses its own undo/redo
-      return;
-    }
-    await undo(page);
-    await assertHTML(page, undoHTML);
-    await redo(page);
-    await assertHTML(page, forwardHTML);
+async function checkHTMLExpectationsIncludingUndoRedo(
+  page,
+  forwardHTML,
+  undoHTML,
+  isCollab
+) {
+  await assertHTML(page, forwardHTML);
+  if (isCollab) {
+    // Collab uses its own undo/redo
+    return;
   }
+  await undo(page);
+  await assertHTML(page, undoHTML);
+  await redo(page);
+  await assertHTML(page, forwardHTML);
+}
 
+test.describe('Markdown', () => {
   const triggersAndExpectations = [
     {
       expectation:
@@ -121,8 +121,6 @@ describe('Markdown', () => {
       undoHTML: '', // HR Rule.
     },
   ];
-
-  initializeE2E((e2e) => {
     // forward case is the normal case.
     // undo case is when the user presses undo.
 
@@ -131,12 +129,10 @@ describe('Markdown', () => {
       const markdownText = triggersAndExpectations[i].markdownText;
 
       if (triggersAndExpectations[i].isBlockTest === false) {
-        it.skipIf(
-          e2e.isPlainText,
+        test(
           `Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`,
-          async () => {
-            const {page} = e2e;
-
+          async ({page, isPlainText,isCollab}) => {
+            test.skip(isPlainText)
             const text = 'x' + markdownText + 'y';
 
             await focusEditor(page);
@@ -162,15 +158,15 @@ describe('Markdown', () => {
               page,
               triggersAndExpectations[i].expectation,
               triggersAndExpectations[i].undoHTML,
+              isCollab
             );
           },
         );
 
-        it.skipIf(
-          e2e.isPlainText,
+        test(
           `Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`,
-          async () => {
-            const {page} = e2e;
+          async ({page, isPlainText, isCollab}) => {
+            test.skip(isPlainText)
 
             const text = 'x' + markdownText + 'y';
 
@@ -242,17 +238,17 @@ describe('Markdown', () => {
               page,
               triggersAndExpectations[i].stylizedExpectation,
               triggersAndExpectations[i].stylizedUndoHTML,
+              isCollab
             );
           },
         );
       }
 
       if (triggersAndExpectations[i].isBlockTest === true) {
-        it.skipIf(
-          e2e.isPlainText,
+        test(
           `Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`,
-          async () => {
-            const {page} = e2e;
+          async ({page, isPlainText, isCollab}) => {
+            test.skip(isPlainText)
 
             await focusEditor(page);
 
@@ -266,10 +262,10 @@ describe('Markdown', () => {
               page,
               forwardHTML,
               undoHTML,
+              isCollab
             );
           },
         );
       }
     }
-  });
 });

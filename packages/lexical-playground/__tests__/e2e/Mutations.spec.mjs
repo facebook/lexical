@@ -11,8 +11,8 @@ import {
   assertSelection,
   evaluate,
   focusEditor,
-  initializeE2E,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
 async function validateContent(page) {
   await assertHTML(
@@ -27,10 +27,8 @@ async function validateContent(page) {
   });
 }
 
-describe('Mutations', () => {
-  initializeE2E((e2e) => {
-    it(`Can restore the DOM to the editor state state`, async () => {
-      const {page} = e2e;
+test.describe('Mutations', () => {
+    test(`Can restore the DOM to the editor state state`, async ({page}) => {
 
       await focusEditor(page);
       await page.keyboard.type(
@@ -238,5 +236,4 @@ describe('Mutations', () => {
         focusPath: [0, 6, 0],
       });
     });
-  });
 });

@@ -10,11 +10,11 @@ import {
   click,
   clickSelectors,
   dragMouse,
+  expect,
   focusEditor,
-  initializeE2E,
   IS_COLLAB,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
 async function insertTable(page) {
   // Open modal
@@ -83,14 +83,11 @@ async function selectCellsFromTableCords(page, firstCords, secondCords) {
   );
 }
 
-describe('Tables', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('Tables', () => {
+    test(
       `Can a table be inserted from the toolbar`,
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         await expect(page).toMatchEditorInlineSnapshot(`<p><br /></p>`);
@@ -191,8 +188,8 @@ describe('Tables', () => {
       },
     );
 
-    it.skipIf(e2e.isPlainText, `Can type inside of table cell`, async () => {
-      const {page} = e2e;
+    test(`Can type inside of table cell`, async ({page, isPlainText}) => {
+      test.skip(isPlainText);
 
       await focusEditor(page);
       await insertTable(page);
@@ -292,8 +289,8 @@ describe('Tables', () => {
       `);
     });
 
-    it.skipIf(e2e.isPlainText, `Can navigate table with keyboard`, async () => {
-      const {page} = e2e;
+    test(`Can navigate table with keyboard`, async ({page, isPlainText}) => {
+      test.skip(isPlainText);
 
       await focusEditor(page);
       await insertTable(page);
@@ -393,11 +390,10 @@ describe('Tables', () => {
       `);
     });
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can select cells using Table selection`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await insertTable(page);
@@ -596,11 +592,10 @@ describe('Tables', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can style text using Table selection`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await insertTable(page);
@@ -714,11 +709,10 @@ describe('Tables', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Can clear text using Table selection`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
 
         await focusEditor(page);
         await insertTable(page);
@@ -822,5 +816,4 @@ describe('Tables', () => {
         `);
       },
     );
-  });
 });

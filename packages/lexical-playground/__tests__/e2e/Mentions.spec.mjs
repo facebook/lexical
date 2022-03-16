@@ -6,23 +6,18 @@
  *
  */
 
-import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts';
+import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  E2E_BROWSER,
   focusEditor,
-  initializeE2E,
   IS_WINDOWS,
   repeat,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('Mentions', () => {
-  initializeE2E((e2e) => {
-    it(`Can enter the Luke Skywalker mention`, async () => {
-      const {page} = e2e;
-
+test.describe('Mentions', () => {
+    test(`Can enter the Luke Skywalker mention`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
@@ -77,9 +72,7 @@ describe('Mentions', () => {
       });
     });
 
-    it(`Can enter and delete part of the Luke Skywalker mention`, async () => {
-      const {page} = e2e;
-
+    test(`Can enter and delete part of the Luke Skywalker mention`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
@@ -142,9 +135,7 @@ describe('Mentions', () => {
       });
     });
 
-    it(`Can enter and backspace part of the Luke Skywalker mention`, async () => {
-      const {page} = e2e;
-
+    test(`Can enter and backspace part of the Luke Skywalker mention`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
@@ -248,9 +239,7 @@ describe('Mentions', () => {
       });
     });
 
-    it(`Can enter multiple Luke Skywalker mentions and then delete them from start`, async () => {
-      const {page} = e2e;
-
+    test(`Can enter multiple Luke Skywalker mentions and then delete them from start`, async ({page, browserName}) => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
@@ -314,7 +303,7 @@ describe('Mentions', () => {
 
       await deleteNextWord(page);
 
-      if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
+      if (IS_WINDOWS && browserName === 'chromium') {
         await assertHTML(
           page,
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Skywalker </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
@@ -333,7 +322,7 @@ describe('Mentions', () => {
       });
 
       await deleteNextWord(page);
-      if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
+      if (IS_WINDOWS && browserName === 'chromium') {
         await assertHTML(
           page,
           '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
@@ -352,7 +341,7 @@ describe('Mentions', () => {
       });
 
       await deleteNextWord(page);
-      if (IS_WINDOWS && E2E_BROWSER === 'chromium') {
+      if (IS_WINDOWS && browserName === 'chromium') {
         await assertHTML(
           page,
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Skywalker </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
@@ -388,9 +377,7 @@ describe('Mentions', () => {
       });
     });
 
-    it(`Can enter a mention then delete it and partially remove text after`, async () => {
-      const {page} = e2e;
-
+    test(`Can enter a mention then delete it and partially remove text after`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await assertSelection(page, {
@@ -455,5 +442,4 @@ describe('Mentions', () => {
         focusPath: [0, 0, 0],
       });
     });
-  });
 });

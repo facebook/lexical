@@ -10,15 +10,15 @@ import {
   click,
   E2E_BROWSER,
   evaluate,
+  expect,
   focusEditor,
-  initializeE2E,
   insertImage,
   sleep,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('Selection', () => {
-  initializeE2E((e2e) => {
-    it('does not focus the editor on load', async () => {
+test.describe('Selection', () => {
+    test('does not focus the editor on load', async ({page}) => {
       const editorHasFocus = async () =>
         await evaluate(page, () => {
           const editorElement = document.querySelector(
@@ -26,7 +26,6 @@ describe('Selection', () => {
           );
           return document.activeElement === editorElement;
         });
-      const {page} = e2e;
 
       await focusEditor(page);
       await evaluate(page, () => {
@@ -40,12 +39,10 @@ describe('Selection', () => {
       expect(await editorHasFocus()).toEqual(false);
     });
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       'keeps single active selection for nested editors',
-      async () => {
-        const {page} = e2e;
-
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         const hasSelection = async (parentSelector) =>
           await evaluate(
             page,
@@ -93,5 +90,4 @@ describe('Selection', () => {
         expect(await hasSelection('.editor-shell')).toBe(false);
       },
     );
-  });
 });

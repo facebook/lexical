@@ -15,7 +15,7 @@ import {
   keyDownCtrlOrMeta,
   keyUpCtrlOrAlt,
   keyUpCtrlOrMeta,
-} from '../utils';
+} from '../utils/index.mjs';
 
 export async function moveToLineBeginning(page) {
   if (IS_MAC) {
@@ -146,13 +146,13 @@ export async function redo(page) {
   }
 }
 
-export async function moveLeft(page, numCharacters = 1): Promise<void> {
+export async function moveLeft(page, numCharacters = 1) {
   for (let i = 0; i < numCharacters; i++) {
     await page.keyboard.press('ArrowLeft');
   }
 }
 
-export async function moveRight(page, numCharacters = 1): Promise<void> {
+export async function moveRight(page, numCharacters = 1) {
   for (let i = 0; i < numCharacters; i++) {
     await page.keyboard.press('ArrowRight');
   }
@@ -160,16 +160,16 @@ export async function moveRight(page, numCharacters = 1): Promise<void> {
 
 export async function selectCharacters(
   page,
-  direction: 'left' | 'right',
+  direction,
   numCharacters = 1,
-): Promise<void> {
+) {
   const moveFunction = direction === 'left' ? moveLeft : moveRight;
   await page.keyboard.down('Shift');
   await moveFunction(page, numCharacters);
   await page.keyboard.up('Shift');
 }
 
-export async function toggleBold(page): Promise<void> {
+export async function toggleBold(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('b');
   await keyUpCtrlOrMeta(page);

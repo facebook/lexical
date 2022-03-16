@@ -785,8 +785,10 @@ function scrollIntoViewIfNeeded(
     } else if (rect.top < 0) {
       element.scrollIntoView();
     } else if (rootElement) {
-      const elementFromPoint = document.elementFromPoint(rect.left, rect.top);
-      if (elementFromPoint === element) {
+      if (
+        document.elementFromPoint(rect.left, rect.top) === element &&
+        document.elementFromPoint(rect.left, rect.bottom) === element
+      ) {
         return;
       }
 

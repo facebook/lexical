@@ -47,6 +47,19 @@ export function applyTableHandlers(
 
   attachTableSelectionToTableElement(tableElement, tableSelection);
 
+  tableElement.addEventListener('dblclick', (event: MouseEvent) => {
+    // $FlowFixMe: event.target is always a Node on the DOM
+    const cell = getCellFromTarget(event.target);
+    if (cell !== null) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      event.stopPropagation();
+      tableSelection.setAnchorCellForSelection(cell);
+      tableSelection.adjustFocusCellForSelection(cell, true);
+      tableSelection.isMouseDown = false;
+    }
+  });
+
   // This is the anchor of the selection.
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     setTimeout(() => {

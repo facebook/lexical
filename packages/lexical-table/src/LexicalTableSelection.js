@@ -173,7 +173,7 @@ export class TableSelection {
     });
   }
 
-  adjustFocusCellForSelection(cell: Cell) {
+  adjustFocusCellForSelection(cell: Cell, ignoreStart?: boolean = false) {
     this.editor.update(() => {
       this.isMouseDown = true;
 
@@ -191,7 +191,7 @@ export class TableSelection {
       const cellY = cell.y;
       if (
         !this.isHighlightingCells &&
-        (this.startX !== cellX || this.startY !== cellY)
+        (this.startX !== cellX || this.startY !== cellY || ignoreStart)
       ) {
         const domSelection = getDOMSelection();
         const anchorNode = domSelection.anchorNode;

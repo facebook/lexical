@@ -11,6 +11,11 @@ import type {LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
+export type DFSNode = $ReadOnly<{
+  depth: number,
+  node: LexicalNode,
+}>;
+
 export function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
@@ -34,16 +39,18 @@ export function removeClassNamesFromElement(
 export function $dfs(
   startingNode?: LexicalNode,
   endingNode?: LexicalNode,
-): Array<LexicalNode> {
+): Array<DFSNode> {
   const nodes = [];
   const start = (startingNode || $getRoot()).getLatest();
   const end =
     endingNode || ($isElementNode(start) ? start.getLastDescendant() : start);
   let node = start;
+  let depth = $getDepth(node);
   while (node !== null && !node.is(end)) {
-    nodes.push(node);
+    nodes.push({depth, node});
     if ($isElementNode(node) && node.getChildrenSize() > 0) {
       node = node.getFirstChild();
+      depth++;
     } else {
       // Find immediate sibling or nearest parent sibling
       let sibling = null;
@@ -51,6 +58,7 @@ export function $dfs(
         sibling = node.getNextSibling();
         if (sibling === null) {
           node = node.getParent();
+          depth--;
         } else {
           node = sibling;
         }
@@ -58,9 +66,18 @@ export function $dfs(
     }
   }
   if (node !== null && node.is(end)) {
-    nodes.push(node);
+    nodes.push({depth, node});
   }
   return nodes;
+}
+
+function $getDepth(node: LexicalNode): number {
+  let node_ = node;
+  let depth = 0;
+  while ((node_ = node_.getParent()) !== null) {
+    depth++;
+  }
+  return depth;
 }
 
 export function $getNearestNodeOfType<T: LexicalNode>(

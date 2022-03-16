@@ -62,30 +62,31 @@ describe('LexicalNodeHelpers tests', () => {
         block3.append(text6);
 
         expectedKeys = [
-          root.getKey(),
-          paragraph1.getKey(),
-          block1.getKey(),
-          text1.getKey(),
-          block2.getKey(),
-          text2.getKey(),
-          text3.getKey(),
-          paragraph2.getKey(),
-          text4.getKey(),
-          text5.getKey(),
-          block3.getKey(),
-          text6.getKey(),
+          {depth: 0, node: root.getKey()},
+          {depth: 1, node: paragraph1.getKey()},
+          {depth: 2, node: block1.getKey()},
+          {depth: 3, node: text1.getKey()},
+          {depth: 2, node: block2.getKey()},
+          {depth: 3, node: text2.getKey()},
+          {depth: 3, node: text3.getKey()},
+          {depth: 1, node: paragraph2.getKey()},
+          {depth: 2, node: text4.getKey()},
+          {depth: 2, node: text5.getKey()},
+          {depth: 2, node: block3.getKey()},
+          {depth: 3, node: text6.getKey()},
         ];
       });
       editor.getEditorState().read(() => {
-        const expectedNodes = expectedKeys.map((nodeKey) =>
-          $getNodeByKey(nodeKey).getLatest(),
-        );
+        const expectedNodes = expectedKeys.map(({depth, node: nodeKey}) => ({
+          depth,
+          node: $getNodeByKey(nodeKey).getLatest(),
+        }));
         const first = expectedNodes[0];
         const second = expectedNodes[1];
         const last = expectedNodes[expectedNodes.length - 1];
         const secondToLast = expectedNodes[expectedNodes.length - 2];
-        expect($dfs(first, last)).toEqual(expectedNodes);
-        expect($dfs(second, secondToLast)).toEqual(
+        expect($dfs(first.node, last.node)).toEqual(expectedNodes);
+        expect($dfs(second.node, secondToLast.node)).toEqual(
           expectedNodes.slice(1, expectedKeys.length - 1),
         );
         expect($dfs()).toEqual(expectedNodes);
@@ -120,11 +121,11 @@ describe('LexicalNodeHelpers tests', () => {
         block1.append(block3);
 
         expect($dfs(root)).toEqual([
-          root.getLatest(),
-          paragraph.getLatest(),
-          block1.getLatest(),
-          block3.getLatest(),
-          block2.getLatest(),
+          {depth: 0, node: root.getLatest()},
+          {depth: 1, node: paragraph.getLatest()},
+          {depth: 2, node: block1.getLatest()},
+          {depth: 3, node: block3.getLatest()},
+          {depth: 2, node: block2.getLatest()},
         ]);
       });
     });

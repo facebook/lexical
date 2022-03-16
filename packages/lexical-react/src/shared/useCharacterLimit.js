@@ -130,7 +130,7 @@ function $wrapOverflowedNodes(offset: number): void {
   const dfsNodesLength = dfsNodes.length;
   let accumulatedLength = 0;
   for (let i = 0; i < dfsNodesLength; i += 1) {
-    const node = dfsNodes[i];
+    const {node} = dfsNodes[i];
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
       const nextLength = accumulatedLength + node.getTextContentSize();

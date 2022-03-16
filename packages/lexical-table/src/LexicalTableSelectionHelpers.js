@@ -47,6 +47,8 @@ export function applyTableHandlers(
 
   attachTableSelectionToTableElement(tableElement, tableSelection);
 
+  let isMouseDown = false;
+
   tableElement.addEventListener('dblclick', (event: MouseEvent) => {
     // $FlowFixMe: event.target is always a Node on the DOM
     const cell = getCellFromTarget(event.target);
@@ -56,7 +58,7 @@ export function applyTableHandlers(
       event.stopPropagation();
       tableSelection.setAnchorCellForSelection(cell);
       tableSelection.adjustFocusCellForSelection(cell, true);
-      tableSelection.isMouseDown = false;
+      isMouseDown = false;
     }
   });
 
@@ -66,26 +68,39 @@ export function applyTableHandlers(
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
       if (cell !== null) {
+        isMouseDown = true;
         tableSelection.setAnchorCellForSelection(cell);
+
+        document.addEventListener(
+          'mouseup',
+          () => {
+            isMouseDown = false;
+          },
+          {
+            capture: true,
+            once: true,
+          },
+        );
       }
     }, 0);
   });
 
   // This is adjusting the focus of the selection.
   tableElement.addEventListener('mousemove', (event: MouseEvent) => {
-    if (tableSelection.isMouseDown) {
+    if (isMouseDown) {
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
       if (cell !== null) {
         const cellX = cell.x;
         const cellY = cell.y;
         if (
-          tableSelection.isMouseDown &&
+          isMouseDown &&
           (tableSelection.startX !== cellX ||
             tableSelection.startY !== cellY ||
             tableSelection.isHighlightingCells)
         ) {
           event.preventDefault();
+          isMouseDown = true;
           tableSelection.adjustFocusCellForSelection(cell);
         }
       }
@@ -93,14 +108,14 @@ export function applyTableHandlers(
   });
 
   tableElement.addEventListener('mouseup', (event: MouseEvent) => {
-    if (tableSelection.isMouseDown) {
-      tableSelection.isMouseDown = false;
+    if (isMouseDown) {
+      isMouseDown = false;
     }
   });
 
   // Select entire table at this point, when grid selection is ready.
   tableElement.addEventListener('mouseleave', (event: MouseEvent) => {
-    if (tableSelection.isMouseDown) {
+    if (isMouseDown) {
       return;
     }
   });
@@ -131,6 +146,122 @@ export function applyTableHandlers(
       'command',
       (type, payload) => {
         const selection = $getSelection();
+
+        if (
+          type === 'keyArrowDown' ||
+          type === 'keyArrowUp' ||
+          type === 'keyArrowLeft' ||
+          type === 'keyArrowRight'
+        ) {
+          const event: KeyboardEvent = payload;
+
+          const direction = {
+            keyArrowDown: 'down',
+            keyArrowLeft: 'backward',
+            keyArrowRight: 'forward',
+            keyArrowUp: 'up',
+          }[type];
+
+          if ($isRangeSelection(selection)) {
+            if (selection.isCollapsed()) {
+              const tableCellNode = $findMatchingParent(
+                selection.anchor.getNode(),
+                (n) => $isTableCellNode(n),
+              );
+
+              if (!$isTableCellNode(tableCellNode)) {
+                return false;
+              }
+
+              const currentCords = tableNode.getCordsFromCellNode(
+                tableCellNode,
+                tableSelection.grid,
+              );
+              const elementParentNode = $findMatchingParent(
+                selection.anchor.getNode(),
+                (n) => $isElementNode(n),
+              );
+
+              if (elementParentNode == null) {
+                throw new Error('Expected BlockNode Parent');
+              }
+
+              const firstChild = tableCellNode.getFirstChild();
+              const lastChild = tableCellNode.getLastChild();
+
+              const isSelectionInFirstBlock =
+                (firstChild && elementParentNode.isParentOf(firstChild)) ||
+                elementParentNode === firstChild;
+
+              const isSelectionInLastBlock =
+                (lastChild && elementParentNode.isParentOf(lastChild)) ||
+                elementParentNode === lastChild;
+
+              if (
+                (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
+                (type === 'keyArrowDown' && isSelectionInLastBlock) ||
+                (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
+                (type === 'keyArrowRight' &&
+                  selection.anchor.offset ===
+                    selection.anchor.getNode().getTextContentSize())
+              ) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                event.stopPropagation();
+
+                // Start Selection
+                if (event.shiftKey) {
+                  tableSelection.setAnchorCellForSelection(
+                    tableNode.getCellFromCordsOrThrow(
+                      currentCords.x,
+                      currentCords.y,
+                      tableSelection.grid,
+                    ),
+                  );
+
+                  return adjustFocusNodeInDirection(
+                    tableSelection,
+                    tableNode,
+                    currentCords.x,
+                    currentCords.y,
+                    direction,
+                  );
+                }
+
+                return selectGridNodeInDirection(
+                  tableSelection,
+                  tableNode,
+                  currentCords.x,
+                  currentCords.y,
+                  direction,
+                );
+              }
+            }
+          } else if ($isGridSelection(selection) && event.shiftKey) {
+            const tableCellNode = selection.focus.getNode();
+
+            if (!$isTableCellNode(tableCellNode)) {
+              return false;
+            }
+
+            const currentCords = tableNode.getCordsFromCellNode(
+              tableCellNode,
+              tableSelection.grid,
+            );
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            event.stopPropagation();
+
+            return adjustFocusNodeInDirection(
+              tableSelection,
+              tableNode,
+              currentCords.x,
+              currentCords.y,
+              direction,
+            );
+          }
+        }
 
         if ($isGridSelection(selection)) {
           if (type === 'deleteCharacter' || type === 'keyBackspace') {
@@ -186,81 +317,6 @@ export function applyTableHandlers(
               );
 
               return true;
-            }
-          }
-
-          if (
-            type === 'keyArrowDown' ||
-            type === 'keyArrowUp' ||
-            type === 'keyArrowLeft' ||
-            type === 'keyArrowRight'
-          ) {
-            const event: KeyboardEvent = payload;
-
-            if (selection.isCollapsed()) {
-              const currentCords = tableNode.getCordsFromCellNode(
-                tableCellNode,
-                tableSelection.grid,
-              );
-              const elementParentNode = $findMatchingParent(
-                selection.anchor.getNode(),
-                (n) => $isElementNode(n),
-              );
-
-              if (elementParentNode == null) {
-                throw new Error('Expected BlockNode Parent');
-              }
-
-              const firstChild = tableCellNode.getFirstChild();
-              const lastChild = tableCellNode.getLastChild();
-
-              const isSelectionInFirstBlock =
-                (firstChild && elementParentNode.isParentOf(firstChild)) ||
-                elementParentNode === firstChild;
-
-              const isSelectionInLastBlock =
-                (lastChild && elementParentNode.isParentOf(lastChild)) ||
-                elementParentNode === lastChild;
-
-              if (
-                (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
-                (type === 'keyArrowDown' && isSelectionInLastBlock)
-              ) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                event.stopPropagation();
-
-                selectGridNodeInDirection(
-                  tableSelection,
-                  tableNode,
-                  currentCords.x,
-                  currentCords.y,
-                  type === 'keyArrowUp' ? 'up' : 'down',
-                );
-
-                return true;
-              }
-
-              if (
-                (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
-                (type === 'keyArrowRight' &&
-                  selection.anchor.offset ===
-                    selection.anchor.getNode().getTextContentSize())
-              ) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                event.stopPropagation();
-
-                selectGridNodeInDirection(
-                  tableSelection,
-                  tableNode,
-                  currentCords.x,
-                  currentCords.y,
-                  type === 'keyArrowLeft' ? 'backward' : 'forward',
-                );
-
-                return true;
-              }
             }
           }
         }
@@ -464,6 +520,57 @@ const selectGridNodeInDirection = (
         tableNode.selectNext();
       }
       return true;
+    }
+  }
+
+  return false;
+};
+
+const adjustFocusNodeInDirection = (
+  tableSelection: TableSelection,
+  tableNode: TableNode,
+  x: number,
+  y: number,
+  direction: 'backward' | 'forward' | 'up' | 'down',
+): boolean => {
+  switch (direction) {
+    case 'backward':
+    case 'forward': {
+      const isForward = direction === 'forward';
+
+      if (x !== (isForward ? tableSelection.grid.columns - 1 : 0)) {
+        tableSelection.adjustFocusCellForSelection(
+          tableNode.getCellFromCordsOrThrow(
+            x + (isForward ? 1 : -1),
+            y,
+            tableSelection.grid,
+          ),
+        );
+      }
+
+      return true;
+    }
+
+    case 'up': {
+      if (y !== 0) {
+        tableSelection.adjustFocusCellForSelection(
+          tableNode.getCellFromCordsOrThrow(x, y - 1, tableSelection.grid),
+        );
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    case 'down': {
+      if (y !== tableSelection.grid.rows - 1) {
+        tableSelection.adjustFocusCellForSelection(
+          tableNode.getCellFromCordsOrThrow(x, y + 1, tableSelection.grid),
+        );
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 

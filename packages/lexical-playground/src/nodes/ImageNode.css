@@ -13,7 +13,7 @@
   font-size: 12px;
   width: calc(100% - 20px);
   white-space: pre-wrap;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .ImageNode__placeholder {

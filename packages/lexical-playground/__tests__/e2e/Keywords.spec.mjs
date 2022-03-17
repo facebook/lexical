@@ -143,7 +143,8 @@ test.describe('Keywords', () => {
       });
     });
 
-    test.only('Can type "congrats Bob!" where " Bob!" is bold', async({page, browserName, isCollab}) => {
+    test('Can type "congrats Bob!" where " Bob!" is bold', async({page, browserName, isCollab, isPlainText}) => {
+      test.skip(isPlainText);
       await focusEditor(page);
       await page.keyboard.type('congrats');
 
@@ -222,8 +223,8 @@ test.describe('Keywords', () => {
       });
     });
 
-    test('Can type "Everyone congrats!" where "Everyone " and "!" are bold', async({page}) => {
-
+    test('Can type "Everyone congrats!" where "Everyone " and "!" are bold', async({page, isPlainText}) => {
+      test.skip(isPlainText);
       await focusEditor(page);
 
       await keyDownCtrlOrMeta(page);

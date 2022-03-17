@@ -123,7 +123,7 @@ export function applyTableHandlers(
   window.addEventListener('mousedown', mouseDownCallback);
 
   tableSelection.listenersToRemove.add(() =>
-    window.removeEventListener(mouseDownCallback),
+    window.removeEventListener('mousedown', mouseDownCallback),
   );
 
   tableSelection.listenersToRemove.add(

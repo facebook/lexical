@@ -749,34 +749,10 @@ export function updateEditorState(
   return reconcileMutatedNodes;
 }
 
-function getClosestAnchorElement(
-  anchorNode: Node,
-  anchorOffset: number,
-): Element {
-  if (anchorNode.nodeType === DOM_TEXT_TYPE) {
+function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
+  const element: Element =
     // $FlowFixMe: this is valid, as we are checking the nodeType
-    return anchorNode.parentNode;
-  }
-
-  const childNode = anchorNode.childNodes[anchorOffset];
-  if (
-    childNode.nodeType === DOM_TEXT_TYPE ||
-    // Using parent element for a new line block will provide
-    // better check for visibility than linebreak itself
-    (childNode instanceof HTMLBRElement && anchorNode.childNodes.length === 1)
-  ) {
-    // $FlowFixMe: this is valid, as we are checking the nodeType
-    return anchorNode;
-  }
-
-  // $FlowFixMe: this is valid, as we are checking the nodeType
-  return childNode;
-}
-
-function scrollIntoViewIfNeeded(
-  element: Element,
-  rootElement: ?HTMLElement,
-): void {
+    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node;
   if (element !== null) {
     const rect = element.getBoundingClientRect();
 
@@ -785,26 +761,11 @@ function scrollIntoViewIfNeeded(
     } else if (rect.top < 0) {
       element.scrollIntoView();
     } else if (rootElement) {
-      if (
-        document.elementFromPoint(rect.left, rect.top) === element &&
-        document.elementFromPoint(rect.left, rect.bottom) === element
-      ) {
-        return;
-      }
-
-      let scrollableElement = rootElement;
-      while (scrollableElement) {
-        if (scrollableElement.scrollHeight > scrollableElement.clientHeight) {
-          const scrollRect = scrollableElement.getBoundingClientRect();
-          if (rect.bottom > scrollRect.bottom) {
-            element.scrollIntoView(false);
-            return;
-          } else if (rect.top < scrollRect.top) {
-            element.scrollIntoView();
-            return;
-          }
-        }
-        scrollableElement = scrollableElement.parentElement;
+      const rootRect = rootElement.getBoundingClientRect();
+      if (rect.bottom > rootRect.bottom) {
+        element.scrollIntoView(false);
+      } else if (rect.top < rootRect.top) {
+        element.scrollIntoView();
       }
     }
   }
@@ -901,10 +862,7 @@ function reconcileSelection(
       nextFocusOffset,
     );
     if (nextSelection.isCollapsed() && rootElement === activeElement) {
-      scrollIntoViewIfNeeded(
-        getClosestAnchorElement(nextAnchorNode, nextAnchorOffset),
-        rootElement,
-      );
+      scrollIntoViewIfNeeded(nextAnchorNode, rootElement);
     }
   } catch (error) {
     // If we encounter an error, continue. This can sometimes

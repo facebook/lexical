@@ -6,7 +6,7 @@
  *
  */
 
-import {E2E_BROWSER, evaluate, focusEditor, initializeE2E} from '../utils';
+import {evaluate, focusEditor, initializeE2E} from '../utils';
 
 describe('Auto scroll while typing', () => {
   initializeE2E((e2e) => {
@@ -50,16 +50,14 @@ describe('Auto scroll while typing', () => {
         name: 'Can auto scroll if content editable element is scrollable',
         selector: '.ContentEditable__root',
       },
-      {
-        name: 'Can auto scroll if parent element is scrollable',
-        selector: '.editor-container',
-      },
+      // {
+      //   name: 'Can auto scroll if parent element is scrollable',
+      //   selector: '.editor-container',
+      // },
     ].forEach((testCase) => {
       [true, false].forEach((isSoftLineBreak) => {
         it.skipIf(
-          // TODO:
-          // skip due to existing bug with safari - #1473
-          (e2e.isPlainText || isSoftLineBreak) && E2E_BROWSER === 'webkit',
+          isSoftLineBreak || e2e.isPlainText,
           `${testCase.name}${isSoftLineBreak ? ' (soft line break)' : ''}`,
           async () => {
             const {page} = e2e;

@@ -704,13 +704,12 @@ export function updateEditorState(
   pendingEditorState: EditorState,
   currentSelection: RangeSelection | NodeSelection | GridSelection | null,
   pendingSelection: RangeSelection | NodeSelection | GridSelection | null,
-  needsNodeUpdate: boolean,
-  needsSelectionUpdate: boolean,
+  needsUpdate: boolean,
   editor: LexicalEditor,
 ): null | MutatedNodes {
   const observer = editor._observer;
   let reconcileMutatedNodes = null;
-  if (needsNodeUpdate && observer !== null) {
+  if (needsUpdate && observer !== null) {
     const dirtyType = editor._dirtyType;
     const dirtyElements = editor._dirtyElements;
     const dirtyLeaves = editor._dirtyLeaves;
@@ -737,10 +736,7 @@ export function updateEditorState(
   const domSelection = getDOMSelection();
   if (
     domSelection !== null &&
-    (needsSelectionUpdate ||
-      needsNodeUpdate ||
-      pendingSelection === null ||
-      pendingSelection.dirty)
+    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
   ) {
     reconcileSelection(
       currentSelection,

@@ -22,7 +22,6 @@ import {
   $isRangeSelection,
 } from './LexicalSelection';
 import {readEditorState} from './LexicalUpdates';
-import {domSelectionTypeNeedsUpdate} from './LexicalUtils';
 import {$createRootNode} from './nodes/base/LexicalRootNode';
 
 export type ParsedEditorState = {
@@ -43,11 +42,7 @@ export function editorStateHasDirtySelection(
   const pendingSelection = editorState._selection;
   // Check if we need to update because of changes in selection
   if (pendingSelection !== null) {
-    if (
-      pendingSelection.dirty ||
-      !pendingSelection.is(currentSelection) ||
-      domSelectionTypeNeedsUpdate(pendingSelection)
-    ) {
+    if (pendingSelection.dirty || !pendingSelection.is(currentSelection)) {
       return true;
     }
   } else if (currentSelection !== null) {

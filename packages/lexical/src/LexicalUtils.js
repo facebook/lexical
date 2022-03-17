@@ -958,16 +958,3 @@ export function isFirefoxClipboardEvents(): boolean {
     inputType === 'insertFromPasteAsQuotation'
   );
 }
-
-export function domSelectionTypeNeedsUpdate(
-  pendingSelection: null | GridSelection | NodeSelection | RangeSelection,
-): boolean {
-  if (!$isRangeSelection(pendingSelection)) {
-    return false;
-  }
-  const domSelection = document.getSelection();
-  return (
-    pendingSelection.isCollapsed() &&
-    (domSelection === null || domSelection.type === 'Range')
-  );
-}

@@ -50,6 +50,10 @@ async function clickOutdentButton(page, times = 1) {
   }
 }
 
+test.beforeEach(({isPlainText}) => {
+  test.skip({isPlainText});
+});
+
 test.describe('Nested List', () => {
     test( `Can toggle an empty list on/off`, async({page}) => {
       await focusEditor(page);
@@ -76,8 +80,6 @@ test.describe('Nested List', () => {
     test(
       `Can create a list and indent/outdent it`,
       async({page}) => {
-
-
         await focusEditor(page);
         await toggleBulletList(page);
         await assertHTML(

@@ -5,17 +5,17 @@ const config = {
   projects: [
     {
       name: 'chromium',
-      testDir: './packages/lexical-playground/__tests__/e2e/',
+      testDir: './packages/lexical-playground/__tests__/',
       use: {...devices['Desktop Chrome']},
     },
     {
       name: 'firefox',
-      testDir: './packages/lexical-playground/__tests__/e2e/',
+      testDir: './packages/lexical-playground/__tests__/',
       use: {...devices['Desktop Firefox']},
     },
     {
       name: 'webkit',
-      testDir: './packages/lexical-playground/__tests__/e2e/',
+      testDir: './packages/lexical-playground/__tests__/',
       use: {...devices['Desktop Safari']},
     },
   ],

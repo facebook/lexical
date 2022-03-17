@@ -143,8 +143,7 @@ test.describe('Keywords', () => {
       });
     });
 
-    test('Can type "congrats Bob!" where " Bob!" is bold', async({page, browserName, isCollab}) => {
-
+    test.only('Can type "congrats Bob!" where " Bob!" is bold', async({page, browserName, isCollab}) => {
       await focusEditor(page);
       await page.keyboard.type('congrats');
 
@@ -215,7 +214,6 @@ test.describe('Keywords', () => {
           '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="keyword" data-lexical-text="true" style="cursor: default;">congrats</span><span data-lexical-text="true"> </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">Bob!</strong></p>',
         );
       }
-
       await assertSelection(page, {
         anchorOffset: 1,
         anchorPath: [0, 1, 0],

@@ -21,6 +21,10 @@ import {
   test,
   waitForSelector} from '../utils/index.mjs';
 
+test.beforeEach(({isPlainText}) => {
+  test.skip({isPlainText});
+});
+
 test.describe('Links', () => {
     test(
       `Can convert a text node into a link`,

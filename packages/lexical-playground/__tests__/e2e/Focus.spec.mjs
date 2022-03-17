@@ -6,7 +6,7 @@
  *
  */
 
-import {focusEditor, test} from '../utils/index.mjs';
+import {expect, focusEditor, test} from '../utils/index.mjs';
 
 test.describe('Focus', () => {
     test(`can tab out of the editor`, async ({page, isRichText}) => {

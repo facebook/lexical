@@ -1,5 +1,4 @@
 for package in 'lexical-file' \
-            'lexical-helpers' \
             'lexical-list' \
             'lexical-react' \
             'lexical-table' \
@@ -7,7 +6,9 @@ for package in 'lexical-file' \
             'lexical-clipboard' \
             'lexical' \
             'lexical-selection' \
-            'lexical-text' 
+            'lexical-text' \
+            'lexical-offset' \
+            'lexical-utils'
 do
   gen-flow-files "./packages/${package}/src" --out-dir "./packages/${package}/dist"
 done

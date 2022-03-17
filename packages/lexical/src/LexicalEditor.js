@@ -528,7 +528,7 @@ class BaseLexicalEditor {
         const style = nextRootElement.style;
         style.userSelect = 'text';
         style.whiteSpace = 'pre-wrap';
-        style.overflowWrap = 'break-word';
+        style.wordBreak = 'break-word';
         nextRootElement.setAttribute('data-lexical-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(getSelf(this));

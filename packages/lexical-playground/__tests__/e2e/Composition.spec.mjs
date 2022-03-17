@@ -15,6 +15,8 @@ import {
   test,
   waitForSelector} from '../utils/index.mjs';
 
+test.use({launchOptions: {slowMo: 50}});
+
 test.describe('Composition', () => {
     test('Handles Hiragana characters', async ({page}) => {
       await focusEditor(page);
@@ -208,11 +210,7 @@ test.describe('Composition', () => {
       });
 
       test('Can type Hiragana via IME between emojis', async ({page, browserName}) => {
-        // We don't yet support FF.
-        if (browserName === 'firefox') {
-          return;
-        }
-
+        test.skip(browserName === 'firefox')
         await focusEditor(page);
 
         await page.keyboard.type(':):)');

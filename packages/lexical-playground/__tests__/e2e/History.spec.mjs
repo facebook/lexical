@@ -10,11 +10,11 @@ import {redo, toggleBold, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
+  expect,
   focusEditor,
   repeat,
   sleep,
-  test
-} from '../utils/index.mjs';
+  test} from '../utils/index.mjs';
 
 test.describe('History', () => {
     test(

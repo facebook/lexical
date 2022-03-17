@@ -53,7 +53,7 @@ base.beforeEach(async ({ page, isRichText, isPlainText, isCollab }) => {
   await page.goto(url);
 });
 
-//base.use({launchOptions: {slowMo: 200}})
+//base.use({launchOptions: {slowMo: 100}})
 
 export const test = base.extend({
   isCollab: IS_COLLAB,

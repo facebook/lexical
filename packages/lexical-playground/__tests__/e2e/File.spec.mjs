@@ -56,7 +56,7 @@ test.describe('File', () => {
         '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
       );
 
-      page.on('filechooser', (fileChooser: FileChooser) => {
+      page.on('filechooser', (fileChooser) => {
         fileChooser.setFiles([filePath]);
       });
       await click(page, '.action-button.import');

@@ -69,7 +69,7 @@ export class OffsetView {
     offsetMap: OffsetMap,
     firstNode: null | OffsetNode,
     blockOffsetSize: number = 1,
-  ) {
+  ): void {
     this._offsetMap = offsetMap;
     this._firstNode = firstNode;
     this._blockOffsetSize = blockOffsetSize;

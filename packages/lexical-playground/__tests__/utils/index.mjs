@@ -27,7 +27,7 @@ export const IS_COLLAB = process.env.E2E_EDITOR_MODE === 'rich-text-with-collab'
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 
-base.beforeEach(async ({ page, isRichText, isPlainText, isCollab }) => {
+base.beforeEach(async ({ page, isRichText, isPlainText, isCollab, isCharLimit, isCharLimitUtf8 }) => {
   page.exposeFunction('expectToBeEqual', (actual, expected) => {
     return expect(actual).toEqual(expected);
   });
@@ -46,6 +46,10 @@ base.beforeEach(async ({ page, isRichText, isPlainText, isCollab }) => {
   if (appSettings.showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;
   }
+
+  appSettings.isCharLimit = !!isCharLimit;
+  appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
+
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
     isCollab ? 'split/' : ''
@@ -56,9 +60,11 @@ base.beforeEach(async ({ page, isRichText, isPlainText, isCollab }) => {
 //base.use({launchOptions: {slowMo: 100}})
 
 export const test = base.extend({
+  isCharLimit: false,
+  isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
   isPlainText: IS_PLAIN_TEXT,
-  isRichText: IS_RICH_TEXT,
+  isRichText: IS_RICH_TEXT
 });
 
 export { expect } from '@playwright/test';

@@ -10,7 +10,6 @@ import {redo, toggleBold, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  expect,
   focusEditor,
   repeat,
   sleep,
@@ -33,12 +32,7 @@ test.describe('History', () => {
         await page.keyboard.type(', again and');
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span></p><p dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 22,
             anchorPath: [1, 0, 0],
@@ -46,13 +40,7 @@ test.describe('History', () => {
             focusPath: [1, 0, 0],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world, again and again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 22,
             anchorPath: [0, 2, 0],
@@ -64,10 +52,7 @@ test.describe('History', () => {
         await undo(page);
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p dir="ltr"><span data-lexical-text="true">hello world again</span></p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span></p><p dir="ltr"><span data-lexical-text="true">hello world again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 11,
             anchorPath: [1, 0, 0],
@@ -75,13 +60,7 @@ test.describe('History', () => {
             focusPath: [1, 0, 0],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world again</span>
-            </p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 11,
             anchorPath: [0, 2, 0],
@@ -93,10 +72,8 @@ test.describe('History', () => {
         await undo(page);
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p dir="ltr"><br /></p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span></p><p dir="ltr"><br /></p>
+`);
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [1],
@@ -104,13 +81,7 @@ test.describe('History', () => {
             focusPath: [1],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <br />
-            </p>
-          `);
+          assertHTML(page, `<pdir="ltr"><spandata-lexical-text="true">helloworld</span><br/><br/></p>`);
           await assertSelection(page, {
             anchorOffset: 2,
             anchorPath: [0],
@@ -121,7 +92,7 @@ test.describe('History', () => {
 
         await undo(page);
 
-        await expect(page).toMatchEditorInlineSnapshot(
+        await assertHTML(page,
           `<p dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
         );
         await assertSelection(page, {
@@ -133,7 +104,7 @@ test.describe('History', () => {
 
         await undo(page);
 
-        await expect(page).toMatchEditorInlineSnapshot(
+        await assertHTML(page,
           `<p dir="ltr"><span data-lexical-text="true">hello</span></p>`,
         );
         await assertSelection(page, {
@@ -145,7 +116,7 @@ test.describe('History', () => {
 
         await undo(page);
 
-        await expect(page).toMatchEditorInlineSnapshot(`<p><br /></p>`);
+        await assertHTML(page, `<p><br /></p>`);
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0],
@@ -155,7 +126,7 @@ test.describe('History', () => {
 
         await redo(page);
 
-        await expect(page).toMatchEditorInlineSnapshot(
+        await assertHTML(page,
           `<p dir="ltr"><span data-lexical-text="true">hello</span></p>`,
         );
         await assertSelection(page, {
@@ -167,7 +138,7 @@ test.describe('History', () => {
 
         await redo(page);
 
-        await expect(page).toMatchEditorInlineSnapshot(
+        await assertHTML(page,
           `<p dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
         );
         await assertSelection(page, {
@@ -180,10 +151,7 @@ test.describe('History', () => {
         await redo(page);
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p><br /></p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span></p><p><br /></p>`);
           await assertSelection(page, {
             anchorOffset: 0,
             anchorPath: [1],
@@ -191,13 +159,7 @@ test.describe('History', () => {
             focusPath: [1],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <br />
-            </p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span><br /><br /></p>`);
           await assertSelection(page, {
             anchorOffset: 2,
             anchorPath: [0],
@@ -209,10 +171,7 @@ test.describe('History', () => {
         await redo(page);
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p dir="ltr"><span data-lexical-text="true">hello world again</span></p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span></p><p dir="ltr"><span data-lexical-text="true">hello world again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 17,
             anchorPath: [1, 0, 0],
@@ -220,13 +179,7 @@ test.describe('History', () => {
             focusPath: [1, 0, 0],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world again</span>
-            </p>
-          `);
+          assertHTML(page, `<pdir="ltr"><spandata-lexical-text="true">helloworld</span><br/><spandata-lexical-text="true">helloworldagain</span></p>`);
           await assertSelection(page, {
             anchorOffset: 17,
             anchorPath: [0, 2, 0],
@@ -238,12 +191,7 @@ test.describe('History', () => {
         await redo(page);
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `);
+          assertHTML(page, `<pdir="ltr"><spandata-lexical-text="true">helloworld</span></p><pdir="ltr"><spandata-lexical-text="true">helloworld,againandagain</span></p>`);
           await assertSelection(page, {
             anchorOffset: 22,
             anchorPath: [1, 0, 0],
@@ -251,13 +199,7 @@ test.describe('History', () => {
             focusPath: [1, 0, 0],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `);
+          assertHTML(page, `<pdir="ltr"><spandata-lexical-text="true">helloworld</span><br/><spandata-lexical-text="true">helloworld,againandagain</span></p>`);
           await assertSelection(page, {
             anchorOffset: 22,
             anchorPath: [0, 2, 0],
@@ -271,10 +213,7 @@ test.describe('History', () => {
         });
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p dir="ltr"><span data-lexical-text="true">hello world, again again</span></p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span></p><p dir="ltr"><span data-lexical-text="true">hello world, again again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 18,
             anchorPath: [1, 0, 0],
@@ -282,13 +221,7 @@ test.describe('History', () => {
             focusPath: [1, 0, 0],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again again</span>
-            </p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world, again again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 18,
             anchorPath: [0, 2, 0],
@@ -300,12 +233,7 @@ test.describe('History', () => {
         await undo(page);
 
         if (isRichText) {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr"><span data-lexical-text="true">hello world</span></p>
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span></p><p dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 22,
             anchorPath: [1, 0, 0],
@@ -313,13 +241,7 @@ test.describe('History', () => {
             focusPath: [1, 0, 0],
           });
         } else {
-          await expect(page).toMatchEditorInlineSnapshot(`
-            <p dir="ltr">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `);
+          await assertHTML(page, `<p dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world, again and again</span></p>`);
           await assertSelection(page, {
             anchorOffset: 22,
             anchorPath: [0, 2, 0],

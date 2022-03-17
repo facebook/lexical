@@ -16,7 +16,6 @@ import {
   waitForSelector} from '../utils/index.mjs';
 
 test.use({launchOptions: {slowMo: 50}});
-
 test.describe('Composition', () => {
     test('Handles Hiragana characters', async ({page}) => {
       await focusEditor(page);

@@ -519,7 +519,6 @@ expect.extend({
       const editor = await page.$(editorSelector);
       html = await editor.innerHTML();
     }
-
     return toMatchInlineSnapshot.call(
       this,
       new PrettyHTML(html, {ignoreClasses, ignoreInlineStyles}),

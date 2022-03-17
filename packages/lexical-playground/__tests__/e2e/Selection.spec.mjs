@@ -8,7 +8,6 @@
 
 import {
   click,
-  E2E_BROWSER,
   evaluate,
   expect,
   focusEditor,
@@ -41,7 +40,7 @@ test.describe('Selection', () => {
 
     test(
       'keeps single active selection for nested editors',
-      async ({page, isPlainText}) => {
+      async ({page, isPlainText, browserName}) => {
         test.skip(isPlainText);
         const hasSelection = async (parentSelector) =>
           await evaluate(
@@ -67,7 +66,7 @@ test.describe('Selection', () => {
         expect(await hasSelection('.editor-shell')).toBe(false);
 
         // Back to root editor
-        if (E2E_BROWSER === 'firefox') {
+        if (browserName === 'firefox') {
           // TODO:
           // In firefox .focus() on editor does not trigger selectionchange, while checking it
           // explicitly clicking on an editor (passing position that is on the right side to

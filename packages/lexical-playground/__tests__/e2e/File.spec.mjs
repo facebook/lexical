@@ -18,6 +18,7 @@ import {
   test
 } from '../utils/index.mjs';
 
+test.use({ acceptDownloads: true })
 test.describe('File', () => {
     test(`Can import/export`, async ({page, isPlainText}) => {
       test.skip(isPlainText);

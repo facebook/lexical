@@ -20,5 +20,9 @@ const config = {
     },
   ],
   retries: 3,
+  use: {
+    trace: 'retain-on-failure',
+    video: 'on-first-retry',
+  },
 };
 module.exports = config;

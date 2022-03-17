@@ -334,7 +334,11 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const currentEditorState = editor._editorState;
   const currentSelection = currentEditorState._selection;
   const pendingSelection = pendingEditorState._selection;
-  const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
+  const needsNodeUpdate = editor._dirtyType !== NO_DIRTY_NODES;
+  const needsSelectionUpdate = editorStateHasDirtySelection(
+    pendingEditorState,
+    editor,
+  );
   editor._pendingEditorState = null;
   editor._editorState = pendingEditorState;
 
@@ -355,7 +359,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       pendingEditorState,
       currentSelection,
       pendingSelection,
-      needsUpdate,
+      needsNodeUpdate,
+      needsSelectionUpdate,
       editor,
     );
     if (mutatedNodes !== null) {
@@ -394,7 +399,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
 
-  if (needsUpdate) {
+  if (needsNodeUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
     editor._cloneNotNeeded.clear();
     editor._dirtyLeaves = new Set();

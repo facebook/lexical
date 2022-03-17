@@ -840,7 +840,9 @@ function reconcileSelection(
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
     anchorDOMNode === nextAnchorNode &&
-    focusDOMNode === nextFocusNode
+    focusDOMNode === nextFocusNode &&
+    // Badly interpreted range selection when collapsed - #1482
+    !(domSelection.type === 'Range' && nextSelection.isCollapsed())
   ) {
     // If the root element does not have focus, ensure it has focus
     if (

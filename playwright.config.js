@@ -5,42 +5,20 @@ const config = {
   projects: [
     {
       name: 'chromium',
+      testDir: './packages/lexical-playground/__tests__/e2e/',
       use: {...devices['Desktop Chrome']},
     },
     {
       name: 'firefox',
+      testDir: './packages/lexical-playground/__tests__/e2e/',
       use: {...devices['Desktop Firefox']},
     },
     {
       name: 'webkit',
+      testDir: './packages/lexical-playground/__tests__/e2e/',
       use: {...devices['Desktop Safari']},
     },
   ],
   retries: 3,
-  //   {
-  //     name: 'chromium:plain',
-  //     use: { ...devices['Desktop Chrome'], textMode: 'plain', },
-  //   },
-  //   {
-  //     name: 'firefox:plain',
-  //     use: { ...devices['Desktop Firefox'], textMode: 'plain', },
-  //   },
-  //   {
-  //     name: 'webkit:plain',
-  //     use: { ...devices['Desktop Safari'], textMode: 'plain', },
-  //   },
-  //   {
-  //     name: 'chromium:collab',
-  //     use: { ...devices['Desktop Chrome'], textMode: 'rich', isCollab: process.env.IS_COLLAB },
-  //   },
-  //   {
-  //     name: 'firefox:collab',
-  //     use: { ...devices['Desktop Firefox'], textMode: 'rich', isCollab: process.env.IS_COLLAB },
-  //   },
-  //   {
-  //     name: 'webkit:collab',
-  //     use: { ...devices['Desktop Safari'], textMode: 'rich', isCollab: process.env.IS_COLLAB },
-  //   },
-  // ],
 };
 module.exports = config;

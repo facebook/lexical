@@ -17,7 +17,6 @@ import {selectAll} from '../keyboardShortcuts/index.mjs';
 
 const {toMatchInlineSnapshot} = jestSnapshot;
 
-export const E2E_DEBUG = process.env.E2E_DEBUG;
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
 export const IS_MAC = process.platform === 'darwin';

@@ -96,7 +96,11 @@ if (CAN_USE_BEFORE_INPUT) {
 let lastKeyWasMaybeAndroidSoftKey = false;
 let rootElementsRegistered = 0;
 
-function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
+function onSelectionChange(
+  domSelection: Selection,
+  editor: LexicalEditor,
+  isActive: boolean,
+): void {
   editor.update(() => {
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
@@ -108,6 +112,10 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
     const selection = $getSelection();
     // Update the selection format
     if ($isRangeSelection(selection) && selection.isCollapsed()) {
+      // Badly interpreted range selection when collapsed - #1482
+      if (domSelection.type === 'Range') {
+        selection.dirty = true;
+      }
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();
@@ -517,10 +525,10 @@ function onDocumentSelectionChange(event: Event): void {
   const prevActiveEditor = activeNestedEditor || rootEditor;
 
   if (prevActiveEditor !== nextActiveEditor) {
-    onSelectionChange(prevActiveEditor, false);
+    onSelectionChange(selection, prevActiveEditor, false);
   }
 
-  onSelectionChange(nextActiveEditor, true);
+  onSelectionChange(selection, nextActiveEditor, true);
 
   // If newly selected editor is nested, then add it to the map, clean map otherwise
   if (nextActiveEditor !== rootEditor) {

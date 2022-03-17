@@ -13,13 +13,13 @@
     "hashtag"
   ],
   "license": "MIT",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "main": "LexicalHashtag.js",
   "peerDependencies": {
-    "lexical": "0.1.15"
+    "lexical": "0.1.16"
   },
   "dependencies": {
-    "@lexical/utils": "0.1.15"
+    "@lexical/utils": "0.1.16"
   },
   "repository": {
     "type": "git",

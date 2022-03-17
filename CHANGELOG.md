@@ -1,3 +1,8 @@
+## 0.1.16 (March 17, 2022)
+
+- Fix scrolling regression.
+- Add missing dependency in lexical-react.
+
 ## 0.1.15 (March 16, 2022)
 
 - Improve composition on Firefox

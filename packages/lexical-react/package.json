@@ -20,7 +20,8 @@
     "@lexical/yjs": "0.1.15",
     "@lexical/hashtag": "0.1.15",
     "@lexical/selection": "0.1.15",
-    "@lexical/utils": "0.1.15"
+    "@lexical/utils": "0.1.15",
+    "@lexical/text": "0.1.15"
   },
   "peerDependencies": {
     "lexical": "0.1.15",

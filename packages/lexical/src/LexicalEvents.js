@@ -108,6 +108,11 @@ function onSelectionChange(editor: LexicalEditor, isActive: boolean): void {
     const selection = $getSelection();
     // Update the selection format
     if ($isRangeSelection(selection) && selection.isCollapsed()) {
+      const domSelection = document.getSelection();
+      // Badly interpreted range selection when collapsed - #1482
+      if (domSelection !== null && domSelection.type === 'Range') {
+        selection.dirty = true;
+      }
       const anchor = selection.anchor;
       if (anchor.type === 'text') {
         const anchorNode = anchor.getNode();

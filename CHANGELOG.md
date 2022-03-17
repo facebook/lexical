@@ -1,6 +1,6 @@
 ## 0.1.16 (March 17, 2022)
 
-- Fix scrolling issue.
+- Fix scrolling regression.
 - Add missing dependency in lexical-react.
 - Fix incorrect file extension in tables.
 

@@ -10,15 +10,14 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
+  initialize,
   repeat,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('Regression test #429', () => {
-  initializeE2E((e2e) => {
-    it(`Can add new lines before the line with emoji`, async () => {
-      const {isRichText, page} = e2e;
-
+test.describe('Regression test #429', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(`Can add new lines before the line with emoji`, async ({isRichText, page}) => {
       await focusEditor(page);
       await page.keyboard.type(':) or :(');
       await assertHTML(
@@ -72,5 +71,4 @@ describe('Regression test #429', () => {
         focusPath: [0, 0, 0, 0],
       });
     });
-  });
 });

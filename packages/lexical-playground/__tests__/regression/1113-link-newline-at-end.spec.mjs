@@ -10,17 +10,14 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
-} from '../utils';
+  initialize,
+  test
+} from '../utils/index.mjs';
 
-describe('Regression test #1113', () => {
-  initializeE2E((e2e) => {
-    it(`Selects new line when inserting a new line at the end of a link`, async () => {
-      const {isRichText, page} = e2e;
-      if (isRichText) {
-        // Legacy events are so broken..
-        return;
-      }
+test.describe('Regression test #1113', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(`Selects new line when inserting a new line at the end of a link`, async ({isRichText, page} ) => {
+      test.skip(isRichText);
       await focusEditor(page);
 
       await page.keyboard.type('https://www.example.com');
@@ -37,5 +34,4 @@ describe('Regression test #1113', () => {
         focusPath: [0],
       });
     });
-  });
 });

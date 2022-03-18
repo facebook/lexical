@@ -6,17 +6,16 @@
  *
  */
 
-import {deleteForward, moveToLineBeginning} from '../keyboardShortcuts';
-import {assertHTML, focusEditor, initializeE2E, IS_MAC} from '../utils';
+import {deleteForward, moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
+import {assertHTML, focusEditor, initialize, IS_MAC, test } from '../utils/index.mjs';
 
-describe('Regression test #1258', () => {
-  initializeE2E((e2e) => {
-    it(`Can delete forward with keyboard`, async () => {
+test.describe('Regression test #1258', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(`Can delete forward with keyboard`, async ({page}) => {
       if (!IS_MAC) {
         // Do Windows/Linux have equivalent shortcuts?
         return;
       }
-      const {page} = e2e;
       await focusEditor(page);
 
       await page.keyboard.type('hello world');
@@ -32,5 +31,4 @@ describe('Regression test #1258', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">ello world</span></p>',
       );
     });
-  });
 });

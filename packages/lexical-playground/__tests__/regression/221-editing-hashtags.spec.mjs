@@ -10,14 +10,13 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
-  waitForSelector,
-} from '../utils';
+  initialize,
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('Regression test #221', () => {
-  initializeE2E((e2e) => {
-    it(`Can handle space in hashtag`, async () => {
-      const {page} = e2e;
+test.describe('Regression test #221', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(`Can handle space in hashtag`, async ({page}) => {
 
       await focusEditor(page);
       await page.keyboard.type('#yolo');
@@ -48,8 +47,7 @@ describe('Regression test #221', () => {
       });
     });
 
-    it(`Can handle delete in hashtag`, async () => {
-      const {page} = e2e;
+    test(`Can handle delete in hashtag`, async ({page}) => {
 
       await focusEditor(page);
       await page.keyboard.type('#yolo ');
@@ -79,8 +77,7 @@ describe('Regression test #221', () => {
       });
     });
 
-    it(`Can handle backspace into hashtag`, async () => {
-      const {page} = e2e;
+    test(`Can handle backspace into hashtag`, async ({page}) => {
 
       await focusEditor(page);
       await page.keyboard.type('#yolo ');
@@ -109,5 +106,4 @@ describe('Regression test #221', () => {
         focusPath: [0, 0, 0],
       });
     });
-  });
 });

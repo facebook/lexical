@@ -6,19 +6,18 @@
  *
  */
 
-import {moveToEditorBeginning} from '../keyboardShortcuts';
+import {moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
-  waitForSelector,
-} from '../utils';
+  initialize,
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('Regression test #379', () => {
-  initializeE2E((e2e) => {
-    it(`Is able to correctly handle backspace press at the line boundary`, async () => {
-      const {page} = e2e;
+test.describe('Regression test #379', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(`Is able to correctly handle backspace press at the line boundary`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('Luke');
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -47,5 +46,4 @@ describe('Regression test #379', () => {
         focusPath: [0, 0, 0],
       });
     });
-  });
 });

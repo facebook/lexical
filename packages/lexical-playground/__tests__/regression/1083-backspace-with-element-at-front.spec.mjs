@@ -6,23 +6,22 @@
  *
  */
 
-import {moveToLineEnd, selectAll} from '../keyboardShortcuts';
+import {moveToLineEnd, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
   focusEditor,
-  initializeE2E,
+  initialize,
   repeat,
-  waitForSelector,
-} from '../utils';
+  test,
+  waitForSelector} from '../utils/index.mjs';
 
-describe('Regression test #1083', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isPlainText,
+test.describe('Regression test #1083', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(
       `Backspace with ElementNode at the front of the paragraph`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         await page.keyboard.type('Hello');
@@ -48,11 +47,10 @@ describe('Regression test #1083', () => {
       },
     );
 
-    it.skipIf(
-      e2e.isPlainText,
+    test(
       `Backspace with ElementNode at the front of the selection`,
-      async () => {
-        const {page} = e2e;
+      async ({page, isPlainText}) => {
+        test.skip(isPlainText);
         await focusEditor(page);
 
         await page.keyboard.type('Say');
@@ -87,5 +85,4 @@ describe('Regression test #1083', () => {
         );
       },
     );
-  });
 });

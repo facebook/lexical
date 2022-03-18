@@ -6,16 +6,15 @@
  *
  */
 
-import {undo} from '../keyboardShortcuts';
-import {assertHTML, focusEditor, initializeE2E} from '../utils';
+import {undo} from '../keyboardShortcuts/index.mjs';
+import {assertHTML, focusEditor, initialize, test} from '../utils/index.mjs';
 
-describe('Regression test #1055', () => {
-  initializeE2E((e2e) => {
-    it.skipIf(
-      e2e.isCollab,
+test.describe('Regression test #1055', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(
       `Adds new editor state into undo stack right after undo was done`,
-      async () => {
-        const {page} = e2e;
+      async ({isCollab, page}) => {
+        test.skip(isCollab);
         await focusEditor(page);
         await page.keyboard.type('hello');
         await undo(page);
@@ -35,5 +34,4 @@ describe('Regression test #1055', () => {
         );
       },
     );
-  });
 });

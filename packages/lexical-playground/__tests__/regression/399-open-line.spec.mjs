@@ -10,16 +10,15 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
-  initializeE2E,
+  initialize,
   IS_MAC,
   repeat,
-} from '../utils';
+  test
+} from '../utils/index.mjs';
 
-describe('Regression test #399', () => {
-  initializeE2E((e2e) => {
-    it(`Supports Ctrl-O as an open line command`, async () => {
-      const {isRichText, page} = e2e;
-
+test.describe('Regression test #399', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+    test(`Supports Ctrl-O as an open line command`, async ({page, isRichText}) => {
       // This is a Mac only command
       if (!IS_MAC) {
         return;
@@ -81,5 +80,4 @@ describe('Regression test #399', () => {
         });
       }
     });
-  });
 });

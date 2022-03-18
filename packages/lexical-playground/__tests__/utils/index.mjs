@@ -333,6 +333,7 @@ export async function sleep(delay) {
 export async function focusEditor(page, parentSelector = '.editor-shell') {
   const selector = `${parentSelector} div[contenteditable="true"]`;
   if (IS_COLLAB) {
+    await page.waitForSelector('iframe[name="left"]')
     const leftFrame = page.frame('left');
     if ((await leftFrame.$$('.loading').length) !== 0) {
       await leftFrame.waitForSelector('.loading', {

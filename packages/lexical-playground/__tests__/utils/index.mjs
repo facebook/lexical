@@ -31,13 +31,9 @@ export async function initialize({ page, isCollab, isCharLimit, isCharLimitUtf8 
     return expect(actual).toEqual(expected);
   });
   const appSettings = {};
-  if (appSettings.isRichText === undefined) {
-    appSettings.isRichText = IS_RICH_TEXT;
-  }
-  if (appSettings.disableBeforeInput === undefined) {
-    appSettings.disableBeforeInput =
-      process.env.E2E_EVENTS_MODE === 'legacy-events';
-  }
+  appSettings.isRichText = IS_RICH_TEXT;
+  appSettings.disableBeforeInput =
+    process.env.E2E_EVENTS_MODE === 'legacy-events';
   if (isCollab) {
     appSettings.isCollab = isCollab;
     appSettings.collabId = uuidv4();
@@ -45,7 +41,6 @@ export async function initialize({ page, isCollab, isCharLimit, isCharLimitUtf8 
   if (appSettings.showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;
   }
-
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
 

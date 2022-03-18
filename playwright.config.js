@@ -22,7 +22,7 @@ const config = {
   ],
   retries: 5,
   use: {
-    trace: 'retain-on-failure',
+    //trace: 'retain-on-failure',
     video: 'on-first-retry',
   },
 };

@@ -19,7 +19,7 @@ const config = {
       use: {...devices['Desktop Safari']},
     },
   ],
-  retries: 3,
+  retries: 5,
   use: {
     trace: 'retain-on-failure',
     video: 'on-first-retry',

@@ -22,6 +22,7 @@ const config = {
   ],
   retries: 5,
   use: {
+    // this causes issues in the CI on on current version.
     //trace: 'retain-on-failure',
     video: 'on-first-retry',
   },

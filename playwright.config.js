@@ -2,7 +2,7 @@
 const {devices} = require('@playwright/test');
 
 const config = {
-  forbidOnly: process.env.CI,
+  forbidOnly: !!process.env.CI,
   projects: [
     {
       name: 'chromium',

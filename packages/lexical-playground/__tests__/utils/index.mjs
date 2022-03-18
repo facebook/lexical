@@ -333,7 +333,7 @@ export async function sleep(delay) {
 export async function focusEditor(page, parentSelector = '.editor-shell') {
   const selector = `${parentSelector} div[contenteditable="true"]`;
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     if ((await leftFrame.$$('.loading').length) !== 0) {
       await leftFrame.waitForSelector('.loading', {
         state: 'detached',

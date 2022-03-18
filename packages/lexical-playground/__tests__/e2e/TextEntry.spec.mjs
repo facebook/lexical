@@ -356,16 +356,11 @@ test.describe('TextEntry', () => {
       });
     });
 
-    test('Empty paragraph and new line node selection', async ({isRichText, isCollab, page}) => {
+    test('Empty paragraph and new line node selection', async ({isRichText, page}) => {
       await focusEditor(page);
 
       // Add paragraph
       await page.keyboard.press('Enter');
-      if (isCollab) {
-        // I think this is a bug in Collab - focusing the editor does not ceate a Paragraph, so hitting enter once
-        // creates only one.
-        await page.keyboard.press('Enter');
-      }
       if (isRichText) {
         await assertHTML(
           page,

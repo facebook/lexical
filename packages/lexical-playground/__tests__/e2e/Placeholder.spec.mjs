@@ -6,15 +6,16 @@
  *
  */
 
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   expect,
   focusEditor,
+initialize ,
   test,
   textContent} from '../utils/index.mjs';
 
 test.describe('Placeholder', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(`Displays a placeholder when no content is present`, async ({page, isRichText, isCollab}) => {
       await focusEditor(page);
       const content = await textContent(page, '.Placeholder__root');

@@ -7,18 +7,19 @@
  */
 
 import {moveToLineBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   click,
   copyToClipboard,
   focusEditor,
+initialize ,
   pasteFromClipboard,
   repeat,
   test,
   waitForSelector} from '../utils/index.mjs';
 
 test.describe('HorizontalRule', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(
       'Can create a horizontal rule and move selection around it',
       async ({page, isPlainText, browserName}) => {

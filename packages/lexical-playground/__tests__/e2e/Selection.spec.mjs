@@ -6,17 +6,18 @@
  *
  */
 
-import {
-  click,
+import { click,
   evaluate,
   expect,
   focusEditor,
+initialize ,
   insertImage,
   sleep,
   test
 } from '../utils/index.mjs';
 
 test.describe('Selection', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     // Skip until we figure out how/why this is supposed to work.
     test.skip('does not focus the editor on load', async ({page}) => {
       const editorHasFocus = async () =>

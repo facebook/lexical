@@ -12,13 +12,13 @@ import {
   moveToPrevWord,
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   click,
   copyToClipboard,
   focus,
   focusEditor,
+initialize ,
   IS_LINUX,
   IS_WINDOWS,
   pasteFromClipboard,
@@ -27,6 +27,7 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('CopyAndPaste', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test('Basic copy + paste', async ({isRichText, page, browserName}) => {
       await focusEditor(page);
 

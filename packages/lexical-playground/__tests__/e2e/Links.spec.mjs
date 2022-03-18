@@ -12,12 +12,12 @@ import {
   selectAll,
   selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   click,
   focus,
   focusEditor,
+initialize ,
   test,
   waitForSelector} from '../utils/index.mjs';
 
@@ -26,6 +26,7 @@ test.beforeEach(({isPlainText}) => {
 });
 
 test.describe('Links', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(
       `Can convert a text node into a link`,
       async({page}) => {

@@ -10,11 +10,13 @@ import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts/index.mjs
 import {
   assertHTML,
   focusEditor,
+  initialize,
   pasteFromClipboard,
   test
 } from '../utils/index.mjs';
 
 test.describe('Auto Links', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(
       'Can convert url-like text into links',
       async ({page, isPlainText}) => {

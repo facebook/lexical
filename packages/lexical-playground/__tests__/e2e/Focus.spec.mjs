@@ -6,9 +6,10 @@
  *
  */
 
-import {expect, focusEditor, test} from '../utils/index.mjs';
+import { expect, focusEditor, initialize ,test} from '../utils/index.mjs';
 
 test.describe('Focus', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(`can tab out of the editor`, async ({page, isRichText}) => {
       test.skip(isRichText);
       await focusEditor(page);

@@ -7,15 +7,16 @@
  */
 
 import {redo, toggleBold, undo} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   focusEditor,
+initialize ,
   repeat,
   sleep,
   test} from '../utils/index.mjs';
 
 test.describe('History', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(
       `Can type two paragraphs of text and correctly undo and redo`,
       async ({isRichText, page, isCollab}) => {

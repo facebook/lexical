@@ -6,9 +6,10 @@
  *
  */
 
-import {evaluate, expect, focusEditor, test} from '../utils/index.mjs';
+import {evaluate, expect, focusEditor, initialize,test} from '../utils/index.mjs';
 
 test.describe('Auto scroll while typing', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     async function addScroll(page, selector_) {
       await evaluate(
         page,

@@ -7,16 +7,18 @@
  */
 
 import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   focusEditor,
+initialize ,
   IS_WINDOWS,
   repeat,
   test,
   waitForSelector} from '../utils/index.mjs';
 
 test.describe('Mentions', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+
     test(`Can enter the Luke Skywalker mention`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('Luke');

@@ -14,11 +14,11 @@ import {
   selectCharacters,
   undo,
 } from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   clearEditor,
   click,
   focusEditor,
+initialize ,
   test,
   waitForSelector} from '../utils/index.mjs';
 
@@ -55,6 +55,7 @@ test.beforeEach(({isPlainText}) => {
 });
 
 test.describe('Nested List', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test( `Can toggle an empty list on/off`, async({page}) => {
       await focusEditor(page);
 

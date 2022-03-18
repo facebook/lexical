@@ -7,10 +7,10 @@
  */
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   click,
   focusEditor,
+initialize ,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
@@ -20,6 +20,8 @@ import {
 
 test.use({ acceptDownloads: true })
 test.describe('File', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+
     test(`Can import/export`, async ({page, isPlainText}) => {
       test.skip(isPlainText);
       await focusEditor(page);

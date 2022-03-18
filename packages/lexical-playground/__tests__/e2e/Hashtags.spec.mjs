@@ -7,15 +7,16 @@
  */
 
 import {deleteNextWord, moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   focusEditor,
+initialize ,
   repeat,
   test,
   waitForSelector} from '../utils/index.mjs';
 
 test.describe('Hashtags', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(`Can handle a single hashtag`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type('#yolo');

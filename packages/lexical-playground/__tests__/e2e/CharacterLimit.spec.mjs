@@ -8,9 +8,9 @@
  */
 
 import {moveToEditorBeginning, moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
+  initialize,
   repeat,
   test
 } from '../utils/index.mjs';
@@ -259,11 +259,13 @@ function testSuite(charset) {
 
 test.describe('CharacterLimit', () => {
   test.describe('UTF-16', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test.use({isCharLimit: true})
     testSuite('UTF-16');
   });
 
   test.describe('UTF-8', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test.use({isCharLimitUtf8: true})
     testSuite('UTF-8');
   });

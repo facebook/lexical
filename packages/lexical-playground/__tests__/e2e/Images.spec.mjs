@@ -6,12 +6,12 @@
  *
  */
 
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   click,
   E2E_PORT,
   focusEditor,
+initialize ,
   test,
   waitForSelector
 } from '../utils/index.mjs';
@@ -19,6 +19,7 @@ import {
 const IMAGE_URL = E2E_PORT === 3000 ? '/src/images/yellow-flower.jpg' : '/assets/yellow-flower.bf6d0400.jpg';
 
 test.describe('Images', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(
       `Can create a decorator and move selection around it`,
       async ({page, isPlainText}) => {

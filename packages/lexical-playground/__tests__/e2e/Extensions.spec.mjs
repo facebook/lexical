@@ -11,10 +11,11 @@ import {
   assertSelection,
   evaluate,
   focusEditor,
-  test
-} from '../utils/index.mjs';
+  initialize,
+  test} from '../utils/index.mjs';
 
 test.describe('Extensions', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(`document.execCommand("insertText")`, async ({page}) => {
       await focusEditor(page);
 

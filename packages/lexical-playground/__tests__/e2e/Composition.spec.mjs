@@ -7,16 +7,17 @@
  */
 
 import {moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   focusEditor,
+initialize ,
   repeat,
   test,
   waitForSelector} from '../utils/index.mjs';
 
 test.use({launchOptions: {slowMo: 50}});
 test.describe('Composition', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test('Handles Hiragana characters', async ({page}) => {
       await focusEditor(page);
 

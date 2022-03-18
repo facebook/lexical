@@ -7,10 +7,10 @@
  */
 
 import {redo, undo} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   focusEditor,
+initialize ,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
@@ -35,6 +35,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
 }
 
 test.describe('Markdown', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
   const triggersAndExpectations = [
     {
       expectation:

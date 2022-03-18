@@ -6,12 +6,12 @@
  *
  */
 
-import {
-  assertHTML,
+import { assertHTML,
   click,
   clickSelectors,
   dragMouse,
   focusEditor,
+  initialize ,
   IS_COLLAB,
   test,
   waitForSelector} from '../utils/index.mjs';
@@ -84,6 +84,7 @@ async function selectCellsFromTableCords(page, firstCords, secondCords) {
 }
 
 test.describe('Tables', () => {
+    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(
       `Can a table be inserted from the toolbar`,
       async ({page, isPlainText}) => {

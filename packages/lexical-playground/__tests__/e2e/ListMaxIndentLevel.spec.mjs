@@ -7,10 +7,10 @@
  */
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   click,
   focusEditor,
+initialize ,
   test,
   waitForSelector} from '../utils/index.mjs';
 
@@ -31,6 +31,7 @@ async function clickIndentButton(page, times = 1) {
 const MAX_INDENT_LEVEL = 6;
 
 test.describe('Nested List', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
    test(
       `Can only indent until the max depth when list is empty`,
       async ({page, isPlainText}) => {

@@ -6,11 +6,11 @@
  *
  */
 
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   evaluate,
   focusEditor,
+initialize ,
   test
 } from '../utils/index.mjs';
 
@@ -28,6 +28,7 @@ async function validateContent(page) {
 }
 
 test.describe('Mutations', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(`Can restore the DOM to the editor state state`, async ({page}) => {
 
       await focusEditor(page);

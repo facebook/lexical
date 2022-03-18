@@ -7,15 +7,16 @@
  */
 
 import {moveToLineBeginning, moveToLineEnd} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   focusEditor,
+initialize ,
   repeat,
   test
 } from '../utils/index.mjs';
 
 test.describe('Emoticons', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test(`Can handle a single emoticon`, async ({page, browserName}) => {
       await focusEditor(page);
       await page.keyboard.type('This is an emoji :)');

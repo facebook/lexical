@@ -16,9 +16,9 @@ import {
   moveToParagraphEnd,
   moveToPrevWord,
 } from '../keyboardShortcuts/index.mjs';
-import {
-  assertSelection,
+import { assertSelection,
   focusEditor,
+initialize ,
   IS_WINDOWS,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
@@ -40,6 +40,8 @@ async function typeParagraphs(page) {
 }
 
 test.describe('Keyboard Navigation', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+
     test('can type several paragraphs', async ({isRichText, page}) => {
       await typeParagraphs(page);
       if (isRichText) {

@@ -26,7 +26,7 @@ export const IS_COLLAB = process.env.E2E_EDITOR_MODE === 'rich-text-with-collab'
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 
-base.beforeEach(async ({ page, isRichText, isPlainText, isCollab, isCharLimit, isCharLimitUtf8 }) => {
+export async function initialize({ page, isCollab, isCharLimit, isCharLimitUtf8 }) {
   page.exposeFunction('expectToBeEqual', (actual, expected) => {
     return expect(actual).toEqual(expected);
   });
@@ -54,9 +54,7 @@ base.beforeEach(async ({ page, isRichText, isPlainText, isCollab, isCharLimit, i
     isCollab ? 'split/' : ''
   }?${urlParams.toString()}`;
   await page.goto(url);
-});
-
-//base.use({launchOptions: {slowMo: 100}})
+}
 
 export const test = base.extend({
   isCharLimit: false,

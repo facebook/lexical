@@ -7,16 +7,17 @@
  */
 
 import {moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
+import { assertHTML,
   assertSelection,
   focusEditor,
+initialize ,
   pasteFromClipboard,
   selectOption,
   test
 } from '../utils/index.mjs';
 
 test.describe('CodeBlock', () => {
+  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
     test('Can create code block with markdown', async ({page, isRichText}) => {
       await focusEditor(page);
       await page.keyboard.type('``` alert(1);');

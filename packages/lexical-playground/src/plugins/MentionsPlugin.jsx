@@ -14,7 +14,7 @@ import type {
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $isRangeSelection} from 'lexical';
+import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 import React, {
   startTransition,
   useCallback,
@@ -959,6 +959,25 @@ function createMentionNodeFromSearchResult(
   });
 }
 
+function isSelectionOnEntityBoundary(
+  editor: LexicalEditor,
+  offset: number,
+): boolean {
+  if (offset !== 0) {
+    return false;
+  }
+  return editor.getEditorState().read(() => {
+    const selection = $getSelection();
+    if ($isRangeSelection(selection)) {
+      const anchor = selection.anchor;
+      const anchorNode = anchor.getNode();
+      const prevSibling = anchorNode.getPreviousSibling();
+      return $isTextNode(prevSibling) && prevSibling.isTextEntity();
+    }
+    return false;
+  });
+}
+
 function useMentions(editor: LexicalEditor): React$Node {
   const [resolution, setResolution] = useState<Resolution | null>(null);
 
@@ -985,7 +1004,10 @@ function useMentions(editor: LexicalEditor): React$Node {
         return;
       }
       const match = getPossibleMentionMatch(text);
-      if (match !== null) {
+      if (
+        match !== null &&
+        !isSelectionOnEntityBoundary(editor, match.leadOffset)
+      ) {
         const isRangePositioned = tryToPositionRange(match, range);
         if (isRangePositioned !== null) {
           startTransition(() =>

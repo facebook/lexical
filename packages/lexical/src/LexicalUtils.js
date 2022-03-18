@@ -560,7 +560,7 @@ export function $updateTextNodeFromDOMContent(
         node.replace(replacement);
         node = replacement;
       }
-      node = node.setTextContent(normalizedTextContent);
+      node.setTextContent(normalizedTextContent);
     }
   }
 }

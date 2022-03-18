@@ -35,6 +35,10 @@ export class MentionNode extends TextNode {
     dom.className = 'mention';
     return dom;
   }
+
+  isTextEntity(): true {
+    return true;
+  }
 }
 
 export function $createMentionNode(mentionName: string): MentionNode {

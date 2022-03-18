@@ -55,16 +55,10 @@ test.describe('Auto scroll while typing', () => {
       // },
     ].forEach((testCase) => {
       [true, false].forEach((isSoftLineBreak) => {
-<<<<<<< HEAD:packages/lexical-playground/__tests__/e2e/AutoScroll-test.js
-        it.skipIf(
-          isSoftLineBreak || e2e.isPlainText,
-=======
         test(
->>>>>>> a58eb39c (wip):packages/lexical-playground/__tests__/e2e/AutoScroll.spec.mjs
           `${testCase.name}${isSoftLineBreak ? ' (soft line break)' : ''}`,
           async ({page, isPlainText, browserName}) => {
-          // skip due to existing bug with safari - #1473
-            test.skip((isPlainText || isSoftLineBreak) && browserName === 'webkit')
+            test.skip(isPlainText || isSoftLineBreak);
             await focusEditor(page);
             await addScroll(page, testCase.selector);
 

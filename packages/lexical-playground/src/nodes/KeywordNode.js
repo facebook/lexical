@@ -34,6 +34,10 @@ export class KeywordNode extends TextNode {
   canInsertTextAfter(): boolean {
     return false;
   }
+
+  isTextEntity(): true {
+    return true;
+  }
 }
 
 export function $createKeywordNode(keyword: string): KeywordNode {

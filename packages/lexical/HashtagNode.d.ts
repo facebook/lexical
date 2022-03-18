@@ -15,7 +15,6 @@ export declare class HashtagNode extends TextNode {
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   setTextContent(text: string): TextNode;
   canInsertTextBefore(): boolean;
-  canInsertTextAfter(): boolean;
 }
 export function $toggleHashtag(node: TextNode): TextNode;
 export function $createHashtagNode(text?: string): TextNode;

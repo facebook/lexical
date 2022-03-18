@@ -33,10 +33,6 @@ export class AutoLinkNode extends LinkNode {
     }
     return null;
   }
-
-  canInsertTextAfter(): true {
-    return true;
-  }
 }
 
 export function $createAutoLinkNode(url: string): AutoLinkNode {

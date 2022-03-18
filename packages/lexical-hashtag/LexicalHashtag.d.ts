@@ -14,10 +14,8 @@ export declare class HashtagNode extends TextNode {
   clone(node: HashtagNode): HashtagNode;
   constructor(text: string, key?: NodeKey);
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
-  setTextContent(text: string): TextNode;
   canInsertTextBefore(): boolean;
-  canInsertTextAfter(): boolean;
+  isTextEntity(): true;
 }
-export function $toggleHashtag(node: TextNode): TextNode;
 export function $createHashtagNode(text?: string): TextNode;
 export function $isHashtagNode(node: LexicalNode | null | undefined): boolean;

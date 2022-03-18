@@ -10,7 +10,7 @@
 import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {$createTextNode, $isTextNode, TextNode} from 'lexical';
+import {TextNode} from 'lexical';
 
 export class HashtagNode extends TextNode {
   static getType(): string {
@@ -31,54 +31,16 @@ export class HashtagNode extends TextNode {
     return element;
   }
 
-  setTextContent(text: string): TextNode {
-    let targetNode = super.setTextContent(text);
-    // Handle hashtags
-    if (targetNode.getParent() !== null && !targetNode.isComposing()) {
-      const indexOfHash = text.indexOf('#');
-      if (indexOfHash === -1 || targetNode.getTextContent() === '#') {
-        targetNode = $toggleHashtag(targetNode);
-      } else if (indexOfHash > 0) {
-        [targetNode] = targetNode.splitText(indexOfHash);
-        targetNode = $toggleHashtag(targetNode);
-      }
-      // Check for invalid characters
-      if ($isTextNode(targetNode) && targetNode.isAttached()) {
-        const targetTextContent = targetNode.getTextContent().slice(1);
-        const indexOfInvalidChar = targetTextContent.search(
-          /[\s.,\\\/#!$%\^&\*;:{}=\-`~()@]/,
-        );
-        if (indexOfInvalidChar === 0) {
-          targetNode = $toggleHashtag(targetNode);
-        } else if (indexOfInvalidChar > 0) {
-          [, targetNode] = targetNode.splitText(indexOfInvalidChar + 1);
-          targetNode = $toggleHashtag(targetNode);
-        }
-      }
-      return targetNode;
-    }
-    return this;
-  }
-
   canInsertTextBefore(): boolean {
     return false;
   }
 
-  canInsertTextAfter(): boolean {
+  isTextEntity(): true {
     return true;
   }
 }
 
-export function $toggleHashtag(node: TextNode): TextNode {
-  const text = node.getTextContent();
-  const replacement = !$isHashtagNode(node)
-    ? $createHashtagNode(text)
-    : $createTextNode(text);
-  node.replace(replacement);
-  return replacement;
-}
-
-export function $createHashtagNode(text?: string = ''): TextNode {
+export function $createHashtagNode(text?: string = ''): HashtagNode {
   return new HashtagNode(text);
 }
 

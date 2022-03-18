@@ -251,37 +251,46 @@ export class TextNode extends LexicalNode {
     const self = this.getLatest();
     return self.__format;
   }
+
   getStyle(): string {
     const self = this.getLatest();
     return self.__style;
   }
+  
   isToken(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_TOKEN;
   }
+
   isSegmented(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_SEGMENTED;
   }
+
   isInert(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_INERT;
   }
+
   isDirectionless(): boolean {
     const self = this.getLatest();
     return (self.__detail & IS_DIRECTIONLESS) !== 0;
   }
+
   isUnmergeable(): boolean {
     const self = this.getLatest();
     return (self.__detail & IS_UNMERGEABLE) !== 0;
   }
+
   hasFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getFormat() & formatFlag) !== 0;
   }
+
   isSimpleText(): boolean {
     return this.__type === 'text' && this.__mode === 0;
   }
+
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     if (
       (!includeInert && this.isInert()) ||
@@ -292,6 +301,7 @@ export class TextNode extends LexicalNode {
     const self = this.getLatest();
     return self.__text;
   }
+
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
     const self = this.getLatest();
     const format = self.__format;
@@ -429,27 +439,32 @@ export class TextNode extends LexicalNode {
     prevSelection: null | RangeSelection | NodeSelection | GridSelection,
     nextSelection: RangeSelection,
   ): void {}
+
   setFormat(format: number): this {
     errorOnReadOnly();
     const self = this.getWritable();
     this.getWritable().__format = format;
     return self;
   }
+
   setStyle(style: string): this {
     errorOnReadOnly();
     const self = this.getWritable();
     this.getWritable().__style = style;
     return self;
   }
+
   toggleFormat(type: TextFormatType): TextNode {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return this.setFormat(this.getFormat() ^ formatFlag);
   }
+
   toggleDirectionless(): this {
     const self = this.getWritable();
     self.__detail ^= IS_DIRECTIONLESS;
     return self;
   }
+
   toggleUnmergeable(): this {
     const self = this.getWritable();
     self.__detail ^= IS_UNMERGEABLE;
@@ -462,12 +477,14 @@ export class TextNode extends LexicalNode {
     self.__mode = mode;
     return self;
   }
-  setTextContent(text: string): TextNode {
+
+  setTextContent(text: string): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     writableSelf.__text = text;
     return writableSelf;
   }
+
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     let anchorOffset = _anchorOffset;
@@ -508,12 +525,13 @@ export class TextNode extends LexicalNode {
     }
     return selection;
   }
+
   spliceText(
     offset: number,
     delCount: number,
     newText: string,
     moveSelection?: boolean,
-  ): TextNode {
+  ): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const text = writableSelf.__text;
@@ -540,12 +558,15 @@ export class TextNode extends LexicalNode {
       text.slice(0, index) + newText + text.slice(index + delCount);
     return writableSelf.setTextContent(updatedText);
   }
+
   canInsertTextBefore(): boolean {
     return true;
   }
+
   canInsertTextAfter(): boolean {
     return true;
   }
+
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
     const self = this.getLatest();
@@ -668,6 +689,7 @@ export class TextNode extends LexicalNode {
 
     return splitNodes;
   }
+
   mergeWithSibling(target: TextNode): TextNode {
     const isBefore = target === this.getPreviousSibling();
     if (!isBefore && target !== this.getNextSibling()) {
@@ -715,6 +737,10 @@ export class TextNode extends LexicalNode {
 
     target.remove();
     return this.getLatest();
+  }
+
+  isTextEntity(): boolean {
+    return false;
   }
 }
 

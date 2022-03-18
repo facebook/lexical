@@ -56,6 +56,7 @@ module.name_mapper='^@lexical/react/LexicalHorizontalRuleNode' -> '<PROJECT_ROOT
 module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalIsTextContentEmpty.js.flow'
 module.name_mapper='^@lexical/react/useLexicalDecoratorMap' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalDecoratorMap.js.flow'
 module.name_mapper='^@lexical/react/useLexicalNodeSelection' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalNodeSelection.js.flow'
+module.name_mapper='^@lexical/react/useLexicalTextEntity' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalTextEntity.js.flow'
 module.name_mapper='^@lexical/react/withSubscriptions' -> '<PROJECT_ROOT>/packages/lexical-react/flow/withSubscriptions.js.flow'
 
 # Composer Plugins

@@ -7,11 +7,12 @@
  * @flow strict
  */
 
+import type {TextNode} from 'lexical';
+
 import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalTextEntity from '@lexical/react/useLexicalTextEntity';
-import {TextNode} from 'lexical';
-import { useCallback, useEffect } from 'react';
+import {useCallback, useEffect} from 'react';
 
 function getHashtagRegexStringChars(): $ReadOnly<{
   alpha: string,
@@ -248,7 +249,7 @@ const REGEX = new RegExp(getHashtagRegexString(), 'i');
 
 export default function HashtagPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
-  
+
   useEffect(() => {
     if (!editor.hasNodes([HashtagNode])) {
       throw new Error('HashtagPlugin: HashtagNode not registered on editor');
@@ -278,4 +279,3 @@ export default function HashtagPlugin(): React$Node {
 
   return null;
 }
-

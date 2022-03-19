@@ -19,12 +19,12 @@ module.exports = {
       // They can use all features including JSX (but shouldn't use `var`).
       files: [
         'packages/*/src/**/*.js',
-        'packages/*/__tests__/**/*.js',
+        'packages/*/__tests__/**/*.?(m)js',
         'packages/*/src/**/*.jsx',
       ],
       parser: 'babel-eslint',
       parserOptions: {
-        ecmaVersion: 8,
+        allowImportExportEverywhere: true,
         sourceType: 'module',
       },
       rules: {

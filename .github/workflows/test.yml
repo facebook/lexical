@@ -92,6 +92,13 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: test-results/
+          retention-days: 7
 
   e2e-linux:
     runs-on: ubuntu-latest
@@ -126,6 +133,14 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: test-results/
+          retention-days: 7
+
 
   e2e-windows:
     runs-on: windows-latest
@@ -156,6 +171,14 @@ jobs:
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
       - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: test-results/
+          retention-days: 7
+
 
   e2e-collab-mac:
     runs-on: macos-latest
@@ -182,6 +205,14 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: test-results/
+          retention-days: 7
+
 
   e2e-collab-linux:
     runs-on: ubuntu-latest
@@ -212,6 +243,14 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: test-results/
+          retention-days: 7
+
 
   e2e-collab-windows:
     runs-on: windows-latest
@@ -238,3 +277,10 @@ jobs:
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: test-results/
+          retention-days: 7

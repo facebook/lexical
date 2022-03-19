@@ -10,4 +10,6 @@
   tab-size: 1;
   outline: 0;
   padding: 10px;
+  overflow: auto;
+  resize: vetical;
 }

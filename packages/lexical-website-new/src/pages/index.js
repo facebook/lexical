@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ *
+ */
+
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
@@ -26,12 +35,14 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary margin-right--sm"
-            to="/docs/intro">
+            to="/docs/intro"
+          >
             Get Started
           </Link>
           <Link
             className="button button--outline margin-left--sm"
-            to="/docs/intro">
+            to="/docs/intro"
+          >
             Learn More
           </Link>
         </div>

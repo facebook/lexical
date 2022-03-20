@@ -13,9 +13,9 @@ import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import React from 'react';
 
-import HomepageExamples from '../components/homepage-examples/HomepageExamples';
-import HomepageFeatures from '../components/homepage-features/HomepageFeatures';
-import styles from './index.module.css';
+import HomepageExamples from '../components/HomepageExamples';
+import HomepageFeatures from '../components/HomepageFeatures';
+import styles from './styles.module.css';
 
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();

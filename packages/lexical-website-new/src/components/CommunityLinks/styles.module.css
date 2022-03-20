@@ -1,0 +1,10 @@
+.image {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+}
+
+.image svg {
+    height: 100px;
+    width: 100px;
+}

@@ -1,0 +1,9 @@
+.communityHeader{
+    padding: 2em 0;
+}
+
+.textContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}

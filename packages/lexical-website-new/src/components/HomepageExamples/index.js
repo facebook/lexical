@@ -1,7 +1,7 @@
 import Link from '@docusaurus/Link';
 import React, {useState} from 'react';
 
-import styles from './HomepageExamples.module.css';
+import styles from './styles.module.css';
 
 function Pills({pills, activeIndex, onClick}) {
   return (
@@ -23,7 +23,8 @@ function Pills({pills, activeIndex, onClick}) {
             id={`${pill.id}-tab`}
             onClick={() => {
               onClick(index);
-            }}>
+            }}
+          >
             {pill.label}
           </a>
         );
@@ -74,12 +75,14 @@ export default function HomepageExamples() {
         className={`row margin-vert--lg ${styles.tabContent}`}
         id={activePill.id}
         role="tabpanel"
-        aria-labelledby={`example-tab-${activeIndex}`}>
+        aria-labelledby={`example-tab-${activeIndex}`}
+      >
         <div className="col col--4">
           {activePill.content}
           <Link
             className="button button--primary margin-top--md"
-            to="/docs/intro">
+            to="/docs/intro"
+          >
             Get Started
           </Link>
         </div>

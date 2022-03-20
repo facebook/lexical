@@ -118,13 +118,19 @@ const config = {
       },
       navbar: {
         items: [
+          {label: 'Tutorial', position: 'left', to: '/tutorial'},
+          {
+            label: 'Playground',
+            position: 'left',
+            to: 'https://lexical-playground.vercel.app/',
+          },
           {
             docId: 'intro',
             label: 'Docs',
             position: 'left',
             type: 'doc',
           },
-          {label: 'Blog', position: 'left', to: '/blog'},
+          {label: 'Community', position: 'left', to: '/community'},
           {
             href: GITHUB_REPO_URL,
             label: 'GitHub',

@@ -168,7 +168,14 @@ test.describe('Tables', () => {
 
     await fillTablePartiallyWithText(page);
 
-    const firstRowFirstColumnCellBoundingBox = await page.locator(
+    let p = page;
+
+    if (IS_COLLAB) {
+      await focusEditor(page);
+      p = await page.frame('left');
+    }
+
+    const firstRowFirstColumnCellBoundingBox = await p.locator(
       'table:first-of-type > tr:nth-child(1) > th:nth-child(1)',
     );
 

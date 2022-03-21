@@ -105,6 +105,7 @@ const moduleResolution = [
   'LexicalListPlugin',
   'LexicalAutoLinkPlugin',
   'LexicalOnChangePlugin',
+  'LexicalAutoScrollPlugin',
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/src/${module}.js`);
   if (fs.existsSync(resolvedPath)) {

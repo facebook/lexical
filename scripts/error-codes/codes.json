@@ -67,5 +67,14 @@
   "67": "The text content string length does not correlate with insertions/deletions of new text.",
   "68": "TODO",
   "69": "insertNode: topLevelElement is root node",
-  "70": "getTopLevelElementOrThrow: root nodes are not top level elements"
+  "70": "getTopLevelElementOrThrow: root nodes are not top level elements",
+  "71": "getLatest() on clone node",
+  "72": "Unexpected parent context null on a nested composer",
+  "73": "Expected table cell",
+  "74": "getNodes: expected to find AnchorNode",
+  "75": "getNodes: expected to find FocusNode",
+  "76": "getNodes: expected to find GridNode",
+  "77": "getNodes: expected to find GridRowNode",
+  "78": "getNodes: expected to find GridCellNode",
+  "79": "Expected grid selection"
 }

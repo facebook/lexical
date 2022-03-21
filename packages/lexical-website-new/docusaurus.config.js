@@ -19,7 +19,6 @@ const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update w
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  // TODO: Update when URL updated
   baseUrl: '/',
 
   favicon: 'img/favicon.ico',
@@ -27,7 +26,7 @@ const config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   organizationName: 'facebook',
-  // Usually your repo name.
+  plugins: ['./plugins/webpack-buffer'],
   presets: [
     [
       'classic',
@@ -118,7 +117,7 @@ const config = {
       },
       navbar: {
         items: [
-          {label: 'Tutorial', position: 'left', to: '/tutorial'},
+          {label: 'Tutorial', position: 'left', to: '/docs/intro'},
           {
             label: 'Playground',
             position: 'left',

@@ -65,6 +65,7 @@ export default function TablePlugin(): React$Node {
               } else {
                 focusNode.append(tableNode);
               }
+              tableNode.insertBefore($createParagraphNode());
             } else {
               const topLevelNode = focusNode.getTopLevelElementOrThrow();
               topLevelNode.insertAfter(tableNode);

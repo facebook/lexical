@@ -25,7 +25,7 @@ import {$createTextNode, ElementNode} from 'lexical';
 
 import {$getListDepth} from './utils';
 
-type ListNodeTagType = 'ul' | 'ol';
+export type ListNodeTagType = 'ul' | 'ol';
 
 export class ListNode extends ElementNode {
   __tag: ListNodeTagType;

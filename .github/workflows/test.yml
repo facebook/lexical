@@ -94,6 +94,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+        run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -136,6 +137,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+        run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -175,6 +177,7 @@ jobs:
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
+      - run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -210,6 +213,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+        run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -249,6 +253,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+        run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -284,6 +289,7 @@ jobs:
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
+      - run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()

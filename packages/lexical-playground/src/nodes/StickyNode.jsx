@@ -8,40 +8,42 @@
  */
 
 import type {
-  EditorConfig,
-  LexicalNode,
-  LexicalEditor,
-  DecoratorMap,
   DecoratorEditor,
+  DecoratorMap,
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
   NodeKey,
 } from 'lexical';
 
-import * as React from 'react';
-import {useCallback, useEffect, useRef} from 'react';
+import './StickyNode.css';
+
 import {
-  DecoratorNode,
+  CollaborationPlugin,
+  useCollaborationContext,
+} from '@lexical/react/LexicalCollaborationPlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
+import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
+import {
   $getNodeByKey,
   $setSelection,
   createDecoratorEditor,
+  DecoratorNode,
 } from 'lexical';
+import * as React from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  useCollaborationContext,
-  CollaborationPlugin,
-} from '@lexical/react/LexicalCollaborationPlugin';
-import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import useLayoutEffect from 'shared/useLayoutEffect';
-import StickyEditorTheme from '../themes/StickyEditorTheme';
-import Placeholder from '../ui/Placeholder';
-import ContentEditable from '../ui/ContentEditable';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
+
 import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
-import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
-import './StickyNode.css';
+import StickyEditorTheme from '../themes/StickyEditorTheme';
+import ContentEditable from '../ui/ContentEditable';
+import Placeholder from '../ui/Placeholder';
 
 function positionSticky(stickyElem: HTMLElement, positioning): void {
   const style = stickyElem.style;
@@ -59,28 +61,28 @@ function StickyComponent({
   color,
   decoratorStateMap,
 }: {
-  x: number,
-  y: number,
-  nodeKey: NodeKey,
   color: 'pink' | 'yellow',
   decoratorStateMap: DecoratorMap,
+  nodeKey: NodeKey,
+  x: number,
+  y: number,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const stickyContainerRef = useRef<null | HTMLElement>(null);
   const positioningRef = useRef<{
-    x: number,
-    y: number,
+    isDragging: boolean,
     offsetX: number,
     offsetY: number,
-    isDragging: boolean,
     rootElementRect: null | ClientRect,
+    x: number,
+    y: number,
   }>({
-    x: 0,
-    y: 0,
+    isDragging: false,
     offsetX: 0,
     offsetY: 0,
-    isDragging: false,
     rootElementRect: null,
+    x: 0,
+    y: 0,
   });
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
@@ -234,7 +236,8 @@ function StickyComponent({
           document.addEventListener('pointerup', handlePointerUp);
           event.preventDefault();
         }
-      }}>
+      }}
+    >
       <button onClick={handleDelete} className="delete">
         X
       </button>
@@ -243,9 +246,10 @@ function StickyComponent({
       </button>
       <LexicalNestedComposer
         initialConfig={{
-          theme: StickyEditorTheme,
           decoratorEditor: decoratorEditor,
-        }}>
+          theme: StickyEditorTheme,
+        }}
+      >
         {isCollab ? (
           <CollaborationPlugin
             id={decoratorEditor.id}

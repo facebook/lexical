@@ -8,19 +8,20 @@
  */
 
 import type {SettingName} from '../appSettings';
-import {DEFAULT_SETTINGS} from '../appSettings';
 
 import * as React from 'react';
-import {createContext, useContext, useMemo, useState, useCallback} from 'react';
+import {createContext, useCallback, useContext, useMemo, useState} from 'react';
+
+import {DEFAULT_SETTINGS} from '../appSettings';
 
 type SettingsContextShape = {
-  settings: {[SettingName]: boolean},
   setOption: (name: SettingName, value: boolean) => void,
+  settings: {[SettingName]: boolean},
 };
 
 const Context: React$Context<SettingsContextShape> = createContext({
-  settings: {},
   setOption: (_, __) => {},
+  settings: {},
 });
 
 export const SettingsContext = ({

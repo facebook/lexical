@@ -8,7 +8,6 @@
  */
 
 import * as React from 'react';
-
 import {useMemo} from 'react';
 
 export default function Switch({
@@ -18,9 +17,9 @@ export default function Switch({
   id,
 }: {
   checked: boolean,
+  id?: string,
   onClick: (SyntheticMouseEvent<>) => void,
   text: string,
-  id?: string,
 }): React$Node {
   const buttonId = useMemo(() => 'id_' + Math.floor(Math.random() * 10000), []);
   return (
@@ -30,7 +29,8 @@ export default function Switch({
         role="switch"
         aria-checked={checked}
         id={buttonId}
-        onClick={onClick}>
+        onClick={onClick}
+      >
         <span />
       </button>
     </div>

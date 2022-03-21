@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
       - uses: actions/cache@v2
         id: cache
         with:
@@ -51,6 +52,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
       - uses: actions/cache@v2
         id: cache
         with:
@@ -81,6 +83,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
       - uses: actions/cache@v2
         id: cache
         with:
@@ -122,6 +125,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install xvfb
+      - run: npm i -g npm@8
       - uses: actions/cache@v2
         id: cache
         with:
@@ -160,6 +164,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
       # - uses: actions/cache@v2
       #   id: cache
       #   with:
@@ -194,6 +199,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
       - uses: actions/cache@v2
         id: cache
         with:
@@ -228,6 +234,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
       - name: install required packages
         run: |
           sudo apt-get update
@@ -266,6 +273,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
       - uses: actions/cache@v2
         id: cache
         with:

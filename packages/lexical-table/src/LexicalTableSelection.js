@@ -64,7 +64,6 @@ export class TableSelection {
   domListeners: Set<() => void>;
   grid: Grid;
   isHighlightingCells: boolean;
-  isMouseDown: boolean;
   startX: number;
   startY: number;
   tableNodeKey: NodeKey;
@@ -74,7 +73,6 @@ export class TableSelection {
   gridSelection: GridSelection | null;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
-    this.isMouseDown = false;
     this.isHighlightingCells = false;
     this.startX = -1;
     this.startY = -1;
@@ -156,7 +154,6 @@ export class TableSelection {
       const grid = getTableGrid(tableElement);
 
       this.isHighlightingCells = false;
-      this.isMouseDown = false;
       this.startX = -1;
       this.startY = -1;
       this.currentX = -1;
@@ -175,8 +172,6 @@ export class TableSelection {
 
   adjustFocusCellForSelection(cell: Cell, ignoreStart?: boolean = false) {
     this.editor.update(() => {
-      this.isMouseDown = true;
-
       const tableNode = $getNodeByKey(this.tableNodeKey);
       if (!$isTableNode(tableNode)) {
         throw new Error('Expected TableNode.');
@@ -239,7 +234,6 @@ export class TableSelection {
     this.editor.update(() => {
       this.startX = cell.x;
       this.startY = cell.y;
-      this.isMouseDown = true;
 
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
@@ -249,17 +243,6 @@ export class TableSelection {
         this.anchorCellNodeKey = anchorNodeKey;
       }
     });
-
-    document.addEventListener(
-      'mouseup',
-      () => {
-        this.isMouseDown = false;
-      },
-      {
-        capture: true,
-        once: true,
-      },
-    );
   }
 
   formatCells(type: TextFormatType) {

@@ -82,6 +82,8 @@ export declare class TableNode extends ElementNode {
   canInsertTab(): true;
   collapseAtStart(): true;
   getCordsFromCellNode(tableCellNode: TableCellNode): {x: number; y: number};
+  getCellFromCords(x: number, y: number, grid: Grid): ?Cell;
+  getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell;
   getCellNodeFromCords(x: number, y: number): TableCellNode | null;
   getCellNodeFromCordsOrThrow(x: number, y: number): TableCellNode;
   setGrid(grid?: Grid): TableNode;

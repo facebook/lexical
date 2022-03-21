@@ -8,7 +8,7 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {Grid} from './LexicalTableSelection';
+import type {Cell, Grid} from './LexicalTableSelection';
 import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
@@ -83,7 +83,7 @@ export class TableNode extends GridNode {
     throw new Error('Cell not found in table.');
   }
 
-  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode {
+  getCellFromCords(x: number, y: number, grid: Grid): ?Cell {
     invariant(grid, 'Grid not found.');
 
     const {cells} = grid;
@@ -95,6 +95,26 @@ export class TableNode extends GridNode {
     }
 
     const cell = row[x];
+
+    if (cell == null) {
+      return null;
+    }
+
+    return cell;
+  }
+
+  getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell {
+    const cell = this.getCellFromCords(x, y, grid);
+
+    if (!cell) {
+      throw new Error('Cell not found at cords.');
+    }
+
+    return cell;
+  }
+
+  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode {
+    const cell = this.getCellFromCords(x, y, grid);
 
     if (cell == null) {
       return null;

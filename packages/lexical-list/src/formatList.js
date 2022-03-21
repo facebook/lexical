@@ -7,16 +7,9 @@
  * @flow strict
  */
 
-import type {ListNode} from '@lexical/list';
+import type {ListNode} from './';
 import type {ElementNode, LexicalEditor} from 'lexical';
 
-import {
-  $createListItemNode,
-  $createListNode,
-  $isListItemNode,
-  $isListNode,
-  ListItemNode,
-} from '@lexical/list';
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -29,6 +22,13 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {
+  $createListItemNode,
+  $createListNode,
+  $isListItemNode,
+  $isListNode,
+  ListItemNode,
+} from './';
 import {
   $getAllListItems,
   $getTopListNode,

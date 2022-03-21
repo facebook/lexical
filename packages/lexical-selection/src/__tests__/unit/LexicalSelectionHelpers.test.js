@@ -1359,13 +1359,14 @@ describe('LexicalSelectionHelpers tests', () => {
         paragraph3.getKey(),
       ]);
       expect(selectedNodes1.nodeMap[0][0]).toEqual(text1.getKey());
-      expect(selectedNodes1.nodeMap[0][1].getTextContent()).toBe('First');
+      expect(selectedNodes1.nodeMap[0][1].__text).toBe('First');
       expect(selectedNodes1.nodeMap[1][0]).toEqual(paragraph1.getKey());
       expect(selectedNodes1.nodeMap[2][0]).toEqual(paragraph2.getKey());
       expect(selectedNodes1.nodeMap[3][0]).toEqual(text2.getKey());
       expect(selectedNodes1.nodeMap[4][0]).toEqual(paragraph3.getKey());
       expect(selectedNodes1.nodeMap[5][0]).toEqual(text3.getKey());
-      expect(selectedNodes1.nodeMap[5][1].getTextContent()).toBe('Third');
+      expect(selectedNodes1.nodeMap[5][1].__text).toBe('T');
+      expect(() => selectedNodes1.nodeMap[5][1].getTextContent()).toThrow();
 
       text1.select(1, 1);
       const selection2 = $getSelection();

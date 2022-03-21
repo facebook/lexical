@@ -122,7 +122,42 @@ function $copyLeafNodeBranchToRoot(
   }
 }
 
+function errGetLatestOnClone(): void {
+  invariant(false, 'getLatest() on clone node');
+}
+
 export function $cloneContents(
+  selection: RangeSelection | NodeSelection | GridSelection,
+): {
+  nodeMap: Array<[NodeKey, LexicalNode]>,
+  range: Array<NodeKey>,
+} {
+  const clone = $cloneContentsImpl(selection);
+  if (__DEV__) {
+    const nodeMap = clone.nodeMap;
+    for (let i = 0; i < nodeMap.length; i++) {
+      const node = nodeMap[i][1];
+      // $FlowFixMe[method-unbinding]
+      if (node.getLatest === errGetLatestOnClone) {
+        continue;
+      }
+      Object.setPrototypeOf(
+        node,
+        Object.create(Object.getPrototypeOf(node), {
+          getLatest: {
+            configurable: true,
+            enumerable: true,
+            value: errGetLatestOnClone,
+            writable: true,
+          },
+        }),
+      );
+    }
+  }
+  return clone;
+}
+
+function $cloneContentsImpl(
   selection: RangeSelection | NodeSelection | GridSelection,
 ): {
   nodeMap: Array<[NodeKey, LexicalNode]>,

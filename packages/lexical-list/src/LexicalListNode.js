@@ -49,6 +49,10 @@ export class ListNode extends ElementNode {
     return this.__tag;
   }
 
+  getStart(): number {
+    return this.__start;
+  }
+
   // View
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {

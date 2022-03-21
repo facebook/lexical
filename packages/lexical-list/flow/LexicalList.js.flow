@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type { ListNodeTagType } from "./src/LexicalListNode";
+import type { ListNodeTagType } from "../src/LexicalListNode";
 import type { LexicalNode, LexicalEditor, ParagraphNode, RangeSelection } from 'lexical';
 import { ElementNode } from 'lexical';
 
@@ -36,6 +36,7 @@ declare export class ListNode extends ElementNode {
     canBeEmpty(): false;
     append(...nodesToAppend: LexicalNode[]): ListNode;
     getTag(): ListNodeTagType;
+    getStart(): number;
 }
 declare export function outdentList(): boolean;
 declare export function removeList(editor: LexicalEditor): boolean;

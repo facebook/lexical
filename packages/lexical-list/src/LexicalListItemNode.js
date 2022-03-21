@@ -18,7 +18,6 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {$createListNode, $isListNode} from '@lexical/list';
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -31,6 +30,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {$createListNode, $isListNode} from './';
 import {$handleIndent, $handleOutdent} from './formatList';
 
 export class ListItemNode extends ElementNode {
@@ -106,7 +106,7 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
       } else {
         // Split the list
-        const newList = $createListNode(list.__tag);
+        const newList = $createListNode(list.getTag());
         const children = list.getChildren();
         for (let i = index + 1; i < childrenLength; i++) {
           const child = children[i];
@@ -260,7 +260,7 @@ function getListItemValue(listItem: ListItemNode): number {
         'getListItemValue: list node is not parent of list item node',
       );
     } else {
-      value = list.__start;
+      value = list.getStart();
     }
   }
 

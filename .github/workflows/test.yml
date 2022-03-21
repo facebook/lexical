@@ -93,7 +93,9 @@ jobs:
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci && npx playwright install
+        run: npm ci
+      - name: Download browsers
+        run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -135,7 +137,9 @@ jobs:
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci && npx playwright install
+        run: npm ci
+      - name: Download browsers
+        run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -174,7 +178,9 @@ jobs:
       #     key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
-      - run: npm ci && npx playwright install
+      - run: npm ci
+      - name: Download browsers
+        run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -209,7 +215,9 @@ jobs:
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci && npx playwright install
+        run: npm ci
+      - name: Download browsers
+        run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -248,7 +256,9 @@ jobs:
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci && npx playwright install
+        run: npm ci
+      - name: Download browsers
+        run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
@@ -281,9 +291,11 @@ jobs:
             node_modules
             C:\Users\runneradmin\AppData\Local\ms-playwright
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
-      # - name: Install dependencies
+      - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
-      - run: npm ci && npx playwright install
+        run: npm ci
+      - name: Download browsers
+        run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()

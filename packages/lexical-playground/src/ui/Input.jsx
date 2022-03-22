@@ -22,7 +22,7 @@ export default function Input({
   label,
   value,
   onChange,
-  placeholder,
+  placeholder = '',
 }: Props): React$Node {
   return (
     <div className="Input__wrapper">
@@ -30,7 +30,7 @@ export default function Input({
       <input
         type="text"
         className="Input__input"
-        placeholder={placeholder ?? ''}
+        placeholder={placeholder}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);

@@ -97,12 +97,6 @@ function PollOptionComponent({
           'PollNode__optionCheckboxWrapper',
           checked && 'PollNode__optionCheckboxChecked',
         )}
-        onClick={() => {
-          const checkbox = checkboxRef.current;
-          if (checkbox !== null) {
-            checkbox.click();
-          }
-        }}
       >
         <input
           ref={checkboxRef}

@@ -85,7 +85,7 @@ function ExcalidrawComponent({
           setModalOpen(false);
         }}
       />
-      <div onClick={onImageClick} onFocus={onFocus} role="button">
+      <div onClick={onImageClick} onFocus={onFocus} role="button" tabIndex={0}>
         <ExcalidrawImage className="image" elements={elements} />
       </div>
     </div>

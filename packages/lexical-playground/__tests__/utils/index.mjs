@@ -525,7 +525,7 @@ function isElement(element) {
 // Wrapper around HTML string that is used as indicator for snapshot serializer
 // that it should use own formatter (below)
 class PrettyHTML {
-  constructor(html, {ignoreClasses, ignoreInlineStyles}) {
+  constructor(html, {ignoreClasses, ignoreInlineStyles} = {}) {
     this.html = html;
     this.ignoreClasses = ignoreClasses;
     this.ignoreInlineStyles = ignoreInlineStyles;

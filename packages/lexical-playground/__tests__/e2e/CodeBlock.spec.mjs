@@ -30,7 +30,7 @@ test.describe('CodeBlock', () => {
         });
         await assertHTML(
           page,
-          '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>',
+          'abcdefg',
         );
 
         // Remove code block (back to a normal paragraph) and check that highlights are converted into regular text

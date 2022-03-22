@@ -102,7 +102,7 @@ test.describe('History', () => {
     } else {
       assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">helloworld</span><br/><br/></p>`,
+        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br/><br/></p>`,
       );
       await assertSelection(page, {
         anchorOffset: 2,

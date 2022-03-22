@@ -21,16 +21,17 @@ const copy = (text: string | null) => {
   textArea.value = text || '';
   textArea.style.position = 'absolute';
   textArea.style.opacity = '0';
-  document.body && document.body.appendChild(textArea);
+  document.body?.appendChild(textArea);
   textArea.focus();
   textArea.select();
   try {
     const result = document.execCommand('copy');
+    // eslint-disable-next-line no-console
     console.log(result);
   } catch (error) {
     console.error(error);
   }
-  document.body && document.body.removeChild(textArea);
+  document.body?.removeChild(textArea);
 };
 
 const download = (filename: string, text: string | null) => {
@@ -41,9 +42,9 @@ const download = (filename: string, text: string | null) => {
   );
   a.setAttribute('download', filename);
   a.style.display = 'none';
-  document.body && document.body.appendChild(a);
+  document.body?.appendChild(a);
   a.click();
-  document.body && document.body.removeChild(a);
+  document.body?.removeChild(a);
 };
 
 const formatStep = (step) => {
@@ -100,7 +101,8 @@ export function isSelectAll(event: KeyboardEvent): boolean {
 
 // stolen from LexicalSelection-test
 function sanitizeSelection(selection) {
-  let {anchorNode, anchorOffset, focusNode, focusOffset} = selection;
+  const {anchorNode, focusNode} = selection;
+  let {anchorOffset, focusOffset} = selection;
   if (anchorOffset !== 0) {
     anchorOffset--;
   }

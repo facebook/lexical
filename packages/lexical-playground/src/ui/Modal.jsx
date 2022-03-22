@@ -7,20 +7,20 @@
  * @flow strict
  */
 
-// $FlowFixMe
-import {createPortal} from 'react-dom';
+import './Modal.css';
 
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
-import './Modal.css';
+// $FlowFixMe
+import {createPortal} from 'react-dom';
 
 function PortalImpl({
   onClose,
   children,
   title,
 }: {
-  onClose: () => void,
   children: React$Node,
+  onClose: () => void,
   title: string,
 }) {
   const modalRef = useRef(null);
@@ -45,17 +45,14 @@ function PortalImpl({
   }, [onClose]);
 
   return (
-    <div className="Modal__overlay" onClick={() => onClose()}>
-      <div
-        className="Modal__modal"
-        tabIndex={-1}
-        ref={modalRef}
-        onClick={(e) => e.stopPropagation()}>
+    <div className="Modal__overlay" role="dialog">
+      <div className="Modal__modal" tabIndex={-1} ref={modalRef}>
         <h2 className="Modal__title">{title}</h2>
         <button
           className="Modal__closeButton"
           aria-label="Close modal"
-          onClick={() => onClose()}>
+          onClick={onClose}
+        >
           X
         </button>
         <div className="Modal__content">{children}</div>
@@ -69,8 +66,8 @@ export default function Modal({
   children,
   title,
 }: {
-  onClose: () => void,
   children: React$Node,
+  onClose: () => void,
   title: string,
 }): React$Node {
   return createPortal(

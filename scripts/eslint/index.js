@@ -11,7 +11,7 @@ const minimatch = require('minimatch');
 const CLIEngine = require('eslint').CLIEngine;
 const listChangedFiles = require('../shared/listChangedFiles');
 
-const allPaths = ['**/*.js'];
+const allPaths = ['**/*.js', '**/*.jsx'];
 
 let changedFiles = null;
 

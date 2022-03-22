@@ -8,19 +8,20 @@
  */
 
 import type {
-  EditorConfig,
-  NodeKey,
-  LexicalNode,
-  LexicalEditor,
   DecoratorMap,
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
 } from 'lexical';
 
-import * as React from 'react';
-import {DecoratorNode, $getNodeByKey} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$getNodeByKey, DecoratorNode} from 'lexical';
+import * as React from 'react';
 import {useCallback, useState} from 'react';
-import ExcalidrawModal from './ExcalidrawModal';
+
 import ExcalidrawImage from './ExcalidrawImage';
+import ExcalidrawModal from './ExcalidrawModal';
 
 function ExcalidrawComponent({
   nodeKey,
@@ -84,7 +85,7 @@ function ExcalidrawComponent({
           setModalOpen(false);
         }}
       />
-      <div onClick={onImageClick} onFocus={onFocus} role="button">
+      <div onClick={onImageClick} onFocus={onFocus} role="button" tabIndex={0}>
         <ExcalidrawImage className="image" elements={elements} />
       </div>
     </div>

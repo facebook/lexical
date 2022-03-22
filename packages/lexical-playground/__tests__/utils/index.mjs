@@ -34,9 +34,6 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
 }) {
-  page.exposeFunction('expectToBeEqual', (actual, expected) => {
-    return expect(actual).toEqual(expected);
-  });
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.disableBeforeInput =

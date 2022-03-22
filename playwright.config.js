@@ -20,7 +20,7 @@ const config = {
       use: {...devices['Desktop Safari']},
     },
   ],
-  retries: process.env.IS_CI ? 5 : 1,
+  retries: process.env.CI ? 5 : 1,
   timeout: 60000,
   use: {
     // this causes issues in the CI on on current version.

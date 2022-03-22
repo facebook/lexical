@@ -21,6 +21,7 @@ const config = {
     },
   ],
   retries: 5,
+  timeout: 60000,
   use: {
     // this causes issues in the CI on on current version.
     //trace: 'retain-on-failure',

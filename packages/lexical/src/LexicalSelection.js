@@ -730,7 +730,9 @@ export class RangeSelection implements BaseSelection {
 
     if (selectedNodesLength === 1) {
       if ($isTokenOrInert(firstNode)) {
-        firstNode.remove();
+        const textNode = $createTextNode(text);
+        textNode.select();
+        firstNode.replace(textNode);
         return;
       }
       const firstNodeFormat = firstNode.getFormat();
@@ -875,7 +877,9 @@ export class RangeSelection implements BaseSelection {
       } else if (startOffset === firstNodeTextLength) {
         firstNode.select();
       } else {
-        firstNode.remove();
+        const textNode = $createTextNode(text);
+        textNode.select();
+        firstNode.replace(textNode);
       }
 
       // Remove all selected nodes that haven't already been removed.

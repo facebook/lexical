@@ -7,8 +7,10 @@
  * @flow strict
  */
 
-import * as React from 'react';
 import './Button.css';
+
+import * as React from 'react';
+
 import joinClasses from '../utils/join-classes';
 
 export default function Button({
@@ -18,8 +20,8 @@ export default function Button({
   small,
 }: {
   children: React$Node,
-  onClick: () => void,
   disabled?: boolean,
+  onClick: () => void,
   small?: boolean,
 }): React$Node {
   return (
@@ -30,7 +32,8 @@ export default function Button({
         disabled && 'Button__disabled',
         small && 'Button__small',
       )}
-      onClick={onClick}>
+      onClick={onClick}
+    >
       {children}
     </button>
   );

@@ -8,22 +8,24 @@
  */
 
 import type {
-  LexicalNode,
   DecoratorArray,
   DecoratorMap,
-  NodeKey,
   LexicalEditor,
+  LexicalNode,
+  NodeKey,
 } from 'lexical';
 
-import {DecoratorNode, createDecoratorArray, createDecoratorMap} from 'lexical';
+import './PollNode.css';
+
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
+import {createDecoratorArray, createDecoratorMap, DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
+
 import Button from '../ui/Button';
 import joinClasses from '../utils/join-classes';
-import './PollNode.css';
 
 function createUID(): string {
   return Math.random()
@@ -64,8 +66,8 @@ function PollOptionComponent({
   totalVotes,
   updateTotalVotes,
 }: {
-  editor: LexicalEditor,
   decoratorMap: DecoratorMap,
+  editor: LexicalEditor,
   index: number,
   options: DecoratorArray,
   totalVotes: number,
@@ -95,12 +97,7 @@ function PollOptionComponent({
           'PollNode__optionCheckboxWrapper',
           checked && 'PollNode__optionCheckboxChecked',
         )}
-        onClick={() => {
-          const checkbox = checkboxRef.current;
-          if (checkbox !== null) {
-            checkbox.click();
-          }
-        }}>
+      >
         <input
           ref={checkboxRef}
           className="PollNode__optionCheckbox"
@@ -173,12 +170,12 @@ function PollComponent({
         // $FlowFixMe: need to revise type
         const key: string = option.get('uid');
         // $FlowFixMe: need to revise type
-        const decoratorMap: DecoratorMap = option;
+        const decoratorMapForOption: DecoratorMap = option;
         return (
           <PollOptionComponent
             editor={editor}
             key={key}
-            decoratorMap={decoratorMap}
+            decoratorMap={decoratorMapForOption}
             index={index}
             options={options}
             totalVotes={totalVotes}
@@ -191,7 +188,8 @@ function PollComponent({
           onClick={() => {
             options.push(createPollOptionMap(editor, ''));
           }}
-          small={true}>
+          small={true}
+        >
           Add Option
         </Button>
       </div>

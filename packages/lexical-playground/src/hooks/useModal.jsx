@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import Modal from '../ui/Modal';
-
 import {useCallback, useMemo, useState} from 'react';
 import * as React from 'react';
+
+import Modal from '../ui/Modal';
 
 export default function useModal(): [
   React$Node,
@@ -39,7 +39,7 @@ export default function useModal(): [
 
   const showModal = useCallback(
     (title, getContent: (() => void) => React$Node) => {
-      setModalContent({title, content: getContent(onClose)});
+      setModalContent({content: getContent(onClose), title});
     },
     [onClose],
   );

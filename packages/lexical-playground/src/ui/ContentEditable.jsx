@@ -7,9 +7,10 @@
  * @flow strict
  */
 
-import * as React from 'react';
-import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import './ContentEditable.css';
+
+import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import * as React from 'react';
 
 export default function ContentEditable({
   className,

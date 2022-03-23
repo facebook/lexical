@@ -23,6 +23,7 @@ import {
   $isAutoLinkNode,
   AutoLinkNode,
 } from 'lexical/AutoLinkNode';
+import {$isLinkNode} from 'lexical/LinkNode';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -227,7 +228,7 @@ function useAutoLink(
         const parent = textNode.getParentOrThrow();
         if ($isAutoLinkNode(parent)) {
           handleLinkEdit(parent, matchers, onChangeWrapped);
-        } else {
+        } else if (!$isLinkNode(parent)) {
           if (textNode.isSimpleText()) {
             handleLinkCreation(textNode, matchers, onChangeWrapped);
           }

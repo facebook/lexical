@@ -434,17 +434,6 @@ export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
   await page.mouse.up();
 }
 
-export async function applyLink(page, url = 'facebook.com') {
-  await waitForSelector(page, '.link');
-  await click(page, '.link');
-  await waitForSelector(page, '.link-input');
-  await waitForSelector(page, '.link-edit');
-  await click(page, '.link-edit');
-  await focus(page, '.link-input');
-  await page.keyboard.type(url);
-  await page.keyboard.press('Enter');
-}
-
 expect.extend({
   async toMatchEditorInlineSnapshot(pageOrOptions, ...args) {
     // Setting error field allows jest to know where the matcher was called

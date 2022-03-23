@@ -37,7 +37,6 @@ describe('LexicalNodeHelpers tests', () => {
     jest.restoreAllMocks();
   });
 
-  // eslint-disable-next-line no-for-of-loops/no-for-of-loops
   for (const plugin of ['PlainTextPlugin', 'RichTextPlugin']) {
     it(`${plugin} custom initialEditorState`, async () => {
       let editor;

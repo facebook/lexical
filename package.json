@@ -108,7 +108,6 @@
     "eslint-plugin-flowtype": "^8.0.3",
     "eslint-plugin-jest": "^24.4.0",
     "eslint-plugin-jsx-a11y": "^6.4.1",
-    "eslint-plugin-no-for-of-loops": "^1.0.1",
     "eslint-plugin-no-function-declare-after-return": "^1.1.0",
     "eslint-plugin-no-only-tests": "^2.6.0",
     "eslint-plugin-react": "^7.24.0",

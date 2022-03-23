@@ -88,7 +88,6 @@ export default function TablePlugin(): React$Node {
     const tableSelections = new Map<NodeKey, TableSelection>();
 
     return editor.addListener('mutation', TableNode, (nodeMutations) => {
-      // eslint-disable-next-line no-for-of-loops/no-for-of-loops
       for (const [nodeKey, mutation] of nodeMutations) {
         if (mutation === 'created') {
           editor.update(() => {

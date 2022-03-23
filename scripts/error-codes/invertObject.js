@@ -20,7 +20,6 @@ function invertObject(targetObj /* : ErrorMap */) /* : ErrorMap */ {
   const result = {};
   const mapKeys = Object.keys(targetObj);
 
-  // eslint-disable-next-line no-for-of-loops/no-for-of-loops
   for (const originalKey of mapKeys) {
     const originalVal = targetObj[originalKey];
 

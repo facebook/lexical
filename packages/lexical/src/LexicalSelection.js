@@ -285,10 +285,10 @@ export class NodeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const objects = Array.from(this._nodes);
+    const objects = this._nodes;
     const nodes = [];
-    for (let i = 0; i < objects.length; i++) {
-      const node = $getNodeByKey(objects[i]);
+    for (const object of objects) {
+      const node = $getNodeByKey(object);
       if (node !== null) {
         nodes.push(node);
       }

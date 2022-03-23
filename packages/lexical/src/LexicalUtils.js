@@ -359,11 +359,7 @@ export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
         return;
       }
       const nodeMap = editorState._nodeMap;
-      const nodeMapEntries = Array.from(nodeMap);
-      // For...of would be faster here, but this will get
-      // compiled away to a slow-path with Babel.
-      for (let i = 0; i < nodeMapEntries.length; i++) {
-        const node = nodeMapEntries[i][1];
+      for (const [, node] of nodeMap) {
         node.markDirty();
       }
     },
@@ -884,11 +880,9 @@ export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T> {
   const editorState = getActiveEditorState();
   const readOnly = editorState._readOnly;
   const klassType = klass.getType();
-  const nodes = Array.from(editorState._nodeMap.values());
-  const nodesLength = nodes.length;
+  const nodes = editorState._nodeMap;
   const nodesOfType = [];
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
+  for (const [, node] of nodes) {
     if (
       node instanceof klass &&
       node.__type === klassType &&

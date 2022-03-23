@@ -53,7 +53,6 @@ function isIndentPermitted(maxDepth: number): boolean {
 
   let totalDepth = 0;
 
-  // eslint-disable-next-line no-for-of-loops/no-for-of-loops
   for (const elementNode of elementNodesInSelection) {
     if ($isListNode(elementNode)) {
       totalDepth = Math.max($getListDepth(elementNode) + 1, totalDepth);

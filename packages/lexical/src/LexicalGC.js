@@ -75,15 +75,10 @@ export function $garbageCollectDetachedNodes(
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
-  const dirtyLeavesArr = Array.from(dirtyLeaves);
-  const dirtyLeavesLength = dirtyLeavesArr.length;
-  const dirtyElementsArr = Array.from(dirtyElements);
-  const dirtyElementsLength = dirtyElementsArr.length;
   const prevNodeMap = prevEditorState._nodeMap;
   const nodeMap = editorState._nodeMap;
 
-  for (let i = 0; i < dirtyLeavesLength; i++) {
-    const nodeKey = dirtyLeavesArr[i];
+  for (const nodeKey of dirtyLeaves) {
     const node = nodeMap.get(nodeKey);
 
     if (node !== undefined && !node.isAttached()) {
@@ -94,10 +89,8 @@ export function $garbageCollectDetachedNodes(
     }
   }
 
-  for (let i = 0; i < dirtyElementsLength; i++) {
-    const nodeKey = dirtyElementsArr[i][0];
+  for (const [nodeKey] of dirtyElements) {
     const node = nodeMap.get(nodeKey);
-
     if (node !== undefined) {
       // Garbage collect node and its children if they exist
       if (!node.isAttached()) {

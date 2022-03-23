@@ -58,6 +58,7 @@ export default function LexicalNestedComposer({
         const [parentEditor] = parentContext;
         return {
           editor: decoratorEditor.editor,
+          editorState: decoratorEditor.editorState,
           namespace: parentEditor._config.namespace,
           nodes: Array.from(parentEditor._nodes.values()).map(
             (registeredNode) => registeredNode.klass,

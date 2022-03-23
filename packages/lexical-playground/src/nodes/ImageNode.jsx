@@ -28,7 +28,7 @@ import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
-import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
+import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
@@ -385,6 +385,7 @@ function ImageComponent({
     if (rootElement !== null) {
       rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
     }
+
     setIsResizing(true);
   }, [editor]);
 
@@ -424,12 +425,12 @@ function ImageComponent({
                 <CollaborationPlugin
                   id={decoratorEditor.id}
                   providerFactory={createWebsocketProvider}
-                  shouldBootstrap={true}
+                  shouldBootstrap={false}
                 />
               ) : (
                 <HistoryPlugin externalHistoryState={historyState} />
               )}
-              <RichTextPlugin
+              <PlainTextPlugin
                 contentEditable={
                   <ContentEditable className="ImageNode__contentEditable" />
                 }

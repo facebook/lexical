@@ -56,7 +56,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       footer: {
-        copyright: `Copyright © ${new Date().getFullYear()} Meta, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,
         links: [
           {
             items: [
@@ -74,8 +74,8 @@ const config = {
                 label: 'Stack Overflow',
               },
               {
-                href: 'https://twitter.com/docusaurus',
-                label: 'Twitter', // TODO: Update when created
+                href: 'https://twitter.com/lexicaljs',
+                label: 'Twitter',
               },
             ],
             title: 'Community',

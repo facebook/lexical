@@ -30,6 +30,7 @@ import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
+import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
@@ -45,7 +46,6 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
-import EquationsPlugin from './plugins/EquationsPlugin';
 
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
@@ -75,8 +75,7 @@ export default function Editor(): React$Node {
       <div
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
-        }`}
-      >
+        }`}>
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />

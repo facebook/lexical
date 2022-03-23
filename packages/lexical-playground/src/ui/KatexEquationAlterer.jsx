@@ -7,15 +7,17 @@
  * @flow strict
  */
 
-import * as React from 'react';
-import {useCallback, useState} from 'react';
-import Button from '../ui/Button';
-import KatexRenderer from './KatexRenderer';
 import './KatexEquationAlterer.css';
 
+import * as React from 'react';
+import {useCallback, useState} from 'react';
+
+import Button from '../ui/Button';
+import KatexRenderer from './KatexRenderer';
+
 type Props = {
-  onConfirm: (string, boolean) => void,
   initialEquation?: string,
+  onConfirm: (string, boolean) => void,
 };
 
 export default function KatexEquationAlterer({

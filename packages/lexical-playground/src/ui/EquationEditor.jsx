@@ -7,15 +7,15 @@
  * @flow strict
  */
 
-import React from 'react';
-import {useCallback} from 'react';
 import './EquationEditor.css';
+
+import React, {useCallback} from 'react';
 
 type BaseEquationEditorProps = {
   equation: string,
-  setEquation: (string) => void,
   inline: boolean,
   inputRef: {current: null | HTMLElement},
+  setEquation: (string) => void,
 };
 
 export default function EquationEditor({
@@ -33,8 +33,8 @@ export default function EquationEditor({
 
   const props = {
     equation,
-    onChange,
     inputRef,
+    onChange,
   };
 
   return inline ? (
@@ -46,8 +46,8 @@ export default function EquationEditor({
 
 type EquationEditorImplProps = {
   equation: string,
-  onChange: (SyntheticInputEvent<HTMLInputElement>) => void,
   inputRef: {current: null | HTMLElement},
+  onChange: (SyntheticInputEvent<HTMLInputElement>) => void,
 };
 
 function InlineEquationEditor({

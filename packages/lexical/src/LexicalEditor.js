@@ -398,13 +398,6 @@ export class LexicalEditor {
       listenerSetOrMap.delete(listener);
     };
   }
-  registerRootListener(listener: RootListener): () => void {
-    const listenerSetOrMap = this._listeners.root;
-    listenerSetOrMap.add(listener);
-    return () => {
-      listenerSetOrMap.delete(listener);
-    };
-  }
   registerDecoratorListener(listener: DecoratorListener): () => void {
     const listenerSetOrMap = this._listeners.decorator;
     listenerSetOrMap.add(listener);
@@ -416,6 +409,15 @@ export class LexicalEditor {
     const listenerSetOrMap = this._listeners.textcontent;
     listenerSetOrMap.add(listener);
     return () => {
+      listenerSetOrMap.delete(listener);
+    };
+  }
+  registerRootListener(listener: RootListener): () => void {
+    const listenerSetOrMap = this._listeners.root;
+    listener(this._rootElement, null);
+    listenerSetOrMap.add(listener);
+    return () => {
+      listener(null, this._rootElement);
       listenerSetOrMap.delete(listener);
     };
   }

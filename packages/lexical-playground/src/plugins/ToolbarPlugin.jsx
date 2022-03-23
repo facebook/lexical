@@ -292,6 +292,8 @@ function InsertPollDialog({
   );
 }
 
+const VALID_TWITTER_URL = /twitter.com\/[0-9a-zA-Z]{1,20}\/status\/([0-9]*)/g;
+
 function InsertTweetDialog({
   activeEditor,
   onClose,
@@ -299,22 +301,23 @@ function InsertTweetDialog({
   activeEditor: LexicalEditor,
   onClose: () => void,
 }): React$Node {
-  const [tweetID, setTweetID] = useState('');
+  const [text, setText] = useState('');
 
   const onClick = () => {
+    const tweetID = text.split('status/')?.[1];
     activeEditor.execCommand('insertTweet', tweetID);
     onClose();
   };
 
-  const isDisabled = tweetID === '' || !tweetID.match(/\d+/g);
+  const isDisabled = text === '' || !text.match(VALID_TWITTER_URL);
 
   return (
     <>
       <Input
-        label="Tweet ID"
-        placeholder="i.e. 1234567890"
-        onChange={setTweetID}
-        value={tweetID}
+        label="Tweet URL"
+        placeholder="i.e. https://twitter.com/jack/status/20"
+        onChange={setText}
+        value={text}
       />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={isDisabled} onClick={onClick}>

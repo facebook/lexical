@@ -58,7 +58,6 @@ module.exports = {
     // import helps to configure simple-import-sort
     'import',
     'jest',
-    'no-for-of-loops',
     'no-function-declare-after-return',
     'react',
     'no-only-tests',
@@ -108,10 +107,6 @@ module.exports = {
     'no-console': ERROR,
 
     'no-debugger': ERROR,
-
-    // Prevent for...of loops because they require a Symbol polyfill.
-    // You can disable this rule for code that isn't shipped (e.g. build scripts and tests).
-    'no-for-of-loops/no-for-of-loops': ERROR,
 
     // Prevent function declarations after return statements
     'no-function-declare-after-return/no-function-declare-after-return': ERROR,

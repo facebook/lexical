@@ -100,7 +100,6 @@ function findOffset(
   if (typeof Segmenter === 'function') {
     const segmenter = new Segmenter();
     const graphemes = segmenter.segment(text);
-    // eslint-disable-next-line no-for-of-loops/no-for-of-loops
     for (const {segment: grapheme} of graphemes) {
       const nextOffset = offset + strlen(grapheme);
       if (nextOffset > maxCharacters) {

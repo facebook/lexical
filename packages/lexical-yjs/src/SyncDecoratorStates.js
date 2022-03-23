@@ -241,10 +241,7 @@ export function syncLexicalDecoratorMapToYjs(
   yjsMap: YMap,
 ): void {
   const internalMap = decoratorMap._map;
-  const keys = Array.from(internalMap.keys());
-
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
+  for (const [key] of internalMap) {
     syncLexicalDecoratorMapKeyToYjs(
       binding,
       collabNode,

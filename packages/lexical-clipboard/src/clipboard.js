@@ -174,9 +174,8 @@ function $createNodesFromDOM(
     currentLexicalNode = transformOutput.node;
     if (currentLexicalNode !== null) {
       lexicalNodes.push(currentLexicalNode);
-      const forChildFunctions = Array.from(forChildMap.values());
-      for (let i = 0; i < forChildFunctions.length; i++) {
-        forChildFunctions[i](currentLexicalNode);
+      for (const [, forChildFunction] of forChildMap) {
+        forChildFunction(currentLexicalNode);
       }
     }
 

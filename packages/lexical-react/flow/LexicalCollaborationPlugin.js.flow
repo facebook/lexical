@@ -33,12 +33,12 @@ export interface Provider {
   on(type: 'status', cb: ({status: string}) => void): void;
   // $FlowFixMe: temp
   on(type: 'update', cb: (any) => void): void;
-  on(type: 'reload', cb: (doc: Doc) => void): void;  
+  on(type: 'reload', cb: (doc: Doc) => void): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
   // $FlowFixMe: temp
   off(type: 'update', cb: (any) => void): void;
   off(type: 'status', cb: ({status: string}) => void): void;
-  off(type: 'reload', cb: (doc: Doc) => void): void;  
+  off(type: 'reload', cb: (doc: Doc) => void): void;
 }
 
 type CollaborationContextType = {
@@ -48,13 +48,16 @@ type CollaborationContextType = {
   yjsDocMap: Map<string, Doc>,
 };
 
-export type ProviderFactory = (id: string, yjsDocMap: Map<string, Doc>) => Provider;
+export type ProviderFactory = (
+  id: string,
+  yjsDocMap: Map<string, Doc>,
+) => Provider;
 
 declare export function CollaborationPlugin(arg0: {
   id: string,
   providerFactory: ProviderFactory,
   shouldBootstrap: boolean,
-  username?: string
+  username?: string,
 }): React$Node;
 declare export var CollaborationContext: React$Context<CollaborationContextType>;
 declare export function useCollaborationContext(): CollaborationContextType;

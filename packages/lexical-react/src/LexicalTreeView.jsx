@@ -70,7 +70,7 @@ export default function TreeView({
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
     setContent(generateContent(editor.getEditorState()));
-    return editor.registerListener('update', ({editorState}) => {
+    return editor.registerUpdateListener(({editorState}) => {
       const compositionKey = editor._compositionKey;
       const treeText = generateContent(editor.getEditorState());
       const compositionText =
@@ -145,7 +145,8 @@ export default function TreeView({
               setTimeTravelEnabled(true);
             }
           }}
-          className={timeTravelButtonClassName}>
+          className={timeTravelButtonClassName}
+        >
           Time Travel
         </button>
       )}
@@ -156,7 +157,8 @@ export default function TreeView({
             className={timeTravelPanelButtonClassName}
             onClick={() => {
               setIsPlaying(!isPlaying);
-            }}>
+            }}
+          >
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <input
@@ -191,7 +193,8 @@ export default function TreeView({
                 setTimeTravelEnabled(false);
                 setIsPlaying(false);
               }
-            }}>
+            }}
+          >
             Exit
           </button>
         </div>

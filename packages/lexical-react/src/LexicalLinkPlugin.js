@@ -100,18 +100,14 @@ export default function LinkPlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerListener(
-      'command',
-      (type, payload) => {
-        if (type === 'toggleLink') {
-          const url: string | null = payload;
-          toggleLink(url);
-          return true;
-        }
-        return false;
-      },
-      EditorPriority,
-    );
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'toggleLink') {
+        const url: string | null = payload;
+        toggleLink(url);
+        return true;
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
 
   return null;

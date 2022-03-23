@@ -107,8 +107,7 @@ export function useYjsCollaboration(
     awareness.on('update', onAwarenessUpdate);
     root.getSharedType().observeDeep(onYjsTreeChanges);
 
-    const removeListener = editor.registerListener(
-      'update',
+    const removeListener = editor.registerUpdateListener(
       ({
         prevEditorState,
         editorState,
@@ -167,27 +166,23 @@ export function useYjsCollaboration(
   }, [binding]);
 
   useEffect(() => {
-    return editor.registerListener(
-      'command',
-      (type, payload) => {
-        if (type === 'toggleConnect') {
-          if (connect !== undefined && disconnect !== undefined) {
-            const shouldConnect = payload;
-            if (shouldConnect) {
-              // eslint-disable-next-line no-console
-              console.log('Collaboration connected!');
-              connect();
-            } else {
-              // eslint-disable-next-line no-console
-              console.log('Collaboration disconnected!');
-              disconnect();
-            }
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'toggleConnect') {
+        if (connect !== undefined && disconnect !== undefined) {
+          const shouldConnect = payload;
+          if (shouldConnect) {
+            // eslint-disable-next-line no-console
+            console.log('Collaboration connected!');
+            connect();
+          } else {
+            // eslint-disable-next-line no-console
+            console.log('Collaboration disconnected!');
+            disconnect();
           }
         }
-        return false;
-      },
-      EditorPriority,
-    );
+      }
+      return false;
+    }, EditorPriority);
   }, [connect, disconnect, editor]);
 
   return [cursorsContainer, binding];
@@ -200,18 +195,14 @@ export function useYjsFocusTracking(
   color: string,
 ) {
   useEffect(() => {
-    return editor.registerListener(
-      'command',
-      (type, payload) => {
-        if (type === 'focus') {
-          setLocalStateFocus(provider, name, color, true);
-        } else if (type === 'blur') {
-          setLocalStateFocus(provider, name, color, false);
-        }
-        return false;
-      },
-      EditorPriority,
-    );
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'focus') {
+        setLocalStateFocus(provider, name, color, true);
+      } else if (type === 'blur') {
+        setLocalStateFocus(provider, name, color, false);
+      }
+      return false;
+    }, EditorPriority);
   }, [color, editor, name, provider]);
 }
 
@@ -245,7 +236,7 @@ export function useYjsHistory(
       return false;
     };
 
-    return editor.registerListener('command', applyCommand, EditorPriority);
+    return editor.registerCommandListener(applyCommand, EditorPriority);
   });
 
   const clearHistory = useCallback(() => {

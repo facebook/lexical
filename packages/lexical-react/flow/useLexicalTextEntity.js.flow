@@ -7,13 +7,12 @@
  * @flow strict
  */
 
- import type {TextNode} from 'lexical';
+import type {TextNode} from 'lexical';
 
- export type EntityMatch = {end: number, start: number};
+export type EntityMatch = {end: number, start: number};
 
- declare export default function useLexicalTextEntity<N: TextNode>(
+declare export default function useLexicalTextEntity<N: TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Class<N>,
   createNode: (textNode: TextNode) => N,
- ): void;
- 
+): void;

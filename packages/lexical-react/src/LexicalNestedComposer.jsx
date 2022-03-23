@@ -67,7 +67,8 @@ export default function LexicalNestedComposer({
         };
         // We only do this for init
         // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [])}>
+      }, [])}
+    >
       <LexicalOnChangePlugin onChange={onChange} />
       {children}
     </LexicalComposer>

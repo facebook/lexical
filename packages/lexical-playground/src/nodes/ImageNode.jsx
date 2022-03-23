@@ -241,7 +241,8 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}>
+          }}
+        >
           Add Caption
         </button>
       )}
@@ -309,47 +310,43 @@ function ImageComponent({
   const [selection, setSelection] = useState(null);
 
   useEffect(() => {
-    return editor.registerListener('update', ({editorState}) => {
+    return editor.registerUpdateListener(({editorState}) => {
       setSelection(editorState.read(() => $getSelection()));
     });
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerListener(
-      'command',
-      (type, payload) => {
-        if (type === 'click') {
-          const event: MouseEvent = payload;
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'click') {
+        const event: MouseEvent = payload;
 
-          if (isResizing) {
-            return true;
-          }
-          if (event.target === ref.current) {
-            if (!event.shiftKey) {
-              clearSelection();
-            }
-            setSelected(!isSelected);
-            return true;
-          }
-        } else if (
-          isSelected &&
-          $isNodeSelection($getSelection()) &&
-          (type === 'keyDelete' || type === 'keyBackspace')
-        ) {
-          const event: KeyboardEvent = payload;
-          event.preventDefault();
-          editor.update(() => {
-            const node = $getNodeByKey(nodeKey);
-            if ($isImageNode(node)) {
-              node.remove();
-            }
-            setSelected(false);
-          });
+        if (isResizing) {
+          return true;
         }
-        return false;
-      },
-      LowPriority,
-    );
+        if (event.target === ref.current) {
+          if (!event.shiftKey) {
+            clearSelection();
+          }
+          setSelected(!isSelected);
+          return true;
+        }
+      } else if (
+        isSelected &&
+        $isNodeSelection($getSelection()) &&
+        (type === 'keyDelete' || type === 'keyBackspace')
+      ) {
+        const event: KeyboardEvent = payload;
+        event.preventDefault();
+        editor.update(() => {
+          const node = $getNodeByKey(nodeKey);
+          if ($isImageNode(node)) {
+            node.remove();
+          }
+          setSelected(false);
+        });
+      }
+      return false;
+    }, LowPriority);
   }, [clearSelection, editor, isResizing, isSelected, nodeKey, setSelected]);
 
   const setShowCaption = useCallback(() => {
@@ -413,7 +410,8 @@ function ImageComponent({
             <LexicalNestedComposer
               initialConfig={{
                 decoratorEditor: decoratorEditor,
-              }}>
+              }}
+            >
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

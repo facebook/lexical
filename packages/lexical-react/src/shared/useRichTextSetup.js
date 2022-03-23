@@ -41,8 +41,7 @@ export default function useRichTextSetup(
   initialEditorState?: InitialEditorStateType,
 ): void {
   useLayoutEffect(() => {
-    const removeListener = editor.registerListener(
-      'command',
+    const removeListener = editor.registerCommandListener(
       (type, payload): boolean => {
         const selection = $getSelection();
         if (type === 'click' && $isNodeSelection(selection)) {

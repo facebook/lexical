@@ -56,10 +56,10 @@ export function useCharacterLimit(
     let lastComputedTextLength = 0;
 
     return withSubscriptions(
-      editor.registerListener('textcontent', (currentText: string) => {
+      editor.registerTextContentListener((currentText: string) => {
         text = currentText;
       }),
-      editor.registerListener('update', ({dirtyLeaves}) => {
+      editor.registerUpdateListener(({dirtyLeaves}) => {
         const isComposing = editor.isComposing();
         const hasDirtyLeaves = dirtyLeaves.size > 0;
         if (isComposing || !hasDirtyLeaves) {

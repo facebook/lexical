@@ -258,8 +258,7 @@ ${steps.map(formatStep).join(`\n`)}
       }
     };
 
-    return editor.registerListener(
-      'root',
+    return editor.registerRootListener(
       (
         rootElement: null | HTMLElement,
         prevRootElement: null | HTMLElement,
@@ -292,8 +291,7 @@ ${steps.map(formatStep).join(`\n`)}
   }, [generateTestContent, steps]);
 
   useEffect(() => {
-    const removeUpdateListener = editor.registerListener(
-      'update',
+    const removeUpdateListener = editor.registerUpdateListener(
       ({editorState, dirtyLeaves, dirtyElements}) => {
         if (!isRecording) {
           return;
@@ -329,7 +327,7 @@ ${steps.map(formatStep).join(`\n`)}
     if (!isRecording) {
       return;
     }
-    const removeUpdateListener = editor.registerListener('update', () => {
+    const removeUpdateListener = editor.registerUpdateListener(() => {
       const rootElement = editor.getRootElement();
       if (rootElement !== null) {
         setCurrentInnerHTML(rootElement?.innerHTML);

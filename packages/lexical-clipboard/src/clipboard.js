@@ -47,7 +47,8 @@ export function $getLexicalContent(editor: LexicalEditor): string | null {
   const selection = $getSelection();
   if (selection !== null) {
     const namespace = editor._config.namespace;
-    return JSON.stringify({namespace, state: $cloneContents(selection)});
+    const state = $cloneContents(selection);
+    return JSON.stringify({namespace, state});
   }
   return null;
 }

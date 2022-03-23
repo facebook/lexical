@@ -65,6 +65,10 @@ export function applyTableHandlers(
   // This is the anchor of the selection.
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     setTimeout(() => {
+      if (event.button !== 0) {
+        return;
+      }
+
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
       if (cell !== null) {
@@ -121,14 +125,18 @@ export function applyTableHandlers(
   });
 
   // Clear selection when clicking outside of dom.
-  const mouseDownCallback = (e) => {
+  const mouseDownCallback = (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
     editor.update(() => {
       const selection = $getSelection();
 
       if (
         $isGridSelection(selection) &&
         selection.gridKey === tableSelection.tableNodeKey &&
-        rootElement.contains(e.target)
+        rootElement.contains(event.target)
       ) {
         return tableSelection.clearHighlight();
       }
@@ -431,7 +439,7 @@ export function $updateDOMForSelection(
   const {cells} = grid;
 
   const selectedCellNodes = new Set(
-    gridSelection ? gridSelection.getNodes() : [],
+    gridSelection ? gridSelection.getNodes(true) : [],
   );
 
   for (let y = 0; y < cells.length; y++) {

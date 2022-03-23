@@ -10,10 +10,12 @@ import {
   assertHTML,
   click,
   clickSelectors,
+  copyToClipboard,
   dragMouse,
   focusEditor,
   initialize,
   IS_COLLAB,
+  pasteFromClipboard,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -217,6 +219,44 @@ test.describe('Tables', () => {
     await assertHTML(
       page,
       `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tbody><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">a</strong></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">bb</strong></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">d</strong></p></th><td class="PlaygroundEditorTheme__tableCell" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">e</strong></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></tbody></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
+      true,
+    );
+  });
+
+  test(`Can copy + paste (internal) using Table selection`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await insertTable(page);
+
+    await fillTablePartiallyWithText(page);
+    await selectCellsFromTableCords(page, {x: 0, y: 0}, {x: 1, y: 1});
+
+    const clipboard = await copyToClipboard(page);
+
+    let p = page;
+
+    if (IS_COLLAB) {
+      await focusEditor(page);
+      p = await page.frame('left');
+    }
+
+    const firstParagraphLocator = await p.locator(
+      '#root > div > div.editor-container.tree-view > div.ContentEditable__root > p:first-of-type',
+    );
+
+    // Focus on inside the iFrame or the boundingBox() below returns null.
+    await firstParagraphLocator.click();
+
+    await pasteFromClipboard(page, clipboard);
+
+    // Check that the character styles are applied.
+    await assertHTML(
+      page,
+      `<table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><br></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><br></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><br></th><td class="PlaygroundEditorTheme__tableCell"><br></td></tr></table><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bb</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">d</span></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">e</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
       true,
     );
   });

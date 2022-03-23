@@ -387,7 +387,7 @@ export declare class GridSelection {
   insertRawText(): void;
   insertText(): void;
   getShape(): GridSelectionShape;
-  getNodes(): Array<LexicalNode>;
+  getNodes(onlyCells?: boolean): Array<LexicalNode>;
   getTextContent(): string;
 }
 export function $isGridSelection(x: unknown | null | undefined): boolean;

@@ -97,13 +97,13 @@ function FloatingCharacterStylesEditor({
 
   useEffect(() => {
     return withSubscriptions(
-      editor.addListener('update', ({editorState}) => {
+      editor.registerListener('update', ({editorState}) => {
         editorState.read(() => {
           updateCharacterStylesEditor();
         });
       }),
 
-      editor.addListener(
+      editor.registerListener(
         'command',
         (type) => {
           if (type === 'selectionChange') {
@@ -194,7 +194,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
   const [isCode, setIsCode] = useState(false);
 
   useEffect(() => {
-    return editor.addListener('update', ({editorState}) => {
+    return editor.registerListener('update', ({editorState}) => {
       editorState.read(() => {
         const selection = $getSelection();
 

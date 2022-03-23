@@ -677,7 +677,7 @@ function MentionsTypeahead({
   }, [results, selectedIndex, updateSelectedIndex]);
 
   useEffect(() => {
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload) => {
         switch (type) {
@@ -1022,7 +1022,10 @@ function useMentions(editor: LexicalEditor): React$Node {
       startTransition(() => setResolution(null));
     };
 
-    const removeUpdateListener = editor.addListener('update', updateListener);
+    const removeUpdateListener = editor.registerListener(
+      'update',
+      updateListener,
+    );
 
     return () => {
       activeRange = null;

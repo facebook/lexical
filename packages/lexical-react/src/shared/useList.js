@@ -22,7 +22,7 @@ const LowPriority: CommandListenerLowPriority = 1;
 
 export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type) => {
         if (type === 'indentContent') {

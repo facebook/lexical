@@ -31,7 +31,7 @@ export default function usePlainTextSetup(
   initialEditorState?: InitialEditorStateType,
 ): void {
   useLayoutEffect(() => {
-    const removeListener = editor.addListener(
+    const removeListener = editor.registerListener(
       'command',
       (type, payload): boolean => {
         const selection = $getSelection();

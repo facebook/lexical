@@ -11,7 +11,7 @@ import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 type Props = {
   initialConfig: {
     editor?: LexicalEditor | null;
-    isReadOnly?: boolean;
+    readOnly?: boolean;
     namespace?: string;
     nodes?: Array<Class<LexicalNode>>;
     theme?: EditorThemeClasses;

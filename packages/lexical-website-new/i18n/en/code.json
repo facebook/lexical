@@ -288,5 +288,17 @@
   "pages.community.links.discord.description": {
     "message": "Some copy about stack overflow Some copy about stack overflowSome copy about stack overflow",
     "description": "Description of Discord community"
+  },
+  "page.home.features.reliable": {
+    "message": "Lexical is comprised of editor instances that each attach to a single content editable element. A set of editor states represent the current and pending states of the editor at any given time.",
+    "description": "short description of why Lexical is reliable"
+  },
+  "page.home.features.accessible": {
+    "message": "Lexical is designed for everyone. It follows best practices established in WCAG and is compatible with screen readers and other assistive technologies.",
+    "description": "short description of why Lexical is accessible"
+  },
+  "page.home.features.fast": {
+    "message": "Lexical is minimal. It doesn't directly concern itself with UI components, toolbars or rich-text features and markdown. The logic for these features can be included via a plugin interface.",
+    "description": "short description of why Lexical is fast"
   }
 }

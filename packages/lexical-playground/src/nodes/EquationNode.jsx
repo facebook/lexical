@@ -18,14 +18,8 @@ import type {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNodeByKey, DecoratorNode} from 'lexical';
 import * as React from 'react';
-<<<<<<< HEAD
-import {useCallback, useEffect, useState} from 'react';
-
-=======
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import KatexRenderer from '../ui/KatexRenderer';
->>>>>>> 020ff1d6 (Fix selection bug + Flow errors)
+
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';
 
@@ -47,49 +41,38 @@ function EquationComponent({
   const [showEquationEditor, setShowEquationEditor] = useState<boolean>(false);
   const inputRef = useRef(null);
 
-  const onHide = useCallback((restoreSelection?: boolean) => {
-    setShowEquationEditor(false);
-    editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isEquationNode(node)) {
-        node.setEquation(equationValue);
-        if (restoreSelection) {
-          node.selectNext(0, 0);
+  const onHide = useCallback(
+    (restoreSelection?: boolean) => {
+      setShowEquationEditor(false);
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isEquationNode(node)) {
+          node.setEquation(equationValue);
+          if (restoreSelection) {
+            node.selectNext(0, 0);
+          }
         }
-      }
-    });
-  }, [editor, equationValue, nodeKey]);
+      });
+    },
+    [editor, equationValue, nodeKey],
+  );
 
   useEffect(() => {
-<<<<<<< HEAD
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'selectionChange' && showEquationEditor) {
-        onHide();
-      }
-
-      return false;
-    }, HighPriority);
-=======
     if (showEquationEditor) {
-      return editor.addListener(
-        'command',
-        (type, payload) => {
-          const activeElement = document.activeElement;
-          const inputElem = inputRef.current;
+      return editor.registerCommandListener((type, payload) => {
+        const activeElement = document.activeElement;
+        const inputElem = inputRef.current;
 
-          if (type === 'selectionChange' && inputElem !== activeElement) {
-            onHide();
-          } else if (type === 'keyEscape' && inputElem === activeElement) {
-            onHide(true);
-            return true;
-          }
+        if (type === 'selectionChange' && inputElem !== activeElement) {
+          onHide();
+        } else if (type === 'keyEscape' && inputElem === activeElement) {
+          onHide(true);
+          return true;
+        }
 
-          return false;
-        },
-        HighPriority,
-      );
+        return false;
+      }, HighPriority);
     }
->>>>>>> 020ff1d6 (Fix selection bug + Flow errors)
   }, [editor, onHide, showEquationEditor]);
 
   return (

@@ -7,10 +7,10 @@
  *
  */
 
-import { LexicalEditor } from "lexical";
+import {LexicalEditor} from 'lexical';
 
 export function importFile(editor: LexicalEditor): void;
 export function exportFile(
-   editor: LexicalEditor,
-   config?: Readonly<{fileName?: string, source?: string}>
- ): void;
+  editor: LexicalEditor,
+  config?: Readonly<{fileName?: string; source?: string}>,
+): void;

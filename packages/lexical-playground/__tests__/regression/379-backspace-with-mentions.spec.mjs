@@ -13,37 +13,40 @@ import {
   focusEditor,
   initialize,
   test,
-  waitForSelector} from '../utils/index.mjs';
+  waitForSelector,
+} from '../utils/index.mjs';
 
 test.describe('Regression test #379', () => {
-  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
-    test(`Is able to correctly handle backspace press at the line boundary`, async ({page}) => {
-      await focusEditor(page);
-      await page.keyboard.type('Luke');
-      await waitForSelector(page, '#mentions-typeahead ul li');
-      await page.keyboard.press('Enter');
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph"></span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
-      );
-      await assertSelection(page, {
-        anchorOffset: 14,
-        anchorPath: [0, 0, 0],
-        focusOffset: 14,
-        focusPath: [0, 0, 0],
-      });
-      await moveToEditorBeginning(page);
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Backspace');
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
-      );
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 0, 0],
-        focusOffset: 0,
-        focusPath: [0, 0, 0],
-      });
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test(`Is able to correctly handle backspace press at the line boundary`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Luke');
+    await waitForSelector(page, '#mentions-typeahead ul li');
+    await page.keyboard.press('Enter');
+    await assertHTML(
+      page,
+      '<p class="PlaygroundEditorTheme__paragraph"></span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+    );
+    await assertSelection(page, {
+      anchorOffset: 14,
+      anchorPath: [0, 0, 0],
+      focusOffset: 14,
+      focusPath: [0, 0, 0],
     });
+    await moveToEditorBeginning(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
+  });
 });

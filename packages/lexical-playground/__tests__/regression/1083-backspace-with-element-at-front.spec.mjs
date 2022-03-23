@@ -14,75 +14,76 @@ import {
   initialize,
   repeat,
   test,
-  waitForSelector} from '../utils/index.mjs';
+  waitForSelector,
+} from '../utils/index.mjs';
 
 test.describe('Regression test #1083', () => {
-  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
-    test(
-      `Backspace with ElementNode at the front of the paragraph`,
-      async ({page, isPlainText}) => {
-        test.skip(isPlainText);
-        await focusEditor(page);
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test(`Backspace with ElementNode at the front of the paragraph`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
 
-        await page.keyboard.type('Hello');
-        await selectAll(page);
-        await waitForSelector(page, '.link');
-        await click(page, '.link');
+    await page.keyboard.type('Hello');
+    await selectAll(page);
+    await waitForSelector(page, '.link');
+    await click(page, '.link');
 
-        await moveToLineEnd(page);
-        await page.keyboard.type('World');
+    await moveToLineEnd(page);
+    await page.keyboard.type('World');
 
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true">World</span></p>',
-        );
-
-        await selectAll(page);
-        await page.keyboard.press('Backspace');
-
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
-        );
-      },
+    await assertHTML(
+      page,
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true">World</span></p>',
     );
 
-    test(
-      `Backspace with ElementNode at the front of the selection`,
-      async ({page, isPlainText}) => {
-        test.skip(isPlainText);
-        await focusEditor(page);
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
 
-        await page.keyboard.type('Say');
-
-        await page.keyboard.type('Hello');
-        await page.keyboard.down('Shift');
-        await repeat('Hello'.length, async () => {
-          await page.keyboard.press('ArrowLeft');
-        });
-        await page.keyboard.up('Shift');
-        await waitForSelector(page, '.link');
-        await click(page, '.link');
-
-        await moveToLineEnd(page);
-        await page.keyboard.type('World');
-
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Say</span><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true">World</span></p>',
-        );
-
-        await page.keyboard.down('Shift');
-        await repeat('HelloWorld'.length, async () => {
-          await page.keyboard.press('ArrowLeft');
-        });
-        await page.keyboard.up('Shift');
-        await page.keyboard.press('Backspace');
-
-        await assertHTML(
-          page,
-          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Say</span></p>',
-        );
-      },
+    await assertHTML(
+      page,
+      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
     );
+  });
+
+  test(`Backspace with ElementNode at the front of the selection`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Say');
+
+    await page.keyboard.type('Hello');
+    await page.keyboard.down('Shift');
+    await repeat('Hello'.length, async () => {
+      await page.keyboard.press('ArrowLeft');
+    });
+    await page.keyboard.up('Shift');
+    await waitForSelector(page, '.link');
+    await click(page, '.link');
+
+    await moveToLineEnd(page);
+    await page.keyboard.type('World');
+
+    await assertHTML(
+      page,
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Say</span><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true">World</span></p>',
+    );
+
+    await page.keyboard.down('Shift');
+    await repeat('HelloWorld'.length, async () => {
+      await page.keyboard.press('ArrowLeft');
+    });
+    await page.keyboard.up('Shift');
+    await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Say</span></p>',
+    );
+  });
 });

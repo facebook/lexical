@@ -7,36 +7,51 @@
  * @flow strict
  */
 
-import type { ListNodeTagType } from "../src/LexicalListNode";
-import type { LexicalNode, LexicalEditor, ParagraphNode, RangeSelection } from 'lexical';
-import { ElementNode } from 'lexical';
+import type {ListNodeTagType} from '../src/LexicalListNode';
+import type {
+  LexicalNode,
+  LexicalEditor,
+  ParagraphNode,
+  RangeSelection,
+} from 'lexical';
+import {ElementNode} from 'lexical';
 
 declare export function $createListItemNode(): ListItemNode;
-declare export function $createListNode(tag: ListNodeTagType, start?: number): ListNode;
+declare export function $createListNode(
+  tag: ListNodeTagType,
+  start?: number,
+): ListNode;
 declare export function $getListDepth(listNode: ListNode): number;
 declare export function $handleListInsertParagraph(): boolean;
-declare export function $isListItemNode(node: ?LexicalNode): boolean %checks(node instanceof ListItemNode);
-declare export function $isListNode(node: ?LexicalNode): boolean %checks(node instanceof ListNode);
+declare export function $isListItemNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof ListItemNode);
+declare export function $isListNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof ListNode);
 declare export function indentList(): boolean;
-declare export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void;
+declare export function insertList(
+  editor: LexicalEditor,
+  listType: 'ul' | 'ol',
+): void;
 declare export class ListItemNode extends ElementNode {
-    append(...nodes: LexicalNode[]): ListItemNode;
-    replace<N: LexicalNode>(replaceWithNode: N): N;
-    insertAfter(node: LexicalNode): LexicalNode;
-    insertNewAfter(): ListItemNode | ParagraphNode;
-    collapseAtStart(selection: RangeSelection): true;
-    getIndent(): number;
-    setIndent(indent: number): this;
-    insertBefore(nodeToInsert: LexicalNode): LexicalNode;
-    canInsertAfter(node: LexicalNode): boolean;
-    canReplaceWith(replacement: LexicalNode): boolean;
-    canMergeWith(node: LexicalNode): boolean;
+  append(...nodes: LexicalNode[]): ListItemNode;
+  replace<N: LexicalNode>(replaceWithNode: N): N;
+  insertAfter(node: LexicalNode): LexicalNode;
+  insertNewAfter(): ListItemNode | ParagraphNode;
+  collapseAtStart(selection: RangeSelection): true;
+  getIndent(): number;
+  setIndent(indent: number): this;
+  insertBefore(nodeToInsert: LexicalNode): LexicalNode;
+  canInsertAfter(node: LexicalNode): boolean;
+  canReplaceWith(replacement: LexicalNode): boolean;
+  canMergeWith(node: LexicalNode): boolean;
 }
 declare export class ListNode extends ElementNode {
-    canBeEmpty(): false;
-    append(...nodesToAppend: LexicalNode[]): ListNode;
-    getTag(): ListNodeTagType;
-    getStart(): number;
+  canBeEmpty(): false;
+  append(...nodesToAppend: LexicalNode[]): ListNode;
+  getTag(): ListNodeTagType;
+  getStart(): number;
 }
 declare export function outdentList(): boolean;
 declare export function removeList(editor: LexicalEditor): boolean;

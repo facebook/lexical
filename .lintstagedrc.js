@@ -1,3 +1,4 @@
 module.exports = {
-  '*.(js|mjs|jsx)': ['flow focus-check', 'prettier --write', 'eslint --fix'],
+  '*': 'prettier --write',
+  '*.(js|mjs|jsx)': ['flow focus-check', 'eslint --fix'],
 };

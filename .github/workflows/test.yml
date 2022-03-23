@@ -149,7 +149,6 @@ jobs:
           path: test-results/
           retention-days: 7
 
-
   e2e-windows:
     runs-on: windows-latest
     strategy:
@@ -190,7 +189,6 @@ jobs:
           path: test-results/
           retention-days: 7
 
-
   e2e-collab-mac:
     runs-on: macos-latest
     strategy:
@@ -226,7 +224,6 @@ jobs:
           name: Test Results
           path: test-results/
           retention-days: 7
-
 
   e2e-collab-linux:
     runs-on: ubuntu-latest
@@ -268,7 +265,6 @@ jobs:
           path: test-results/
           retention-days: 7
 
-
   e2e-collab-windows:
     runs-on: windows-latest
     strategy:
@@ -292,7 +288,7 @@ jobs:
             C:\Users\runneradmin\AppData\Local\ms-playwright
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-      #   if: steps.cache.outputs.cache-hit != 'true'
+        #   if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - name: Download browsers
         run: npx playwright install

@@ -13,29 +13,32 @@ import {
   initialize,
   repeat,
   test,
-  waitForSelector} from '../utils/index.mjs';
+  waitForSelector,
+} from '../utils/index.mjs';
 
 test.describe('Regression test #230', () => {
-    test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
-    test(`Is able to right arrow before hashtag after inserting text node`, async ({page}) => {
-      await focusEditor(page);
-      await page.keyboard.type('#foo');
-      await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
-      await repeat(4, async () => {
-        await page.keyboard.press('ArrowLeft');
-      });
-      await page.keyboard.type('a');
-      await page.keyboard.press('Backspace');
-      await page.keyboard.press('ArrowRight');
-      await assertHTML(
-        page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
-      );
-      await assertSelection(page, {
-        anchorOffset: 1,
-        anchorPath: [0, 0, 0],
-        focusOffset: 1,
-        focusPath: [0, 0, 0],
-      });
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test(`Is able to right arrow before hashtag after inserting text node`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('#foo');
+    await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
+    await repeat(4, async () => {
+      await page.keyboard.press('ArrowLeft');
     });
+    await page.keyboard.type('a');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('ArrowRight');
+    await assertHTML(
+      page,
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+    );
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 0, 0],
+      focusOffset: 1,
+      focusPath: [0, 0, 0],
+    });
+  });
 });

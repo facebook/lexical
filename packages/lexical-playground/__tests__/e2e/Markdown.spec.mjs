@@ -7,21 +7,22 @@
  */
 
 import {redo, undo} from '../keyboardShortcuts/index.mjs';
-import { assertHTML,
+import {
+  assertHTML,
   assertSelection,
   focusEditor,
-initialize ,
+  initialize,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
-  test
+  test,
 } from '../utils/index.mjs';
 
 async function checkHTMLExpectationsIncludingUndoRedo(
   page,
   forwardHTML,
   undoHTML,
-  isCollab
+  isCollab,
 ) {
   await assertHTML(page, forwardHTML);
   if (isCollab) {
@@ -35,7 +36,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
 }
 
 test.describe('Markdown', () => {
-  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
       expectation:
@@ -122,151 +123,151 @@ test.describe('Markdown', () => {
       undoHTML: '', // HR Rule.
     },
   ];
-    // forward case is the normal case.
-    // undo case is when the user presses undo.
+  // forward case is the normal case.
+  // undo case is when the user presses undo.
 
-    const count = triggersAndExpectations.length;
-    for (let i = 0; i < count; ++i) {
-      const markdownText = triggersAndExpectations[i].markdownText;
+  const count = triggersAndExpectations.length;
+  for (let i = 0; i < count; ++i) {
+    const markdownText = triggersAndExpectations[i].markdownText;
 
-      if (triggersAndExpectations[i].isBlockTest === false) {
-        test(
-          `Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`,
-          async ({page, isPlainText,isCollab}) => {
-            test.skip(isPlainText)
-            const text = 'x' + markdownText + 'y';
+    if (triggersAndExpectations[i].isBlockTest === false) {
+      test(`Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`, async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+        const text = 'x' + markdownText + 'y';
 
-            await focusEditor(page);
-            await page.keyboard.type(text);
-            await repeat(text.length, async () => {
-              await page.keyboard.press('ArrowLeft');
-            });
-            await assertSelection(page, {
-              anchorOffset: 0,
-              anchorPath: [0, 0, 0],
-              focusOffset: 0,
-              focusPath: [0, 0, 0],
-            });
+        await focusEditor(page);
+        await page.keyboard.type(text);
+        await repeat(text.length, async () => {
+          await page.keyboard.press('ArrowLeft');
+        });
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 0,
+          focusPath: [0, 0, 0],
+        });
 
-            await repeat(1 + markdownText.length, async () => {
-              await page.keyboard.press('ArrowRight');
-            });
+        await repeat(1 + markdownText.length, async () => {
+          await page.keyboard.press('ArrowRight');
+        });
 
-            // Trigger markdown.
-            await page.keyboard.type(' ');
+        // Trigger markdown.
+        await page.keyboard.type(' ');
 
-            await checkHTMLExpectationsIncludingUndoRedo(
-              page,
-              triggersAndExpectations[i].expectation,
-              triggersAndExpectations[i].undoHTML,
-              isCollab
-            );
-          },
+        await checkHTMLExpectationsIncludingUndoRedo(
+          page,
+          triggersAndExpectations[i].expectation,
+          triggersAndExpectations[i].undoHTML,
+          isCollab,
         );
+      });
 
-        test(
-          `Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`,
-          async ({page, isPlainText, isCollab}) => {
-            test.skip(isPlainText)
+      test(`Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`, async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
 
-            const text = 'x' + markdownText + 'y';
+        const text = 'x' + markdownText + 'y';
 
-            await focusEditor(page);
-            await page.keyboard.type(text);
-            await repeat(text.length, async () => {
-              await page.keyboard.press('ArrowLeft');
-            });
-            await assertSelection(page, {
-              anchorOffset: 0,
-              anchorPath: [0, 0, 0],
-              focusOffset: 0,
-              focusPath: [0, 0, 0],
-            });
+        await focusEditor(page);
+        await page.keyboard.type(text);
+        await repeat(text.length, async () => {
+          await page.keyboard.press('ArrowLeft');
+        });
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 0,
+          focusPath: [0, 0, 0],
+        });
 
-            // Select first 2 characters.
-            await page.keyboard.down('Shift');
-            await repeat(2, async () => {
-              await page.keyboard.press('ArrowRight');
-            });
-            await page.keyboard.up('Shift');
+        // Select first 2 characters.
+        await page.keyboard.down('Shift');
+        await repeat(2, async () => {
+          await page.keyboard.press('ArrowRight');
+        });
+        await page.keyboard.up('Shift');
 
-            // Make underline.
-            await keyDownCtrlOrMeta(page);
-            await page.keyboard.press('u');
-            await keyUpCtrlOrMeta(page);
+        // Make underline.
+        await keyDownCtrlOrMeta(page);
+        await page.keyboard.press('u');
+        await keyUpCtrlOrMeta(page);
 
-            // Back to beginning.
-            await repeat(2, async () => {
-              await page.keyboard.press('ArrowLeft');
-            });
+        // Back to beginning.
+        await repeat(2, async () => {
+          await page.keyboard.press('ArrowLeft');
+        });
 
-            // Move to end.
-            await repeat(text.length, async () => {
-              await page.keyboard.press('ArrowRight');
-            });
+        // Move to end.
+        await repeat(text.length, async () => {
+          await page.keyboard.press('ArrowRight');
+        });
 
-            // Select last two characters.
-            await page.keyboard.down('Shift');
-            await repeat(2, async () => {
-              await page.keyboard.press('ArrowLeft');
-            });
-            await page.keyboard.up('Shift');
+        // Select last two characters.
+        await page.keyboard.down('Shift');
+        await repeat(2, async () => {
+          await page.keyboard.press('ArrowLeft');
+        });
+        await page.keyboard.up('Shift');
 
-            // Make underline.
-            await keyDownCtrlOrMeta(page);
-            await page.keyboard.press('u');
-            await keyUpCtrlOrMeta(page);
+        // Make underline.
+        await keyDownCtrlOrMeta(page);
+        await page.keyboard.press('u');
+        await keyUpCtrlOrMeta(page);
 
-            // Back to beginning of text.
-            await repeat(text.length, async () => {
-              await page.keyboard.press('ArrowLeft');
-            });
+        // Back to beginning of text.
+        await repeat(text.length, async () => {
+          await page.keyboard.press('ArrowLeft');
+        });
 
-            // Move after markdown text.
-            await repeat(1 + markdownText.length, async () => {
-              await page.keyboard.press('ArrowRight');
-            });
+        // Move after markdown text.
+        await repeat(1 + markdownText.length, async () => {
+          await page.keyboard.press('ArrowRight');
+        });
 
-            // Trigger markdown.
-            await page.keyboard.type(' ');
+        // Trigger markdown.
+        await page.keyboard.type(' ');
 
-            await assertHTML(
-              page,
-              triggersAndExpectations[i].stylizedExpectation,
-            );
+        await assertHTML(page, triggersAndExpectations[i].stylizedExpectation);
 
-            await checkHTMLExpectationsIncludingUndoRedo(
-              page,
-              triggersAndExpectations[i].stylizedExpectation,
-              triggersAndExpectations[i].stylizedUndoHTML,
-              isCollab
-            );
-          },
+        await checkHTMLExpectationsIncludingUndoRedo(
+          page,
+          triggersAndExpectations[i].stylizedExpectation,
+          triggersAndExpectations[i].stylizedUndoHTML,
+          isCollab,
         );
-      }
-
-      if (triggersAndExpectations[i].isBlockTest === true) {
-        test(
-          `Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`,
-          async ({page, isPlainText, isCollab}) => {
-            test.skip(isPlainText)
-
-            await focusEditor(page);
-
-            await page.keyboard.type(markdownText);
-
-            const forwardHTML = triggersAndExpectations[i].expectation;
-
-            const undoHTML = `<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">${markdownText}</span></p>`;
-
-            await checkHTMLExpectationsIncludingUndoRedo(
-              page,
-              forwardHTML,
-              undoHTML,
-              isCollab
-            );
-          },
-        );
-      }
+      });
     }
+
+    if (triggersAndExpectations[i].isBlockTest === true) {
+      test(`Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`, async ({
+        page,
+        isPlainText,
+        isCollab,
+      }) => {
+        test.skip(isPlainText);
+
+        await focusEditor(page);
+
+        await page.keyboard.type(markdownText);
+
+        const forwardHTML = triggersAndExpectations[i].expectation;
+
+        const undoHTML = `<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">${markdownText}</span></p>`;
+
+        await checkHTMLExpectationsIncludingUndoRedo(
+          page,
+          forwardHTML,
+          undoHTML,
+          isCollab,
+        );
+      });
+    }
+  }
 });

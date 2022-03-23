@@ -256,7 +256,7 @@ export class TextNode extends LexicalNode {
     const self = this.getLatest();
     return self.__style;
   }
-  
+
   isToken(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_TOKEN;

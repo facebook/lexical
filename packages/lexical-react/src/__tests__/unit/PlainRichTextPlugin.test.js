@@ -58,7 +58,8 @@ describe('LexicalNodeHelpers tests', () => {
               namespace: 'PlaygroundEditor',
               nodes: plugin === 'PlainTextPlugin' ? [] : [...ExtendedNodes],
               theme: {},
-            }}>
+            }}
+          >
             <GrabEditor />
             {plugin === 'PlainTextPlugin' ? (
               <PlainTextPlugin

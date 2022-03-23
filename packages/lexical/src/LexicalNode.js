@@ -760,7 +760,7 @@ export class LexicalNode {
     }
     return prevSibling.select(anchorOffset, focusOffset);
   }
-  
+
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();

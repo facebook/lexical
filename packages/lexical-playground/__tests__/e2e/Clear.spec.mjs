@@ -6,10 +6,16 @@
  *
  */
 
-import {assertHTML, click, focusEditor, initialize,test} from '../utils/index.mjs';
+import {
+  assertHTML,
+  click,
+  focusEditor,
+  initialize,
+  test,
+} from '../utils/index.mjs';
 
 test.describe('Clear', () => {
-  test.beforeEach(({ isCollab, page }) => initialize({ isCollab, page }));
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`can clear the editor`, async ({page}) => {
     await focusEditor(page);
 

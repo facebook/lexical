@@ -6,26 +6,26 @@
  *
  */
 
- import type {LexicalEditor, RangeSelection} from 'lexical';
+import type {LexicalEditor, RangeSelection} from 'lexical';
 
- /*
-  * Rich Text
-  */
+/*
+ * Rich Text
+ */
 
 export function $insertDataTransferForRichText(
-   dataTransfer: DataTransfer,
-   selection: RangeSelection,
-   editor: LexicalEditor,
- ): void;
+  dataTransfer: DataTransfer,
+  selection: RangeSelection,
+  editor: LexicalEditor,
+): void;
 
 export function getHtmlContent(editor: LexicalEditor): string;
 export function $getLexicalContent(editor: LexicalEditor): string;
 
- /*
-  * Plain Text
-  */
+/*
+ * Plain Text
+ */
 
 export function $insertDataTransferForPlainText(
-   dataTransfer: DataTransfer,
-   selection: RangeSelection,
- ): void;
+  dataTransfer: DataTransfer,
+  selection: RangeSelection,
+): void;

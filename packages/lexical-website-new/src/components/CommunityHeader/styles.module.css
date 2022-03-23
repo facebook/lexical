@@ -7,12 +7,12 @@
  *
  */
 
-.communityHeader{
-    padding: 2em 0;
+.communityHeader {
+  padding: 2em 0;
 }
 
 .textContainer {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }

@@ -158,11 +158,7 @@ export async function moveRight(page, numCharacters = 1) {
   }
 }
 
-export async function selectCharacters(
-  page,
-  direction,
-  numCharacters = 1,
-) {
+export async function selectCharacters(page, direction, numCharacters = 1) {
   const moveFunction = direction === 'left' ? moveLeft : moveRight;
   await page.keyboard.down('Shift');
   await moveFunction(page, numCharacters);

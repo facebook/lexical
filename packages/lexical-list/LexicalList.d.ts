@@ -6,8 +6,14 @@
  *
  */
 
- import { ListNodeTagType } from "./src/LexicalListNode";
- import { ElementNode, LexicalNode, LexicalEditor, ParagraphNode, RangeSelection } from 'lexical';
+import {ListNodeTagType} from './src/LexicalListNode';
+import {
+  ElementNode,
+  LexicalNode,
+  LexicalEditor,
+  ParagraphNode,
+  RangeSelection,
+} from 'lexical';
 
 export function $createListItemNode(): ListItemNode;
 export function $createListNode(tag: ListNodeTagType, start?: number): ListNode;
@@ -18,22 +24,22 @@ export function $isListNode(node?: LexicalNode): boolean;
 export function indentList(): boolean;
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void;
 export declare class ListItemNode extends ElementNode {
-    append(...nodes: LexicalNode[]): ListItemNode;
-    replace<N extends LexicalNode>(replaceWithNode: N): N;
-    insertAfter(node: LexicalNode): LexicalNode;
-    insertNewAfter(): ListItemNode | ParagraphNode;
-    collapseAtStart(selection: RangeSelection): true;
-    getIndent(): number;
-    setIndent(indent: number): this;
-    insertBefore(nodeToInsert: LexicalNode): LexicalNode;
-    canInsertAfter(node: LexicalNode): boolean;
-    canReplaceWith(replacement: LexicalNode): boolean;
-    canMergeWith(node: LexicalNode): boolean;
- }
+  append(...nodes: LexicalNode[]): ListItemNode;
+  replace<N extends LexicalNode>(replaceWithNode: N): N;
+  insertAfter(node: LexicalNode): LexicalNode;
+  insertNewAfter(): ListItemNode | ParagraphNode;
+  collapseAtStart(selection: RangeSelection): true;
+  getIndent(): number;
+  setIndent(indent: number): this;
+  insertBefore(nodeToInsert: LexicalNode): LexicalNode;
+  canInsertAfter(node: LexicalNode): boolean;
+  canReplaceWith(replacement: LexicalNode): boolean;
+  canMergeWith(node: LexicalNode): boolean;
+}
 export declare class ListNode extends ElementNode {
-    canBeEmpty(): false;
-    append(...nodesToAppend: LexicalNode[]): ListNode;
-    getTag(): ListNodeTagType;
+  canBeEmpty(): false;
+  append(...nodesToAppend: LexicalNode[]): ListNode;
+  getTag(): ListNodeTagType;
 }
 export function outdentList(): boolean;
 export function removeList(editor: LexicalEditor): boolean;

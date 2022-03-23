@@ -19,6 +19,7 @@ import {KeywordNode} from './KeywordNode';
 import {MentionNode} from './MentionNode';
 import {PollNode} from './PollNode';
 import {StickyNode} from './StickyNode';
+import {TweetNode} from './TweetNode.jsx';
 import {TypeaheadNode} from './TypeaheadNode';
 
 const PlaygroundNodes: Array<Class<LexicalNode>> = [
@@ -32,6 +33,7 @@ const PlaygroundNodes: Array<Class<LexicalNode>> = [
   TypeaheadNode,
   KeywordNode,
   HorizontalRuleNode,
+  TweetNode,
 ];
 
 export default PlaygroundNodes;

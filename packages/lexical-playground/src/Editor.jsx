@@ -42,6 +42,7 @@ import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
+import TwitterPlugin from './plugins/TwitterPlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
 
@@ -112,6 +113,7 @@ export default function Editor(): React$Node {
             <ImagesPlugin />
             <LinkPlugin />
             <PollPlugin />
+            <TwitterPlugin />
           </>
         ) : (
           <>

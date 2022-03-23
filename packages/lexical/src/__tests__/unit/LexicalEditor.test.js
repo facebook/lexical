@@ -788,11 +788,11 @@ describe('LexicalEditor tests', () => {
       }, [changeElement]);
 
       React.useEffect(() => {
-        return editor.addListener('root', rootListener);
+        return editor.registerListener('root', rootListener);
       }, []);
 
       React.useEffect(() => {
-        return editor.addListener('update', updateListener);
+        return editor.registerListener('update', updateListener);
       }, []);
 
       const ref = React.useCallback((node) => {
@@ -832,7 +832,7 @@ describe('LexicalEditor tests', () => {
       );
       // Subscribe to changes
       React.useEffect(() => {
-        return editor.addListener('decorator', (nextDecorators) => {
+        return editor.registerListener('decorator', (nextDecorators) => {
           setDecorators(nextDecorators);
         });
       }, []);
@@ -855,7 +855,7 @@ describe('LexicalEditor tests', () => {
         editor = React.useMemo(() => createTestEditor(), []);
 
         React.useEffect(() => {
-          editor.addListener('root', listener);
+          editor.registerListener('root', listener);
         }, []);
 
         const ref = React.useCallback((node) => {
@@ -901,7 +901,7 @@ describe('LexicalEditor tests', () => {
         DEPRECATED__useLexicalRichText(editor);
 
         React.useEffect(() => {
-          editor.addListener('root', listener);
+          editor.registerListener('root', listener);
         }, []);
 
         const ref = React.useCallback((node) => {
@@ -1502,7 +1502,7 @@ describe('LexicalEditor tests', () => {
       paragraph.append(textNode);
     });
 
-    editor.addListener('textcontent', (text) => {
+    editor.registerListener('textcontent', (text) => {
       fn(text);
     });
     await editor.update(() => {
@@ -1519,8 +1519,8 @@ describe('LexicalEditor tests', () => {
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
 
-    editor.addListener('mutation', ParagraphNode, paragraphNodeMutations);
-    editor.addListener('mutation', TextNode, textNodeMutations);
+    editor.registerListener('mutation', ParagraphNode, paragraphNodeMutations);
+    editor.registerListener('mutation', TextNode, textNodeMutations);
 
     const paragraphKeys = [];
     const textNodeKeys = [];
@@ -1588,7 +1588,7 @@ describe('LexicalEditor tests', () => {
     });
     const initialEditorState = editor.getEditorState();
     const textNodeMutations = jest.fn();
-    editor.addListener('mutation', TextNode, textNodeMutations);
+    editor.registerListener('mutation', TextNode, textNodeMutations);
 
     const textNodeKeys = [];
     await editor.update(() => {
@@ -1635,8 +1635,8 @@ describe('LexicalEditor tests', () => {
     init();
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
-    editor.addListener('mutation', ParagraphNode, paragraphNodeMutations);
-    editor.addListener('mutation', TextNode, textNodeMutations);
+    editor.registerListener('mutation', ParagraphNode, paragraphNodeMutations);
+    editor.registerListener('mutation', TextNode, textNodeMutations);
 
     await editor.update(() => {
       $getRoot().append($createParagraphNode());
@@ -1649,7 +1649,7 @@ describe('LexicalEditor tests', () => {
   it('mutation listeners with normalization', async () => {
     init();
     const textNodeMutations = jest.fn();
-    editor.addListener('mutation', TextNode, textNodeMutations);
+    editor.registerListener('mutation', TextNode, textNodeMutations);
 
     const textNodeKeys = [];
     await editor.update(() => {
@@ -1690,8 +1690,8 @@ describe('LexicalEditor tests', () => {
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
 
-    editor.addListener('mutation', ParagraphNode, paragraphNodeMutations);
-    editor.addListener('mutation', TextNode, textNodeMutations);
+    editor.registerListener('mutation', ParagraphNode, paragraphNodeMutations);
+    editor.registerListener('mutation', TextNode, textNodeMutations);
 
     const paragraphNodeKeys = [];
     const textNodeKeys = [];
@@ -1745,8 +1745,8 @@ describe('LexicalEditor tests', () => {
 
     const tableCellMutations = jest.fn();
     const tableRowMutations = jest.fn();
-    editor.addListener('mutation', TableCellNode, tableCellMutations);
-    editor.addListener('mutation', TableRowNode, tableRowMutations);
+    editor.registerListener('mutation', TableCellNode, tableCellMutations);
+    editor.registerListener('mutation', TableRowNode, tableRowMutations);
 
     // Create Table
     await editor.update(() => {
@@ -1792,7 +1792,7 @@ describe('LexicalEditor tests', () => {
   it('readonly listener', () => {
     init();
     const readOnlyFn = jest.fn();
-    editor.addListener('readonly', readOnlyFn);
+    editor.registerListener('readonly', readOnlyFn);
 
     expect(editor.isReadOnly()).toBe(false);
     editor.setReadOnly(true);

@@ -57,7 +57,7 @@ export default function useEditorEvents(
       });
     }
 
-    return editor.addListener(
+    return editor.registerListener(
       'root',
       (
         rootElement: null | HTMLElement,

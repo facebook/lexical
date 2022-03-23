@@ -27,7 +27,7 @@ export default function ExcalidrawPlugin(): React$Node {
       );
     }
 
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type) => {
         if (type === 'insertExcalidraw') {

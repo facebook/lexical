@@ -24,7 +24,7 @@ export default function PollPlugin(): React$Node {
       throw new Error('PollPlugin: PollNode not registered on editor');
     }
 
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload) => {
         if (type === 'insertPoll') {

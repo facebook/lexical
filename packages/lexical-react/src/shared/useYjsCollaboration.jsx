@@ -107,7 +107,7 @@ export function useYjsCollaboration(
     awareness.on('update', onAwarenessUpdate);
     root.getSharedType().observeDeep(onYjsTreeChanges);
 
-    const removeListener = editor.addListener(
+    const removeListener = editor.registerListener(
       'update',
       ({
         prevEditorState,
@@ -167,7 +167,7 @@ export function useYjsCollaboration(
   }, [binding]);
 
   useEffect(() => {
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload) => {
         if (type === 'toggleConnect') {
@@ -200,7 +200,7 @@ export function useYjsFocusTracking(
   color: string,
 ) {
   useEffect(() => {
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload) => {
         if (type === 'focus') {
@@ -245,7 +245,7 @@ export function useYjsHistory(
       return false;
     };
 
-    return editor.addListener('command', applyCommand, EditorPriority);
+    return editor.registerListener('command', applyCommand, EditorPriority);
   });
 
   const clearHistory = useCallback(() => {

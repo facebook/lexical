@@ -217,7 +217,7 @@ export default function useAutoFormatter(editor: LexicalEditor): void {
     // However, given "#A B", where the user delets "A" should not.
 
     let priorTriggerState: null | AutoFormatTriggerState = null;
-    return editor.addListener('update', ({tags}) => {
+    return editor.registerListener('update', ({tags}) => {
       // Examine historic so that we are not running autoformatting within markdown.
       if (tags.has('historic') === false) {
         const currentTriggerState = getTriggerState(editor.getEditorState());

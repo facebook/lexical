@@ -55,7 +55,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
     useState<MouseDraggingDirection | null>(null);
 
   useEffect(() => {
-    return editor.registerListener('update', ({editorState}) => {
+    return editor.registerUpdateListener(({editorState}) => {
       editorState.read(() => {
         const selection = $getSelection();
         const isGridSelection = $isGridSelection(selection);

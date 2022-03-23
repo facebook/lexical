@@ -73,7 +73,8 @@ export default function Editor(): React$Node {
       <div
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
-        }`}>
+        }`}
+      >
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />

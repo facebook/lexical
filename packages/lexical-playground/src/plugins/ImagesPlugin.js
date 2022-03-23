@@ -26,28 +26,24 @@ export default function ImagesPlugin(): React$Node {
       throw new Error('ImagesPlugin: ImageNode not registered on editor');
     }
 
-    return editor.registerListener(
-      'command',
-      (type) => {
-        if (type === 'insertImage') {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            if ($isRootNode(selection.anchor.getNode())) {
-              selection.insertParagraph();
-            }
-            const imageNode = $createImageNode(
-              yellowFlowerImage,
-              'Yellow flower in tilt shift lens',
-              500,
-            );
-            selection.insertNodes([imageNode]);
+    return editor.registerCommandListener((type) => {
+      if (type === 'insertImage') {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          if ($isRootNode(selection.anchor.getNode())) {
+            selection.insertParagraph();
           }
-          return true;
+          const imageNode = $createImageNode(
+            yellowFlowerImage,
+            'Yellow flower in tilt shift lens',
+            500,
+          );
+          selection.insertNodes([imageNode]);
         }
-        return false;
-      },
-      EditorPriority,
-    );
+        return true;
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
   return null;
 }

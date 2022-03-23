@@ -23,7 +23,7 @@ export default function useDecorators(
   );
   // Subscribe to changes
   useLayoutEffect(() => {
-    return editor.registerListener('decorator', (nextDecorators) => {
+    return editor.registerDecoratorListener((nextDecorators) => {
       flushSync(() => {
         setDecorators(nextDecorators);
       });

@@ -29,12 +29,12 @@ export interface Provider {
   on(type: 'status', cb: (arg0: {status: string}) => void): void;
   // $FlowFixMe: temp
   on(type: 'update', cb: (arg0: any) => void): void;
-  on(type: 'reload', cb: (doc: Doc) => boolean): void;  
+  on(type: 'reload', cb: (doc: Doc) => boolean): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
   // $FlowFixMe: temp
   off(type: 'update', cb: (arg0: any) => void): void;
   off(type: 'status', cb: (arg0: {status: string}) => void): void;
-  off(type: 'reload', cb: (doc: Doc) => boolean): void;  
+  off(type: 'reload', cb: (doc: Doc) => boolean): void;
 }
 type CollaborationContextType = {
   clientID: number;
@@ -42,7 +42,10 @@ type CollaborationContextType = {
   name: string;
   yjsDocMap: Map<string, Doc>;
 };
-export type ProviderFactory = (id: string, yjsDocMap: Map<string, Doc>) => Provider;
+export type ProviderFactory = (
+  id: string,
+  yjsDocMap: Map<string, Doc>,
+) => Provider;
 export function CollaborationPlugin(arg0: {
   id: string;
   providerFactory: ProviderFactory;

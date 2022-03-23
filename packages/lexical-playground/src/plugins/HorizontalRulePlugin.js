@@ -20,31 +20,27 @@ export default function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerListener(
-      'command',
-      (type) => {
-        if (type === 'insertHorizontalRule') {
-          const selection = $getSelection();
-          if (!$isRangeSelection(selection)) {
-            return false;
-          }
-
-          const focusNode = selection.focus.getNode();
-          if (focusNode !== null) {
-            const horizontalRuleNode = $createHorizontalRuleNode();
-            selection.insertParagraph();
-            selection.focus
-              .getNode()
-              .getTopLevelElementOrThrow()
-              .insertBefore(horizontalRuleNode);
-          }
-
-          return true;
+    return editor.registerCommandListener((type) => {
+      if (type === 'insertHorizontalRule') {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
         }
-        return false;
-      },
-      EditorPriority,
-    );
+
+        const focusNode = selection.focus.getNode();
+        if (focusNode !== null) {
+          const horizontalRuleNode = $createHorizontalRuleNode();
+          selection.insertParagraph();
+          selection.focus
+            .getNode()
+            .getTopLevelElementOrThrow()
+            .insertBefore(horizontalRuleNode);
+        }
+
+        return true;
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
 
   return null;

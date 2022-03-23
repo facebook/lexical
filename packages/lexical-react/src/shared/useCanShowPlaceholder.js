@@ -23,7 +23,7 @@ export default function useLexicalCanShowPlaceholder(
   );
 
   useLayoutEffect(() => {
-    return editor.registerListener('update', ({editorState}) => {
+    return editor.registerUpdateListener(({editorState}) => {
       const isComposing = editor.isComposing();
       const currentCanShowPlaceholder = editorState.read(
         $canShowPlaceholderCurry(isComposing),

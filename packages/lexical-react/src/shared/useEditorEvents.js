@@ -57,8 +57,7 @@ export default function useEditorEvents(
       });
     }
 
-    return editor.registerListener(
-      'root',
+    return editor.registerRootListener(
       (
         rootElement: null | HTMLElement,
         prevRootElement: null | HTMLElement,

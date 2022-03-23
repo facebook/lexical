@@ -51,7 +51,7 @@ function useTypeahead(editor: LexicalEditor): void {
         'AutocompletePlugin: TypeaheadNode not registered on editor',
       );
     }
-    return editor.registerListener('textcontent', (_text) => {
+    return editor.registerTextContentListener((_text) => {
       setText(_text);
     });
   }, [editor]);
@@ -153,7 +153,7 @@ function useTypeahead(editor: LexicalEditor): void {
 
   // Rerender on editor updates
   useEffect(() => {
-    return editor.registerListener('update', ({editorState}) => {
+    return editor.registerUpdateListener(({editorState}) => {
       editorState.read(() => {
         const typeaheadNode = $getRoot()
           .getAllTextNodes(true)

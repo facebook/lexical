@@ -142,103 +142,30 @@ export function applyTableHandlers(
   );
 
   tableSelection.listenersToRemove.add(
-    editor.registerListener(
-      'command',
-      (type, payload) => {
-        const selection = $getSelection();
+    editor.registerCommandListener((type, payload) => {
+      const selection = $getSelection();
 
-        if (
-          type === 'keyArrowDown' ||
-          type === 'keyArrowUp' ||
-          type === 'keyArrowLeft' ||
-          type === 'keyArrowRight'
-        ) {
-          const event: KeyboardEvent = payload;
+      if (
+        type === 'keyArrowDown' ||
+        type === 'keyArrowUp' ||
+        type === 'keyArrowLeft' ||
+        type === 'keyArrowRight'
+      ) {
+        const event: KeyboardEvent = payload;
 
-          const direction = {
-            keyArrowDown: 'down',
-            keyArrowLeft: 'backward',
-            keyArrowRight: 'forward',
-            keyArrowUp: 'up',
-          }[type];
+        const direction = {
+          keyArrowDown: 'down',
+          keyArrowLeft: 'backward',
+          keyArrowRight: 'forward',
+          keyArrowUp: 'up',
+        }[type];
 
-          if ($isRangeSelection(selection)) {
-            if (selection.isCollapsed()) {
-              const tableCellNode = $findMatchingParent(
-                selection.anchor.getNode(),
-                (n) => $isTableCellNode(n),
-              );
-
-              if (!$isTableCellNode(tableCellNode)) {
-                return false;
-              }
-
-              const currentCords = tableNode.getCordsFromCellNode(
-                tableCellNode,
-                tableSelection.grid,
-              );
-              const elementParentNode = $findMatchingParent(
-                selection.anchor.getNode(),
-                (n) => $isElementNode(n),
-              );
-
-              if (elementParentNode == null) {
-                throw new Error('Expected BlockNode Parent');
-              }
-
-              const firstChild = tableCellNode.getFirstChild();
-              const lastChild = tableCellNode.getLastChild();
-
-              const isSelectionInFirstBlock =
-                (firstChild && elementParentNode.isParentOf(firstChild)) ||
-                elementParentNode === firstChild;
-
-              const isSelectionInLastBlock =
-                (lastChild && elementParentNode.isParentOf(lastChild)) ||
-                elementParentNode === lastChild;
-
-              if (
-                (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
-                (type === 'keyArrowDown' && isSelectionInLastBlock) ||
-                (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
-                (type === 'keyArrowRight' &&
-                  selection.anchor.offset ===
-                    selection.anchor.getNode().getTextContentSize())
-              ) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                event.stopPropagation();
-
-                // Start Selection
-                if (event.shiftKey) {
-                  tableSelection.setAnchorCellForSelection(
-                    tableNode.getCellFromCordsOrThrow(
-                      currentCords.x,
-                      currentCords.y,
-                      tableSelection.grid,
-                    ),
-                  );
-
-                  return adjustFocusNodeInDirection(
-                    tableSelection,
-                    tableNode,
-                    currentCords.x,
-                    currentCords.y,
-                    direction,
-                  );
-                }
-
-                return selectGridNodeInDirection(
-                  tableSelection,
-                  tableNode,
-                  currentCords.x,
-                  currentCords.y,
-                  direction,
-                );
-              }
-            }
-          } else if ($isGridSelection(selection) && event.shiftKey) {
-            const tableCellNode = selection.focus.getNode();
+        if ($isRangeSelection(selection)) {
+          if (selection.isCollapsed()) {
+            const tableCellNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isTableCellNode(n),
+            );
 
             if (!$isTableCellNode(tableCellNode)) {
               return false;
@@ -248,83 +175,152 @@ export function applyTableHandlers(
               tableCellNode,
               tableSelection.grid,
             );
-
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            event.stopPropagation();
-
-            return adjustFocusNodeInDirection(
-              tableSelection,
-              tableNode,
-              currentCords.x,
-              currentCords.y,
-              direction,
+            const elementParentNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isElementNode(n),
             );
-          }
-        }
 
-        if ($isGridSelection(selection)) {
-          if (type === 'deleteCharacter' || type === 'keyBackspace') {
-            const event: KeyboardEvent = payload;
-            event.preventDefault();
-            event.stopPropagation();
+            if (elementParentNode == null) {
+              throw new Error('Expected BlockNode Parent');
+            }
 
-            tableSelection.clearText();
-            return true;
-          } else if (type === 'formatText') {
-            tableSelection.formatCells(payload);
-            return true;
-          } else if (type === 'insertText') {
-            tableSelection.clearHighlight();
-            return false;
+            const firstChild = tableCellNode.getFirstChild();
+            const lastChild = tableCellNode.getLastChild();
+
+            const isSelectionInFirstBlock =
+              (firstChild && elementParentNode.isParentOf(firstChild)) ||
+              elementParentNode === firstChild;
+
+            const isSelectionInLastBlock =
+              (lastChild && elementParentNode.isParentOf(lastChild)) ||
+              elementParentNode === lastChild;
+
+            if (
+              (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
+              (type === 'keyArrowDown' && isSelectionInLastBlock) ||
+              (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
+              (type === 'keyArrowRight' &&
+                selection.anchor.offset ===
+                  selection.anchor.getNode().getTextContentSize())
+            ) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              event.stopPropagation();
+
+              // Start Selection
+              if (event.shiftKey) {
+                tableSelection.setAnchorCellForSelection(
+                  tableNode.getCellFromCordsOrThrow(
+                    currentCords.x,
+                    currentCords.y,
+                    tableSelection.grid,
+                  ),
+                );
+
+                return adjustFocusNodeInDirection(
+                  tableSelection,
+                  tableNode,
+                  currentCords.x,
+                  currentCords.y,
+                  direction,
+                );
+              }
+
+              return selectGridNodeInDirection(
+                tableSelection,
+                tableNode,
+                currentCords.x,
+                currentCords.y,
+                direction,
+              );
+            }
           }
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
-          );
+        } else if ($isGridSelection(selection) && event.shiftKey) {
+          const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
             return false;
           }
 
-          if (type === 'deleteCharacter') {
-            if (
-              selection.isCollapsed() &&
-              selection.anchor.offset === 0 &&
-              selection.anchor.getNode().getPreviousSiblings().length === 0
-            ) {
-              return true;
-            }
-          }
+          const currentCords = tableNode.getCordsFromCellNode(
+            tableCellNode,
+            tableSelection.grid,
+          );
 
-          if (type === 'keyTab') {
-            const event: KeyboardEvent = payload;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          event.stopPropagation();
 
-            if (selection.isCollapsed()) {
-              const currentCords = tableNode.getCordsFromCellNode(
-                tableCellNode,
-                tableSelection.grid,
-              );
-              event.preventDefault();
+          return adjustFocusNodeInDirection(
+            tableSelection,
+            tableNode,
+            currentCords.x,
+            currentCords.y,
+            direction,
+          );
+        }
+      }
 
-              selectGridNodeInDirection(
-                tableSelection,
-                tableNode,
-                currentCords.x,
-                currentCords.y,
-                !event.shiftKey && type === 'keyTab' ? 'forward' : 'backward',
-              );
+      if ($isGridSelection(selection)) {
+        if (type === 'deleteCharacter' || type === 'keyBackspace') {
+          const event: KeyboardEvent = payload;
+          event.preventDefault();
+          event.stopPropagation();
 
-              return true;
-            }
+          tableSelection.clearText();
+          return true;
+        } else if (type === 'formatText') {
+          tableSelection.formatCells(payload);
+          return true;
+        } else if (type === 'insertText') {
+          tableSelection.clearHighlight();
+          return false;
+        }
+      } else if ($isRangeSelection(selection)) {
+        const tableCellNode = $findMatchingParent(
+          selection.anchor.getNode(),
+          (n) => $isTableCellNode(n),
+        );
+
+        if (!$isTableCellNode(tableCellNode)) {
+          return false;
+        }
+
+        if (type === 'deleteCharacter') {
+          if (
+            selection.isCollapsed() &&
+            selection.anchor.offset === 0 &&
+            selection.anchor.getNode().getPreviousSiblings().length === 0
+          ) {
+            return true;
           }
         }
 
-        return false;
-      },
-      CriticalPriority,
-    ),
+        if (type === 'keyTab') {
+          const event: KeyboardEvent = payload;
+
+          if (selection.isCollapsed()) {
+            const currentCords = tableNode.getCordsFromCellNode(
+              tableCellNode,
+              tableSelection.grid,
+            );
+            event.preventDefault();
+
+            selectGridNodeInDirection(
+              tableSelection,
+              tableNode,
+              currentCords.x,
+              currentCords.y,
+              !event.shiftKey && type === 'keyTab' ? 'forward' : 'backward',
+            );
+
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }, CriticalPriority),
   );
 
   return tableSelection;

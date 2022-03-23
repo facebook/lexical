@@ -102,7 +102,8 @@ export default function LinkPreview({
           <Glimmer style={{width: '60%'}} index={1} />
           <Glimmer style={{width: '80%'}} index={2} />
         </>
-      }>
+      }
+    >
       <LinkPreviewContent url={url} />
     </Suspense>
   );

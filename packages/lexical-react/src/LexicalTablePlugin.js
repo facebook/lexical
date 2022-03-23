@@ -44,50 +44,46 @@ export default function TablePlugin(): React$Node {
         'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
       );
     }
-    return editor.registerListener(
-      'command',
-      (type, payload) => {
-        if (type === 'insertTable') {
-          const {columns, rows} = payload;
-          const selection = $getSelection();
-          if (!$isRangeSelection(selection)) {
-            return true;
-          }
-          const focus = selection.focus;
-          const focusNode = focus.getNode();
-
-          if (focusNode !== null) {
-            const tableNode = $createTableNodeWithDimensions(rows, columns);
-            if ($isRootNode(focusNode)) {
-              const target = focusNode.getChildAtIndex(focus.offset);
-              if (target !== null) {
-                target.insertBefore(tableNode);
-              } else {
-                focusNode.append(tableNode);
-              }
-              tableNode.insertBefore($createParagraphNode());
-            } else {
-              const topLevelNode = focusNode.getTopLevelElementOrThrow();
-              topLevelNode.insertAfter(tableNode);
-            }
-            tableNode.insertAfter($createParagraphNode());
-            const firstCell = tableNode
-              .getFirstChildOrThrow<ElementNode>()
-              .getFirstChildOrThrow<ElementNode>();
-            firstCell.select();
-          }
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'insertTable') {
+        const {columns, rows} = payload;
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
           return true;
         }
-        return false;
-      },
-      EditorPriority,
-    );
+        const focus = selection.focus;
+        const focusNode = focus.getNode();
+
+        if (focusNode !== null) {
+          const tableNode = $createTableNodeWithDimensions(rows, columns);
+          if ($isRootNode(focusNode)) {
+            const target = focusNode.getChildAtIndex(focus.offset);
+            if (target !== null) {
+              target.insertBefore(tableNode);
+            } else {
+              focusNode.append(tableNode);
+            }
+            tableNode.insertBefore($createParagraphNode());
+          } else {
+            const topLevelNode = focusNode.getTopLevelElementOrThrow();
+            topLevelNode.insertAfter(tableNode);
+          }
+          tableNode.insertAfter($createParagraphNode());
+          const firstCell = tableNode
+            .getFirstChildOrThrow<ElementNode>()
+            .getFirstChildOrThrow<ElementNode>();
+          firstCell.select();
+        }
+        return true;
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
 
   useEffect(() => {
     const tableSelections = new Map<NodeKey, TableSelection>();
 
-    return editor.registerListener('mutation', TableNode, (nodeMutations) => {
+    return editor.registerMutationListener(TableNode, (nodeMutations) => {
       for (const [nodeKey, mutation] of nodeMutations) {
         if (mutation === 'created') {
           editor.update(() => {

@@ -24,7 +24,7 @@ export default function useLexicalIsTextContentEmpty(
   );
 
   useLayoutEffect(() => {
-    return editor.registerListener('update', ({editorState}) => {
+    return editor.registerUpdateListener(({editorState}) => {
       const isComposing = editor.isComposing();
       const currentIsEmpty = editorState.read(
         $isRootTextContentEmptyCurry(isComposing, trim),

@@ -20,30 +20,26 @@ type Props = $ReadOnly<{
 export default function LexicalClearEditorPlugin({onClear}: Props): React$Node {
   const [editor] = useLexicalComposerContext();
   useLayoutEffect(() => {
-    return editor.registerListener(
-      'command',
-      (type, payload) => {
-        if (type === 'clearEditor') {
-          editor.update(() => {
-            if (onClear == null) {
-              const root = $getRoot();
-              const selection = $getSelection();
-              const paragraph = $createParagraphNode();
-              root.clear();
-              root.append(paragraph);
-              if (selection !== null) {
-                paragraph.select();
-              }
-            } else {
-              onClear();
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'clearEditor') {
+        editor.update(() => {
+          if (onClear == null) {
+            const root = $getRoot();
+            const selection = $getSelection();
+            const paragraph = $createParagraphNode();
+            root.clear();
+            root.append(paragraph);
+            if (selection !== null) {
+              paragraph.select();
             }
-          });
-          return true;
-        }
-        return false;
-      },
-      (0: CommandListenerEditorPriority),
-    );
+          } else {
+            onClear();
+          }
+        });
+        return true;
+      }
+      return false;
+    }, (0: CommandListenerEditorPriority));
   }, [editor, onClear]);
 
   return null;

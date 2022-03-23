@@ -277,7 +277,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   }
   // klass: Array<Class<LexicalNode>>
   // $FlowFixMe: use our declared type instead
-  const editor: editor = new BaseLexicalEditor(
+  const editor: editor = new LexicalEditor(
     editorState,
     parentEditor,
     registeredNodes,
@@ -299,12 +299,7 @@ export function createEditor<EditorContext>(editorConfig?: {
   return editor;
 }
 
-function getSelf(self: BaseLexicalEditor): LexicalEditor {
-  // $FlowFixMe: a hack to work around exporting a declaration
-  return ((self: any): LexicalEditor);
-}
-
-class BaseLexicalEditor {
+export class LexicalEditor {
   _parentEditor: null | LexicalEditor;
   _rootElement: null | HTMLElement;
   _editorState: EditorState;
@@ -389,81 +384,75 @@ class BaseLexicalEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  registerListener(
-    type: ListenerType,
-    arg1:
-      | UpdateListener
-      | DecoratorListener
-      | RootListener
-      | TextContentListener
-      | CommandListener
-      | ReadOnlyListener
-      | Class<LexicalNode>,
-    arg2: MutationListener | CommandListenerPriority,
+  registerUpdateListener(listener: UpdateListener): () => void {
+    const listenerSetOrMap = this._listeners.update;
+    listenerSetOrMap.add(listener);
+    return () => {
+      listenerSetOrMap.delete(listener);
+    };
+  }
+  registerReadOnlyListener(listener: ReadOnlyListener): () => void {
+    const listenerSetOrMap = this._listeners.readonly;
+    listenerSetOrMap.add(listener);
+    return () => {
+      listenerSetOrMap.delete(listener);
+    };
+  }
+  registerDecoratorListener(listener: DecoratorListener): () => void {
+    const listenerSetOrMap = this._listeners.decorator;
+    listenerSetOrMap.add(listener);
+    return () => {
+      listenerSetOrMap.delete(listener);
+    };
+  }
+  registerTextContentListener(listener: TextContentListener): () => void {
+    const listenerSetOrMap = this._listeners.textcontent;
+    listenerSetOrMap.add(listener);
+    return () => {
+      listenerSetOrMap.delete(listener);
+    };
+  }
+  registerRootListener(listener: RootListener): () => void {
+    const listenerSetOrMap = this._listeners.root;
+    listener(this._rootElement, null);
+    listenerSetOrMap.add(listener);
+    return () => {
+      listener(null, this._rootElement);
+      listenerSetOrMap.delete(listener);
+    };
+  }
+  registerCommandListener(
+    listener: CommandListener,
+    priority: CommandListenerPriority,
   ): () => void {
-    const listenerSetOrMap = this._listeners[type];
-    if (type === 'command') {
-      // $FlowFixMe: TODO refine
-      const listener: CommandListener = arg1;
-      // $FlowFixMe: TODO refine
-      const priority = (arg2: CommandListenerPriority);
-      if (priority === undefined) {
-        invariant(false, 'Listener for type "command" requires a "priority".');
-      }
-
-      // $FlowFixMe: unsure how to cast this
-      const commands: Array<Set<CommandListener>> = listenerSetOrMap;
-      const commandSet = commands[priority];
-      commandSet.add(listener);
-      return () => {
-        commandSet.delete(listener);
-      };
-    } else if (type === 'mutation') {
-      // $FlowFixMe: refine
-      const klass = (arg1: Class<LexicalNode>);
-      // $FlowFixMe: refine
-      const mutationListener = (arg2: MutationListener);
-      const registeredNode = this._nodes.get(klass.getType());
-      if (registeredNode === undefined) {
-        invariant(
-          false,
-          'Node %s has not been registered. Ensure node has been passed to createEditor.',
-          klass.name,
-        );
-      }
-      const mutations = this._listeners.mutation;
-      mutations.set(mutationListener, klass);
-      return () => {
-        mutations.delete(mutationListener);
-      };
-    } else {
-      const listener:
-        | UpdateListener
-        | DecoratorListener
-        | RootListener
-        | TextContentListener
-        | ReadOnlyListener
-        // $FlowFixMe: TODO refine
-        | CommandListener = arg1;
-      // $FlowFixMe: TODO refine this from the above types
-      listenerSetOrMap.add(listener);
-
-      const isRootType = type === 'root';
-      if (isRootType) {
-        // $FlowFixMe: TODO refine
-        const rootListener: RootListener = listener;
-        rootListener(this._rootElement, null);
-      }
-      return () => {
-        // $FlowFixMe: TODO refine this from the above types
-        listenerSetOrMap.delete(listener);
-        if (isRootType) {
-          // $FlowFixMe: TODO refine
-          const rootListener: RootListener = (listener: any);
-          rootListener(null, this._rootElement);
-        }
-      };
+    if (priority === undefined) {
+      invariant(false, 'Listener for type "command" requires a "priority".');
     }
+    const listenerSetOrMap = this._listeners.command;
+    const commands: Array<Set<CommandListener>> = listenerSetOrMap;
+    const commandSet = commands[priority];
+    commandSet.add(listener);
+    return () => {
+      commandSet.delete(listener);
+    };
+  }
+  registerMutationListener(
+    klass: Class<LexicalNode>,
+    listener: MutationListener,
+  ): () => void {
+    const registeredNode = this._nodes.get(klass.getType());
+    if (registeredNode === undefined) {
+      invariant(
+        false,
+        'Node %s has not been registered. Ensure node has been passed to createEditor.',
+        klass.name,
+      );
+    }
+    const mutations = this._listeners.mutation;
+    mutations.set(listener, klass);
+    return () => {
+      mutations.delete(listener);
+    };
   }
   addNodeTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T: LexicalNode> in the
@@ -482,7 +471,7 @@ class BaseLexicalEditor {
     }
     const transforms = registeredNode.transforms;
     transforms.add(listener);
-    markAllNodesAsDirty(getSelf(this), type);
+    markAllNodesAsDirty(this, type);
     return () => {
       transforms.delete(listener);
     };
@@ -498,7 +487,7 @@ class BaseLexicalEditor {
     return true;
   }
   execCommand(type: string, payload?: CommandPayload): boolean {
-    return triggerCommandListeners(getSelf(this), type, payload);
+    return triggerCommandListeners(this, type, payload);
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;
@@ -512,12 +501,7 @@ class BaseLexicalEditor {
       const pendingEditorState = this._pendingEditorState || this._editorState;
       this._rootElement = nextRootElement;
 
-      resetEditor(
-        getSelf(this),
-        prevRootElement,
-        nextRootElement,
-        pendingEditorState,
-      );
+      resetEditor(this, prevRootElement, nextRootElement, pendingEditorState);
       if (prevRootElement !== null) {
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
@@ -531,21 +515,15 @@ class BaseLexicalEditor {
         style.wordBreak = 'break-word';
         nextRootElement.setAttribute('data-lexical-editor', 'true');
         this._dirtyType = FULL_RECONCILE;
-        initMutationObserver(getSelf(this));
+        initMutationObserver(this);
         this._updateTags.add('history-merge');
-        commitPendingUpdates(getSelf(this));
+        commitPendingUpdates(this);
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
-          addRootElementEvents(nextRootElement, getSelf(this));
+          addRootElementEvents(nextRootElement, this);
         }
       }
-      triggerListeners(
-        'root',
-        getSelf(this),
-        false,
-        nextRootElement,
-        prevRootElement,
-      );
+      triggerListeners('root', this, false, nextRootElement, prevRootElement);
     }
   }
   getElementByKey(key: NodeKey): HTMLElement | null {
@@ -561,15 +539,15 @@ class BaseLexicalEditor {
         "setEditorState: the editor state is empty. Ensure the editor state's root node never becomes empty.",
       );
     }
-    flushRootMutations(getSelf(this));
+    flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
-    const tags = getSelf(this)._updateTags;
+    const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
       if (tag != null) {
         tags.add(tag);
       }
-      commitPendingUpdates(getSelf(this));
+      commitPendingUpdates(this);
     }
     this._pendingEditorState = editorState;
     this._dirtyType = FULL_RECONCILE;
@@ -577,13 +555,13 @@ class BaseLexicalEditor {
     if (tag != null) {
       tags.add(tag);
     }
-    commitPendingUpdates(getSelf(this));
+    commitPendingUpdates(this);
   }
   parseEditorState(stringifiedEditorState: string): EditorState {
-    return parseEditorState(stringifiedEditorState, getSelf(this));
+    return parseEditorState(stringifiedEditorState, this);
   }
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
-    updateEditor(getSelf(this), updateFn, options);
+    updateEditor(this, updateFn, options);
   }
   focus(callbackFn?: () => void): void {
     const rootElement = this._rootElement;
@@ -591,7 +569,7 @@ class BaseLexicalEditor {
       // This ensures that iOS does not trigger caps lock upon focus
       rootElement.setAttribute('autocapitalize', 'off');
       updateEditor(
-        getSelf(this),
+        this,
         () => {
           const selection = $getSelection();
           const root = $getRoot();
@@ -628,74 +606,6 @@ class BaseLexicalEditor {
   }
   setReadOnly(readOnly: boolean): void {
     this._readOnly = readOnly;
-    triggerListeners('readonly', getSelf(this), true, readOnly);
+    triggerListeners('readonly', this, true, readOnly);
   }
-}
-
-// We export this to make the registerListener types work properly.
-// For some reason, we can't do this via an interface without
-// Flow messing up the types. It's hacky, but it improves DX.
-declare export class LexicalEditor {
-  _cloneNotNeeded: Set<NodeKey>;
-  _compositionKey: null | NodeKey;
-  _config: EditorConfig<{...}>;
-  _decorators: {[NodeKey]: ReactNode};
-  _deferred: Array<() => void>;
-  _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
-  _dirtyLeaves: Set<NodeKey>;
-  _dirtyType: 0 | 1 | 2;
-  _editorState: EditorState;
-  _htmlConversions: DOMConversionCache;
-  _key: string;
-  _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _listeners: Listeners;
-  _nodes: RegisteredNodes;
-  _normalizedNodes: Set<NodeKey>;
-  _observer: null | MutationObserver;
-  _onError: ErrorHandler;
-  _parentEditor: null | LexicalEditor;
-  _pendingDecorators: null | {[NodeKey]: ReactNode};
-  _pendingEditorState: null | EditorState;
-  _readOnly: boolean;
-  _rootElement: null | HTMLElement;
-  _updates: Array<[() => void, void | EditorUpdateOptions]>;
-  _updateTags: Set<string>;
-  _updating: boolean;
-
-  addNodeTransform<T: LexicalNode>(
-    klass: Class<T>,
-    listener: Transform<T>,
-  ): () => void;
-  blur(): void;
-  execCommand(type: string, payload: CommandPayload): boolean;
-  focus(callbackFn?: () => void): void;
-  getDecorators(): {[NodeKey]: ReactNode};
-  getEditorState(): EditorState;
-  getElementByKey(key: NodeKey): null | HTMLElement;
-  getRootElement(): null | HTMLElement;
-  hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
-  isComposing(): boolean;
-  isReadOnly(): boolean;
-  parseEditorState(stringifiedEditorState: string): EditorState;
-  registerListener(type: 'update', listener: UpdateListener): () => void;
-  registerListener(type: 'root', listener: RootListener): () => void;
-  registerListener(type: 'decorator', listener: DecoratorListener): () => void;
-  registerListener(
-    type: 'textcontent',
-    listener: TextContentListener,
-  ): () => void;
-  registerListener(
-    type: 'mutation',
-    klass: Class<LexicalNode>,
-    listener: MutationListener,
-  ): () => void;
-  registerListener(
-    type: 'command',
-    listener: CommandListener,
-    priority: CommandListenerPriority,
-  ): () => void;
-  setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
-  setReadOnly(readOnly: boolean): void;
-  setRootElement(rootElement: null | HTMLElement): void;
-  update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
 }

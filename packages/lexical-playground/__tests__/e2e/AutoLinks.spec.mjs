@@ -14,12 +14,13 @@ import {
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
-  applyLink,
   assertHTML,
+  click,
   focusEditor,
   initialize,
   pasteFromClipboard,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('Auto Links', () => {
@@ -101,17 +102,19 @@ test.describe('Auto Links', () => {
     await page.keyboard.type('hm');
 
     await selectAll(page);
-    await applyLink(page);
+    await waitForSelector(page, '.link');
+    await click(page, '.link');
+
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://facebook.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hm</span></a></p>',
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hm</span></a></p>',
     );
     await moveLeft(page, 1);
     await moveRight(page, 1);
     await page.keyboard.type('ttps://facebook.co');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://facebook.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">https://facebook.com</span></a></p>',
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">https://facebook.com</span></a></p>',
     );
   });
 });

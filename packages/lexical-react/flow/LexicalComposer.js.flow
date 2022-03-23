@@ -12,7 +12,7 @@ import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 type Props = {
   initialConfig: $ReadOnly<{
     editor?: LexicalEditor | null,
-    isReadOnly?: boolean,
+    readOnly?: boolean,
     namespace?: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     theme?: EditorThemeClasses,

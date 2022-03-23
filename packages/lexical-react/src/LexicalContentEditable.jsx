@@ -66,7 +66,7 @@ export default function LexicalContentEditable({
   );
   useLayoutEffect(() => {
     setReadOnly(editor.isReadOnly());
-    return editor.registerListener('readonly', (currentIsReadOnly) => {
+    return editor.registerReadOnlyListener((currentIsReadOnly) => {
       setReadOnly(currentIsReadOnly);
     });
   }, [editor]);

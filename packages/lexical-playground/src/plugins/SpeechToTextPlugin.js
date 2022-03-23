@@ -95,17 +95,13 @@ function SpeechToTextPlugin(): null {
   }, [editor, isEnabled, report]);
 
   useEffect(() => {
-    return editor.registerListener(
-      'command',
-      (type, payload: boolean) => {
-        if (type === 'speechToText') {
-          setIsEnabled(payload);
-          return true;
-        }
-        return false;
-      },
-      EditorPriority,
-    );
+    return editor.registerCommandListener((type, payload: boolean) => {
+      if (type === 'speechToText') {
+        setIsEnabled(payload);
+        return true;
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
 
   return null;

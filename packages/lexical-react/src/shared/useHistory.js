@@ -390,8 +390,8 @@ export function useHistory(
     };
 
     return withSubscriptions(
-      editor.registerListener('command', applyCommand, EditorPriority),
-      editor.registerListener('update', applyChange),
+      editor.registerCommandListener(applyCommand, EditorPriority),
+      editor.registerUpdateListener(applyChange),
     );
   }, [clearHistory, delay, editor, historyState]);
 }

@@ -64,27 +64,23 @@ function VideoPlugin(): React$Node {
 
   useEffect(() => {
     // Similar with command listener, which returns unlisten callback
-    const removeListener = editor.registerListener(
-      'command',
-      (type, payload) => {
-        // Adding custom command that will be handled by this plugin
-        if (type === 'insertVideo') {
-          editor.update(() => {
-            const selection = $getSelection();
-            if (selection !== null) {
-              const url: string = payload;
-              selection.insertNodes([$createVideoNode(url)]);
-            }
-          });
+    const removeListener = editor.registerCommandListener((type, payload) => {
+      // Adding custom command that will be handled by this plugin
+      if (type === 'insertVideo') {
+        editor.update(() => {
+          const selection = $getSelection();
+          if (selection !== null) {
+            const url: string = payload;
+            selection.insertNodes([$createVideoNode(url)]);
+          }
+        });
 
-          // Returning true indicates that command is handled and no further propagation is required
-          return true;
-        }
+        // Returning true indicates that command is handled and no further propagation is required
+        return true;
+      }
 
-        return false;
-      },
-      0,
-    );
+      return false;
+    }, 0);
 
     return () => {
       removeListener();

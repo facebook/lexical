@@ -24,25 +24,21 @@ export default function PollPlugin(): React$Node {
       throw new Error('PollPlugin: PollNode not registered on editor');
     }
 
-    return editor.registerListener(
-      'command',
-      (type, payload) => {
-        if (type === 'insertPoll') {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const question: string = payload;
-            const pollNode = $createPollNode(question);
-            if ($isRootNode(selection.anchor.getNode())) {
-              selection.insertParagraph();
-            }
-            selection.insertNodes([pollNode]);
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'insertPoll') {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const question: string = payload;
+          const pollNode = $createPollNode(question);
+          if ($isRootNode(selection.anchor.getNode())) {
+            selection.insertParagraph();
           }
-          return true;
+          selection.insertNodes([pollNode]);
         }
-        return false;
-      },
-      EditorPriority,
-    );
+        return true;
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
   return null;
 }

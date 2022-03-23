@@ -27,21 +27,17 @@ export default function ExcalidrawPlugin(): React$Node {
       );
     }
 
-    return editor.registerListener(
-      'command',
-      (type) => {
-        if (type === 'insertExcalidraw') {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const excalidrawNode = $createExcalidrawNode();
-            selection.insertNodes([excalidrawNode]);
-          }
-          return true;
+    return editor.registerCommandListener((type) => {
+      if (type === 'insertExcalidraw') {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const excalidrawNode = $createExcalidrawNode();
+          selection.insertNodes([excalidrawNode]);
         }
-        return false;
-      },
-      EditorPriority,
-    );
+        return true;
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
   return null;
 }

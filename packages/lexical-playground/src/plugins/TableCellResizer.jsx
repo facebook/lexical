@@ -288,32 +288,32 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
           backgroundColor: 'none',
           cursor: 'row-resize',
           height: '10px',
-          left: `${left}px`,
-          top: `${top + height - 10}px`,
+          left: `${window.pageXOffset + left}px`,
+          top: `${window.pageYOffset + top + height - 10}px`,
           width: `${width}px`,
         },
         left: {
           backgroundColor: 'none',
           cursor: 'col-resize',
           height: `${height}px`,
-          left: `${left}px`,
-          top: `${top}px`,
+          left: `${window.pageXOffset + left}px`,
+          top: `${window.pageYOffset + top}px`,
           width: '10px',
         },
         right: {
           backgroundColor: 'none',
           cursor: 'col-resize',
           height: `${height}px`,
-          left: `${left + width - 10}px`,
-          top: `${top}px`,
+          left: `${window.pageXOffset + left + width - 10}px`,
+          top: `${window.pageYOffset + top}px`,
           width: '10px',
         },
         top: {
           backgroundColor: 'none',
           cursor: 'row-resize',
           height: '10px',
-          left: `${left}px`,
-          top: `${top}px`,
+          left: `${window.pageXOffset + left}px`,
+          top: `${window.pageYOffset + top}px`,
           width: `${width}px`,
         },
       };
@@ -322,13 +322,21 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
 
       if (draggingDirection && mouseCurrentPos && tableRect) {
         if (isHeightChanging(draggingDirection)) {
-          styles[draggingDirection].left = `${tableRect.left}px`;
-          styles[draggingDirection].top = `${mouseCurrentPos.y}px`;
+          styles[draggingDirection].left = `${
+            window.pageXOffset + tableRect.left
+          }px`;
+          styles[draggingDirection].top = `${
+            window.pageYOffset + mouseCurrentPos.y
+          }px`;
           styles[draggingDirection].height = '3px';
           styles[draggingDirection].width = `${tableRect.width}px`;
         } else {
-          styles[draggingDirection].top = `${tableRect.top}px`;
-          styles[draggingDirection].left = `${mouseCurrentPos.x}px`;
+          styles[draggingDirection].top = `${
+            window.pageYOffset + tableRect.top
+          }px`;
+          styles[draggingDirection].left = `${
+            window.pageXOffset + mouseCurrentPos.x
+          }px`;
           styles[draggingDirection].width = '3px';
           styles[draggingDirection].height = `${tableRect.height}px`;
         }

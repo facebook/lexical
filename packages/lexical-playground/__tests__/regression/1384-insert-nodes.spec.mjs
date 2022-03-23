@@ -13,29 +13,33 @@ import {
   focusEditor,
   initialize,
   pasteFromClipboard,
-  test
+  test,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #1384', () => {
-  test.beforeEach(({isCollab, page }) => initialize({ isCollab, page }));
-    test(
-      `Properly pastes in code blocks`,
-      async ({ page, isPlainText, isCollab }) => {
-        test.skip(isPlainText || isCollab);
-        await focusEditor(page);
-        await page.keyboard.type('``` alert(1);');
-        await page.keyboard.press('Enter');
-        await page.keyboard.type('alert(2);');
-        await page.keyboard.press('Enter');
-        await page.keyboard.type('alert(3);');
-        await page.keyboard.press('ArrowUp');
-        await page.keyboard.press('ArrowUp');
-        await page.keyboard.press('ArrowLeft');
-        await selectCharacters(page, 'left', 8);
-        const clipboard = await copyToClipboard(page);
-        await page.keyboard.press('ArrowLeft');
-        await pasteFromClipboard(page, clipboard);
-        await assertHTML(page, `<codespellcheck="false"dir="ltr"><spandata-lexical-text="true">alert</span><spandata-lexical-text="true">(</span><spandata-lexical-text="true">1</span><spandata-lexical-text="true">)</span><spandata-lexical-text="true">alert</span><spandata-lexical-text="true">(</span><spandata-lexical-text="true">1</span><spandata-lexical-text="true">)</span><spandata-lexical-text="true">;</span><br/><spandata-lexical-text="true">alert</span><spandata-lexical-text="true">(</span><spandata-lexical-text="true">2</span><spandata-lexical-text="true">)</span><spandata-lexical-text="true">;</span><br/><spandata-lexical-text="true">alert</span><spandata-lexical-text="true">(</span><spandata-lexical-text="true">3</span><spandata-lexical-text="true">)</span><spandata-lexical-text="true">;</span></code>`);
-      },
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test(`Properly pastes in code blocks`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('``` alert(1);');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('alert(2);');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('alert(3);');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowLeft');
+    await selectCharacters(page, 'left', 8);
+    const clipboard = await copyToClipboard(page);
+    await page.keyboard.press('ArrowLeft');
+    await pasteFromClipboard(page, clipboard);
+    await assertHTML(
+      page,
+      `<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">2</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">3</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>`,
     );
+  });
 });

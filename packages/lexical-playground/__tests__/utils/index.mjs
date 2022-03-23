@@ -7,8 +7,9 @@
  * @flow strict
  */
 
-import { expect,test as base } from '@playwright/test';
+import {expect, test as base} from '@playwright/test';
 import jestSnapshot from 'jest-snapshot';
+import {JSDOM} from 'jsdom';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
@@ -22,14 +23,17 @@ export const E2E_BROWSER = process.env.E2E_BROWSER;
 export const IS_MAC = process.platform === 'darwin';
 export const IS_WINDOWS = process.platform === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
-export const IS_COLLAB = process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
+export const IS_COLLAB =
+  process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 
-export async function initialize({ page, isCollab, isCharLimit, isCharLimitUtf8 }) {
-  page.exposeFunction('expectToBeEqual', (actual, expected) => {
-    return expect(actual).toEqual(expected);
-  });
+export async function initialize({
+  page,
+  isCollab,
+  isCharLimit,
+  isCharLimitUtf8,
+}) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.disableBeforeInput =
@@ -56,10 +60,10 @@ export const test = base.extend({
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
   isPlainText: IS_PLAIN_TEXT,
-  isRichText: IS_RICH_TEXT
+  isRichText: IS_RICH_TEXT,
 });
 
-export { expect } from '@playwright/test';
+export {expect} from '@playwright/test';
 
 function appSettingsToURLParams(appSettings) {
   const params = new URLSearchParams();
@@ -84,24 +88,12 @@ export async function clickSelectors(page, selectors) {
 
 async function assertHTMLOnPageOrFrame(page, pageOrFrame, expectedHtml) {
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
-  await page.evaluate(async (args) => {
-    const actualHtmlString = args.actualHtml;
-    const expectedHtmlString = args.expectedHtml;
-    // Assert HTML of the editor matches the given html
-    if (expectedHtmlString === '') {
-      // eslint-disable-next-line no-console
-      console.log('Output HTML:\n\n' + actualHtml);
-      throw new Error('Empty HTML assertion!');
-    }
-    // HTML might differ between browsers, so we use attach
-    // outputs to an element using JSDOM to normalize and prettify
-    // the output.
-    const actual = document.createElement('div');
-    actual.innerHTML = actualHtmlString;
-    const expected = document.createElement('div');
-    expected.innerHTML = expectedHtmlString;
-    await window.expectToBeEqual(actual, expected);
-  }, {actualHtml, expectedHtml});
+  const {document} = new JSDOM().window;
+  const actual = document.createElement('div');
+  actual.innerHTML = actualHtml;
+  const expected = document.createElement('div');
+  expected.innerHTML = expectedHtml;
+  expect(actual).toEqual(expected);
 }
 
 export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
@@ -326,7 +318,7 @@ export async function sleep(delay) {
 export async function focusEditor(page, parentSelector = '.editor-shell') {
   const selector = `${parentSelector} div[contenteditable="true"]`;
   if (IS_COLLAB) {
-    await page.waitForSelector('iframe[name="left"]')
+    await page.waitForSelector('iframe[name="left"]');
     const leftFrame = page.frame('left');
     if ((await leftFrame.$$('.loading').length) !== 0) {
       await leftFrame.waitForSelector('.loading', {

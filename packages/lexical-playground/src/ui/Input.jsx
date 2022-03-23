@@ -11,21 +11,26 @@ import './Input.css';
 
 import * as React from 'react';
 
+type Props = $ReadOnly<{
+  label: string,
+  onChange: (string) => void,
+  placeholder?: string,
+  value: string,
+}>;
+
 export default function Input({
   label,
   value,
   onChange,
-}: {
-  label: string,
-  onChange: (string) => void,
-  value: string,
-}): React$Node {
+  placeholder = '',
+}: Props): React$Node {
   return (
     <div className="Input__wrapper">
       <label className="Input__label">{label}</label>
       <input
         type="text"
         className="Input__input"
+        placeholder={placeholder}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);

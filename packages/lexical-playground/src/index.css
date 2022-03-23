@@ -346,6 +346,10 @@ i.poll {
   background-image: url(images/icons/card-checklist.svg);
 }
 
+i.tweet {
+  background-image: url(images/icons/tweet.svg);
+}
+
 i.left-align {
   background-image: url(images/icons/text-left.svg);
 }

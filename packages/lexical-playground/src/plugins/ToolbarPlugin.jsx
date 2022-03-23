@@ -288,6 +288,42 @@ function InsertPollDialog({
   );
 }
 
+const VALID_TWITTER_URL = /twitter.com\/[0-9a-zA-Z]{1,20}\/status\/([0-9]*)/g;
+
+function InsertTweetDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [text, setText] = useState('');
+
+  const onClick = () => {
+    const tweetID = text.split('status/')?.[1];
+    activeEditor.execCommand('insertTweet', tweetID);
+    onClose();
+  };
+
+  const isDisabled = text === '' || !text.match(VALID_TWITTER_URL);
+
+  return (
+    <>
+      <Input
+        label="Tweet URL"
+        placeholder="i.e. https://twitter.com/jack/status/20"
+        onChange={setText}
+        value={text}
+      />
+      <div className="ToolbarPlugin__dialogActions">
+        <Button disabled={isDisabled} onClick={onClick}>
+          Confirm
+        </Button>
+      </div>
+    </>
+  );
+}
+
 function BlockOptionsDropdownList({
   editor,
   blockType,
@@ -848,6 +884,20 @@ export default function ToolbarPlugin(): React$Node {
             aria-label="Insert Poll"
           >
             <i className="format poll" />
+          </button>
+          <button
+            onClick={() => {
+              showModal('Insert Tweet', (onClose) => (
+                <InsertTweetDialog
+                  activeEditor={activeEditor}
+                  onClose={onClose}
+                />
+              ));
+            }}
+            className="toolbar-item"
+            aria-label="Insert tweet"
+          >
+            <i className="format tweet" />
           </button>
         </>
       )}

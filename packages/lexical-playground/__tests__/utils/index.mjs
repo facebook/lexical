@@ -434,6 +434,17 @@ export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
   await page.mouse.up();
 }
 
+export async function applyLink(page, url = 'facebook.com') {
+  await waitForSelector(page, '.link');
+  await click(page, '.link');
+  await waitForSelector(page, '.link-input');
+  await waitForSelector(page, '.link-edit');
+  await click(page, '.link-edit');
+  await focus(page, '.link-input');
+  await page.keyboard.type(url);
+  await page.keyboard.press('Enter');
+}
+
 expect.extend({
   async toMatchEditorInlineSnapshot(pageOrOptions, ...args) {
     // Setting error field allows jest to know where the matcher was called
@@ -525,7 +536,7 @@ function isElement(element) {
 // Wrapper around HTML string that is used as indicator for snapshot serializer
 // that it should use own formatter (below)
 class PrettyHTML {
-  constructor(html, {ignoreClasses, ignoreInlineStyles}) {
+  constructor(html, {ignoreClasses, ignoreInlineStyles} = {}) {
     this.html = html;
     this.ignoreClasses = ignoreClasses;
     this.ignoreInlineStyles = ignoreInlineStyles;

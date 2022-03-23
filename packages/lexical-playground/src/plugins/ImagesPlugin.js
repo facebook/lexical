@@ -26,7 +26,7 @@ export default function ImagesPlugin(): React$Node {
       throw new Error('ImagesPlugin: ImageNode not registered on editor');
     }
 
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type) => {
         if (type === 'insertImage') {

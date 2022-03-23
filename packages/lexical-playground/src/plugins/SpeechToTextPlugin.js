@@ -95,7 +95,7 @@ function SpeechToTextPlugin(): null {
   }, [editor, isEnabled, report]);
 
   useEffect(() => {
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload: boolean) => {
         if (type === 'speechToText') {

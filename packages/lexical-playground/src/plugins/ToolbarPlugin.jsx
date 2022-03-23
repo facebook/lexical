@@ -164,13 +164,13 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
 
   useEffect(() => {
     return withSubscriptions(
-      editor.addListener('update', ({editorState}) => {
+      editor.registerListener('update', ({editorState}) => {
         editorState.read(() => {
           updateLinkEditor();
         });
       }),
 
-      editor.addListener(
+      editor.registerListener(
         'command',
         (type) => {
           if (type === 'selectionChange') {
@@ -562,7 +562,7 @@ export default function ToolbarPlugin(): React$Node {
   }, [activeEditor]);
 
   useEffect(() => {
-    return activeEditor.addListener('update', ({editorState}) => {
+    return activeEditor.registerListener('update', ({editorState}) => {
       editorState.read(() => {
         updateToolbar();
       });
@@ -570,7 +570,7 @@ export default function ToolbarPlugin(): React$Node {
   }, [activeEditor, updateToolbar]);
 
   useEffect(() => {
-    const removeCommandListener = editor.addListener(
+    const removeCommandListener = editor.registerListener(
       'command',
       (type, payload, _editor) => {
         if (type === 'selectionChange') {

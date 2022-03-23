@@ -142,7 +142,7 @@ export function applyTableHandlers(
   );
 
   tableSelection.listenersToRemove.add(
-    editor.addListener(
+    editor.registerListener(
       'command',
       (type, payload) => {
         const selection = $getSelection();

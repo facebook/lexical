@@ -44,7 +44,7 @@ export default function TablePlugin(): React$Node {
         'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
       );
     }
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload) => {
         if (type === 'insertTable') {
@@ -87,7 +87,7 @@ export default function TablePlugin(): React$Node {
   useEffect(() => {
     const tableSelections = new Map<NodeKey, TableSelection>();
 
-    return editor.addListener('mutation', TableNode, (nodeMutations) => {
+    return editor.registerListener('mutation', TableNode, (nodeMutations) => {
       for (const [nodeKey, mutation] of nodeMutations) {
         if (mutation === 'created') {
           editor.update(() => {

@@ -309,13 +309,13 @@ function ImageComponent({
   const [selection, setSelection] = useState(null);
 
   useEffect(() => {
-    return editor.addListener('update', ({editorState}) => {
+    return editor.registerListener('update', ({editorState}) => {
       setSelection(editorState.read(() => $getSelection()));
     });
   }, [editor]);
 
   useEffect(() => {
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload) => {
         if (type === 'click') {

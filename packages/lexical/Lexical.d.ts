@@ -82,17 +82,20 @@ export declare class LexicalEditor {
   _key: string;
   _readOnly: boolean;
   isComposing(): boolean;
-  addListener(type: 'update', listener: UpdateListener): () => void;
-  addListener(type: 'root', listener: RootListener): () => void;
-  addListener(type: 'decorator', listener: DecoratorListener): () => void;
-  addListener(type: 'textcontent', listener: TextContentListener): () => void;
-  addListener(
+  registerListener(type: 'update', listener: UpdateListener): () => void;
+  registerListener(type: 'root', listener: RootListener): () => void;
+  registerListener(type: 'decorator', listener: DecoratorListener): () => void;
+  registerListener(
+    type: 'textcontent',
+    listener: TextContentListener,
+  ): () => void;
+  registerListener(
     type: 'command',
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
-  addListener(type: 'readonly', listener: ReadOnlyListener): () => void;
-  addListener(
+  registerListener(type: 'readonly', listener: ReadOnlyListener): () => void;
+  registerListener(
     type: 'mutation',
     klass: Class<LexicalNode>,
     listener: MutationListener,

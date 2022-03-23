@@ -117,7 +117,7 @@ function StickyComponent({
       }
     });
 
-    const removeRootListener = editor.addListener(
+    const removeRootListener = editor.registerListener(
       'root',
       (nextRootElem, prevRootElem) => {
         if (prevRootElem !== null) {
@@ -236,8 +236,7 @@ function StickyComponent({
           document.addEventListener('pointerup', handlePointerUp);
           event.preventDefault();
         }
-      }}
-    >
+      }}>
       <button onClick={handleDelete} className="delete">
         X
       </button>
@@ -248,8 +247,7 @@ function StickyComponent({
         initialConfig={{
           decoratorEditor: decoratorEditor,
           theme: StickyEditorTheme,
-        }}
-      >
+        }}>
         {isCollab ? (
           <CollaborationPlugin
             id={decoratorEditor.id}

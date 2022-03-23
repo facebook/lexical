@@ -81,7 +81,7 @@ export default function CodeHighlightPlugin(): React$Node {
       editor.addNodeTransform(CodeHighlightNode, (node) =>
         textNodeTransform(node, editor),
       ),
-      editor.addListener(
+      editor.registerListener(
         'command',
         (type, payload): boolean =>
           type === 'indentContent' || type === 'outdentContent'

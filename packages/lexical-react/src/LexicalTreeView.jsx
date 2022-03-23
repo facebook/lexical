@@ -70,7 +70,7 @@ export default function TreeView({
   const [isPlaying, setIsPlaying] = useState(false);
   useEffect(() => {
     setContent(generateContent(editor.getEditorState()));
-    return editor.addListener('update', ({editorState}) => {
+    return editor.registerListener('update', ({editorState}) => {
       const compositionKey = editor._compositionKey;
       const treeText = generateContent(editor.getEditorState());
       const compositionText =

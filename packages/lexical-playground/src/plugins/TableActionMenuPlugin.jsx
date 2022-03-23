@@ -57,16 +57,20 @@ function TableActionMenu({
   });
 
   useEffect(() => {
-    return editor.addListener('mutation', TableCellNode, (nodeMutations) => {
-      const nodeUpdated =
-        nodeMutations.get(tableCellNode.getKey()) === 'updated';
+    return editor.registerListener(
+      'mutation',
+      TableCellNode,
+      (nodeMutations) => {
+        const nodeUpdated =
+          nodeMutations.get(tableCellNode.getKey()) === 'updated';
 
-      if (nodeUpdated) {
-        editor.getEditorState().read(() => {
-          updateTableCellNode(tableCellNode.getLatest());
-        });
-      }
-    });
+        if (nodeUpdated) {
+          editor.getEditorState().read(() => {
+            updateTableCellNode(tableCellNode.getLatest());
+          });
+        }
+      },
+    );
   }, [editor, tableCellNode]);
 
   useEffect(() => {
@@ -459,7 +463,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
   }, [editor]);
 
   useEffect(() => {
-    return editor.addListener('update', () => {
+    return editor.registerListener('update', () => {
       editor.getEditorState().read(() => {
         moveMenu();
       });

@@ -34,7 +34,7 @@ export default function ActionsPlugins({
   const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {
-    return editor.addListener(
+    return editor.registerListener(
       'command',
       (type, payload) => {
         if (type === 'readOnly') {

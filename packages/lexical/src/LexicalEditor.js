@@ -389,7 +389,7 @@ class BaseLexicalEditor {
   isComposing(): boolean {
     return this._compositionKey != null;
   }
-  addListener(
+  registerListener(
     type: ListenerType,
     arg1:
       | UpdateListener
@@ -632,7 +632,7 @@ class BaseLexicalEditor {
   }
 }
 
-// We export this to make the addListener types work properly.
+// We export this to make the registerListener types work properly.
 // For some reason, we can't do this via an interface without
 // Flow messing up the types. It's hacky, but it improves DX.
 declare export class LexicalEditor {
@@ -662,20 +662,6 @@ declare export class LexicalEditor {
   _updateTags: Set<string>;
   _updating: boolean;
 
-  addListener(type: 'update', listener: UpdateListener): () => void;
-  addListener(type: 'root', listener: RootListener): () => void;
-  addListener(type: 'decorator', listener: DecoratorListener): () => void;
-  addListener(type: 'textcontent', listener: TextContentListener): () => void;
-  addListener(
-    type: 'mutation',
-    klass: Class<LexicalNode>,
-    listener: MutationListener,
-  ): () => void;
-  addListener(
-    type: 'command',
-    listener: CommandListener,
-    priority: CommandListenerPriority,
-  ): () => void;
   addNodeTransform<T: LexicalNode>(
     klass: Class<T>,
     listener: Transform<T>,
@@ -691,6 +677,23 @@ declare export class LexicalEditor {
   isComposing(): boolean;
   isReadOnly(): boolean;
   parseEditorState(stringifiedEditorState: string): EditorState;
+  registerListener(type: 'update', listener: UpdateListener): () => void;
+  registerListener(type: 'root', listener: RootListener): () => void;
+  registerListener(type: 'decorator', listener: DecoratorListener): () => void;
+  registerListener(
+    type: 'textcontent',
+    listener: TextContentListener,
+  ): () => void;
+  registerListener(
+    type: 'mutation',
+    klass: Class<LexicalNode>,
+    listener: MutationListener,
+  ): () => void;
+  registerListener(
+    type: 'command',
+    listener: CommandListener,
+    priority: CommandListenerPriority,
+  ): () => void;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
   setReadOnly(readOnly: boolean): void;
   setRootElement(rootElement: null | HTMLElement): void;

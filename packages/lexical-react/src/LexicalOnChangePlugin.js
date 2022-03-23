@@ -24,7 +24,7 @@ export default function OnChangePlugin({
   const [editor] = useLexicalComposerContext();
   useLayoutEffect(() => {
     if (onChange) {
-      return editor.addListener(
+      return editor.registerListener(
         'update',
         ({editorState, dirtyElements, dirtyLeaves, prevEditorState}) => {
           if (

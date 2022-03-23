@@ -25,30 +25,26 @@ export default function TwitterPlugin(): React$Node {
       throw new Error('TwitterPlugin: TweetNode not registered on editor');
     }
 
-    return editor.addListener(
-      'command',
-      (type, payload) => {
-        if (type === 'insertTweet') {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const focusNode = selection.focus.getNode();
-            if (focusNode !== null) {
-              const tweetNode = $createTweetNode(payload);
-              selection.focus
-                .getNode()
-                .getTopLevelElementOrThrow()
-                .insertAfter(tweetNode);
-              const paragraphNode = $createParagraphNode();
-              tweetNode.insertAfter(paragraphNode);
-              paragraphNode.select();
-            }
-            return true;
+    return editor.registerCommandListener((type, payload) => {
+      if (type === 'insertTweet') {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const focusNode = selection.focus.getNode();
+          if (focusNode !== null) {
+            const tweetNode = $createTweetNode(payload);
+            selection.focus
+              .getNode()
+              .getTopLevelElementOrThrow()
+              .insertAfter(tweetNode);
+            const paragraphNode = $createParagraphNode();
+            tweetNode.insertAfter(paragraphNode);
+            paragraphNode.select();
           }
+          return true;
         }
-        return false;
-      },
-      EditorPriority,
-    );
+      }
+      return false;
+    }, EditorPriority);
   }, [editor]);
   return null;
 }

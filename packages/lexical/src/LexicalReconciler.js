@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {
+ import type {
   EditorConfig,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
@@ -324,31 +324,38 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
       const classList = dom.classList;
       const theme = activeEditorConfig.theme;
 
+      let previousDirectionTheme =
+        previousDirection !== null ? theme[previousDirection] : undefined;
+      let nextDirectionTheme =
+        direction !== null ? theme[direction] : undefined;
+
+      // Remove the old theme classes if they exist
+      if (previousDirectionTheme !== undefined) {
+        if (typeof previousDirectionTheme === 'string') {
+          const classNamesArr = previousDirectionTheme.split(' ');
+          // $FlowFixMe: intentional
+          previousDirectionTheme = theme[previousDirection] = classNamesArr;
+        }
+        // $FlowFixMe: intentional
+        classList.remove(...previousDirectionTheme);
+      }
       if (
         direction === null ||
         (hasEmptyDirectionedTextContent && direction === 'ltr')
       ) {
+        // Remove direction
         dom.removeAttribute('dir');
-        let previousDirectionTheme = theme[previousDirection];
-        if (previousDirectionTheme !== undefined) {
-          if (typeof previousDirectionTheme === 'string') {
-            const classNamesArr = previousDirectionTheme.split(' ');
+      } else {
+        // Apply the new theme classes if they exist
+        if (nextDirectionTheme !== undefined) {
+          if (typeof nextDirectionTheme === 'string') {
+            const classNamesArr = nextDirectionTheme.split(' ');
             // $FlowFixMe: intentional
-            previousDirectionTheme = theme[previousDirection] = classNamesArr;
+            nextDirectionTheme = theme[direction] = classNamesArr;
           }
-          // $FlowFixMe: intentional
-          classList.remove(...previousDirectionTheme);
+          classList.add(...nextDirectionTheme);
         }
-      } else if (direction !== null) {
-        let directionTheme = theme[direction];
-        if (directionTheme !== undefined) {
-          if (typeof directionTheme === 'string') {
-            const classNamesArr = directionTheme.split(' ');
-            // $FlowFixMe: intentional
-            directionTheme = theme[previousDirection] = classNamesArr;
-          }
-          classList.add(...directionTheme);
-        }
+        // Update direction
         dom.dir = direction;
       }
       if (!activeEditorStateReadOnly) {

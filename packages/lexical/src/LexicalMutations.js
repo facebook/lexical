@@ -196,10 +196,7 @@ export function $flushMutations(
       // is Lexical's "current" editor state. This is basically like
       // an internal revert on the DOM.
       if (badDOMTargets.size > 0) {
-        const entries = Array.from(badDOMTargets.entries());
-        for (let i = 0; i < entries.length; i++) {
-          const [targetDOM, targetNode] = entries[i];
-
+        for (const [targetDOM, targetNode] of badDOMTargets) {
           if ($isElementNode(targetNode)) {
             const childKeys = targetNode.__children;
             let currentDOM = targetDOM.firstChild;

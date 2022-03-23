@@ -498,7 +498,10 @@ class BaseLexicalEditor {
     return true;
   }
   execCommand(type: string, payload?: CommandPayload): boolean {
-    return triggerCommandListeners(getSelf(this), type, payload);
+    console.time(type);
+    const res = triggerCommandListeners(getSelf(this), type, payload);
+    console.timeEnd(type);
+    return res;
   }
   getDecorators(): {[NodeKey]: ReactNode} {
     return this._decorators;

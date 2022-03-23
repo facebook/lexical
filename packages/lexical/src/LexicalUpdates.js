@@ -141,10 +141,7 @@ function $normalizeAllDirtyTextNodes(
 ): void {
   const dirtyLeaves = editor._dirtyLeaves;
   const nodeMap = editorState._nodeMap;
-  const dirtyLeavesLength = dirtyLeaves.size;
-  const dDirtyLeavesArr = Array.from(dirtyLeaves);
-  for (let i = 0; i < dirtyLeavesLength; i++) {
-    const nodeKey = dDirtyLeavesArr[i];
+  for (const nodeKey of dirtyLeaves) {
     const node = nodeMap.get(nodeKey);
     if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
       $normalizeTextNode(node);
@@ -183,9 +180,7 @@ function $applyAllTransforms(
     if (untransformedDirtyLeavesLength > 0) {
       // We leverage editor._dirtyLeaves to track the new dirty leaves after the transforms
       editor._dirtyLeaves = new Set();
-      const untransformedDirtyLeavesArr = Array.from(untransformedDirtyLeaves);
-      for (let i = 0; i < untransformedDirtyLeavesLength; i++) {
-        const nodeKey = untransformedDirtyLeavesArr[i];
+      for (const nodeKey of untransformedDirtyLeaves) {
         const node = nodeMap.get(nodeKey);
         if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
           $normalizeTextNode(node);
@@ -211,18 +206,12 @@ function $applyAllTransforms(
     // new ones caused by element transforms
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
-    const untransformedDirtyElementsArr = Array.from(
-      untransformedDirtyElements,
-    );
-    for (let i = 0; i < untransformedDirtyElementsLength; i++) {
-      const currentUntransformedDirtyElement = untransformedDirtyElementsArr[i];
+    for (const currentUntransformedDirtyElement of untransformedDirtyElements) {
       const nodeKey = currentUntransformedDirtyElement[0];
       const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1];
       if (nodeKey === 'root' || !intentionallyMarkedAsDirty) {
         continue;
       }
-      const nodeIntentionallyMarkedAsDirty =
-        untransformedDirtyElementsArr[i][1];
       const node = nodeMap.get(nodeKey);
       if (
         node !== undefined &&
@@ -230,7 +219,7 @@ function $applyAllTransforms(
       ) {
         $applyTransforms(editor, node, transformsCache);
       }
-      dirtyElements.set(nodeKey, nodeIntentionallyMarkedAsDirty);
+      dirtyElements.set(nodeKey, intentionallyMarkedAsDirty);
     }
     untransformedDirtyLeaves = editor._dirtyLeaves;
     untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
@@ -460,9 +449,9 @@ export function triggerListeners(
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
   try {
-    const listeners = Array.from(editor._listeners[type]);
-    for (let i = 0; i < listeners.length; i++) {
-      listeners[i](...payload);
+    const listeners = editor._listeners[type];
+    for (const listener of listeners) {
+      listener(...payload);
     }
   } finally {
     editor._updating = previouslyUpdating;
@@ -486,9 +475,9 @@ export function triggerCommandListeners(
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];
       const commandListeners = currentEditor._listeners.command;
-      const listeners = Array.from(commandListeners[i]);
-      for (let s = 0; s < listeners.length; s++) {
-        if (listeners[s](type, payload, editor) === true) {
+      const listeners = commandListeners[i];
+      for (const listener of listeners) {
+        if (listener(type, payload, editor) === true) {
           return true;
         }
       }

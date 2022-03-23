@@ -126,9 +126,9 @@ export class DecoratorMap {
 
   set(key: string, value: DecoratorStateValue): void {
     this._map.set(key, value);
-    const observers = Array.from(this._observers);
-    for (let i = 0; i < observers.length; i++) {
-      observers[i](key, value);
+    const observers = this._observers;
+    for (const observer of observers) {
+      observer(key, value);
     }
   }
 

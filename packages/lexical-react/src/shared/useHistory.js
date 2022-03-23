@@ -56,28 +56,23 @@ export type HistoryState = {
 
 function getDirtyNodes(
   editorState: EditorState,
-  dirtyLeavesSet: Set<NodeKey>,
-  dirtyElementsSet: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  dirtyLeaves: Set<NodeKey>,
+  dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): Array<LexicalNode> {
-  const dirtyLeaves = Array.from(dirtyLeavesSet);
-  const dirtyElements = Array.from(dirtyElementsSet);
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
-  for (let i = 0; i < dirtyLeaves.length; i++) {
-    const dirtyLeafKey = dirtyLeaves[i];
+  for (const dirtyLeafKey of dirtyLeaves) {
     const dirtyLeaf = nodeMap.get(dirtyLeafKey);
     if (dirtyLeaf !== undefined) {
       nodes.push(dirtyLeaf);
     }
   }
 
-  for (let i = 0; i < dirtyElements.length; i++) {
-    const intentionallyMarkedAsDirty = dirtyElements[i][1];
+  for (const [dirtyElementKey, intentionallyMarkedAsDirty] of dirtyElements) {
     if (!intentionallyMarkedAsDirty) {
       continue;
     }
-    const dirtyElementKey = dirtyElements[i][0];
     const dirtyElement = nodeMap.get(dirtyElementKey);
     if (dirtyElement !== undefined && !$isRootNode(dirtyElement)) {
       nodes.push(dirtyElement);

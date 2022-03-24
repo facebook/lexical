@@ -7,13 +7,13 @@
  * @flow strict
  */
 
-import type {HistoryState} from './shared/useHistory';
+import type {HistoryState} from '@lexical/history';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 import {useHistory} from './shared/useHistory';
 
-export {createEmptyHistoryState} from './shared/useHistory';
+export {createEmptyHistoryState} from '@lexical/history';
 
 export type {HistoryState};
 

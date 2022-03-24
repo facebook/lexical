@@ -7,12 +7,12 @@
  * @flow strict
  */
 
-import type {HistoryState} from './shared/useHistory';
+import type {HistoryState} from '@lexical/history';
 import type {LexicalEditor} from 'lexical';
 
 import {useHistory} from './shared/useHistory';
 
-export {createEmptyHistoryState} from './shared/useHistory';
+export {createEmptyHistoryState} from '@lexical/history';
 
 export type {HistoryState};
 

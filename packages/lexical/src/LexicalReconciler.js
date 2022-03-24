@@ -756,7 +756,11 @@ export function updateEditorState(
   return reconcileMutatedNodes;
 }
 
-function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
+function scrollIntoViewIfNeeded(
+  editor: LexicalEditor,
+  node: Node,
+  rootElement: ?HTMLElement,
+): void {
   const element: Element =
     // $FlowFixMe: this is valid, as we are checking the nodeType
     node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node;
@@ -775,6 +779,8 @@ function scrollIntoViewIfNeeded(node: Node, rootElement: ?HTMLElement): void {
         element.scrollIntoView();
       }
     }
+
+    editor._updateTags.add('scroll-into-view');
   }
 }
 
@@ -871,7 +877,7 @@ function reconcileSelection(
       nextFocusOffset,
     );
     if (nextSelection.isCollapsed() && rootElement === activeElement) {
-      scrollIntoViewIfNeeded(nextAnchorNode, rootElement);
+      scrollIntoViewIfNeeded(editor, nextAnchorNode, rootElement);
     }
   } catch (error) {
     // If we encounter an error, continue. This can sometimes

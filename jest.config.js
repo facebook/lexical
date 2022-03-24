@@ -31,6 +31,8 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
         '^@lexical/react/LexicalAutoLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.js',
+        '^@lexical/react/LexicalAutoScrollPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.js',
         '^@lexical/react/LexicalCollaborationPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.js',
         '^@lexical/react/LexicalComposerContext$':

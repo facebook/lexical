@@ -8,6 +8,7 @@
  */
 
 import AutoFormatterPlugin from '@lexical/react/LexicalAutoFormatterPlugin';
+import AutoScrollPlugin from '@lexical/react/LexicalAutoScrollPlugin';
 import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
 import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
@@ -19,6 +20,7 @@ import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import * as React from 'react';
+import {useRef} from 'react';
 
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
@@ -68,6 +70,7 @@ export default function Editor(): React$Node {
     ? 'Enter some rich text...'
     : 'Enter some plain text...';
   const placeholder = <Placeholder>{text}</Placeholder>;
+  const scrollRef = useRef(null);
 
   return (
     <>
@@ -75,7 +78,9 @@ export default function Editor(): React$Node {
       <div
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
-        }`}>
+        }`}
+        ref={scrollRef}
+      >
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />
@@ -88,6 +93,7 @@ export default function Editor(): React$Node {
         <AutoLinkPlugin />
         <CharacterStylesPopupPlugin />
         <EquationsPlugin />
+        <AutoScrollPlugin scrollRef={scrollRef} />
         {isRichText ? (
           <>
             {isCollab ? (

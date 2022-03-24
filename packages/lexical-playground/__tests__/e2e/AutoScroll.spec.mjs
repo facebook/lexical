@@ -22,7 +22,7 @@ test.describe('Auto scroll while typing', () => {
       (selector) => {
         const element = document.querySelector(selector);
         element.style.overflow = 'auto';
-        element.style.maxHeight = '100px';
+        element.style.maxHeight = '200px';
       },
       selector_,
     );
@@ -35,6 +35,7 @@ test.describe('Auto scroll while typing', () => {
         const selection = document.getSelection();
         const range = selection.getRangeAt(0);
         const element = document.createElement('span');
+        element.innerHTML = '|';
         range.insertNode(element);
         const selectionRect = element.getBoundingClientRect();
         element.parentNode.removeChild(element);
@@ -56,10 +57,10 @@ test.describe('Auto scroll while typing', () => {
       name: 'Can auto scroll if content editable element is scrollable',
       selector: '.ContentEditable__root',
     },
-    // {
-    //   name: 'Can auto scroll if parent element is scrollable',
-    //   selector: '.editor-container',
-    // },
+    {
+      name: 'Can auto scroll if parent element is scrollable',
+      selector: '.editor-container',
+    },
   ].forEach((testCase) => {
     [true, false].forEach((isSoftLineBreak) => {
       test(`${testCase.name}${

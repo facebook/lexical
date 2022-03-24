@@ -433,25 +433,36 @@ export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
   await page.mouse.up();
 }
 
-// Wrapper around HTML string that is used as indicator for snapshot serializer
-// that it should use own formatter (below)
 export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
-  let html = string;
+  let output = string;
 
   if (ignoreClasses) {
-    html = html.replace(/\sclass="([^"]*)"/g, '');
+    output = output.replace(/\sclass="([^"]*)"/g, '');
   }
 
   if (ignoreInlineStyles) {
-    html = html.replace(/\sstyle="([^"]*)"/g, '');
+    output = output.replace(/\sstyle="([^"]*)"/g, '');
   }
 
   return prettier
-    .format(html, {
+    .format(output, {
       attributeGroups: ['$DEFAULT', '^data-'],
       attributeSort: 'ASC',
       htmlWhitespaceSensitivity: 'ignore',
       parser: 'html',
     })
     .trim();
+}
+
+// This function does not suppose to do anything, it's only used as a trigger
+// for prettier auto-formatting (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
+export function html(partials, params) {
+  let output = '';
+  for (let i = 0; i < partials.length; i++) {
+    output += partials[i];
+    if (i < partials.length - 1) {
+      output += params[i];
+    }
+  }
+  return output;
 }

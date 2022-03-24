@@ -6,4 +6,6 @@ module.exports = {
   jsxBracketSameLine: true,
   printWidth: 80,
   trailingComma: 'all',
+  htmlWhitespaceSensitivity: 'ignore',
+  attributeGroups: ['$DEFAULT', '^data-'],
 };

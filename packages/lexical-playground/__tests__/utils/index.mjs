@@ -9,7 +9,6 @@
 
 import {expect, test as base} from '@playwright/test';
 import jestSnapshot from 'jest-snapshot';
-import {JSDOM} from 'jsdom';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
@@ -88,11 +87,14 @@ export async function clickSelectors(page, selectors) {
 
 async function assertHTMLOnPageOrFrame(page, pageOrFrame, expectedHtml) {
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
-  const {document} = new JSDOM().window;
-  const actual = document.createElement('div');
-  actual.innerHTML = actualHtml;
-  const expected = document.createElement('div');
-  expected.innerHTML = expectedHtml;
+  const actual = new PrettyHTML(actualHtml, {
+    ignoreClasses: true,
+    ignoreInlineStyles: true,
+  }).prettify();
+  const expected = new PrettyHTML(expectedHtml.replace(/\n/gm, ''), {
+    ignoreClasses: true,
+    ignoreInlineStyles: true,
+  }).prettify();
   expect(actual).toEqual(expected);
 }
 

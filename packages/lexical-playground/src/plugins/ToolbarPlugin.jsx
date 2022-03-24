@@ -638,7 +638,7 @@ export default function ToolbarPlugin(): React$Node {
       (_payload, newEditor) => {
         updateToolbar();
         setActiveEditor(newEditor);
-        return true;
+        return false;
       },
       LowPriority,
     );
@@ -648,7 +648,7 @@ export default function ToolbarPlugin(): React$Node {
       'canUndo',
       (payload) => {
         setCanUndo(payload);
-        return true;
+        return false;
       },
       LowPriority,
     );
@@ -658,7 +658,7 @@ export default function ToolbarPlugin(): React$Node {
       'canRedo',
       (payload) => {
         setCanRedo(payload);
-        return true;
+        return false;
       },
       LowPriority,
     );

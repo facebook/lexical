@@ -15,6 +15,12 @@ import type {
   TextNode,
 } from 'lexical';
 
+import {
+  $createCodeNode,
+  $isCodeNode,
+  getCodeLanguages,
+  getDefaultCodeLanguage,
+} from '@lexical/code';
 import {$isListNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
@@ -32,7 +38,6 @@ import {
   $getSelection,
   $isRangeSelection,
 } from 'lexical';
-import {$createCodeNode, $isCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode, $isHeadingNode} from 'lexical/HeadingNode';
 import {$isLinkNode} from 'lexical/LinkNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
@@ -46,7 +51,6 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
-import {getCodeLanguages, getDefaultCodeLanguage} from './CodeHighlightPlugin';
 
 const LowPriority: CommandListenerLowPriority = 1;
 

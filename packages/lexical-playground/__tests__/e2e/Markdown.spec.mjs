@@ -80,7 +80,7 @@ test.describe('Markdown', () => {
       isBlockTest: true,
       markdownText: '> ',
 
-      undoHTML: '', // Block quote.
+      undoHTML: '<p><span data-lexical-text="true">&gt;</span></p>', // Block quote.
     },
     {
       expectation:
@@ -264,7 +264,7 @@ test.describe('Markdown', () => {
         await checkHTMLExpectationsIncludingUndoRedo(
           page,
           forwardHTML,
-          undoHTML,
+          triggersAndExpectations[i].undoHTML || undoHTML,
           isCollab,
         );
       });

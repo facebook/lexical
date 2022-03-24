@@ -850,7 +850,7 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello!</span></p><p class="PlaygroundEditorTheme__paragraph"></br></p>',
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello!</span></p><p class="PlaygroundEditorTheme__paragraph"><br/></p>',
     );
 
     await assertSelection(page, {
@@ -874,7 +874,7 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><a class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr" href="https://facebook.com/"><span data-lexical-text="true">Facebook!</span></a></p>',
+      '<p class="PlaygroundEditorTheme__paragraph"><a class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook!</span></a></p>',
     );
 
     await assertSelection(page, {

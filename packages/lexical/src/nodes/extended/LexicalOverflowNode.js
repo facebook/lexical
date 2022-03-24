@@ -26,7 +26,7 @@ export class OverflowNode extends ElementNode {
   }
 
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
-    const div = document.createElement('div');
+    const div = document.createElement('span');
     const className = config.theme.characterLimit;
     if (typeof className === 'string') {
       div.className = className;

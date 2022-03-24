@@ -8,15 +8,11 @@
  */
 
 import {expect, test as base} from '@playwright/test';
-import jestSnapshot from 'jest-snapshot';
-import {JSDOM} from 'jsdom';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
-
-const {toMatchInlineSnapshot} = jestSnapshot;
 
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
@@ -88,11 +84,14 @@ export async function clickSelectors(page, selectors) {
 
 async function assertHTMLOnPageOrFrame(page, pageOrFrame, expectedHtml) {
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
-  const {document} = new JSDOM().window;
-  const actual = document.createElement('div');
-  actual.innerHTML = actualHtml;
-  const expected = document.createElement('div');
-  expected.innerHTML = expectedHtml;
+  const actual = prettifyHTML(actualHtml, {
+    ignoreClasses: true,
+    ignoreInlineStyles: true,
+  });
+  const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
+    ignoreClasses: true,
+    ignoreInlineStyles: true,
+  });
   expect(actual).toEqual(expected);
 }
 
@@ -434,128 +433,25 @@ export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
   await page.mouse.up();
 }
 
-expect.extend({
-  async toMatchEditorInlineSnapshot(pageOrOptions, ...args) {
-    // Setting error field allows jest to know where the matcher was called
-    // to populate inline snapshot during update cycle
-    this.error = new Error();
-    let html;
-
-    const {
-      page,
-      ignoreSecondFrame,
-      ignoreClasses,
-      ignoreInlineStyles,
-      parentSelector,
-    } = isElement(pageOrOptions)
-      ? {
-          ignoreClasses: true,
-          ignoreInlineStyles: true,
-          ignoreSecondFrame: false,
-          page: pageOrOptions,
-          parentSelector: '.editor-shell',
-        }
-      : {
-          ignoreClasses: pageOrOptions.ignoreClasses !== false,
-          ignoreInlineStyles: pageOrOptions.ignoreInlineStyles !== false,
-          ignoreSecondFrame: pageOrOptions.ignoreSecondFrame === true,
-          page: pageOrOptions.page,
-          parentSelector: pageOrOptions.parentSelector || '.editor-shell',
-        };
-
-    const editorSelector = `${parentSelector} div[contenteditable="true"]`;
-
-    if (!isElement(page)) {
-      throw new Error(
-        'toMatchEditorInlineSnapshot expects page or options object with page property',
-      );
-    }
-
-    if (IS_COLLAB) {
-      // For collab we make sure that left and right sides are matching each other
-      // and then asserting it to the snapshot
-      const leftFrame = await page.frame('left');
-      const leftFrameEditor = await leftFrame.$(editorSelector);
-      const leftFrameHTML = new PrettyHTML(await leftFrameEditor.innerHTML(), {
-        ignoreClasses,
-        ignoreInlineStyles,
-      }).prettify();
-
-      if (!ignoreSecondFrame) {
-        let attempts = 5;
-
-        while (attempts--) {
-          const rightFrame = await page.frame('right');
-          const rightFrameEditor = await rightFrame.$(editorSelector);
-          const rightFrameHTML = new PrettyHTML(
-            await rightFrameEditor.innerHTML(),
-            {ignoreClasses, ignoreInlineStyles},
-          ).prettify();
-
-          if (rightFrameHTML === leftFrameHTML) {
-            break;
-          }
-
-          if (!attempts) {
-            // Returning as a matcher for a nicer left vs right diff formatting
-            return expect(leftFrameHTML).toBe(rightFrameHTML);
-          }
-
-          await sleep(500);
-        }
-      }
-
-      html = leftFrameHTML;
-    } else {
-      const editor = await page.$(editorSelector);
-      html = await editor.innerHTML();
-    }
-    return toMatchInlineSnapshot.call(
-      this,
-      new PrettyHTML(html, {ignoreClasses, ignoreInlineStyles}),
-      ...args,
-    );
-  },
-});
-
-function isElement(element) {
-  return element && typeof element.$ === 'function';
-}
-
 // Wrapper around HTML string that is used as indicator for snapshot serializer
 // that it should use own formatter (below)
-class PrettyHTML {
-  constructor(html, {ignoreClasses, ignoreInlineStyles} = {}) {
-    this.html = html;
-    this.ignoreClasses = ignoreClasses;
-    this.ignoreInlineStyles = ignoreInlineStyles;
+export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
+  let html = string;
+
+  if (ignoreClasses) {
+    html = html.replace(/\sclass="([^"]*)"/g, '');
   }
 
-  prettify() {
-    let html = this.html;
-
-    if (this.ignoreClasses) {
-      html = html.replace(/\sclass="([^"]*)"/g, '');
-    }
-
-    if (this.ignoreInlineStyles) {
-      html = html.replace(/\sstyle="([^"]*)"/g, '');
-    }
-
-    return prettier
-      .format(html, {
-        htmlWhitespaceSensitivity: 'ignore',
-        parser: 'html',
-      })
-      .trim();
+  if (ignoreInlineStyles) {
+    html = html.replace(/\sstyle="([^"]*)"/g, '');
   }
+
+  return prettier
+    .format(html, {
+      attributeGroups: ['$DEFAULT', '^data-'],
+      attributeSort: 'ASC',
+      htmlWhitespaceSensitivity: 'ignore',
+      parser: 'html',
+    })
+    .trim();
 }
-
-expect.addSnapshotSerializer({
-  print: (value) => {
-    return value.prettify();
-  },
-  test: (value) => {
-    return value instanceof PrettyHTML;
-  },
-});

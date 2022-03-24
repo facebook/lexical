@@ -8,6 +8,7 @@
  */
 
 import Link from '@docusaurus/Link';
+import clsx from 'clsx';
 import React, {useState} from 'react';
 
 import styles from './styles.module.css';
@@ -16,16 +17,12 @@ function Pills({pills, activeIndex, onClick}) {
   return (
     <div role="tablist" className="pills">
       {pills.map((pill, index) => {
-        const classNames = ['pills__item'];
         const isSelected = activeIndex === index;
-        if (isSelected) {
-          classNames.push('pills__item--active');
-          classNames.push(styles.tabSelected);
-        }
+
         return (
-          <a
+          <li
             key={pill.id}
-            className={`${classNames.join(' ')} ${styles.tabAnchor}`}
+            className={clsx('pills__item', isSelected && 'pills__item--active')}
             aria-selected={isSelected}
             tabIndex="0"
             role="tab"
@@ -35,7 +32,7 @@ function Pills({pills, activeIndex, onClick}) {
             }}
           >
             {pill.label}
-          </a>
+          </li>
         );
       })}
     </div>
@@ -73,7 +70,7 @@ export default function HomepageExamples() {
   const activePill = pills[activeIndex];
   return (
     <div className="container">
-      <div className="row">
+      <div>
         <Pills
           pills={pills}
           activeIndex={activeIndex}
@@ -81,19 +78,21 @@ export default function HomepageExamples() {
         />
       </div>
       <div
-        className={`row margin-vert--lg ${styles.tabContent}`}
+        className={clsx('row margin-vert--lg', styles.tabContent)}
         id={activePill.id}
         role="tabpanel"
         aria-labelledby={`example-tab-${activeIndex}`}
       >
         <div className="col col--4">
           {activePill.content}
-          <Link
-            className="button button--primary margin-top--md"
-            to="/docs/intro"
-          >
-            Get Started
-          </Link>
+          <div>
+            <Link
+              className="button button--primary margin-top--md"
+              to="/docs/intro"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
         <div className="col col--8">
           <iframe

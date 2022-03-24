@@ -58,7 +58,7 @@ export default function LexicalComposer({
           nodes,
           onError: (error) => onError(error, newEditor),
           readOnly: true,
-          theme: theme,
+          theme,
         });
         editor = newEditor;
       }

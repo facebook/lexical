@@ -423,7 +423,7 @@ export class LexicalEditor {
     type: string,
     listener: CommandListener,
     priority: CommandListenerPriority,
-  ): (() => void) | void {
+  ): () => void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }

@@ -428,7 +428,13 @@ export class LexicalEditor {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
     if (!this._listeners.command.has(type)) {
-      this._listeners.command.set(type, Array(5).fill(new Set()));
+      this._listeners.command.set(type, [
+        new Set(),
+        new Set(),
+        new Set(),
+        new Set(),
+        new Set(),
+      ]);
     }
     const commands = this._listeners.command.get(type);
     // $FlowFixMe[incompatible-use] The command will exist as we're seeeing it above.

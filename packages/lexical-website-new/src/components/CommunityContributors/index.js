@@ -4,88 +4,107 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
-import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
 import React from 'react';
 
-export default function CommnunityContributors() {
+const CONTRIBUTORS = [
+  {
+    imageUrl: 'https://github.com/trueadm.png',
+    link: 'https://github.com/trueadm',
+    name: 'Dominic Gannaway',
+  },
+  {
+    imageUrl: 'https://github.com/zurfyx.png',
+    link: 'https://github.com/zurfyx',
+    name: 'Gerard Rovira',
+  },
+  {
+    imageUrl: 'https://github.com/acywatson.png',
+    link: 'https://github.com/acywatson',
+    name: 'Acy Watson',
+  },
+  {
+    imageUrl: 'https://github.com/trueadm.png',
+    link: 'https://github.com/trueadm',
+    name: 'Dominic Gannaway',
+  },
+  {
+    imageUrl: 'https://github.com/zurfyx.png',
+    link: 'https://github.com/zurfyx',
+    name: 'Gerard Rovira',
+  },
+  {
+    imageUrl: 'https://github.com/acywatson.png',
+    link: 'https://github.com/acywatson',
+    name: 'Acy Watson',
+  },
+];
+
+export default function CommunityContributors() {
   return (
-    <div class="container">
-      <div class="row">
-        <h2>
-          <Translate
-            id="pages.community.contributors.howToSubHeader"
-            description="Subtitle of section on contribution guidelines"
-          >
-            How to contribute
-          </Translate>
-        </h2>
-        <p>
-          <Translate
-            id="pages.community.contributors.beforeParticipating"
-            description="Phrase before paragraph listing documents and policies to read before contributing"
-          >
-            Before participating in React’s communities, please read our
-          </Translate>{' '}
-          <Link to="https://github.com/facebook/lexical/blob/main/CODE_OF_CONDUCT.md">
+    <div>
+      <h2>
+        <Translate
+          id="pages.community.contributors.subHeader"
+          description="Subtitle of section on contributors"
+        >
+          Contributors
+        </Translate>
+      </h2>
+      <div className="row">
+        <div className="col col--9">
+          <p>
             <Translate
-              id="pages.community.contributors.codeOfConductLink"
-              description="Hyperlink to code of conduct"
+              id="pages.community.contributors.subtext"
+              description="The descriptive text of the header section of the community page"
             >
-              Code of Conduct
+              Lexical development is led by small team at Meta. It also receives
+              contributions from people all over the world. Here are just a few
+              members.
             </Translate>
-          </Link>
-          .{' '}
-          <Translate
-            id="pages.community.contributors.covenant"
-            description="Phrase about adoption of the contributor covenant policy"
-          >
-            We have adopted the
-          </Translate>{' '}
-          <Link to="https://www.contributor-covenant.org/">
-            <Translate
-              id="pages.community.contributors.covenantLink"
-              description="Hyperlink to contributor covenant"
+          </p>
+          <p>
+            <a
+              href="https://github.com/facebook/lexical/graphs/contributors"
+              target="_blank"
+              rel="noopener"
             >
-              Contributor Covenant
-            </Translate>
-          </Link>{' '}
-          <Translate
-            id="pages.community.contributors.guidelines"
-            description="Phrase about our expectations that all contributors adhere to all policies listed herein."
-          >
-            and we expect that all community members adhere to the
-          </Translate>{' '}
-          <Link to="https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md">
-            <Translate
-              id="pages.community.contributors.contributingLink"
-              description="Hyperlink to contributing technical instructions"
-            >
-              contributing guidelines
-            </Translate>
-          </Link>
-          .{' '}
-        </p>
-        <p>
-          <Translate
-            id="pages.community.contributors.joinUs"
-            description="Phrase inviting users to join us as contributors after agreeing to the guidelines"
-          >
-            Once you've read over those, we invite you to join us on the
-          </Translate>{' '}
-          <Link
-            to="https://github.com/facebook/lexical"
-            description="Hyperlink to Github repo"
-          >
-            <Translate id="pages.community.contributors.joinUsRepoLink">
-              Lexical Github repo
-            </Translate>
-          </Link>
-          .
-        </p>
+              <Translate
+                id="pages.community.contributors.gitHubLink"
+                description="Link to GitHub's contribute page for the repository"
+              >
+                See the rest of the contributors on Github.
+              </Translate>
+            </a>
+          </p>
+        </div>
+      </div>
+      <div className="row">
+        {CONTRIBUTORS.map(({name, imageUrl, link}, index) => (
+          <div className="col col--3 margin-top--lg" key={index}>
+            <div className="avatar avatar--vertical text--center">
+              <div>
+                <img
+                  class="avatar__photo avatar__photo--xl"
+                  alt={name}
+                  src={imageUrl}
+                />
+              </div>
+              <div className="margin-top--xs">
+                <a
+                  className="avatar__name"
+                  href={link}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  {name}
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

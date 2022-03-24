@@ -9,6 +9,7 @@
 
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
+import clsx from 'clsx';
 import React from 'react';
 
 import ImageSwitcher from '../ImageSwitcher';
@@ -27,8 +28,8 @@ const links = [
     ),
     image: (
       <ImageSwitcher
-        light={require('../../../static/img/github-mark-light.svg').default}
-        dark={require('../../../static/img/github-mark-dark.svg').default}
+        light={require('@site/static/img/github-mark-light.svg').default}
+        dark={require('@site/static/img/github-mark-dark.svg').default}
       />
     ),
     title: (
@@ -53,8 +54,8 @@ const links = [
     ),
     image: (
       <ImageSwitcher
-        light={require('../../../static/img/stack-overflow.svg').default}
-        dark={require('../../../static/img/stack-overflow.svg').default}
+        light={require('@site/static/img/stack-overflow.svg').default}
+        dark={require('@site/static/img/stack-overflow.svg').default}
       />
     ),
     title: (
@@ -79,8 +80,8 @@ const links = [
     ),
     image: (
       <ImageSwitcher
-        light={require('../../../static/img/discord-logo-color.svg').default}
-        dark={require('../../../static/img/discord-logo-color.svg').default}
+        light={require('@site/static/img/discord-logo-color.svg').default}
+        dark={require('@site/static/img/discord-logo-color.svg').default}
       />
     ),
     title: (
@@ -97,15 +98,13 @@ const links = [
 
 function CommunityLink({title, url, description, image}) {
   return (
-    <div className="container">
-      <div className="row">
-        <div className={`col col--4 ${styles.image}`}>{image}</div>
-        <div className="col col--8">
-          <Link to={url}>
-            <h2>{title}</h2>
-          </Link>
-          <p>{description}</p>
-        </div>
+    <div className="row">
+      <div className={clsx('col col--4', styles.image)}>{image}</div>
+      <div className="col col--8">
+        <Link to={url}>
+          <h2>{title}</h2>
+        </Link>
+        <p>{description}</p>
       </div>
     </div>
   );
@@ -113,9 +112,9 @@ function CommunityLink({title, url, description, image}) {
 
 export default function CommunityLinks() {
   return (
-    <div className="container">
+    <div>
       {links.map((link, index) => (
-        <div key={index} className={`row margin-vert--md`}>
+        <div key={index} className="margin-vert--md">
           <CommunityLink {...link} />
         </div>
       ))}

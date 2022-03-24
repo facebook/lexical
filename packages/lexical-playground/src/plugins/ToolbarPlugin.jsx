@@ -118,7 +118,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
   const [isEditMode, setEditMode] = useState(false);
   const [lastSelection, setLastSelection] = useState(null);
 
-  const updateLinkEditor = useCallback((): boolean => {
+  const updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
@@ -136,7 +136,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
     const activeElement = document.activeElement;
 
     if (editorElem === null) {
-      return false;
+      return;
     }
 
     const rootElement = editor.getRootElement();
@@ -182,7 +182,10 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
 
       editor.registerCommandListener(
         'selectionChange',
-        () => updateLinkEditor(),
+        () => {
+          updateLinkEditor();
+          return true;
+        },
         LowPriority,
       ),
     );
@@ -263,7 +266,8 @@ function InsertTableDialog({
       <Input label="No of columns" onChange={setColumns} value={columns} />
       <div
         className="ToolbarPlugin__dialogActions"
-        data-test-id="table-model-confirm-insert">
+        data-test-id="table-model-confirm-insert"
+      >
         <Button onClick={onClick}>Confirm</Button>
       </div>
     </>
@@ -717,7 +721,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('undo');
         }}
         className="toolbar-item spaced"
-        aria-label="Undo">
+        aria-label="Undo"
+      >
         <i className="format undo" />
       </button>
       <button
@@ -726,7 +731,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('redo');
         }}
         className="toolbar-item"
-        aria-label="Redo">
+        aria-label="Redo"
+      >
         <i className="format redo" />
       </button>
       <Divider />
@@ -737,7 +743,8 @@ export default function ToolbarPlugin(): React$Node {
             onClick={() =>
               setShowBlockOptionsDropDown(!showBlockOptionsDropDown)
             }
-            aria-label="Formatting Options">
+            aria-label="Formatting Options"
+          >
             <span className={'icon block-type ' + blockType} />
             <span className="text">{blockTypeToBlockName[blockType]}</span>
             <i className="chevron-down" />
@@ -810,7 +817,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.execCommand('formatText', 'bold');
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-            aria-label="Format Bold">
+            aria-label="Format Bold"
+          >
             <i className="format bold" />
           </button>
           <button
@@ -818,7 +826,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.execCommand('formatText', 'italic');
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-            aria-label="Format Italics">
+            aria-label="Format Italics"
+          >
             <i className="format italic" />
           </button>
           <button
@@ -826,7 +835,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.execCommand('formatText', 'underline');
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-            aria-label="Format Underline">
+            aria-label="Format Underline"
+          >
             <i className="format underline" />
           </button>
           <button
@@ -836,7 +846,8 @@ export default function ToolbarPlugin(): React$Node {
             className={
               'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
             }
-            aria-label="Format Strikethrough">
+            aria-label="Format Strikethrough"
+          >
             <i className="format strikethrough" />
           </button>
           <button
@@ -844,13 +855,15 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.execCommand('formatText', 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
-            aria-label="Insert Code">
+            aria-label="Insert Code"
+          >
             <i className="format code" />
           </button>
           <button
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-            aria-label="Insert Link">
+            aria-label="Insert Link"
+          >
             <i className="format link" />
           </button>
           {isLink &&
@@ -863,7 +876,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.execCommand('insertHorizontalRule');
             }}
             className="toolbar-item spaced"
-            aria-label="Insert Horizontal Rule">
+            aria-label="Insert Horizontal Rule"
+          >
             <i className="format horizontal-rule" />
           </button>
           <button
@@ -871,7 +885,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.execCommand('insertImage');
             }}
             className="toolbar-item spaced"
-            aria-label="Insert Image">
+            aria-label="Insert Image"
+          >
             <i className="format image" />
           </button>
           <button
@@ -879,7 +894,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.execCommand('insertExcalidraw');
             }}
             className="toolbar-item spaced"
-            aria-label="Insert Excalidraw">
+            aria-label="Insert Excalidraw"
+          >
             <i className="format diagram-2" />
           </button>
           <button
@@ -892,7 +908,8 @@ export default function ToolbarPlugin(): React$Node {
               ));
             }}
             className="toolbar-item"
-            aria-label="Insert Table">
+            aria-label="Insert Table"
+          >
             <i className="format table" />
           </button>
           <button
@@ -905,7 +922,8 @@ export default function ToolbarPlugin(): React$Node {
               ));
             }}
             className="toolbar-item"
-            aria-label="Insert Poll">
+            aria-label="Insert Poll"
+          >
             <i className="format poll" />
           </button>
           <button
@@ -918,7 +936,8 @@ export default function ToolbarPlugin(): React$Node {
               ));
             }}
             className="toolbar-item"
-            aria-label="Insert tweet">
+            aria-label="Insert tweet"
+          >
             <i className="format tweet" />
           </button>
           <button
@@ -931,7 +950,8 @@ export default function ToolbarPlugin(): React$Node {
               ));
             }}
             className="toolbar-item"
-            aria-label="Insert Equation">
+            aria-label="Insert Equation"
+          >
             <i className="format equation" />
           </button>
         </>
@@ -943,7 +963,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('formatElement', 'left');
         }}
         className="toolbar-item spaced"
-        aria-label="Left Align">
+        aria-label="Left Align"
+      >
         <i className="format left-align" />
       </button>
       <button
@@ -951,7 +972,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('formatElement', 'center');
         }}
         className="toolbar-item spaced"
-        aria-label="Center Align">
+        aria-label="Center Align"
+      >
         <i className="format center-align" />
       </button>
       <button
@@ -959,7 +981,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('formatElement', 'right');
         }}
         className="toolbar-item spaced"
-        aria-label="Right Align">
+        aria-label="Right Align"
+      >
         <i className="format right-align" />
       </button>
       <button
@@ -967,7 +990,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('formatElement', 'justify');
         }}
         className="toolbar-item"
-        aria-label="Justify Align">
+        aria-label="Justify Align"
+      >
         <i className="format justify-align" />
       </button>
       <Divider />
@@ -976,7 +1000,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('outdentContent');
         }}
         className="toolbar-item spaced"
-        aria-label="Outdent">
+        aria-label="Outdent"
+      >
         <i className={'format ' + (isRTL ? 'indent' : 'outdent')} />
       </button>
       <button
@@ -984,7 +1009,8 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.execCommand('indentContent');
         }}
         className="toolbar-item"
-        aria-label="Indent">
+        aria-label="Indent"
+      >
         <i className={'format ' + (isRTL ? 'outdent' : 'indent')} />
       </button>
       {modal}

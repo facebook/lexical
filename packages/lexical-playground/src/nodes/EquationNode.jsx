@@ -66,7 +66,6 @@ function EquationComponent({
           const inputElem = inputRef.current;
           if (inputElem !== activeElement) {
             onHide();
-            return true;
           }
           return false;
         },

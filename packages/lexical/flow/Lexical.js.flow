@@ -33,7 +33,6 @@ type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
 type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 type CommandListener = (
-  type: string,
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
@@ -47,7 +46,7 @@ type Listeners = {
   textcontent: Set<TextContentListener>,
   root: Set<RootListener>,
   update: Set<UpdateListener>,
-  command: Array<Set<CommandListener>>,
+  command: Map<string, Array<Set<CommandListener>>>,
 };
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
@@ -97,6 +96,7 @@ declare export class LexicalEditor {
   registerDecoratorListener(listener: DecoratorListener): () => void;
   registerTextContentListener(listener: TextContentListener): () => void;
   registerCommandListener(
+    type: string,
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
@@ -109,7 +109,7 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  execCommand(type: string, payload: CommandPayload): boolean;
+  execCommand(type: string, payload?: CommandPayload): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): {
     [NodeKey]: X,

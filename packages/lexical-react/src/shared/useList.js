@@ -22,33 +22,72 @@ const LowPriority: CommandListenerLowPriority = 1;
 
 export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
-    return editor.registerCommandListener((type) => {
-      if (type === 'indentContent') {
+    return editor.registerCommandListener(
+      'indentContent',
+      () => {
         const hasHandledIndention = indentList();
         if (hasHandledIndention) {
           return true;
         }
-      } else if (type === 'outdentContent') {
+        return false;
+      },
+      LowPriority,
+    );
+  }, [editor]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'outdentContent',
+      () => {
         const hasHandledIndention = outdentList();
         if (hasHandledIndention) {
           return true;
         }
-      } else if (type === 'insertOrderedList') {
+        return false;
+      },
+      LowPriority,
+    );
+  }, [editor]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'insertOrderedList',
+      () => {
         insertList(editor, 'ol');
         return true;
-      } else if (type === 'insertUnorderedList') {
+      },
+      LowPriority,
+    );
+  }, [editor]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'insertUnorderedList',
+      () => {
         insertList(editor, 'ul');
         return true;
-      } else if (type === 'removeList') {
+      },
+      LowPriority,
+    );
+  }, [editor]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'removeList',
+      () => {
         removeList(editor);
         return true;
-      } else if (type === 'insertParagraph') {
+      },
+      LowPriority,
+    );
+  }, [editor]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'insertParagraph',
+      () => {
         const hasHandledInsertParagraph = $handleListInsertParagraph();
         if (hasHandledInsertParagraph) {
           return true;
         }
-      }
-      return false;
-    }, LowPriority);
+        return false;
+      },
+      LowPriority,
+    );
   }, [editor]);
 }

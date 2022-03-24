@@ -129,7 +129,6 @@ export type RootListener = (
 export type TextContentListener = (text: string) => void;
 export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 export type CommandListener = (
-  type: string,
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
@@ -152,7 +151,7 @@ export type CommandListenerPriority =
 export type CommandPayload = any;
 
 type Listeners = {
-  command: Array<Set<CommandListener>>,
+  command: Map<string, Array<Set<CommandListener>>>,
   decorator: Set<DecoratorListener>,
   mutation: MutationListeners,
   readonly: Set<ReadOnlyListener>,
@@ -350,7 +349,7 @@ export class LexicalEditor {
     this._updating = false;
     // Listeners
     this._listeners = {
-      command: [new Set(), new Set(), new Set(), new Set(), new Set()],
+      command: new Map(),
       decorator: new Set(),
       mutation: new Map(),
       readonly: new Set(),
@@ -421,14 +420,18 @@ export class LexicalEditor {
     };
   }
   registerCommandListener(
+    type: string,
     listener: CommandListener,
     priority: CommandListenerPriority,
-  ): () => void {
+  ): (() => void) | void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
-    const listenerSetOrMap = this._listeners.command;
-    const commands: Array<Set<CommandListener>> = listenerSetOrMap;
+    if (!this._listeners.command.has(type)) {
+      this._listeners.command.set(type, Array(5).fill(new Set()));
+    }
+    const commands = this._listeners.command.get(type);
+    // $FlowFixMe[incompatible-use] The command will exist as we're seeeing it above.
     const commandSet = commands[priority];
     commandSet.add(listener);
     return () => {

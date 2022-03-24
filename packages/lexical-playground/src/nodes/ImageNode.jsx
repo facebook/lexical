@@ -241,8 +241,7 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}
-        >
+          }}>
           Add Caption
         </button>
       )}
@@ -316,8 +315,9 @@ function ImageComponent({
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'click') {
+    return editor.registerCommandListener(
+      'click',
+      (payload) => {
         const event: MouseEvent = payload;
 
         if (isResizing) {
@@ -330,11 +330,16 @@ function ImageComponent({
           setSelected(!isSelected);
           return true;
         }
-      } else if (
-        isSelected &&
-        $isNodeSelection($getSelection()) &&
-        (type === 'keyDelete' || type === 'keyBackspace')
-      ) {
+
+        return false;
+      },
+      LowPriority,
+    );
+  }, [clearSelection, editor, isResizing, isSelected, nodeKey, setSelected]);
+
+  const onDelete = useCallback(
+    (payload) => {
+      if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
         editor.update(() => {
@@ -344,10 +349,22 @@ function ImageComponent({
           }
           setSelected(false);
         });
+        return true;
       }
       return false;
-    }, LowPriority);
-  }, [clearSelection, editor, isResizing, isSelected, nodeKey, setSelected]);
+    },
+    [editor, isSelected, nodeKey, setSelected],
+  );
+  useEffect(() => {
+    return editor.registerCommandListener('keyDelete', onDelete, LowPriority);
+  }, [editor, onDelete]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'keyBackspace',
+      onDelete,
+      LowPriority,
+    );
+  }, [editor, onDelete]);
 
   const setShowCaption = useCallback(() => {
     editor.update(() => {
@@ -410,8 +427,7 @@ function ImageComponent({
             <LexicalNestedComposer
               initialConfig={{
                 decoratorEditor: decoratorEditor,
-              }}
-            >
+              }}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

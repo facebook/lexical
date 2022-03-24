@@ -166,8 +166,9 @@ export function useYjsCollaboration(
   }, [binding]);
 
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'toggleConnect') {
+    return editor.registerCommandListener(
+      'toggleConnect',
+      (payload) => {
         if (connect !== undefined && disconnect !== undefined) {
           const shouldConnect = payload;
           if (shouldConnect) {
@@ -180,9 +181,10 @@ export function useYjsCollaboration(
             disconnect();
           }
         }
-      }
-      return false;
-    }, EditorPriority);
+        return true;
+      },
+      EditorPriority,
+    );
   }, [connect, disconnect, editor]);
 
   return [cursorsContainer, binding];
@@ -195,14 +197,24 @@ export function useYjsFocusTracking(
   color: string,
 ) {
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'focus') {
-        setLocalStateFocus(provider, name, color, true);
-      } else if (type === 'blur') {
+    return editor.registerCommandListener(
+      'focus',
+      (payload) => {
         setLocalStateFocus(provider, name, color, false);
-      }
-      return false;
-    }, EditorPriority);
+        return true;
+      },
+      EditorPriority,
+    );
+  }, [color, editor, name, provider]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'blur',
+      (payload) => {
+        setLocalStateFocus(provider, name, color, false);
+        return true;
+      },
+      EditorPriority,
+    );
   }, [color, editor, name, provider]);
 }
 
@@ -220,23 +232,28 @@ export function useYjsHistory(
       undoManager.undo();
     };
 
+    return editor.registerCommandListener(
+      'undo',
+      () => {
+        undo();
+        return true;
+      },
+      EditorPriority,
+    );
+  });
+  useEffect(() => {
     const redo = () => {
       undoManager.redo();
     };
 
-    const applyCommand = (type) => {
-      if (type === 'undo') {
-        undo();
-        return true;
-      }
-      if (type === 'redo') {
+    return editor.registerCommandListener(
+      'redo',
+      () => {
         redo();
         return true;
-      }
-      return false;
-    };
-
-    return editor.registerCommandListener(applyCommand, EditorPriority);
+      },
+      EditorPriority,
+    );
   });
 
   const clearHistory = useCallback(() => {

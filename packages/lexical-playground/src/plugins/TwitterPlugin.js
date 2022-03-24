@@ -25,8 +25,9 @@ export default function TwitterPlugin(): React$Node {
       throw new Error('TwitterPlugin: TweetNode not registered on editor');
     }
 
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'insertTweet') {
+    return editor.registerCommandListener(
+      'insertTweet',
+      (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           const focusNode = selection.focus.getNode();
@@ -40,11 +41,11 @@ export default function TwitterPlugin(): React$Node {
             tweetNode.insertAfter(paragraphNode);
             paragraphNode.select();
           }
-          return true;
         }
-      }
-      return false;
-    }, EditorPriority);
+        return true;
+      },
+      EditorPriority,
+    );
   }, [editor]);
   return null;
 }

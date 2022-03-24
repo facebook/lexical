@@ -30,7 +30,6 @@ type RootListener = (
 type TextContentListener = (text: string) => void;
 type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 type CommandListener = (
-  type: string,
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;

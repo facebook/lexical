@@ -118,7 +118,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
   const [isEditMode, setEditMode] = useState(false);
   const [lastSelection, setLastSelection] = useState(null);
 
-  const updateLinkEditor = useCallback(() => {
+  const updateLinkEditor = useCallback((): boolean => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
@@ -136,7 +136,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
     const activeElement = document.activeElement;
 
     if (editorElem === null) {
-      return;
+      return false;
     }
 
     const rootElement = editor.getRootElement();
@@ -168,6 +168,8 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       setEditMode(false);
       setLinkUrl('');
     }
+
+    return true;
   }, [editor]);
 
   useEffect(() => {
@@ -178,12 +180,11 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
         });
       }),
 
-      editor.registerCommandListener((type) => {
-        if (type === 'selectionChange') {
-          updateLinkEditor();
-        }
-        return false;
-      }, LowPriority),
+      editor.registerCommandListener(
+        'selectionChange',
+        () => updateLinkEditor(),
+        LowPriority,
+      ),
     );
   }, [editor, updateLinkEditor]);
 
@@ -628,24 +629,35 @@ export default function ToolbarPlugin(): React$Node {
   }, [activeEditor, updateToolbar]);
 
   useEffect(() => {
-    const removeCommandListener = editor.registerCommandListener(
-      (type, payload, _editor) => {
-        if (type === 'selectionChange') {
-          updateToolbar();
-          setActiveEditor(_editor);
-        } else if (type === 'canUndo') {
-          setCanUndo(payload);
-        } else if (type === 'canRedo') {
-          setCanRedo(payload);
-        }
-        return false;
+    return editor.registerCommandListener(
+      'selectionChange',
+      (_payload, newEditor) => {
+        updateToolbar();
+        setActiveEditor(newEditor);
+        return true;
       },
       LowPriority,
     );
-
-    return () => {
-      removeCommandListener();
-    };
+  }, [editor, selectedElementKey, updateToolbar]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'canUndo',
+      (payload) => {
+        setCanUndo(payload);
+        return true;
+      },
+      LowPriority,
+    );
+  }, [editor, selectedElementKey, updateToolbar]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'canRedo',
+      (payload) => {
+        setCanRedo(payload);
+        return true;
+      },
+      LowPriority,
+    );
   }, [editor, selectedElementKey, updateToolbar]);
 
   const applyStyleText = useCallback(

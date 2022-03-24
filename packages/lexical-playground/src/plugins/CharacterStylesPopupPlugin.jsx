@@ -103,12 +103,14 @@ function FloatingCharacterStylesEditor({
         });
       }),
 
-      editor.registerCommandListener((type) => {
-        if (type === 'selectionChange') {
+      editor.registerCommandListener(
+        'selectionChange',
+        () => {
           updateCharacterStylesEditor();
-        }
-        return false;
-      }, 1),
+          return true;
+        },
+        1,
+      ),
     );
   }, [editor, updateCharacterStylesEditor]);
 

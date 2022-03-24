@@ -59,19 +59,36 @@ function EquationComponent({
 
   useEffect(() => {
     if (showEquationEditor) {
-      return editor.registerCommandListener((type, payload) => {
-        const activeElement = document.activeElement;
-        const inputElem = inputRef.current;
-
-        if (type === 'selectionChange' && inputElem !== activeElement) {
-          onHide();
-        } else if (type === 'keyEscape' && inputElem === activeElement) {
-          onHide(true);
-          return true;
-        }
-
-        return false;
-      }, HighPriority);
+      return editor.registerCommandListener(
+        'selectionChange',
+        (payload) => {
+          const activeElement = document.activeElement;
+          const inputElem = inputRef.current;
+          if (inputElem !== activeElement) {
+            onHide();
+            return true;
+          }
+          return false;
+        },
+        HighPriority,
+      );
+    }
+  }, [editor, onHide, showEquationEditor]);
+  useEffect(() => {
+    if (showEquationEditor) {
+      return editor.registerCommandListener(
+        'keyEscape',
+        (payload) => {
+          const activeElement = document.activeElement;
+          const inputElem = inputRef.current;
+          if (inputElem === activeElement) {
+            onHide(true);
+            return true;
+          }
+          return false;
+        },
+        HighPriority,
+      );
     }
   }, [editor, onHide, showEquationEditor]);
 

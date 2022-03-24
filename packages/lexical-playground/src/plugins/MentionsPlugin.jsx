@@ -595,8 +595,7 @@ function MentionsTypeaheadItem({
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       {result}
     </li>
   );
@@ -678,75 +677,90 @@ function MentionsTypeahead({
   }, [results, selectedIndex, updateSelectedIndex]);
 
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      switch (type) {
-        case 'keyArrowDown': {
-          const event: KeyboardEvent = payload;
-          if (results !== null && selectedIndex !== null) {
-            if (
-              selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
-              selectedIndex !== results.length - 1
-            ) {
-              updateSelectedIndex(selectedIndex + 1);
-            }
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
-          return true;
-        }
-        case 'keyArrowUp': {
-          const event: KeyboardEvent = payload;
-          if (results !== null && selectedIndex !== null) {
-            if (selectedIndex !== 0) {
-              updateSelectedIndex(selectedIndex - 1);
-            }
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
-          return true;
-        }
-        case 'keyEscape': {
-          const event: KeyboardEvent = payload;
-          if (results === null || selectedIndex === null) {
-            return false;
+    return editor.registerCommandListener(
+      'keyArrowDown',
+      (payload) => {
+        const event: KeyboardEvent = payload;
+        if (results !== null && selectedIndex !== null) {
+          if (
+            selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
+            selectedIndex !== results.length - 1
+          ) {
+            updateSelectedIndex(selectedIndex + 1);
           }
           event.preventDefault();
           event.stopImmediatePropagation();
-          close();
-          return true;
         }
-        case 'keyTab': {
-          const event: KeyboardEvent = payload;
-          if (results === null || selectedIndex === null) {
-            return false;
+        return true;
+      },
+      LowPriority,
+    );
+  }, [editor, results, selectedIndex, updateSelectedIndex]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'keyArrowUp',
+      (payload) => {
+        const event: KeyboardEvent = payload;
+        if (results !== null && selectedIndex !== null) {
+          if (selectedIndex !== 0) {
+            updateSelectedIndex(selectedIndex - 1);
           }
           event.preventDefault();
           event.stopImmediatePropagation();
-          applyCurrentSelected();
-          return true;
         }
-        case 'keyEnter': {
-          const event: KeyboardEvent = payload;
-          if (results === null || selectedIndex === null) {
-            return false;
-          }
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          applyCurrentSelected();
-          return true;
-        }
-        default:
+        return true;
+      },
+      LowPriority,
+    );
+  }, [editor, results, selectedIndex, updateSelectedIndex]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'keyEscape',
+      (payload) => {
+        const event: KeyboardEvent = payload;
+        if (results === null || selectedIndex === null) {
           return false;
-      }
-    }, LowPriority);
-  }, [
-    applyCurrentSelected,
-    close,
-    editor,
-    results,
-    selectedIndex,
-    updateSelectedIndex,
-  ]);
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        close();
+        return true;
+      },
+      LowPriority,
+    );
+  }, [close, editor, results, selectedIndex]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'keyTab',
+      (payload) => {
+        const event: KeyboardEvent = payload;
+        if (results === null || selectedIndex === null) {
+          return false;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        applyCurrentSelected();
+        return true;
+      },
+      LowPriority,
+    );
+  }, [applyCurrentSelected, editor, results, selectedIndex]);
+  useEffect(() => {
+    return editor.registerCommandListener(
+      'keyEnter',
+      (payload) => {
+        const event: KeyboardEvent = payload;
+        if (results === null || selectedIndex === null) {
+          return false;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        applyCurrentSelected();
+        return true;
+      },
+      LowPriority,
+    );
+  }, [applyCurrentSelected, editor, results, selectedIndex]);
 
   if (results === null) {
     return null;
@@ -757,8 +771,7 @@ function MentionsTypeahead({
       aria-label="Suggested mentions"
       id="mentions-typeahead"
       ref={divRef}
-      role="listbox"
-    >
+      role="listbox">
       <ul>
         {results.slice(0, SUGGESTION_LIST_LENGTH_LIMIT).map((result, i) => (
           <MentionsTypeaheadItem

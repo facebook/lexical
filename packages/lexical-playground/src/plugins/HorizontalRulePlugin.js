@@ -20,8 +20,9 @@ export default function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerCommandListener((type) => {
-      if (type === 'insertHorizontalRule') {
+    return editor.registerCommandListener(
+      'insertHorizontalRule',
+      (type) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -38,9 +39,9 @@ export default function HorizontalRulePlugin(): null {
         }
 
         return true;
-      }
-      return false;
-    }, EditorPriority);
+      },
+      EditorPriority,
+    );
   }, [editor]);
 
   return null;

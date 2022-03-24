@@ -30,8 +30,9 @@ export default function EquationsPlugin(): React$Node {
       );
     }
 
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'insertEquation') {
+    return editor.registerCommandListener(
+      'insertEquation',
+      (payload) => {
         const {equation, inline} = payload;
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
@@ -39,9 +40,9 @@ export default function EquationsPlugin(): React$Node {
           selection.insertNodes([equationNode]);
         }
         return true;
-      }
-      return false;
-    }, EditorPriority);
+      },
+      EditorPriority,
+    );
   }, [editor]);
   return null;
 }

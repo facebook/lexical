@@ -64,7 +64,7 @@ function VideoPlugin(): React$Node {
 
   useEffect(() => {
     // Similar with command listener, which returns unlisten callback
-    const removeListener = editor.registerCommandListener((type, payload) => {
+    const removeListener = editor.registerCommandListener((payload) => {
       // Adding custom command that will be handled by this plugin
       if (type === 'insertVideo') {
         editor.update(() => {

@@ -58,8 +58,12 @@ export default function Home() {
     <Layout description={siteConfig.tagline}>
       <HomepageHeader />
       <main>
-        <HomepageFeatures />
-        <HomepageExamples />
+        <div className="margin-vert--lg">
+          <HomepageFeatures />
+        </div>
+        <div className="margin-vert--lg">
+          <HomepageExamples />
+        </div>
       </main>
     </Layout>
   );

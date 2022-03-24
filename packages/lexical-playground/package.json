@@ -23,7 +23,8 @@
     "@excalidraw/excalidraw": "0.11.0",
     "yjs": ">=13.5.22",
     "y-websocket": ">=1.3.x",
-    "prismjs": "1.25.0"
+    "prismjs": "1.25.0",
+    "katex": "^0.15.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^1.0.7",

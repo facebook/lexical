@@ -34,5 +34,7 @@ export default function KatexRenderer({
     });
   }, [equation, katexElementRef, inline]);
 
-  return <span onClick={onClick} ref={katexElementRef} />;
+  return (
+    <span role="button" tabIndex={-1} onClick={onClick} ref={katexElementRef} />
+  );
 }

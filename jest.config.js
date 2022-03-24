@@ -23,6 +23,7 @@ module.exports = {
         '^./dist/(.+)': './src/$1',
         '^@lexical/clipboard$':
           '<rootDir>/packages/lexical-clipboard/src/index.js',
+        '^@lexical/code$': '<rootDir>/packages/lexical-code/src/index.js',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
         '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
@@ -66,8 +67,6 @@ module.exports = {
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js',
         '^lexical/CodeHighlightNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js',
-        '^lexical/CodeNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeNode.js',
         '^lexical/ExtendedNodes$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalExtendedNodes.js',
         '^lexical/HeadingNode$':

@@ -6,15 +6,19 @@
  *
  */
 
+import {$createCodeNode} from '@lexical/code';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
 } from 'lexical';
-import {$createCodeNode} from 'lexical/CodeNode';
 
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
+
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 const editorConfig = Object.freeze({
   theme: {

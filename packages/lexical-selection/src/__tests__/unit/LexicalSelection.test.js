@@ -23,7 +23,7 @@ import {
   createTestEditor,
 } from 'lexical/src/__tests__/utils';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {
@@ -50,6 +50,10 @@ import {
   setNativeSelectionWithPaths,
   undo,
 } from '../utils';
+
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -132,7 +136,7 @@ describe('LexicalSelection tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.createRoot(container).render(<TestBase />);
+      createRoot(container).render(<TestBase />);
     });
     ref.current.focus();
     await Promise.resolve().then();

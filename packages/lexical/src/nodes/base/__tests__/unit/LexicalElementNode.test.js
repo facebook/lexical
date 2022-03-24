@@ -8,13 +8,17 @@
 
 import {$createTextNode, $getRoot, $getSelection, TextNode} from 'lexical';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../../__tests__/utils';
+
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('LexicalElementNode tests', () => {
   let container = null;
@@ -58,7 +62,7 @@ describe('LexicalElementNode tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.createRoot(container).render(<TestBase />);
+      createRoot(container).render(<TestBase />);
     });
 
     // Insert initial block

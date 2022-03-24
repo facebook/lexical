@@ -15,10 +15,14 @@ import {
   ParagraphNode,
 } from 'lexical';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import useLexicalIsTextContentEmpty from '../../useLexicalIsTextContentEmpty';
+
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('useLexicalIsTextContentEmpty', () => {
   let container = null;
@@ -26,7 +30,7 @@ describe('useLexicalIsTextContentEmpty', () => {
 
   beforeEach(() => {
     container = document.createElement('div');
-    reactRoot = ReactDOM.createRoot(container);
+    reactRoot = createRoot(container);
     document.body.appendChild(container);
   });
 

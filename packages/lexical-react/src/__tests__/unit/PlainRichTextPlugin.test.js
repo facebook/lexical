@@ -12,7 +12,7 @@ import {$rootTextContentCurry} from '@lexical/text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import ExtendedNodes from 'lexical/ExtendedNodes';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import LexicalComposer from '../../../src/LexicalComposer';
@@ -20,13 +20,17 @@ import PlainTextPlugin from '../../../src/LexicalPlainTextPlugin';
 import RichTextPlugin from '../../../src/LexicalRichTextPlugin';
 import {useLexicalComposerContext} from '../../LexicalComposerContext';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 describe('LexicalNodeHelpers tests', () => {
   let container = null;
   let reactRoot;
 
   beforeEach(() => {
     container = document.createElement('div');
-    reactRoot = ReactDOM.createRoot(container);
+    reactRoot = createRoot(container);
     document.body.appendChild(container);
   });
 
@@ -58,8 +62,7 @@ describe('LexicalNodeHelpers tests', () => {
               namespace: 'PlaygroundEditor',
               nodes: plugin === 'PlainTextPlugin' ? [] : [...ExtendedNodes],
               theme: {},
-            }}
-          >
+            }}>
             <GrabEditor />
             {plugin === 'PlainTextPlugin' ? (
               <PlainTextPlugin

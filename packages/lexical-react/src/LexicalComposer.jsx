@@ -15,13 +15,13 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {createEditor} from 'lexical';
-import React, {useContext, useMemo} from 'react';
+import React, {useMemo} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 type Props = {
   children: React$Node,
   initialConfig: $ReadOnly<{
-    editor?: LexicalEditor | null,
+    editor__DEPRECATED?: LexicalEditor | null,
     namespace?: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     onError: (error: Error, editor: LexicalEditor) => void,
@@ -34,31 +34,19 @@ export default function LexicalComposer({
   initialConfig,
   children,
 }: Props): React$MixedElement {
-  const parentContext = useContext(LexicalComposerContext);
   const composerContext = useMemo(
     () => {
       let composerTheme: void | EditorThemeClasses;
-      let parentEditor;
       const {
         theme,
         namespace,
-        editor: initialEditor,
+        editor__DEPRECATED: initialEditor,
         nodes,
         onError,
       } = initialConfig;
 
-      if (theme != null) {
-        composerTheme = theme;
-      } else if (parentContext != null) {
-        parentEditor = parentContext[0];
-        const parentTheme = parentContext[1].getTheme();
-        if (parentTheme != null) {
-          composerTheme = parentTheme;
-        }
-      }
-
       const context: LexicalComposerContextType = createLexicalComposerContext(
-        parentContext,
+        null,
         composerTheme,
       );
       let editor = initialEditor || null;
@@ -69,9 +57,8 @@ export default function LexicalComposer({
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
-          parentEditor,
           readOnly: true,
-          theme: composerTheme,
+          theme,
         });
         editor = newEditor;
       }

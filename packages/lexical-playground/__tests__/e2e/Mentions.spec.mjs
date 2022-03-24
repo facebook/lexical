@@ -94,7 +94,7 @@ test.describe('Mentions', () => {
     await waitForSelector(page, '#mentions-typeahead ul li');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Luke</span></p',
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Luke</span></p>',
     );
 
     await page.keyboard.press('Enter');

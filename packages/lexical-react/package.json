@@ -27,7 +27,8 @@
     "@lexical/code": "0.1.16",
     "@lexical/text": "0.1.16",
     "@lexical/link": "0.1.16",
-    "@lexical/overflow": "0.1.16"
+    "@lexical/overflow": "0.1.16",
+    "@lexical/history": "0.1.16"
   },
   "peerDependencies": {
     "lexical": "0.1.16",

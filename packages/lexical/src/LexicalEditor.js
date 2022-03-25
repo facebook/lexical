@@ -502,9 +502,7 @@ export class LexicalEditor {
     return true;
   }
   execCommand(type: string, payload?: CommandPayload): boolean {
-    // console.time('execCommand: ' + type);
     const result = triggerCommandListeners(this, type, payload);
-    // console.timeEnd('execCommand: ' + type);
     return result;
   }
   getDecorators(): {[NodeKey]: mixed} {

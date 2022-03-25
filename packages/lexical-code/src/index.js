@@ -753,7 +753,7 @@ export function registerCodeHighlighting(
     ),
     editor.registerCommandListener(
       'indentContent',
-      (payload): boolean => handleMultilineIndent('outdentContent'),
+      (payload): boolean => handleMultilineIndent('indentContent'),
       1,
     ),
     editor.registerCommandListener(

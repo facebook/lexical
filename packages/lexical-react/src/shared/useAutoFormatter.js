@@ -22,9 +22,9 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode} from '@lexical/list';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
-import {$isCodeNode} from 'lexical/CodeNode';
 import {useEffect} from 'react';
 
 import {

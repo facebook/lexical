@@ -10,7 +10,7 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import * as React from 'react';
-import {createRoot} from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 import * as Y from 'yjs';
 
@@ -132,7 +132,6 @@ class Client {
             setEditor={(editor) => (this._editor = editor)}
           />
         </LexicalComposer>,
-        container,
       );
     });
   }

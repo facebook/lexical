@@ -22,6 +22,7 @@ const DEFAULT_PKGS = [
   'lexical-hashtag',
   'lexical-selection',
   'lexical-offset',
+  'lexical-code',
   'lexical-utils',
   'lexical-text',
 ];

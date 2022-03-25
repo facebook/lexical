@@ -54,6 +54,10 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-utils/src/index.js'),
   },
   {
+    find: '@lexical/code',
+    replacement: path.resolve('../lexical-code/src/index.js'),
+  },
+  {
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
   },

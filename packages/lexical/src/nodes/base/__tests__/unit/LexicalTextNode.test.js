@@ -16,7 +16,7 @@ import {
   $getSelection,
 } from 'lexical';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {
@@ -35,6 +35,10 @@ import {
   $setCompositionKey,
   getEditorStateTextContent,
 } from '../../../../LexicalUtils';
+
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 const editorConfig = Object.freeze({
   theme: {
@@ -91,7 +95,7 @@ describe('LexicalTextNode tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      ReactDOM.createRoot(container).render(<TestBase />);
+      createRoot(container).render(<TestBase />);
     });
 
     // Insert initial block

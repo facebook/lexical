@@ -12,6 +12,10 @@ import {$createParagraphNode, $getRoot} from 'lexical';
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {$getListDepth, $getTopListNode, $isLastItemInList} from '../../utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 describe('Lexical List Utils tests', () => {
   initializeUnitTest((testEnv) => {
     test('getListDepth should return the 1-based depth of a list with one levels', async () => {

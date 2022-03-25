@@ -28,6 +28,10 @@ import {
   waitForReact,
 } from './utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();
   const paragraph = $createParagraphNode();

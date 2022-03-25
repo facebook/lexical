@@ -57,11 +57,13 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-text/dist'));
   fs.removeSync(path.resolve('./packages/lexical-offset/dist'));
   fs.removeSync(path.resolve('./packages/lexical-utils/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-code/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
   '@lexical/clipboard': 'LexicalClipboard',
+  '@lexical/code': 'LexicalCode',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
   '@lexical/list': 'LexicalList',
@@ -116,6 +118,7 @@ const externals = [
   '@lexical/text',
   '@lexical/offset',
   '@lexical/utils',
+  '@lexical/code',
   '@lexical/yjs',
   'react-dom',
   'react',
@@ -398,6 +401,17 @@ const packages = [
     name: 'Lexical Utils',
     outputPath: './packages/lexical-utils/dist/',
     sourcePath: './packages/lexical-utils/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalCode',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Code',
+    outputPath: './packages/lexical-code/dist/',
+    sourcePath: './packages/lexical-code/src/',
   },
   {
     modules: lexicalNodes.map((module) => ({

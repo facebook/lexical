@@ -24,6 +24,10 @@ import {EditorState} from '../../LexicalEditorState';
 import {$createRootNode} from '../../nodes/base/LexicalRootNode';
 import {initializeUnitTest} from '../utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 describe('LexicalEditorState tests', () => {
   initializeUnitTest((testEnv) => {
     test('constructor', async () => {

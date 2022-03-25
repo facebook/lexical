@@ -23,9 +23,6 @@ async function prepareLexicalPackage() {
 
   // Remap the node extensions to their short versions
   await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalCodeNode.js ./packages/${LEXICAL_PKG}/npm/CodeNode.js`,
-  );
-  await exec(
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalQuoteNode.js ./packages/${LEXICAL_PKG}/npm/QuoteNode.js`,
   );
   await exec(
@@ -36,9 +33,6 @@ async function prepareLexicalPackage() {
   );
   await exec(
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalAutoLinkNode.js ./packages/${LEXICAL_PKG}/npm/AutoLinkNode.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalCodeHighlightNode.js ./packages/${LEXICAL_PKG}/npm/CodeHighlightNode.js`,
   );
   await exec(
     `mv ./packages/${LEXICAL_PKG}/npm/LexicalOverflowNode.js ./packages/${LEXICAL_PKG}/npm/OverflowNode.js`,

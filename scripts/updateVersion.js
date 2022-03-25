@@ -11,6 +11,7 @@ const fs = require('fs-extra');
 
 const packages = {
   '@lexical/clipboard': 'lexical-clipboard',
+  '@lexical/code': 'lexical-code',
   '@lexical/file': 'lexical-file',
   '@lexical/hashtag': 'lexical-hashtag',
   '@lexical/list': 'lexical-list',

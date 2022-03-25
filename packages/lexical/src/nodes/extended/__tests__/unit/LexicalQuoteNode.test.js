@@ -17,6 +17,10 @@ const editorConfig = Object.freeze({
   },
 });
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 describe('LexicalQuoteNode tests', () => {
   initializeUnitTest((testEnv) => {
     test('QuoteNode.constructor', async () => {

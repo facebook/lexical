@@ -19,11 +19,11 @@
     "@lexical/hashtag": "0.1.16",
     "@lexical/selection": "0.1.16",
     "@lexical/utils": "0.1.16",
+    "@lexical/code": "0.1.16",
     "link-preview-generator": "1.0.7",
     "@excalidraw/excalidraw": "0.11.0",
     "yjs": ">=13.5.22",
     "y-websocket": ">=1.3.x",
-    "prismjs": "1.25.0",
     "katex": "^0.15.2"
   },
   "devDependencies": {

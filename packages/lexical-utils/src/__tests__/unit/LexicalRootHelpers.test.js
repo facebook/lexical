@@ -17,6 +17,10 @@ import {
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 describe('LexicalRootHelpers tests', () => {
   initializeUnitTest((testEnv) => {
     it('textContent', async () => {

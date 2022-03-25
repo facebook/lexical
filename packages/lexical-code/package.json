@@ -1,0 +1,29 @@
+{
+  "name": "@lexical/code",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "This package contains the functionality for the code blocks and code highlighting for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "code"
+  ],
+  "license": "MIT",
+  "version": "0.1.16",
+  "main": "LexicalCode.js",
+  "peerDependencies": {
+    "lexical": "0.1.16"
+  },
+  "dependencies": {
+    "@lexical/utils": "0.1.16",
+    "prismjs": "^1.25.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-cod"
+  }
+}

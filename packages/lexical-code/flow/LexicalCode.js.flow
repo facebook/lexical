@@ -13,8 +13,8 @@ import type {
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  EditorThemeClasses,
 } from 'lexical';
-import type {CodeHighlightNode} from 'lexical/CodeHighlightNode';
 
 import {ElementNode} from 'lexical';
 
@@ -44,3 +44,31 @@ declare export function getFirstCodeHighlightNodeOfLine(
 declare export function getLastCodeHighlightNodeOfLine(
   anchor: LexicalNode,
 ): ?CodeHighlightNode;
+
+import {TextNode} from 'lexical';
+
+declare export class CodeHighlightNode extends TextNode {
+  __highlightType: ?string;
+  constructor(text: string, highlightType?: string, key?: NodeKey): void;
+  static getType(): string;
+  static clone(node: CodeHighlightNode): CodeHighlightNode;
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  updateDOM<EditorContext>(
+    // $FlowFixMe
+    prevNode: CodeHighlightNode,
+    dom: HTMLElement,
+    config: EditorConfig<EditorContext>,
+  ): boolean;
+  setFormat(format: number): this;
+}
+declare function getHighlightThemeClass(
+  theme: EditorThemeClasses,
+  highlightType: ?string,
+): ?string;
+declare export function $createCodeHighlightNode(
+  text: string,
+  highlightType?: string,
+): CodeHighlightNode;
+declare export function $isCodeHighlightNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof CodeHighlightNode);

@@ -20,10 +20,8 @@ module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.
 
 module.name_mapper='^lexical/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalHeadingNode.js.flow'
 module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalQuoteNode.js.flow'
-module.name_mapper='^lexical/CodeNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalCodeNode.js.flow'
 module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalLinkNode.js.flow'
 module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalAutoLinkNode.js.flow'
-module.name_mapper='^lexical/CodeHighlightNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalCodeHighlightNode.js.flow'
 module.name_mapper='^lexical/OverflowNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalOverflowNode.js.flow'
 module.name_mapper='^lexical/ExtendedNodes' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalExtendedNodes.js.flow'
 
@@ -35,6 +33,7 @@ module.name_mapper='^@lexical/selection' -> '<PROJECT_ROOT>/packages/lexical-sel
 module.name_mapper='^@lexical/text' -> '<PROJECT_ROOT>/packages/lexical-text/src/index.js'
 module.name_mapper='^@lexical/offset' -> '<PROJECT_ROOT>/packages/lexical-offset/src/index.js'
 module.name_mapper='^@lexical/utils' -> '<PROJECT_ROOT>/packages/lexical-utils/src/index.js'
+module.name_mapper='^@lexical/code' -> '<PROJECT_ROOT>/packages/lexical-code/src/index.js'
 
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalEditor' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalEditor.js'
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalRichText' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js'

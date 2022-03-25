@@ -16,6 +16,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
+import {$createCodeNode} from '@lexical/code';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
@@ -30,7 +31,6 @@ import {
   $isRangeSelection,
   $setSelection,
 } from 'lexical';
-import {$createCodeNode} from 'lexical/CodeNode';
 import {$createHeadingNode} from 'lexical/HeadingNode';
 import {$createQuoteNode} from 'lexical/QuoteNode';
 import invariant from 'shared/invariant';

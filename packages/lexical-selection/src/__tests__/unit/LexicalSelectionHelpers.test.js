@@ -24,6 +24,10 @@ import {
   createTestEditor,
 } from 'lexical/src/__tests__/utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = $createParagraphNode();
   const nodeMap = editor._pendingEditorState._nodeMap;

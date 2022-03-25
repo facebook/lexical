@@ -10,6 +10,10 @@ import {$getRoot, $getSelection, ParagraphNode, TextNode} from 'lexical';
 import {LexicalNode} from '../../LexicalNode';
 import {initializeUnitTest, TestElementNode} from '../utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 class TestNode extends LexicalNode {
   static getType(): string {
     return 'test';

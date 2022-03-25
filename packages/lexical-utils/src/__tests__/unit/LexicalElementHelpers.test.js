@@ -12,6 +12,10 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 describe('LexicalElementHelpers tests', () => {
   describe('addClassNamesToElement() and removeClassNamesFromElement()', () => {
     test('basic', async () => {

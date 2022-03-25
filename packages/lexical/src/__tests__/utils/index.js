@@ -11,7 +11,7 @@ import type {LexicalEditor} from 'lexical';
 import {createEditor, DecoratorNode, ElementNode, TextNode} from 'lexical';
 import ExtendedNodes from 'lexical/ExtendedNodes';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {resetRandomKey} from '../../LexicalUtils';
@@ -79,7 +79,7 @@ export function initializeUnitTest(
     };
 
     ReactTestUtils.act(() => {
-      ReactDOM.createRoot(testEnv.container).render(<Editor />);
+      createRoot(testEnv.container).render(<Editor />);
     });
   });
 

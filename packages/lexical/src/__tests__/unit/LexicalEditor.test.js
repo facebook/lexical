@@ -32,7 +32,8 @@ import {
   TextNode,
 } from 'lexical';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import {createPortal} from 'react-dom';
+import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
 import {getEditorStateTextContent} from '../../LexicalUtils';
@@ -42,13 +43,17 @@ import {
   createTestEditor,
 } from '../utils';
 
+// No idea why we suddenly need to do this, but it fixes the tests
+// with latest experimental React version.
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
 describe('LexicalEditor tests', () => {
   let container = null;
   let reactRoot;
 
   beforeEach(() => {
     container = document.createElement('div');
-    reactRoot = ReactDOM.createRoot(container);
+    reactRoot = createRoot(container);
     document.body.appendChild(container);
   });
 
@@ -841,7 +846,7 @@ describe('LexicalEditor tests', () => {
           Object.keys(decorators).map((nodeKey) => {
             const reactDecorator = decorators[nodeKey];
             const element = editor.getElementByKey(nodeKey);
-            return ReactDOM.createPortal(reactDecorator, element);
+            return createPortal(reactDecorator, element);
           }),
         [decorators],
       );

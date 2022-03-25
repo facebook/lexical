@@ -13,6 +13,7 @@ import {
 import {
   assertHTML,
   focusEditor,
+  html,
   initialize,
   IS_MAC,
   test,
@@ -30,14 +31,28 @@ test.describe('Regression test #1258', () => {
     await page.keyboard.type('hello world');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">hello world</span>
+        </p>
+      `,
     );
 
     await moveToLineBeginning(page);
     await deleteForward(page);
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">ello world</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">ello world</span>
+        </p>
+      `,
     );
   });
 });

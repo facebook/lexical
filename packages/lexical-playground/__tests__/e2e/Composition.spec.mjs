@@ -11,6 +11,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   repeat,
   test,
@@ -27,7 +28,14 @@ test.describe('Composition', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">も</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">も</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -40,7 +48,9 @@ test.describe('Composition', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -53,7 +63,14 @@ test.describe('Composition', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">もじ</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">もじ</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 2,
@@ -69,7 +86,14 @@ test.describe('Composition', () => {
     await page.keyboard.type('هَ');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl"
+        >
+          <span data-lexical-text="true">هَ</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 2,
@@ -81,7 +105,14 @@ test.describe('Composition', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">ه</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl"
+        >
+          <span data-lexical-text="true">ه</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -94,13 +125,22 @@ test.describe('Composition', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await page.keyboard.type('هَ');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl"
+        >
+          <span data-lexical-text="true">هَ</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 2,
@@ -120,7 +160,14 @@ test.describe('Composition', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">ه</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+          dir="rtl"
+        >
+          <span data-lexical-text="true">ه</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -155,7 +202,14 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">すし もじあ</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">すし もじあ</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 6,
@@ -202,7 +256,17 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><br><span data-lexical-text="true">すし もじあ</span><br><br></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <br />
+            <span data-lexical-text="true">すし もじあ</span>
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 6,
@@ -239,7 +303,20 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">すし もじあ</span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true">すし もじあ</span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 6,
@@ -254,7 +331,19 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -275,7 +364,19 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -318,7 +419,21 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true">すし もじあ</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true">すし もじあ</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 6,
@@ -365,7 +480,14 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Luke すし もじあSkywalker</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Luke すし もじあSkywalker</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 11,
@@ -405,7 +527,20 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#すし</span><span data-lexical-text="true"> もじあ</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #すし
+            </span>
+            <span data-lexical-text="true">もじあ</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 4,
@@ -425,7 +560,14 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">すし#すし もじあ</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">すし#すし もじあ</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -458,7 +600,9 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -482,7 +626,11 @@ test.describe('Composition', () => {
 
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true"> </span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true"></span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,

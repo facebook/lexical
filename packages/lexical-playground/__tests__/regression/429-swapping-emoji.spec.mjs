@@ -10,6 +10,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   repeat,
   test,
@@ -25,7 +26,20 @@ test.describe('Regression test #429', () => {
     await page.keyboard.type(':) or :(');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> or </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true">or</span>
+          <span class="emoji unhappysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙁</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 2,
@@ -41,7 +55,21 @@ test.describe('Regression test #429', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> or </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true">or</span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -52,7 +80,21 @@ test.describe('Regression test #429', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> or </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <br />
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true">or</span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -65,7 +107,20 @@ test.describe('Regression test #429', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> or </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true">or</span>
+          <span class="emoji unhappysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙁</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,

@@ -14,6 +14,7 @@ import {
 import {
   assertHTML,
   assertSelection,
+  html,
   initialize,
   repeat,
   test,
@@ -27,13 +28,24 @@ function testSuite(charset) {
     await page.keyboard.type('12345');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12345</span>
+        </p>
+      `,
     );
 
     await page.keyboard.type('6789');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6789</span></span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12345</span>
+          <span class="PlaygroundEditorTheme__characterLimit">
+            <span data-lexical-text="true">6789</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 4,
@@ -47,7 +59,17 @@ function testSuite(charset) {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">01234</span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">5</span></span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6789</span></span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">01234</span>
+          <span class="PlaygroundEditorTheme__characterLimit">
+            <span data-lexical-text="true">5</span>
+          </span>
+          <span class="PlaygroundEditorTheme__characterLimit">
+            <span data-lexical-text="true">6789</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -69,13 +91,30 @@ function testSuite(charset) {
     await page.keyboard.type('1234:)56');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">1234</span><span class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">56</span></span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">1234</span>
+          <span
+            class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true">56</span>
+          </span>
+        </p>
+      `,
     );
 
     await repeat(3, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">1234</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">1234</span>
+        </p>
+      `,
     );
   });
 
@@ -93,19 +132,44 @@ function testSuite(charset) {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></span></p><p class="PlaygroundEditorTheme__paragraph"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true">12345</span>
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">6</span>
+            </span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">7</span>
+            </span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span><br><span data-lexical-text="true">7</span></span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true">12345</span>
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">6</span>
+              <br />
+              <span data-lexical-text="true">7</span>
+            </span>
+          </p>
+        `,
       );
     }
 
     await repeat(3, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12345</span>
+        </p>
+      `,
     );
   });
 
@@ -126,12 +190,29 @@ function testSuite(charset) {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">23456</span></p><p class="PlaygroundEditorTheme__paragraph"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true">23456</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">7</span>
+            </span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">23456</span><span class="PlaygroundEditorTheme__characterLimit"><br><span data-lexical-text="true">7</span></span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true">23456</span>
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <br />
+              <span data-lexical-text="true">7</span>
+            </span>
+          </p>
+        `,
       );
     }
 
@@ -139,12 +220,27 @@ function testSuite(charset) {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">3456</span></p><p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">7</span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true">3456</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true">7</span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">3456</span><br><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true">3456</span>
+            <br />
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">7</span>
+            </span>
+          </p>
+        `,
       );
     }
   });
@@ -164,12 +260,41 @@ function testSuite(charset) {
     if (charset === 'UTF-16') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">234</span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">56</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">234</span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span class="PlaygroundEditorTheme__characterLimit">
+              <span data-lexical-text="true">56</span>
+            </span>
+          </p>
+        `,
       );
     } else if (charset === 'UTF-8') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">234</span><span class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true">56</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">234</span>
+            <span
+              class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+              dir="ltr"
+            >
+              <span class="emoji happysmile" data-lexical-text="true">
+                <span class="emoji-inner">🙂</span>
+              </span>
+              <span data-lexical-text="true">56</span>
+            </span>
+          </p>
+        `,
       );
     }
   });
@@ -208,14 +333,30 @@ function testSuite(charset) {
     await page.keyboard.type('6');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span></p><p class="PlaygroundEditorTheme__paragraph"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12345</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span class="PlaygroundEditorTheme__characterLimit">
+            <span data-lexical-text="true">6</span>
+          </span>
+        </p>
+      `,
     );
 
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">12345</span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12345</span>
+          <span class="PlaygroundEditorTheme__characterLimit">
+            <span data-lexical-text="true">6</span>
+          </span>
+        </p>
+      `,
     );
   });
 
@@ -228,12 +369,38 @@ function testSuite(charset) {
     if (charset === 'UTF-16') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">ààààà</span><span class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">à</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">ààààà</span>
+            <span
+              class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+              dir="ltr"
+            >
+              <span data-lexical-text="true">à</span>
+            </span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">àà</span><span class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">àààà</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">àà</span>
+            <span
+              class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+              dir="ltr"
+            >
+              <span data-lexical-text="true">àààà</span>
+            </span>
+          </p>
+        `,
       );
     }
   });
@@ -246,18 +413,56 @@ function testSuite(charset) {
     if (['chromium', 'webkit'].includes(browserName)) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">👨‍👩‍👦‍👦</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span
+              class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+              dir="ltr"
+            >
+              <span data-lexical-text="true">👨‍👩‍👦‍👦</span>
+            </span>
+          </p>
+        `,
       );
     } else {
       if (charset === 'UTF-16') {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">👨‍👩</span><span class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">‍👦‍👦</span></span></p>',
+          html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr"
+            >
+              <span data-lexical-text="true">👨‍👩</span>
+              <span
+                class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+                dir="ltr"
+              >
+                <span data-lexical-text="true">‍👦‍👦</span>
+              </span>
+            </p>
+          `,
         );
       } else {
         await assertHTML(
           page,
-          '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">👨</span><span class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">‍👩‍👦‍👦</span></span></p>',
+          html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr"
+            >
+              <span data-lexical-text="true">👨</span>
+              <span
+                class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
+                dir="ltr"
+              >
+                <span data-lexical-text="true">‍👩‍👦‍👦</span>
+              </span>
+            </p>
+          `,
         );
       }
     }

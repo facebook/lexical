@@ -12,6 +12,7 @@ import {
   clickSelectors,
   dragMouse,
   focusEditor,
+  html,
   initialize,
   IS_COLLAB,
   test,
@@ -96,14 +97,108 @@ test.describe('Tables', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br /></p>`,
+      html`
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
 
     await insertTable(page);
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br/></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br/></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br/></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br/></p>`,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -117,7 +212,100 @@ test.describe('Tables', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">abc</span>
+              </p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -131,7 +319,110 @@ test.describe('Tables', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bb</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">d</span></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">e</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+            </th>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">bb</span>
+              </p>
+            </th>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">cc</span>
+              </p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+            </th>
+            <td>
+              <p dir="ltr">
+                <span data-lexical-text="true">e</span>
+              </p>
+            </td>
+            <td>
+              <p dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -149,14 +440,235 @@ test.describe('Tables', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bb</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">d</span></p></th><td class="PlaygroundEditorTheme__tableCell" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">e</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
-      true,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+            </th>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">bb</span>
+              </p>
+            </th>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">cc</span>
+              </p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+            </th>
+            <td
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">e</span>
+              </p>
+            </td>
+            <td>
+              <p dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true, ignoreSecondFrame: true},
     );
 
     // Check that the highlight styles are applied.
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bb</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">d</span></p></th><td class="PlaygroundEditorTheme__tableCell" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">e</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+            </th>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">bb</span>
+              </p>
+            </th>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">cc</span>
+              </p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+            </th>
+            <td
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">e</span>
+              </p>
+            </td>
+            <td>
+              <p dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true, ignoreSecondFrame: true},
     );
   });
 
@@ -192,8 +704,118 @@ test.describe('Tables', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bb</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">d</span></p></th><td class="PlaygroundEditorTheme__tableCell" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">e</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
-      true,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+            </th>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">bb</span>
+              </p>
+            </th>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">cc</span>
+              </p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+            </th>
+            <td
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <span data-lexical-text="true">e</span>
+              </p>
+            </td>
+            <td>
+              <p dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true, ignoreSecondFrame: true},
     );
   });
 
@@ -216,8 +838,118 @@ test.describe('Tables', () => {
     // Check that the character styles are applied.
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">a</strong></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">bb</strong></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">d</strong></p></th><td class="PlaygroundEditorTheme__tableCell" style="background-color: rgb(163, 187, 255); caret-color: transparent;"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderlineStrikethrough" data-lexical-text="true">e</strong></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
-      true,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <strong data-lexical-text="true">a</strong>
+              </p>
+            </th>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <strong data-lexical-text="true">bb</strong>
+              </p>
+            </th>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">cc</span>
+              </p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <strong data-lexical-text="true">d</strong>
+              </p>
+            </th>
+            <td
+              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
+            >
+              <p dir="ltr">
+                <strong data-lexical-text="true">e</strong>
+              </p>
+            </td>
+            <td>
+              <p dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true, ignoreSecondFrame: true},
     );
   });
 
@@ -235,8 +967,102 @@ test.describe('Tables', () => {
     // Check that the text was cleared.
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br></p><table class="PlaygroundEditorTheme__table"><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">cc</span></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">f</span></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr><tr><th class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"><p class="PlaygroundEditorTheme__paragraph"><br></p></th><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td><td class="PlaygroundEditorTheme__tableCell"><p class="PlaygroundEditorTheme__paragraph"><br></p></td></tr></table><p class="PlaygroundEditorTheme__paragraph"><br></p>`,
-      true,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p dir="ltr">
+                <span data-lexical-text="true">cc</span>
+              </p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p dir="ltr">
+                <span data-lexical-text="true">f</span>
+              </p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
   });
 });

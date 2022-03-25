@@ -11,6 +11,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
@@ -26,7 +27,14 @@ test.describe('TextEntry', () => {
     await page.keyboard.type(targetText);
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello Lexical</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello Lexical</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: targetText.length,
@@ -50,7 +58,14 @@ test.describe('TextEntry', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Foo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Foo</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 3,
@@ -74,7 +89,11 @@ test.describe('TextEntry', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true"> </span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -114,7 +133,23 @@ test.describe('TextEntry', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello World.</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello World.</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">This is another paragraph.</span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -125,7 +160,19 @@ test.describe('TextEntry', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello World.</span><br><span data-lexical-text="true">This is another paragraph. </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello World.</span>
+            <br />
+            <span data-lexical-text="true">This is another paragraph.</span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -150,7 +197,14 @@ test.describe('TextEntry', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Delete some of these characte</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Delete some of these characte</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: backspacedText.length,
@@ -175,7 +229,14 @@ test.describe('TextEntry', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello lolbar.</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello lolbar.</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 9,
@@ -216,7 +277,14 @@ test.describe('TextEntry', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Delete some of these </span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Delete some of these</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: backspacedText.length,
@@ -238,7 +306,12 @@ test.describe('TextEntry', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true"></span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -249,7 +322,13 @@ test.describe('TextEntry', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span><br><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true"></span>
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -266,7 +345,9 @@ test.describe('TextEntry', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -277,7 +358,13 @@ test.describe('TextEntry', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">  </span><br><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true"></span>
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -300,7 +387,14 @@ test.describe('TextEntry', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <br />
+          <br />
+          <br />
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 3,
@@ -326,7 +420,15 @@ test.describe('TextEntry', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph">
+            <br />
+            <br />
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -337,7 +439,15 @@ test.describe('TextEntry', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><br><br><br><br><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 1,
@@ -353,12 +463,37 @@ test.describe('TextEntry', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span></p><p class="PlaygroundEditorTheme__paragraph"><br><br><br><br></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+            dir="rtl"
+          >
+            <span data-lexical-text="true">هَ</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph">
+            <br />
+            <br />
+            <br />
+            <br />
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl" dir="rtl"><span data-lexical-text="true">هَ</span><br><br><br><br><br></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
+            dir="rtl"
+          >
+            <span data-lexical-text="true">هَ</span>
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+          </p>
+        `,
       );
     }
 
@@ -381,7 +516,10 @@ test.describe('TextEntry', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
       );
       await page.pause();
       await assertSelection(page, {
@@ -393,7 +531,12 @@ test.describe('TextEntry', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 1,
@@ -440,7 +583,9 @@ test.describe('TextEntry', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -455,7 +600,12 @@ test.describe('TextEntry', () => {
     await page.keyboard.up('Shift');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <br />
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -467,7 +617,12 @@ test.describe('TextEntry', () => {
     await page.keyboard.press('ArrowLeft');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <br />
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -480,7 +635,9 @@ test.describe('TextEntry', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,

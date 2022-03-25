@@ -11,6 +11,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   repeat,
   sleep,
@@ -39,7 +40,20 @@ test.describe('History', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 22,
@@ -50,7 +64,16 @@ test.describe('History', () => {
     } else {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world, again and again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 22,
@@ -65,7 +88,20 @@ test.describe('History', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 11,
@@ -76,7 +112,16 @@ test.describe('History', () => {
     } else {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 11,
@@ -91,7 +136,20 @@ test.describe('History', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><br /></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -102,7 +160,16 @@ test.describe('History', () => {
     } else {
       assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br/><br/></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -116,7 +183,14 @@ test.describe('History', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">hello world</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 11,
@@ -129,7 +203,14 @@ test.describe('History', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello</span></p>`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">hello</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 5,
@@ -142,7 +223,9 @@ test.describe('History', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><br /></p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -155,7 +238,14 @@ test.describe('History', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello</span></p>`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">hello</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 5,
@@ -168,7 +258,14 @@ test.describe('History', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p>`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">hello world</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 11,
@@ -182,7 +279,15 @@ test.describe('History', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph"><br /></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -193,7 +298,16 @@ test.describe('History', () => {
     } else {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br /><br /></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -208,7 +322,20 @@ test.describe('History', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 17,
@@ -219,7 +346,16 @@ test.describe('History', () => {
     } else {
       assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br/><span data-lexical-text="true">hello world again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 17,
@@ -234,7 +370,20 @@ test.describe('History', () => {
     if (isRichText) {
       assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 22,
@@ -245,7 +394,16 @@ test.describe('History', () => {
     } else {
       assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br/><span data-lexical-text="true">hello world, again and again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 22,
@@ -262,7 +420,20 @@ test.describe('History', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world, again again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world, again again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 18,
@@ -273,7 +444,16 @@ test.describe('History', () => {
     } else {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world, again again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 18,
@@ -288,7 +468,20 @@ test.describe('History', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world, again and again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 22,
@@ -299,7 +492,16 @@ test.describe('History', () => {
     } else {
       await assertHTML(
         page,
-        `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span><br /><span data-lexical-text="true">hello world, again and again</span></p>`,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 22,
@@ -325,13 +527,56 @@ test.describe('History', () => {
     await toggleBold(page);
     await page.keyboard.type('baz');
 
-    const step1HTML =
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">foo</strong><span data-lexical-text="true">bar</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">baz</strong></p>';
-    const step2HTML =
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">foo</strong><span data-lexical-text="true">bar</span></p>';
-    const step3HTML =
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">foo</strong></p>';
-    const step4HTML = '<p class="PlaygroundEditorTheme__paragraph"><br /></p>';
+    const step1HTML = html`
+      <p
+        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+        dir="ltr"
+      >
+        <strong
+          class="PlaygroundEditorTheme__textBold"
+          data-lexical-text="true"
+        >
+          foo
+        </strong>
+        <span data-lexical-text="true">bar</span>
+        <strong
+          class="PlaygroundEditorTheme__textBold"
+          data-lexical-text="true"
+        >
+          baz
+        </strong>
+      </p>
+    `;
+    const step2HTML = html`
+      <p
+        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+        dir="ltr"
+      >
+        <strong
+          class="PlaygroundEditorTheme__textBold"
+          data-lexical-text="true"
+        >
+          foo
+        </strong>
+        <span data-lexical-text="true">bar</span>
+      </p>
+    `;
+    const step3HTML = html`
+      <p
+        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+        dir="ltr"
+      >
+        <strong
+          class="PlaygroundEditorTheme__textBold"
+          data-lexical-text="true"
+        >
+          foo
+        </strong>
+      </p>
+    `;
+    const step4HTML = html`
+      <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+    `;
 
     await assertHTML(page, step1HTML);
     await undo(page);

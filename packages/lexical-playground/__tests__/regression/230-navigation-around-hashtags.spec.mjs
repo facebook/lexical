@@ -10,6 +10,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   repeat,
   test,
@@ -32,7 +33,16 @@ test.describe('Regression test #230', () => {
     await page.keyboard.press('ArrowRight');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #foo
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,

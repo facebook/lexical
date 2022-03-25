@@ -13,6 +13,7 @@ import {
   click,
   copyToClipboard,
   focusEditor,
+  html,
   initialize,
   pasteFromClipboard,
   repeat,
@@ -38,7 +39,17 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await assertSelection(page, {
@@ -90,7 +101,27 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some text</span></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Some more text</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Some text</span>
+        </p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Some more text</span>
+        </p>
+      `,
     );
 
     await moveToLineBeginning(page);
@@ -149,7 +180,14 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Test</span>
+        </p>
+      `,
     );
 
     await waitForSelector(page, 'button .horizontal-rule');
@@ -160,7 +198,22 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Test</span>
+        </p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await assertSelection(page, {
@@ -189,7 +242,14 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Test</span>
+        </p>
+      `,
     );
 
     await page.keyboard.press('ArrowLeft');
@@ -210,7 +270,27 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Te</span></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">st</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Te</span>
+        </p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">st</span>
+        </p>
+      `,
     );
 
     await assertSelection(page, {
@@ -234,7 +314,17 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await assertSelection(page, {
@@ -257,7 +347,17 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await assertSelection(page, {
@@ -274,7 +374,25 @@ test.describe('HorizontalRule', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p><div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true"
+        >
+          <hr />
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await assertSelection(page, {

@@ -10,6 +10,7 @@ import {
   assertHTML,
   click,
   focusEditor,
+  html,
   initialize,
   test,
 } from '../utils/index.mjs';
@@ -22,14 +23,28 @@ test.describe('Clear', () => {
     await page.keyboard.type('foo');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">foo</span>
+        </p>
+      `,
     );
 
     await click(page, '.action-button.clear');
     await page.keyboard.type('bar');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bar</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">bar</span>
+        </p>
+      `,
     );
   });
 });

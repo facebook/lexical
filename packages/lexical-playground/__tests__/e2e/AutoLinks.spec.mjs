@@ -17,6 +17,7 @@ import {
   assertHTML,
   click,
   focusEditor,
+  html,
   initialize,
   pasteFromClipboard,
   test,
@@ -34,7 +35,25 @@ test.describe('Auto Links', () => {
     );
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="http://example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com</span></a><span data-lexical-text="true"> and </span><a href="https://example.com/path?with=query#and-hash" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">https://example.com/path?with=query#and-hash</span></a><span data-lexical-text="true"> and </span><a href="www.example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">www.example.com</span></a></p>',
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a href="http://example.com" dir="ltr">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a href="https://example.com/path?with=query#and-hash" dir="ltr">
+            <span data-lexical-text="true">
+              https://example.com/path?with=query#and-hash
+            </span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a href="www.example.com" dir="ltr">
+            <span data-lexical-text="true">www.example.com</span>
+          </a>
+        </p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -43,41 +62,60 @@ test.describe('Auto Links', () => {
     isPlainText,
   }) => {
     test.skip(isPlainText);
-    const htmlWithLink =
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="http://example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com</span></a></p>';
+    const htmlWithLink = html`
+      <p dir="ltr">
+        <a href="http://example.com" dir="ltr">
+          <span data-lexical-text="true">http://example.com</span>
+        </a>
+      </p>
+    `;
 
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
 
     // Add non-url text after the link
     await page.keyboard.type('!');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com!</span></p>',
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">http://example.com!</span>
+        </p>
+      `,
+      {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
 
     // Add non-url text before the link
     await moveToLineBeginning(page);
     await page.keyboard.type('!');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">!http://example.com</span></p>',
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">!http://example.com</span>
+        </p>
+      `,
+      {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
 
     // Add newline after link
     await moveToLineEnd(page);
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      htmlWithLink + '<p class="PlaygroundEditorTheme__paragraph"><br /></p>',
+      htmlWithLink +
+        html`
+          <p><br /></p>
+        `,
+      {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
   });
 
   test('Can create link when pasting text with urls', async ({
@@ -92,7 +130,25 @@ test.describe('Auto Links', () => {
     });
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><a href="http://example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">http://example.com</span></a><span data-lexical-text="true"> and </span><a href="https://example.com/path?with=query#and-hash" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">https://example.com/path?with=query#and-hash</span></a><span data-lexical-text="true"> and </span><a href="www.example.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">www.example.com</span></a></p>',
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a href="http://example.com" dir="ltr">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a href="https://example.com/path?with=query#and-hash" dir="ltr">
+            <span data-lexical-text="true">
+              https://example.com/path?with=query#and-hash
+            </span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a href="www.example.com" dir="ltr">
+            <span data-lexical-text="true">www.example.com</span>
+          </a>
+        </p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -107,14 +163,28 @@ test.describe('Auto Links', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hm</span></a></p>',
+      html`
+        <p dir="ltr">
+          <a href="https://" dir="ltr">
+            <span data-lexical-text="true">hm</span>
+          </a>
+        </p>
+      `,
+      {ignoreClasses: true},
     );
     await moveLeft(page, 1);
     await moveRight(page, 1);
     await page.keyboard.type('ttps://facebook.co');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">https://facebook.com</span></a></p>',
+      html`
+        <p dir="ltr">
+          <a href="https://" dir="ltr">
+            <span data-lexical-text="true">https://facebook.com</span>
+          </a>
+        </p>
+      `,
+      {ignoreClasses: true},
     );
   });
 });

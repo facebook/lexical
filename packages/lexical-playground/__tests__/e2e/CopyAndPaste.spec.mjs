@@ -19,6 +19,7 @@ import {
   copyToClipboard,
   focus,
   focusEditor,
+  html,
   initialize,
   IS_LINUX,
   IS_WINDOWS,
@@ -40,7 +41,21 @@ test.describe('CopyAndPaste', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 12,
@@ -51,7 +66,17 @@ test.describe('CopyAndPaste', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+            <br />
+            <br />
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 12,
@@ -66,7 +91,21 @@ test.describe('CopyAndPaste', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
       if (browserName === 'firefox') {
         await assertSelection(page, {
@@ -86,7 +125,17 @@ test.describe('CopyAndPaste', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+            <br />
+            <br />
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
       if (browserName === 'firefox') {
         await assertSelection(page, {
@@ -110,12 +159,36 @@ test.describe('CopyAndPaste', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+            <br />
+            <br />
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
     }
 
@@ -125,7 +198,28 @@ test.describe('CopyAndPaste', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!Copy + pasting?</span></p><p class="PlaygroundEditorTheme__paragraph"><br></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Sounds good!Copy + pasting?</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 12,
@@ -136,7 +230,20 @@ test.describe('CopyAndPaste', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!Copy + pasting?</span><br><br><span data-lexical-text="true">Sounds good!</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Copy + pasting?</span>
+            <br />
+            <br />
+            <span data-lexical-text="true">Sounds good!Copy + pasting?</span>
+            <br />
+            <br />
+            <span data-lexical-text="true">Sounds good!</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 12,
@@ -161,7 +268,60 @@ test.describe('CopyAndPaste', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello world</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar2
+            </span>
+            <span data-lexical-text="true">when</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #not
+            </span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Next</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #line
+            </span>
+            <span data-lexical-text="true">of</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #text
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foo
+            </span>
+          </p>
+        `,
       );
 
       await assertSelection(page, {
@@ -173,7 +333,56 @@ test.describe('CopyAndPaste', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span><br><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello world</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar2
+            </span>
+            <span data-lexical-text="true">when</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #not
+            </span>
+            <br />
+            <span data-lexical-text="true">Next</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #line
+            </span>
+            <span data-lexical-text="true">of</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #text
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foo
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 4,
@@ -229,7 +438,60 @@ test.describe('CopyAndPaste', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello world</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar2
+            </span>
+            <span data-lexical-text="true">when</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #not
+            </span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Next</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #line
+            </span>
+            <span data-lexical-text="true">of</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #text
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foo
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 4,
@@ -240,7 +502,56 @@ test.describe('CopyAndPaste', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span><br><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello world</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar2
+            </span>
+            <span data-lexical-text="true">when</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #not
+            </span>
+            <br />
+            <span data-lexical-text="true">Next</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #line
+            </span>
+            <span data-lexical-text="true">of</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #text
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foo
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 4,
@@ -285,7 +596,60 @@ test.describe('CopyAndPaste', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello world</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar2
+            </span>
+            <span data-lexical-text="true">when</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #not
+            </span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Next</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #line
+            </span>
+            <span data-lexical-text="true">of</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #text
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foo
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 1,
@@ -296,7 +660,56 @@ test.describe('CopyAndPaste', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello world </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foobar2</span><span data-lexical-text="true"> when </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#not</span><br><span data-lexical-text="true">Next </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#line</span><span data-lexical-text="true"> of </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#text</span><span data-lexical-text="true"> test </span><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#foo</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello world</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foobar2
+            </span>
+            <span data-lexical-text="true">when</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #not
+            </span>
+            <br />
+            <span data-lexical-text="true">Next</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #line
+            </span>
+            <span data-lexical-text="true">of</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #text
+            </span>
+            <span data-lexical-text="true">test</span>
+            <span
+              class="PlaygroundEditorTheme__hashtag"
+              data-lexical-text="true"
+            >
+              #foo
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 1,
@@ -355,7 +768,9 @@ test.describe('CopyAndPaste', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -420,7 +835,9 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -811,7 +1228,29 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true"> World</span><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true"> World</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <a
+            href="https://"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello</span>
+          </a>
+          <span data-lexical-text="true">World</span>
+          <a
+            href="https://"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello</span>
+          </a>
+          <span data-lexical-text="true">World</span>
+        </p>
+      `,
     );
   });
 
@@ -829,7 +1268,14 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello!</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello!</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 6,
@@ -850,7 +1296,15 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello!</span></p><p class="PlaygroundEditorTheme__paragraph"><br/></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello!</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await assertSelection(page, {
@@ -874,7 +1328,17 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><a class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" href="https://facebook.com/" dir="ltr"><span data-lexical-text="true">Facebook!</span></a></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            href="https://facebook.com/"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Facebook!</span>
+          </a>
+        </p>
+      `,
     );
 
     await assertSelection(page, {
@@ -891,7 +1355,11 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">Facebook!</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">Facebook!</span>
+        </p>
+      `,
     );
 
     await click(page, '.link');
@@ -903,7 +1371,17 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><a href="https://facebook.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Facebook!</span></a></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <a
+            href="https://facebook.com"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Facebook!</span>
+          </a>
+        </p>
+      `,
     );
   });
 

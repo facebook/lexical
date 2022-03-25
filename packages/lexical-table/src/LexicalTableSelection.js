@@ -67,6 +67,8 @@ export class TableSelection {
   startX: number;
   startY: number;
   tableNodeKey: NodeKey;
+  anchorCell: Cell | null;
+  focusCell: Cell | null;
   anchorCellNodeKey: NodeKey | null;
   focusCellNodeKey: NodeKey | null;
   editor: LexicalEditor;
@@ -85,6 +87,8 @@ export class TableSelection {
     this.gridSelection = null;
     this.anchorCellNodeKey = null;
     this.focusCellNodeKey = null;
+    this.anchorCell = null;
+    this.focusCell = null;
 
     this.trackTableGrid();
   }
@@ -158,10 +162,15 @@ export class TableSelection {
       this.startY = -1;
       this.currentX = -1;
       this.currentY = -1;
+      this.gridSelection = null;
+      this.anchorCellNodeKey = null;
+      this.focusCellNodeKey = null;
+      this.anchorCell = null;
+      this.focusCell = null;
 
       $updateDOMForSelection(grid, null);
-      this.gridSelection = null;
       $setSelection(null);
+      this.editor.execCommand('selectionChange');
 
       const parent = removeHighlightStyle.parentNode;
       if (parent != null) {
@@ -184,16 +193,19 @@ export class TableSelection {
 
       const cellX = cell.x;
       const cellY = cell.y;
+      this.focusCell = cell;
+
+      const domSelection = getDOMSelection();
+
+      if (this.anchorCell !== null) {
+        // Collapse the selection
+        domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+      }
+
       if (
         !this.isHighlightingCells &&
         (this.startX !== cellX || this.startY !== cellY || ignoreStart)
       ) {
-        const domSelection = getDOMSelection();
-        const anchorNode = domSelection.anchorNode;
-        if (anchorNode !== null) {
-          // Collapse the selection
-          domSelection.setBaseAndExtent(anchorNode, 0, anchorNode, 0);
-        }
         this.isHighlightingCells = true;
         if (document.body) {
           document.body.appendChild(removeHighlightStyle);
@@ -224,6 +236,7 @@ export class TableSelection {
           );
 
           $setSelection(this.gridSelection);
+          this.editor.execCommand('selectionChange');
           $updateDOMForSelection(this.grid, this.gridSelection);
         }
       }
@@ -232,8 +245,12 @@ export class TableSelection {
 
   setAnchorCellForSelection(cell: Cell) {
     this.editor.update(() => {
+      this.anchorCell = cell;
       this.startX = cell.x;
       this.startY = cell.y;
+
+      const domSelection = getDOMSelection();
+      domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
 
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
@@ -257,7 +274,7 @@ export class TableSelection {
       const anchor = formatSelection.anchor;
       const focus = formatSelection.focus;
       selection.getNodes().forEach((cellNode) => {
-        if ($isElementNode(cellNode) && cellNode.getTextContentSize() !== 0) {
+        if ($isTableCellNode(cellNode) && cellNode.getTextContentSize() !== 0) {
           anchor.set(cellNode.getKey(), 0, 'element');
           focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
           formatSelection.formatText(type);
@@ -265,6 +282,7 @@ export class TableSelection {
       });
 
       $setSelection(selection);
+      this.editor.execCommand('selectionChange');
     });
   }
 
@@ -281,7 +299,7 @@ export class TableSelection {
         invariant(false, 'Expected grid selection');
       }
 
-      const selectedNodes = selection.getNodes();
+      const selectedNodes = selection.getNodes().filter($isTableCellNode);
 
       if (selectedNodes.length === this.grid.columns * this.grid.rows) {
         tableNode.selectPrevious();
@@ -306,6 +324,7 @@ export class TableSelection {
       });
       $updateDOMForSelection(this.grid, null);
       $setSelection(null);
+      this.editor.execCommand('selectionChange');
     });
   }
 }

@@ -412,7 +412,7 @@ export class GridSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const nodes = [];
+    const nodes = new Set();
 
     const {fromX, fromY, toX, toY} = this.getShape();
 
@@ -420,9 +420,13 @@ export class GridSelection implements BaseSelection {
     if (!$isGridNode(gridNode)) {
       invariant(false, 'getNodes: expected to find GridNode');
     }
+    nodes.add(gridNode);
+
     const gridRowNodes = gridNode.getChildren();
     for (let r = fromY; r <= toY; r++) {
       const gridRowNode = gridRowNodes[r];
+      nodes.add(gridRowNode);
+
       if (!$isGridRowNode(gridRowNode)) {
         invariant(false, 'getNodes: expected to find GridRowNode');
       }
@@ -432,11 +436,21 @@ export class GridSelection implements BaseSelection {
         if (!$isGridCellNode(gridCellNode)) {
           invariant(false, 'getNodes: expected to find GridCellNode');
         }
-        nodes.push(gridCellNode);
+        nodes.add(gridCellNode);
+
+        const children = gridCellNode.getChildren();
+
+        while (children.length > 0) {
+          const child = children.shift();
+          nodes.add(child);
+          if ($isElementNode(child)) {
+            children.unshift(...child.getChildren());
+          }
+        }
       }
     }
 
-    return nodes;
+    return Array.from(nodes);
   }
 
   getTextContent(): string {

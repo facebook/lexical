@@ -9,7 +9,7 @@
 
 import type {CommandListenerEditorPriority} from 'lexical';
 
-import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $setSelection} from 'lexical';
 import {useEffect} from 'react';
@@ -98,6 +98,12 @@ function toggleLink(url: null | string) {
 
 export default function LinkPlugin(): null {
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    if (!editor.hasNodes([LinkNode])) {
+      throw new Error('LinkPlugin: LinkNode not registered on editor');
+    }
+  }, [editor]);
 
   useEffect(() => {
     return editor.registerCommandListener((type, payload) => {

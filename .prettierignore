@@ -8,3 +8,5 @@ packages/playwright-core
 packages/**/vite.config.js
 **/node_modules
 flow-typed
+.github/CODEOWNERS
+.prettierignore

@@ -10,17 +10,17 @@
 import type {LexicalEditor, NodeKey} from 'lexical';
 
 import {
+  $createOverflowNode,
+  $isOverflowNode,
+  OverflowNode,
+} from '@lexical/overflow';
+import {
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
 } from 'lexical';
-import {
-  $createOverflowNode,
-  $isOverflowNode,
-  OverflowNode,
-} from 'lexical/OverflowNode';
 
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {mergePrevious} from '../../DEPRECATED_useLexicalCharacterLimit';

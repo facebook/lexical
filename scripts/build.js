@@ -61,6 +61,8 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-dragon/dist'));
   fs.removeSync(path.resolve('./packages/lexical-plain-text/dist'));
   fs.removeSync(path.resolve('./packages/lexical-rich-text/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-overflow/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-link/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
@@ -70,8 +72,10 @@ const wwwMappings = {
   '@lexical/dragon': 'LexicalDragon',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
+  '@lexical/link': 'LexicalLink',
   '@lexical/list': 'LexicalList',
   '@lexical/offset': 'LexicalOffset',
+  '@lexical/overflow': 'LexicalOverflow',
   '@lexical/plain-text': 'LexicalPlainText',
   '@lexical/rich-text': 'LexicalRichText',
   '@lexical/selection': 'LexicalSelection',
@@ -82,16 +86,6 @@ const wwwMappings = {
   lexical: 'Lexical',
   'react-dom': 'ReactDOMComet',
 };
-
-const lexicalNodes = fs
-  .readdirSync(path.resolve('./packages/lexical/src/nodes/extended'))
-  .map((str) => path.basename(str, '.js'))
-  .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
-const lexicalNodesExternals = lexicalNodes.map((node) => {
-  const external = `lexical/${node.replace('Lexical', '')}`;
-  wwwMappings[external] = node;
-  return external;
-});
 
 const lexicalShared = fs
   .readdirSync(path.resolve('./packages/shared/src'))
@@ -129,11 +123,12 @@ const externals = [
   '@lexical/plain-text',
   '@lexical/rich-text',
   '@lexical/dragon',
+  '@lexical/overflow',
+  '@lexical/link',
   'react-dom',
   'react',
   'yjs',
   'y-websocket',
-  ...lexicalNodesExternals,
   ...lexicalReactModuleExternals,
   ...Object.values(wwwMappings),
 ];
@@ -436,6 +431,28 @@ const packages = [
   {
     modules: [
       {
+        outputFileName: 'LexicalLink',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Link',
+    outputPath: './packages/lexical-link/dist/',
+    sourcePath: './packages/lexical-link/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalOverflow',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Overflow',
+    outputPath: './packages/lexical-overflow/dist/',
+    sourcePath: './packages/lexical-overflow/src/',
+  },
+  {
+    modules: [
+      {
         outputFileName: 'LexicalPlainText',
         sourceFileName: 'index.js',
       },
@@ -454,16 +471,6 @@ const packages = [
     name: 'Lexical Rich Text',
     outputPath: './packages/lexical-rich-text/dist/',
     sourcePath: './packages/lexical-rich-text/src/',
-  },
-  {
-    modules: lexicalNodes.map((module) => ({
-      name: module,
-      outputFileName: module,
-      sourceFileName: module,
-    })),
-    name: 'Lexical Core Nodes',
-    outputPath: './packages/lexical/dist/',
-    sourcePath: './packages/lexical/src/nodes/extended/',
   },
   {
     modules: lexicalShared.map((module) => ({

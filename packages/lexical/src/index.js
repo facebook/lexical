@@ -39,26 +39,22 @@ import {
   isDecoratorArray,
   isDecoratorEditor,
   isDecoratorMap,
-} from './nodes/base/LexicalDecoratorNode';
-import {$isElementNode, ElementNode} from './nodes/base/LexicalElementNode';
-import {$isGridCellNode, GridCellNode} from './nodes/base/LexicalGridCellNode';
-import {$isGridNode, GridNode} from './nodes/base/LexicalGridNode';
-import {$isGridRowNode, GridRowNode} from './nodes/base/LexicalGridRowNode';
+} from './nodes/LexicalDecoratorNode';
+import {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
+import {$isGridCellNode, GridCellNode} from './nodes/LexicalGridCellNode';
+import {$isGridNode, GridNode} from './nodes/LexicalGridNode';
+import {$isGridRowNode, GridRowNode} from './nodes/LexicalGridRowNode';
 import {
   $createLineBreakNode,
   $isLineBreakNode,
-} from './nodes/base/LexicalLineBreakNode';
+} from './nodes/LexicalLineBreakNode';
 import {
   $createParagraphNode,
   $isParagraphNode,
   ParagraphNode,
-} from './nodes/base/LexicalParagraphNode';
-import {$isRootNode} from './nodes/base/LexicalRootNode';
-import {
-  $createTextNode,
-  $isTextNode,
-  TextNode,
-} from './nodes/base/LexicalTextNode';
+} from './nodes/LexicalParagraphNode';
+import {$isRootNode} from './nodes/LexicalRootNode';
+import {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
 
 export {
   $createGridSelection,

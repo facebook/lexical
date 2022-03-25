@@ -22,7 +22,7 @@ import {
   $isRangeSelection,
 } from './LexicalSelection';
 import {readEditorState} from './LexicalUpdates';
-import {$createRootNode} from './nodes/base/LexicalRootNode';
+import {$createRootNode} from './nodes/LexicalRootNode';
 
 export type ParsedEditorState = {
   _nodeMap: Array<[NodeKey, ParsedNode]>,

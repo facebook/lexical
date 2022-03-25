@@ -70,30 +70,19 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-dragon/src/index.js'),
   },
   {
+    find: '@lexical/link',
+    replacement: path.resolve('../lexical-link/src/index.js'),
+  },
+  {
+    find: '@lexical/overflow',
+    replacement: path.resolve('../lexical-overflow/src/index.js'),
+  },
+  {
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
   },
   {find: 'shared', replacement: path.resolve('../shared/src')},
 ];
-
-// Lexical Node
-[
-  'ExtendedNodes',
-  'LinkNode',
-  'CodeNode',
-  'HeadingNode',
-  'QuoteNode',
-  'CodeHighlightNode',
-  'AutoLinkNode',
-  'OverflowNode',
-].forEach((module) => {
-  moduleResolution.push({
-    find: `lexical/${module}`,
-    replacement: path.resolve(
-      `../lexical/src/nodes/extended/Lexical${module}.js`,
-    ),
-  });
-});
 
 // Lexical React
 [

@@ -27,6 +27,8 @@ const DEFAULT_PKGS = [
   'lexical-rich-text',
   'lexical-utils',
   'lexical-dragon',
+  'lexical-overflow',
+  'lexical-link',
   'lexical-text',
 ];
 

@@ -13,7 +13,7 @@ import type {
   DecoratorArray,
   DecoratorMap,
   DecoratorStateValue,
-} from './nodes/base/LexicalDecoratorNode';
+} from './nodes/LexicalDecoratorNode';
 
 import invariant from 'shared/invariant';
 
@@ -27,7 +27,7 @@ import {
   createDecoratorArray,
   createDecoratorEditor,
   createDecoratorMap,
-} from './nodes/base/LexicalDecoratorNode';
+} from './nodes/LexicalDecoratorNode';
 
 export type NodeParserState = {
   originalSelection: null | ParsedSelection,

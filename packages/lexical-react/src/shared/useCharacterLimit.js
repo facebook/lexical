@@ -9,6 +9,11 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import {
+  $createOverflowNode,
+  $isOverflowNode,
+  OverflowNode,
+} from '@lexical/overflow';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {$rootTextContentCurry} from '@lexical/text';
 import {$dfs} from '@lexical/utils';
@@ -19,11 +24,6 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
-import {
-  $createOverflowNode,
-  $isOverflowNode,
-  OverflowNode,
-} from 'lexical/OverflowNode';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 

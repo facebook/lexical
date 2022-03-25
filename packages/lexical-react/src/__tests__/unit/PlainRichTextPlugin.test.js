@@ -7,10 +7,16 @@
  * @flow strict
  */
 
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
+import {HashtagNode} from '@lexical/hashtag';
+import {AutoLinkNode, LinkNode} from '@lexical/link';
+import {ListItemNode, ListNode} from '@lexical/list';
+import {OverflowNode} from '@lexical/overflow';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {$rootTextContentCurry} from '@lexical/text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
-import ExtendedNodes from 'lexical/ExtendedNodes';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -60,7 +66,24 @@ describe('LexicalNodeHelpers tests', () => {
           <LexicalComposer
             initialConfig={{
               namespace: 'PlaygroundEditor',
-              nodes: plugin === 'PlainTextPlugin' ? [] : [...ExtendedNodes],
+              nodes:
+                plugin === 'PlainTextPlugin'
+                  ? []
+                  : [
+                      HeadingNode,
+                      ListNode,
+                      ListItemNode,
+                      QuoteNode,
+                      CodeNode,
+                      TableNode,
+                      TableCellNode,
+                      TableRowNode,
+                      HashtagNode,
+                      CodeHighlightNode,
+                      AutoLinkNode,
+                      LinkNode,
+                      OverflowNode,
+                    ],
               theme: {},
             }}>
             <GrabEditor />

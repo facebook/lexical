@@ -21,7 +21,7 @@ import {
 } from 'lexical';
 
 import {EditorState} from '../../LexicalEditorState';
-import {$createRootNode} from '../../nodes/base/LexicalRootNode';
+import {$createRootNode} from '../../nodes/LexicalRootNode';
 import {initializeUnitTest} from '../utils';
 
 // No idea why we suddenly need to do this, but it fixes the tests

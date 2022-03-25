@@ -9,6 +9,12 @@
 
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
+import {
+  $createAutoLinkNode,
+  $isAutoLinkNode,
+  $isLinkNode,
+  AutoLinkNode,
+} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
@@ -18,12 +24,6 @@ import {
   $isTextNode,
   TextNode,
 } from 'lexical';
-import {
-  $createAutoLinkNode,
-  $isAutoLinkNode,
-  AutoLinkNode,
-} from 'lexical/AutoLinkNode';
-import {$isLinkNode} from 'lexical/LinkNode';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 

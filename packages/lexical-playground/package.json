@@ -22,6 +22,8 @@
     "@lexical/plain-text": "0.1.16",
     "@lexical/rich-text": "0.1.16",
     "@lexical/code": "0.1.16",
+    "@lexical/link": "0.1.16",
+    "@lexical/overflow": "0.1.16",
     "link-preview-generator": "1.0.7",
     "@excalidraw/excalidraw": "0.11.0",
     "yjs": ">=13.5.22",

@@ -242,8 +242,7 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}
-        >
+          }}>
           Add Caption
         </button>
       )}
@@ -336,6 +335,7 @@ function ImageComponent({
       editor.registerCommandListener(
         'click',
         (payload) => {
+          console.log('imageNode');
           const event: MouseEvent = payload;
 
           if (isResizing) {
@@ -427,8 +427,7 @@ function ImageComponent({
             <LexicalNestedComposer
               initialConfig={{
                 decoratorEditor: decoratorEditor,
-              }}
-            >
+              }}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

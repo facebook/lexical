@@ -6,6 +6,7 @@
  *
  */
 
+import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import DEPRECATED_useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
@@ -16,7 +17,6 @@ import {
   $getSelection,
   Selection,
 } from 'lexical';
-import {$createLinkNode} from 'lexical/LinkNode';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,

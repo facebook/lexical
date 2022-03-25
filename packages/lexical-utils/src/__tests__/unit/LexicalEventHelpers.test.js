@@ -7,15 +7,20 @@
  * @flow strict
  */
 
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
+import {HashtagNode} from '@lexical/hashtag';
+import {AutoLinkNode, LinkNode} from '@lexical/link';
+import {ListItemNode, ListNode} from '@lexical/list';
+import {OverflowNode} from '@lexical/overflow';
 import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   applySelectionInputs,
   pasteHTML,
   setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
+import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {createEditor} from 'lexical';
-import ExtendedNodes from 'lexical/ExtendedNodes';
-import {LinkNode} from 'lexical/LinkNode';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -51,7 +56,22 @@ describe('LexicalEventHelpers', () => {
     const editor = React.useMemo(
       () =>
         createEditor({
-          nodes: [LinkNode, ...ExtendedNodes],
+          nodes: [
+            LinkNode,
+            HeadingNode,
+            ListNode,
+            ListItemNode,
+            QuoteNode,
+            CodeNode,
+            TableNode,
+            TableCellNode,
+            TableRowNode,
+            HashtagNode,
+            CodeHighlightNode,
+            AutoLinkNode,
+            LinkNode,
+            OverflowNode,
+          ],
           theme: {
             code: 'editor-code',
             heading: {

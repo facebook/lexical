@@ -6,7 +6,7 @@
  *
  */
 
-import {$createLinkNode, $isLinkNode, LinkNode} from 'lexical/LinkNode';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({

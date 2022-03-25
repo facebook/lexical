@@ -87,16 +87,6 @@ const wwwMappings = {
   'react-dom': 'ReactDOMComet',
 };
 
-const lexicalNodes = fs
-  .readdirSync(path.resolve('./packages/lexical/src/nodes/extended'))
-  .map((str) => path.basename(str, '.js'))
-  .filter((str) => !str.includes('__tests__') && !str.includes('test-utils'));
-const lexicalNodesExternals = lexicalNodes.map((node) => {
-  const external = `lexical/${node.replace('Lexical', '')}`;
-  wwwMappings[external] = node;
-  return external;
-});
-
 const lexicalShared = fs
   .readdirSync(path.resolve('./packages/shared/src'))
   .map((str) => path.basename(str, '.js'));
@@ -139,7 +129,6 @@ const externals = [
   'react',
   'yjs',
   'y-websocket',
-  ...lexicalNodesExternals,
   ...lexicalReactModuleExternals,
   ...Object.values(wwwMappings),
 ];
@@ -482,16 +471,6 @@ const packages = [
     name: 'Lexical Rich Text',
     outputPath: './packages/lexical-rich-text/dist/',
     sourcePath: './packages/lexical-rich-text/src/',
-  },
-  {
-    modules: lexicalNodes.map((module) => ({
-      name: module,
-      outputFileName: module,
-      sourceFileName: module,
-    })),
-    name: 'Lexical Core Nodes',
-    outputPath: './packages/lexical/dist/',
-    sourcePath: './packages/lexical/src/nodes/extended/',
   },
   {
     modules: lexicalShared.map((module) => ({

@@ -106,14 +106,15 @@ export default function LinkPlugin(): null {
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'toggleLink') {
+    return editor.registerCommandListener(
+      'toggleLink',
+      (payload) => {
         const url: string | null = payload;
         toggleLink(url);
         return true;
-      }
-      return false;
-    }, EditorPriority);
+      },
+      EditorPriority,
+    );
   }, [editor]);
 
   return null;

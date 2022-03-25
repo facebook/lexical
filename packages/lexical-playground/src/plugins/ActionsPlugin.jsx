@@ -12,6 +12,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {exportFile, importFile} from '@lexical/file';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {$getRoot} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
@@ -34,16 +35,26 @@ export default function ActionsPlugins({
   const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'readOnly') {
-        const readOnly = payload;
-        setIsReadyOnly(readOnly);
-      } else if (type === 'connected') {
-        const isConnected = payload;
-        setConnected(isConnected);
-      }
-      return false;
-    }, EditorPriority);
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'readOnly',
+        (payload) => {
+          const readOnly = payload;
+          setIsReadyOnly(readOnly);
+          return false;
+        },
+        EditorPriority,
+      ),
+      editor.registerCommandListener(
+        'connected',
+        (payload) => {
+          const isConnected = payload;
+          setConnected(isConnected);
+          return false;
+        },
+        EditorPriority,
+      ),
+    );
   }, [editor]);
 
   const insertSticky = useCallback(() => {

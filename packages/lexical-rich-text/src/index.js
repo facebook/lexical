@@ -8,7 +8,6 @@
  */
 
 import type {
-  CommandListenerEditorPriority,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
@@ -26,6 +25,7 @@ import {
   $insertDataTransferForRichText,
   getHtmlContent,
 } from '@lexical/clipboard';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -304,200 +304,384 @@ export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): () => void {
-  const removeListener = editor.registerCommandListener(
-    (type, payload): boolean => {
-      const selection = $getSelection();
-      if (type === 'click' && $isNodeSelection(selection)) {
-        selection.clear();
+  const removeListener = withSubscriptions(
+    editor.registerCommandListener(
+      'click',
+      (payload) => {
+        const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          selection.clear();
+          return true;
+        }
+        return false;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'deleteCharacter',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const isBackward: boolean = payload;
+        selection.deleteCharacter(isBackward);
         return true;
-      }
-      if ($isRangeSelection(selection)) {
-        switch (type) {
-          case 'deleteCharacter': {
-            const isBackward: boolean = payload;
-            selection.deleteCharacter(isBackward);
-            return true;
-          }
-          case 'deleteWord': {
-            const isBackward: boolean = payload;
-            selection.deleteWord(isBackward);
-            return true;
-          }
-          case 'deleteLine': {
-            const isBackward: boolean = payload;
-            selection.deleteLine(isBackward);
-            return true;
-          }
-          case 'insertText': {
-            const eventOrText: InputEvent | string = payload;
-            if (typeof eventOrText === 'string') {
-              selection.insertText(eventOrText);
-            } else {
-              const dataTransfer = eventOrText.dataTransfer;
-              if (dataTransfer != null) {
-                $insertDataTransferForRichText(dataTransfer, selection, editor);
-              } else {
-                const data = eventOrText.data;
-                if (data) {
-                  selection.insertText(data);
-                }
-              }
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'deleteWord',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const isBackward: boolean = payload;
+        selection.deleteWord(isBackward);
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'deleteLine',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const isBackward: boolean = payload;
+        selection.deleteLine(isBackward);
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'insertText',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const eventOrText: InputEvent | string = payload;
+        if (typeof eventOrText === 'string') {
+          selection.insertText(eventOrText);
+        } else {
+          const dataTransfer = eventOrText.dataTransfer;
+          if (dataTransfer != null) {
+            $insertDataTransferForRichText(dataTransfer, selection, editor);
+          } else {
+            const data = eventOrText.data;
+            if (data) {
+              selection.insertText(data);
             }
-            return true;
-          }
-          case 'removeText':
-            selection.removeText();
-            return true;
-          case 'formatText': {
-            const format: TextFormatType = payload;
-            selection.formatText(format);
-            return true;
-          }
-          case 'formatElement': {
-            const format: ElementFormatType = payload;
-            const node = selection.anchor.getNode();
-            const element = $isElementNode(node)
-              ? node
-              : node.getParentOrThrow();
-            element.setFormat(format);
-            return true;
-          }
-          case 'insertLineBreak':
-            const selectStart: boolean = payload;
-            selection.insertLineBreak(selectStart);
-            return true;
-          case 'insertParagraph':
-            selection.insertParagraph();
-            return true;
-          case 'indentContent': {
-            // Handle code blocks
-            const anchor = selection.anchor;
-            const parentBlock =
-              anchor.type === 'element'
-                ? anchor.getNode()
-                : anchor.getNode().getParentOrThrow();
-            if (parentBlock.canInsertTab()) {
-              editor.execCommand('insertText', '\t');
-            } else {
-              if (parentBlock.getIndent() !== 10) {
-                parentBlock.setIndent(parentBlock.getIndent() + 1);
-              }
-            }
-            return true;
-          }
-          case 'outdentContent': {
-            // Handle code blocks
-            const anchor = selection.anchor;
-            const anchorNode = anchor.getNode();
-            const parentBlock =
-              anchor.type === 'element'
-                ? anchor.getNode()
-                : anchor.getNode().getParentOrThrow();
-            if (parentBlock.canInsertTab()) {
-              const textContent = anchorNode.getTextContent();
-              const character = textContent[anchor.offset - 1];
-              if (character === '\t') {
-                editor.execCommand('deleteCharacter', true);
-              }
-            } else {
-              if (parentBlock.getIndent() !== 0) {
-                parentBlock.setIndent(parentBlock.getIndent() - 1);
-              }
-            }
-            return true;
-          }
-          case 'keyArrowLeft': {
-            const event: KeyboardEvent = payload;
-            const isHoldingShift = event.shiftKey;
-            if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
-              event.preventDefault();
-              $moveCharacter(selection, isHoldingShift, true);
-              return true;
-            }
-            return false;
-          }
-          case 'keyArrowRight': {
-            const event: KeyboardEvent = payload;
-            const isHoldingShift = event.shiftKey;
-            if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
-              event.preventDefault();
-              $moveCharacter(selection, isHoldingShift, false);
-              return true;
-            }
-            return false;
-          }
-          case 'keyBackspace': {
-            const event: KeyboardEvent = payload;
-            event.preventDefault();
-            const {anchor} = selection;
-            if (selection.isCollapsed() && anchor.offset === 0) {
-              const element =
-                anchor.type === 'element'
-                  ? anchor.getNode()
-                  : anchor.getNode().getParentOrThrow();
-              if (element.getIndent() > 0) {
-                return editor.execCommand('outdentContent');
-              }
-            }
-            return editor.execCommand('deleteCharacter', true);
-          }
-          case 'keyDelete': {
-            const event: KeyboardEvent = payload;
-            event.preventDefault();
-            return editor.execCommand('deleteCharacter', false);
-          }
-          case 'keyEnter': {
-            const event: KeyboardEvent = payload;
-            event.preventDefault();
-            if (event.shiftKey) {
-              return editor.execCommand('insertLineBreak');
-            }
-            return editor.execCommand('insertParagraph');
-          }
-          case 'keyTab': {
-            const event: KeyboardEvent = payload;
-            event.preventDefault();
-            return editor.execCommand(
-              event.shiftKey ? 'outdentContent' : 'indentContent',
-            );
-          }
-          case 'keyEscape': {
-            editor.blur();
-            return true;
-          }
-          case 'drop':
-          case 'dragstart': {
-            // TODO: Make drag and drop work at some point.
-            const event: DragEvent = payload;
-            event.preventDefault();
             return true;
           }
         }
-      }
-
-      if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-        switch (type) {
-          case 'copy': {
-            const event: ClipboardEvent = payload;
-            onCopyForRichText(event, editor);
-            return true;
-          }
-          case 'cut': {
-            const event: ClipboardEvent = payload;
-            onCutForRichText(event, editor);
-            return true;
-          }
-          case 'paste': {
-            const event: ClipboardEvent = payload;
-            onPasteForRichText(event, editor);
-            return true;
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'removeText',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        selection.removeText();
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'formatText',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const format: TextFormatType = payload;
+        selection.formatText(format);
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'formatElement',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const format: ElementFormatType = payload;
+        const node = selection.anchor.getNode();
+        const element = $isElementNode(node) ? node : node.getParentOrThrow();
+        element.setFormat(format);
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'insertLineBreak',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const selectStart: boolean = payload;
+        selection.insertLineBreak(selectStart);
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'insertParagraph',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        selection.insertParagraph();
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'indentContent',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        // Handle code blocks
+        const anchor = selection.anchor;
+        const parentBlock =
+          anchor.type === 'element'
+            ? anchor.getNode()
+            : anchor.getNode().getParentOrThrow();
+        if (parentBlock.canInsertTab()) {
+          editor.execCommand('insertText', '\t');
+        } else {
+          if (parentBlock.getIndent() !== 10) {
+            parentBlock.setIndent(parentBlock.getIndent() + 1);
           }
         }
-      }
-
-      return false;
-    },
-    (0: CommandListenerEditorPriority),
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'outdentContent',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        // Handle code blocks
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+        const parentBlock =
+          anchor.type === 'element'
+            ? anchor.getNode()
+            : anchor.getNode().getParentOrThrow();
+        if (parentBlock.canInsertTab()) {
+          const textContent = anchorNode.getTextContent();
+          const character = textContent[anchor.offset - 1];
+          if (character === '\t') {
+            editor.execCommand('deleteCharacter', true);
+          }
+        } else {
+          if (parentBlock.getIndent() !== 0) {
+            parentBlock.setIndent(parentBlock.getIndent() - 1);
+          }
+        }
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'keyArrowLeft',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const event: KeyboardEvent = payload;
+        const isHoldingShift = event.shiftKey;
+        if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
+          event.preventDefault();
+          $moveCharacter(selection, isHoldingShift, true);
+          return true;
+        }
+        return false;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'keyArrowRight',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const event: KeyboardEvent = payload;
+        const isHoldingShift = event.shiftKey;
+        if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
+          event.preventDefault();
+          $moveCharacter(selection, isHoldingShift, false);
+          return true;
+        }
+        return false;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'keyBackspace',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const event: KeyboardEvent = payload;
+        event.preventDefault();
+        const {anchor} = selection;
+        if (selection.isCollapsed() && anchor.offset === 0) {
+          const element =
+            anchor.type === 'element'
+              ? anchor.getNode()
+              : anchor.getNode().getParentOrThrow();
+          if (element.getIndent() > 0) {
+            return editor.execCommand('outdentContent');
+          }
+        }
+        return editor.execCommand('deleteCharacter', true);
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'keyDelete',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const event: KeyboardEvent = payload;
+        event.preventDefault();
+        return editor.execCommand('deleteCharacter', false);
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'keyEnter',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const event: KeyboardEvent = payload;
+        event.preventDefault();
+        if (event.shiftKey) {
+          return editor.execCommand('insertLineBreak');
+        }
+        return editor.execCommand('insertParagraph');
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'keyTab',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const event: KeyboardEvent = payload;
+        event.preventDefault();
+        return editor.execCommand(
+          event.shiftKey ? 'outdentContent' : 'indentContent',
+        );
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'keyEscape',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        editor.blur();
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'drop',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        // TODO: Make drag and drop work at some point.
+        const event: DragEvent = payload;
+        event.preventDefault();
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'dragstart',
+      (payload) => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        // TODO: Make drag and drop work at some point.
+        const event: DragEvent = payload;
+        event.preventDefault();
+        return true;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'copy',
+      (payload) => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+          const event: ClipboardEvent = payload;
+          onCopyForRichText(event, editor);
+          return true;
+        }
+        return false;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'cut',
+      (payload) => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+          const event: ClipboardEvent = payload;
+          onCutForRichText(event, editor);
+          return true;
+        }
+        return false;
+      },
+      0,
+    ),
+    editor.registerCommandListener(
+      'paste',
+      (payload) => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+          const event: ClipboardEvent = payload;
+          onPasteForRichText(event, editor);
+          return true;
+        }
+        return false;
+      },
+      0,
+    ),
   );
   initializeEditor(editor, initialEditorState);
   return removeListener;

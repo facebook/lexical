@@ -44,8 +44,9 @@ export default function TablePlugin(): React$Node {
         'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
       );
     }
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'insertTable') {
+    return editor.registerCommandListener(
+      'insertTable',
+      (payload) => {
         const {columns, rows} = payload;
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -75,9 +76,9 @@ export default function TablePlugin(): React$Node {
           firstCell.select();
         }
         return true;
-      }
-      return false;
-    }, EditorPriority);
+      },
+      EditorPriority,
+    );
   }, [editor]);
 
   useEffect(() => {

@@ -1476,6 +1476,77 @@ describe('LexicalEditor tests', () => {
     });
   });
 
+  it('can subscribe and unsubscribe from commands and the callback is fired', () => {
+    init();
+    const commandListener = jest.fn();
+    const command = 'insertTestDecoratorNode';
+    const payload = 'testPayload';
+    const removeCommandListener = editor.registerCommandListener(
+      command,
+      commandListener,
+      0,
+    );
+    editor.execCommand(command, payload);
+    editor.execCommand(command, payload);
+    editor.execCommand(command, payload);
+    expect(commandListener).toHaveBeenCalledTimes(3);
+    expect(commandListener).toHaveBeenCalledWith(payload, editor);
+    removeCommandListener();
+    editor.execCommand(command, payload);
+    editor.execCommand(command, payload);
+    editor.execCommand(command, payload);
+    expect(commandListener).toHaveBeenCalledTimes(3);
+    expect(commandListener).toHaveBeenCalledWith(payload, editor);
+  });
+
+  it('removes the command from the command map when no listener are attached', () => {
+    init();
+    const commandListener = jest.fn();
+    const commandListenerTwo = jest.fn();
+    const command = 'insertTestDecoratorNode';
+    const removeCommandListener = editor.registerCommandListener(
+      command,
+      commandListener,
+      0,
+    );
+    const removeCommandListenerTwo = editor.registerCommandListener(
+      command,
+      commandListenerTwo,
+      0,
+    );
+    expect(editor._listeners.command).toEqual(
+      new Map([
+        [
+          command,
+          [
+            new Set([commandListener, commandListenerTwo]),
+            new Set(),
+            new Set(),
+            new Set(),
+            new Set(),
+          ],
+        ],
+      ]),
+    );
+    removeCommandListener();
+    expect(editor._listeners.command).toEqual(
+      new Map([
+        [
+          command,
+          [
+            new Set([commandListenerTwo]),
+            new Set(),
+            new Set(),
+            new Set(),
+            new Set(),
+          ],
+        ],
+      ]),
+    );
+    removeCommandListenerTwo();
+    expect(editor._listeners.command).toEqual(new Map());
+  });
+
   it('can register transforms before updates', async () => {
     init();
     const emptyTransform = () => {};

@@ -475,10 +475,15 @@ export function triggerCommandListeners(
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];
       const commandListeners = currentEditor._listeners.command;
-      const listeners = commandListeners[i];
-      for (const listener of listeners) {
-        if (listener(type, payload, editor) === true) {
-          return true;
+      const listenerInPriorityOrder = commandListeners.get(type);
+      if (listenerInPriorityOrder !== undefined) {
+        const listeners = listenerInPriorityOrder[i];
+        if (listeners !== undefined) {
+          for (const listener of listeners) {
+            if (listener(payload, editor) === true) {
+              return true;
+            }
+          }
         }
       }
     }

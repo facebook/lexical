@@ -16,39 +16,71 @@ import {
   outdentList,
   removeList,
 } from '@lexical/list';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {useEffect} from 'react';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
 export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
-    return editor.registerCommandListener((type) => {
-      if (type === 'indentContent') {
-        const hasHandledIndention = indentList();
-        if (hasHandledIndention) {
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'indentContent',
+        () => {
+          const hasHandledIndention = indentList();
+          if (hasHandledIndention) {
+            return true;
+          }
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'outdentContent',
+        () => {
+          const hasHandledIndention = outdentList();
+          if (hasHandledIndention) {
+            return true;
+          }
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'insertOrderedList',
+        () => {
+          insertList(editor, 'ol');
           return true;
-        }
-      } else if (type === 'outdentContent') {
-        const hasHandledIndention = outdentList();
-        if (hasHandledIndention) {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'insertUnorderedList',
+        () => {
+          insertList(editor, 'ul');
           return true;
-        }
-      } else if (type === 'insertOrderedList') {
-        insertList(editor, 'ol');
-        return true;
-      } else if (type === 'insertUnorderedList') {
-        insertList(editor, 'ul');
-        return true;
-      } else if (type === 'removeList') {
-        removeList(editor);
-        return true;
-      } else if (type === 'insertParagraph') {
-        const hasHandledInsertParagraph = $handleListInsertParagraph();
-        if (hasHandledInsertParagraph) {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'removeList',
+        () => {
+          removeList(editor);
           return true;
-        }
-      }
-      return false;
-    }, LowPriority);
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'insertParagraph',
+        () => {
+          const hasHandledInsertParagraph = $handleListInsertParagraph();
+          if (hasHandledInsertParagraph) {
+            return true;
+          }
+          return false;
+        },
+        LowPriority,
+      ),
+    );
   }, [editor]);
 }

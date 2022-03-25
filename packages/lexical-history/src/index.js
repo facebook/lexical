@@ -19,6 +19,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   $getSelection,
   $isRangeSelection,
@@ -362,29 +363,42 @@ export function registerHistory(
     };
   };
 
-  const applyCommand = (type) => {
-    switch (type) {
-      case 'undo':
+  const unregisterCommandListener = withSubscriptions(
+    editor.registerCommandListener(
+      'undo',
+      () => {
         undo(editor, historyState);
         return true;
-      case 'redo':
+      },
+      EditorPriority,
+    ),
+    editor.registerCommandListener(
+      'redo',
+      () => {
         redo(editor, historyState);
         return true;
-      case 'clearEditor':
+      },
+      EditorPriority,
+    ),
+    editor.registerCommandListener(
+      'clearEditor',
+      () => {
         clearHistory(historyState);
         return false;
-      case 'clearHistory':
+      },
+      EditorPriority,
+    ),
+    editor.registerCommandListener(
+      'clearHistory',
+      () => {
         clearHistory(historyState);
         return true;
-      default:
-        return false;
-    }
-  };
-
-  const unregisterCommandListener = editor.registerCommandListener(
-    applyCommand,
-    EditorPriority,
+      },
+      EditorPriority,
+    ),
+    editor.registerUpdateListener(applyChange),
   );
+
   const unregisterUpdateListener = editor.registerUpdateListener(applyChange);
 
   return () => {

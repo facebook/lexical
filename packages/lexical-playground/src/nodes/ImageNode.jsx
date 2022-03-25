@@ -32,6 +32,7 @@ import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   $getNodeByKey,
   $getSelection,
@@ -309,32 +310,9 @@ function ImageComponent({
   );
   const [selection, setSelection] = useState(null);
 
-  useEffect(() => {
-    return editor.registerUpdateListener(({editorState}) => {
-      setSelection(editorState.read(() => $getSelection()));
-    });
-  }, [editor]);
-
-  useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'click') {
-        const event: MouseEvent = payload;
-
-        if (isResizing) {
-          return true;
-        }
-        if (event.target === ref.current) {
-          if (!event.shiftKey) {
-            clearSelection();
-          }
-          setSelected(!isSelected);
-          return true;
-        }
-      } else if (
-        isSelected &&
-        $isNodeSelection($getSelection()) &&
-        (type === 'keyDelete' || type === 'keyBackspace')
-      ) {
+  const onDelete = useCallback(
+    (payload) => {
+      if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
         editor.update(() => {
@@ -346,8 +324,47 @@ function ImageComponent({
         });
       }
       return false;
-    }, LowPriority);
-  }, [clearSelection, editor, isResizing, isSelected, nodeKey, setSelected]);
+    },
+    [editor, isSelected, nodeKey, setSelected],
+  );
+
+  useEffect(() => {
+    return withSubscriptions(
+      editor.registerUpdateListener(({editorState}) => {
+        setSelection(editorState.read(() => $getSelection()));
+      }),
+      editor.registerCommandListener(
+        'click',
+        (payload) => {
+          const event: MouseEvent = payload;
+
+          if (isResizing) {
+            return true;
+          }
+          if (event.target === ref.current) {
+            if (!event.shiftKey) {
+              clearSelection();
+            }
+            setSelected(!isSelected);
+            return true;
+          }
+
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener('keyDelete', onDelete, LowPriority),
+      editor.registerCommandListener('keyBackspace', onDelete, LowPriority),
+    );
+  }, [
+    clearSelection,
+    editor,
+    isResizing,
+    isSelected,
+    nodeKey,
+    onDelete,
+    setSelected,
+  ]);
 
   const setShowCaption = useCallback(() => {
     editor.update(() => {

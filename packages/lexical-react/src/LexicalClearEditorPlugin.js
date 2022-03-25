@@ -7,8 +7,6 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -20,8 +18,9 @@ type Props = $ReadOnly<{
 export default function LexicalClearEditorPlugin({onClear}: Props): React$Node {
   const [editor] = useLexicalComposerContext();
   useLayoutEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'clearEditor') {
+    return editor.registerCommandListener(
+      'clearEditor',
+      (payload) => {
         editor.update(() => {
           if (onClear == null) {
             const root = $getRoot();
@@ -37,9 +36,9 @@ export default function LexicalClearEditorPlugin({onClear}: Props): React$Node {
           }
         });
         return true;
-      }
-      return false;
-    }, (0: CommandListenerEditorPriority));
+      },
+      0,
+    );
   }, [editor, onClear]);
 
   return null;

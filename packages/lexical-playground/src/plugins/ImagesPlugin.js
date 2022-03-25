@@ -26,8 +26,9 @@ export default function ImagesPlugin(): React$Node {
       throw new Error('ImagesPlugin: ImageNode not registered on editor');
     }
 
-    return editor.registerCommandListener((type) => {
-      if (type === 'insertImage') {
+    return editor.registerCommandListener(
+      'insertImage',
+      () => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           if ($isRootNode(selection.anchor.getNode())) {
@@ -41,9 +42,9 @@ export default function ImagesPlugin(): React$Node {
           selection.insertNodes([imageNode]);
         }
         return true;
-      }
-      return false;
-    }, EditorPriority);
+      },
+      EditorPriority,
+    );
   }, [editor]);
   return null;
 }

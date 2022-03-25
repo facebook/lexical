@@ -150,23 +150,14 @@ export function applyTableHandlers(
   );
 
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener((type, payload) => {
-      const selection = $getSelection();
+    editor.registerCommandListener(
+      'keyArrowDown',
+      (payload) => {
+        const selection = $getSelection();
 
-      if (
-        type === 'keyArrowDown' ||
-        type === 'keyArrowUp' ||
-        type === 'keyArrowLeft' ||
-        type === 'keyArrowRight'
-      ) {
         const event: KeyboardEvent = payload;
 
-        const direction = {
-          keyArrowDown: 'down',
-          keyArrowLeft: 'backward',
-          keyArrowRight: 'forward',
-          keyArrowUp: 'up',
-        }[type];
+        const direction = 'down';
 
         if ($isRangeSelection(selection)) {
           if (selection.isCollapsed()) {
@@ -192,31 +183,313 @@ export function applyTableHandlers(
               throw new Error('Expected BlockNode Parent');
             }
 
-            const firstChild = tableCellNode.getFirstChild();
             const lastChild = tableCellNode.getLastChild();
-
-            const isSelectionInFirstBlock =
-              (firstChild && elementParentNode.isParentOf(firstChild)) ||
-              elementParentNode === firstChild;
 
             const isSelectionInLastBlock =
               (lastChild && elementParentNode.isParentOf(lastChild)) ||
               elementParentNode === lastChild;
 
-            const isDirectionalKey =
-              type === 'keyArrowUp' ||
-              type === 'keyArrowDown' ||
-              type === 'keyArrowLeft' ||
-              type === 'keyArrowRight';
+            if (isSelectionInLastBlock || event.shiftKey) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              event.stopPropagation();
+
+              // Start Selection
+              if (event.shiftKey) {
+                tableSelection.setAnchorCellForSelection(
+                  tableNode.getCellFromCordsOrThrow(
+                    currentCords.x,
+                    currentCords.y,
+                    tableSelection.grid,
+                  ),
+                );
+
+                return adjustFocusNodeInDirection(
+                  tableSelection,
+                  tableNode,
+                  currentCords.x,
+                  currentCords.y,
+                  direction,
+                );
+              }
+
+              return selectGridNodeInDirection(
+                tableSelection,
+                tableNode,
+                currentCords.x,
+                currentCords.y,
+                direction,
+              );
+            }
+          }
+        } else if ($isGridSelection(selection) && event.shiftKey) {
+          const tableCellNode = selection.focus.getNode();
+
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
+
+          const currentCords = tableNode.getCordsFromCellNode(
+            tableCellNode,
+            tableSelection.grid,
+          );
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          event.stopPropagation();
+
+          return adjustFocusNodeInDirection(
+            tableSelection,
+            tableNode,
+            currentCords.x,
+            currentCords.y,
+            direction,
+          );
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'keyArrowUp',
+      (payload) => {
+        const selection = $getSelection();
+
+        const event: KeyboardEvent = payload;
+
+        const direction = 'up';
+
+        if ($isRangeSelection(selection)) {
+          if (selection.isCollapsed()) {
+            const tableCellNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isTableCellNode(n),
+            );
+
+            if (!$isTableCellNode(tableCellNode)) {
+              return false;
+            }
+
+            const currentCords = tableNode.getCordsFromCellNode(
+              tableCellNode,
+              tableSelection.grid,
+            );
+            const elementParentNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isElementNode(n),
+            );
+
+            if (elementParentNode == null) {
+              throw new Error('Expected BlockNode Parent');
+            }
+
+            const lastChild = tableCellNode.getLastChild();
+
+            const isSelectionInLastBlock =
+              (lastChild && elementParentNode.isParentOf(lastChild)) ||
+              elementParentNode === lastChild;
+
+            if (isSelectionInLastBlock || event.shiftKey) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              event.stopPropagation();
+
+              // Start Selection
+              if (event.shiftKey) {
+                tableSelection.setAnchorCellForSelection(
+                  tableNode.getCellFromCordsOrThrow(
+                    currentCords.x,
+                    currentCords.y,
+                    tableSelection.grid,
+                  ),
+                );
+
+                return adjustFocusNodeInDirection(
+                  tableSelection,
+                  tableNode,
+                  currentCords.x,
+                  currentCords.y,
+                  direction,
+                );
+              }
+
+              return selectGridNodeInDirection(
+                tableSelection,
+                tableNode,
+                currentCords.x,
+                currentCords.y,
+                direction,
+              );
+            }
+          }
+        } else if ($isGridSelection(selection) && event.shiftKey) {
+          const tableCellNode = selection.focus.getNode();
+
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
+
+          const currentCords = tableNode.getCordsFromCellNode(
+            tableCellNode,
+            tableSelection.grid,
+          );
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          event.stopPropagation();
+
+          return adjustFocusNodeInDirection(
+            tableSelection,
+            tableNode,
+            currentCords.x,
+            currentCords.y,
+            direction,
+          );
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'keyArrowLeft',
+      (payload) => {
+        const selection = $getSelection();
+
+        const event: KeyboardEvent = payload;
+
+        const direction = 'backward';
+
+        if ($isRangeSelection(selection)) {
+          if (selection.isCollapsed()) {
+            const tableCellNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isTableCellNode(n),
+            );
+
+            if (!$isTableCellNode(tableCellNode)) {
+              return false;
+            }
+
+            const currentCords = tableNode.getCordsFromCellNode(
+              tableCellNode,
+              tableSelection.grid,
+            );
+            const elementParentNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isElementNode(n),
+            );
+
+            if (elementParentNode == null) {
+              throw new Error('Expected BlockNode Parent');
+            }
+
+            if (selection.anchor.offset === 0 || event.shiftKey) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              event.stopPropagation();
+
+              // Start Selection
+              if (event.shiftKey) {
+                tableSelection.setAnchorCellForSelection(
+                  tableNode.getCellFromCordsOrThrow(
+                    currentCords.x,
+                    currentCords.y,
+                    tableSelection.grid,
+                  ),
+                );
+
+                return adjustFocusNodeInDirection(
+                  tableSelection,
+                  tableNode,
+                  currentCords.x,
+                  currentCords.y,
+                  direction,
+                );
+              }
+
+              return selectGridNodeInDirection(
+                tableSelection,
+                tableNode,
+                currentCords.x,
+                currentCords.y,
+                direction,
+              );
+            }
+          }
+        } else if ($isGridSelection(selection) && event.shiftKey) {
+          const tableCellNode = selection.focus.getNode();
+
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
+
+          const currentCords = tableNode.getCordsFromCellNode(
+            tableCellNode,
+            tableSelection.grid,
+          );
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          event.stopPropagation();
+
+          return adjustFocusNodeInDirection(
+            tableSelection,
+            tableNode,
+            currentCords.x,
+            currentCords.y,
+            direction,
+          );
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'keyArrowRight',
+      (payload) => {
+        const selection = $getSelection();
+
+        const event: KeyboardEvent = payload;
+
+        const direction = 'forward';
+
+        if ($isRangeSelection(selection)) {
+          if (selection.isCollapsed()) {
+            const tableCellNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isTableCellNode(n),
+            );
+
+            if (!$isTableCellNode(tableCellNode)) {
+              return false;
+            }
+
+            const currentCords = tableNode.getCordsFromCellNode(
+              tableCellNode,
+              tableSelection.grid,
+            );
+            const elementParentNode = $findMatchingParent(
+              selection.anchor.getNode(),
+              (n) => $isElementNode(n),
+            );
+
+            if (elementParentNode == null) {
+              throw new Error('Expected BlockNode Parent');
+            }
 
             if (
-              (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
-              (type === 'keyArrowDown' && isSelectionInLastBlock) ||
-              (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
-              (type === 'keyArrowRight' &&
-                selection.anchor.offset ===
-                  selection.anchor.getNode().getTextContentSize()) ||
-              (isDirectionalKey && event.shiftKey)
+              selection.anchor.offset ===
+                selection.anchor.getNode().getTextContentSize() ||
+              event.shiftKey
             ) {
               event.preventDefault();
               event.stopImmediatePropagation();
@@ -274,34 +547,35 @@ export function applyTableHandlers(
             direction,
           );
         }
-      }
 
-      if ($isGridSelection(selection)) {
-        if (type === 'deleteCharacter' || type === 'keyBackspace') {
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'deleteCharacter',
+      (payload) => {
+        const selection = $getSelection();
+
+        if ($isGridSelection(selection)) {
           const event: KeyboardEvent = payload;
           event.preventDefault();
           event.stopPropagation();
 
           tableSelection.clearText();
           return true;
-        } else if (type === 'formatText') {
-          tableSelection.formatCells(payload);
-          return true;
-        } else if (type === 'insertText') {
-          tableSelection.clearHighlight();
-          return false;
-        }
-      } else if ($isRangeSelection(selection)) {
-        const tableCellNode = $findMatchingParent(
-          selection.anchor.getNode(),
-          (n) => $isTableCellNode(n),
-        );
+        } else if ($isRangeSelection(selection)) {
+          const tableCellNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            (n) => $isTableCellNode(n),
+          );
 
-        if (!$isTableCellNode(tableCellNode)) {
-          return false;
-        }
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
 
-        if (type === 'deleteCharacter') {
           if (
             selection.isCollapsed() &&
             selection.anchor.offset === 0 &&
@@ -311,7 +585,106 @@ export function applyTableHandlers(
           }
         }
 
-        if (type === 'keyTab') {
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'keyBackspace',
+      (payload) => {
+        const selection = $getSelection();
+
+        if ($isGridSelection(selection)) {
+          const event: KeyboardEvent = payload;
+          event.preventDefault();
+          event.stopPropagation();
+
+          tableSelection.clearText();
+          return true;
+        } else if ($isRangeSelection(selection)) {
+          const tableCellNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            (n) => $isTableCellNode(n),
+          );
+
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'formatText',
+      (payload) => {
+        const selection = $getSelection();
+
+        if ($isGridSelection(selection)) {
+          tableSelection.formatCells(payload);
+          return true;
+        } else if ($isRangeSelection(selection)) {
+          const tableCellNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            (n) => $isTableCellNode(n),
+          );
+
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'insertText',
+      (payload) => {
+        const selection = $getSelection();
+
+        if ($isGridSelection(selection)) {
+          tableSelection.clearHighlight();
+          return false;
+        } else if ($isRangeSelection(selection)) {
+          const tableCellNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            (n) => $isTableCellNode(n),
+          );
+
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+  tableSelection.listenersToRemove.add(
+    editor.registerCommandListener(
+      'keyTab',
+      (payload) => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          const tableCellNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            (n) => $isTableCellNode(n),
+          );
+
+          if (!$isTableCellNode(tableCellNode)) {
+            return false;
+          }
+
           const event: KeyboardEvent = payload;
 
           if (selection.isCollapsed()) {
@@ -326,18 +699,18 @@ export function applyTableHandlers(
               tableNode,
               currentCords.x,
               currentCords.y,
-              !event.shiftKey && type === 'keyTab' ? 'forward' : 'backward',
+              !event.shiftKey ? 'forward' : 'backward',
             );
 
             return true;
           }
         }
-      }
 
-      return false;
-    }, CriticalPriority),
+        return false;
+      },
+      CriticalPriority,
+    ),
   );
-
   return tableSelection;
 }
 

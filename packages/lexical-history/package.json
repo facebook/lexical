@@ -1,0 +1,25 @@
+{
+  "name": "@lexical/history",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "This package contains selection history helpers for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "history"
+  ],
+  "license": "MIT",
+  "version": "0.1.16",
+  "main": "LexicalHistory.js",
+  "peerDependencies": {
+    "lexical": "0.1.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-history"
+  }
+}

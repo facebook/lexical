@@ -27,6 +27,7 @@ module.exports = {
         '^@lexical/dragon$': '<rootDir>/packages/lexical-dragon/src/index.js',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
         '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.js',
+        '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.js',
         '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
         '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.js',

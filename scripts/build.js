@@ -53,6 +53,7 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-file/dist'));
   fs.removeSync(path.resolve('./packages/lexical-clipboard/dist'));
   fs.removeSync(path.resolve('./packages/lexical-hashtag/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-history/dist'));
   fs.removeSync(path.resolve('./packages/lexical-selection/dist'));
   fs.removeSync(path.resolve('./packages/lexical-text/dist'));
   fs.removeSync(path.resolve('./packages/lexical-offset/dist'));
@@ -72,6 +73,7 @@ const wwwMappings = {
   '@lexical/dragon': 'LexicalDragon',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
+  '@lexical/history': 'LexicalHistory',
   '@lexical/link': 'LexicalLink',
   '@lexical/list': 'LexicalList',
   '@lexical/offset': 'LexicalOffset',
@@ -114,6 +116,7 @@ const externals = [
   '@lexical/file',
   '@lexical/clipboard',
   '@lexical/hashtag',
+  '@lexical/history',
   '@lexical/selection',
   '@lexical/text',
   '@lexical/offset',
@@ -361,6 +364,17 @@ const packages = [
     name: 'Lexical Hashtag',
     outputPath: './packages/lexical-hashtag/dist/',
     sourcePath: './packages/lexical-hashtag/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalHistory',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical History',
+    outputPath: './packages/lexical-history/dist/',
+    sourcePath: './packages/lexical-history/src/',
   },
   {
     modules: [

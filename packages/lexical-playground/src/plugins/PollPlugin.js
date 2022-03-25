@@ -24,8 +24,9 @@ export default function PollPlugin(): React$Node {
       throw new Error('PollPlugin: PollNode not registered on editor');
     }
 
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'insertPoll') {
+    return editor.registerCommandListener(
+      'insertPoll',
+      (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           const question: string = payload;
@@ -36,9 +37,9 @@ export default function PollPlugin(): React$Node {
           selection.insertNodes([pollNode]);
         }
         return true;
-      }
-      return false;
-    }, EditorPriority);
+      },
+      EditorPriority,
+    );
   }, [editor]);
   return null;
 }

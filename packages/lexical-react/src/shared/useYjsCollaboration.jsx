@@ -11,6 +11,7 @@ import type {Binding, Provider} from '@lexical/yjs';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 import type {Doc} from 'yjs';
 
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   createBinding,
   createUndoManager,
@@ -166,8 +167,9 @@ export function useYjsCollaboration(
   }, [binding]);
 
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'toggleConnect') {
+    return editor.registerCommandListener(
+      'toggleConnect',
+      (payload) => {
         if (connect !== undefined && disconnect !== undefined) {
           const shouldConnect = payload;
           if (shouldConnect) {
@@ -180,9 +182,10 @@ export function useYjsCollaboration(
             disconnect();
           }
         }
-      }
-      return false;
-    }, EditorPriority);
+        return true;
+      },
+      EditorPriority,
+    );
   }, [connect, disconnect, editor]);
 
   return [cursorsContainer, binding];
@@ -195,14 +198,24 @@ export function useYjsFocusTracking(
   color: string,
 ) {
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      if (type === 'focus') {
-        setLocalStateFocus(provider, name, color, true);
-      } else if (type === 'blur') {
-        setLocalStateFocus(provider, name, color, false);
-      }
-      return false;
-    }, EditorPriority);
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'focus',
+        (payload) => {
+          setLocalStateFocus(provider, name, color, false);
+          return true;
+        },
+        EditorPriority,
+      ),
+      editor.registerCommandListener(
+        'blur',
+        (payload) => {
+          setLocalStateFocus(provider, name, color, false);
+          return true;
+        },
+        EditorPriority,
+      ),
+    );
   }, [color, editor, name, provider]);
 }
 
@@ -219,24 +232,28 @@ export function useYjsHistory(
     const undo = () => {
       undoManager.undo();
     };
-
     const redo = () => {
       undoManager.redo();
     };
 
-    const applyCommand = (type) => {
-      if (type === 'undo') {
-        undo();
-        return true;
-      }
-      if (type === 'redo') {
-        redo();
-        return true;
-      }
-      return false;
-    };
-
-    return editor.registerCommandListener(applyCommand, EditorPriority);
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'undo',
+        () => {
+          undo();
+          return true;
+        },
+        EditorPriority,
+      ),
+      editor.registerCommandListener(
+        'redo',
+        () => {
+          redo();
+          return true;
+        },
+        EditorPriority,
+      ),
+    );
   });
 
   const clearHistory = useCallback(() => {

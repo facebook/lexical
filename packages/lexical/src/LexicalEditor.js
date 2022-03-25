@@ -129,7 +129,6 @@ export type RootListener = (
 export type TextContentListener = (text: string) => void;
 export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
 export type CommandListener = (
-  type: string,
   payload: CommandPayload,
   editor: LexicalEditor,
 ) => boolean;
@@ -152,7 +151,7 @@ export type CommandListenerPriority =
 export type CommandPayload = any;
 
 type Listeners = {
-  command: Array<Set<CommandListener>>,
+  command: Map<string, Array<Set<CommandListener>>>,
   decorator: Set<DecoratorListener>,
   mutation: MutationListeners,
   readonly: Set<ReadOnlyListener>,
@@ -350,7 +349,7 @@ export class LexicalEditor {
     this._updating = false;
     // Listeners
     this._listeners = {
-      command: [new Set(), new Set(), new Set(), new Set(), new Set()],
+      command: new Map(),
       decorator: new Set(),
       mutation: new Map(),
       readonly: new Set(),
@@ -421,18 +420,42 @@ export class LexicalEditor {
     };
   }
   registerCommandListener(
+    type: string,
     listener: CommandListener,
     priority: CommandListenerPriority,
-  ): () => void {
+  ): (() => void) | void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
-    const listenerSetOrMap = this._listeners.command;
-    const commands: Array<Set<CommandListener>> = listenerSetOrMap;
-    const commandSet = commands[priority];
-    commandSet.add(listener);
+    const commandsMap = this._listeners.command;
+    if (!commandsMap.has(type)) {
+      commandsMap.set(type, [
+        new Set(),
+        new Set(),
+        new Set(),
+        new Set(),
+        new Set(),
+      ]);
+    }
+    const listenersInPriorityOrder = commandsMap.get(type);
+    if (listenersInPriorityOrder === undefined) {
+      invariant(
+        false,
+        'registerCommandListener: Command type of "%s" not found in command map',
+        type,
+      );
+    }
+    const listeners = listenersInPriorityOrder[priority];
+    listeners.add(listener);
     return () => {
-      commandSet.delete(listener);
+      listeners.delete(listener);
+      if (
+        listenersInPriorityOrder.every(
+          (listenersSet) => listenersSet.size === 0,
+        )
+      ) {
+        commandsMap.delete(type);
+      }
     };
   }
   registerMutationListener(
@@ -486,7 +509,8 @@ export class LexicalEditor {
     return true;
   }
   execCommand(type: string, payload?: CommandPayload): boolean {
-    return triggerCommandListeners(this, type, payload);
+    const result = triggerCommandListeners(this, type, payload);
+    return result;
   }
   getDecorators(): {[NodeKey]: mixed} {
     return this._decorators;

@@ -14,6 +14,7 @@ import type {
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 import React, {
   startTransition,
@@ -678,9 +679,10 @@ function MentionsTypeahead({
   }, [results, selectedIndex, updateSelectedIndex]);
 
   useEffect(() => {
-    return editor.registerCommandListener((type, payload) => {
-      switch (type) {
-        case 'keyArrowDown': {
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'keyArrowDown',
+        (payload) => {
           const event: KeyboardEvent = payload;
           if (results !== null && selectedIndex !== null) {
             if (
@@ -693,8 +695,12 @@ function MentionsTypeahead({
             event.stopImmediatePropagation();
           }
           return true;
-        }
-        case 'keyArrowUp': {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'keyArrowUp',
+        (payload) => {
           const event: KeyboardEvent = payload;
           if (results !== null && selectedIndex !== null) {
             if (selectedIndex !== 0) {
@@ -704,8 +710,12 @@ function MentionsTypeahead({
             event.stopImmediatePropagation();
           }
           return true;
-        }
-        case 'keyEscape': {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'keyEscape',
+        (payload) => {
           const event: KeyboardEvent = payload;
           if (results === null || selectedIndex === null) {
             return false;
@@ -714,8 +724,12 @@ function MentionsTypeahead({
           event.stopImmediatePropagation();
           close();
           return true;
-        }
-        case 'keyTab': {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'keyTab',
+        (payload) => {
           const event: KeyboardEvent = payload;
           if (results === null || selectedIndex === null) {
             return false;
@@ -724,8 +738,12 @@ function MentionsTypeahead({
           event.stopImmediatePropagation();
           applyCurrentSelected();
           return true;
-        }
-        case 'keyEnter': {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'keyEnter',
+        (payload) => {
           const event: KeyboardEvent = payload;
           if (results === null || selectedIndex === null) {
             return false;
@@ -734,11 +752,10 @@ function MentionsTypeahead({
           event.stopImmediatePropagation();
           applyCurrentSelected();
           return true;
-        }
-        default:
-          return false;
-      }
-    }, LowPriority);
+        },
+        LowPriority,
+      ),
+    );
   }, [
     applyCurrentSelected,
     close,

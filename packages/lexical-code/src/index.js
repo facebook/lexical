@@ -752,12 +752,23 @@ export function registerCodeHighlighting(
       textNodeTransform(node, editor),
     ),
     editor.registerCommandListener(
-      (type, payload): boolean =>
-        type === 'indentContent' || type === 'outdentContent'
-          ? handleMultilineIndent(type)
-          : type === 'keyArrowUp' || type === 'keyArrowDown'
-          ? handleShiftLines(type, payload)
-          : false,
+      'indentContent',
+      (payload): boolean => handleMultilineIndent('indentContent'),
+      1,
+    ),
+    editor.registerCommandListener(
+      'outdentContent',
+      (payload): boolean => handleMultilineIndent('outdentContent'),
+      1,
+    ),
+    editor.registerCommandListener(
+      'keyArrowUp',
+      (payload): boolean => handleShiftLines('keyArrowUp', payload),
+      1,
+    ),
+    editor.registerCommandListener(
+      'keyArrowDown',
+      (payload): boolean => handleShiftLines('keyArrowDown', payload),
       1,
     ),
   ];

@@ -616,45 +616,6 @@ export function registerRichText(
       0,
     ),
     editor.registerCommandListener(
-      'copy',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: ClipboardEvent = payload;
-        onCopyForRichText(event, editor);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommandListener(
-      'cut',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: ClipboardEvent = payload;
-        onCutForRichText(event, editor);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommandListener(
-      'paste',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: ClipboardEvent = payload;
-        onPasteForRichText(event, editor);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommandListener(
       'drop',
       (payload) => {
         const selection = $getSelection();
@@ -686,10 +647,7 @@ export function registerRichText(
       'copy',
       (payload) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        if ($isGridSelection(selection)) {
+        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
           const event: ClipboardEvent = payload;
           onCopyForRichText(event, editor);
           return true;
@@ -702,10 +660,7 @@ export function registerRichText(
       'cut',
       (payload) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        if ($isGridSelection(selection)) {
+        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
           const event: ClipboardEvent = payload;
           onCutForRichText(event, editor);
           return true;
@@ -718,10 +673,7 @@ export function registerRichText(
       'paste',
       (payload) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        if ($isGridSelection(selection)) {
+        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
           const event: ClipboardEvent = payload;
           onPasteForRichText(event, editor);
           return true;

@@ -322,7 +322,6 @@ function ImageComponent({
           }
           setSelected(false);
         });
-        return true;
       }
       return false;
     },

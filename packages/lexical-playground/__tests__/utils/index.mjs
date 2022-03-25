@@ -82,30 +82,56 @@ export async function clickSelectors(page, selectors) {
   }
 }
 
-async function assertHTMLOnPageOrFrame(page, pageOrFrame, expectedHtml) {
+async function assertHTMLOnPageOrFrame(
+  page,
+  pageOrFrame,
+  expectedHtml,
+  ignoreClasses,
+  ignoreInlineStyles,
+) {
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
   const actual = prettifyHTML(actualHtml, {
-    ignoreClasses: true,
-    ignoreInlineStyles: true,
+    ignoreClasses,
+    ignoreInlineStyles,
   });
   const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
-    ignoreClasses: true,
-    ignoreInlineStyles: true,
+    ignoreClasses,
+    ignoreInlineStyles,
   });
   expect(actual).toEqual(expected);
 }
 
-export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
+export async function assertHTML(
+  page,
+  expectedHtml,
+  {
+    ignoreSecondFrame = false,
+    ignoreClasses = false,
+    ignoreInlineStyles = false,
+  } = {},
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
-    await assertHTMLOnPageOrFrame(page, leftFrame, expectedHtml);
+    await assertHTMLOnPageOrFrame(
+      page,
+      leftFrame,
+      expectedHtml,
+      ignoreClasses,
+      ignoreInlineStyles,
+    );
     if (!ignoreSecondFrame) {
       let attempts = 0;
       while (attempts < 4) {
         const rightFrame = await page.frame('right');
         let failed = false;
         try {
-          await assertHTMLOnPageOrFrame(page, rightFrame, expectedHtml);
+          await assertHTMLOnPageOrFrame(
+            page,
+            rightFrame,
+            expectedHtml,
+            ignoreClasses,
+            ignoreInlineStyles,
+          );
         } catch (e) {
           if (attempts === 5) {
             throw e;
@@ -120,7 +146,13 @@ export async function assertHTML(page, expectedHtml, ignoreSecondFrame) {
       }
     }
   } else {
-    await assertHTMLOnPageOrFrame(page, page, expectedHtml);
+    await assertHTMLOnPageOrFrame(
+      page,
+      page,
+      expectedHtml,
+      ignoreClasses,
+      ignoreInlineStyles,
+    );
   }
 }
 
@@ -456,7 +488,7 @@ export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
 
 // This function does not suppose to do anything, it's only used as a trigger
 // for prettier auto-formatting (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
-export function html(partials, params) {
+export function html(partials, ...params) {
   let output = '';
   for (let i = 0; i < partials.length; i++) {
     output += partials[i];

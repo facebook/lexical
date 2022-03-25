@@ -53,6 +53,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      {ignoreClasses: true},
     );
   });
 
@@ -71,7 +72,7 @@ test.describe('Auto Links', () => {
 
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
 
     // Add non-url text after the link
     await page.keyboard.type('!');
@@ -82,9 +83,10 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true">http://example.com!</span>
         </p>
       `,
+      {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
 
     // Add non-url text before the link
     await moveToLineBeginning(page);
@@ -96,9 +98,10 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true">!http://example.com</span>
         </p>
       `,
+      {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
 
     // Add newline after link
     await moveToLineEnd(page);
@@ -109,9 +112,10 @@ test.describe('Auto Links', () => {
         html`
           <p><br /></p>
         `,
+      {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink);
+    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
   });
 
   test('Can create link when pasting text with urls', async ({
@@ -144,6 +148,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      {ignoreClasses: true},
     );
   });
 
@@ -165,6 +170,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      {ignoreClasses: true},
     );
     await moveLeft(page, 1);
     await moveRight(page, 1);
@@ -178,6 +184,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      {ignoreClasses: true},
     );
   });
 });

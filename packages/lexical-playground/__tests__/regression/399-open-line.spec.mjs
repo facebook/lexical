@@ -10,6 +10,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   IS_MAC,
   repeat,
@@ -34,7 +35,20 @@ test.describe('Regression test #399', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bar</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">foo</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">bar</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 3,
@@ -45,7 +59,16 @@ test.describe('Regression test #399', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span><br><span data-lexical-text="true">bar</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">foo</span>
+            <br />
+            <span data-lexical-text="true">bar</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 3,
@@ -62,7 +85,21 @@ test.describe('Regression test #399', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><br><span data-lexical-text="true">bar</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">foo</span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <br />
+            <span data-lexical-text="true">bar</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -73,7 +110,17 @@ test.describe('Regression test #399', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span><br><br><span data-lexical-text="true">bar</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">foo</span>
+            <br />
+            <br />
+            <span data-lexical-text="true">bar</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,

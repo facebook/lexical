@@ -11,6 +11,7 @@ import {
   assertHTML,
   click,
   focusEditor,
+  html,
   initialize,
   repeat,
   test,
@@ -36,7 +37,21 @@ test.describe('Regression test #1083', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true">World</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <a
+            href="https://"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello</span>
+          </a>
+          <span data-lexical-text="true">World</span>
+        </p>
+      `,
     );
 
     await selectAll(page);
@@ -44,7 +59,9 @@ test.describe('Regression test #1083', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
   });
 
@@ -71,7 +88,22 @@ test.describe('Regression test #1083', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Say</span><a href="https://" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a><span data-lexical-text="true">World</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Say</span>
+          <a
+            href="https://"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello</span>
+          </a>
+          <span data-lexical-text="true">World</span>
+        </p>
+      `,
     );
 
     await page.keyboard.down('Shift');
@@ -83,7 +115,14 @@ test.describe('Regression test #1083', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Say</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Say</span>
+        </p>
+      `,
     );
   });
 });

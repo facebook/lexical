@@ -12,6 +12,7 @@ import {
   click,
   E2E_PORT,
   focusEditor,
+  html,
   initialize,
   test,
   waitForSelector,
@@ -39,7 +40,22 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -70,7 +86,9 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -87,7 +105,28 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;" class="focused"><button class="image-caption-button">Add Caption</button><div class="image-resizer-ne"></div><div class="image-resizer-se"></div><div class="image-resizer-sw"></div><div class="image-resizer-nw"></div></span><br></p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+              class="focused"
+            />
+            <button class="image-caption-button">Add Caption</button>
+            <div class="image-resizer-ne"></div>
+            <div class="image-resizer-se"></div>
+            <div class="image-resizer-sw"></div>
+            <div class="image-resizer-nw"></div>
+          </span>
+          <br />
+        </p>
+      `,
       true,
     );
 
@@ -95,7 +134,9 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await click(page, 'div[contenteditable="true"]');
@@ -108,7 +149,22 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -122,7 +178,9 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     await assertSelection(page, {
@@ -155,7 +213,33 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -167,7 +251,22 @@ test.describe('Images', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph"><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -179,7 +278,9 @@ test.describe('Images', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -198,7 +299,37 @@ test.describe('Images', () => {
 
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Test</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 4,
@@ -209,7 +340,26 @@ test.describe('Images', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Test</span><span class="editor-image" data-lexical-decorator="true" contenteditable="false"><img src="${IMAGE_URL}" alt="Yellow flower in tilt shift lens" style="height: inherit; max-width: 500px; width: inherit;"></span><br></p>`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Test</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true"
+          >
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+            />
+          </span>
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 4,

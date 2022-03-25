@@ -11,6 +11,7 @@ import {
   assertHTML,
   click,
   focusEditor,
+  html,
   initialize,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
@@ -43,7 +44,46 @@ test.describe('File', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">World</strong></p><ol class="PlaygroundEditorTheme__ol1"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">one</strong></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">two</strong></li></ol>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true"
+          >
+            World
+          </strong>
+        </p>
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true"
+            >
+              one
+            </strong>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true"
+            >
+              two
+            </strong>
+          </li>
+        </ol>
+      `,
     );
 
     const [download] = await Promise.all([
@@ -57,7 +97,9 @@ test.describe('File', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
 
     page.on('filechooser', (fileChooser) => {
@@ -68,7 +110,46 @@ test.describe('File', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello </span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">World</strong></p><ol class="PlaygroundEditorTheme__ol1"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">one</strong></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">two</strong></li></ol>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true"
+          >
+            World
+          </strong>
+        </p>
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true"
+            >
+              one
+            </strong>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true"
+            >
+              two
+            </strong>
+          </li>
+        </ol>
+      `,
     );
   });
 });

@@ -11,6 +11,7 @@ import {
   assertSelection,
   expect,
   focusEditor,
+  html,
   initialize,
   test,
   textContent,
@@ -35,7 +36,9 @@ test.describe('Placeholder', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,

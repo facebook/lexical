@@ -10,6 +10,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   repeat,
   test,
@@ -37,7 +38,9 @@ test.describe('Regression test #231', () => {
     });
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,

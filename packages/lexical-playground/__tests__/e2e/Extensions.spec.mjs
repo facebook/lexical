@@ -11,6 +11,7 @@ import {
   assertSelection,
   evaluate,
   focusEditor,
+  html,
   initialize,
   test,
 } from '../utils/index.mjs';
@@ -29,7 +30,14 @@ test.describe('Extensions', () => {
     );
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">foo</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 3,
@@ -74,7 +82,14 @@ test.describe('Extensions', () => {
     );
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">foo</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 3,
@@ -106,7 +121,14 @@ test.describe('Extensions', () => {
     });
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foobar</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">foobar</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 6,
@@ -141,7 +163,14 @@ test.describe('Extensions', () => {
     if (browserName === 'firefox') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">bar</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">bar</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 3,
@@ -152,7 +181,14 @@ test.describe('Extensions', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">foobar</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">foobar</span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 6,

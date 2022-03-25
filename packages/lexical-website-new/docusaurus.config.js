@@ -13,6 +13,7 @@
 
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const importPlugin = require('remark-import-partial');
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
@@ -38,7 +39,9 @@ const config = {
         },
         docs: {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/docs/`,
-          sidebarPath: require.resolve('./sidebars.js'), // TODO: Update when directory finalized
+          remarkPlugins: [importPlugin],
+          // TODO: Update when directory finalized
+          sidebarPath: require.resolve('./sidebars.js'),
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

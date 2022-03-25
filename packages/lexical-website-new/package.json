@@ -21,7 +21,8 @@
     "clsx": "^1.1.1",
     "prism-react-renderer": "^1.2.1",
     "react": "^18.0.0-alpha-64931821a-20210808",
-    "react-dom": "^18.0.0-alpha-64931821a-20210808"
+    "react-dom": "^18.0.0-alpha-64931821a-20210808",
+    "remark-import-partial": "0.0.2"
   },
   "devDependencies": {
     "buffer": "^6.0.3",

@@ -4,23 +4,24 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import HomepageExamples from '@site/src/components/HomepageExamples';
+import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import React from 'react';
 
-import HomepageExamples from '../components/HomepageExamples';
-import HomepageFeatures from '../components/HomepageFeatures';
 import styles from './styles.module.css';
 
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
+    <header
+      className={clsx('hero hero--dark hero--primary', styles.heroBanner)}
+    >
       <div className="container">
         <h1 className="hero__title">
           <img
@@ -57,8 +58,12 @@ export default function Home() {
     <Layout description={siteConfig.tagline}>
       <HomepageHeader />
       <main>
-        <HomepageFeatures />
-        <HomepageExamples />
+        <div className="margin-vert--lg">
+          <HomepageFeatures />
+        </div>
+        <div className="margin-vert--lg">
+          <HomepageExamples />
+        </div>
       </main>
     </Layout>
   );

@@ -25,6 +25,11 @@ import {$isListNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+} from '@lexical/rich-text';
+import {
   $getSelectionStyleValueForProperty,
   $isAtNodeEnd,
   $isParentElementRTL,
@@ -38,9 +43,7 @@ import {
   $getSelection,
   $isRangeSelection,
 } from 'lexical';
-import {$createHeadingNode, $isHeadingNode} from 'lexical/HeadingNode';
 import {$isLinkNode} from 'lexical/LinkNode';
-import {$createQuoteNode} from 'lexical/QuoteNode';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe

@@ -18,8 +18,6 @@ exact_by_default=true
 
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
 
-module.name_mapper='^lexical/HeadingNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalHeadingNode.js.flow'
-module.name_mapper='^lexical/QuoteNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalQuoteNode.js.flow'
 module.name_mapper='^lexical/LinkNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalLinkNode.js.flow'
 module.name_mapper='^lexical/AutoLinkNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalAutoLinkNode.js.flow'
 module.name_mapper='^lexical/OverflowNode' -> '<PROJECT_ROOT>/packages/lexical/flow/LexicalOverflowNode.js.flow'
@@ -34,6 +32,9 @@ module.name_mapper='^@lexical/text' -> '<PROJECT_ROOT>/packages/lexical-text/src
 module.name_mapper='^@lexical/offset' -> '<PROJECT_ROOT>/packages/lexical-offset/src/index.js'
 module.name_mapper='^@lexical/utils' -> '<PROJECT_ROOT>/packages/lexical-utils/src/index.js'
 module.name_mapper='^@lexical/code' -> '<PROJECT_ROOT>/packages/lexical-code/src/index.js'
+module.name_mapper='^@lexical/plain-text' -> '<PROJECT_ROOT>/packages/lexical-plain-text/src/index.js'
+module.name_mapper='^@lexical/rich-text' -> '<PROJECT_ROOT>/packages/lexical-rich-text/src/index.js'
+module.name_mapper='^@lexical/dragon' -> '<PROJECT_ROOT>/packages/lexical-dragon/src/index.js'
 
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalEditor' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalEditor.js'
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalRichText' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js'

@@ -8,6 +8,7 @@
 
 import type {State} from 'lexical';
 
+import {$createHeadingNode} from '@lexical/rich-text';
 import {$cloneContents} from '@lexical/selection';
 import {
   $createParagraphNode,
@@ -17,7 +18,6 @@ import {
   $getSelection,
   TextNode,
 } from 'lexical';
-import {$createHeadingNode} from 'lexical/HeadingNode';
 import {
   $createTestElementNode,
   $createTestExcludeFromCopyElementNode,

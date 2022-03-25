@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
 import Translate from '@docusaurus/Translate';
@@ -15,7 +14,7 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    Svg: require('../../../static/img/feature-reliable.svg').default,
+    Svg: require('@site/static/img/feature-reliable.svg').default,
     description: (
       <Translate
         id="page.home.features.reliable"
@@ -29,7 +28,7 @@ const FeatureList = [
     title: 'Reliable',
   },
   {
-    Svg: require('../../../static/img/feature-accessible.svg').default,
+    Svg: require('@site/static/img/feature-accessible.svg').default,
     description: (
       <Translate
         id="page.home.features.accessible"
@@ -43,7 +42,7 @@ const FeatureList = [
     title: 'Accessible',
   },
   {
-    Svg: require('../../../static/img/feature-fast.svg').default,
+    Svg: require('@site/static/img/feature-fast.svg').default,
     description: (
       <Translate
         id="page.home.features.fast"
@@ -60,7 +59,7 @@ const FeatureList = [
 
 function Feature({Svg, title, description}) {
   return (
-    <div className={clsx('col col--4')}>
+    <div>
       <div className="text--center">
         <Svg className={styles.featureSvg} alt={title} />
       </div>
@@ -78,7 +77,9 @@ export default function HomepageFeatures() {
       <div className="container">
         <div className="row">
           {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
+            <div className={clsx('col col--4')} key={idx}>
+              <Feature {...props} />
+            </div>
           ))}
         </div>
       </div>

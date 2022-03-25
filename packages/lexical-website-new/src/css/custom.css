@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
 /**
@@ -23,6 +22,8 @@
   --ifm-color-primary-lighter: #aed4ff;
   --ifm-color-primary-lightest: #e6f2ff;
   --ifm-code-font-size: 95%;
+
+  --ifm-footer-padding-vertical: 4rem;
 }
 
 .docusaurus-highlight-code-line {
@@ -34,4 +35,8 @@
 
 html[data-theme='dark'] .docusaurus-highlight-code-line {
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+.footer__links {
+  margin-bottom: 3rem;
 }

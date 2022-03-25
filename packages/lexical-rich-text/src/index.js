@@ -309,7 +309,6 @@ export function registerRichText(
       'click',
       (payload) => {
         const selection = $getSelection();
-        console.log('registerRichText');
         if ($isNodeSelection(selection)) {
           selection.clear();
           return true;

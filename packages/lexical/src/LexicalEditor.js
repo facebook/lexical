@@ -423,7 +423,7 @@ export class LexicalEditor {
     type: string,
     listener: CommandListener,
     priority: CommandListenerPriority,
-  ): () => void {
+  ): (() => void) | void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
@@ -437,15 +437,22 @@ export class LexicalEditor {
         new Set(),
       ]);
     }
-    const listenerInPriorityOrder = commandsMap.get(type);
-    // $FlowFixMe[incompatible-use] The listenersSet will exist as we're setting it above.
-    const listenersSet = listenerInPriorityOrder[priority];
-    listenersSet.add(listener);
+    const listenersInPriorityOrder = commandsMap.get(type);
+    if (listenersInPriorityOrder === undefined) {
+      invariant(
+        false,
+        'registerCommandListener: Command type of "%s" not found in command map',
+        type,
+      );
+    }
+    const listeners = listenersInPriorityOrder[priority];
+    listeners.add(listener);
     return () => {
-      listenersSet.delete(listener);
+      listeners.delete(listener);
       if (
-        // $FlowFixMe[incompatible-use] The listenerInPriorityOrder will exist as we're setting it above.
-        listenerInPriorityOrder.every((listenerSet) => listenersSet.size === 0)
+        listenersInPriorityOrder.every(
+          (listenersSet) => listenersSet.size === 0,
+        )
       ) {
         commandsMap.delete(type);
       }

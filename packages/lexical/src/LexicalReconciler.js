@@ -7,7 +7,7 @@
  * @flow strict
  */
 
- import type {
+import type {
   EditorConfig,
   IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
@@ -21,8 +21,7 @@ import type {
   NodeSelection,
   RangeSelection,
 } from './LexicalSelection';
-import type {ElementNode} from './nodes/base/LexicalElementNode';
-import type {Node as ReactNode} from 'react';
+import type {ElementNode} from './nodes/LexicalElementNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -552,7 +551,7 @@ function reconcileNode(
   return dom;
 }
 
-function reconcileDecorator(key: NodeKey, decorator: ReactNode): void {
+function reconcileDecorator(key: NodeKey, decorator: mixed): void {
   let pendingDecorators = activeEditor._pendingDecorators;
   const currentDecorators = activeEditor._decorators;
 

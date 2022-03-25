@@ -1,0 +1,25 @@
+{
+  "name": "@lexical/overflow",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "This package contains selection overflow helpers and nodes for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "overflow"
+  ],
+  "license": "MIT",
+  "version": "0.1.16",
+  "main": "LexicalOverflow.js",
+  "peerDependencies": {
+    "lexical": "0.1.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-overflow"
+  }
+}

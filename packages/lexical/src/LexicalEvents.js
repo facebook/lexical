@@ -9,8 +9,8 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
-import type {ElementNode} from './nodes/base/LexicalElementNode';
-import type {TextNode} from './nodes/base/LexicalTextNode';
+import type {ElementNode} from './nodes/LexicalElementNode';
+import type {TextNode} from './nodes/LexicalTextNode';
 
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';

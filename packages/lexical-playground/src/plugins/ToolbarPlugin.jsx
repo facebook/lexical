@@ -21,6 +21,7 @@ import {
   getCodeLanguages,
   getDefaultCodeLanguage,
 } from '@lexical/code';
+import {$isLinkNode} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import withSubscriptions from '@lexical/react/withSubscriptions';
@@ -43,7 +44,6 @@ import {
   $getSelection,
   $isRangeSelection,
 } from 'lexical';
-import {$isLinkNode} from 'lexical/LinkNode';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe

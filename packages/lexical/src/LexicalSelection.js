@@ -11,8 +11,8 @@ import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ParsedSelection} from './LexicalParsing';
-import type {ElementNode} from './nodes/base/LexicalElementNode';
-import type {TextFormatType} from './nodes/base/LexicalTextNode';
+import type {ElementNode} from './nodes/LexicalElementNode';
+import type {TextFormatType} from './nodes/LexicalTextNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';

@@ -9,7 +9,6 @@
 
 import type {EditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
-import type {Node as ReactNode} from 'react';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -31,9 +30,9 @@ import {
   generateRandomKey,
   markAllNodesAsDirty,
 } from './LexicalUtils';
-import {LineBreakNode} from './nodes/base/LexicalLineBreakNode';
-import {ParagraphNode} from './nodes/base/LexicalParagraphNode';
-import {RootNode} from './nodes/base/LexicalRootNode';
+import {LineBreakNode} from './nodes/LexicalLineBreakNode';
+import {ParagraphNode} from './nodes/LexicalParagraphNode';
+import {RootNode} from './nodes/LexicalRootNode';
 
 export type EditorThemeClassName = string;
 
@@ -122,7 +121,7 @@ export type UpdateListener = ({
   prevEditorState: EditorState,
   tags: Set<string>,
 }) => void;
-export type DecoratorListener = (decorator: {[NodeKey]: ReactNode}) => void;
+export type DecoratorListener = (decorator: {[NodeKey]: mixed}) => void;
 export type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
@@ -311,8 +310,8 @@ export class LexicalEditor {
   _updating: boolean;
   _listeners: Listeners;
   _nodes: RegisteredNodes;
-  _decorators: {[NodeKey]: ReactNode};
-  _pendingDecorators: null | {[NodeKey]: ReactNode};
+  _decorators: {[NodeKey]: mixed};
+  _pendingDecorators: null | {[NodeKey]: mixed};
   _config: EditorConfig<{...}>;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
@@ -489,7 +488,7 @@ export class LexicalEditor {
   execCommand(type: string, payload?: CommandPayload): boolean {
     return triggerCommandListeners(this, type, payload);
   }
-  getDecorators(): {[NodeKey]: ReactNode} {
+  getDecorators(): {[NodeKey]: mixed} {
     return this._decorators;
   }
   getRootElement(): null | HTMLElement {

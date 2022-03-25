@@ -1,19 +1,19 @@
 {
-  "name": "@lexical/hashtag",
+  "name": "@lexical/link",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
   },
-  "description": "This package contains the functionality for Lexical hashtags.",
+  "description": "This package contains the functionality for Lexical links.",
   "keywords": [
     "lexical",
     "editor",
     "rich-text",
-    "hashtag"
+    "link"
   ],
   "license": "MIT",
   "version": "0.1.16",
-  "main": "LexicalHashtag.js",
+  "main": "LexicalLink.js",
   "peerDependencies": {
     "lexical": "0.1.16"
   },
@@ -23,6 +23,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
-    "directory": "packages/lexical-hashtag"
+    "directory": "packages/lexical-link"
   }
 }

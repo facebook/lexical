@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {ElementFormatType} from './nodes/base/LexicalElementNode';
-import type {TextFormatType, TextModeType} from './nodes/base/LexicalTextNode';
+import type {ElementFormatType} from './nodes/LexicalElementNode';
+import type {TextFormatType, TextModeType} from './nodes/LexicalTextNode';
 
 // DOM
 export const DOM_ELEMENT_TYPE = 1;

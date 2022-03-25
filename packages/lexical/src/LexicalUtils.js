@@ -24,9 +24,8 @@ import type {
   PointType,
   RangeSelection,
 } from './LexicalSelection';
-import type {RootNode} from './nodes/base/LexicalRootNode';
-import type {TextFormatType, TextNode} from './nodes/base/LexicalTextNode';
-import type {Node as ReactNode} from 'react';
+import type {RootNode} from './nodes/LexicalRootNode';
+import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
 import {IS_APPLE} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
@@ -334,7 +333,7 @@ export function $getNearestNodeFromDOMNode(
   return null;
 }
 
-export function cloneDecorators(editor: LexicalEditor): {[NodeKey]: ReactNode} {
+export function cloneDecorators(editor: LexicalEditor): {[NodeKey]: mixed} {
   const currentDecorators = editor._decorators;
   const pendingDecorators = Object.assign({}, currentDecorators);
   editor._pendingDecorators = pendingDecorators;

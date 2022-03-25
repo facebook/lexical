@@ -11,6 +11,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   pasteFromClipboard,
   selectOption,
@@ -31,7 +32,44 @@ test.describe('CodeBlock', () => {
       });
       await assertHTML(
         page,
-        '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>',
+        html`
+          <code
+            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            spellcheck="false"
+            dir="ltr"
+          >
+            <span
+              class="PlaygroundEditorTheme__tokenFunction"
+              data-lexical-text="true"
+            >
+              alert
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true"
+            >
+              (
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenProperty"
+              data-lexical-text="true"
+            >
+              1
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true"
+            >
+              )
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true"
+            >
+              ;
+            </span>
+          </code>
+        `,
       );
 
       // Remove code block (back to a normal paragraph) and check that highlights are converted into regular text
@@ -39,12 +77,26 @@ test.describe('CodeBlock', () => {
       await page.keyboard.press('Backspace');
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">alert(1);</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">alert(1);</span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">``` alert(1);</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">\`\`\` alert(1);</span>
+          </p>
+        `,
       );
     }
   });
@@ -66,12 +118,56 @@ test.describe('CodeBlock', () => {
       });
       await assertHTML(
         page,
-        '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>',
+        html`
+          <code
+            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            spellcheck="false"
+            dir="ltr"
+          >
+            <span
+              class="PlaygroundEditorTheme__tokenFunction"
+              data-lexical-text="true"
+            >
+              alert
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true"
+            >
+              (
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenProperty"
+              data-lexical-text="true"
+            >
+              1
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true"
+            >
+              )
+            </span>
+            <span
+              class="PlaygroundEditorTheme__tokenPunctuation"
+              data-lexical-text="true"
+            >
+              ;
+            </span>
+          </code>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">``` alert(1);</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">\`\`\` alert(1);</span>
+          </p>
+        `,
       );
     }
   });
@@ -85,17 +181,67 @@ test.describe('CodeBlock', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span data-lexical-text="true">select </span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">*</span><span data-lexical-text="true"> from users</span></code>',
+        html`
+          <code
+            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            spellcheck="false"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">select</span>
+            <span
+              class="PlaygroundEditorTheme__tokenOperator"
+              data-lexical-text="true"
+            >
+              *
+            </span>
+            <span data-lexical-text="true">from users</span>
+          </code>
+        `,
       );
       await selectOption(page, '.code-language', {value: 'sql'});
       await assertHTML(
         page,
-        '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">select</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">*</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">from</span><span data-lexical-text="true"> users</span></code>',
+        html`
+          <code
+            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            spellcheck="false"
+            dir="ltr"
+          >
+            <span
+              class="PlaygroundEditorTheme__tokenAttr"
+              data-lexical-text="true"
+            >
+              select
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tokenOperator"
+              data-lexical-text="true"
+            >
+              *
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="PlaygroundEditorTheme__tokenAttr"
+              data-lexical-text="true"
+            >
+              from
+            </span>
+            <span data-lexical-text="true">users</span>
+          </code>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">``` select * from users</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">\`\`\` select * from users</span>
+          </p>
+        `,
       );
     }
   });
@@ -114,7 +260,78 @@ test.describe('CodeBlock', () => {
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">1</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">alert</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">2</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span></code>',
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+        >
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true"
+          >
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true"
+          >
+            1
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            ;
+          </span>
+          <br />
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true"
+          >
+            alert
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true"
+          >
+            2
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            ;
+          </span>
+          <br />
+          <span data-lexical-text="true"></span>
+        </code>
+      `,
     );
   });
 
@@ -134,7 +351,74 @@ test.describe('CodeBlock', () => {
     await page.keyboard.type('}');
     await assertHTML(
       page,
-      '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span></code>',
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+        >
+          <span
+            class="PlaygroundEditorTheme__tokenAttr"
+            data-lexical-text="true"
+          >
+            if
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span data-lexical-text="true">x</span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            {
+          </span>
+          <br />
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true"
+          >
+            x
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            ;
+          </span>
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            }
+          </span>
+        </code>
+      `,
     );
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowUp');
@@ -144,14 +428,152 @@ test.describe('CodeBlock', () => {
     await page.keyboard.press('Tab');
     await assertHTML(
       page,
-      '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span data-lexical-text="true">		</span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span data-lexical-text="true">			</span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span data-lexical-text="true">		</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span></code>',
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+        >
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenAttr"
+            data-lexical-text="true"
+          >
+            if
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span data-lexical-text="true">x</span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            {
+          </span>
+          <br />
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true"
+          >
+            x
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            ;
+          </span>
+          <br />
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            }
+          </span>
+        </code>
+      `,
     );
     await page.keyboard.down('Shift');
     await page.keyboard.press('Tab');
     await page.keyboard.up('Shift');
     await assertHTML(
       page,
-      '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span data-lexical-text="true">		</span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span data-lexical-text="true">	</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span></code>',
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+        >
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenAttr"
+            data-lexical-text="true"
+          >
+            if
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span data-lexical-text="true">x</span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            {
+          </span>
+          <br />
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true"
+          >
+            x
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            ;
+          </span>
+          <br />
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            }
+          </span>
+        </code>
+      `,
     );
     await page.keyboard.down('Shift');
     await page.keyboard.press('Tab');
@@ -159,7 +581,73 @@ test.describe('CodeBlock', () => {
     await page.keyboard.up('Shift');
     await assertHTML(
       page,
-      '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">if</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">x</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span></code>',
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+        >
+          <span
+            class="PlaygroundEditorTheme__tokenAttr"
+            data-lexical-text="true"
+          >
+            if
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span data-lexical-text="true">x</span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            {
+          </span>
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenFunction"
+            data-lexical-text="true"
+          >
+            x
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            (
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            )
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            ;
+          </span>
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true"
+          >
+            }
+          </span>
+        </code>
+      `,
     );
   });
 
@@ -168,10 +656,170 @@ test.describe('CodeBlock', () => {
     isPlainText,
   }) => {
     test.skip(isPlainText);
-    const abcHTML =
-      '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">a</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">b</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">c</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>';
-    const bcaHTML =
-      '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">b</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">c</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">a</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>';
+    const abcHTML = html`
+      <code
+        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+        spellcheck="false"
+        dir="ltr"
+      >
+        <span
+          class="PlaygroundEditorTheme__tokenFunction"
+          data-lexical-text="true"
+        >
+          a
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          (
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          )
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          ;
+        </span>
+        <br />
+        <span
+          class="PlaygroundEditorTheme__tokenFunction"
+          data-lexical-text="true"
+        >
+          b
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          (
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          )
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          ;
+        </span>
+        <br />
+        <span
+          class="PlaygroundEditorTheme__tokenFunction"
+          data-lexical-text="true"
+        >
+          c
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          (
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          )
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          ;
+        </span>
+      </code>
+    `;
+    const bcaHTML = html`
+      <code
+        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+        spellcheck="false"
+        dir="ltr"
+      >
+        <span
+          class="PlaygroundEditorTheme__tokenFunction"
+          data-lexical-text="true"
+        >
+          b
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          (
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          )
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          ;
+        </span>
+        <br />
+        <span
+          class="PlaygroundEditorTheme__tokenFunction"
+          data-lexical-text="true"
+        >
+          c
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          (
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          )
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          ;
+        </span>
+        <br />
+        <span
+          class="PlaygroundEditorTheme__tokenFunction"
+          data-lexical-text="true"
+        >
+          a
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          (
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          )
+        </span>
+        <span
+          class="PlaygroundEditorTheme__tokenPunctuation"
+          data-lexical-text="true"
+        >
+          ;
+        </span>
+      </code>
+    `;
     const endOfFirstLine = {
       anchorOffset: 1,
       anchorPath: [0, 3, 0],
@@ -218,8 +866,113 @@ test.describe('CodeBlock', () => {
    * }
    *
    */
-  const EXPECTED_HTML =
-    '<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">function</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">run</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span data-lexical-text="true">  </span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">return</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">[</span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">null</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">undefined</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">2</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">""</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">]</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span><br><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span></code>';
+  const EXPECTED_HTML = html`
+    <code
+      class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+      spellcheck="false"
+      dir="ltr"
+    >
+      <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+        function
+      </span>
+      <span data-lexical-text="true"></span>
+      <span
+        class="PlaygroundEditorTheme__tokenFunction"
+        data-lexical-text="true"
+      >
+        run
+      </span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        (
+      </span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        )
+      </span>
+      <span data-lexical-text="true"></span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        {
+      </span>
+      <br />
+      <span data-lexical-text="true"></span>
+      <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+        return
+      </span>
+      <span data-lexical-text="true"></span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        [
+      </span>
+      <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+        null
+      </span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        ,
+      </span>
+      <span data-lexical-text="true"></span>
+      <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+        undefined
+      </span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        ,
+      </span>
+      <span data-lexical-text="true"></span>
+      <span
+        class="PlaygroundEditorTheme__tokenProperty"
+        data-lexical-text="true"
+      >
+        2
+      </span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        ,
+      </span>
+      <span data-lexical-text="true"></span>
+      <span
+        class="PlaygroundEditorTheme__tokenSelector"
+        data-lexical-text="true"
+      >
+        ""
+      </span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        ]
+      </span>
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        ;
+      </span>
+      <br />
+      <span
+        class="PlaygroundEditorTheme__tokenPunctuation"
+        data-lexical-text="true"
+      >
+        }
+      </span>
+    </code>
+  `;
   const CODE_PASTING_TESTS = [
     {
       expectedHTML: EXPECTED_HTML,

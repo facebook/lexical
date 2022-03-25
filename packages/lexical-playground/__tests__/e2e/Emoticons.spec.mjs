@@ -14,6 +14,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   repeat,
   test,
@@ -26,7 +27,17 @@ test.describe('Emoticons', () => {
     await page.keyboard.type('This is an emoji :)');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is an emoji </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">This is an emoji</span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 2,
@@ -38,7 +49,14 @@ test.describe('Emoticons', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is an emoji </span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">This is an emoji</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 17,
@@ -77,7 +95,14 @@ test.describe('Emoticons', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">This is an emoji </span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">This is an emoji</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 17,
@@ -96,7 +121,28 @@ test.describe('Emoticons', () => {
     await page.keyboard.type(':) :) <3 :(');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji heart" data-lexical-text="true">
+            <span class="emoji-inner">❤</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji unhappysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙁</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 2,
@@ -110,7 +156,30 @@ test.describe('Emoticons', () => {
     await page.keyboard.up('Shift');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><br></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji heart" data-lexical-text="true">
+            <span class="emoji-inner">❤</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji unhappysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙁</span>
+          </span>
+          <br />
+          <br />
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 8,
@@ -122,7 +191,44 @@ test.describe('Emoticons', () => {
     await page.keyboard.type(':) :) <3 :(');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji heart" data-lexical-text="true">
+            <span class="emoji-inner">❤</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji unhappysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙁</span>
+          </span>
+          <br />
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji heart" data-lexical-text="true">
+            <span class="emoji-inner">❤</span>
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="emoji unhappysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙁</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 2,
@@ -135,7 +241,45 @@ test.describe('Emoticons', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+            <br />
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
@@ -146,7 +290,46 @@ test.describe('Emoticons', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><br></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+            <br />
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+            <br />
+            <br />
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 16,
@@ -160,7 +343,64 @@ test.describe('Emoticons', () => {
     if (isRichText) {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p><p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+            <br />
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+          </p>
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -171,7 +411,60 @@ test.describe('Emoticons', () => {
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span><br><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span data-lexical-text="true"> </span><span class="emoji heart" data-lexical-text="true"><span class="emoji-inner">❤</span></span><span data-lexical-text="true"> </span><span class="emoji unhappysmile" data-lexical-text="true"><span class="emoji-inner">🙁</span></span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+            <br />
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+            <br />
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji happysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙂</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji heart" data-lexical-text="true">
+              <span class="emoji-inner">❤</span>
+            </span>
+            <span data-lexical-text="true"></span>
+            <span class="emoji unhappysmile" data-lexical-text="true">
+              <span class="emoji-inner">🙁</span>
+            </span>
+          </p>
+        `,
       );
       await assertSelection(page, {
         anchorOffset: 2,
@@ -189,7 +482,9 @@ test.describe('Emoticons', () => {
     await repeat(22, async () => await page.keyboard.press('Backspace'));
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -278,7 +573,29 @@ test.describe('Emoticons', () => {
     await page.keyboard.type('Hey');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hey</span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span><span class="emoji happysmile" data-lexical-text="true"><span class="emoji-inner">🙂</span></span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hey</span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+          <span class="emoji happysmile" data-lexical-text="true">
+            <span class="emoji-inner">🙂</span>
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 3,
@@ -297,7 +614,14 @@ test.describe('Emoticons', () => {
     await page.keyboard.type('a');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -315,7 +639,14 @@ test.describe('Emoticons', () => {
     await page.keyboard.type('a');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
     );
     await page.pause();
     await assertSelection(page, {

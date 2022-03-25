@@ -80,7 +80,8 @@ test.describe('Markdown', () => {
       isBlockTest: true,
       markdownText: '> ',
 
-      undoHTML: '<p><span data-lexical-text="true">&gt;</span></p>', // Block quote.
+      undoHTML:
+        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true">&gt;</span></p>', // Block quote.
     },
     {
       expectation:

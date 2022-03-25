@@ -11,6 +11,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   test,
   waitForSelector,
@@ -27,7 +28,17 @@ test.describe('Regression test #379', () => {
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 14,
@@ -40,7 +51,17 @@ test.describe('Regression test #379', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,

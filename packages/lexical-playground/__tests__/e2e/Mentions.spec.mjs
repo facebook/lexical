@@ -14,6 +14,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   IS_WINDOWS,
   repeat,
@@ -37,13 +38,30 @@ test.describe('Mentions', () => {
     await waitForSelector(page, '#mentions-typeahead ul li');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Luke</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Luke</span>
+        </p>
+      `,
     );
 
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 14,
@@ -94,13 +112,30 @@ test.describe('Mentions', () => {
     await waitForSelector(page, '#mentions-typeahead ul li');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Luke</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Luke</span>
+        </p>
+      `,
     );
 
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 14,
@@ -122,7 +157,17 @@ test.describe('Mentions', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Skywalker</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Skywalker
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -134,7 +179,9 @@ test.describe('Mentions', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -159,13 +206,30 @@ test.describe('Mentions', () => {
     await waitForSelector(page, '#mentions-typeahead ul li');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Luke</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Luke</span>
+        </p>
+      `,
     );
 
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 14,
@@ -179,7 +243,17 @@ test.describe('Mentions', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 4,
@@ -191,7 +265,9 @@ test.describe('Mentions', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -208,7 +284,14 @@ test.describe('Mentions', () => {
     await page.keyboard.press('ArrowLeft');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc  def</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">abc def</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 4,
@@ -222,13 +305,35 @@ test.describe('Mentions', () => {
     await waitForSelector(page, '#mentions-typeahead ul li');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc Luke def</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">abc Luke def</span>
+        </p>
+      `,
     );
 
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> def</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">abc</span>
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 14,
@@ -240,7 +345,22 @@ test.describe('Mentions', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">abc </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke</span><span data-lexical-text="true"> def</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">abc</span>
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke
+          </span>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 4,
@@ -297,7 +417,41 @@ test.describe('Mentions', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+          <span data-lexical-text="true"></span>
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 14,
@@ -320,12 +474,72 @@ test.describe('Mentions', () => {
     if (IS_WINDOWS && browserName === 'chromium') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Skywalker </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Skywalker</span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true"> Skywalker </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Skywalker</span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+          </p>
+        `,
       );
     }
     await assertSelection(page, {
@@ -339,12 +553,65 @@ test.describe('Mentions', () => {
     if (IS_WINDOWS && browserName === 'chromium') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph"><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+        html`
+          <p class="PlaygroundEditorTheme__paragraph">
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+          </p>
+        `,
       );
     }
     await assertSelection(page, {
@@ -358,12 +625,56 @@ test.describe('Mentions', () => {
     if (IS_WINDOWS && browserName === 'chromium') {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Skywalker </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Skywalker</span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+          </p>
+        `,
       );
     } else {
       await assertHTML(
         page,
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true"> Skywalker </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> </span><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span></p>',
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Skywalker</span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true"></span>
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2);"
+              data-lexical-text="true"
+            >
+              Luke Skywalker
+            </span>
+          </p>
+        `,
       );
     }
     await assertSelection(page, {
@@ -381,7 +692,9 @@ test.describe('Mentions', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph"><br></p>',
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,
@@ -412,7 +725,21 @@ test.describe('Mentions', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="mention" data-lexical-text="true" style="background-color: rgba(24, 119, 232, 0.2);">Luke Skywalker</span><span data-lexical-text="true"> foo bar</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+          <span data-lexical-text="true">foo bar</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 8,
@@ -449,7 +776,14 @@ test.describe('Mentions', () => {
 
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true"> bar</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">bar</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 0,

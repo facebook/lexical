@@ -10,6 +10,7 @@ import {
   assertHTML,
   assertSelection,
   focusEditor,
+  html,
   initialize,
   test,
   waitForSelector,
@@ -23,7 +24,16 @@ test.describe('Regression test #221', () => {
     await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #yolo
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 5,
@@ -37,7 +47,17 @@ test.describe('Regression test #221', () => {
     await page.keyboard.press('Space');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yo</span><span data-lexical-text="true"> lo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #yo
+          </span>
+          <span data-lexical-text="true">lo</span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -53,7 +73,17 @@ test.describe('Regression test #221', () => {
     await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span><span data-lexical-text="true"> </span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #yolo
+          </span>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -66,7 +96,16 @@ test.describe('Regression test #221', () => {
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #yolo
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 5,
@@ -82,7 +121,17 @@ test.describe('Regression test #221', () => {
     await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yolo</span><span data-lexical-text="true"> </span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #yolo
+          </span>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 1,
@@ -95,7 +144,16 @@ test.describe('Regression test #221', () => {
     await page.keyboard.press('Backspace');
     await assertHTML(
       page,
-      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#yol</span></p>',
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #yol
+          </span>
+        </p>
+      `,
     );
     await assertSelection(page, {
       anchorOffset: 4,

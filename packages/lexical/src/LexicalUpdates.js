@@ -476,9 +476,9 @@ export function triggerCommandListeners(
       const currentEditor = editors[e];
       const commandListeners = currentEditor._listeners.command;
       const listenerInPriorityOrder = commandListeners.get(type);
-      if (listenerInPriorityOrder != null) {
+      if (listenerInPriorityOrder !== undefined) {
         const listeners = listenerInPriorityOrder[i];
-        if (listeners != null) {
+        if (listeners !== undefined) {
           for (const listener of listeners) {
             if (listener(payload, editor) === true) {
               return true;

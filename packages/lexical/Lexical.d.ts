@@ -42,7 +42,7 @@ type Listeners = {
   textcontent: Set<TextContentListener>;
   root: Set<RootListener>;
   update: Set<UpdateListener>;
-  command: Array<Set<CommandListener>>;
+  command: Map<string, Array<Set<CommandListener>>>;
 };
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {

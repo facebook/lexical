@@ -427,8 +427,9 @@ export class LexicalEditor {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
-    if (!this._listeners.command.has(type)) {
-      this._listeners.command.set(type, [
+    const commandsMap = this._listeners.command;
+    if (!commandsMap.has(type)) {
+      commandsMap.set(type, [
         new Set(),
         new Set(),
         new Set(),
@@ -436,12 +437,18 @@ export class LexicalEditor {
         new Set(),
       ]);
     }
-    const commands = this._listeners.command.get(type);
-    // $FlowFixMe[incompatible-use] The command will exist as we're seeeing it above.
-    const commandSet = commands[priority];
-    commandSet.add(listener);
+    const listenerInPriorityOrder = commandsMap.get(type);
+    // $FlowFixMe[incompatible-use] The listenersSet will exist as we're setting it above.
+    const listenersSet = listenerInPriorityOrder[priority];
+    listenersSet.add(listener);
     return () => {
-      commandSet.delete(listener);
+      listenersSet.delete(listener);
+      if (
+        // $FlowFixMe[incompatible-use] The listenerInPriorityOrder will exist as we're setting it above.
+        listenerInPriorityOrder.every((listenerSet) => listenersSet.size === 0)
+      ) {
+        commandsMap.delete(type);
+      }
     };
   }
   registerMutationListener(
@@ -495,7 +502,10 @@ export class LexicalEditor {
     return true;
   }
   execCommand(type: string, payload?: CommandPayload): boolean {
-    return triggerCommandListeners(this, type, payload);
+    // console.time('execCommand: ' + type);
+    const result = triggerCommandListeners(this, type, payload);
+    // console.timeEnd('execCommand: ' + type);
+    return result;
   }
   getDecorators(): {[NodeKey]: mixed} {
     return this._decorators;

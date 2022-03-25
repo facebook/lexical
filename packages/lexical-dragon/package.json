@@ -1,0 +1,26 @@
+{
+  "name": "@lexical/dragon",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "This package contains compatability with Dragon NaturallySpeaking accessibility tools.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "dragon",
+    "accessibility"
+  ],
+  "license": "MIT",
+  "version": "0.1.16",
+  "main": "LexicalDragon.js",
+  "peerDependencies": {
+    "lexical": "0.1.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-dragon"
+  }
+}

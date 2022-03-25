@@ -58,16 +58,22 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-offset/dist'));
   fs.removeSync(path.resolve('./packages/lexical-utils/dist'));
   fs.removeSync(path.resolve('./packages/lexical-code/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-dragon/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-plain-text/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-rich-text/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
 }
 
 const wwwMappings = {
   '@lexical/clipboard': 'LexicalClipboard',
   '@lexical/code': 'LexicalCode',
+  '@lexical/dragon': 'LexicalDragon',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
   '@lexical/list': 'LexicalList',
   '@lexical/offset': 'LexicalOffset',
+  '@lexical/plain-text': 'LexicalPlainText',
+  '@lexical/rich-text': 'LexicalRichText',
   '@lexical/selection': 'LexicalSelection',
   '@lexical/table': 'LexicalTable',
   '@lexical/text': 'LexicalText',
@@ -120,6 +126,9 @@ const externals = [
   '@lexical/utils',
   '@lexical/code',
   '@lexical/yjs',
+  '@lexical/plain-text',
+  '@lexical/rich-text',
+  '@lexical/dragon',
   'react-dom',
   'react',
   'yjs',
@@ -412,6 +421,39 @@ const packages = [
     name: 'Lexical Code',
     outputPath: './packages/lexical-code/dist/',
     sourcePath: './packages/lexical-code/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalDragon',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Dragon',
+    outputPath: './packages/lexical-dragon/dist/',
+    sourcePath: './packages/lexical-dragon/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalPlainText',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Plain Text',
+    outputPath: './packages/lexical-plain-text/dist/',
+    sourcePath: './packages/lexical-plain-text/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalRichText',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Rich Text',
+    outputPath: './packages/lexical-rich-text/dist/',
+    sourcePath: './packages/lexical-rich-text/src/',
   },
   {
     modules: lexicalNodes.map((module) => ({

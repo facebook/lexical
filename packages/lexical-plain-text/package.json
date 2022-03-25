@@ -1,0 +1,26 @@
+{
+  "name": "@lexical/plain-text",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "This package contains plain text helpers for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "plain-text"
+  ],
+  "license": "MIT",
+  "version": "0.1.16",
+  "main": "LexicalPlainText.js",
+  "peerDependencies": {
+    "lexical": "0.1.16",
+    "@lexical/selection": "0.1.16",
+    "@lexical/clipboard": "0.1.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-plain-text"
+  }
+}

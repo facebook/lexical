@@ -24,10 +24,13 @@ module.exports = {
         '^@lexical/clipboard$':
           '<rootDir>/packages/lexical-clipboard/src/index.js',
         '^@lexical/code$': '<rootDir>/packages/lexical-code/src/index.js',
+        '^@lexical/dragon$': '<rootDir>/packages/lexical-dragon/src/index.js',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
         '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
         '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.js',
+        '^@lexical/plain-text$':
+          '<rootDir>/packages/lexical-plain-text/src/index.js',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
         '^@lexical/react/LexicalAutoLinkPlugin$':
@@ -56,6 +59,8 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
         '^@lexical/react/withSubscriptions$':
           '<rootDir>/packages/lexical-react/src/withSubscriptions.js',
+        '^@lexical/rich-text$':
+          '<rootDir>/packages/lexical-rich-text/src/index.js',
         '^@lexical/selection$':
           '<rootDir>/packages/lexical-selection/src/index.js',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
@@ -65,18 +70,12 @@ module.exports = {
         '^lexical$': '<rootDir>/packages/lexical/src/index.js',
         '^lexical/AutoLinkNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalAutoLinkNode.js',
-        '^lexical/CodeHighlightNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalCodeHighlightNode.js',
         '^lexical/ExtendedNodes$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalExtendedNodes.js',
-        '^lexical/HeadingNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalHeadingNode.js',
         '^lexical/LinkNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalLinkNode.js',
         '^lexical/OverflowNode$':
           '<rootDir>/packages/lexical/src/nodes/extended/LexicalOverflowNode.js',
-        '^lexical/QuoteNode$':
-          '<rootDir>/packages/lexical/src/nodes/extended/LexicalQuoteNode.js',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getDOMSelection$':

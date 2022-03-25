@@ -19,6 +19,7 @@ import type {
 import {$createCodeNode} from '@lexical/code';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
+import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
   $findNodeWithOffsetFromJoinedText,
   $joinTextNodesInElementNode,
@@ -31,8 +32,6 @@ import {
   $isRangeSelection,
   $setSelection,
 } from 'lexical';
-import {$createHeadingNode} from 'lexical/HeadingNode';
-import {$createQuoteNode} from 'lexical/QuoteNode';
 import invariant from 'shared/invariant';
 
 /*

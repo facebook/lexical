@@ -65,6 +65,10 @@ export function applyTableHandlers(
   // This is the anchor of the selection.
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     setTimeout(() => {
+      if (event.button !== 0) {
+        return;
+      }
+
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
       if (cell !== null) {
@@ -121,14 +125,18 @@ export function applyTableHandlers(
   });
 
   // Clear selection when clicking outside of dom.
-  const mouseDownCallback = (e) => {
+  const mouseDownCallback = (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
     editor.update(() => {
       const selection = $getSelection();
 
       if (
         $isGridSelection(selection) &&
         selection.gridKey === tableSelection.tableNodeKey &&
-        rootElement.contains(e.target)
+        rootElement.contains(event.target)
       ) {
         return tableSelection.clearHighlight();
       }
@@ -195,13 +203,20 @@ export function applyTableHandlers(
               (lastChild && elementParentNode.isParentOf(lastChild)) ||
               elementParentNode === lastChild;
 
+            const isDirectionalKey =
+              type === 'keyArrowUp' ||
+              type === 'keyArrowDown' ||
+              type === 'keyArrowLeft' ||
+              type === 'keyArrowRight';
+
             if (
               (type === 'keyArrowUp' && isSelectionInFirstBlock) ||
               (type === 'keyArrowDown' && isSelectionInLastBlock) ||
               (type === 'keyArrowLeft' && selection.anchor.offset === 0) ||
               (type === 'keyArrowRight' &&
                 selection.anchor.offset ===
-                  selection.anchor.getNode().getTextContentSize())
+                  selection.anchor.getNode().getTextContentSize()) ||
+              (isDirectionalKey && event.shiftKey)
             ) {
               event.preventDefault();
               event.stopImmediatePropagation();

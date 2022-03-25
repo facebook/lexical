@@ -22,6 +22,7 @@ import {
   $getDecoratorNode,
   $isDecoratorNode,
   $isElementNode,
+  $isGridSelection,
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
@@ -163,100 +164,109 @@ function $cloneContentsImpl(
   nodeMap: Array<[NodeKey, LexicalNode]>,
   range: Array<NodeKey>,
 } {
-  if (!$isRangeSelection(selection)) {
-    invariant(false, 'TODO');
-  }
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorOffset = anchor.getCharacterOffset();
-  const focusOffset = focus.getCharacterOffset();
-  const anchorNode = anchor.getNode();
-  const focusNode = focus.getNode();
-  const anchorNodeParent = anchorNode.getParentOrThrow();
-  // Handle a single text node extraction
-  if (
-    anchorNode === focusNode &&
-    $isTextNode(anchorNode) &&
-    (anchorNodeParent.canBeEmpty() || anchorNodeParent.getChildrenSize() > 1)
-  ) {
-    const clonedFirstNode = $cloneWithProperties<TextNode>(anchorNode);
-    const isBefore = focusOffset > anchorOffset;
-    const startOffset = isBefore ? anchorOffset : focusOffset;
-    const endOffset = isBefore ? focusOffset : anchorOffset;
-    clonedFirstNode.__text = clonedFirstNode.__text.slice(
-      startOffset,
-      endOffset,
-    );
-    const key = clonedFirstNode.getKey();
-    return {nodeMap: [[key, clonedFirstNode]], range: [key]};
-  }
-  const nodes = selection.getNodes();
-  if (nodes.length === 0) {
-    return {nodeMap: [], range: []};
-  }
-  // Check if we can use the parent of the nodes, if the
-  // parent can't be empty, then it's important that we
-  // also copy that element node along with its children.
-  let nodesLength = nodes.length;
-  const firstNode = nodes[0];
-  const firstNodeParent = firstNode.getParent();
-  if (
-    firstNodeParent !== null &&
-    (!firstNodeParent.canBeEmpty() || $isRootNode(firstNodeParent))
-  ) {
-    const parentChildren = firstNodeParent.__children;
-    const parentChildrenLength = parentChildren.length;
-    if (parentChildrenLength === nodesLength) {
-      let areTheSame = true;
-      for (let i = 0; i < parentChildren.length; i++) {
-        if (parentChildren[i] !== nodes[i].__key) {
-          areTheSame = false;
-          break;
+  if ($isRangeSelection(selection)) {
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorOffset = anchor.getCharacterOffset();
+    const focusOffset = focus.getCharacterOffset();
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
+    const anchorNodeParent = anchorNode.getParentOrThrow();
+    // Handle a single text node extraction
+    if (
+      anchorNode === focusNode &&
+      $isTextNode(anchorNode) &&
+      (anchorNodeParent.canBeEmpty() || anchorNodeParent.getChildrenSize() > 1)
+    ) {
+      const clonedFirstNode = $cloneWithProperties<TextNode>(anchorNode);
+      const isBefore = focusOffset > anchorOffset;
+      const startOffset = isBefore ? anchorOffset : focusOffset;
+      const endOffset = isBefore ? focusOffset : anchorOffset;
+      clonedFirstNode.__text = clonedFirstNode.__text.slice(
+        startOffset,
+        endOffset,
+      );
+      const key = clonedFirstNode.getKey();
+      return {nodeMap: [[key, clonedFirstNode]], range: [key]};
+    }
+    const nodes = selection.getNodes();
+    if (nodes.length === 0) {
+      return {nodeMap: [], range: []};
+    }
+    // Check if we can use the parent of the nodes, if the
+    // parent can't be empty, then it's important that we
+    // also copy that element node along with its children.
+    let nodesLength = nodes.length;
+    const firstNode = nodes[0];
+    const firstNodeParent = firstNode.getParent();
+    if (
+      firstNodeParent !== null &&
+      (!firstNodeParent.canBeEmpty() || $isRootNode(firstNodeParent))
+    ) {
+      const parentChildren = firstNodeParent.__children;
+      const parentChildrenLength = parentChildren.length;
+      if (parentChildrenLength === nodesLength) {
+        let areTheSame = true;
+        for (let i = 0; i < parentChildren.length; i++) {
+          if (parentChildren[i] !== nodes[i].__key) {
+            areTheSame = false;
+            break;
+          }
+        }
+        if (areTheSame) {
+          nodesLength++;
+          nodes.push(firstNodeParent);
         }
       }
-      if (areTheSame) {
-        nodesLength++;
-        nodes.push(firstNodeParent);
-      }
     }
-  }
-  const lastNode = nodes[nodesLength - 1];
-  const isBefore = anchor.isBefore(focus);
-  const nodeMap = new Map();
-  const range = [];
+    const lastNode = nodes[nodesLength - 1];
+    const isBefore = anchor.isBefore(focus);
+    const nodeMap = new Map();
+    const range = [];
 
-  // Do first node to root
-  $copyLeafNodeBranchToRoot(
-    firstNode,
-    isBefore ? anchorOffset : focusOffset,
-    true,
-    range,
-    nodeMap,
-  );
-  // Copy all nodes between
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
-    const key = node.getKey();
-    if (
-      !nodeMap.has(key) &&
-      (!$isElementNode(node) || !node.excludeFromCopy())
-    ) {
-      const clone = $cloneWithProperties<LexicalNode>(node);
-      if ($isRootNode(node.getParent())) {
-        range.push(node.getKey());
+    // Do first node to root
+    $copyLeafNodeBranchToRoot(
+      firstNode,
+      isBefore ? anchorOffset : focusOffset,
+      true,
+      range,
+      nodeMap,
+    );
+    // Copy all nodes between
+    for (let i = 0; i < nodesLength; i++) {
+      const node = nodes[i];
+      const key = node.getKey();
+      if (
+        !nodeMap.has(key) &&
+        (!$isElementNode(node) || !node.excludeFromCopy())
+      ) {
+        const clone = $cloneWithProperties<LexicalNode>(node);
+        if ($isRootNode(node.getParent())) {
+          range.push(node.getKey());
+        }
+        nodeMap.set(key, clone);
       }
-      nodeMap.set(key, clone);
     }
+    // Do last node to root
+    $copyLeafNodeBranchToRoot(
+      lastNode,
+      isBefore ? focusOffset : anchorOffset,
+      false,
+      range,
+      nodeMap,
+    );
+    return {nodeMap: Array.from(nodeMap.entries()), range};
+  } else if ($isGridSelection(selection)) {
+    const nodeMap = selection.getNodes().map((node) => {
+      const nodeKey = node.getKey();
+      const clone = $cloneWithProperties<LexicalNode>(node);
+      return [nodeKey, clone];
+    });
+
+    return {nodeMap, range: [selection.gridKey]};
   }
-  // Do last node to root
-  $copyLeafNodeBranchToRoot(
-    lastNode,
-    isBefore ? focusOffset : anchorOffset,
-    false,
-    range,
-    nodeMap,
-  );
-  return {nodeMap: Array.from(nodeMap.entries()), range};
+
+  invariant(false, 'TODO');
 }
 
 export function getStyleObjectFromCSS(css: string): {[string]: string} | null {

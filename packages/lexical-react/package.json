@@ -21,6 +21,10 @@
     "@lexical/hashtag": "0.1.16",
     "@lexical/selection": "0.1.16",
     "@lexical/utils": "0.1.16",
+    "@lexical/dragon": "0.1.16",
+    "@lexical/plain-text": "0.1.16",
+    "@lexical/rich-text": "0.1.16",
+    "@lexical/code": "0.1.16",
     "@lexical/text": "0.1.16"
   },
   "peerDependencies": {

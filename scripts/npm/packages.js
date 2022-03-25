@@ -23,7 +23,10 @@ const DEFAULT_PKGS = [
   'lexical-selection',
   'lexical-offset',
   'lexical-code',
+  'lexical-plain-text',
+  'lexical-rich-text',
   'lexical-utils',
+  'lexical-dragon',
   'lexical-text',
 ];
 

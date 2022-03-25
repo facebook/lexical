@@ -6,12 +6,12 @@
  *
  */
 
-import {$createTextNode, $getRoot, ParagraphNode} from 'lexical';
 import {
   $createHeadingNode,
   $isHeadingNode,
   HeadingNode,
-} from 'lexical/HeadingNode';
+} from '@lexical/rich-text';
+import {$createTextNode, $getRoot, ParagraphNode} from 'lexical';
 
 import {initializeUnitTest} from '../../../../../../lexical/src/__tests__/utils';
 

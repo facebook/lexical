@@ -129,7 +129,6 @@
     "prettier-plugin-organize-attributes": "^0.0.5",
     "pretty-quick": "^3.1.3",
     "react-test-renderer": "^17.0.2",
-    "remark-import-partial": "0.0.2",
     "rollup": "^2.60.2",
     "serve": "^13.0.2",
     "start-server-and-test": "^1.13.0",

@@ -633,34 +633,32 @@ export default function ToolbarPlugin(): React$Node {
   }, [activeEditor, updateToolbar]);
 
   useEffect(() => {
-    return editor.registerCommandListener(
-      'selectionChange',
-      (_payload, newEditor) => {
-        updateToolbar();
-        setActiveEditor(newEditor);
-        return false;
-      },
-      LowPriority,
-    );
-  }, [editor, selectedElementKey, updateToolbar]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'canUndo',
-      (payload) => {
-        setCanUndo(payload);
-        return false;
-      },
-      LowPriority,
-    );
-  }, [editor, selectedElementKey, updateToolbar]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'canRedo',
-      (payload) => {
-        setCanRedo(payload);
-        return false;
-      },
-      LowPriority,
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'selectionChange',
+        (_payload, newEditor) => {
+          updateToolbar();
+          setActiveEditor(newEditor);
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'canUndo',
+        (payload) => {
+          setCanUndo(payload);
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'canRedo',
+        (payload) => {
+          setCanRedo(payload);
+          return false;
+        },
+        LowPriority,
+      ),
     );
   }, [editor, selectedElementKey, updateToolbar]);
 

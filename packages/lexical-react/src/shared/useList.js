@@ -16,78 +16,71 @@ import {
   outdentList,
   removeList,
 } from '@lexical/list';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {useEffect} from 'react';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
 export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
-    return editor.registerCommandListener(
-      'indentContent',
-      () => {
-        const hasHandledIndention = indentList();
-        if (hasHandledIndention) {
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'indentContent',
+        () => {
+          const hasHandledIndention = indentList();
+          if (hasHandledIndention) {
+            return true;
+          }
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'outdentContent',
+        () => {
+          const hasHandledIndention = outdentList();
+          if (hasHandledIndention) {
+            return true;
+          }
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'insertOrderedList',
+        () => {
+          insertList(editor, 'ol');
           return true;
-        }
-        return false;
-      },
-      LowPriority,
-    );
-  }, [editor]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'outdentContent',
-      () => {
-        const hasHandledIndention = outdentList();
-        if (hasHandledIndention) {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'insertUnorderedList',
+        () => {
+          insertList(editor, 'ul');
           return true;
-        }
-        return false;
-      },
-      LowPriority,
-    );
-  }, [editor]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'insertOrderedList',
-      () => {
-        insertList(editor, 'ol');
-        return true;
-      },
-      LowPriority,
-    );
-  }, [editor]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'insertUnorderedList',
-      () => {
-        insertList(editor, 'ul');
-        return true;
-      },
-      LowPriority,
-    );
-  }, [editor]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'removeList',
-      () => {
-        removeList(editor);
-        return true;
-      },
-      LowPriority,
-    );
-  }, [editor]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'insertParagraph',
-      () => {
-        const hasHandledInsertParagraph = $handleListInsertParagraph();
-        if (hasHandledInsertParagraph) {
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'removeList',
+        () => {
+          removeList(editor);
           return true;
-        }
-        return false;
-      },
-      LowPriority,
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener(
+        'insertParagraph',
+        () => {
+          const hasHandledInsertParagraph = $handleListInsertParagraph();
+          if (hasHandledInsertParagraph) {
+            return true;
+          }
+          return false;
+        },
+        LowPriority,
+      ),
     );
   }, [editor]);
 }

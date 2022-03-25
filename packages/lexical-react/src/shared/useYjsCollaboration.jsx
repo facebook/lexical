@@ -11,6 +11,7 @@ import type {Binding, Provider} from '@lexical/yjs';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 import type {Doc} from 'yjs';
 
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   createBinding,
   createUndoManager,
@@ -197,23 +198,23 @@ export function useYjsFocusTracking(
   color: string,
 ) {
   useEffect(() => {
-    return editor.registerCommandListener(
-      'focus',
-      (payload) => {
-        setLocalStateFocus(provider, name, color, false);
-        return true;
-      },
-      EditorPriority,
-    );
-  }, [color, editor, name, provider]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'blur',
-      (payload) => {
-        setLocalStateFocus(provider, name, color, false);
-        return true;
-      },
-      EditorPriority,
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'focus',
+        (payload) => {
+          setLocalStateFocus(provider, name, color, false);
+          return true;
+        },
+        EditorPriority,
+      ),
+      editor.registerCommandListener(
+        'blur',
+        (payload) => {
+          setLocalStateFocus(provider, name, color, false);
+          return true;
+        },
+        EditorPriority,
+      ),
     );
   }, [color, editor, name, provider]);
 }
@@ -231,28 +232,27 @@ export function useYjsHistory(
     const undo = () => {
       undoManager.undo();
     };
-
-    return editor.registerCommandListener(
-      'undo',
-      () => {
-        undo();
-        return true;
-      },
-      EditorPriority,
-    );
-  });
-  useEffect(() => {
     const redo = () => {
       undoManager.redo();
     };
 
-    return editor.registerCommandListener(
-      'redo',
-      () => {
-        redo();
-        return true;
-      },
-      EditorPriority,
+    return withSubscriptions(
+      editor.registerCommandListener(
+        'undo',
+        () => {
+          undo();
+          return true;
+        },
+        EditorPriority,
+      ),
+      editor.registerCommandListener(
+        'redo',
+        () => {
+          redo();
+          return true;
+        },
+        EditorPriority,
+      ),
     );
   });
 

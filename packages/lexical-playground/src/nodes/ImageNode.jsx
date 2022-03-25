@@ -32,6 +32,7 @@ import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
+import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   $getNodeByKey,
   $getSelection,
@@ -241,7 +242,8 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}>
+          }}
+        >
           Add Caption
         </button>
       )}
@@ -308,35 +310,6 @@ function ImageComponent({
   );
   const [selection, setSelection] = useState(null);
 
-  useEffect(() => {
-    return editor.registerUpdateListener(({editorState}) => {
-      setSelection(editorState.read(() => $getSelection()));
-    });
-  }, [editor]);
-
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'click',
-      (payload) => {
-        const event: MouseEvent = payload;
-
-        if (isResizing) {
-          return true;
-        }
-        if (event.target === ref.current) {
-          if (!event.shiftKey) {
-            clearSelection();
-          }
-          setSelected(!isSelected);
-          return true;
-        }
-
-        return false;
-      },
-      LowPriority,
-    );
-  }, [clearSelection, editor, isResizing, isSelected, nodeKey, setSelected]);
-
   const onDelete = useCallback(
     (payload) => {
       if (isSelected && $isNodeSelection($getSelection())) {
@@ -355,16 +328,44 @@ function ImageComponent({
     },
     [editor, isSelected, nodeKey, setSelected],
   );
+
   useEffect(() => {
-    return editor.registerCommandListener('keyDelete', onDelete, LowPriority);
-  }, [editor, onDelete]);
-  useEffect(() => {
-    return editor.registerCommandListener(
-      'keyBackspace',
-      onDelete,
-      LowPriority,
+    return withSubscriptions(
+      editor.registerUpdateListener(({editorState}) => {
+        setSelection(editorState.read(() => $getSelection()));
+      }),
+      editor.registerCommandListener(
+        'click',
+        (payload) => {
+          const event: MouseEvent = payload;
+
+          if (isResizing) {
+            return true;
+          }
+          if (event.target === ref.current) {
+            if (!event.shiftKey) {
+              clearSelection();
+            }
+            setSelected(!isSelected);
+            return true;
+          }
+
+          return false;
+        },
+        LowPriority,
+      ),
+      editor.registerCommandListener('keyDelete', onDelete, LowPriority),
+      editor.registerCommandListener('keyBackspace', onDelete, LowPriority),
     );
-  }, [editor, onDelete]);
+  }, [
+    clearSelection,
+    editor,
+    isResizing,
+    isSelected,
+    nodeKey,
+    onDelete,
+    setSelected,
+  ]);
 
   const setShowCaption = useCallback(() => {
     editor.update(() => {
@@ -427,7 +428,8 @@ function ImageComponent({
             <LexicalNestedComposer
               initialConfig={{
                 decoratorEditor: decoratorEditor,
-              }}>
+              }}
+            >
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

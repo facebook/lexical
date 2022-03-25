@@ -76,7 +76,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-highlight-language="javascript"><br></code>',
       isBlockTest: true,
       markdownText: '``` ',
 

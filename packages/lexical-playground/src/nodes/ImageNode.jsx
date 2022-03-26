@@ -32,7 +32,7 @@ import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
 import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -242,8 +242,7 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}
-        >
+          }}>
           Add Caption
         </button>
       )}
@@ -329,7 +328,7 @@ function ImageComponent({
   );
 
   useEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
@@ -427,8 +426,7 @@ function ImageComponent({
             <LexicalNestedComposer
               initialConfig={{
                 decoratorEditor: decoratorEditor,
-              }}
-            >
+              }}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

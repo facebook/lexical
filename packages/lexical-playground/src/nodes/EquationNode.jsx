@@ -16,7 +16,7 @@ import type {
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {$getNodeByKey, DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -60,7 +60,7 @@ function EquationComponent({
 
   useEffect(() => {
     if (showEquationEditor) {
-      return withSubscriptions(
+      return mergeRegister(
         editor.registerCommandListener(
           'selectionChange',
           (payload) => {

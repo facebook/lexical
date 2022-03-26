@@ -17,6 +17,9 @@
   "peerDependencies": {
     "lexical": "0.1.16"
   },
+  "dependencies": {
+    "@lexical/utils": "0.1.16"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",

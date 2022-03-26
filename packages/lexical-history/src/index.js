@@ -19,7 +19,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -363,7 +363,7 @@ export function registerHistory(
     };
   };
 
-  const unregisterCommandListener = withSubscriptions(
+  const unregisterCommandListener = mergeRegister(
     editor.registerCommandListener(
       'undo',
       () => {

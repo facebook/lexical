@@ -15,6 +15,7 @@
   "main": "LexicalPlainText.js",
   "peerDependencies": {
     "lexical": "0.1.16",
+    "@lexical/utils": "0.1.16",
     "@lexical/selection": "0.1.16",
     "@lexical/clipboard": "0.1.16"
   },

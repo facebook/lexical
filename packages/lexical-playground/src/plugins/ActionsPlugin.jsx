@@ -12,7 +12,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import {exportFile, importFile} from '@lexical/file';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {$getRoot} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
@@ -35,7 +35,7 @@ export default function ActionsPlugins({
   const isCollab = yjsDocMap.get('main') !== undefined;
 
   useEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerCommandListener(
         'readOnly',
         (payload) => {
@@ -76,15 +76,13 @@ export default function ActionsPlugins({
           className={
             'action-button action-button-mic ' +
             (isSpeechToText ? 'active' : '')
-          }
-        >
+          }>
           <i className="mic" />
         </button>
       )}
       <button
         className="action-button import"
-        onClick={() => importFile(editor)}
-      >
+        onClick={() => importFile(editor)}>
         <i className="import" />
       </button>
       <button
@@ -94,8 +92,7 @@ export default function ActionsPlugins({
             fileName: `Playground ${new Date().toISOString()}`,
             source: 'Playground',
           })
-        }
-      >
+        }>
         <i className="export" />
       </button>
       <button className="action-button sticky" onClick={insertSticky}>
@@ -106,16 +103,14 @@ export default function ActionsPlugins({
         onClick={() => {
           editor.execCommand('clearEditor');
           editor.focus();
-        }}
-      >
+        }}>
         <i className="clear" />
       </button>
       <button
         className="action-button lock"
         onClick={() => {
           editor.setReadOnly(!editor.isReadOnly());
-        }}
-      >
+        }}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
       {isCollab && (
@@ -123,8 +118,7 @@ export default function ActionsPlugins({
           className="action-button connect"
           onClick={() => {
             editor.execCommand('toggleConnect', !connected);
-          }}
-        >
+          }}>
           <i className={connected ? 'disconnect' : 'connect'} />
         </button>
       )}

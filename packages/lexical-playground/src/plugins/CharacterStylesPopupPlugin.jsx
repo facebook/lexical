@@ -11,8 +11,8 @@ import type {ElementNode, LexicalEditor, RangeSelection} from 'lexical';
 
 import {$isLinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
 import {$isAtNodeEnd} from '@lexical/selection';
+import {mergeRegister} from '@lexical/utils';
 import {$getSelection, $isRangeSelection, $isTextNode, TextNode} from 'lexical';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
@@ -96,7 +96,7 @@ function FloatingCharacterStylesEditor({
   }, [editor]);
 
   useEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
           updateCharacterStylesEditor();
@@ -121,8 +121,7 @@ function FloatingCharacterStylesEditor({
           editor.execCommand('formatText', 'bold');
         }}
         className={'popup-item spaced ' + (isBold ? 'active' : '')}
-        aria-label="Format Bold"
-      >
+        aria-label="Format Bold">
         <i className="format bold" />
       </button>
       <button
@@ -130,8 +129,7 @@ function FloatingCharacterStylesEditor({
           editor.execCommand('formatText', 'italic');
         }}
         className={'popup-item spaced ' + (isItalic ? 'active' : '')}
-        aria-label="Format Italics"
-      >
+        aria-label="Format Italics">
         <i className="format italic" />
       </button>
       <button
@@ -139,8 +137,7 @@ function FloatingCharacterStylesEditor({
           editor.execCommand('formatText', 'underline');
         }}
         className={'popup-item spaced ' + (isUnderline ? 'active' : '')}
-        aria-label="Format Underline"
-      >
+        aria-label="Format Underline">
         <i className="format underline" />
       </button>
       <button
@@ -148,8 +145,7 @@ function FloatingCharacterStylesEditor({
           editor.execCommand('formatText', 'strikethrough');
         }}
         className={'popup-item spaced ' + (isStrikethrough ? 'active' : '')}
-        aria-label="Format Strikethrough"
-      >
+        aria-label="Format Strikethrough">
         <i className="format strikethrough" />
       </button>
       <button
@@ -157,15 +153,13 @@ function FloatingCharacterStylesEditor({
           editor.execCommand('formatText', 'code');
         }}
         className={'popup-item spaced ' + (isCode ? 'active' : '')}
-        aria-label="Insert Code"
-      >
+        aria-label="Insert Code">
         <i className="format code" />
       </button>
       <button
         onClick={insertLink}
         className={'popup-item spaced ' + (isLink ? 'active' : '')}
-        aria-label="Insert Link"
-      >
+        aria-label="Insert Link">
         <i className="format link" />
       </button>
     </div>

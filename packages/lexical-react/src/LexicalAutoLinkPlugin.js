@@ -16,7 +16,7 @@ import {
   AutoLinkNode,
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {
   $createTextNode,
   $isElementNode,
@@ -223,7 +223,7 @@ function useAutoLink(
       }
     };
 
-    return withSubscriptions(
+    return mergeRegister(
       editor.addNodeTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
         if ($isAutoLinkNode(parent)) {

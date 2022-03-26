@@ -14,7 +14,7 @@ import type {
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 import React, {
   startTransition,
@@ -596,8 +596,7 @@ function MentionsTypeaheadItem({
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       {result}
     </li>
   );
@@ -679,7 +678,7 @@ function MentionsTypeahead({
   }, [results, selectedIndex, updateSelectedIndex]);
 
   useEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerCommandListener(
         'keyArrowDown',
         (payload) => {
@@ -774,8 +773,7 @@ function MentionsTypeahead({
       aria-label="Suggested mentions"
       id="mentions-typeahead"
       ref={divRef}
-      role="listbox"
-    >
+      role="listbox">
       <ul>
         {results.slice(0, SUGGESTION_LIST_LENGTH_LIMIT).map((result, i) => (
           <MentionsTypeaheadItem

@@ -12,7 +12,7 @@ import type {LexicalEditor} from 'lexical';
 
 import {registerDragonSupport} from '@lexical/dragon';
 import {registerPlainText} from '@lexical/plain-text';
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function usePlainTextSetup(
@@ -20,7 +20,7 @@ export default function usePlainTextSetup(
   initialEditorState?: InitialEditorStateType,
 ): void {
   useLayoutEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       registerPlainText(editor, initialEditorState),
       registerDragonSupport(editor),
     );

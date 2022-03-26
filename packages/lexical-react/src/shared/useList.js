@@ -16,14 +16,14 @@ import {
   outdentList,
   removeList,
 } from '@lexical/list';
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {useEffect} from 'react';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
 export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerCommandListener(
         'indentContent',
         () => {

@@ -61,8 +61,6 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/useLexicalDecorators.js',
         '^@lexical/react/useLexicalEditor$':
           '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
-        '^@lexical/react/withSubscriptions$':
-          '<rootDir>/packages/lexical-react/src/withSubscriptions.js',
         '^@lexical/rich-text$':
           '<rootDir>/packages/lexical-rich-text/src/index.js',
         '^@lexical/selection$':

@@ -14,9 +14,8 @@ import {
   $isOverflowNode,
   OverflowNode,
 } from '@lexical/overflow';
-import withSubscriptions from '@lexical/react/withSubscriptions';
 import {$rootTextContentCurry} from '@lexical/text';
-import {$dfs} from '@lexical/utils';
+import {$dfs, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isLeafNode,
@@ -55,7 +54,7 @@ export function useCharacterLimit(
     let text = editor.getEditorState().read($rootTextContentCurry);
     let lastComputedTextLength = 0;
 
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerTextContentListener((currentText: string) => {
         text = currentText;
       }),

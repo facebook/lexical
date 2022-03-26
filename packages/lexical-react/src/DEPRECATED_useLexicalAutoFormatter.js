@@ -9,8 +9,8 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import useAutoFormatter from './shared/useAutoFormatter';
+import useMarkdownShortcuts from './shared/useMarkdownShortcuts';
 
 export default function useLexicalAutoFormatter(editor: LexicalEditor): void {
-  useAutoFormatter(editor);
+  useMarkdownShortcuts(editor);
 }

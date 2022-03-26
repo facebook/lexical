@@ -33,6 +33,7 @@ module.name_mapper='^@lexical/rich-text' -> '<PROJECT_ROOT>/packages/lexical-ric
 module.name_mapper='^@lexical/dragon' -> '<PROJECT_ROOT>/packages/lexical-dragon/src/index.js'
 module.name_mapper='^@lexical/link' -> '<PROJECT_ROOT>/packages/lexical-link/src/index.js'
 module.name_mapper='^@lexical/overflow' -> '<PROJECT_ROOT>/packages/lexical-overflow/src/index.js'
+module.name_mapper='^@lexical/markdown' -> '<PROJECT_ROOT>/packages/lexical-markdown/src/index.js'
 
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalEditor' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalEditor.js'
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalRichText' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js'
@@ -62,7 +63,7 @@ module.name_mapper='^@lexical/react/LexicalRichTextPlugin' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^@lexical/react/LexicalHistoryPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHistoryPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalOnChangePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHashtagPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHashtagPlugin.js.flow'
-module.name_mapper='^@lexical/react/LexicalAutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoFormatterPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalMarkdownShortcutPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMarkdownShortcutPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCharacterLimitPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCharacterLimitPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalClearEditorPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalClearEditorPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCollaborationPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCollaborationPlugin.js.flow'

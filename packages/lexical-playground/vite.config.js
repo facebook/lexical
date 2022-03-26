@@ -82,6 +82,10 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-overflow/src/index.js'),
   },
   {
+    find: '@lexical/markdown',
+    replacement: path.resolve('../lexical-markdown/src/index.js'),
+  },
+  {
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
   },
@@ -100,7 +104,7 @@ const moduleResolution = [
   'LexicalNestedComposer',
   'LexicalHorizontalRuleNode',
   'useLexicalNodeSelection',
-  'LexicalAutoFormatterPlugin',
+  'LexicalMarkdownShortcutPlugin',
   'LexicalCharacterLimitPlugin',
   'LexicalHashtagPlugin',
   'LexicalPlainTextPlugin',

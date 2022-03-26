@@ -36,6 +36,7 @@ import type {
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
+  mergeRegister,
 } from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -732,16 +733,14 @@ function handleShiftLines(
   return true;
 }
 
-export function registerCodeHighlighting(
-  editor: LexicalEditor,
-): Array<() => void> {
+export function registerCodeHighlighting(editor: LexicalEditor): () => void {
   if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
     throw new Error(
       'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
     );
   }
 
-  return [
+  return mergeRegister(
     editor.addNodeTransform(CodeNode, (node) =>
       codeNodeTransform(node, editor),
     ),
@@ -771,5 +770,5 @@ export function registerCodeHighlighting(
       (payload): boolean => handleShiftLines('keyArrowDown', payload),
       1,
     ),
-  ];
+  );
 }

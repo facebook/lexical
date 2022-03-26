@@ -11,7 +11,7 @@ import type {Binding, Provider} from '@lexical/yjs';
 import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
 import type {Doc} from 'yjs';
 
-import withSubscriptions from '@lexical/react/withSubscriptions';
+import {mergeRegister} from '@lexical/utils';
 import {
   createBinding,
   createUndoManager,
@@ -198,7 +198,7 @@ export function useYjsFocusTracking(
   color: string,
 ) {
   useEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerCommandListener(
         'focus',
         (payload) => {
@@ -236,7 +236,7 @@ export function useYjsHistory(
       undoManager.redo();
     };
 
-    return withSubscriptions(
+    return mergeRegister(
       editor.registerCommandListener(
         'undo',
         () => {

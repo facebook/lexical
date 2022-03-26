@@ -11,8 +11,8 @@ import type {InitialEditorStateType} from '@lexical/rich-text';
 import type {LexicalEditor} from 'lexical';
 
 import {registerDragonSupport} from '@lexical/dragon';
-import withSubscriptions from '@lexical/react/withSubscriptions';
 import {registerRichText} from '@lexical/rich-text';
+import {mergeRegister} from '@lexical/utils';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export default function useRichTextSetup(
@@ -20,7 +20,7 @@ export default function useRichTextSetup(
   initialEditorState?: InitialEditorStateType,
 ): void {
   useLayoutEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       registerRichText(editor, initialEditorState),
       registerDragonSupport(editor),
     );

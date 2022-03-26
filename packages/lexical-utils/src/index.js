@@ -9,7 +9,7 @@
 
 import type {LexicalNode} from 'lexical';
 
-import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
+import {$getRoot, $isElementNode} from 'lexical';
 
 export type DFSNode = $ReadOnly<{
   depth: number,
@@ -116,28 +116,10 @@ export function $findMatchingParent(
   return null;
 }
 
-export function $areSiblingsNullOrSpace(node: LexicalNode): boolean {
-  return $isPreviousSiblingNullOrSpace(node) && $isNextSiblingNullOrSpace(node);
-}
+type Func = () => void;
 
-export function $isPreviousSiblingNullOrSpace(node: LexicalNode): boolean {
-  const previousSibling = node.getPreviousSibling();
-  return (
-    previousSibling === null ||
-    $isLineBreakNode(previousSibling) ||
-    ($isTextNode(previousSibling) &&
-      previousSibling.isSimpleText() &&
-      previousSibling.getTextContent().endsWith(' '))
-  );
-}
-
-export function $isNextSiblingNullOrSpace(node: LexicalNode): boolean {
-  const nextSibling = node.getNextSibling();
-  return (
-    nextSibling === null ||
-    $isLineBreakNode(nextSibling) ||
-    ($isTextNode(nextSibling) &&
-      nextSibling.isSimpleText() &&
-      nextSibling.getTextContent().startsWith(' '))
-  );
+export function mergeRegister(...func: Array<Func>): () => void {
+  return () => {
+    func.forEach((f) => f());
+  };
 }

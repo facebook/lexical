@@ -9,13 +9,12 @@
 
 import {registerCodeHighlighting} from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
 import {useEffect} from 'react';
 
 export default function CodeHighlightPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return withSubscriptions(...registerCodeHighlighting(editor));
+    return registerCodeHighlighting(editor);
   }, [editor]);
   return null;
 }

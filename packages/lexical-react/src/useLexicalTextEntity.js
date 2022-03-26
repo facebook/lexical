@@ -10,8 +10,8 @@
 import type {EntityMatch} from '@lexical/text';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import withSubscriptions from '@lexical/react/withSubscriptions';
 import {registerLexicalTextEntity} from '@lexical/text';
+import {mergeRegister} from '@lexical/utils';
 import {TextNode} from 'lexical';
 import {useEffect} from 'react';
 
@@ -23,7 +23,7 @@ export default function useLexicalTextEntity<N: TextNode>(
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return withSubscriptions(
+    return mergeRegister(
       ...registerLexicalTextEntity(editor, getMatch, targetNode, createNode),
     );
   }, [createNode, editor, getMatch, targetNode]);

@@ -13,11 +13,11 @@ import {
   $insertDataTransferForPlainText,
   getHtmlContent,
 } from '@lexical/clipboard';
-import withSubscriptions from '@lexical/react/withSubscriptions';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
+import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getRoot,
@@ -127,7 +127,7 @@ export function registerPlainText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): () => void {
-  const removeListener = withSubscriptions(
+  const removeListener = mergeRegister(
     editor.registerCommandListener(
       'deleteCharacter',
       (payload) => {

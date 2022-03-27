@@ -126,4 +126,4 @@ Adds `clearEditor` command support to clear editor's content
 
 ### `LexicalMarkdownShortcutPlugin`
 
-Adds markdown shortcit support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough)
+Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough)

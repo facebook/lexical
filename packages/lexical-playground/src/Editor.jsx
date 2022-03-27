@@ -7,7 +7,6 @@
  * @flow strict
  */
 
-import AutoFormatterPlugin from '@lexical/react/LexicalAutoFormatterPlugin';
 import AutoScrollPlugin from '@lexical/react/LexicalAutoScrollPlugin';
 import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
 import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
@@ -16,6 +15,7 @@ import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import ListPlugin from '@lexical/react/LexicalListPlugin';
+import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
@@ -79,8 +79,7 @@ export default function Editor(): React$Node {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}
-        ref={scrollRef}
-      >
+        ref={scrollRef}>
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />
@@ -110,7 +109,7 @@ export default function Editor(): React$Node {
               placeholder={placeholder}
               initialEditorState={isCollab ? null : undefined}
             />
-            <AutoFormatterPlugin />
+            <LexicalMarkdownShortcutPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />

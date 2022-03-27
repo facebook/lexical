@@ -65,6 +65,7 @@ if (isClean) {
   fs.removeSync(path.resolve('./packages/lexical-overflow/dist'));
   fs.removeSync(path.resolve('./packages/lexical-link/dist'));
   fs.removeSync(path.resolve('./packages/lexical-yjs/dist'));
+  fs.removeSync(path.resolve('./packages/lexical-markdown/dist'));
 }
 
 const wwwMappings = {
@@ -76,6 +77,7 @@ const wwwMappings = {
   '@lexical/history': 'LexicalHistory',
   '@lexical/link': 'LexicalLink',
   '@lexical/list': 'LexicalList',
+  '@lexical/markdown': 'LexicalMarkdown',
   '@lexical/offset': 'LexicalOffset',
   '@lexical/overflow': 'LexicalOverflow',
   '@lexical/plain-text': 'LexicalPlainText',
@@ -128,6 +130,7 @@ const externals = [
   '@lexical/dragon',
   '@lexical/overflow',
   '@lexical/link',
+  '@lexical/markdown',
   'react-dom',
   'react',
   'yjs',
@@ -485,6 +488,17 @@ const packages = [
     name: 'Lexical Rich Text',
     outputPath: './packages/lexical-rich-text/dist/',
     sourcePath: './packages/lexical-rich-text/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalMarkdown',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Markdown',
+    outputPath: './packages/lexical-markdown/dist/',
+    sourcePath: './packages/lexical-markdown/src/',
   },
   {
     modules: lexicalShared.map((module) => ({

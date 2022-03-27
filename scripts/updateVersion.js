@@ -18,6 +18,7 @@ const packages = {
   '@lexical/history': 'lexical-history',
   '@lexical/link': 'lexical-link',
   '@lexical/list': 'lexical-list',
+  '@lexical/markdown': 'lexical-markdown',
   '@lexical/offset': 'lexical-offset',
   '@lexical/overflow': 'lexical-overflow',
   '@lexical/plain-text': 'lexical-plain-text',

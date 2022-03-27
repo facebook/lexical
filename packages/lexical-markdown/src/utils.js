@@ -9,6 +9,7 @@
 
 import type {TextNodeWithOffset} from '@lexical/text';
 import type {
+  DecoratorNode,
   ElementNode,
   LexicalEditor,
   NodeKey,
@@ -18,7 +19,6 @@ import type {
 
 import {$createCodeNode} from '@lexical/code';
 import {$createListItemNode, $createListNode} from '@lexical/list';
-import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
   $findNodeWithOffsetFromJoinedText,
@@ -419,9 +419,10 @@ export function getPatternMatchResultsForCriteria(
   return getPatternMatchResultsForText(autoFormatCriteria, scanningContext);
 }
 
-function getNewNodeForCriteria(
+function getNewNodeForCriteria<T>(
   scanningContext: ScanningContext,
   element: ElementNode,
+  createHorizontalRuleNode: () => DecoratorNode<T>,
 ): null | ElementNode {
   let newNode = null;
 
@@ -493,7 +494,7 @@ function getNewNodeForCriteria(
       }
       case 'horizontalRule': {
         // return null for newNode. Insert the HR here.
-        const horizontalRuleNode = $createHorizontalRuleNode();
+        const horizontalRuleNode = createHorizontalRuleNode();
         element.insertBefore(horizontalRuleNode);
         break;
       }
@@ -505,17 +506,21 @@ function getNewNodeForCriteria(
   return newNode;
 }
 
-export function transformTextNodeForAutoFormatCriteria(
+export function transformTextNodeForAutoFormatCriteria<T>(
   scanningContext: ScanningContext,
+  createHorizontalRuleNode: () => DecoratorNode<T>,
 ) {
   if (scanningContext.autoFormatCriteria.requiresParagraphStart) {
-    transformTextNodeForParagraphs(scanningContext);
+    transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
   } else {
     transformTextNodeForText(scanningContext);
   }
 }
 
-function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
+function transformTextNodeForParagraphs<T>(
+  scanningContext: ScanningContext,
+  createHorizontalRuleNode: () => DecoratorNode<T>,
+): void {
   const textNodeWithOffset = scanningContext.textNodeWithOffset;
   const element = textNodeWithOffset.node.getParentOrThrow();
   const text = scanningContext.patternMatchResults.regExCaptureGroups[0].text;
@@ -528,7 +533,11 @@ function transformTextNodeForParagraphs(scanningContext: ScanningContext) {
   }
 
   // Transform the current element kind to the new element kind.
-  const elementNode = getNewNodeForCriteria(scanningContext, element);
+  const elementNode = getNewNodeForCriteria(
+    scanningContext,
+    element,
+    createHorizontalRuleNode,
+  );
 
   if (elementNode !== null) {
     element.replace(elementNode);

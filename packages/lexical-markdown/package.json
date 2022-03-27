@@ -1,0 +1,32 @@
+{
+  "name": "@lexical/markdown",
+  "author": {
+    "name": "Dominic Gannaway",
+    "email": "dg@domgan.com"
+  },
+  "description": "This package contains Markdown helpers and functionality for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "markdown"
+  ],
+  "license": "MIT",
+  "version": "0.1.16",
+  "main": "LexicalMarkdown.js",
+  "peerDependencies": {
+    "lexical": "0.1.16"
+  },
+  "dependencies": {
+    "@lexical/utils": "0.1.16",
+    "@lexical/code": "0.1.16",
+    "@lexical/text": "0.1.16",
+    "@lexical/rich-text": "0.1.16",
+    "@lexical/list": "0.1.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-markdown"
+  }
+}

@@ -9,11 +9,11 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
-import useAutoFormatter from './shared/useAutoFormatter';
+import useMarkdownShortcuts from './shared/useMarkdownShortcuts';
 
-export default function AutoFormatterPlugin(): React$Node {
+export default function LexicalMarkdownShortcutPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
-  useAutoFormatter(editor);
+  useMarkdownShortcuts(editor);
 
   return null;
 }

@@ -12,9 +12,10 @@ import type {
   AutoFormatCriteriaWithPatternMatchResults,
   AutoFormatTriggerState,
   ScanningContext,
-} from './AutoFormatterUtils.js';
+} from './utils.js';
 import type {TextNodeWithOffset} from '@lexical/text';
 import type {
+  DecoratorNode,
   EditorState,
   GridSelection,
   LexicalEditor,
@@ -25,7 +26,6 @@ import type {
 import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode} from '@lexical/list';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
-import {useEffect} from 'react';
 
 import {
   getAllAutoFormatCriteria,
@@ -34,7 +34,39 @@ import {
   getPatternMatchResultsForCriteria,
   transformTextNodeForAutoFormatCriteria,
   TRIGGER_STRING,
-} from './AutoFormatterUtils.js';
+} from './utils.js';
+
+function getTextNodeForAutoFormatting(
+  selection: null | RangeSelection | NodeSelection | GridSelection,
+): null | TextNodeWithOffset {
+  if (!$isRangeSelection(selection)) {
+    return null;
+  }
+  const node = selection.anchor.getNode();
+
+  if (!$isTextNode(node)) {
+    return null;
+  }
+  return {node, offset: selection.anchor.offset};
+}
+
+function updateAutoFormatting<T>(
+  editor: LexicalEditor,
+  scanningContext: ScanningContext,
+  createHorizontalRuleNode: () => DecoratorNode<T>,
+): void {
+  editor.update(
+    () => {
+      transformTextNodeForAutoFormatCriteria(
+        scanningContext,
+        createHorizontalRuleNode,
+      );
+    },
+    {
+      tag: 'history-push',
+    },
+  );
+}
 
 function getCriteriaWithPatternMatchResults(
   autoFormatCriteriaArray: AutoFormatCriteriaArray,
@@ -65,35 +97,6 @@ function getCriteriaWithPatternMatchResults(
     }
   }
   return {autoFormatCriteria: null, patternMatchResults: null};
-}
-
-function getTextNodeForAutoFormatting(
-  selection: null | RangeSelection | NodeSelection | GridSelection,
-): null | TextNodeWithOffset {
-  if (!$isRangeSelection(selection)) {
-    return null;
-  }
-
-  const node = selection.anchor.getNode();
-
-  if (!$isTextNode(node)) {
-    return null;
-  }
-  return {node, offset: selection.anchor.offset};
-}
-
-function updateAutoFormatting(
-  editor: LexicalEditor,
-  scanningContext: ScanningContext,
-): void {
-  editor.update(
-    () => {
-      transformTextNodeForAutoFormatCriteria(scanningContext);
-    },
-    {
-      tag: 'history-push',
-    },
-  );
 }
 
 function findScanningContextWithValidMatch(
@@ -139,6 +142,39 @@ function findScanningContextWithValidMatch(
   return scanningContext;
 }
 
+function getTriggerState(
+  editorState: EditorState,
+): null | AutoFormatTriggerState {
+  let criteria: null | AutoFormatTriggerState = null;
+
+  editorState.read(() => {
+    const selection = $getSelection();
+    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+      return;
+    }
+    const node = selection.anchor.getNode();
+    const parentNode = node.getParent();
+
+    const isParentAListItemNode =
+      parentNode !== null && $isListItemNode(parentNode);
+
+    const hasParentNode = parentNode !== null;
+
+    criteria = {
+      anchorOffset: selection.anchor.offset,
+      hasParentNode,
+      isCodeBlock: $isCodeNode(node),
+      isParentAListItemNode,
+      isSelectionCollapsed: selection.isCollapsed(),
+      isSimpleText: $isTextNode(node) && node.isSimpleText(),
+      nodeKey: node.getKey(),
+      textContent: node.getTextContent(),
+    };
+  });
+
+  return criteria;
+}
+
 function findScanningContext(
   editor: LexicalEditor,
   currentTriggerState: null | AutoFormatTriggerState,
@@ -176,66 +212,30 @@ function findScanningContext(
   return findScanningContextWithValidMatch(editor, currentTriggerState);
 }
 
-function getTriggerState(
-  editorState: EditorState,
-): null | AutoFormatTriggerState {
-  let criteria: null | AutoFormatTriggerState = null;
+export function registerMarkdownShortcuts<T>(
+  editor: LexicalEditor,
+  createHorizontalRuleNode: () => DecoratorNode<T>,
+): () => void {
+  // The priorTriggerState is compared against the currentTriggerState to determine
+  // if the user has performed some typing event that warrants an auto format.
+  // For example, typing "#" and then " ", shoud trigger an format.
+  // However, given "#A B", where the user delets "A" should not.
 
-  editorState.read(() => {
-    const selection = $getSelection();
-    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-      return;
-    }
-    const node = selection.anchor.getNode();
-    const parentNode = node.getParent();
-
-    const isParentAListItemNode =
-      parentNode !== null && $isListItemNode(parentNode);
-
-    const hasParentNode = parentNode !== null;
-
-    criteria = {
-      anchorOffset: selection.anchor.offset,
-      hasParentNode,
-      isCodeBlock: $isCodeNode(node),
-      isParentAListItemNode,
-      isSelectionCollapsed: selection.isCollapsed(),
-      isSimpleText: $isTextNode(node) && node.isSimpleText(),
-      nodeKey: node.getKey(),
-      textContent: node.getTextContent(),
-    };
-  });
-
-  return criteria;
-}
-
-export default function useAutoFormatter(editor: LexicalEditor): void {
-  useEffect(() => {
-    // The priorTriggerState is compared against the currentTriggerState to determine
-    // if the user has performed some typing event that warrants an auto format.
-    // For example, typing "#" and then " ", shoud trigger an format.
-    // However, given "#A B", where the user delets "A" should not.
-
-    let priorTriggerState: null | AutoFormatTriggerState = null;
-    return editor.registerUpdateListener(({tags}) => {
-      // Examine historic so that we are not running autoformatting within markdown.
-      if (tags.has('historic') === false) {
-        const currentTriggerState = getTriggerState(editor.getEditorState());
-        const scanningContext =
-          currentTriggerState == null
-            ? null
-            : findScanningContext(
-                editor,
-                currentTriggerState,
-                priorTriggerState,
-              );
-        if (scanningContext != null) {
-          updateAutoFormatting(editor, scanningContext);
-        }
-        priorTriggerState = currentTriggerState;
-      } else {
-        priorTriggerState = null;
+  let priorTriggerState: null | AutoFormatTriggerState = null;
+  return editor.registerUpdateListener(({tags}) => {
+    // Examine historic so that we are not running autoformatting within markdown.
+    if (tags.has('historic') === false) {
+      const currentTriggerState = getTriggerState(editor.getEditorState());
+      const scanningContext =
+        currentTriggerState == null
+          ? null
+          : findScanningContext(editor, currentTriggerState, priorTriggerState);
+      if (scanningContext != null) {
+        updateAutoFormatting(editor, scanningContext, createHorizontalRuleNode);
       }
-    });
-  }, [editor]);
+      priorTriggerState = currentTriggerState;
+    } else {
+      priorTriggerState = null;
+    }
+  });
 }

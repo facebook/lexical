@@ -124,6 +124,6 @@ Lexical auto-scrolls its contenteditable container while typing. This plugin can
 
 Adds `clearEditor` command support to clear editor's content
 
-### `LexicalAutoFormatterPlugin`
+### `LexicalMarkdownShortcutPlugin`
 
-Adds markdown support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough)
+Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough)

@@ -10,6 +10,7 @@ import {redo, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
+  click,
   focusEditor,
   initialize,
   keyDownCtrlOrMeta,
@@ -271,4 +272,19 @@ test.describe('Markdown', () => {
       });
     }
   }
+  test(`Should test markdown convertion from plain text to Lexical.`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('#Heading');
+    await click(page, 'i.markdown');
+
+    const html =
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#Heading</span></p>';
+    await assertHTML(page, html);
+  });
 });

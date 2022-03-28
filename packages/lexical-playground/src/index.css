@@ -370,6 +370,10 @@ i.indent {
   background-image: url(images/icons/indent.svg);
 }
 
+i.markdown {
+  background-image: url(images/icons/markdown.svg);
+}
+
 i.outdent {
   background-image: url(images/icons/outdent.svg);
 }

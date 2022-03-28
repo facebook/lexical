@@ -10,6 +10,7 @@ import {redo, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
+  click,
   focusEditor,
   initialize,
   keyDownCtrlOrMeta,
@@ -38,6 +39,13 @@ async function checkHTMLExpectationsIncludingUndoRedo(
 test.describe('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
+    {
+      expectation:
+        '<p class="PlaygroundEditorTheme__paragraph"><a href="http://www.test.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></a><span data-lexical-text="true"> </span></p>',
+      isBlockTest: true,
+      markdownText: '[hello world](http://www.test.com) ', // Link
+      undoHTML: `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">[hello world](http://www.test.com) </span></p>`,
+    },
     {
       expectation:
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span data-lexical-text="true"> y</span></p>',
@@ -271,4 +279,19 @@ test.describe('Markdown', () => {
       });
     }
   }
+  test(`Should test markdown convertion from plain text to Lexical.`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('#Heading');
+    await click(page, 'i.markdown');
+
+    const html =
+      '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">#Heading</span></p>';
+    await assertHTML(page, html);
+  });
 });

@@ -85,7 +85,6 @@ function handleLinkCreation(
   let text = nodeText;
   let textOffset = 0;
   let lastNode = node;
-  let lastNodeOffset = 0;
   let match;
   while ((match = findFirstMatch(text, matchers)) && match !== null) {
     const matchOffset = match.index;
@@ -116,19 +115,18 @@ function handleLinkCreation(
 
     if (contentBeforeMatchIsValid && contentAfterMatchIsValid) {
       let middleNode;
-      const lastNodeMatchOffset = offset - lastNodeOffset;
-      if (lastNodeMatchOffset === 0) {
+
+      if (matchOffset === 0) {
         [middleNode, lastNode] = lastNode.splitText(matchLength);
       } else {
         [, middleNode, lastNode] = lastNode.splitText(
-          lastNodeMatchOffset,
-          lastNodeMatchOffset + matchLength,
+          matchOffset,
+          matchOffset + matchLength,
         );
       }
       const linkNode = $createAutoLinkNode(match.url);
       linkNode.append($createTextNode(match.text));
       middleNode.replace(linkNode);
-      lastNodeOffset = lastNodeMatchOffset + matchLength;
       onChange(match.url, null);
     }
 

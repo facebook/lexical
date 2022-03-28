@@ -12,28 +12,36 @@ import type {
   AutoFormatCriteriaWithPatternMatchResults,
   AutoFormatTriggerState,
   ScanningContext,
-} from './utils.js';
+} from './lowLevelUtils';
 import type {TextNodeWithOffset} from '@lexical/text';
 import type {
   DecoratorNode,
   EditorState,
   GridSelection,
   LexicalEditor,
+  LexicalNode,
   NodeSelection,
   RangeSelection,
 } from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode} from '@lexical/list';
-import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
+import {
+  $getRoot,
+  $getSelection,
+  $isParagraphNode,
+  $isRangeSelection,
+  $isTextNode,
+} from 'lexical';
 
 import {
+  convertStringToLexical,
   getAllAutoFormatCriteria,
   getAllAutoFormatCriteriaForTextNodes,
+  getAllTriggers,
   getInitialScanningContext,
   getPatternMatchResultsForCriteria,
   transformTextNodeForAutoFormatCriteria,
-  TRIGGER_STRING,
 } from './utils.js';
 
 function getTextNodeForAutoFormatting(
@@ -184,32 +192,48 @@ function findScanningContext(
     return null;
   }
 
-  // The below checks needs to execute relativey quickly, so perform the light-weight ones first.
-  // The substr check is a quick way to avoid autoformat parsing in that it looks for the autoformat
-  // trigger which is the trigger string (" ").
-  const triggerStringLength = TRIGGER_STRING.length;
-  const currentTextContentLength = currentTriggerState.textContent.length;
-  const triggerOffset = currentTriggerState.anchorOffset - triggerStringLength;
+  const triggers = getAllTriggers();
+  const triggerCount = triggers.length;
+  for (let ti = 0; ti < triggerCount; ti++) {
+    const triggerString = triggers[ti].triggerString;
+    // The below checks needs to execute relativey quickly, so perform the light-weight ones first.
+    // The substr check is a quick way to avoid autoformat parsing in that it looks for the autoformat
+    // trigger which is the trigger string (" ").
+    const triggerStringLength = triggerString.length;
+    const currentTextContentLength = currentTriggerState.textContent.length;
+    const triggerOffset =
+      currentTriggerState.anchorOffset - triggerStringLength;
 
-  if (
-    (currentTriggerState.hasParentNode === true &&
-      currentTriggerState.isSimpleText &&
-      currentTriggerState.isSelectionCollapsed &&
-      currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
-      currentTriggerState.anchorOffset !== priorTriggerState.anchorOffset &&
-      triggerOffset >= 0 &&
-      triggerOffset + triggerStringLength <= currentTextContentLength &&
-      currentTriggerState.textContent.substr(
-        triggerOffset,
-        triggerStringLength,
-      ) === TRIGGER_STRING &&
-      currentTriggerState.textContent !== priorTriggerState.textContent) ===
-    false
-  ) {
-    return null;
+    if (
+      (currentTriggerState.hasParentNode === true &&
+        currentTriggerState.isSimpleText &&
+        currentTriggerState.isSelectionCollapsed &&
+        currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
+        currentTriggerState.anchorOffset !== priorTriggerState.anchorOffset &&
+        triggerOffset >= 0 &&
+        triggerOffset + triggerStringLength <= currentTextContentLength &&
+        currentTriggerState.textContent.substr(
+          triggerOffset,
+          triggerStringLength,
+        ) === triggerString && // Some code differentiation needed if trigger kind is not a simple space character.
+        currentTriggerState.textContent !== priorTriggerState.textContent) ===
+      false
+    ) {
+      return null;
+    }
   }
 
   return findScanningContextWithValidMatch(editor, currentTriggerState);
+}
+
+function convertMarkdownForParagraphs(paragraphs: Array<LexicalNode>) {
+  const countOfParagraphs = paragraphs.length;
+  for (let parIndex = 0; parIndex < countOfParagraphs; parIndex++) {
+    const paragraph = paragraphs[parIndex];
+
+    if ($isParagraphNode(paragraph)) {
+    }
+  }
 }
 
 export function registerMarkdownShortcuts<T>(
@@ -244,5 +268,8 @@ export function $convertFromMarkdownString(
   markdownString: string,
   editor: LexicalEditor,
 ) {
-  // Add implementation here.
+  editor.update(() => {
+    convertStringToLexical(markdownString, editor);
+    convertMarkdownForParagraphs($getRoot().getChildren());
+  }, {});
 }

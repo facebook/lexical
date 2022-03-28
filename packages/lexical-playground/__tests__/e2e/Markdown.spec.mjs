@@ -41,6 +41,13 @@ test.describe('Markdown', () => {
   const triggersAndExpectations = [
     {
       expectation:
+        '<p class="PlaygroundEditorTheme__paragraph"><a href="http://www.test.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></a><span data-lexical-text="true"> </span></p>',
+      isBlockTest: true,
+      markdownText: '[hello world](http://www.test.com) ', // Link
+      undoHTML: `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">[hello world](http://www.test.com) </span></p>`,
+    },
+    {
+      expectation:
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span data-lexical-text="true"> y</span></p>',
       isBlockTest: false,
       markdownText: '__hello__',

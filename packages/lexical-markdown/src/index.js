@@ -239,3 +239,10 @@ export function registerMarkdownShortcuts<T>(
     }
   });
 }
+
+export function $convertFromMarkdownString(
+  markdownString: string,
+  editor: LexicalEditor,
+) {
+  // Add implementation here.
+}

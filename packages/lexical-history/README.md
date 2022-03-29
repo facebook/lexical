@@ -22,7 +22,7 @@ History package handles `undo`, `redo` and `clearHistory` commands. It also trig
 
 ```jsx
 <Toolbar>
-  <Button onClick={() => editor.execCommand('undo')}>Undo</Button>
-  <Button onClick={() => editor.execCommand('redo')}>Redo</Button>
+  <Button onClick={() => editor.dispatchCommand('undo')}>Undo</Button>
+  <Button onClick={() => editor.dispatchCommand('redo')}>Redo</Button>
 </Toolbar>
 ```

@@ -242,7 +242,8 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}>
+          }}
+        >
           Add Caption
         </button>
       )}
@@ -332,7 +333,7 @@ function ImageComponent({
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'click',
         (payload) => {
           const event: MouseEvent = payload;
@@ -352,8 +353,8 @@ function ImageComponent({
         },
         LowPriority,
       ),
-      editor.registerCommandListener('keyDelete', onDelete, LowPriority),
-      editor.registerCommandListener('keyBackspace', onDelete, LowPriority),
+      editor.registerCommand('keyDelete', onDelete, LowPriority),
+      editor.registerCommand('keyBackspace', onDelete, LowPriority),
     );
   }, [
     clearSelection,
@@ -426,7 +427,8 @@ function ImageComponent({
             <LexicalNestedComposer
               initialConfig={{
                 decoratorEditor: decoratorEditor,
-              }}>
+              }}
+            >
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />

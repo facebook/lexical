@@ -596,7 +596,8 @@ function MentionsTypeaheadItem({
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onClick={onClick}>
+      onClick={onClick}
+    >
       {result}
     </li>
   );
@@ -679,7 +680,7 @@ function MentionsTypeahead({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommandListener(
+      editor.registerCommand(
         'keyArrowDown',
         (payload) => {
           const event: KeyboardEvent = payload;
@@ -697,7 +698,7 @@ function MentionsTypeahead({
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'keyArrowUp',
         (payload) => {
           const event: KeyboardEvent = payload;
@@ -712,7 +713,7 @@ function MentionsTypeahead({
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'keyEscape',
         (payload) => {
           const event: KeyboardEvent = payload;
@@ -726,7 +727,7 @@ function MentionsTypeahead({
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'keyTab',
         (payload) => {
           const event: KeyboardEvent = payload;
@@ -740,7 +741,7 @@ function MentionsTypeahead({
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'keyEnter',
         (payload) => {
           const event: KeyboardEvent = payload;
@@ -773,7 +774,8 @@ function MentionsTypeahead({
       aria-label="Suggested mentions"
       id="mentions-typeahead"
       ref={divRef}
-      role="listbox">
+      role="listbox"
+    >
       <ul>
         {results.slice(0, SUGGESTION_LIST_LENGTH_LIMIT).map((result, i) => (
           <MentionsTypeaheadItem

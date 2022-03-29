@@ -18,7 +18,7 @@ export function importFile(editor: LexicalEditor) {
       JSON.stringify(json.editorState),
     );
     editor.setEditorState(editorState);
-    editor.execCommand('clearHistory');
+    editor.dispatchCommand('clearHistory');
   });
 }
 

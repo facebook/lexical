@@ -750,22 +750,22 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
     editor.addNodeTransform(CodeHighlightNode, (node) =>
       textNodeTransform(node, editor),
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'indentContent',
       (payload): boolean => handleMultilineIndent('indentContent'),
       1,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'outdentContent',
       (payload): boolean => handleMultilineIndent('outdentContent'),
       1,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowUp',
       (payload): boolean => handleShiftLines('keyArrowUp', payload),
       1,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowDown',
       (payload): boolean => handleShiftLines('keyArrowDown', payload),
       1,

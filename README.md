@@ -166,7 +166,7 @@ There are a few ways to update an editor instance:
 - Trigger an update with `editor.update()`
 - Setting the editor state via `editor.setEditorState()`
 - Applying a change as part of an existing update via `editor.addNodeTransform()`
-- Using a command listener with `editor.registerCommandListener( () => {...}, priority)`
+- Using a command listener with `editor.registerCommand( () => {...}, priority)`
 
 The most common way to update the editor is to use `editor.update()`. Calling this function
 requires a function to be passed in that will provide access to mutate the underlying

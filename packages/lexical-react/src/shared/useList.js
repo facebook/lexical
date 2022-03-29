@@ -24,7 +24,7 @@ const LowPriority: CommandListenerLowPriority = 1;
 export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommandListener(
+      editor.registerCommand(
         'indentContent',
         () => {
           const hasHandledIndention = indentList();
@@ -35,7 +35,7 @@ export default function useList(editor: LexicalEditor): void {
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'outdentContent',
         () => {
           const hasHandledIndention = outdentList();
@@ -46,7 +46,7 @@ export default function useList(editor: LexicalEditor): void {
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'insertOrderedList',
         () => {
           insertList(editor, 'ol');
@@ -54,7 +54,7 @@ export default function useList(editor: LexicalEditor): void {
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'insertUnorderedList',
         () => {
           insertList(editor, 'ul');
@@ -62,7 +62,7 @@ export default function useList(editor: LexicalEditor): void {
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'removeList',
         () => {
           removeList(editor);
@@ -70,7 +70,7 @@ export default function useList(editor: LexicalEditor): void {
         },
         LowPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'insertParagraph',
         () => {
           const hasHandledInsertParagraph = $handleListInsertParagraph();

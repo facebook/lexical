@@ -85,7 +85,7 @@ export declare class LexicalEditor {
   registerRootListener(listener: RootListener): () => void;
   registerDecoratorListener(listener: DecoratorListener): () => void;
   registerTextContentListener(listener: TextContentListener): () => void;
-  registerCommandListener(
+  registerCommand(
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
@@ -98,7 +98,7 @@ export declare class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  execCommand(type: string, payload: CommandPayload): boolean;
+  dispatchCommand(type: string, payload: CommandPayload): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): Record<NodeKey, X>;
   getRootElement(): null | HTMLElement;

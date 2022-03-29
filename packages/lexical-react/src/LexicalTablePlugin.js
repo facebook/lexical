@@ -44,7 +44,7 @@ export default function TablePlugin(): React$Node {
         'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
       );
     }
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'insertTable',
       (payload) => {
         const {columns, rows} = payload;

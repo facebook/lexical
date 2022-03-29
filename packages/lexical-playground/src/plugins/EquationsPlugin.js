@@ -30,7 +30,7 @@ export default function EquationsPlugin(): React$Node {
       );
     }
 
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'insertEquation',
       (payload) => {
         const {equation, inline} = payload;

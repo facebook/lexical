@@ -170,7 +170,7 @@ export class TableSelection {
 
       $updateDOMForSelection(grid, null);
       $setSelection(null);
-      this.editor.execCommand('selectionChange');
+      this.editor.dispatchCommand('selectionChange');
 
       const parent = removeHighlightStyle.parentNode;
       if (parent != null) {
@@ -236,7 +236,7 @@ export class TableSelection {
           );
 
           $setSelection(this.gridSelection);
-          this.editor.execCommand('selectionChange');
+          this.editor.dispatchCommand('selectionChange');
           $updateDOMForSelection(this.grid, this.gridSelection);
         }
       }
@@ -282,7 +282,7 @@ export class TableSelection {
       });
 
       $setSelection(selection);
-      this.editor.execCommand('selectionChange');
+      this.editor.dispatchCommand('selectionChange');
     });
   }
 
@@ -324,7 +324,7 @@ export class TableSelection {
       });
       $updateDOMForSelection(this.grid, null);
       $setSelection(null);
-      this.editor.execCommand('selectionChange');
+      this.editor.dispatchCommand('selectionChange');
     });
   }
 }

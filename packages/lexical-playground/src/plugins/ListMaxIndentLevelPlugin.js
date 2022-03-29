@@ -75,7 +75,7 @@ export default function ListMaxIndentLevelPlugin({maxDepth}: Props): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'indentContent',
       () => !isIndentPermitted(maxDepth ?? 7),
       highPriority,

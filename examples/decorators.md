@@ -64,7 +64,7 @@ function VideoPlugin(): React$Node {
 
   useEffect(() => {
     // Similar with command listener, which returns unlisten callback
-    const removeListener = editor.registerCommandListener(
+    const removeListener = editor.registerCommand(
       'insertVideo',
       (payload) => {
         // Adding custom command that will be handled by this plugin
@@ -99,7 +99,7 @@ function ToolbarVideoButton(): React$Node {
   const insertVideo = useCallback(
     (url) => {
       // Executing command defined in a plugin
-      editor.execCommand('insertVideo', url);
+      editor.dispatchCommand('insertVideo', url);
     },
     [editor],
   );

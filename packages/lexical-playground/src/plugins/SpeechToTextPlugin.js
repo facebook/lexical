@@ -28,10 +28,10 @@ const VOICE_COMMANDS: $ReadOnly<{
     selection.insertParagraph();
   },
   redo: ({editor}) => {
-    editor.execCommand('redo');
+    editor.dispatchCommand('redo');
   },
   undo: ({editor}) => {
-    editor.execCommand('undo');
+    editor.dispatchCommand('undo');
   },
 };
 
@@ -95,7 +95,7 @@ function SpeechToTextPlugin(): null {
   }, [editor, isEnabled, report]);
 
   useEffect(() => {
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'speechToText',
       (payload: boolean) => {
         setIsEnabled(payload);

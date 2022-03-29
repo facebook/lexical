@@ -27,7 +27,7 @@ export default function ExcalidrawPlugin(): React$Node {
       );
     }
 
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'insertExcalidraw',
       () => {
         const selection = $getSelection();

@@ -25,7 +25,7 @@ export default function TwitterPlugin(): React$Node {
       throw new Error('TwitterPlugin: TweetNode not registered on editor');
     }
 
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'insertTweet',
       (payload) => {
         const selection = $getSelection();

@@ -37,7 +37,7 @@ export default function ActionsPlugins({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommandListener(
+      editor.registerCommand(
         'readOnly',
         (payload) => {
           const readOnly = payload;
@@ -46,7 +46,7 @@ export default function ActionsPlugins({
         },
         EditorPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'connected',
         (payload) => {
           const isConnected = payload;
@@ -77,7 +77,7 @@ export default function ActionsPlugins({
       {SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {
-            editor.execCommand('speechToText', !isSpeechToText);
+            editor.dispatchCommand('speechToText', !isSpeechToText);
             setIsSpeechToText(!isSpeechToText);
           }}
           className={
@@ -111,7 +111,7 @@ export default function ActionsPlugins({
       <button
         className="action-button clear"
         onClick={() => {
-          editor.execCommand('clearEditor');
+          editor.dispatchCommand('clearEditor');
           editor.focus();
         }}
       >
@@ -132,7 +132,7 @@ export default function ActionsPlugins({
         <button
           className="action-button connect"
           onClick={() => {
-            editor.execCommand('toggleConnect', !connected);
+            editor.dispatchCommand('toggleConnect', !connected);
           }}
         >
           <i className={connected ? 'disconnect' : 'connect'} />

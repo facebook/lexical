@@ -267,11 +267,11 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
     const current = historyState.current;
     if (current !== null) {
       undoStack.push(current);
-      editor.execCommand('canUndo', true);
+      editor.dispatchCommand('canUndo', true);
     }
     const historyStateEntry = redoStack.pop();
     if (redoStack.length === 0) {
-      editor.execCommand('canRedo', false);
+      editor.dispatchCommand('canRedo', false);
     }
     historyState.current = historyStateEntry;
     historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
@@ -289,10 +289,10 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
     const historyStateEntry = undoStack.pop();
     if (current !== null) {
       redoStack.push(current);
-      editor.execCommand('canRedo', true);
+      editor.dispatchCommand('canRedo', true);
     }
     if (undoStack.length === 0) {
-      editor.execCommand('canUndo', false);
+      editor.dispatchCommand('canUndo', false);
     }
     historyState.current = historyStateEntry;
     historyStateEntry.editor.setEditorState(
@@ -350,7 +350,7 @@ export function registerHistory(
           ...current,
           undoSelection: prevEditorState.read($getSelection),
         });
-        editor.execCommand('canUndo', true);
+        editor.dispatchCommand('canUndo', true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {
       return;
@@ -364,7 +364,7 @@ export function registerHistory(
   };
 
   const unregisterCommandListener = mergeRegister(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'undo',
       () => {
         undo(editor, historyState);
@@ -372,7 +372,7 @@ export function registerHistory(
       },
       EditorPriority,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'redo',
       () => {
         redo(editor, historyState);
@@ -380,7 +380,7 @@ export function registerHistory(
       },
       EditorPriority,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'clearEditor',
       () => {
         clearHistory(historyState);
@@ -388,7 +388,7 @@ export function registerHistory(
       },
       EditorPriority,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'clearHistory',
       () => {
         clearHistory(historyState);

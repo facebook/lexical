@@ -304,7 +304,7 @@ export function registerRichText(
   initialEditorState?: InitialEditorStateType,
 ): () => void {
   const removeListener = mergeRegister(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'click',
       (payload) => {
         const selection = $getSelection();
@@ -316,7 +316,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'deleteCharacter',
       (payload) => {
         const selection = $getSelection();
@@ -329,7 +329,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'deleteWord',
       (payload) => {
         const selection = $getSelection();
@@ -342,7 +342,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'deleteLine',
       (payload) => {
         const selection = $getSelection();
@@ -355,7 +355,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertText',
       (payload) => {
         const selection = $getSelection();
@@ -381,7 +381,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'removeText',
       (payload) => {
         const selection = $getSelection();
@@ -393,7 +393,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'formatText',
       (payload) => {
         const selection = $getSelection();
@@ -406,7 +406,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'formatElement',
       (payload) => {
         const selection = $getSelection();
@@ -421,7 +421,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertLineBreak',
       (payload) => {
         const selection = $getSelection();
@@ -434,7 +434,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertParagraph',
       (payload) => {
         const selection = $getSelection();
@@ -446,7 +446,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'indentContent',
       (payload) => {
         const selection = $getSelection();
@@ -460,7 +460,7 @@ export function registerRichText(
             ? anchor.getNode()
             : anchor.getNode().getParentOrThrow();
         if (parentBlock.canInsertTab()) {
-          editor.execCommand('insertText', '\t');
+          editor.dispatchCommand('insertText', '\t');
         } else {
           if (parentBlock.getIndent() !== 10) {
             parentBlock.setIndent(parentBlock.getIndent() + 1);
@@ -470,7 +470,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'outdentContent',
       (payload) => {
         const selection = $getSelection();
@@ -488,7 +488,7 @@ export function registerRichText(
           const textContent = anchorNode.getTextContent();
           const character = textContent[anchor.offset - 1];
           if (character === '\t') {
-            editor.execCommand('deleteCharacter', true);
+            editor.dispatchCommand('deleteCharacter', true);
           }
         } else {
           if (parentBlock.getIndent() !== 0) {
@@ -499,7 +499,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowLeft',
       (payload) => {
         const selection = $getSelection();
@@ -517,7 +517,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowRight',
       (payload) => {
         const selection = $getSelection();
@@ -535,7 +535,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyBackspace',
       (payload) => {
         const selection = $getSelection();
@@ -551,14 +551,14 @@ export function registerRichText(
               ? anchor.getNode()
               : anchor.getNode().getParentOrThrow();
           if (element.getIndent() > 0) {
-            return editor.execCommand('outdentContent');
+            return editor.dispatchCommand('outdentContent');
           }
         }
-        return editor.execCommand('deleteCharacter', true);
+        return editor.dispatchCommand('deleteCharacter', true);
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyDelete',
       (payload) => {
         const selection = $getSelection();
@@ -567,11 +567,11 @@ export function registerRichText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.execCommand('deleteCharacter', false);
+        return editor.dispatchCommand('deleteCharacter', false);
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyEnter',
       (payload) => {
         const selection = $getSelection();
@@ -581,13 +581,13 @@ export function registerRichText(
         const event: KeyboardEvent = payload;
         event.preventDefault();
         if (event.shiftKey) {
-          return editor.execCommand('insertLineBreak');
+          return editor.dispatchCommand('insertLineBreak');
         }
-        return editor.execCommand('insertParagraph');
+        return editor.dispatchCommand('insertParagraph');
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyTab',
       (payload) => {
         const selection = $getSelection();
@@ -596,13 +596,13 @@ export function registerRichText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.execCommand(
+        return editor.dispatchCommand(
           event.shiftKey ? 'outdentContent' : 'indentContent',
         );
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyEscape',
       (payload) => {
         const selection = $getSelection();
@@ -614,7 +614,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'drop',
       (payload) => {
         const selection = $getSelection();
@@ -628,7 +628,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'dragstart',
       (payload) => {
         const selection = $getSelection();
@@ -642,7 +642,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'copy',
       (payload) => {
         const selection = $getSelection();
@@ -655,7 +655,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'cut',
       (payload) => {
         const selection = $getSelection();
@@ -668,7 +668,7 @@ export function registerRichText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'paste',
       (payload) => {
         const selection = $getSelection();

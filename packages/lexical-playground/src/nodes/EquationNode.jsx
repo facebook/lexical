@@ -61,7 +61,7 @@ function EquationComponent({
   useEffect(() => {
     if (showEquationEditor) {
       return mergeRegister(
-        editor.registerCommandListener(
+        editor.registerCommand(
           'selectionChange',
           (payload) => {
             const activeElement = document.activeElement;
@@ -73,7 +73,7 @@ function EquationComponent({
           },
           HighPriority,
         ),
-        editor.registerCommandListener(
+        editor.registerCommand(
           'keyEscape',
           (payload) => {
             const activeElement = document.activeElement;

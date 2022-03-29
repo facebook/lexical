@@ -419,11 +419,11 @@ export class LexicalEditor {
       listenerSetOrMap.delete(listener);
     };
   }
-  registerCommandListener(
+  registerCommand(
     type: string,
     listener: CommandListener,
     priority: CommandListenerPriority,
-  ): (() => void) | void {
+  ): () => void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
@@ -441,7 +441,7 @@ export class LexicalEditor {
     if (listenersInPriorityOrder === undefined) {
       invariant(
         false,
-        'registerCommandListener: Command type of "%s" not found in command map',
+        'registerCommand: Command type of "%s" not found in command map',
         type,
       );
     }
@@ -508,9 +508,8 @@ export class LexicalEditor {
     }
     return true;
   }
-  execCommand(type: string, payload?: CommandPayload): boolean {
-    const result = triggerCommandListeners(this, type, payload);
-    return result;
+  dispatchCommand(type: string, payload?: CommandPayload): boolean {
+    return triggerCommandListeners(this, type, payload);
   }
   getDecorators(): {[NodeKey]: mixed} {
     return this._decorators;

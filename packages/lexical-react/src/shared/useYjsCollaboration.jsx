@@ -62,7 +62,7 @@ export function useYjsCollaboration(
     const {awareness} = provider;
 
     const onStatus = ({status}: {status: string}) => {
-      editor.execCommand('connected', status === 'connected');
+      editor.dispatchCommand('connected', status === 'connected');
     };
 
     const onSync = (isSynced: boolean) => {
@@ -167,7 +167,7 @@ export function useYjsCollaboration(
   }, [binding]);
 
   useEffect(() => {
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'toggleConnect',
       (payload) => {
         if (connect !== undefined && disconnect !== undefined) {
@@ -199,7 +199,7 @@ export function useYjsFocusTracking(
 ) {
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommandListener(
+      editor.registerCommand(
         'focus',
         (payload) => {
           setLocalStateFocus(provider, name, color, false);
@@ -207,7 +207,7 @@ export function useYjsFocusTracking(
         },
         EditorPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'blur',
         (payload) => {
           setLocalStateFocus(provider, name, color, false);
@@ -237,7 +237,7 @@ export function useYjsHistory(
     };
 
     return mergeRegister(
-      editor.registerCommandListener(
+      editor.registerCommand(
         'undo',
         () => {
           undo();
@@ -245,7 +245,7 @@ export function useYjsHistory(
         },
         EditorPriority,
       ),
-      editor.registerCommandListener(
+      editor.registerCommand(
         'redo',
         () => {
           redo();

@@ -128,7 +128,7 @@ export function registerPlainText(
   initialEditorState?: InitialEditorStateType,
 ): () => void {
   const removeListener = mergeRegister(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'deleteCharacter',
       (payload) => {
         const selection = $getSelection();
@@ -141,7 +141,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'deleteWord',
       (payload) => {
         const selection = $getSelection();
@@ -154,7 +154,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'deleteLine',
       (payload) => {
         const selection = $getSelection();
@@ -167,7 +167,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertText',
       (payload) => {
         const selection = $getSelection();
@@ -192,7 +192,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'removeText',
       (payload) => {
         const selection = $getSelection();
@@ -204,7 +204,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertLineBreak',
       (payload) => {
         const selection = $getSelection();
@@ -217,7 +217,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertParagraph',
       (payload) => {
         const selection = $getSelection();
@@ -229,7 +229,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'indentContent',
       (payload) => {
         const selection = $getSelection();
@@ -240,7 +240,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'outdentContent',
       (payload) => {
         const selection = $getSelection();
@@ -251,7 +251,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertHorizontalRule',
       (payload) => {
         const selection = $getSelection();
@@ -262,7 +262,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertImage',
       (payload) => {
         const selection = $getSelection();
@@ -273,7 +273,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertTable',
       (payload) => {
         const selection = $getSelection();
@@ -284,7 +284,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'formatElement',
       (payload) => {
         const selection = $getSelection();
@@ -295,7 +295,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'formatText',
       (payload) => {
         const selection = $getSelection();
@@ -306,7 +306,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowLeft',
       (payload) => {
         const selection = $getSelection();
@@ -324,7 +324,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowRight',
       (payload) => {
         const selection = $getSelection();
@@ -342,7 +342,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyBackspace',
       (payload) => {
         const selection = $getSelection();
@@ -351,11 +351,11 @@ export function registerPlainText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.execCommand('deleteCharacter', true);
+        return editor.dispatchCommand('deleteCharacter', true);
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyDelete',
       (payload) => {
         const selection = $getSelection();
@@ -364,11 +364,11 @@ export function registerPlainText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.execCommand('deleteCharacter', false);
+        return editor.dispatchCommand('deleteCharacter', false);
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyEnter',
       (payload) => {
         const selection = $getSelection();
@@ -377,11 +377,11 @@ export function registerPlainText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.execCommand('insertLineBreak');
+        return editor.dispatchCommand('insertLineBreak');
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'copy',
       (payload) => {
         const selection = $getSelection();
@@ -394,7 +394,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'cut',
       (payload) => {
         const selection = $getSelection();
@@ -407,7 +407,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'paste',
       (payload) => {
         const selection = $getSelection();
@@ -420,7 +420,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'drop',
       (payload) => {
         const selection = $getSelection();
@@ -434,7 +434,7 @@ export function registerPlainText(
       },
       0,
     ),
-    editor.registerCommandListener(
+    editor.registerCommand(
       'dragstart',
       (payload) => {
         const selection = $getSelection();

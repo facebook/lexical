@@ -1481,20 +1481,20 @@ describe('LexicalEditor tests', () => {
     const commandListener = jest.fn();
     const command = 'insertTestDecoratorNode';
     const payload = 'testPayload';
-    const removeCommandListener = editor.registerCommandListener(
+    const removeCommandListener = editor.registerCommand(
       command,
       commandListener,
       0,
     );
-    editor.execCommand(command, payload);
-    editor.execCommand(command, payload);
-    editor.execCommand(command, payload);
+    editor.dispatchCommand(command, payload);
+    editor.dispatchCommand(command, payload);
+    editor.dispatchCommand(command, payload);
     expect(commandListener).toHaveBeenCalledTimes(3);
     expect(commandListener).toHaveBeenCalledWith(payload, editor);
     removeCommandListener();
-    editor.execCommand(command, payload);
-    editor.execCommand(command, payload);
-    editor.execCommand(command, payload);
+    editor.dispatchCommand(command, payload);
+    editor.dispatchCommand(command, payload);
+    editor.dispatchCommand(command, payload);
     expect(commandListener).toHaveBeenCalledTimes(3);
     expect(commandListener).toHaveBeenCalledWith(payload, editor);
   });
@@ -1504,12 +1504,12 @@ describe('LexicalEditor tests', () => {
     const commandListener = jest.fn();
     const commandListenerTwo = jest.fn();
     const command = 'insertTestDecoratorNode';
-    const removeCommandListener = editor.registerCommandListener(
+    const removeCommandListener = editor.registerCommand(
       command,
       commandListener,
       0,
     );
-    const removeCommandListenerTwo = editor.registerCommandListener(
+    const removeCommandListenerTwo = editor.registerCommand(
       command,
       commandListenerTwo,
       0,

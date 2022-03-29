@@ -640,7 +640,7 @@ function transformTextNodeWithLink(scanningContext: ScanningContext) {
 
   $setSelection(newSelectionForLink);
 
-  scanningContext.editor.execCommand('toggleLink', url);
+  scanningContext.editor.dispatchCommand('toggleLink', url);
 
   // Place caret at end of final capture group.
   selectAfterFinalCaptureGroup(scanningContext);

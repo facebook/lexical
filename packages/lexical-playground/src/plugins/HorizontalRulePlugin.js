@@ -20,7 +20,7 @@ export default function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'insertHorizontalRule',
       (type) => {
         const selection = $getSelection();

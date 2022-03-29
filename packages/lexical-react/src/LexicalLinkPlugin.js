@@ -106,7 +106,7 @@ export default function LinkPlugin(): null {
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerCommandListener(
+    return editor.registerCommand(
       'toggleLink',
       (payload) => {
         const url: string | null = payload;

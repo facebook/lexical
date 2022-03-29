@@ -150,7 +150,7 @@ export function applyTableHandlers(
   );
 
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowDown',
       (payload) => {
         const selection = $getSelection();
@@ -253,7 +253,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowUp',
       (payload) => {
         const selection = $getSelection();
@@ -356,7 +356,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowLeft',
       (payload) => {
         const selection = $getSelection();
@@ -453,7 +453,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyArrowRight',
       (payload) => {
         const selection = $getSelection();
@@ -554,7 +554,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'deleteCharacter',
       (payload) => {
         const selection = $getSelection();
@@ -591,7 +591,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyBackspace',
       (payload) => {
         const selection = $getSelection();
@@ -620,7 +620,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'formatText',
       (payload) => {
         const selection = $getSelection();
@@ -645,7 +645,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'insertText',
       (payload) => {
         const selection = $getSelection();
@@ -670,7 +670,7 @@ export function applyTableHandlers(
     ),
   );
   tableSelection.listenersToRemove.add(
-    editor.registerCommandListener(
+    editor.registerCommand(
       'keyTab',
       (payload) => {
         const selection = $getSelection();

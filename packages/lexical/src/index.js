@@ -102,3 +102,4 @@ export {
   TextNode,
   VERSION,
 };
+export * from './LexicalCommands';

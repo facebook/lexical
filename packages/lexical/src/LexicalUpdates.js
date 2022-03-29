@@ -10,6 +10,7 @@
 import type {
   CommandPayload,
   EditorUpdateOptions,
+  LexicalCommand,
   LexicalEditor,
   MutatedNodes,
   Transform,
@@ -460,7 +461,8 @@ export function triggerListeners(
 
 export function triggerCommandListeners(
   editor: LexicalEditor,
-  type: string,
+  // $FlowFixMe[missing-type-arg]
+  type: LexicalCommand<>,
   payload: CommandPayload,
 ): boolean {
   if (editor._updating === false || activeEditor !== editor) {

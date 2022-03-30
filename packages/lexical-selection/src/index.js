@@ -20,6 +20,7 @@ import type {
 
 import {
   $getDecoratorNode,
+  $getPreviousSelection,
   $isDecoratorNode,
   $isElementNode,
   $isGridSelection,
@@ -27,6 +28,7 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $setSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -548,6 +550,9 @@ export function $wrapLeafNodesInElements(
   let target = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
+  if (target.isInline()) {
+    target = target.getParentOrThrow();
+  }
   while (target !== null) {
     const prevSibling = target.getPreviousSibling();
     if (prevSibling !== null) {
@@ -576,7 +581,10 @@ export function $wrapLeafNodesInElements(
   // an element for that.
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
-    const parent = node.getParent();
+    let parent = node.getParent();
+    if (parent !== null && parent.isInline()) {
+      parent = parent.getParent();
+    }
     if (
       parent !== null &&
       $isLeafNode(node) &&
@@ -644,7 +652,20 @@ export function $wrapLeafNodesInElements(
       }
     }
   }
-  selection.dirty = true;
+  const prevSelection = $getPreviousSelection();
+  if (
+    $isRangeSelection(prevSelection) &&
+    isPointAttached(prevSelection.anchor) &&
+    isPointAttached(prevSelection.focus)
+  ) {
+    $setSelection(prevSelection);
+  } else {
+    selection.dirty = true;
+  }
+}
+
+function isPointAttached(point: Point): boolean {
+  return point.getNode().isAttached();
 }
 
 export function $isAtNodeEnd(point: Point): boolean {

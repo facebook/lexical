@@ -1,9 +1,5 @@
 {
   "name": "@lexical/code",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains the functionality for the code blocks and code highlighting for Lexical.",
   "keywords": [
     "lexical",

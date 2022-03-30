@@ -1,9 +1,5 @@
 {
   "name": "@lexical/markdown",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains Markdown helpers and functionality for Lexical.",
   "keywords": [
     "lexical",

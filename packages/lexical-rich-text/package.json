@@ -1,9 +1,5 @@
 {
   "name": "@lexical/rich-text",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains rich text helpers for Lexical.",
   "keywords": [
     "lexical",

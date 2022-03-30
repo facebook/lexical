@@ -1,9 +1,5 @@
 {
   "name": "@lexical/link",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains the functionality for Lexical links.",
   "keywords": [
     "lexical",

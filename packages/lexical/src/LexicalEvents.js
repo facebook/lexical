@@ -12,25 +12,17 @@ import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
-
 import {
-  $getRoot,
-  $getSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  $setCompositionKey,
-} from '.';
-import {
+  BLUR_COMMAND,
   CLICK_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DRAGSTART_COMMAND,
+  DROP_COMMAND,
+  FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
@@ -49,7 +41,19 @@ import {
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
-} from './LexicalCommands';
+} from 'lexical';
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
+
+import {
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $setCompositionKey,
+} from '.';
 import {
   $flushMutations,
   $getNodeByKey,
@@ -597,19 +601,14 @@ export function addRootElementEvents(
                   return editor.dispatchCommand(COPY_COMMAND, event);
                 case 'paste':
                   return editor.dispatchCommand(PASTE_COMMAND, event);
-                case 'keyArrowLeft':
-                  return editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
-                case 'keyArrowUp':
-                  return editor.dispatchCommand(KEY_ARROW_UP_COMMAND, event);
-                case 'keyArrowRight':
-                  return editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
-                case 'keyArrowDown':
-                  return editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, event);
-                case 'keyBackspace':
-                  return editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
-                default:
-                  // $FlowFixMe[incompatible-call]
-                  editor.dispatchCommand(eventName, event);
+                case 'dragstart':
+                  return editor.dispatchCommand(DRAGSTART_COMMAND, event);
+                case 'focus':
+                  return editor.dispatchCommand(FOCUS_COMMAND, event);
+                case 'blur':
+                  return editor.dispatchCommand(BLUR_COMMAND, event);
+                case 'drop':
+                  return editor.dispatchCommand(DROP_COMMAND, event);
               }
             }
           };

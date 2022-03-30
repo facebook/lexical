@@ -147,14 +147,15 @@ export type CommandListenerPriority =
   | CommandListenerHighPriority
   | CommandListenerCriticalPriority;
 
-// eslint-disable-next-line no-unused-vars
-export type LexicalCommand<P> = $ReadOnly<{}>;
+export type LexicalCommand<T> = $ReadOnly<{type: T}>;
+// $FlowFixMe: intentional
+export type InternalLexicalCommand = LexicalCommand;
+
 // $FlowFixMe: intentional
 export type CommandPayload = any;
 
 type Listeners = {
-  // $FlowFixMe[missing-type-arg]
-  command: Map<LexicalCommand<>, Array<Set<CommandListener>>>,
+  command: Map<InternalLexicalCommand, Array<Set<CommandListener>>>,
   decorator: Set<DecoratorListener>,
   mutation: MutationListeners,
   readonly: Set<ReadOnlyListener>,
@@ -423,7 +424,7 @@ export class LexicalEditor {
     };
   }
   registerCommand(
-    type: LexicalCommand<>,
+    type: InternalLexicalCommand,
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void {
@@ -511,9 +512,10 @@ export class LexicalEditor {
     }
     return true;
   }
-  // $FlowFixMe[missing-type-arg]
-  dispatchCommand(type: LexicalCommand<>, payload?: CommandPayload): boolean {
-    // $FlowFixMe[missing-type-arg]
+  dispatchCommand(
+    type: InternalLexicalCommand,
+    payload?: CommandPayload,
+  ): boolean {
     return triggerCommandListeners(this, type, payload);
   }
   getDecorators(): {[NodeKey]: mixed} {

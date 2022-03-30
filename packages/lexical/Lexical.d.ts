@@ -11,6 +11,10 @@ import {Class, $ReadOnly} from 'utility-types';
 /**
  * LexicalCommands
  */
+
+export type LexicalCommand<T> = $ReadOnly<{type: T}>;
+export type InternalLexicalCommand = LexicalCommand<>;
+
 declare var SELECTION_CHANGE_COMMAND: LexicalCommand<'selectionChange'>;
 declare var CLICK_COMMAND: LexicalCommand<'click'>;
 declare var DELETE_CHARACTER_COMMAND: LexicalCommand<'deleteCharacter'>;
@@ -61,6 +65,8 @@ declare var INSERT_TWEET_COMMAND: LexicalCommand<'insertTweet'>;
 declare var SPEECT_TO_TEXT_COMMAND: LexicalCommand<'speechToText'>;
 declare var INSERT_EQUATION_COMMAND: LexicalCommand<'insertEquation'>;
 declare var READ_ONLY_COMMAND: LexicalCommand<'readOnly'>;
+
+declare function createCommand<T>(type: T): LexicalCommand<T>;
 
 /**
  * LexicalEditor

@@ -15,8 +15,11 @@
  * LexicalCommands
  */
 
-// eslint-disable-next-line no-unused-vars
-export type LexicalCommand<P> = $ReadOnly<{}>;
+export type LexicalCommand<T> = $ReadOnly<{
+  type: T,
+}>;
+// $FlowFixMe
+export type InternalLexicalCommand = LexicalCommand<>;
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<'selectionChange'>;
 declare export var CLICK_COMMAND: LexicalCommand<'click'>;
@@ -69,7 +72,7 @@ declare export var SPEECT_TO_TEXT_COMMAND: LexicalCommand<'speechToText'>;
 declare export var INSERT_EQUATION_COMMAND: LexicalCommand<'insertEquation'>;
 declare export var READ_ONLY_COMMAND: LexicalCommand<'readOnly'>;
 
-declare export function createCommand<P>(): LexicalCommand<P>;
+declare export function createCommand<T>(type: T): LexicalCommand<T>;
 
 /**
  * LexicalEditor
@@ -160,7 +163,7 @@ declare export class LexicalEditor {
   registerTextContentListener(listener: TextContentListener): () => void;
   registerCommand(
     // $FlowFixMe
-    type: LexicalCommand<>,
+    type: InternalLexicalCommand,
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
@@ -173,8 +176,11 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  // $FlowFixMe
-  dispatchCommand(type: LexicalCommand<>, payload?: CommandPayload): boolean;
+  dispatchCommand(
+    // $FlowFixMe
+    type: InternalLexicalCommand,
+    payload?: CommandPayload,
+  ): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): {
     [NodeKey]: X,

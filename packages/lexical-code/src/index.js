@@ -31,6 +31,7 @@ import type {
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  LexicalCommand,
 } from 'lexical';
 
 import {
@@ -53,7 +54,6 @@ import {
   KEY_ARROW_UP_COMMAND,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
-import type {LexicalCommand} from '../../lexical/src/LexicalEditor';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 

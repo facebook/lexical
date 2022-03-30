@@ -7,7 +7,11 @@
  * @flow strict
  */
 
-import type {CommandListenerLowPriority} from 'lexical';
+import type {
+  CommandListenerLowPriority,
+  LexicalEditor,
+  RangeSelection,
+} from 'lexical';
 
 import {
   $createCodeNode,
@@ -51,9 +55,7 @@ import {
   INSERT_TABLE_COMMAND,
   INSERT_TWEET_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
-  LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
-  RangeSelection,
   REDO_COMMAND,
   REMOVE_LIST_COMMAND,
   SELECTION_CHANGE_COMMAND,

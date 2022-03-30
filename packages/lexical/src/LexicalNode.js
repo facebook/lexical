@@ -126,7 +126,9 @@ export type DOMConversionFn = (
   element: Node,
   parent?: Node,
 ) => DOMConversionOutput;
-export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
+export type DOMChildConversion = (
+  lexicalNode: LexicalNode,
+) => LexicalNode | null | void;
 export type DOMConversionMap = {
   [NodeName]: (node: Node) => DOMConversion | null,
 };

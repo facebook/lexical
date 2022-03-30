@@ -54,7 +54,7 @@ async function clickOutdentButton(page, times = 1) {
 }
 
 test.beforeEach(({isPlainText}) => {
-  test.skip({isPlainText});
+  test.skip(isPlainText);
 });
 
 test.describe('Nested List', () => {

@@ -1669,8 +1669,9 @@ function $removeSegment(
     segmentOffset += text.length;
 
     if (
-      (isBackward && (segmentOffset === offset || isLast)) ||
-      segmentOffset > offset
+      (isBackward && segmentOffset === offset) ||
+      segmentOffset > offset ||
+      isLast
     ) {
       split.splice(i, 1);
       if (isLast) {

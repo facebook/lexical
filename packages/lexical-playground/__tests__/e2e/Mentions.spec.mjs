@@ -164,19 +164,19 @@ test.describe('Mentions', () => {
             style="background-color: rgba(24, 119, 232, 0.2);"
             data-lexical-text="true"
           >
-            Skywalker
+            Luke
           </span>
         </p>
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 4,
       anchorPath: [0, 0, 0],
-      focusOffset: 0,
+      focusOffset: 4,
       focusPath: [0, 0, 0],
     });
 
-    await page.keyboard.press('Delete');
+    await page.keyboard.press('Backspace');
     await assertHTML(
       page,
       html`

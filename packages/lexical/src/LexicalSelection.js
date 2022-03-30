@@ -1543,7 +1543,7 @@ export class RangeSelection implements BaseSelection {
             (isBackward && offset !== textContentSize) ||
             (!isBackward && offset !== 0)
           ) {
-            $removeSegment(focusNode, isBackward);
+            $removeSegment(focusNode, isBackward, offset);
             return;
           }
         } else if (anchorNode !== null && anchorNode.isSegmented()) {
@@ -1554,7 +1554,7 @@ export class RangeSelection implements BaseSelection {
             (isBackward && offset !== 0) ||
             (!isBackward && offset !== textContentSize)
           ) {
-            $removeSegment(anchorNode, isBackward);
+            $removeSegment(anchorNode, isBackward, offset);
             return;
           }
         }
@@ -1650,15 +1650,35 @@ function $updateCaretSelectionForUnicodeCharacter(
   }
 }
 
-function $removeSegment(node: TextNode, isBackward: boolean): void {
+function $removeSegment(
+  node: TextNode,
+  isBackward: boolean,
+  offset: number,
+): void {
   const textNode = node;
   const textContent = textNode.getTextContent();
   const split = textContent.split(/\s/g);
+  const splitLength = split.length;
+  let segmentOffset = 0;
+  let restoreOffset = 0;
 
-  if (isBackward) {
-    split.pop();
-  } else {
-    split.shift();
+  for (let i = 0; i < splitLength; i++) {
+    const text = split[i];
+    const isLast = i === splitLength - 1;
+    restoreOffset = segmentOffset;
+    segmentOffset += text.length;
+
+    if (
+      (isBackward && segmentOffset === offset) ||
+      segmentOffset > offset ||
+      isLast
+    ) {
+      split.splice(i, 1);
+      if (isLast) {
+        restoreOffset = undefined;
+      }
+      break;
+    }
   }
   const nextTextContent = split.join(' ');
 
@@ -1666,11 +1686,7 @@ function $removeSegment(node: TextNode, isBackward: boolean): void {
     textNode.remove();
   } else {
     textNode.setTextContent(nextTextContent);
-    if (isBackward) {
-      textNode.select();
-    } else {
-      textNode.select(0, 0);
-    }
+    textNode.select(restoreOffset, restoreOffset);
   }
 }
 

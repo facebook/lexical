@@ -164,19 +164,19 @@ test.describe('Mentions', () => {
             style="background-color: rgba(24, 119, 232, 0.2);"
             data-lexical-text="true"
           >
-            Skywalker
+            Luke
           </span>
         </p>
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 4,
       anchorPath: [0, 0, 0],
-      focusOffset: 0,
+      focusOffset: 4,
       focusPath: [0, 0, 0],
     });
 
-    await page.keyboard.press('Delete');
+    await page.keyboard.press('Backspace');
     await assertHTML(
       page,
       html`
@@ -189,6 +189,160 @@ test.describe('Mentions', () => {
       focusOffset: 0,
       focusPath: [0],
     });
+  });
+
+  test(`Can enter and backspace part of the Luke Skywalker mention in the middle`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Luke');
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 0, 0],
+    });
+
+    await waitForSelector(page, '#mentions-typeahead ul li');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Luke</span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('Enter');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 14,
+      anchorPath: [0, 0, 0],
+      focusOffset: 14,
+      focusPath: [0, 0, 0],
+    });
+
+    await waitForSelector(page, '.mention');
+
+    await repeat(10, async () => {
+      await page.keyboard.press('ArrowLeft');
+    });
+
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 0, 0],
+    });
+
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Skywalker
+          </span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can enter and delete part of the Luke Skywalker mention in the middle`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Luke');
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 0, 0],
+    });
+
+    await waitForSelector(page, '#mentions-typeahead ul li');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Luke</span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('Enter');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke Skywalker
+          </span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 14,
+      anchorPath: [0, 0, 0],
+      focusOffset: 14,
+      focusPath: [0, 0, 0],
+    });
+
+    await waitForSelector(page, '.mention');
+
+    await repeat(10, async () => {
+      await page.keyboard.press('ArrowLeft');
+    });
+
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 0, 0],
+    });
+
+    await page.keyboard.press('Delete');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true"
+          >
+            Luke
+          </span>
+        </p>
+      `,
+    );
   });
 
   test(`Can enter and backspace part of the Luke Skywalker mention`, async ({

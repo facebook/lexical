@@ -235,7 +235,7 @@ type JSONEditorState = {
   _selection: null | ParsedSelection,
 };
 
-declare export class EditorState {
+export interface EditorState {
   _nodeMap: NodeMap;
   _selection: null | RangeSelection | NodeSelection | GridSelection;
   _flushSync: boolean;

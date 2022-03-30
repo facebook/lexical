@@ -7,7 +7,6 @@
  * @flow strict
  */
 
-import type {ListNodeTagType} from '../src/LexicalListNode';
 import type {
   LexicalNode,
   LexicalEditor,
@@ -16,6 +15,7 @@ import type {
 } from 'lexical';
 import {ElementNode} from 'lexical';
 
+type ListNodeTagType = 'ul' | 'ol';
 declare export function $createListItemNode(): ListItemNode;
 declare export function $createListNode(
   tag: ListNodeTagType,

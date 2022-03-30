@@ -50,9 +50,10 @@ export function registerMarkdownShortcuts<T>(
   });
 }
 
-export function $convertFromMarkdownString(
+export function $convertFromMarkdownString<T>(
   markdownString: string,
   editor: LexicalEditor,
+  createHorizontalRuleNode: () => DecoratorNode<T>,
 ) {
   convertStringToLexical(markdownString, editor);
   convertMarkdownForElementNodes($getRoot().getChildren(), editor);

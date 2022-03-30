@@ -13,6 +13,7 @@ import {exportFile, importFile} from '@lexical/file';
 import {$convertFromMarkdownString} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {mergeRegister} from '@lexical/utils';
 import {$getRoot} from 'lexical';
 import * as React from 'react';
@@ -68,7 +69,7 @@ export default function ActionsPlugins({
 
   const convertFromMarkdown = useCallback(() => {
     editor.update(() => {
-      $convertFromMarkdownString('', editor);
+      $convertFromMarkdownString('', editor, $createHorizontalRuleNode);
     });
   }, [editor]);
 

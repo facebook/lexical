@@ -3,10 +3,6 @@
   "description": "Lexical is an extensible text editor library that provides excellent reliability, accessible and performance.",
   "version": "0.1.16",
   "license": "MIT",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "private": true,
   "workspaces": [
     "packages/*"

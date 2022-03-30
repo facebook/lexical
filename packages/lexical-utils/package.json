@@ -1,9 +1,5 @@
 {
   "name": "@lexical/utils",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains misc utilities for Lexical.",
   "keywords": [
     "lexical",

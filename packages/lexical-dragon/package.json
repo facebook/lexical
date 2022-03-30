@@ -1,9 +1,5 @@
 {
   "name": "@lexical/dragon",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains compatability with Dragon NaturallySpeaking accessibility tools.",
   "keywords": [
     "lexical",

@@ -1,9 +1,5 @@
 {
   "name": "@lexical/overflow",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains selection overflow helpers and nodes for Lexical.",
   "keywords": [
     "lexical",

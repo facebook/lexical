@@ -1,9 +1,5 @@
 {
   "name": "@lexical/yjs",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "The library provides Yjs editor bindings for Lexical.",
   "keywords": [
     "react",

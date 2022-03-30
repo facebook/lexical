@@ -1,9 +1,5 @@
 {
   "name": "@lexical/clipboard",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package provides the copy/paste functionality for Lexical.",
   "keywords": [
     "lexical",

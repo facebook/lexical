@@ -89,7 +89,20 @@ test.describe('Links', () => {
 
     await assertHTML(
       page,
-      html`<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://facebook.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a></p`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <a
+            href="https://facebook.com"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello</span>
+          </a>
+        </p>
+      `,
     );
 
     await assertSelection(page, {

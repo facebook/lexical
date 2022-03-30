@@ -8,12 +8,20 @@
  */
 
 import type {ScanningContext} from './utils';
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, LexicalNode, ParagraphNode} from 'lexical';
 
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $isParagraphNode,
+} from 'lexical';
 
-export function convertParagraphNodeFromPlainText(
+import {getInitialScanningContext} from './utils';
+
+function convertParagraphNodeContainingMarkdown(
   scanningContext: ScanningContext,
+  paragraphNode: ParagraphNode,
 ) {
   // To be implemented
 }
@@ -31,4 +39,25 @@ export function convertStringToLexical(
   const root = $getRoot();
   root.clear();
   root.append(...nodes);
+}
+
+export function convertMarkdownForParagraphs(
+  paragraphs: Array<LexicalNode>,
+  editor: LexicalEditor,
+) {
+  // Please see the declaration of ScanningContext for a detailed explanation.
+  const scanningContext = getInitialScanningContext(editor, null, null);
+
+  const countOfParagraphs = paragraphs.length;
+  for (let parIndex = 0; parIndex < countOfParagraphs; parIndex++) {
+    const paragraph = paragraphs[parIndex];
+
+    if (
+      $isParagraphNode(paragraph) &&
+      paragraph.getTextContent().length &&
+      paragraph.getChildren().length
+    ) {
+      convertParagraphNodeContainingMarkdown(scanningContext, paragraph);
+    }
+  }
 }

@@ -299,6 +299,27 @@ export const allAutoFormatCriteria: AutoFormatCriteriaArray = [
   ...allAutoFormatCriteriaForTextNodes,
 ];
 
+export function getInitialScanningContext(
+  editor: LexicalEditor,
+  textNodeWithOffset: null | TextNodeWithOffset,
+  triggerState: null | AutoFormatTriggerState,
+): ScanningContext {
+  return {
+    autoFormatCriteria: {
+      autoFormatKind: 'noTransformation',
+      regEx: /(?:)/, // Empty reg ex will do until the precise criteria is discovered.
+      requiresParagraphStart: null,
+    },
+    editor,
+    joinedText: null,
+    patternMatchResults: {
+      regExCaptureGroups: [],
+    },
+    textNodeWithOffset,
+    triggerState,
+  };
+}
+
 function getPatternMatchResultsWithRegEx(
   textToSearch: string,
   matchMustAppearAtStartOfString: boolean,

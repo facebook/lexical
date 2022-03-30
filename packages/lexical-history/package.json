@@ -1,9 +1,5 @@
 {
   "name": "@lexical/history",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "description": "This package contains selection history helpers for Lexical.",
   "keywords": [
     "lexical",

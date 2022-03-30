@@ -1,10 +1,6 @@
 {
   "name": "shared",
   "private": "true",
-  "author": {
-    "name": "Dominic Gannaway",
-    "email": "dg@domgan.com"
-  },
   "keywords": [
     "react",
     "lexical",

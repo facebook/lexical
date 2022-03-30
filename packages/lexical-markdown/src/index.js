@@ -12,7 +12,7 @@ import type {
   AutoFormatCriteriaWithPatternMatchResults,
   AutoFormatTriggerState,
   ScanningContext,
-} from './lowLevelUtils';
+} from './utils';
 import type {TextNodeWithOffset} from '@lexical/text';
 import type {
   DecoratorNode,
@@ -35,14 +35,17 @@ import {
 } from 'lexical';
 
 import {
-  convertStringToLexical,
   getAllAutoFormatCriteria,
   getAllAutoFormatCriteriaForTextNodes,
   getAllTriggers,
   getInitialScanningContext,
   getPatternMatchResultsForCriteria,
   transformTextNodeForAutoFormatCriteria,
-} from './utils.js';
+} from './autoFormatUtils.js';
+import {
+  convertParagraphNodeFromPlainText,
+  convertStringToLexical,
+} from './convertFromPlainTextUtils.js';
 
 function getTextNodeForAutoFormatting(
   selection: null | RangeSelection | NodeSelection | GridSelection,
@@ -226,12 +229,23 @@ function findScanningContext(
   return findScanningContextWithValidMatch(editor, currentTriggerState);
 }
 
-function convertMarkdownForParagraphs(paragraphs: Array<LexicalNode>) {
+function convertMarkdownForParagraphs(
+  paragraphs: Array<LexicalNode>,
+  editor: LexicalEditor,
+) {
+  // Please see the declaration of ScanningContext for a detailed explanation.
+  const scanningContext = getInitialScanningContext(editor, null, null);
+
   const countOfParagraphs = paragraphs.length;
   for (let parIndex = 0; parIndex < countOfParagraphs; parIndex++) {
     const paragraph = paragraphs[parIndex];
 
-    if ($isParagraphNode(paragraph)) {
+    if (
+      $isParagraphNode(paragraph) &&
+      paragraph.getTextContent().length &&
+      paragraph.getChildren().length
+    ) {
+      convertParagraphNodeFromPlainText(scanningContext);
     }
   }
 }
@@ -268,8 +282,6 @@ export function $convertFromMarkdownString(
   markdownString: string,
   editor: LexicalEditor,
 ) {
-  editor.update(() => {
-    convertStringToLexical(markdownString, editor);
-    convertMarkdownForParagraphs($getRoot().getChildren());
-  }, {});
+  convertStringToLexical(markdownString, editor);
+  convertMarkdownForParagraphs($getRoot().getChildren(), editor);
 }

@@ -18,7 +18,7 @@ import {
   updateAutoFormatting,
 } from './autoFormatUtils';
 import {
-  convertMarkdownForParagraphs,
+  convertMarkdownForElementNodes,
   convertStringToLexical,
 } from './convertFromPlainTextUtils.js';
 
@@ -55,5 +55,5 @@ export function $convertFromMarkdownString(
   editor: LexicalEditor,
 ) {
   convertStringToLexical(markdownString, editor);
-  convertMarkdownForParagraphs($getRoot().getChildren(), editor);
+  convertMarkdownForElementNodes($getRoot().getChildren(), editor);
 }

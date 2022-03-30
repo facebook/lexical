@@ -8,23 +8,29 @@
  */
 
 import type {ScanningContext} from './utils';
-import type {LexicalEditor, LexicalNode, ParagraphNode} from 'lexical';
+import type {
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  ParagraphNode,
+} from 'lexical';
 
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isParagraphNode,
+  $isTextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
-import {getInitialScanningContext} from './utils';
-
-function convertParagraphNodeContainingMarkdown(
-  scanningContext: ScanningContext,
-  paragraphNode: ParagraphNode,
-) {
-  // To be implemented
-}
+import {getAllMarkdownCriteria} from './autoFormatUtils';
+import {
+  getInitialScanningContext,
+  getPatternMatchResultsForParagraphs,
+  resetScanningContext,
+} from './utils';
 
 export function convertStringToLexical(
   text: string,
@@ -41,23 +47,67 @@ export function convertStringToLexical(
   root.append(...nodes);
 }
 
-export function convertMarkdownForParagraphs(
-  paragraphs: Array<LexicalNode>,
+function convertElementNodeContainingMarkdown(
+  scanningContext: ScanningContext,
+  elementNode: ElementNode,
+) {
+  // Handle code block to be done.
+  // Handle paragraph nodes below.
+  if ($isParagraphNode(elementNode)) {
+    const paragraphNode: ParagraphNode = elementNode;
+    const allCriteria = getAllMarkdownCriteria();
+    const count = allCriteria.length;
+    for (let i = 0; i < count; i++) {
+      const criteria = allCriteria[i];
+      if (
+        criteria.requiresParagraphStart !== null &&
+        criteria.requiresParagraphStart === true
+      ) {
+        const firstChild = paragraphNode.getFirstChild();
+        invariant(
+          $isTextNode(firstChild),
+          'Expect paragraph containing only text nodes.',
+        );
+        scanningContext.textNodeWithOffset = {
+          node: firstChild,
+          offset: 0,
+        };
+        scanningContext.joinedText = paragraphNode.getTextContent();
+
+        const patternMatchResults = getPatternMatchResultsForParagraphs(
+          criteria,
+          scanningContext,
+        );
+
+        if (patternMatchResults != null) {
+          // Lazy fill-in the particular format criteria and any matching result information.
+          scanningContext.markdownCriteria = criteria;
+          scanningContext.patternMatchResults = patternMatchResults;
+        }
+      }
+    }
+  }
+}
+
+export function convertMarkdownForElementNodes(
+  elementNodes: Array<LexicalNode>,
   editor: LexicalEditor,
 ) {
   // Please see the declaration of ScanningContext for a detailed explanation.
-  const scanningContext = getInitialScanningContext(editor, null, null);
+  const scanningContext = getInitialScanningContext(editor, false, null, null);
 
-  const countOfParagraphs = paragraphs.length;
-  for (let parIndex = 0; parIndex < countOfParagraphs; parIndex++) {
-    const paragraph = paragraphs[parIndex];
+  const count = elementNodes.length;
+  for (let i = 0; i < count; i++) {
+    const elementNode = elementNodes[i];
 
     if (
-      $isParagraphNode(paragraph) &&
-      paragraph.getTextContent().length &&
-      paragraph.getChildren().length
+      $isElementNode(elementNode) &&
+      elementNode.getTextContent().length &&
+      elementNode.getChildren().length
     ) {
-      convertParagraphNodeContainingMarkdown(scanningContext, paragraph);
+      convertElementNodeContainingMarkdown(scanningContext, elementNode);
     }
+    // Reset the scanning information that relates to the particular element node.
+    resetScanningContext(scanningContext);
   }
 }

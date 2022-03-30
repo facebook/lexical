@@ -8,11 +8,11 @@
  */
 
 import type {
-  AutoFormatCriteria,
-  AutoFormatCriteriaArray,
-  AutoFormatCriteriaWithPatternMatchResults,
   AutoFormatTrigger,
   AutoFormatTriggerState,
+  MarkdownCriteria,
+  MarkdownCriteriaArray,
+  MarkdownCriteriaWithPatternMatchResults,
   PatternMatchResults,
   ScanningContext,
 } from './utils';
@@ -31,8 +31,8 @@ import {$isListItemNode} from '@lexical/list';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 
 import {
-  allAutoFormatCriteria,
-  allAutoFormatCriteriaForTextNodes,
+  allMarkdownCriteria,
+  allMarkdownCriteriaForTextNodes,
   getInitialScanningContext,
   getPatternMatchResultsForParagraphs,
   getPatternMatchResultsForText,
@@ -45,39 +45,39 @@ export function getAllTriggers(): Array<AutoFormatTrigger> {
   return triggers;
 }
 
-export function getAllAutoFormatCriteriaForTextNodes(): AutoFormatCriteriaArray {
-  return allAutoFormatCriteriaForTextNodes;
+export function getAllMarkdownCriteriaForTextNodes(): MarkdownCriteriaArray {
+  return allMarkdownCriteriaForTextNodes;
 }
 
-export function getAllAutoFormatCriteria(): AutoFormatCriteriaArray {
-  return allAutoFormatCriteria;
+export function getAllMarkdownCriteria(): MarkdownCriteriaArray {
+  return allMarkdownCriteria;
 }
 
-export function getPatternMatchResultsForCriteria(
-  autoFormatCriteria: AutoFormatCriteria,
-  scanningContext: ScanningContext,
-): null | PatternMatchResults {
-  if (
-    autoFormatCriteria.requiresParagraphStart !== null &&
-    autoFormatCriteria.requiresParagraphStart === true
-  ) {
-    return getPatternMatchResultsForParagraphs(
-      autoFormatCriteria,
-      scanningContext,
-    );
-  }
-  return getPatternMatchResultsForText(autoFormatCriteria, scanningContext);
-}
-
-export function transformTextNodeForAutoFormatCriteria<T>(
+export function transformTextNodeForMarkdownCriteria<T>(
   scanningContext: ScanningContext,
   createHorizontalRuleNode: () => DecoratorNode<T>,
 ) {
-  if (scanningContext.autoFormatCriteria.requiresParagraphStart) {
+  if (scanningContext.markdownCriteria.requiresParagraphStart) {
     transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
   } else {
     transformTextNodeForText(scanningContext);
   }
+}
+
+function getPatternMatchResultsForCriteria(
+  markdownCriteria: MarkdownCriteria,
+  scanningContext: ScanningContext,
+): null | PatternMatchResults {
+  if (
+    markdownCriteria.requiresParagraphStart !== null &&
+    markdownCriteria.requiresParagraphStart === true
+  ) {
+    return getPatternMatchResultsForParagraphs(
+      markdownCriteria,
+      scanningContext,
+    );
+  }
+  return getPatternMatchResultsForText(markdownCriteria, scanningContext);
 }
 
 function getTextNodeForAutoFormatting(
@@ -101,7 +101,7 @@ export function updateAutoFormatting<T>(
 ): void {
   editor.update(
     () => {
-      transformTextNodeForAutoFormatCriteria(
+      transformTextNodeForMarkdownCriteria(
         scanningContext,
         createHorizontalRuleNode,
       );
@@ -113,34 +113,34 @@ export function updateAutoFormatting<T>(
 }
 
 function getCriteriaWithPatternMatchResults(
-  autoFormatCriteriaArray: AutoFormatCriteriaArray,
+  markdownCriteriaArray: MarkdownCriteriaArray,
   scanningContext: ScanningContext,
-): AutoFormatCriteriaWithPatternMatchResults {
+): MarkdownCriteriaWithPatternMatchResults {
   const currentTriggerState = scanningContext.triggerState;
 
-  const count = autoFormatCriteriaArray.length;
+  const count = markdownCriteriaArray.length;
   for (let i = 0; i < count; i++) {
-    const autoFormatCriteria = autoFormatCriteriaArray[i];
+    const markdownCriteria = markdownCriteriaArray[i];
 
     // Skip code block nodes, unless the autoFormatKind calls for toggling the code block.
     if (
       (currentTriggerState != null &&
         currentTriggerState.isCodeBlock === false) ||
-      autoFormatCriteria.autoFormatKind === 'paragraphCodeBlock'
+      markdownCriteria.autoFormatKind === 'paragraphCodeBlock'
     ) {
       const patternMatchResults = getPatternMatchResultsForCriteria(
-        autoFormatCriteria,
+        markdownCriteria,
         scanningContext,
       );
       if (patternMatchResults != null) {
         return {
-          autoFormatCriteria: autoFormatCriteria,
+          markdownCriteria: markdownCriteria,
           patternMatchResults,
         };
       }
     }
   }
-  return {autoFormatCriteria: null, patternMatchResults: null};
+  return {markdownCriteria: null, patternMatchResults: null};
 }
 
 function findScanningContextWithValidMatch(
@@ -158,6 +158,7 @@ function findScanningContextWithValidMatch(
     // Please see the declaration of ScanningContext for a detailed explanation.
     const initialScanningContext = getInitialScanningContext(
       editor,
+      true,
       textNodeWithOffset,
       currentTriggerState,
     );
@@ -165,21 +166,21 @@ function findScanningContextWithValidMatch(
     const criteriaWithPatternMatchResults = getCriteriaWithPatternMatchResults(
       // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.
       currentTriggerState.isParentAListItemNode === false
-        ? getAllAutoFormatCriteria()
-        : getAllAutoFormatCriteriaForTextNodes(),
+        ? getAllMarkdownCriteria()
+        : getAllMarkdownCriteriaForTextNodes(),
       initialScanningContext,
     );
 
     if (
-      criteriaWithPatternMatchResults.autoFormatCriteria === null ||
+      criteriaWithPatternMatchResults.markdownCriteria === null ||
       criteriaWithPatternMatchResults.patternMatchResults === null
     ) {
       return;
     }
     scanningContext = initialScanningContext;
     // Lazy fill-in the particular format criteria and any matching result information.
-    scanningContext.autoFormatCriteria =
-      criteriaWithPatternMatchResults.autoFormatCriteria;
+    scanningContext.markdownCriteria =
+      criteriaWithPatternMatchResults.markdownCriteria;
     scanningContext.patternMatchResults =
       criteriaWithPatternMatchResults.patternMatchResults;
   });

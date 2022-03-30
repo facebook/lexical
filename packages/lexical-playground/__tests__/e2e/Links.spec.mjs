@@ -20,12 +20,13 @@ import {
   focusEditor,
   html,
   initialize,
+  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
 
 test.beforeEach(({isPlainText}) => {
-  test.skip({isPlainText});
+  test.skip(isPlainText);
 });
 
 test.describe('Links', () => {
@@ -88,7 +89,20 @@ test.describe('Links', () => {
 
     await assertHTML(
       page,
-      html`<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><a href="https://facebook.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></a></p`,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <a
+            href="https://facebook.com"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello</span>
+          </a>
+        </p>
+      `,
     );
 
     await assertSelection(page, {
@@ -476,5 +490,65 @@ test.describe('Links', () => {
       focusOffset: 6,
       focusPath: [0, 0, 0],
     });
+  });
+
+  test(`Can convert part of a text node into a link and change block type`, async ({
+    page,
+    browserName,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello world');
+
+    await repeat(5, async () => {
+      await page.keyboard.press('ArrowLeft');
+    });
+
+    await waitForSelector(page, '.link');
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello</span>
+          <a
+            href="https://"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">world</span>
+          </a>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('ArrowLeft');
+
+    await waitForSelector(page, '.block-controls');
+    await click(page, '.block-controls');
+    await waitForSelector(page, '.dropdown .icon.large-heading');
+    await click(page, '.dropdown .icon.large-heading');
+
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello</span>
+          <a
+            href="https://"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">world</span>
+          </a>
+        </h1>
+      `,
+    );
   });
 });

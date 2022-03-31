@@ -13,7 +13,6 @@ import {Class, $ReadOnly} from 'utility-types';
  */
 
 export type LexicalCommand<T> = $ReadOnly<{type: T}>;
-export type InternalLexicalCommand = LexicalCommand<>;
 
 declare var SELECTION_CHANGE_COMMAND: LexicalCommand<'selectionChange'>;
 declare var CLICK_COMMAND: LexicalCommand<'click'>;

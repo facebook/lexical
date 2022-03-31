@@ -12,7 +12,6 @@
  */
 
 export type LexicalCommand<T> = $ReadOnly<{}>;
-export type InternalLexicalCommand = LexicalCommand<>;
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<'selectionChange'>;
 declare export var CLICK_COMMAND: LexicalCommand<'click'>;
@@ -154,9 +153,8 @@ declare export class LexicalEditor {
   registerRootListener(listener: RootListener): () => void;
   registerDecoratorListener(listener: DecoratorListener): () => void;
   registerTextContentListener(listener: TextContentListener): () => void;
-  registerCommand(
-    // $FlowFixMe
-    type: InternalLexicalCommand,
+  registerCommand<T>(
+    type: LexicalCommand<T>,
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
@@ -169,9 +167,8 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand(
-    // $FlowFixMe
-    type: InternalLexicalCommand,
+  dispatchCommand<T>(
+    type: LexicalCommand<T>,
     payload?: CommandPayload,
   ): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;

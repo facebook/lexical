@@ -10,7 +10,7 @@
 import type {
   CommandPayload,
   EditorUpdateOptions,
-  InternalLexicalCommand,
+  LexicalCommand,
   LexicalEditor,
   MutatedNodes,
   Transform,
@@ -459,9 +459,9 @@ export function triggerListeners(
   }
 }
 
-export function triggerCommandListeners(
+export function triggerCommandListeners<T>(
   editor: LexicalEditor,
-  type: InternalLexicalCommand,
+  type: LexicalCommand<T>,
   payload: CommandPayload,
 ): boolean {
   if (editor._updating === false || activeEditor !== editor) {

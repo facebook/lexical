@@ -147,7 +147,8 @@ export type CommandListenerPriority =
   | CommandListenerHighPriority
   | CommandListenerCriticalPriority;
 
-export type LexicalCommand<T> = $ReadOnly<{type: T}>;
+// eslint-disable-next-line no-unused-vars
+export type LexicalCommand<T> = $ReadOnly<{}>;
 // $FlowFixMe: intentional
 export type InternalLexicalCommand = LexicalCommand;
 

@@ -12,7 +12,6 @@
  */
 
 export type LexicalCommand<T> = $ReadOnly<{}>;
-// $FlowFixMe
 export type InternalLexicalCommand = LexicalCommand<>;
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<'selectionChange'>;

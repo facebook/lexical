@@ -1,0 +1,39 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+import type {LexicalNode} from 'lexical';
+export type DFSNode = $ReadOnly<{
+  depth: number;
+  node: LexicalNode;
+}>;
+declare function addClassNamesToElement(
+  element: HTMLElement,
+  ...classNames: Array<typeof undefined | boolean | null | string>
+): void;
+declare function removeClassNamesFromElement(
+  element: HTMLElement,
+  ...classNames: Array<string>
+): void;
+declare function $dfs(
+  startingNode?: LexicalNode,
+  endingNode?: LexicalNode,
+): Array<DFSNode>;
+declare function $getDepth(node: LexicalNode): number;
+declare function $getNearestNodeOfType<T extends LexicalNode>(
+  node: LexicalNode,
+  klass: Class<T>,
+): T | null;
+export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
+export type DOMNodeToLexicalConversionMap = {
+  [string]: DOMNodeToLexicalConversion;
+};
+declare function $findMatchingParent(
+  startingNode: LexicalNode,
+  findFn: (LexicalNode) => boolean,
+): LexicalNode | null;
+type Func = () => void;
+declare function mergeRegister(...func: Array<Func>): () => void;

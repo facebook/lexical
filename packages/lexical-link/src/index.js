@@ -45,13 +45,14 @@ export class LinkNode extends ElementNode {
   updateDOM<EditorContext>(
     // $FlowFixMe: not sure how to fix this
     prevNode: LinkNode,
-    // $FlowFixMe: not sure how to fix this
-    dom: HTMLAnchorElement,
+    dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean {
+    // $FlowFixMe: not sure how to fix this
+    const anchor: HTMLAnchorElement = dom;
     const url = this.__url;
     if (url !== prevNode.__url) {
-      dom.href = url;
+      anchor.href = url;
     }
     return false;
   }

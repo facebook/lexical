@@ -243,6 +243,6 @@ export function registerMarkdownShortcuts<T>(
 export function $convertFromMarkdownString(
   markdownString: string,
   editor: LexicalEditor,
-) {
+): void {
   // Add implementation here.
 }

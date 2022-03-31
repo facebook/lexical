@@ -1,0 +1,47 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+import type {
+  DOMConversionMap,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+} from 'lexical';
+import {addClassNamesToElement} from '@lexical/utils';
+import {$isElementNode, ElementNode} from 'lexical';
+declare export class LinkNode extends ElementNode {
+  __url: string;
+  static getType(): string;
+  static clone(node: LinkNode): LinkNode;
+  constructor(url: string, key?: NodeKey): void;
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  updateDOM<EditorContext>(
+    prevNode: LinkNode,
+    dom: HTMLElement,
+    config: EditorConfig<EditorContext>,
+  ): boolean;
+  static convertDOM(): DOMConversionMap | null;
+  getURL(): string;
+  setURL(url: string): void;
+  insertNewAfter(selection: RangeSelection): null | ElementNode;
+  canInsertTextBefore(): false;
+  canInsertTextAfter(): boolean;
+  canBeEmpty(): false;
+  isInline(): true;
+}
+declare export function $createLinkNode(url: string): LinkNode;
+declare export function $isLinkNode(node: ?LexicalNode): boolean;
+declare export class AutoLinkNode extends LinkNode {
+  static getType(): string;
+  // $FlowFixMe clone method inheritance
+  static clone(node: AutoLinkNode): AutoLinkNode;
+  insertNewAfter(selection: RangeSelection): null | ElementNode;
+}
+declare export function $createAutoLinkNode(url: string): AutoLinkNode;
+declare export function $isAutoLinkNode(node: ?LexicalNode): boolean;

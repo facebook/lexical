@@ -35,14 +35,14 @@ import {
 import invariant from 'shared/invariant';
 
 /*
-How to add a new syntax to capture and transform.
-1. Create a new enumeration by adding to AutoFormatKind.
-2. Add a new criteria with a regEx pattern. See markdownStrikethrough as an example.
-3. Add your block criteria (e.g. '# ') to allAutoFormatCriteria or 
-   your text criteria (e.g. *MyItalic*) to allAutoFormatCriteriaForTextNodes.
-4. Add your Lexical block specific transforming code here: transformTextNodeForText.   
-   Add your Lexical text specific transforming code here: transformTextNodeForText.   
-*/
+   How to add a new syntax to capture and transform.
+   1. Create a new enumeration by adding to AutoFormatKind.
+   2. Add a new criteria with a regEx pattern. See markdownStrikethrough as an example.
+   3. Add your block criteria (e.g. '# ') to allMarkdownCriteria or 
+      your text criteria (e.g. *MyItalic*) to allMarkdownCriteriaForTextNodes.
+   4. Add your Lexical block specific transforming code here: transformTextNodeForText.   
+      Add your Lexical text specific transforming code here: transformTextNodeForText.   
+   */
 
 // The trigger state helps to capture EditorState information
 // from the prior and current EditorState.
@@ -87,12 +87,13 @@ export type AutoFormatKind =
 // calculations. For example, this includes the parent element's getTextContent() which
 // ultimately gets deposited into the joinedText field.
 export type ScanningContext = {
-  autoFormatCriteria: AutoFormatCriteria,
   editor: LexicalEditor,
+  isAutoFormatting: boolean,
   joinedText: ?string,
+  markdownCriteria: MarkdownCriteria,
   patternMatchResults: PatternMatchResults,
-  textNodeWithOffset: TextNodeWithOffset,
-  triggerState: AutoFormatTriggerState,
+  textNodeWithOffset: ?TextNodeWithOffset,
+  triggerState: ?AutoFormatTriggerState,
 };
 
 // The auto formatter runs these steps:
@@ -107,9 +108,10 @@ export type ScanningContext = {
 // // //
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
-export type AutoFormatCriteria = $ReadOnly<{
+export type MarkdownCriteria = $ReadOnly<{
   autoFormatKind: ?AutoFormatKind,
   regEx: RegExp,
+  regExForAutoFormatting: RegExp,
   requiresParagraphStart: ?boolean,
 }>;
 
@@ -126,134 +128,174 @@ export type PatternMatchResults = {
   regExCaptureGroups: Array<CaptureGroupDetail>,
 };
 
-export type AutoFormatCriteriaWithPatternMatchResults = {
-  autoFormatCriteria: null | AutoFormatCriteria,
+export type MarkdownCriteriaWithPatternMatchResults = {
+  markdownCriteria: null | MarkdownCriteria,
   patternMatchResults: null | PatternMatchResults,
 };
 
-export type AutoFormatCriteriaArray = Array<AutoFormatCriteria>;
+export type MarkdownCriteriaArray = Array<MarkdownCriteria>;
 
-export const TRIGGER_STRING = '\u0020'; // The space key triggers markdown.
+// Eventually we need to support multiple trigger string's including newlines.
 const SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES = '\u0004'; // Select an unused unicode character to separate text and non-text nodes.
 const SEPARATOR_LENGTH = SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES.length;
 
+export type AutoFormatTriggerKind = 'space_trigger' | 'codeBlock_trigger';
+
+export type AutoFormatTrigger = {
+  triggerKind: AutoFormatTriggerKind,
+  triggerString: string,
+};
+
+const spaceTrigger: AutoFormatTrigger = {
+  triggerKind: 'space_trigger',
+  triggerString: '\u0020',
+};
+
+// TODO: add support for ``` + carriage return either inside or not inside code block. Should toggle between.
+// const codeBlockTrigger : AutoFormatTrigger = {
+//     triggerKind: 'codeBlock_trigger',
+//     triggerString: '```', // + new paragraph element or new code block element.
+// };
+
+export const triggers: Array<AutoFormatTrigger> = [
+  spaceTrigger /*, codeBlockTrigger*/,
+];
+
 // Todo: speed up performance by having non-capture group variations of the regex.
-const autoFormatBase: AutoFormatCriteria = {
+const autoFormatBase: MarkdownCriteria = {
   autoFormatKind: null,
   regEx: /(?:)/,
+  regExForAutoFormatting: /(?:)/,
   requiresParagraphStart: false,
 };
 
-const paragraphStartBase: AutoFormatCriteria = {
+const paragraphStartBase: MarkdownCriteria = {
   ...autoFormatBase,
   requiresParagraphStart: true,
 };
 
-const markdownHeader1: AutoFormatCriteria = {
+const markdownHeader1: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphH1',
-  regEx: /^(?:# )/,
+  regEx: /^(?:#)/,
+  regExForAutoFormatting: /^(?:# )/,
 };
 
-const markdownHeader2: AutoFormatCriteria = {
+const markdownHeader2: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphH2',
-  regEx: /^(?:## )/,
+  regEx: /^(?:##)/,
+  regExForAutoFormatting: /^(?:## )/,
 };
 
-const markdownHeader3: AutoFormatCriteria = {
+const markdownHeader3: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphH2',
-  regEx: /^(?:### )/,
+  regEx: /^(?:###)/,
+  regExForAutoFormatting: /^(?:### )/,
 };
 
-const markdownBlockQuote: AutoFormatCriteria = {
+const markdownBlockQuote: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphBlockQuote',
-  regEx: /^(?:> )/,
+  regEx: /^(?:>)/,
+  regExForAutoFormatting: /^(?:> )/,
 };
 
-const markdownUnorderedListDash: AutoFormatCriteria = {
+const markdownUnorderedListDash: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphUnorderedList',
   regEx: /^(?:- )/,
+  regExForAutoFormatting: /^(?:- )/,
 };
 
-const markdownUnorderedListAsterisk: AutoFormatCriteria = {
+const markdownUnorderedListAsterisk: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphUnorderedList',
   regEx: /^(?:\* )/,
+  regExForAutoFormatting: /^(?:\* )/,
 };
 
-const markdownCodeBlock: AutoFormatCriteria = {
+const markdownCodeBlock: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphCodeBlock',
-  regEx: /^(```)([a-z]*)( )/,
+  regEx: /^(```)$/,
+  regExForAutoFormatting: /^(```)([a-z]*)( )/,
 };
 
-const markdownOrderedList: AutoFormatCriteria = {
+const markdownOrderedList: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'paragraphOrderedList',
   regEx: /^(\d+)\.\s/,
+  regExForAutoFormatting: /^(\d+)\.\s/,
 };
 
-const markdownHorizontalRule: AutoFormatCriteria = {
+const markdownHorizontalRule: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'horizontalRule',
-  regEx: /^(?:\*\*\* )/,
+  regEx: /^(?:\*\*\*)$/,
+  regExForAutoFormatting: /^(?:\*\*\* )/,
 };
 
-const markdownHorizontalRuleUsingDashes: AutoFormatCriteria = {
+const markdownHorizontalRuleUsingDashes: MarkdownCriteria = {
   ...paragraphStartBase,
   autoFormatKind: 'horizontalRule',
-  regEx: /^(?:--- )/,
+  regEx: /^(?:---)$/,
+  regExForAutoFormatting: /^(?:--- )/,
 };
 
-const markdownItalic: AutoFormatCriteria = {
+const markdownItalic: MarkdownCriteria = {
   ...autoFormatBase,
   autoFormatKind: 'italic',
-  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)(\s)$/,
+  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)/,
+  regExForAutoFormatting: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)(\s)$/,
 };
 
-const markdownBold: AutoFormatCriteria = {
+const markdownBold: MarkdownCriteria = {
   ...autoFormatBase,
   autoFormatKind: 'bold',
-  regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)(\s)$/,
+  regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)/,
+  regExForAutoFormatting: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)(\s)$/,
 };
 
-const markdownBoldWithUnderlines: AutoFormatCriteria = {
+const markdownBoldWithUnderlines: MarkdownCriteria = {
   ...autoFormatBase,
   autoFormatKind: 'bold',
-  regEx: /(__)(\s*)([^__]*)(\s*)(__)(\s)$/,
+  regEx: /(__)(\s*)([^__]*)(\s*)(__)/,
+  regExForAutoFormatting: /(__)(\s*)([^__]*)(\s*)(__)(\s)$/,
 };
 
-const markdownBoldItalic: AutoFormatCriteria = {
+const markdownBoldItalic: MarkdownCriteria = {
   ...autoFormatBase,
   autoFormatKind: 'bold_italic',
-  regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)(\s)$/,
+  regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)/,
+  regExForAutoFormatting: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)(\s)$/,
 };
 
 // Markdown does not support underline, but we can allow folks to use
 // the HTML tags for underline.
-const fakeMarkdownUnderline: AutoFormatCriteria = {
+const fakeMarkdownUnderline: MarkdownCriteria = {
   ...autoFormatBase,
   autoFormatKind: 'underline',
-  regEx: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>)(\s)$/,
+  regEx: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>)/,
+  regExForAutoFormatting: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>)(\s)$/,
 };
 
-const markdownStrikethrough: AutoFormatCriteria = {
+const markdownStrikethrough: MarkdownCriteria = {
   ...autoFormatBase,
   autoFormatKind: 'strikethrough',
-  regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)(\s)$/,
+  regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)/,
+  regExForAutoFormatting: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)(\s)$/,
 };
 
-const markdownLink: AutoFormatCriteria = {
+const markdownLink: MarkdownCriteria = {
   ...autoFormatBase,
   autoFormatKind: 'link',
-  regEx: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))(\s)$/,
+  regEx: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))/,
+  regExForAutoFormatting: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))(\s)$/,
 };
 
-const allAutoFormatCriteriaForTextNodes = [
+export const allMarkdownCriteriaForTextNodes: MarkdownCriteriaArray = [
   markdownBoldItalic,
   markdownItalic,
   markdownBold,
@@ -263,7 +305,7 @@ const allAutoFormatCriteriaForTextNodes = [
   markdownLink,
 ];
 
-const allAutoFormatCriteria = [
+export const allMarkdownCriteria: MarkdownCriteriaArray = [
   markdownHeader1,
   markdownHeader2,
   markdownHeader3,
@@ -274,36 +316,53 @@ const allAutoFormatCriteria = [
   markdownCodeBlock,
   markdownHorizontalRule,
   markdownHorizontalRuleUsingDashes,
-  ...allAutoFormatCriteriaForTextNodes,
+  ...allMarkdownCriteriaForTextNodes,
 ];
-
-export function getAllAutoFormatCriteriaForTextNodes(): AutoFormatCriteriaArray {
-  return allAutoFormatCriteriaForTextNodes;
-}
-
-export function getAllAutoFormatCriteria(): AutoFormatCriteriaArray {
-  return allAutoFormatCriteria;
-}
 
 export function getInitialScanningContext(
   editor: LexicalEditor,
-  textNodeWithOffset: TextNodeWithOffset,
-  triggerState: AutoFormatTriggerState,
+  isAutoFormatting: boolean,
+  textNodeWithOffset: null | TextNodeWithOffset,
+  triggerState: null | AutoFormatTriggerState,
 ): ScanningContext {
   return {
-    autoFormatCriteria: {
+    editor,
+    isAutoFormatting,
+    joinedText: null,
+    markdownCriteria: {
       autoFormatKind: 'noTransformation',
-      regEx: /(?:)/, // Empty reg ex will do until the precise criteria is discovered.
+      regEx: /(?:)/, // Empty reg ex.
+      regExForAutoFormatting: /(?:)/, // Empty reg ex.
       requiresParagraphStart: null,
     },
-    editor,
-    joinedText: null,
     patternMatchResults: {
       regExCaptureGroups: [],
     },
     textNodeWithOffset,
     triggerState,
   };
+}
+
+export function resetScanningContext(
+  scanningContext: ScanningContext,
+): ScanningContext {
+  scanningContext.joinedText = '';
+
+  scanningContext.markdownCriteria = {
+    autoFormatKind: 'noTransformation',
+    regEx: /(?:)/, // Empty reg ex.
+    regExForAutoFormatting: /(?:)/, // Empty reg ex.
+    requiresParagraphStart: null,
+  };
+
+  scanningContext.patternMatchResults = {
+    regExCaptureGroups: [],
+  };
+
+  scanningContext.triggerState = null;
+  scanningContext.textNodeWithOffset = null;
+
+  return scanningContext;
 }
 
 function getPatternMatchResultsWithRegEx(
@@ -350,29 +409,38 @@ function getPatternMatchResultsWithRegEx(
   return null;
 }
 
-function getPatternMatchResultsForParagraphs(
-  autoFormatCriteria: AutoFormatCriteria,
+export function getTextNodeWithOffsetOrThrow(
+  scanningContext: ScanningContext,
+): TextNodeWithOffset {
+  const textNodeWithOffset = scanningContext.textNodeWithOffset;
+  if (textNodeWithOffset == null) {
+    invariant(false, 'Expect to have a text node with offset.');
+  }
+  return textNodeWithOffset;
+}
+
+export function getPatternMatchResultsForParagraphs(
+  markdownCriteria: MarkdownCriteria,
   scanningContext: ScanningContext,
 ): null | PatternMatchResults {
-  const textNodeWithOffset = scanningContext.textNodeWithOffset;
+  const textNodeWithOffset = getTextNodeWithOffsetOrThrow(scanningContext);
 
   // At start of paragraph.
   if (textNodeWithOffset.node.getPreviousSibling() === null) {
-    const textToSearch =
-      scanningContext.textNodeWithOffset.node.getTextContent();
+    const textToSearch = textNodeWithOffset.node.getTextContent();
     return getPatternMatchResultsWithRegEx(
       textToSearch,
       true,
       false,
-      autoFormatCriteria.regEx,
+      markdownCriteria.regExForAutoFormatting,
     );
   }
 
   return null;
 }
 
-function getPatternMatchResultsForText(
-  autoFormatCriteria: AutoFormatCriteria,
+export function getPatternMatchResultsForText(
+  markdownCriteria: MarkdownCriteria,
   scanningContext: ScanningContext,
 ): null | PatternMatchResults {
   if (scanningContext.joinedText == null) {
@@ -383,7 +451,7 @@ function getPatternMatchResultsForText(
         scanningContext.joinedText = $joinTextNodesInElementNode(
           parentNode,
           SEPARATOR_BETWEEN_TEXT_AND_NON_TEXT_NODES,
-          scanningContext.textNodeWithOffset,
+          getTextNodeWithOffsetOrThrow(scanningContext),
         );
       }
     } else {
@@ -399,24 +467,8 @@ function getPatternMatchResultsForText(
     scanningContext.joinedText,
     false,
     true,
-    autoFormatCriteria.regEx,
+    markdownCriteria.regExForAutoFormatting,
   );
-}
-
-export function getPatternMatchResultsForCriteria(
-  autoFormatCriteria: AutoFormatCriteria,
-  scanningContext: ScanningContext,
-): null | PatternMatchResults {
-  if (
-    autoFormatCriteria.requiresParagraphStart !== null &&
-    autoFormatCriteria.requiresParagraphStart === true
-  ) {
-    return getPatternMatchResultsForParagraphs(
-      autoFormatCriteria,
-      scanningContext,
-    );
-  }
-  return getPatternMatchResultsForText(autoFormatCriteria, scanningContext);
 }
 
 function getNewNodeForCriteria<T>(
@@ -427,10 +479,10 @@ function getNewNodeForCriteria<T>(
   let newNode = null;
 
   const children = element.getChildren();
-  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+  const markdownCriteria = scanningContext.markdownCriteria;
   const patternMatchResults = scanningContext.patternMatchResults;
-  if (autoFormatCriteria.autoFormatKind != null) {
-    switch (autoFormatCriteria.autoFormatKind) {
+  if (markdownCriteria.autoFormatKind != null) {
+    switch (markdownCriteria.autoFormatKind) {
       case 'paragraphH1': {
         newNode = $createHeadingNode('h1');
         newNode.append(...children);
@@ -506,22 +558,11 @@ function getNewNodeForCriteria<T>(
   return newNode;
 }
 
-export function transformTextNodeForAutoFormatCriteria<T>(
-  scanningContext: ScanningContext,
-  createHorizontalRuleNode: () => DecoratorNode<T>,
-) {
-  if (scanningContext.autoFormatCriteria.requiresParagraphStart) {
-    transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
-  } else {
-    transformTextNodeForText(scanningContext);
-  }
-}
-
-function transformTextNodeForParagraphs<T>(
+export function transformTextNodeForParagraphs<T>(
   scanningContext: ScanningContext,
   createHorizontalRuleNode: () => DecoratorNode<T>,
 ): void {
-  const textNodeWithOffset = scanningContext.textNodeWithOffset;
+  const textNodeWithOffset = getTextNodeWithOffsetOrThrow(scanningContext);
   const element = textNodeWithOffset.node.getParentOrThrow();
   const text = scanningContext.patternMatchResults.regExCaptureGroups[0].text;
 
@@ -544,18 +585,18 @@ function transformTextNodeForParagraphs<T>(
   }
 }
 
-function transformTextNodeForText(scanningContext: ScanningContext) {
-  const autoFormatCriteria = scanningContext.autoFormatCriteria;
+export function transformTextNodeForText(scanningContext: ScanningContext) {
+  const markdownCriteria = scanningContext.markdownCriteria;
 
-  if (autoFormatCriteria.autoFormatKind != null) {
-    const formatting = getTextFormatType(autoFormatCriteria.autoFormatKind);
+  if (markdownCriteria.autoFormatKind != null) {
+    const formatting = getTextFormatType(markdownCriteria.autoFormatKind);
 
     if (formatting != null) {
       transformTextNodeWithFormatting(formatting, scanningContext);
       return;
     }
 
-    if (autoFormatCriteria.autoFormatKind === 'link') {
+    if (markdownCriteria.autoFormatKind === 'link') {
       transformTextNodeWithLink(scanningContext);
     }
   }
@@ -649,7 +690,7 @@ function transformTextNodeWithLink(scanningContext: ScanningContext) {
 // Below are lower level helper functions.
 
 function getParent(scanningContext: ScanningContext): ElementNode {
-  return scanningContext.textNodeWithOffset.node.getParentOrThrow();
+  return getTextNodeWithOffsetOrThrow(scanningContext).node.getParentOrThrow();
 }
 
 function getJoinedTextLength(patternMatchResults: PatternMatchResults): number {

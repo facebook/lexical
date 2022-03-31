@@ -7,16 +7,12 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $isRangeSelection, $isRootNode} from 'lexical';
 import {useEffect} from 'react';
 
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function ImagesPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -26,25 +22,21 @@ export default function ImagesPlugin(): React$Node {
       throw new Error('ImagesPlugin: ImageNode not registered on editor');
     }
 
-    return editor.registerCommand(
-      'insertImage',
-      () => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          if ($isRootNode(selection.anchor.getNode())) {
-            selection.insertParagraph();
-          }
-          const imageNode = $createImageNode(
-            yellowFlowerImage,
-            'Yellow flower in tilt shift lens',
-            500,
-          );
-          selection.insertNodes([imageNode]);
+    return editor.registerCommand('insertImage', () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        if ($isRootNode(selection.anchor.getNode())) {
+          selection.insertParagraph();
         }
-        return true;
-      },
-      EditorPriority,
-    );
+        const imageNode = $createImageNode(
+          yellowFlowerImage,
+          'Yellow flower in tilt shift lens',
+          500,
+        );
+        selection.insertNodes([imageNode]);
+      }
+      return true;
+    });
   }, [editor]);
   return null;
 }

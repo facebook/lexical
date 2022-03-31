@@ -8,11 +8,7 @@
  */
 
 import type {TableSelection} from '@lexical/table';
-import type {
-  CommandListenerEditorPriority,
-  ElementNode,
-  NodeKey,
-} from 'lexical';
+import type {ElementNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -32,8 +28,6 @@ import {
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
-const EditorPriority: CommandListenerEditorPriority = 0;
-
 export default function TablePlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
@@ -44,41 +38,37 @@ export default function TablePlugin(): React$Node {
         'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
       );
     }
-    return editor.registerCommand(
-      'insertTable',
-      (payload) => {
-        const {columns, rows} = payload;
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return true;
-        }
-        const focus = selection.focus;
-        const focusNode = focus.getNode();
-
-        if (focusNode !== null) {
-          const tableNode = $createTableNodeWithDimensions(rows, columns);
-          if ($isRootNode(focusNode)) {
-            const target = focusNode.getChildAtIndex(focus.offset);
-            if (target !== null) {
-              target.insertBefore(tableNode);
-            } else {
-              focusNode.append(tableNode);
-            }
-            tableNode.insertBefore($createParagraphNode());
-          } else {
-            const topLevelNode = focusNode.getTopLevelElementOrThrow();
-            topLevelNode.insertAfter(tableNode);
-          }
-          tableNode.insertAfter($createParagraphNode());
-          const firstCell = tableNode
-            .getFirstChildOrThrow<ElementNode>()
-            .getFirstChildOrThrow<ElementNode>();
-          firstCell.select();
-        }
+    return editor.registerCommand('insertTable', (payload) => {
+      const {columns, rows} = payload;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
         return true;
-      },
-      EditorPriority,
-    );
+      }
+      const focus = selection.focus;
+      const focusNode = focus.getNode();
+
+      if (focusNode !== null) {
+        const tableNode = $createTableNodeWithDimensions(rows, columns);
+        if ($isRootNode(focusNode)) {
+          const target = focusNode.getChildAtIndex(focus.offset);
+          if (target !== null) {
+            target.insertBefore(tableNode);
+          } else {
+            focusNode.append(tableNode);
+          }
+          tableNode.insertBefore($createParagraphNode());
+        } else {
+          const topLevelNode = focusNode.getTopLevelElementOrThrow();
+          topLevelNode.insertAfter(tableNode);
+        }
+        tableNode.insertAfter($createParagraphNode());
+        const firstCell = tableNode
+          .getFirstChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<ElementNode>();
+        firstCell.select();
+      }
+      return true;
+    });
   }, [editor]);
 
   useEffect(() => {

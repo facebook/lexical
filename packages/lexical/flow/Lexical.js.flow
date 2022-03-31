@@ -98,7 +98,7 @@ declare export class LexicalEditor {
   registerCommand(
     type: string,
     listener: CommandListener,
-    priority: CommandListenerPriority,
+    priority?: CommandListenerPriority,
   ): () => void;
   registerReadOnlyListener(listener: ReadOnlyListener): () => void;
   registerMutationListener(

@@ -8,7 +8,6 @@
  */
 
 import type {
-  CommandListenerEditorPriority,
   EditorState,
   GridSelection,
   IntentionallyMarkedAsDirtyElement,
@@ -38,8 +37,6 @@ const COMPOSING_CHARACTER = 1;
 const INSERT_CHARACTER_AFTER_SELECTION = 2;
 const DELETE_CHARACTER_BEFORE_SELECTION = 3;
 const DELETE_CHARACTER_AFTER_SELECTION = 4;
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export type HistoryStateEntry = {
   editor: LexicalEditor,
@@ -364,38 +361,22 @@ export function registerHistory(
   };
 
   const unregisterCommandListener = mergeRegister(
-    editor.registerCommand(
-      'undo',
-      () => {
-        undo(editor, historyState);
-        return true;
-      },
-      EditorPriority,
-    ),
-    editor.registerCommand(
-      'redo',
-      () => {
-        redo(editor, historyState);
-        return true;
-      },
-      EditorPriority,
-    ),
-    editor.registerCommand(
-      'clearEditor',
-      () => {
-        clearHistory(historyState);
-        return false;
-      },
-      EditorPriority,
-    ),
-    editor.registerCommand(
-      'clearHistory',
-      () => {
-        clearHistory(historyState);
-        return true;
-      },
-      EditorPriority,
-    ),
+    editor.registerCommand('undo', () => {
+      undo(editor, historyState);
+      return true;
+    }),
+    editor.registerCommand('redo', () => {
+      redo(editor, historyState);
+      return true;
+    }),
+    editor.registerCommand('clearEditor', () => {
+      clearHistory(historyState);
+      return false;
+    }),
+    editor.registerCommand('clearHistory', () => {
+      clearHistory(historyState);
+      return true;
+    }),
     editor.registerUpdateListener(applyChange),
   );
 

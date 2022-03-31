@@ -128,326 +128,230 @@ export function registerPlainText(
   initialEditorState?: InitialEditorStateType,
 ): () => void {
   const removeListener = mergeRegister(
-    editor.registerCommand(
-      'deleteCharacter',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const isBackward: boolean = payload;
-        selection.deleteCharacter(isBackward);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'deleteWord',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const isBackward: boolean = payload;
-        selection.deleteWord(isBackward);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'deleteLine',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const isBackward: boolean = payload;
-        selection.deleteLine(isBackward);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'insertText',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const eventOrText: InputEvent | string = payload;
-        if (typeof eventOrText === 'string') {
-          selection.insertText(eventOrText);
+    editor.registerCommand('deleteCharacter', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const isBackward: boolean = payload;
+      selection.deleteCharacter(isBackward);
+      return true;
+    }),
+    editor.registerCommand('deleteWord', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const isBackward: boolean = payload;
+      selection.deleteWord(isBackward);
+      return true;
+    }),
+    editor.registerCommand('deleteLine', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const isBackward: boolean = payload;
+      selection.deleteLine(isBackward);
+      return true;
+    }),
+    editor.registerCommand('insertText', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const eventOrText: InputEvent | string = payload;
+      if (typeof eventOrText === 'string') {
+        selection.insertText(eventOrText);
+      } else {
+        const dataTransfer = eventOrText.dataTransfer;
+        if (dataTransfer != null) {
+          $insertDataTransferForPlainText(dataTransfer, selection);
         } else {
-          const dataTransfer = eventOrText.dataTransfer;
-          if (dataTransfer != null) {
-            $insertDataTransferForPlainText(dataTransfer, selection);
-          } else {
-            const data = eventOrText.data;
-            if (data) {
-              selection.insertText(data);
-            }
+          const data = eventOrText.data;
+          if (data) {
+            selection.insertText(data);
           }
         }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'removeText',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        selection.removeText();
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'insertLineBreak',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const selectStart: boolean = payload;
-        selection.insertLineBreak(selectStart);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'insertParagraph',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        selection.insertLineBreak();
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'indentContent',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'outdentContent',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'insertHorizontalRule',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'insertImage',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'insertTable',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'formatElement',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'formatText',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'keyArrowLeft',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: KeyboardEvent = payload;
-        const isHoldingShift = event.shiftKey;
-        if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
-          event.preventDefault();
-          $moveCharacter(selection, isHoldingShift, true);
-          return true;
-        }
+      }
+      return true;
+    }),
+    editor.registerCommand('removeText', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
         return false;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'keyArrowRight',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: KeyboardEvent = payload;
-        const isHoldingShift = event.shiftKey;
-        if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
-          event.preventDefault();
-          $moveCharacter(selection, isHoldingShift, false);
-          return true;
-        }
+      }
+      selection.removeText();
+      return true;
+    }),
+    editor.registerCommand('insertLineBreak', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
         return false;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'keyBackspace',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: KeyboardEvent = payload;
+      }
+      const selectStart: boolean = payload;
+      selection.insertLineBreak(selectStart);
+      return true;
+    }),
+    editor.registerCommand('insertParagraph', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      selection.insertLineBreak();
+      return true;
+    }),
+    editor.registerCommand('indentContent', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      return true;
+    }),
+    editor.registerCommand('outdentContent', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      return true;
+    }),
+    editor.registerCommand('insertHorizontalRule', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      return true;
+    }),
+    editor.registerCommand('insertImage', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      return true;
+    }),
+    editor.registerCommand('insertTable', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      return true;
+    }),
+    editor.registerCommand('formatElement', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      return true;
+    }),
+    editor.registerCommand('formatText', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      return true;
+    }),
+    editor.registerCommand('keyArrowLeft', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: KeyboardEvent = payload;
+      const isHoldingShift = event.shiftKey;
+      if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
         event.preventDefault();
-        return editor.dispatchCommand('deleteCharacter', true);
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'keyDelete',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: KeyboardEvent = payload;
+        $moveCharacter(selection, isHoldingShift, true);
+        return true;
+      }
+      return false;
+    }),
+    editor.registerCommand('keyArrowRight', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: KeyboardEvent = payload;
+      const isHoldingShift = event.shiftKey;
+      if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
         event.preventDefault();
-        return editor.dispatchCommand('deleteCharacter', false);
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'keyEnter',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: KeyboardEvent = payload;
-        event.preventDefault();
-        return editor.dispatchCommand('insertLineBreak');
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'copy',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: ClipboardEvent = payload;
-        onCopyForPlainText(event, editor);
+        $moveCharacter(selection, isHoldingShift, false);
         return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'cut',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: ClipboardEvent = payload;
-        onCutForPlainText(event, editor);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'paste',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const event: ClipboardEvent = payload;
-        onPasteForPlainText(event, editor);
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'drop',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        // TODO: Make drag and drop work at some point.
-        const event: DragEvent = payload;
-        event.preventDefault();
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      'dragstart',
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        // TODO: Make drag and drop work at some point.
-        const event: DragEvent = payload;
-        event.preventDefault();
-        return true;
-      },
-      0,
-    ),
+      }
+      return false;
+    }),
+    editor.registerCommand('keyBackspace', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: KeyboardEvent = payload;
+      event.preventDefault();
+      return editor.dispatchCommand('deleteCharacter', true);
+    }),
+    editor.registerCommand('keyDelete', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: KeyboardEvent = payload;
+      event.preventDefault();
+      return editor.dispatchCommand('deleteCharacter', false);
+    }),
+    editor.registerCommand('keyEnter', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: KeyboardEvent = payload;
+      event.preventDefault();
+      return editor.dispatchCommand('insertLineBreak');
+    }),
+    editor.registerCommand('copy', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: ClipboardEvent = payload;
+      onCopyForPlainText(event, editor);
+      return true;
+    }),
+    editor.registerCommand('cut', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: ClipboardEvent = payload;
+      onCutForPlainText(event, editor);
+      return true;
+    }),
+    editor.registerCommand('paste', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      const event: ClipboardEvent = payload;
+      onPasteForPlainText(event, editor);
+      return true;
+    }),
+    editor.registerCommand('drop', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      // TODO: Make drag and drop work at some point.
+      const event: DragEvent = payload;
+      event.preventDefault();
+      return true;
+    }),
+    editor.registerCommand('dragstart', (payload) => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      // TODO: Make drag and drop work at some point.
+      const event: DragEvent = payload;
+      event.preventDefault();
+      return true;
+    }),
   );
   initializeEditor(editor, initialEditorState);
   return removeListener;

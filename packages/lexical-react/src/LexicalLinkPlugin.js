@@ -7,14 +7,10 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $setSelection} from 'lexical';
 import {useEffect} from 'react';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 function toggleLink(url: null | string) {
   const selection = $getSelection();
@@ -106,15 +102,11 @@ export default function LinkPlugin(): null {
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerCommand(
-      'toggleLink',
-      (payload) => {
-        const url: string | null = payload;
-        toggleLink(url);
-        return true;
-      },
-      EditorPriority,
-    );
+    return editor.registerCommand('toggleLink', (payload) => {
+      const url: string | null = payload;
+      toggleLink(url);
+      return true;
+    });
   }, [editor]);
 
   return null;

@@ -7,15 +7,11 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function ExcalidrawPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -27,18 +23,14 @@ export default function ExcalidrawPlugin(): React$Node {
       );
     }
 
-    return editor.registerCommand(
-      'insertExcalidraw',
-      () => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          const excalidrawNode = $createExcalidrawNode();
-          selection.insertNodes([excalidrawNode]);
-        }
-        return true;
-      },
-      EditorPriority,
-    );
+    return editor.registerCommand('insertExcalidraw', () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const excalidrawNode = $createExcalidrawNode();
+        selection.insertNodes([excalidrawNode]);
+      }
+      return true;
+    });
   }, [editor]);
   return null;
 }

@@ -7,8 +7,6 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {exportFile, importFile} from '@lexical/file';
 import {$convertFromMarkdownString} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
@@ -20,8 +18,6 @@ import {useCallback, useEffect, useState} from 'react';
 
 import {$createStickyNode} from '../nodes/StickyNode';
 import {SUPPORT_SPEECH_RECOGNITION} from './SpeechToTextPlugin';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function ActionsPlugins({
   isRichText,
@@ -37,24 +33,16 @@ export default function ActionsPlugins({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
-        'readOnly',
-        (payload) => {
-          const readOnly = payload;
-          setIsReadyOnly(readOnly);
-          return false;
-        },
-        EditorPriority,
-      ),
-      editor.registerCommand(
-        'connected',
-        (payload) => {
-          const isConnected = payload;
-          setConnected(isConnected);
-          return false;
-        },
-        EditorPriority,
-      ),
+      editor.registerCommand('readOnly', (payload) => {
+        const readOnly = payload;
+        setIsReadyOnly(readOnly);
+        return false;
+      }),
+      editor.registerCommand('connected', (payload) => {
+        const isConnected = payload;
+        setConnected(isConnected);
+        return false;
+      }),
     );
   }, [editor]);
 

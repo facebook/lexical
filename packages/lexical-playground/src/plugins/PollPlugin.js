@@ -7,15 +7,11 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $isRangeSelection, $isRootNode} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createPollNode, PollNode} from '../nodes/PollNode';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function PollPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -24,22 +20,18 @@ export default function PollPlugin(): React$Node {
       throw new Error('PollPlugin: PollNode not registered on editor');
     }
 
-    return editor.registerCommand(
-      'insertPoll',
-      (payload) => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          const question: string = payload;
-          const pollNode = $createPollNode(question);
-          if ($isRootNode(selection.anchor.getNode())) {
-            selection.insertParagraph();
-          }
-          selection.insertNodes([pollNode]);
+    return editor.registerCommand('insertPoll', (payload) => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const question: string = payload;
+        const pollNode = $createPollNode(question);
+        if ($isRootNode(selection.anchor.getNode())) {
+          selection.insertParagraph();
         }
-        return true;
-      },
-      EditorPriority,
-    );
+        selection.insertNodes([pollNode]);
+      }
+      return true;
+    });
   }, [editor]);
   return null;
 }

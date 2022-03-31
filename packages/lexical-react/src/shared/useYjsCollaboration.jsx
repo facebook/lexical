@@ -8,7 +8,7 @@
  */
 
 import type {Binding, Provider} from '@lexical/yjs';
-import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
+import type {LexicalEditor} from 'lexical';
 import type {Doc} from 'yjs';
 
 import {mergeRegister} from '@lexical/utils';
@@ -26,8 +26,6 @@ import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export function useYjsCollaboration(
   editor: LexicalEditor,
@@ -167,25 +165,21 @@ export function useYjsCollaboration(
   }, [binding]);
 
   useEffect(() => {
-    return editor.registerCommand(
-      'toggleConnect',
-      (payload) => {
-        if (connect !== undefined && disconnect !== undefined) {
-          const shouldConnect = payload;
-          if (shouldConnect) {
-            // eslint-disable-next-line no-console
-            console.log('Collaboration connected!');
-            connect();
-          } else {
-            // eslint-disable-next-line no-console
-            console.log('Collaboration disconnected!');
-            disconnect();
-          }
+    return editor.registerCommand('toggleConnect', (payload) => {
+      if (connect !== undefined && disconnect !== undefined) {
+        const shouldConnect = payload;
+        if (shouldConnect) {
+          // eslint-disable-next-line no-console
+          console.log('Collaboration connected!');
+          connect();
+        } else {
+          // eslint-disable-next-line no-console
+          console.log('Collaboration disconnected!');
+          disconnect();
         }
-        return true;
-      },
-      EditorPriority,
-    );
+      }
+      return true;
+    });
   }, [connect, disconnect, editor]);
 
   return [cursorsContainer, binding];
@@ -199,22 +193,14 @@ export function useYjsFocusTracking(
 ) {
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
-        'focus',
-        (payload) => {
-          setLocalStateFocus(provider, name, color, false);
-          return true;
-        },
-        EditorPriority,
-      ),
-      editor.registerCommand(
-        'blur',
-        (payload) => {
-          setLocalStateFocus(provider, name, color, false);
-          return true;
-        },
-        EditorPriority,
-      ),
+      editor.registerCommand('focus', (payload) => {
+        setLocalStateFocus(provider, name, color, false);
+        return true;
+      }),
+      editor.registerCommand('blur', (payload) => {
+        setLocalStateFocus(provider, name, color, false);
+        return true;
+      }),
     );
   }, [color, editor, name, provider]);
 }
@@ -237,22 +223,14 @@ export function useYjsHistory(
     };
 
     return mergeRegister(
-      editor.registerCommand(
-        'undo',
-        () => {
-          undo();
-          return true;
-        },
-        EditorPriority,
-      ),
-      editor.registerCommand(
-        'redo',
-        () => {
-          redo();
-          return true;
-        },
-        EditorPriority,
-      ),
+      editor.registerCommand('undo', () => {
+        undo();
+        return true;
+      }),
+      editor.registerCommand('redo', () => {
+        redo();
+        return true;
+      }),
     );
   });
 

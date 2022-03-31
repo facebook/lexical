@@ -7,15 +7,11 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createTweetNode, TweetNode} from '../nodes/TweetNode.jsx';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function TwitterPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -25,27 +21,23 @@ export default function TwitterPlugin(): React$Node {
       throw new Error('TwitterPlugin: TweetNode not registered on editor');
     }
 
-    return editor.registerCommand(
-      'insertTweet',
-      (payload) => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          const focusNode = selection.focus.getNode();
-          if (focusNode !== null) {
-            const tweetNode = $createTweetNode(payload);
-            selection.focus
-              .getNode()
-              .getTopLevelElementOrThrow()
-              .insertAfter(tweetNode);
-            const paragraphNode = $createParagraphNode();
-            tweetNode.insertAfter(paragraphNode);
-            paragraphNode.select();
-          }
+    return editor.registerCommand('insertTweet', (payload) => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const focusNode = selection.focus.getNode();
+        if (focusNode !== null) {
+          const tweetNode = $createTweetNode(payload);
+          selection.focus
+            .getNode()
+            .getTopLevelElementOrThrow()
+            .insertAfter(tweetNode);
+          const paragraphNode = $createParagraphNode();
+          tweetNode.insertAfter(paragraphNode);
+          paragraphNode.select();
         }
-        return true;
-      },
-      EditorPriority,
-    );
+      }
+      return true;
+    });
   }, [editor]);
   return null;
 }

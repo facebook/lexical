@@ -59,10 +59,7 @@ function convertElementNodeContainingMarkdown(
     const count = allCriteria.length;
     for (let i = 0; i < count; i++) {
       const criteria = allCriteria[i];
-      if (
-        criteria.requiresParagraphStart !== null &&
-        criteria.requiresParagraphStart === true
-      ) {
+      if (criteria.requiresParagraphStart === true) {
         const firstChild = paragraphNode.getFirstChild();
         invariant(
           $isTextNode(firstChild),

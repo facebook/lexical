@@ -57,7 +57,7 @@ export function transformTextNodeForMarkdownCriteria<T>(
   scanningContext: ScanningContext,
   createHorizontalRuleNode: () => DecoratorNode<T>,
 ) {
-  if (scanningContext.markdownCriteria.requiresParagraphStart) {
+  if (scanningContext.markdownCriteria.requiresParagraphStart === true) {
     transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
   } else {
     transformTextNodeForText(scanningContext);
@@ -68,10 +68,7 @@ function getPatternMatchResultsForCriteria(
   markdownCriteria: MarkdownCriteria,
   scanningContext: ScanningContext,
 ): null | PatternMatchResults {
-  if (
-    markdownCriteria.requiresParagraphStart !== null &&
-    markdownCriteria.requiresParagraphStart === true
-  ) {
+  if (markdownCriteria.requiresParagraphStart === true) {
     return getPatternMatchResultsForParagraphs(
       markdownCriteria,
       scanningContext,
@@ -134,7 +131,7 @@ function getCriteriaWithPatternMatchResults(
       );
       if (patternMatchResults != null) {
         return {
-          markdownCriteria: markdownCriteria,
+          markdownCriteria,
           patternMatchResults,
         };
       }
@@ -200,8 +197,7 @@ export function getTriggerState(
     const node = selection.anchor.getNode();
     const parentNode = node.getParent();
 
-    const isParentAListItemNode =
-      parentNode !== null && $isListItemNode(parentNode);
+    const isParentAListItemNode = $isListItemNode(parentNode);
 
     const hasParentNode = parentNode !== null;
 
@@ -210,7 +206,7 @@ export function getTriggerState(
       hasParentNode,
       isCodeBlock: $isCodeNode(node),
       isParentAListItemNode,
-      isSelectionCollapsed: selection.isCollapsed(),
+      isSelectionCollapsed: true,
       isSimpleText: $isTextNode(node) && node.isSimpleText(),
       nodeKey: node.getKey(),
       textContent: node.getTextContent(),

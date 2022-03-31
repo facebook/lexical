@@ -21,7 +21,7 @@ const getHasScriptCached = () =>
 type TweetComponentProps = $ReadOnly<{
   loadingComponent?: React$Node,
   onError?: (error?: Error) => void,
-  onLoad?: (error?: Error) => void,
+  onLoad?: () => void,
   tweetID: string,
 }>;
 
@@ -38,13 +38,10 @@ function TweetComponent({
 
   const createTweet = useCallback(async () => {
     try {
-      const element = await window.twttr.widgets.createTweet(
-        tweetID,
-        containerRef.current,
-      );
+      await window.twttr.widgets.createTweet(tweetID, containerRef.current);
 
       setIsLoading(false);
-      onLoad?.(element);
+      onLoad?.();
     } catch (e) {
       onError?.(e);
     }

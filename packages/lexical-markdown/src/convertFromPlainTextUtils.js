@@ -83,6 +83,8 @@ function convertElementNodeContainingMarkdown(
           // Lazy fill-in the particular format criteria and any matching result information.
           scanningContext.markdownCriteria = criteria;
           scanningContext.patternMatchResults = patternMatchResults;
+
+          // Todo: perform text transformation here.
         }
       }
     }

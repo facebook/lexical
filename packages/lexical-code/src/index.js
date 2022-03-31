@@ -596,7 +596,7 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
 }
 
 function handleMultilineIndent(
-  type: 'indentContent' | 'outdentContent',
+  type: LexicalCommand<'indentContent'> | LexicalCommand<'outdentContent'>,
 ): boolean {
   const selection = $getSelection();
 
@@ -630,10 +630,10 @@ function handleMultilineIndent(
 
 function doIndent(
   node: CodeHighlightNode,
-  type: 'indentContent' | 'outdentContent',
+  type: LexicalCommand<'indentContent'> | LexicalCommand<'outdentContent'>,
 ) {
   const text = node.getTextContent();
-  if (type === 'indentContent') {
+  if (type === INDENT_CONTENT_COMMAND) {
     // If the codeblock node doesn't start with whitespace, we don't want to
     // naively prepend a '\t'; Prism will then mangle all of our nodes when
     // it separates the whitespace from the first non-whitespace node. This
@@ -757,12 +757,12 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
-      (payload): boolean => handleMultilineIndent('indentContent'),
+      (payload): boolean => handleMultilineIndent(INDENT_CONTENT_COMMAND),
       1,
     ),
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
-      (payload): boolean => handleMultilineIndent('outdentContent'),
+      (payload): boolean => handleMultilineIndent(OUTDENT_CONTENT_COMMAND),
       1,
     ),
     editor.registerCommand(

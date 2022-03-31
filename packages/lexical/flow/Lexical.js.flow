@@ -8,16 +8,10 @@
  */
 
 /**
- * LexicalEditor
- */
-
-/**
  * LexicalCommands
  */
 
-export type LexicalCommand<T> = $ReadOnly<{
-  type: T,
-}>;
+export type LexicalCommand<T> = $ReadOnly<{}>;
 // $FlowFixMe
 export type InternalLexicalCommand = LexicalCommand<>;
 
@@ -72,7 +66,7 @@ declare export var SPEECT_TO_TEXT_COMMAND: LexicalCommand<'speechToText'>;
 declare export var INSERT_EQUATION_COMMAND: LexicalCommand<'insertEquation'>;
 declare export var READ_ONLY_COMMAND: LexicalCommand<'readOnly'>;
 
-declare export function createCommand<T>(type: T): LexicalCommand<T>;
+declare export function createCommand<T>(): LexicalCommand<T>;
 
 /**
  * LexicalEditor

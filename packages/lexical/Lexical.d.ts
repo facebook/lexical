@@ -66,7 +66,7 @@ declare var SPEECT_TO_TEXT_COMMAND: LexicalCommand<'speechToText'>;
 declare var INSERT_EQUATION_COMMAND: LexicalCommand<'insertEquation'>;
 declare var READ_ONLY_COMMAND: LexicalCommand<'readOnly'>;
 
-declare function createCommand<T>(type: T): LexicalCommand<T>;
+declare function createCommand<T>(): LexicalCommand<T>;
 
 /**
  * LexicalEditor

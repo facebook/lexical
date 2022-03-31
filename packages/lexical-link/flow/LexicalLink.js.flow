@@ -36,7 +36,9 @@ declare export class LinkNode extends ElementNode {
   isInline(): true;
 }
 declare export function $createLinkNode(url: string): LinkNode;
-declare export function $isLinkNode(node: ?LexicalNode): boolean;
+declare export function $isLinkNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof LinkNode);
 declare export class AutoLinkNode extends LinkNode {
   static getType(): string;
   // $FlowFixMe clone method inheritance
@@ -44,4 +46,6 @@ declare export class AutoLinkNode extends LinkNode {
   insertNewAfter(selection: RangeSelection): null | ElementNode;
 }
 declare export function $createAutoLinkNode(url: string): AutoLinkNode;
-declare export function $isAutoLinkNode(node: ?LexicalNode): boolean;
+declare export function $isAutoLinkNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof AutoLinkNode);

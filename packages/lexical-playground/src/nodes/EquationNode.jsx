@@ -17,12 +17,7 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {
-  $getNodeByKey,
-  DecoratorNode,
-  KEY_ESCAPE_COMMAND,
-  SELECTION_CHANGE_COMMAND,
-} from 'lexical';
+import {$getNodeByKey, DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -67,7 +62,7 @@ function EquationComponent({
     if (showEquationEditor) {
       return mergeRegister(
         editor.registerCommand(
-          SELECTION_CHANGE_COMMAND,
+          'selectionChange',
           (payload) => {
             const activeElement = document.activeElement;
             const inputElem = inputRef.current;
@@ -79,7 +74,7 @@ function EquationComponent({
           HighPriority,
         ),
         editor.registerCommand(
-          KEY_ESCAPE_COMMAND,
+          'keyEscape',
           (payload) => {
             const activeElement = document.activeElement;
             const inputElem = inputRef.current;

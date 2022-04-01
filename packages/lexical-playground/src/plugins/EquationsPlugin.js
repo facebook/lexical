@@ -13,11 +13,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 import 'katex/dist/katex.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  $getSelection,
-  $isRangeSelection,
-  INSERT_EQUATION_COMMAND,
-} from 'lexical';
+import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createEquationNode, EquationNode} from '../nodes/EquationNode';
@@ -35,7 +31,7 @@ export default function EquationsPlugin(): React$Node {
     }
 
     return editor.registerCommand(
-      INSERT_EQUATION_COMMAND,
+      'insertEquation',
       (payload) => {
         const {equation, inline} = payload;
         const selection = $getSelection();

@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {CLEAR_HISTORY_COMMAND, VERSION} from 'lexical';
+import {VERSION} from 'lexical';
 
 export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem((text) => {
@@ -18,7 +18,7 @@ export function importFile(editor: LexicalEditor) {
       JSON.stringify(json.editorState),
     );
     editor.setEditorState(editorState);
-    editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
+    editor.dispatchCommand('clearHistory');
   });
 }
 

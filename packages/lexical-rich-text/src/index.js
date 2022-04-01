@@ -38,31 +38,7 @@ import {
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
-  CLICK_COMMAND,
-  COPY_COMMAND,
-  CUT_COMMAND,
-  DELETE_CHARACTER_COMMAND,
-  DELETE_LINE_COMMAND,
-  DELETE_WORD_COMMAND,
-  DRAGSTART_COMMAND,
-  DROP_COMMAND,
   ElementNode,
-  FORMAT_ELEMENT_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  INDENT_CONTENT_COMMAND,
-  INSERT_LINE_BREAK_COMMAND,
-  INSERT_PARAGRAPH_COMMAND,
-  INSERT_TEXT_COMMAND,
-  KEY_ARROW_LEFT_COMMAND,
-  KEY_ARROW_RIGHT_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
-  KEY_ENTER_COMMAND,
-  KEY_ESCAPE_COMMAND,
-  KEY_TAB_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
-  PASTE_COMMAND,
-  REMOVE_TEXT_COMMAND,
 } from 'lexical';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
@@ -329,7 +305,7 @@ export function registerRichText(
 ): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
-      CLICK_COMMAND,
+      'click',
       (payload) => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
@@ -341,7 +317,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      DELETE_CHARACTER_COMMAND,
+      'deleteCharacter',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -354,7 +330,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      DELETE_WORD_COMMAND,
+      'deleteWord',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -367,7 +343,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      DELETE_LINE_COMMAND,
+      'deleteLine',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -380,7 +356,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      INSERT_TEXT_COMMAND,
+      'insertText',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -406,7 +382,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      REMOVE_TEXT_COMMAND,
+      'removeText',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -418,7 +394,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      FORMAT_TEXT_COMMAND,
+      'formatText',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -431,7 +407,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      FORMAT_ELEMENT_COMMAND,
+      'formatElement',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -446,7 +422,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      INSERT_LINE_BREAK_COMMAND,
+      'insertLineBreak',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -459,7 +435,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      INSERT_PARAGRAPH_COMMAND,
+      'insertParagraph',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -471,7 +447,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      INDENT_CONTENT_COMMAND,
+      'indentContent',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -484,7 +460,7 @@ export function registerRichText(
             ? anchor.getNode()
             : anchor.getNode().getParentOrThrow();
         if (parentBlock.canInsertTab()) {
-          editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
+          editor.dispatchCommand('insertText', '\t');
         } else {
           if (parentBlock.getIndent() !== 10) {
             parentBlock.setIndent(parentBlock.getIndent() + 1);
@@ -495,7 +471,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      OUTDENT_CONTENT_COMMAND,
+      'outdentContent',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -512,7 +488,7 @@ export function registerRichText(
           const textContent = anchorNode.getTextContent();
           const character = textContent[anchor.offset - 1];
           if (character === '\t') {
-            editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+            editor.dispatchCommand('deleteCharacter', true);
           }
         } else {
           if (parentBlock.getIndent() !== 0) {
@@ -524,7 +500,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      KEY_ARROW_LEFT_COMMAND,
+      'keyArrowLeft',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -542,7 +518,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      KEY_ARROW_RIGHT_COMMAND,
+      'keyArrowRight',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -560,7 +536,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      KEY_BACKSPACE_COMMAND,
+      'keyBackspace',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -575,15 +551,15 @@ export function registerRichText(
               ? anchor.getNode()
               : anchor.getNode().getParentOrThrow();
           if (element.getIndent() > 0) {
-            return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
+            return editor.dispatchCommand('outdentContent');
           }
         }
-        return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+        return editor.dispatchCommand('deleteCharacter', true);
       },
       0,
     ),
     editor.registerCommand(
-      KEY_DELETE_COMMAND,
+      'keyDelete',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -591,12 +567,12 @@ export function registerRichText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+        return editor.dispatchCommand('deleteCharacter', false);
       },
       0,
     ),
     editor.registerCommand(
-      KEY_ENTER_COMMAND,
+      'keyEnter',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -605,14 +581,14 @@ export function registerRichText(
         const event: KeyboardEvent = payload;
         event.preventDefault();
         if (event.shiftKey) {
-          return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+          return editor.dispatchCommand('insertLineBreak');
         }
-        return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
+        return editor.dispatchCommand('insertParagraph');
       },
       0,
     ),
     editor.registerCommand(
-      KEY_TAB_COMMAND,
+      'keyTab',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -621,13 +597,13 @@ export function registerRichText(
         const event: KeyboardEvent = payload;
         event.preventDefault();
         return editor.dispatchCommand(
-          event.shiftKey ? OUTDENT_CONTENT_COMMAND : INDENT_CONTENT_COMMAND,
+          event.shiftKey ? 'outdentContent' : 'indentContent',
         );
       },
       0,
     ),
     editor.registerCommand(
-      KEY_ESCAPE_COMMAND,
+      'keyEscape',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -639,7 +615,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      DROP_COMMAND,
+      'drop',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -653,7 +629,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      DRAGSTART_COMMAND,
+      'dragstart',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -667,7 +643,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      COPY_COMMAND,
+      'copy',
       (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection) || $isGridSelection(selection)) {
@@ -680,7 +656,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      CUT_COMMAND,
+      'cut',
       (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection) || $isGridSelection(selection)) {
@@ -693,7 +669,7 @@ export function registerRichText(
       0,
     ),
     editor.registerCommand(
-      PASTE_COMMAND,
+      'paste',
       (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection) || $isGridSelection(selection)) {

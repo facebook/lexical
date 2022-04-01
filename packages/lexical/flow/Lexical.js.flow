@@ -8,67 +8,9 @@
  */
 
 /**
- * LexicalCommands
- */
-
-export type LexicalCommand<T> = $ReadOnly<{}>;
-
-declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<'selectionChange'>;
-declare export var CLICK_COMMAND: LexicalCommand<'click'>;
-declare export var DELETE_CHARACTER_COMMAND: LexicalCommand<'deleteCharacter'>;
-declare export var INSERT_LINE_BREAK_COMMAND: LexicalCommand<'insertLinebreak'>;
-declare export var INSERT_PARAGRAPH_COMMAND: LexicalCommand<'insertParagraph'>;
-declare export var INSERT_TEXT_COMMAND: LexicalCommand<'insertText'>;
-declare export var PASTE_COMMAND: LexicalCommand<'paste'>;
-declare export var REMOVE_TEXT_COMMAND: LexicalCommand<'removeText'>;
-declare export var DELETE_WORD_COMMAND: LexicalCommand<'deleteWord'>;
-declare export var DELETE_LINE_COMMAND: LexicalCommand<'deleteLine'>;
-declare export var FORMAT_TEXT_COMMAND: LexicalCommand<'formatText'>;
-declare export var UNDO_COMMAND: LexicalCommand<'undo'>;
-declare export var REDO_COMMAND: LexicalCommand<'redo'>;
-declare export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<'keyArrowRight'>;
-declare export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<'keyArrowLeft'>;
-declare export var KEY_ARROW_UP_COMMAND: LexicalCommand<'keyArrowUp'>;
-declare export var KEY_ARROW_DOWN_COMMAND: LexicalCommand<'keyArrowDown'>;
-declare export var KEY_ENTER_COMMAND: LexicalCommand<'keyEnter'>;
-declare export var KEY_BACKSPACE_COMMAND: LexicalCommand<'keyBackspace'>;
-declare export var KEY_ESCAPE_COMMAND: LexicalCommand<'keyEscape'>;
-declare export var KEY_DELETE_COMMAND: LexicalCommand<'keyDelete'>;
-declare export var KEY_TAB_COMMAND: LexicalCommand<'keyTab'>;
-declare export var INDENT_CONTENT_COMMAND: LexicalCommand<'indentContent'>;
-declare export var OUTDENT_CONTENT_COMMAND: LexicalCommand<'outdentContent'>;
-declare export var DROP_COMMAND: LexicalCommand<'drop'>;
-declare export var FORMAT_ELEMENT_COMMAND: LexicalCommand<'formatElement'>;
-declare export var DRAGSTART_COMMAND: LexicalCommand<'dragstart'>;
-declare export var COPY_COMMAND: LexicalCommand<'copy'>;
-declare export var CUT_COMMAND: LexicalCommand<'cut'>;
-declare export var CLEAR_EDITOR_COMMAND: LexicalCommand<'clearEditor'>;
-declare export var CLEAR_HISTORY_COMMAND: LexicalCommand<'clearHistory'>;
-declare export var CAN_REDO_COMMAND: LexicalCommand<'canRedo'>;
-declare export var CAN_UNDO_COMMAND: LexicalCommand<'canUndo'>;
-declare export var CONNECTED_COMMAND: LexicalCommand<'connected'>;
-declare export var TOGGLE_CONNECT_COMMAND: LexicalCommand<'toggleConnect'>;
-declare export var FOCUS_COMMAND: LexicalCommand<'focus'>;
-declare export var BLUR_COMMAND: LexicalCommand<'blur'>;
-declare export var TOGGLE_LINK_COMMAND: LexicalCommand<'toggleLink'>;
-declare export var INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<'insertHorizontalRule'>;
-declare export var INSERT_IMAGE_COMMAND: LexicalCommand<'insertImage'>;
-declare export var INSERT_POLL_COMMAND: LexicalCommand<'insertPoll'>;
-declare export var INSERT_TABLE_COMMAND: LexicalCommand<'insertTable'>;
-declare export var INSERT_EXCALIDRAW_COMMAND: LexicalCommand<'insertExcalidraw'>;
-declare export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<'insertUnorderList'>;
-declare export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<'insertOrderedList'>;
-declare export var REMOVE_LIST_COMMAND: LexicalCommand<'removeList'>;
-declare export var INSERT_TWEET_COMMAND: LexicalCommand<'insertTweet'>;
-declare export var SPEECT_TO_TEXT_COMMAND: LexicalCommand<'speechToText'>;
-declare export var INSERT_EQUATION_COMMAND: LexicalCommand<'insertEquation'>;
-declare export var READ_ONLY_COMMAND: LexicalCommand<'readOnly'>;
-
-declare export function createCommand<T>(): LexicalCommand<T>;
-
-/**
  * LexicalEditor
  */
+
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 type UpdateListener = ({
@@ -153,8 +95,8 @@ declare export class LexicalEditor {
   registerRootListener(listener: RootListener): () => void;
   registerDecoratorListener(listener: DecoratorListener): () => void;
   registerTextContentListener(listener: TextContentListener): () => void;
-  registerCommand<T>(
-    type: LexicalCommand<T>,
+  registerCommand(
+    type: string,
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void;
@@ -167,10 +109,7 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<T>(
-    type: LexicalCommand<T>,
-    payload?: CommandPayload,
-  ): boolean;
+  dispatchCommand(type: string, payload?: CommandPayload): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): {
     [NodeKey]: X,

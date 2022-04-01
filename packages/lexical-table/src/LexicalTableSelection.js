@@ -25,7 +25,6 @@ import {
   $isElementNode,
   $isGridSelection,
   $setSelection,
-  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -171,7 +170,7 @@ export class TableSelection {
 
       $updateDOMForSelection(grid, null);
       $setSelection(null);
-      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+      this.editor.dispatchCommand('selectionChange');
 
       const parent = removeHighlightStyle.parentNode;
       if (parent != null) {
@@ -237,7 +236,7 @@ export class TableSelection {
           );
 
           $setSelection(this.gridSelection);
-          this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+          this.editor.dispatchCommand('selectionChange');
           $updateDOMForSelection(this.grid, this.gridSelection);
         }
       }
@@ -283,7 +282,7 @@ export class TableSelection {
       });
 
       $setSelection(selection);
-      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+      this.editor.dispatchCommand('selectionChange');
     });
   }
 
@@ -325,7 +324,7 @@ export class TableSelection {
       });
       $updateDOMForSelection(this.grid, null);
       $setSelection(null);
-      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+      this.editor.dispatchCommand('selectionChange');
     });
   }
 }

@@ -10,12 +10,7 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  $getSelection,
-  $isRangeSelection,
-  $isRootNode,
-  INSERT_POLL_COMMAND,
-} from 'lexical';
+import {$getSelection, $isRangeSelection, $isRootNode} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createPollNode, PollNode} from '../nodes/PollNode';
@@ -30,7 +25,7 @@ export default function PollPlugin(): React$Node {
     }
 
     return editor.registerCommand(
-      INSERT_POLL_COMMAND,
+      'insertPoll',
       (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {

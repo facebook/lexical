@@ -14,14 +14,7 @@ import {$convertFromMarkdownString} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {
-  $getRoot,
-  CLEAR_EDITOR_COMMAND,
-  CONNECTED_COMMAND,
-  READ_ONLY_COMMAND,
-  SPEECT_TO_TEXT_COMMAND,
-  TOGGLE_CONNECT_COMMAND,
-} from 'lexical';
+import {$getRoot} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
@@ -45,7 +38,7 @@ export default function ActionsPlugins({
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
-        READ_ONLY_COMMAND,
+        'readOnly',
         (payload) => {
           const readOnly = payload;
           setIsReadyOnly(readOnly);
@@ -54,7 +47,7 @@ export default function ActionsPlugins({
         EditorPriority,
       ),
       editor.registerCommand(
-        CONNECTED_COMMAND,
+        'connected',
         (payload) => {
           const isConnected = payload;
           setConnected(isConnected);
@@ -84,7 +77,7 @@ export default function ActionsPlugins({
       {SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {
-            editor.dispatchCommand(SPEECT_TO_TEXT_COMMAND, !isSpeechToText);
+            editor.dispatchCommand('speechToText', !isSpeechToText);
             setIsSpeechToText(!isSpeechToText);
           }}
           className={
@@ -118,7 +111,7 @@ export default function ActionsPlugins({
       <button
         className="action-button clear"
         onClick={() => {
-          editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
+          editor.dispatchCommand('clearEditor');
           editor.focus();
         }}
       >
@@ -139,7 +132,7 @@ export default function ActionsPlugins({
         <button
           className="action-button connect"
           onClick={() => {
-            editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
+            editor.dispatchCommand('toggleConnect', !connected);
           }}
         >
           <i className={connected ? 'disconnect' : 'connect'} />

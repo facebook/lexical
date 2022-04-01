@@ -13,15 +13,7 @@ import {$isLinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
-import {
-  $getSelection,
-  $isRangeSelection,
-  $isTextNode,
-  FORMAT_TEXT_COMMAND,
-  SELECTION_CHANGE_COMMAND,
-  TextNode,
-  TOGGLE_LINK_COMMAND,
-} from 'lexical';
+import {$getSelection, $isRangeSelection, $isTextNode, TextNode} from 'lexical';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
@@ -62,9 +54,9 @@ function FloatingCharacterStylesEditor({
 
   const insertLink = useCallback(() => {
     if (!isLink) {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://');
+      editor.dispatchCommand('toggleLink', 'https://');
     } else {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+      editor.dispatchCommand('toggleLink', null);
     }
   }, [editor, isLink]);
 
@@ -112,7 +104,7 @@ function FloatingCharacterStylesEditor({
       }),
 
       editor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
+        'selectionChange',
         () => {
           updateCharacterStylesEditor();
           return false;
@@ -126,7 +118,7 @@ function FloatingCharacterStylesEditor({
     <div ref={popupCharStylesEditorRef} className="character-style-popup">
       <button
         onClick={() => {
-          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+          editor.dispatchCommand('formatText', 'bold');
         }}
         className={'popup-item spaced ' + (isBold ? 'active' : '')}
         aria-label="Format Bold"
@@ -135,7 +127,7 @@ function FloatingCharacterStylesEditor({
       </button>
       <button
         onClick={() => {
-          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+          editor.dispatchCommand('formatText', 'italic');
         }}
         className={'popup-item spaced ' + (isItalic ? 'active' : '')}
         aria-label="Format Italics"
@@ -144,7 +136,7 @@ function FloatingCharacterStylesEditor({
       </button>
       <button
         onClick={() => {
-          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+          editor.dispatchCommand('formatText', 'underline');
         }}
         className={'popup-item spaced ' + (isUnderline ? 'active' : '')}
         aria-label="Format Underline"
@@ -153,7 +145,7 @@ function FloatingCharacterStylesEditor({
       </button>
       <button
         onClick={() => {
-          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+          editor.dispatchCommand('formatText', 'strikethrough');
         }}
         className={'popup-item spaced ' + (isStrikethrough ? 'active' : '')}
         aria-label="Format Strikethrough"
@@ -162,7 +154,7 @@ function FloatingCharacterStylesEditor({
       </button>
       <button
         onClick={() => {
-          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+          editor.dispatchCommand('formatText', 'code');
         }}
         className={'popup-item spaced ' + (isCode ? 'active' : '')}
         aria-label="Insert Code"

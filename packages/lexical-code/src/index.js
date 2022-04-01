@@ -31,7 +31,6 @@ import type {
   NodeKey,
   ParagraphNode,
   RangeSelection,
-  LexicalCommand,
 } from 'lexical';
 
 import {
@@ -49,10 +48,6 @@ import {
   $isTextNode,
   ElementNode,
   TextNode,
-  INDENT_CONTENT_COMMAND,
-  KEY_ARROW_DOWN_COMMAND,
-  KEY_ARROW_UP_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -596,7 +591,7 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
 }
 
 function handleMultilineIndent(
-  type: LexicalCommand<'indentContent'> | LexicalCommand<'outdentContent'>,
+  type: 'indentContent' | 'outdentContent',
 ): boolean {
   const selection = $getSelection();
 
@@ -630,10 +625,10 @@ function handleMultilineIndent(
 
 function doIndent(
   node: CodeHighlightNode,
-  type: LexicalCommand<'indentContent'> | LexicalCommand<'outdentContent'>,
+  type: 'indentContent' | 'outdentContent',
 ) {
   const text = node.getTextContent();
-  if (type === INDENT_CONTENT_COMMAND) {
+  if (type === 'indentContent') {
     // If the codeblock node doesn't start with whitespace, we don't want to
     // naively prepend a '\t'; Prism will then mangle all of our nodes when
     // it separates the whitespace from the first non-whitespace node. This
@@ -659,7 +654,7 @@ function doIndent(
 }
 
 function handleShiftLines(
-  type: LexicalCommand<'keyArrowUp'> | LexicalCommand<'keyArrowDown'>,
+  type: 'keyArrowUp' | 'keyArrowDown',
   event: KeyboardEvent,
 ): boolean {
   // We only care about the alt+arrow keys
@@ -700,7 +695,7 @@ function handleShiftLines(
   event.preventDefault();
   event.stopPropagation(); // required to stop cursor movement under Firefox
 
-  const arrowIsUp = type === KEY_ARROW_UP_COMMAND;
+  const arrowIsUp = type === 'keyArrowUp';
   const linebreak = arrowIsUp
     ? start.getPreviousSibling()
     : end.getNextSibling();
@@ -721,7 +716,7 @@ function handleShiftLines(
     maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
   linebreak.remove();
   range.forEach((node) => node.remove());
-  if (type === KEY_ARROW_UP_COMMAND) {
+  if (type === 'keyArrowUp') {
     range.forEach((node) => insertionPoint.insertBefore(node));
     insertionPoint.insertBefore(linebreak);
   } else {
@@ -756,23 +751,23 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
       textNodeTransform(node, editor),
     ),
     editor.registerCommand(
-      INDENT_CONTENT_COMMAND,
-      (payload): boolean => handleMultilineIndent(INDENT_CONTENT_COMMAND),
+      'indentContent',
+      (payload): boolean => handleMultilineIndent('indentContent'),
       1,
     ),
     editor.registerCommand(
-      OUTDENT_CONTENT_COMMAND,
-      (payload): boolean => handleMultilineIndent(OUTDENT_CONTENT_COMMAND),
+      'outdentContent',
+      (payload): boolean => handleMultilineIndent('outdentContent'),
       1,
     ),
     editor.registerCommand(
-      KEY_ARROW_UP_COMMAND,
-      (payload): boolean => handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
+      'keyArrowUp',
+      (payload): boolean => handleShiftLines('keyArrowUp', payload),
       1,
     ),
     editor.registerCommand(
-      KEY_ARROW_DOWN_COMMAND,
-      (payload): boolean => handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
+      'keyArrowDown',
+      (payload): boolean => handleShiftLines('keyArrowDown', payload),
       1,
     ),
   );

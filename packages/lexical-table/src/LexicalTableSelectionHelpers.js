@@ -23,15 +23,6 @@ import {
   $isGridSelection,
   $isParagraphNode,
   $isRangeSelection,
-  DELETE_CHARACTER_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  INSERT_TEXT_COMMAND,
-  KEY_ARROW_DOWN_COMMAND,
-  KEY_ARROW_LEFT_COMMAND,
-  KEY_ARROW_RIGHT_COMMAND,
-  KEY_ARROW_UP_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_TAB_COMMAND,
 } from 'lexical';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -160,7 +151,7 @@ export function applyTableHandlers(
 
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      KEY_ARROW_DOWN_COMMAND,
+      'keyArrowDown',
       (payload) => {
         const selection = $getSelection();
 
@@ -263,7 +254,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      KEY_ARROW_UP_COMMAND,
+      'keyArrowUp',
       (payload) => {
         const selection = $getSelection();
 
@@ -366,7 +357,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      KEY_ARROW_LEFT_COMMAND,
+      'keyArrowLeft',
       (payload) => {
         const selection = $getSelection();
 
@@ -463,7 +454,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      KEY_ARROW_RIGHT_COMMAND,
+      'keyArrowRight',
       (payload) => {
         const selection = $getSelection();
 
@@ -564,7 +555,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      DELETE_CHARACTER_COMMAND,
+      'deleteCharacter',
       (payload) => {
         const selection = $getSelection();
 
@@ -601,7 +592,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      KEY_BACKSPACE_COMMAND,
+      'keyBackspace',
       (payload) => {
         const selection = $getSelection();
 
@@ -630,7 +621,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      FORMAT_TEXT_COMMAND,
+      'formatText',
       (payload) => {
         const selection = $getSelection();
 
@@ -655,7 +646,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      INSERT_TEXT_COMMAND,
+      'insertText',
       (payload) => {
         const selection = $getSelection();
 
@@ -680,7 +671,7 @@ export function applyTableHandlers(
   );
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      KEY_TAB_COMMAND,
+      'keyTab',
       (payload) => {
         const selection = $getSelection();
 

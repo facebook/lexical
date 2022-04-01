@@ -23,30 +23,6 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
-  COPY_COMMAND,
-  CUT_COMMAND,
-  DELETE_CHARACTER_COMMAND,
-  DELETE_LINE_COMMAND,
-  DELETE_WORD_COMMAND,
-  DRAGSTART_COMMAND,
-  DROP_COMMAND,
-  FORMAT_ELEMENT_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  INDENT_CONTENT_COMMAND,
-  INSERT_HORIZONTAL_RULE_COMMAND,
-  INSERT_IMAGE_COMMAND,
-  INSERT_LINE_BREAK_COMMAND,
-  INSERT_PARAGRAPH_COMMAND,
-  INSERT_TABLE_COMMAND,
-  INSERT_TEXT_COMMAND,
-  KEY_ARROW_LEFT_COMMAND,
-  KEY_ARROW_RIGHT_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
-  KEY_ENTER_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
-  PASTE_COMMAND,
-  REMOVE_TEXT_COMMAND,
 } from 'lexical';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
@@ -153,7 +129,7 @@ export function registerPlainText(
 ): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
-      DELETE_CHARACTER_COMMAND,
+      'deleteCharacter',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -166,7 +142,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      DELETE_WORD_COMMAND,
+      'deleteWord',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -179,7 +155,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      DELETE_LINE_COMMAND,
+      'deleteLine',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -192,7 +168,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      INSERT_TEXT_COMMAND,
+      'insertText',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -217,7 +193,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      REMOVE_TEXT_COMMAND,
+      'removeText',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -229,7 +205,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      INSERT_LINE_BREAK_COMMAND,
+      'insertLineBreak',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -242,7 +218,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      INSERT_PARAGRAPH_COMMAND,
+      'insertParagraph',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -254,7 +230,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      INDENT_CONTENT_COMMAND,
+      'indentContent',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -265,7 +241,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      OUTDENT_CONTENT_COMMAND,
+      'outdentContent',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -276,7 +252,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      INSERT_HORIZONTAL_RULE_COMMAND,
+      'insertHorizontalRule',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -287,7 +263,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      INSERT_IMAGE_COMMAND,
+      'insertImage',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -298,7 +274,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      INSERT_TABLE_COMMAND,
+      'insertTable',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -309,7 +285,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      FORMAT_ELEMENT_COMMAND,
+      'formatElement',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -320,7 +296,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      FORMAT_TEXT_COMMAND,
+      'formatText',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -331,7 +307,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      KEY_ARROW_LEFT_COMMAND,
+      'keyArrowLeft',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -349,7 +325,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      KEY_ARROW_RIGHT_COMMAND,
+      'keyArrowRight',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -367,7 +343,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      KEY_BACKSPACE_COMMAND,
+      'keyBackspace',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -375,12 +351,12 @@ export function registerPlainText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+        return editor.dispatchCommand('deleteCharacter', true);
       },
       0,
     ),
     editor.registerCommand(
-      KEY_DELETE_COMMAND,
+      'keyDelete',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -388,12 +364,12 @@ export function registerPlainText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+        return editor.dispatchCommand('deleteCharacter', false);
       },
       0,
     ),
     editor.registerCommand(
-      KEY_ENTER_COMMAND,
+      'keyEnter',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -401,12 +377,12 @@ export function registerPlainText(
         }
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+        return editor.dispatchCommand('insertLineBreak');
       },
       0,
     ),
     editor.registerCommand(
-      COPY_COMMAND,
+      'copy',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -419,7 +395,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      CUT_COMMAND,
+      'cut',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -432,7 +408,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      PASTE_COMMAND,
+      'paste',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -445,7 +421,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      DROP_COMMAND,
+      'drop',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
@@ -459,7 +435,7 @@ export function registerPlainText(
       0,
     ),
     editor.registerCommand(
-      DRAGSTART_COMMAND,
+      'dragstart',
       (payload) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {

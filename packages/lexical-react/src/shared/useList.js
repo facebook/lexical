@@ -17,14 +17,6 @@ import {
   removeList,
 } from '@lexical/list';
 import {mergeRegister} from '@lexical/utils';
-import {
-  INDENT_CONTENT_COMMAND,
-  INSERT_ORDERED_LIST_COMMAND,
-  INSERT_PARAGRAPH_COMMAND,
-  INSERT_UNORDERED_LIST_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
-  REMOVE_LIST_COMMAND,
-} from 'lexical';
 import {useEffect} from 'react';
 
 const LowPriority: CommandListenerLowPriority = 1;
@@ -33,7 +25,7 @@ export default function useList(editor: LexicalEditor): void {
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
-        INDENT_CONTENT_COMMAND,
+        'indentContent',
         () => {
           const hasHandledIndention = indentList();
           if (hasHandledIndention) {
@@ -44,7 +36,7 @@ export default function useList(editor: LexicalEditor): void {
         LowPriority,
       ),
       editor.registerCommand(
-        OUTDENT_CONTENT_COMMAND,
+        'outdentContent',
         () => {
           const hasHandledIndention = outdentList();
           if (hasHandledIndention) {
@@ -55,7 +47,7 @@ export default function useList(editor: LexicalEditor): void {
         LowPriority,
       ),
       editor.registerCommand(
-        INSERT_ORDERED_LIST_COMMAND,
+        'insertOrderedList',
         () => {
           insertList(editor, 'ol');
           return true;
@@ -63,7 +55,7 @@ export default function useList(editor: LexicalEditor): void {
         LowPriority,
       ),
       editor.registerCommand(
-        INSERT_UNORDERED_LIST_COMMAND,
+        'insertUnorderedList',
         () => {
           insertList(editor, 'ul');
           return true;
@@ -71,7 +63,7 @@ export default function useList(editor: LexicalEditor): void {
         LowPriority,
       ),
       editor.registerCommand(
-        REMOVE_LIST_COMMAND,
+        'removeList',
         () => {
           removeList(editor);
           return true;
@@ -79,7 +71,7 @@ export default function useList(editor: LexicalEditor): void {
         LowPriority,
       ),
       editor.registerCommand(
-        INSERT_PARAGRAPH_COMMAND,
+        'insertParagraph',
         () => {
           const hasHandledInsertParagraph = $handleListInsertParagraph();
           if (hasHandledInsertParagraph) {

@@ -12,36 +12,6 @@ import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {
-  BLUR_COMMAND,
-  CLICK_COMMAND,
-  COPY_COMMAND,
-  CUT_COMMAND,
-  DELETE_CHARACTER_COMMAND,
-  DELETE_LINE_COMMAND,
-  DELETE_WORD_COMMAND,
-  DRAGSTART_COMMAND,
-  DROP_COMMAND,
-  FOCUS_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  INSERT_LINE_BREAK_COMMAND,
-  INSERT_PARAGRAPH_COMMAND,
-  INSERT_TEXT_COMMAND,
-  KEY_ARROW_DOWN_COMMAND,
-  KEY_ARROW_LEFT_COMMAND,
-  KEY_ARROW_RIGHT_COMMAND,
-  KEY_ARROW_UP_COMMAND,
-  KEY_BACKSPACE_COMMAND,
-  KEY_DELETE_COMMAND,
-  KEY_ENTER_COMMAND,
-  KEY_ESCAPE_COMMAND,
-  KEY_TAB_COMMAND,
-  PASTE_COMMAND,
-  REDO_COMMAND,
-  REMOVE_TEXT_COMMAND,
-  SELECTION_CHANGE_COMMAND,
-  UNDO_COMMAND,
-} from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
@@ -154,7 +124,7 @@ function onSelectionChange(
         selection.format = 0;
       }
     }
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+    editor.dispatchCommand('selectionChange');
   });
 }
 
@@ -182,7 +152,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         }
       }
     }
-    editor.dispatchCommand(CLICK_COMMAND, event);
+    editor.dispatchCommand('click', event);
   });
 }
 
@@ -237,7 +207,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       // Used for Android
       $setCompositionKey(null);
       event.preventDefault();
-      editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+      editor.dispatchCommand('deleteCharacter', true);
       return;
     }
     const data = event.data;
@@ -257,10 +227,10 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
-        editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+        editor.dispatchCommand('insertLineBreak');
       } else if (data === '\n\n') {
         event.preventDefault();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
+        editor.dispatchCommand('insertParagraph');
       } else if (data == null && event.dataTransfer) {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
@@ -271,7 +241,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         $shouldPreventDefaultAndInsertText(selection, data, true)
       ) {
         event.preventDefault();
-        editor.dispatchCommand(INSERT_TEXT_COMMAND, data);
+        editor.dispatchCommand('insertText', data);
       }
       return;
     }
@@ -285,88 +255,88 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       case 'insertFromYank':
       case 'insertFromDrop':
       case 'insertReplacementText': {
-        editor.dispatchCommand(INSERT_TEXT_COMMAND, event);
+        editor.dispatchCommand('insertText', event);
         break;
       }
       case 'insertFromComposition': {
         // This is the end of composition
         $setCompositionKey(null);
-        editor.dispatchCommand(INSERT_TEXT_COMMAND, event);
+        editor.dispatchCommand('insertText', event);
         break;
       }
       case 'insertLineBreak': {
         // Used for Android
         $setCompositionKey(null);
-        editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+        editor.dispatchCommand('insertLineBreak');
         break;
       }
       case 'insertParagraph': {
         // Used for Android
         $setCompositionKey(null);
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
+        editor.dispatchCommand('insertParagraph');
         break;
       }
       case 'insertFromPaste':
       case 'insertFromPasteAsQuotation': {
-        editor.dispatchCommand(PASTE_COMMAND, event);
+        editor.dispatchCommand('paste', event);
         break;
       }
       case 'deleteByComposition': {
         if ($canRemoveText(anchorNode, focusNode)) {
-          editor.dispatchCommand(REMOVE_TEXT_COMMAND);
+          editor.dispatchCommand('removeText');
         }
         break;
       }
       case 'deleteByDrag':
       case 'deleteByCut': {
-        editor.dispatchCommand(REMOVE_TEXT_COMMAND);
+        editor.dispatchCommand('removeText');
         break;
       }
       case 'deleteContent': {
-        editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+        editor.dispatchCommand('deleteCharacter', false);
         break;
       }
       case 'deleteWordBackward': {
-        editor.dispatchCommand(DELETE_WORD_COMMAND, true);
+        editor.dispatchCommand('deleteWord', true);
         break;
       }
       case 'deleteWordForward': {
-        editor.dispatchCommand(DELETE_WORD_COMMAND, false);
+        editor.dispatchCommand('deleteWord', false);
         break;
       }
       case 'deleteHardLineBackward':
       case 'deleteSoftLineBackward': {
-        editor.dispatchCommand(DELETE_LINE_COMMAND, true);
+        editor.dispatchCommand('deleteLine', true);
         break;
       }
       case 'deleteContentForward':
       case 'deleteHardLineForward':
       case 'deleteSoftLineForward': {
-        editor.dispatchCommand(DELETE_LINE_COMMAND, false);
+        editor.dispatchCommand('deleteLine', false);
         break;
       }
       case 'formatStrikeThrough': {
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+        editor.dispatchCommand('formatText', 'strikethrough');
         break;
       }
       case 'formatBold': {
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+        editor.dispatchCommand('formatText', 'bold');
         break;
       }
       case 'formatItalic': {
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+        editor.dispatchCommand('formatText', 'italic');
         break;
       }
       case 'formatUnderline': {
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+        editor.dispatchCommand('formatText', 'underline');
         break;
       }
       case 'historyUndo': {
-        editor.dispatchCommand(UNDO_COMMAND);
+        editor.dispatchCommand('undo');
         break;
       }
       case 'historyRedo': {
-        editor.dispatchCommand(REDO_COMMAND);
+        editor.dispatchCommand('redo');
         break;
       }
       default:
@@ -386,7 +356,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
-      editor.dispatchCommand(INSERT_TEXT_COMMAND, data);
+      editor.dispatchCommand('insertText', data);
     } else {
       $updateSelectedTextFromDOM(editor, null);
     }
@@ -414,7 +384,7 @@ function onCompositionStart(
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        editor.dispatchCommand(INSERT_TEXT_COMMAND, ' ');
+        editor.dispatchCommand('insertText', ' ');
       }
     }
   });
@@ -460,64 +430,64 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
 
   if (isMoveForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-    editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    editor.dispatchCommand('keyArrowRight', event);
   } else if (isMoveBackward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-    editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    editor.dispatchCommand('keyArrowLeft', event);
   } else if (isMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-    editor.dispatchCommand(KEY_ARROW_UP_COMMAND, event);
+    editor.dispatchCommand('keyArrowUp', event);
   } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-    editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, event);
+    editor.dispatchCommand('keyArrowDown', event);
   } else if (isLineBreak(keyCode, shiftKey)) {
-    editor.dispatchCommand(KEY_ENTER_COMMAND, event);
+    editor.dispatchCommand('keyEnter', event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, true);
+    editor.dispatchCommand('insertLineBreak', true);
   } else if (isParagraph(keyCode, shiftKey)) {
-    editor.dispatchCommand(KEY_ENTER_COMMAND, event);
+    editor.dispatchCommand('keyEnter', event);
   } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
     if (isBackspace(keyCode)) {
-      editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
+      editor.dispatchCommand('keyBackspace', event);
     } else {
-      editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+      editor.dispatchCommand('deleteCharacter', true);
     }
   } else if (isEscape(keyCode)) {
-    editor.dispatchCommand(KEY_ESCAPE_COMMAND, event);
+    editor.dispatchCommand('keyEscape', event);
   } else if (isDeleteForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     if (isDelete(keyCode)) {
-      editor.dispatchCommand(KEY_DELETE_COMMAND, event);
+      editor.dispatchCommand('keyDelete', event);
     } else {
       event.preventDefault();
-      editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
+      editor.dispatchCommand('deleteCharacter', false);
     }
   } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(DELETE_WORD_COMMAND, true);
+    editor.dispatchCommand('deleteWord', true);
   } else if (isDeleteWordForward(keyCode, altKey, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(DELETE_WORD_COMMAND, false);
+    editor.dispatchCommand('deleteWord', false);
   } else if (isDeleteLineBackward(keyCode, metaKey)) {
     event.preventDefault();
-    editor.dispatchCommand(DELETE_LINE_COMMAND, true);
+    editor.dispatchCommand('deleteLine', true);
   } else if (isDeleteLineForward(keyCode, metaKey)) {
     event.preventDefault();
-    editor.dispatchCommand(DELETE_LINE_COMMAND, false);
+    editor.dispatchCommand('deleteLine', false);
   } else if (isBold(keyCode, metaKey, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+    editor.dispatchCommand('formatText', 'bold');
   } else if (isUnderline(keyCode, metaKey, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+    editor.dispatchCommand('formatText', 'underline');
   } else if (isItalic(keyCode, metaKey, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+    editor.dispatchCommand('formatText', 'italic');
   } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {
-    editor.dispatchCommand(KEY_TAB_COMMAND, event);
+    editor.dispatchCommand('keyTab', event);
   } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(UNDO_COMMAND);
+    editor.dispatchCommand('undo');
   } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
-    editor.dispatchCommand(REDO_COMMAND);
+    editor.dispatchCommand('redo');
   }
 }
 
@@ -594,22 +564,7 @@ export function addRootElementEvents(
           }
         : (event: Event) => {
             if (!editor.isReadOnly()) {
-              switch (eventName) {
-                case 'cut':
-                  return editor.dispatchCommand(CUT_COMMAND, event);
-                case 'copy':
-                  return editor.dispatchCommand(COPY_COMMAND, event);
-                case 'paste':
-                  return editor.dispatchCommand(PASTE_COMMAND, event);
-                case 'dragstart':
-                  return editor.dispatchCommand(DRAGSTART_COMMAND, event);
-                case 'focus':
-                  return editor.dispatchCommand(FOCUS_COMMAND, event);
-                case 'blur':
-                  return editor.dispatchCommand(BLUR_COMMAND, event);
-                case 'drop':
-                  return editor.dispatchCommand(DROP_COMMAND, event);
-              }
+              editor.dispatchCommand(eventName, event);
             }
           };
     rootElement.addEventListener(eventName, eventHandler);

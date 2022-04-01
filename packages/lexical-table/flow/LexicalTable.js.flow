@@ -60,7 +60,11 @@ declare export class TableCellNode extends ElementNode {
   collapseAtStart(): true;
   canBeEmpty(): false;
 }
-declare export function $createTableCellNode(): TableCellNode;
+declare export function $createTableCellNode(
+  headerState: TableCellHeaderState,
+  colSpan?: number,
+  width?: ?number,
+): TableCellNode;
 declare export function $isTableCellNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof TableCellNode);

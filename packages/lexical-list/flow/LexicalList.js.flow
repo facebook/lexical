@@ -35,8 +35,6 @@ declare export function insertList(
   listType: 'ul' | 'ol',
 ): void;
 declare export class ListItemNode extends ElementNode {
-  __tag: ListNodeTagType;
-  __start: number;
   append(...nodes: LexicalNode[]): ListItemNode;
   replace<N: LexicalNode>(replaceWithNode: N): N;
   insertAfter(node: LexicalNode): LexicalNode;
@@ -50,6 +48,8 @@ declare export class ListItemNode extends ElementNode {
   canMergeWith(node: LexicalNode): boolean;
 }
 declare export class ListNode extends ElementNode {
+  __tag: ListNodeTagType;
+  __start: number;
   canBeEmpty(): false;
   append(...nodesToAppend: LexicalNode[]): ListNode;
   getTag(): ListNodeTagType;

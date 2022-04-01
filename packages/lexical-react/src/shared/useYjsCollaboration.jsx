@@ -21,7 +21,17 @@ import {
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
 } from '@lexical/yjs';
-import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
+import {
+  $createParagraphNode,
+  $getRoot,
+  $getSelection,
+  BLUR_COMMAND,
+  CONNECTED_COMMAND,
+  FOCUS_COMMAND,
+  REDO_COMMAND,
+  TOGGLE_CONNECT_COMMAND,
+  UNDO_COMMAND,
+} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
@@ -62,7 +72,7 @@ export function useYjsCollaboration(
     const {awareness} = provider;
 
     const onStatus = ({status}: {status: string}) => {
-      editor.dispatchCommand('connected', status === 'connected');
+      editor.dispatchCommand(CONNECTED_COMMAND, status === 'connected');
     };
 
     const onSync = (isSynced: boolean) => {
@@ -168,7 +178,7 @@ export function useYjsCollaboration(
 
   useEffect(() => {
     return editor.registerCommand(
-      'toggleConnect',
+      TOGGLE_CONNECT_COMMAND,
       (payload) => {
         if (connect !== undefined && disconnect !== undefined) {
           const shouldConnect = payload;
@@ -200,7 +210,7 @@ export function useYjsFocusTracking(
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
-        'focus',
+        FOCUS_COMMAND,
         (payload) => {
           setLocalStateFocus(provider, name, color, true);
           return true;
@@ -208,7 +218,7 @@ export function useYjsFocusTracking(
         EditorPriority,
       ),
       editor.registerCommand(
-        'blur',
+        BLUR_COMMAND,
         (payload) => {
           setLocalStateFocus(provider, name, color, false);
           return true;
@@ -238,7 +248,7 @@ export function useYjsHistory(
 
     return mergeRegister(
       editor.registerCommand(
-        'undo',
+        UNDO_COMMAND,
         () => {
           undo();
           return true;
@@ -246,7 +256,7 @@ export function useYjsHistory(
         EditorPriority,
       ),
       editor.registerCommand(
-        'redo',
+        REDO_COMMAND,
         () => {
           redo();
           return true;

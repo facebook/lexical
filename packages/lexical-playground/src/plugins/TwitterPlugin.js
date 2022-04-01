@@ -10,7 +10,12 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createParagraphNode, $getSelection, $isRangeSelection} from 'lexical';
+import {
+  $createParagraphNode,
+  $getSelection,
+  $isRangeSelection,
+  INSERT_TWEET_COMMAND,
+} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createTweetNode, TweetNode} from '../nodes/TweetNode.jsx';
@@ -26,7 +31,7 @@ export default function TwitterPlugin(): React$Node {
     }
 
     return editor.registerCommand(
-      'insertTweet',
+      INSERT_TWEET_COMMAND,
       (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {

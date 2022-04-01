@@ -28,6 +28,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $isRootNode,
+  INSERT_TABLE_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -45,7 +46,7 @@ export default function TablePlugin(): React$Node {
       );
     }
     return editor.registerCommand(
-      'insertTable',
+      INSERT_TABLE_COMMAND,
       (payload) => {
         const {columns, rows} = payload;
         const selection = $getSelection();

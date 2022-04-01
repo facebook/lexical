@@ -147,11 +147,15 @@ export type CommandListenerPriority =
   | CommandListenerHighPriority
   | CommandListenerCriticalPriority;
 
+// eslint-disable-next-line no-unused-vars
+export type LexicalCommand<T> = $ReadOnly<{}>;
+
 // $FlowFixMe: intentional
 export type CommandPayload = any;
 
 type Listeners = {
-  command: Map<string, Array<Set<CommandListener>>>,
+  // $FlowFixMe We don't want to require a generic within LexicalEditor just for commands.
+  command: Map<LexicalCommand<>, Array<Set<CommandListener>>>,
   decorator: Set<DecoratorListener>,
   mutation: MutationListeners,
   readonly: Set<ReadOnlyListener>,
@@ -419,8 +423,8 @@ export class LexicalEditor {
       listenerSetOrMap.delete(listener);
     };
   }
-  registerCommand(
-    type: string,
+  registerCommand<T>(
+    type: LexicalCommand<T>,
     listener: CommandListener,
     priority: CommandListenerPriority,
   ): () => void {
@@ -508,7 +512,10 @@ export class LexicalEditor {
     }
     return true;
   }
-  dispatchCommand(type: string, payload?: CommandPayload): boolean {
+  dispatchCommand<T>(
+    type: LexicalCommand<T>,
+    payload?: CommandPayload,
+  ): boolean {
     return triggerCommandListeners(this, type, payload);
   }
   getDecorators(): {[NodeKey]: mixed} {

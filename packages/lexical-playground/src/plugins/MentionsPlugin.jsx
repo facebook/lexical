@@ -15,7 +15,16 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
+import {
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_UP_COMMAND,
+  KEY_ENTER_COMMAND,
+  KEY_ESCAPE_COMMAND,
+  KEY_TAB_COMMAND,
+} from 'lexical';
 import React, {
   startTransition,
   useCallback,
@@ -681,7 +690,7 @@ function MentionsTypeahead({
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
-        'keyArrowDown',
+        KEY_ARROW_DOWN_COMMAND,
         (payload) => {
           const event: KeyboardEvent = payload;
           if (results !== null && selectedIndex !== null) {
@@ -699,7 +708,7 @@ function MentionsTypeahead({
         LowPriority,
       ),
       editor.registerCommand(
-        'keyArrowUp',
+        KEY_ARROW_UP_COMMAND,
         (payload) => {
           const event: KeyboardEvent = payload;
           if (results !== null && selectedIndex !== null) {
@@ -714,7 +723,7 @@ function MentionsTypeahead({
         LowPriority,
       ),
       editor.registerCommand(
-        'keyEscape',
+        KEY_ESCAPE_COMMAND,
         (payload) => {
           const event: KeyboardEvent = payload;
           if (results === null || selectedIndex === null) {
@@ -728,7 +737,7 @@ function MentionsTypeahead({
         LowPriority,
       ),
       editor.registerCommand(
-        'keyTab',
+        KEY_TAB_COMMAND,
         (payload) => {
           const event: KeyboardEvent = payload;
           if (results === null || selectedIndex === null) {
@@ -742,7 +751,7 @@ function MentionsTypeahead({
         LowPriority,
       ),
       editor.registerCommand(
-        'keyEnter',
+        KEY_ENTER_COMMAND,
         (payload) => {
           const event: KeyboardEvent = payload;
           if (results === null || selectedIndex === null) {

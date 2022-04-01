@@ -8,7 +8,12 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
+import {
+  $createParagraphNode,
+  $getRoot,
+  $getSelection,
+  CLEAR_EDITOR_COMMAND,
+} from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 type Props = $ReadOnly<{
@@ -19,7 +24,7 @@ export default function LexicalClearEditorPlugin({onClear}: Props): React$Node {
   const [editor] = useLexicalComposerContext();
   useLayoutEffect(() => {
     return editor.registerCommand(
-      'clearEditor',
+      CLEAR_EDITOR_COMMAND,
       (payload) => {
         editor.update(() => {
           if (onClear == null) {

@@ -15,7 +15,12 @@ import type {
 
 import {$getListDepth, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $isElementNode, $isRangeSelection} from 'lexical';
+import {
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  INDENT_CONTENT_COMMAND,
+} from 'lexical';
 import {useEffect} from 'react';
 
 type Props = $ReadOnly<{
@@ -76,7 +81,7 @@ export default function ListMaxIndentLevelPlugin({maxDepth}: Props): null {
 
   useEffect(() => {
     return editor.registerCommand(
-      'indentContent',
+      INDENT_CONTENT_COMMAND,
       () => !isIndentPermitted(maxDepth ?? 7),
       highPriority,
     );

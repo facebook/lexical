@@ -9,10 +9,8 @@
 
 import type {
   CommandListenerLowPriority,
-  ElementNode,
   LexicalEditor,
   RangeSelection,
-  TextNode,
 } from 'lexical';
 
 import {
@@ -42,6 +40,28 @@ import {
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  ElementNode,
+  FORMAT_ELEMENT_COMMAND,
+  FORMAT_TEXT_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  INSERT_EQUATION_COMMAND,
+  INSERT_EXCALIDRAW_COMMAND,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+  INSERT_IMAGE_COMMAND,
+  INSERT_ORDERED_LIST_COMMAND,
+  INSERT_POLL_COMMAND,
+  INSERT_TABLE_COMMAND,
+  INSERT_TWEET_COMMAND,
+  INSERT_UNORDERED_LIST_COMMAND,
+  OUTDENT_CONTENT_COMMAND,
+  REDO_COMMAND,
+  REMOVE_LIST_COMMAND,
+  SELECTION_CHANGE_COMMAND,
+  TextNode,
+  TOGGLE_LINK_COMMAND,
+  UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -180,7 +200,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
       }),
 
       editor.registerCommand(
-        'selectionChange',
+        SELECTION_CHANGE_COMMAND,
         () => {
           updateLinkEditor();
           return true;
@@ -211,7 +231,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
               event.preventDefault();
               if (lastSelection !== null) {
                 if (linkUrl !== '') {
-                  editor.dispatchCommand('toggleLink', linkUrl);
+                  editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl);
                 }
                 setEditMode(false);
               }
@@ -255,7 +275,7 @@ function InsertTableDialog({
   const [columns, setColumns] = useState('5');
 
   const onClick = () => {
-    activeEditor.dispatchCommand('insertTable', {columns, rows});
+    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows});
     onClose();
   };
 
@@ -283,7 +303,7 @@ function InsertPollDialog({
   const [question, setQuestion] = useState('');
 
   const onClick = () => {
-    activeEditor.dispatchCommand('insertPoll', question);
+    activeEditor.dispatchCommand(INSERT_POLL_COMMAND, question);
     onClose();
   };
 
@@ -312,7 +332,7 @@ function InsertTweetDialog({
 
   const onClick = () => {
     const tweetID = text.split('status/')?.[1];
-    activeEditor.dispatchCommand('insertTweet', tweetID);
+    activeEditor.dispatchCommand(INSERT_TWEET_COMMAND, tweetID);
     onClose();
   };
 
@@ -344,7 +364,7 @@ function InsertEquationDialog({
 }): React$Node {
   const onEquationConfirm = useCallback(
     (equation: string, inline: boolean) => {
-      activeEditor.dispatchCommand('insertEquation', {equation, inline});
+      activeEditor.dispatchCommand(INSERT_EQUATION_COMMAND, {equation, inline});
       onClose();
     },
     [activeEditor, onClose],
@@ -439,18 +459,18 @@ function BlockOptionsDropdownList({
 
   const formatBulletList = () => {
     if (blockType !== 'ul') {
-      editor.dispatchCommand('insertUnorderedList');
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
     } else {
-      editor.dispatchCommand('removeList');
+      editor.dispatchCommand(REMOVE_LIST_COMMAND);
     }
     setShowBlockOptionsDropDown(false);
   };
 
   const formatNumberedList = () => {
     if (blockType !== 'ol') {
-      editor.dispatchCommand('insertOrderedList');
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND);
     } else {
-      editor.dispatchCommand('removeList');
+      editor.dispatchCommand(REMOVE_LIST_COMMAND);
     }
     setShowBlockOptionsDropDown(false);
   };
@@ -634,7 +654,7 @@ export default function ToolbarPlugin(): React$Node {
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
-        'selectionChange',
+        SELECTION_CHANGE_COMMAND,
         (_payload, newEditor) => {
           updateToolbar();
           setActiveEditor(newEditor);
@@ -643,7 +663,7 @@ export default function ToolbarPlugin(): React$Node {
         LowPriority,
       ),
       editor.registerCommand(
-        'canUndo',
+        CAN_UNDO_COMMAND,
         (payload) => {
           setCanUndo(payload);
           return false;
@@ -651,7 +671,7 @@ export default function ToolbarPlugin(): React$Node {
         LowPriority,
       ),
       editor.registerCommand(
-        'canRedo',
+        CAN_REDO_COMMAND,
         (payload) => {
           setCanRedo(payload);
           return false;
@@ -689,9 +709,9 @@ export default function ToolbarPlugin(): React$Node {
 
   const insertLink = useCallback(() => {
     if (!isLink) {
-      editor.dispatchCommand('toggleLink', 'https://');
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://');
     } else {
-      editor.dispatchCommand('toggleLink', null);
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
     }
   }, [editor, isLink]);
 
@@ -715,7 +735,7 @@ export default function ToolbarPlugin(): React$Node {
       <button
         disabled={!canUndo}
         onClick={() => {
-          activeEditor.dispatchCommand('undo');
+          activeEditor.dispatchCommand(UNDO_COMMAND);
         }}
         className="toolbar-item spaced"
         aria-label="Undo"
@@ -725,7 +745,7 @@ export default function ToolbarPlugin(): React$Node {
       <button
         disabled={!canRedo}
         onClick={() => {
-          activeEditor.dispatchCommand('redo');
+          activeEditor.dispatchCommand(REDO_COMMAND);
         }}
         className="toolbar-item"
         aria-label="Redo"
@@ -811,7 +831,7 @@ export default function ToolbarPlugin(): React$Node {
           <Divider />
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('formatText', 'bold');
+              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
             aria-label="Format Bold"
@@ -820,7 +840,7 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('formatText', 'italic');
+              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
             aria-label="Format Italics"
@@ -829,7 +849,7 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('formatText', 'underline');
+              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
             aria-label="Format Underline"
@@ -838,7 +858,10 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('formatText', 'strikethrough');
+              activeEditor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                'strikethrough',
+              );
             }}
             className={
               'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
@@ -849,7 +872,7 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('formatText', 'code');
+              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
             aria-label="Insert Code"
@@ -870,7 +893,7 @@ export default function ToolbarPlugin(): React$Node {
             )}
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('insertHorizontalRule');
+              activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND);
             }}
             className="toolbar-item spaced"
             aria-label="Insert Horizontal Rule"
@@ -879,7 +902,7 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('insertImage');
+              activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND);
             }}
             className="toolbar-item spaced"
             aria-label="Insert Image"
@@ -888,7 +911,7 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand('insertExcalidraw');
+              activeEditor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND);
             }}
             className="toolbar-item spaced"
             aria-label="Insert Excalidraw"
@@ -957,7 +980,7 @@ export default function ToolbarPlugin(): React$Node {
       <Divider />
       <button
         onClick={() => {
-          activeEditor.dispatchCommand('formatElement', 'left');
+          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
         }}
         className="toolbar-item spaced"
         aria-label="Left Align"
@@ -966,7 +989,7 @@ export default function ToolbarPlugin(): React$Node {
       </button>
       <button
         onClick={() => {
-          activeEditor.dispatchCommand('formatElement', 'center');
+          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
         }}
         className="toolbar-item spaced"
         aria-label="Center Align"
@@ -975,7 +998,7 @@ export default function ToolbarPlugin(): React$Node {
       </button>
       <button
         onClick={() => {
-          activeEditor.dispatchCommand('formatElement', 'right');
+          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
         }}
         className="toolbar-item spaced"
         aria-label="Right Align"
@@ -984,7 +1007,7 @@ export default function ToolbarPlugin(): React$Node {
       </button>
       <button
         onClick={() => {
-          activeEditor.dispatchCommand('formatElement', 'justify');
+          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
         }}
         className="toolbar-item"
         aria-label="Justify Align"
@@ -994,7 +1017,7 @@ export default function ToolbarPlugin(): React$Node {
       <Divider />
       <button
         onClick={() => {
-          activeEditor.dispatchCommand('outdentContent');
+          activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
         }}
         className="toolbar-item spaced"
         aria-label="Outdent"
@@ -1003,7 +1026,7 @@ export default function ToolbarPlugin(): React$Node {
       </button>
       <button
         onClick={() => {
-          activeEditor.dispatchCommand('indentContent');
+          activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND);
         }}
         className="toolbar-item"
         aria-label="Indent"

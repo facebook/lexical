@@ -212,7 +212,7 @@ export function useYjsFocusTracking(
       editor.registerCommand(
         FOCUS_COMMAND,
         (payload) => {
-          setLocalStateFocus(provider, name, color, false);
+          setLocalStateFocus(provider, name, color, true);
           return true;
         },
         EditorPriority,

@@ -31,7 +31,7 @@ declare var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<'keyArrowRight'>;
 declare var KEY_ARROW_LEFT_COMMAND: LexicalCommand<'keyArrowLeft'>;
 declare var KEY_ARROW_UP_COMMAND: LexicalCommand<'keyArrowUp'>;
 declare var KEY_ARROW_DOWN_COMMAND: LexicalCommand<'keyArrowDown'>;
-declare var KEY_ENTER_COMMAND: LexicalCommand<'leyEnter'>;
+declare var KEY_ENTER_COMMAND: LexicalCommand<'keyEnter'>;
 declare var KEY_BACKSPACE_COMMAND: LexicalCommand<'keyBackspace'>;
 declare var KEY_ESCAPE_COMMAND: LexicalCommand<'keyEscape'>;
 declare var KEY_DELETE_COMMAND: LexicalCommand<'keyDelete'>;

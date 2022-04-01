@@ -43,8 +43,8 @@ export const KEY_ARROW_UP_COMMAND: LexicalCommand<'keyArrowUp'> =
   createCommand<'keyArrowUp'>();
 export const KEY_ARROW_DOWN_COMMAND: LexicalCommand<'keyArrowDown'> =
   createCommand<'keyArrowDown'>();
-export const KEY_ENTER_COMMAND: LexicalCommand<'leyEnter'> =
-  createCommand<'leyEnter'>();
+export const KEY_ENTER_COMMAND: LexicalCommand<'keyEnter'> =
+  createCommand<'keyEnter'>();
 export const KEY_BACKSPACE_COMMAND: LexicalCommand<'keyBackspace'> =
   createCommand<'keyBackspace'>();
 export const KEY_ESCAPE_COMMAND: LexicalCommand<'keyEscape'> =

@@ -30,7 +30,7 @@ declare export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<'keyArrowRight'>;
 declare export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<'keyArrowLeft'>;
 declare export var KEY_ARROW_UP_COMMAND: LexicalCommand<'keyArrowUp'>;
 declare export var KEY_ARROW_DOWN_COMMAND: LexicalCommand<'keyArrowDown'>;
-declare export var KEY_ENTER_COMMAND: LexicalCommand<'leyEnter'>;
+declare export var KEY_ENTER_COMMAND: LexicalCommand<'keyEnter'>;
 declare export var KEY_BACKSPACE_COMMAND: LexicalCommand<'keyBackspace'>;
 declare export var KEY_ESCAPE_COMMAND: LexicalCommand<'keyEscape'>;
 declare export var KEY_DELETE_COMMAND: LexicalCommand<'keyDelete'>;

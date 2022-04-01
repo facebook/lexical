@@ -31,6 +31,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $setSelection,
+  TOGGLE_LINK_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -681,7 +682,7 @@ function transformTextNodeWithLink(scanningContext: ScanningContext) {
 
   $setSelection(newSelectionForLink);
 
-  scanningContext.editor.dispatchCommand('toggleLink', url);
+  scanningContext.editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
 
   // Place caret at end of final capture group.
   selectAfterFinalCaptureGroup(scanningContext);

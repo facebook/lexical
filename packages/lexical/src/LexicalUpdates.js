@@ -449,9 +449,9 @@ export function triggerListeners(
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
   try {
-    const listeners = editor._listeners[type];
-    for (const listener of listeners) {
-      listener(...payload);
+    const listeners = Array.from(editor._listeners[type]);
+    for (let i = 0; i < listeners.length; i++) {
+      listeners[i](...payload);
     }
   } finally {
     editor._updating = previouslyUpdating;

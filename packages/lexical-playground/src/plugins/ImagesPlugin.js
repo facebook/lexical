@@ -10,7 +10,12 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $isRangeSelection, $isRootNode} from 'lexical';
+import {
+  $getSelection,
+  $isRangeSelection,
+  $isRootNode,
+  INSERT_IMAGE_COMMAND,
+} from 'lexical';
 import {useEffect} from 'react';
 
 import yellowFlowerImage from '../images/yellow-flower.jpg';
@@ -27,7 +32,7 @@ export default function ImagesPlugin(): React$Node {
     }
 
     return editor.registerCommand(
-      'insertImage',
+      INSERT_IMAGE_COMMAND,
       () => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {

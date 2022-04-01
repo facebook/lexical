@@ -11,7 +11,7 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $setSelection} from 'lexical';
+import {$getSelection, $setSelection, TOGGLE_LINK_COMMAND} from 'lexical';
 import {useEffect} from 'react';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -107,7 +107,7 @@ export default function LinkPlugin(): null {
 
   useEffect(() => {
     return editor.registerCommand(
-      'toggleLink',
+      TOGGLE_LINK_COMMAND,
       (payload) => {
         const url: string | null = payload;
         toggleLink(url);

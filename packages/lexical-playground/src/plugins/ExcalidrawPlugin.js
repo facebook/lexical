@@ -10,7 +10,7 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $isRangeSelection} from 'lexical';
+import {$getSelection, $isRangeSelection,INSERT_EXCALIDRAW_COMMAND} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
@@ -28,7 +28,7 @@ export default function ExcalidrawPlugin(): React$Node {
     }
 
     return editor.registerCommand(
-      'insertExcalidraw',
+      INSERT_EXCALIDRAW_COMMAND,
       () => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {

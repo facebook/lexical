@@ -11,7 +11,11 @@ import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
-import {$getSelection, $isRangeSelection} from 'lexical';
+import {
+  $getSelection,
+  $isRangeSelection,
+  INSERT_HORIZONTAL_RULE_COMMAND,
+} from 'lexical';
 import {useEffect} from 'react';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -21,7 +25,7 @@ export default function HorizontalRulePlugin(): null {
 
   useEffect(() => {
     return editor.registerCommand(
-      'insertHorizontalRule',
+      INSERT_HORIZONTAL_RULE_COMMAND,
       (type) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {

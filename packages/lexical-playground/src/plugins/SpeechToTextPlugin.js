@@ -14,7 +14,13 @@ import type {
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $isRangeSelection} from 'lexical';
+import {
+  $getSelection,
+  $isRangeSelection,
+  REDO_COMMAND,
+  SPEECT_TO_TEXT_COMMAND,
+  UNDO_COMMAND,
+} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 
 import useReport from '../hooks/useReport';
@@ -28,10 +34,10 @@ const VOICE_COMMANDS: $ReadOnly<{
     selection.insertParagraph();
   },
   redo: ({editor}) => {
-    editor.dispatchCommand('redo');
+    editor.dispatchCommand(REDO_COMMAND);
   },
   undo: ({editor}) => {
-    editor.dispatchCommand('undo');
+    editor.dispatchCommand(UNDO_COMMAND);
   },
 };
 
@@ -96,7 +102,7 @@ function SpeechToTextPlugin(): null {
 
   useEffect(() => {
     return editor.registerCommand(
-      'speechToText',
+      SPEECT_TO_TEXT_COMMAND,
       (payload: boolean) => {
         setIsEnabled(payload);
         return true;

@@ -25,6 +25,12 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  CLEAR_EDITOR_COMMAND,
+  CLEAR_HISTORY_COMMAND,
+  REDO_COMMAND,
+  UNDO_COMMAND,
 } from 'lexical';
 
 type MergeAction = 0 | 1 | 2;
@@ -267,11 +273,11 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
     const current = historyState.current;
     if (current !== null) {
       undoStack.push(current);
-      editor.dispatchCommand('canUndo', true);
+      editor.dispatchCommand(CAN_UNDO_COMMAND, true);
     }
     const historyStateEntry = redoStack.pop();
     if (redoStack.length === 0) {
-      editor.dispatchCommand('canRedo', false);
+      editor.dispatchCommand(CAN_REDO_COMMAND, false);
     }
     historyState.current = historyStateEntry;
     historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
@@ -289,10 +295,10 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
     const historyStateEntry = undoStack.pop();
     if (current !== null) {
       redoStack.push(current);
-      editor.dispatchCommand('canRedo', true);
+      editor.dispatchCommand(CAN_REDO_COMMAND, true);
     }
     if (undoStack.length === 0) {
-      editor.dispatchCommand('canUndo', false);
+      editor.dispatchCommand(CAN_UNDO_COMMAND, false);
     }
     historyState.current = historyStateEntry;
     historyStateEntry.editor.setEditorState(
@@ -350,7 +356,7 @@ export function registerHistory(
           ...current,
           undoSelection: prevEditorState.read($getSelection),
         });
-        editor.dispatchCommand('canUndo', true);
+        editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {
       return;
@@ -365,7 +371,7 @@ export function registerHistory(
 
   const unregisterCommandListener = mergeRegister(
     editor.registerCommand(
-      'undo',
+      UNDO_COMMAND,
       () => {
         undo(editor, historyState);
         return true;
@@ -373,7 +379,7 @@ export function registerHistory(
       EditorPriority,
     ),
     editor.registerCommand(
-      'redo',
+      REDO_COMMAND,
       () => {
         redo(editor, historyState);
         return true;
@@ -381,7 +387,7 @@ export function registerHistory(
       EditorPriority,
     ),
     editor.registerCommand(
-      'clearEditor',
+      CLEAR_EDITOR_COMMAND,
       () => {
         clearHistory(historyState);
         return false;
@@ -389,7 +395,7 @@ export function registerHistory(
       EditorPriority,
     ),
     editor.registerCommand(
-      'clearHistory',
+      CLEAR_HISTORY_COMMAND,
       () => {
         clearHistory(historyState);
         return true;

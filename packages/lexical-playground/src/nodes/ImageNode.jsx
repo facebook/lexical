@@ -37,8 +37,11 @@ import {
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
+  CLICK_COMMAND,
   createDecoratorEditor,
   DecoratorNode,
+  KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
@@ -334,7 +337,7 @@ function ImageComponent({
         setSelection(editorState.read(() => $getSelection()));
       }),
       editor.registerCommand(
-        'click',
+        CLICK_COMMAND,
         (payload) => {
           const event: MouseEvent = payload;
 
@@ -353,8 +356,8 @@ function ImageComponent({
         },
         LowPriority,
       ),
-      editor.registerCommand('keyDelete', onDelete, LowPriority),
-      editor.registerCommand('keyBackspace', onDelete, LowPriority),
+      editor.registerCommand(KEY_DELETE_COMMAND, onDelete, LowPriority),
+      editor.registerCommand(KEY_BACKSPACE_COMMAND, onDelete, LowPriority),
     );
   }, [
     clearSelection,

@@ -196,7 +196,7 @@ export class CodeNode extends ElementNode {
         if (isGitHubCodeTable(table)) {
           return {
             conversion: convertTableElement,
-            priority: 1,
+            priority: 4,
           };
         }
         return null;
@@ -207,7 +207,20 @@ export class CodeNode extends ElementNode {
         if (isGitHubCodeCell(td)) {
           return {
             conversion: convertTableCellElement,
-            priority: 1,
+            priority: 4,
+          };
+        }
+        return null;
+      },
+      tr: (node: Node) => {
+        // $FlowFixMe[incompatible-type] element is a <tr> since we matched it by nodeName
+        const tr: HTMLTableElement = node;
+        // $FlowFixMe[incompatible-type] We want to "skip" these before they get processed by a TableRow.
+        const table: HTMLTableElement = tr.closest('table');
+        if (isGitHubCodeTable(table)) {
+          return {
+            conversion: convertTableRowElement,
+            priority: 4,
           };
         }
         return null;
@@ -353,6 +366,10 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
 
 function convertTableElement(): DOMConversionOutput {
   return {node: $createCodeNode()};
+}
+
+function convertTableRowElement(): DOMConversionOutput {
+  return {node: null};
 }
 
 function convertTableCellElement(domNode: Node): DOMConversionOutput {

@@ -30,21 +30,14 @@ import {
   DELETE_WORD_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
-  FORMAT_ELEMENT_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  INDENT_CONTENT_COMMAND,
-  INSERT_HORIZONTAL_RULE_COMMAND,
-  INSERT_IMAGE_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
-  INSERT_TABLE_COMMAND,
   INSERT_TEXT_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
@@ -154,12 +147,11 @@ export function registerPlainText(
   const removeListener = mergeRegister(
     editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
-      (payload) => {
+      (isBackward: boolean) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isBackward: boolean = payload;
         selection.deleteCharacter(isBackward);
         return true;
       },
@@ -167,12 +159,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       DELETE_WORD_COMMAND,
-      (payload) => {
+      (isBackward: boolean) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isBackward: boolean = payload;
         selection.deleteWord(isBackward);
         return true;
       },
@@ -180,12 +171,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       DELETE_LINE_COMMAND,
-      (payload) => {
+      (isBackward: boolean) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isBackward: boolean = payload;
         selection.deleteLine(isBackward);
         return true;
       },
@@ -193,12 +183,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       INSERT_TEXT_COMMAND,
-      (payload) => {
+      (eventOrText: InputEvent | string) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const eventOrText: InputEvent | string = payload;
         if (typeof eventOrText === 'string') {
           selection.insertText(eventOrText);
         } else {
@@ -230,12 +219,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       INSERT_LINE_BREAK_COMMAND,
-      (payload) => {
+      (selectStart: boolean) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const selectStart: boolean = payload;
         selection.insertLineBreak(selectStart);
         return true;
       },
@@ -249,83 +237,6 @@ export function registerPlainText(
           return false;
         }
         selection.insertLineBreak();
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      INDENT_CONTENT_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      OUTDENT_CONTENT_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      INSERT_HORIZONTAL_RULE_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      INSERT_IMAGE_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      INSERT_TABLE_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      FORMAT_ELEMENT_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        return true;
-      },
-      0,
-    ),
-    editor.registerCommand(
-      FORMAT_TEXT_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
         return true;
       },
       0,
@@ -368,12 +279,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
-      (payload) => {
+      (event: KeyboardEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: KeyboardEvent = payload;
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
@@ -381,12 +291,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       KEY_DELETE_COMMAND,
-      (payload) => {
+      (event: KeyboardEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: KeyboardEvent = payload;
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
       },
@@ -394,12 +303,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       KEY_ENTER_COMMAND,
-      (payload) => {
+      (event: KeyboardEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: KeyboardEvent = payload;
         event.preventDefault();
         return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
       },
@@ -407,12 +315,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       COPY_COMMAND,
-      (payload) => {
+      (event: ClipboardEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: ClipboardEvent = payload;
         onCopyForPlainText(event, editor);
         return true;
       },
@@ -420,12 +327,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       CUT_COMMAND,
-      (payload) => {
+      (event: ClipboardEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: ClipboardEvent = payload;
         onCutForPlainText(event, editor);
         return true;
       },
@@ -433,12 +339,11 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       PASTE_COMMAND,
-      (payload) => {
+      (event: ClipboardEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: ClipboardEvent = payload;
         onPasteForPlainText(event, editor);
         return true;
       },
@@ -446,13 +351,12 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       DROP_COMMAND,
-      (payload) => {
+      (event: DragEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
         // TODO: Make drag and drop work at some point.
-        const event: DragEvent = payload;
         event.preventDefault();
         return true;
       },
@@ -460,13 +364,12 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       DRAGSTART_COMMAND,
-      (payload) => {
+      (event: DragEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
         // TODO: Make drag and drop work at some point.
-        const event: DragEvent = payload;
         event.preventDefault();
         return true;
       },

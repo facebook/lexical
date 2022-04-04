@@ -7,20 +7,22 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
+import type {CommandListenerEditorPriority, LexicalCommand} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
-  INSERT_TWEET_COMMAND,
+  createCommand,
 } from 'lexical';
 import {useEffect} from 'react';
 
 import {$createTweetNode, TweetNode} from '../nodes/TweetNode.jsx';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
+
+export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand();
 
 export default function TwitterPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();

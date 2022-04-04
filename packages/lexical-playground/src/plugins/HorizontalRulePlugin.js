@@ -10,12 +10,11 @@
 import type {CommandListenerEditorPriority} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
-  $getSelection,
-  $isRangeSelection,
+  $createHorizontalRuleNode,
   INSERT_HORIZONTAL_RULE_COMMAND,
-} from 'lexical';
+} from '@lexical/react/LexicalHorizontalRuleNode';
+import {$getSelection, $isRangeSelection} from 'lexical';
 import {useEffect} from 'react';
 
 const EditorPriority: CommandListenerEditorPriority = 0;

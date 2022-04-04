@@ -76,5 +76,8 @@
   "76": "getNodes: expected to find GridNode",
   "77": "getNodes: expected to find GridRowNode",
   "78": "getNodes: expected to find GridCellNode",
-  "79": "Expected grid selection"
+  "79": "Expected grid selection",
+  "80": "Expect paragraph containing only text nodes.",
+  "81": "registerCommand: Command %s not found in command map",
+  "82": "Expect to have a text node with offset."
 }

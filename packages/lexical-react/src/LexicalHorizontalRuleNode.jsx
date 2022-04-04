@@ -7,10 +7,13 @@
  * @flow strict
  */
 
-import type {LexicalNode} from 'lexical';
+import type {LexicalCommand, LexicalNode} from 'lexical';
 
-import {DecoratorNode} from 'lexical';
+import {createCommand, DecoratorNode} from 'lexical';
 import * as React from 'react';
+
+export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
+  createCommand();
 
 function HorizontalRuleComponent() {
   return <hr />;

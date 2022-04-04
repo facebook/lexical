@@ -13,6 +13,7 @@ import type {Doc} from 'yjs';
 
 import {mergeRegister} from '@lexical/utils';
 import {
+  CONNECTED_COMMAND,
   createBinding,
   createUndoManager,
   initLocalState,
@@ -20,16 +21,15 @@ import {
   syncCursorPositions,
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
+  TOGGLE_CONNECT_COMMAND,
 } from '@lexical/yjs';
 import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
   BLUR_COMMAND,
-  CONNECTED_COMMAND,
   FOCUS_COMMAND,
   REDO_COMMAND,
-  TOGGLE_CONNECT_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';

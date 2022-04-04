@@ -230,3 +230,8 @@ declare class TableSelection {
   formatCells(type: TextFormatType): void;
   clearText(): void;
 }
+
+export var INSERT_TABLE_COMMAND: LexicalCommand<{
+  rows: string;
+  columns: string;
+}>;

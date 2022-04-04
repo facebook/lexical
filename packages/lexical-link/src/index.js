@@ -11,13 +11,14 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  LexicalCommand,
   LexicalNode,
   NodeKey,
   RangeSelection,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {$isElementNode, ElementNode} from 'lexical';
+import {$isElementNode, createCommand, ElementNode} from 'lexical';
 
 export class LinkNode extends ElementNode {
   __url: string;
@@ -148,3 +149,6 @@ export function $createAutoLinkNode(url: string): AutoLinkNode {
 export function $isAutoLinkNode(node: ?LexicalNode): boolean %checks {
   return node instanceof AutoLinkNode;
 }
+
+export const TOGGLE_LINK_COMMAND: LexicalCommand<string | null> =
+  createCommand();

@@ -7,6 +7,10 @@
  * @flow strict
  */
 
+import type {LexicalCommand} from 'lexical';
+
+import {createCommand} from 'lexical';
+
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -70,3 +74,8 @@ export {
   TableRowNode,
   TableSelection,
 };
+
+export const INSERT_TABLE_COMMAND: LexicalCommand<{
+  columns: string,
+  rows: string,
+}> = createCommand();

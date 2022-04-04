@@ -432,12 +432,11 @@ export function registerRichText(
     ),
     editor.registerCommand(
       FORMAT_ELEMENT_COMMAND,
-      (payload) => {
+      (format: ElementFormatType) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const format: ElementFormatType = payload;
         const node = selection.anchor.getNode();
         const element = $isElementNode(node) ? node : node.getParentOrThrow();
         element.setFormat(format);
@@ -640,13 +639,12 @@ export function registerRichText(
     ),
     editor.registerCommand(
       DROP_COMMAND,
-      (payload) => {
+      (event: DragEvent) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
         // TODO: Make drag and drop work at some point.
-        const event: DragEvent = payload;
         event.preventDefault();
         return true;
       },
@@ -694,10 +692,9 @@ export function registerRichText(
     ),
     editor.registerCommand(
       PASTE_COMMAND,
-      (payload) => {
+      (event: ClipboardEvent) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-          const event: ClipboardEvent = payload;
           onPasteForRichText(event, editor);
           return true;
         }

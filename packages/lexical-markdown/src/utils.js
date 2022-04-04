@@ -18,6 +18,7 @@ import type {
 } from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
+import {TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
@@ -31,7 +32,6 @@ import {
   $isElementNode,
   $isRangeSelection,
   $setSelection,
-  TOGGLE_LINK_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 

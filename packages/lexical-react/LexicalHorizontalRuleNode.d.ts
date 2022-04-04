@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
+import type {LexicalNode, LexicalCommand} from 'lexical';
 import {DecoratorNode} from 'lexical';
 export declare class HorizontalRuleNode extends DecoratorNode<React.ReactNode> {
   getType(): string;
@@ -21,3 +21,5 @@ export function $createHorizontalRuleNode(): HorizontalRuleNode;
 export function $isHorizontalRuleNode(
   node: LexicalNode | null | undefined,
 ): boolean;
+
+export var INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void>;

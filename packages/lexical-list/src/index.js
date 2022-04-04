@@ -7,6 +7,10 @@
  * @flow strict
  */
 
+import type {LexicalCommand} from 'lexical';
+
+import {createCommand} from 'lexical';
+
 import {
   $handleListInsertParagraph,
   indentList,
@@ -36,3 +40,9 @@ export {
   outdentList,
   removeList,
 };
+
+export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
+  createCommand();
+export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> =
+  createCommand();
+export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand();

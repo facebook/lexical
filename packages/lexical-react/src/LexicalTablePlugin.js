@@ -18,6 +18,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTableNodeWithDimensions,
   applyTableHandlers,
+  INSERT_TABLE_COMMAND,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -28,7 +29,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $isRootNode,
-  INSERT_TABLE_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -57,7 +57,10 @@ export default function TablePlugin(): React$Node {
         const focusNode = focus.getNode();
 
         if (focusNode !== null) {
-          const tableNode = $createTableNodeWithDimensions(rows, columns);
+          const tableNode = $createTableNodeWithDimensions(
+            Number(rows),
+            Number(columns),
+          );
           if ($isRootNode(focusNode)) {
             const target = focusNode.getChildAtIndex(focus.offset);
             if (target !== null) {

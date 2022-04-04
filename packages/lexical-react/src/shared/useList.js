@@ -12,18 +12,18 @@ import type {CommandListenerLowPriority, LexicalEditor} from 'lexical';
 import {
   $handleListInsertParagraph,
   indentList,
+  INSERT_ORDERED_LIST_COMMAND,
+  INSERT_UNORDERED_LIST_COMMAND,
   insertList,
   outdentList,
+  REMOVE_LIST_COMMAND,
   removeList,
 } from '@lexical/list';
 import {mergeRegister} from '@lexical/utils';
 import {
   INDENT_CONTENT_COMMAND,
-  INSERT_ORDERED_LIST_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
-  INSERT_UNORDERED_LIST_COMMAND,
   OUTDENT_CONTENT_COMMAND,
-  REMOVE_LIST_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 

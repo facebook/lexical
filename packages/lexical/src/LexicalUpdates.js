@@ -8,7 +8,6 @@
  */
 
 import type {
-  CommandPayload,
   EditorUpdateOptions,
   LexicalCommand,
   LexicalEditor,
@@ -459,10 +458,10 @@ export function triggerListeners(
   }
 }
 
-export function triggerCommandListeners<T>(
+export function triggerCommandListeners<P>(
   editor: LexicalEditor,
-  type: LexicalCommand<T>,
-  payload: CommandPayload,
+  type: LexicalCommand<P>,
+  payload: P,
 ): boolean {
   if (editor._updating === false || activeEditor !== editor) {
     let returnVal = false;

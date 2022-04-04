@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   ParagraphNode,
   RangeSelection,
+  LexicalCommand,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 
@@ -57,3 +58,7 @@ declare export class ListNode extends ElementNode {
 }
 declare export function outdentList(): boolean;
 declare export function removeList(editor: LexicalEditor): boolean;
+
+declare export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;
+declare export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;
+declare export var REMOVE_LIST_COMMAND: LexicalCommand<void>;

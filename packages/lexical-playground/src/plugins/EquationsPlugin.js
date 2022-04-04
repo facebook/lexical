@@ -7,22 +7,23 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
+import type {CommandListenerEditorPriority, LexicalCommand} from 'lexical';
 
 // $FlowFixMe
 import 'katex/dist/katex.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  $getSelection,
-  $isRangeSelection,
-  INSERT_EQUATION_COMMAND,
-} from 'lexical';
+import {$getSelection, $isRangeSelection, createCommand} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createEquationNode, EquationNode} from '../nodes/EquationNode';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
+
+export const INSERT_EQUATION_COMMAND: LexicalCommand<{
+  equation: string,
+  inline: boolean,
+}> = createCommand();
 
 export default function EquationsPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();

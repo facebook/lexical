@@ -13,6 +13,7 @@ import {
   LexicalEditor,
   ParagraphNode,
   RangeSelection,
+  LexicalCommand,
 } from 'lexical';
 
 export function $createListItemNode(): ListItemNode;
@@ -43,3 +44,7 @@ export declare class ListNode extends ElementNode {
 }
 export function outdentList(): boolean;
 export function removeList(editor: LexicalEditor): boolean;
+
+export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;
+export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;
+export var REMOVE_LIST_COMMAND: LexicalCommand<void>;

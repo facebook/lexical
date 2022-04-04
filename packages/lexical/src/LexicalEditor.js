@@ -128,10 +128,7 @@ export type RootListener = (
 ) => void;
 export type TextContentListener = (text: string) => void;
 export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
-export type CommandListener = (
-  payload: CommandPayload,
-  editor: LexicalEditor,
-) => boolean;
+export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 export type ReadOnlyListener = (readOnly: boolean) => void;
 
 export type CommandListenerEditorPriority = 0;
@@ -149,9 +146,6 @@ export type CommandListenerPriority =
 
 // eslint-disable-next-line no-unused-vars
 export type LexicalCommand<T> = $ReadOnly<{}>;
-
-// $FlowFixMe: intentional
-export type CommandPayload = any;
 
 type Listeners = {
   // $FlowFixMe We don't want to require a generic within LexicalEditor just for commands.
@@ -423,17 +417,17 @@ export class LexicalEditor {
       listenerSetOrMap.delete(listener);
     };
   }
-  registerCommand<T>(
-    type: LexicalCommand<T>,
-    listener: CommandListener,
+  registerCommand<P>(
+    command: LexicalCommand<P>,
+    listener: CommandListener<P>,
     priority: CommandListenerPriority,
   ): () => void {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
     const commandsMap = this._listeners.command;
-    if (!commandsMap.has(type)) {
-      commandsMap.set(type, [
+    if (!commandsMap.has(command)) {
+      commandsMap.set(command, [
         new Set(),
         new Set(),
         new Set(),
@@ -441,12 +435,12 @@ export class LexicalEditor {
         new Set(),
       ]);
     }
-    const listenersInPriorityOrder = commandsMap.get(type);
+    const listenersInPriorityOrder = commandsMap.get(command);
     if (listenersInPriorityOrder === undefined) {
       invariant(
         false,
-        'registerCommand: Command type of "%s" not found in command map',
-        type,
+        'registerCommand: Command %s not found in command map',
+        command,
       );
     }
     const listeners = listenersInPriorityOrder[priority];
@@ -458,7 +452,7 @@ export class LexicalEditor {
           (listenersSet) => listenersSet.size === 0,
         )
       ) {
-        commandsMap.delete(type);
+        commandsMap.delete(command);
       }
     };
   }
@@ -512,10 +506,7 @@ export class LexicalEditor {
     }
     return true;
   }
-  dispatchCommand<T>(
-    type: LexicalCommand<T>,
-    payload?: CommandPayload,
-  ): boolean {
+  dispatchCommand<P>(type: LexicalCommand<P>, payload?: P): boolean {
     return triggerCommandListeners(this, type, payload);
   }
   getDecorators(): {[NodeKey]: mixed} {

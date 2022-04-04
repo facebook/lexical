@@ -18,7 +18,8 @@
     "@lexical/code": "0.1.16",
     "@lexical/text": "0.1.16",
     "@lexical/rich-text": "0.1.16",
-    "@lexical/list": "0.1.16"
+    "@lexical/list": "0.1.16",
+    "@lexical/link": "0.1.16"
   },
   "repository": {
     "type": "git",

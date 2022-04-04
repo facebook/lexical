@@ -565,14 +565,10 @@ export function applyTableHandlers(
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
-      (payload) => {
+      () => {
         const selection = $getSelection();
 
         if ($isGridSelection(selection)) {
-          const event: KeyboardEvent = payload;
-          event.preventDefault();
-          event.stopPropagation();
-
           tableSelection.clearText();
           return true;
         } else if ($isRangeSelection(selection)) {

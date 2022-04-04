@@ -13,6 +13,7 @@ import type {
   LexicalNode,
   NodeKey,
   RangeSelection,
+  LexicalCommand,
 } from 'lexical';
 
 export declare class LinkNode extends ElementNode {
@@ -45,3 +46,5 @@ export declare class AutoLinkNode extends LinkNode {
 }
 export function $createAutoLinkNode(url: string): AutoLinkNode;
 export function $isAutoLinkNode(node: ?LexicalNode): boolean;
+
+export var TOGGLE_LINK_COMMAND: LexicalCommand<string | null>;

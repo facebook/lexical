@@ -12,60 +12,50 @@ import {Class, $ReadOnly} from 'utility-types';
  * LexicalCommands
  */
 
-export type LexicalCommand<T> = $ReadOnly<{type: T}>;
+export type LexicalCommand<P> = $ReadOnly<{}>;
 
-declare var SELECTION_CHANGE_COMMAND: LexicalCommand<'selectionChange'>;
-declare var CLICK_COMMAND: LexicalCommand<'click'>;
-declare var DELETE_CHARACTER_COMMAND: LexicalCommand<'deleteCharacter'>;
-declare var INSERT_LINE_BREAK_COMMAND: LexicalCommand<'insertLinebreak'>;
-declare var INSERT_PARAGRAPH_COMMAND: LexicalCommand<'insertParagraph'>;
-declare var INSERT_TEXT_COMMAND: LexicalCommand<'insertText'>;
-declare var PASTE_COMMAND: LexicalCommand<'paste'>;
-declare var REMOVE_TEXT_COMMAND: LexicalCommand<'removeText'>;
-declare var DELETE_WORD_COMMAND: LexicalCommand<'deleteWord'>;
-declare var DELETE_LINE_COMMAND: LexicalCommand<'deleteLine'>;
-declare var FORMAT_TEXT_COMMAND: LexicalCommand<'formatText'>;
-declare var UNDO_COMMAND: LexicalCommand<'undo'>;
-declare var REDO_COMMAND: LexicalCommand<'redo'>;
-declare var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<'keyArrowRight'>;
-declare var KEY_ARROW_LEFT_COMMAND: LexicalCommand<'keyArrowLeft'>;
-declare var KEY_ARROW_UP_COMMAND: LexicalCommand<'keyArrowUp'>;
-declare var KEY_ARROW_DOWN_COMMAND: LexicalCommand<'keyArrowDown'>;
-declare var KEY_ENTER_COMMAND: LexicalCommand<'keyEnter'>;
-declare var KEY_BACKSPACE_COMMAND: LexicalCommand<'keyBackspace'>;
-declare var KEY_ESCAPE_COMMAND: LexicalCommand<'keyEscape'>;
-declare var KEY_DELETE_COMMAND: LexicalCommand<'keyDelete'>;
-declare var KEY_TAB_COMMAND: LexicalCommand<'keyTab'>;
-declare var INDENT_CONTENT_COMMAND: LexicalCommand<'indentContent'>;
-declare var OUTDENT_CONTENT_COMMAND: LexicalCommand<'outdentContent'>;
-declare var DROP_COMMAND: LexicalCommand<'drop'>;
-declare var FORMAT_ELEMENT_COMMAND: LexicalCommand<'formatElement'>;
-declare var DRAGSTART_COMMAND: LexicalCommand<'dragstart'>;
-declare var COPY_COMMAND: LexicalCommand<'copy'>;
-declare var CUT_COMMAND: LexicalCommand<'cut'>;
-declare var CLEAR_EDITOR_COMMAND: LexicalCommand<'clearEditor'>;
-declare var CLEAR_HISTORY_COMMAND: LexicalCommand<'clearHistory'>;
-declare var CAN_REDO_COMMAND: LexicalCommand<'canRedo'>;
-declare var CAN_UNDO_COMMAND: LexicalCommand<'canUndo'>;
-declare var CONNECTED_COMMAND: LexicalCommand<'connected'>;
-declare var TOGGLE_CONNECT_COMMAND: LexicalCommand<'toggleConnect'>;
-declare var FOCUS_COMMAND: LexicalCommand<'focus'>;
-declare var BLUR_COMMAND: LexicalCommand<'blur'>;
-declare var TOGGLE_LINK_COMMAND: LexicalCommand<'toggleLink'>;
-declare var INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<'insertHorizontalRule'>;
-declare var INSERT_IMAGE_COMMAND: LexicalCommand<'insertImage'>;
-declare var INSERT_POLL_COMMAND: LexicalCommand<'insertPoll'>;
-declare var INSERT_TABLE_COMMAND: LexicalCommand<'insertTable'>;
-declare var INSERT_EXCALIDRAW_COMMAND: LexicalCommand<'insertExcalidraw'>;
-declare var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<'insertUnorderList'>;
-declare var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<'insertOrderedList'>;
-declare var REMOVE_LIST_COMMAND: LexicalCommand<'removeList'>;
-declare var INSERT_TWEET_COMMAND: LexicalCommand<'insertTweet'>;
-declare var SPEECT_TO_TEXT_COMMAND: LexicalCommand<'speechToText'>;
-declare var INSERT_EQUATION_COMMAND: LexicalCommand<'insertEquation'>;
-declare var READ_ONLY_COMMAND: LexicalCommand<'readOnly'>;
+export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
+export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
+export var DELETE_CHARACTER_COMMAND: LexicalCommand<boolean>;
+export var INSERT_LINE_BREAK_COMMAND: LexicalCommand<boolean>;
+export var INSERT_PARAGRAPH_COMMAND: LexicalCommand<void>;
+export var INSERT_TEXT_COMMAND: LexicalCommand<InputEvent | string>;
+export var PASTE_COMMAND: LexicalCommand<ClipboardEvent>;
+export var REMOVE_TEXT_COMMAND: LexicalCommand<void>;
+export var DELETE_WORD_COMMAND: LexicalCommand<boolean>;
+export var DELETE_LINE_COMMAND: LexicalCommand<boolean>;
+export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
+export var UNDO_COMMAND: LexicalCommand<void>;
+export var REDO_COMMAND: LexicalCommand<void>;
+export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent>;
+export var INDENT_CONTENT_COMMAND: LexicalCommand<void>;
+export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
+export var DROP_COMMAND: LexicalCommand<DragEvent>;
+export var FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType>;
+export var DRAGSTART_COMMAND: LexicalCommand<DragEvent>;
+export var COPY_COMMAND: LexicalCommand<ClipboardEvent>;
+export var CUT_COMMAND: LexicalCommand<ClipboardEvent>;
+export var CLEAR_EDITOR_COMMAND: LexicalCommand<void>;
+export var CLEAR_HISTORY_COMMAND: LexicalCommand<void>;
+export var CAN_REDO_COMMAND: LexicalCommand<boolean>;
+export var CAN_UNDO_COMMAND: LexicalCommand<boolean>;
+export var FOCUS_COMMAND: LexicalCommand<FocusEvent>;
+export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
+export var INSERT_TABLE_COMMAND: LexicalCommand<{
+  rows: string;
+  columns: string;
+}>;
+export var READ_ONLY_COMMAND: LexicalCommand<void>;
 
-declare function createCommand<T>(): LexicalCommand<T>;
+export declare function createCommand<T>(): LexicalCommand<T>;
 
 /**
  * LexicalEditor
@@ -88,20 +78,18 @@ type RootListener = (
 ) => void;
 type TextContentListener = (text: string) => void;
 type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
-type CommandListener = (
-  payload: CommandPayload,
-  editor: LexicalEditor,
-) => boolean;
+type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 export type ReadOnlyListener = (readOnly: boolean) => void;
 
-type CommandPayload = any;
+type InternalCommandListener = CommandListener<any>;
+
 type Listeners = {
   decorator: Set<DecoratorListener>;
   mutation: MutationListeners;
   textcontent: Set<TextContentListener>;
   root: Set<RootListener>;
   update: Set<UpdateListener>;
-  command: Map<string, Array<Set<CommandListener>>>;
+  command: Map<string, Array<Set<InternalCommandListener>>>;
 };
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
@@ -144,8 +132,9 @@ export declare class LexicalEditor {
   registerRootListener(listener: RootListener): () => void;
   registerDecoratorListener(listener: DecoratorListener): () => void;
   registerTextContentListener(listener: TextContentListener): () => void;
-  registerCommand(
-    listener: CommandListener,
+  registerCommand<P>(
+    command: LexicalCommand<P>,
+    listener: CommandListener<P>,
     priority: CommandListenerPriority,
   ): () => void;
   registerReadOnlyListener(listener: ReadOnlyListener): () => void;
@@ -157,7 +146,7 @@ export declare class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand(type: string, payload: CommandPayload): boolean;
+  dispatchCommand(type: string, payload: P): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): Record<NodeKey, X>;
   getRootElement(): null | HTMLElement;

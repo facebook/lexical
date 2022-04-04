@@ -9,6 +9,7 @@
 
 import type {
   CommandListenerEditorPriority,
+  LexicalCommand,
   LexicalEditor,
   RangeSelection,
 } from 'lexical';
@@ -17,8 +18,8 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
   $isRangeSelection,
+  createCommand,
   REDO_COMMAND,
-  SPEECT_TO_TEXT_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
@@ -26,6 +27,8 @@ import {useEffect, useRef, useState} from 'react';
 import useReport from '../hooks/useReport';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
+
+export const SPEECT_TO_TEXT_COMMAND: LexicalCommand<boolean> = createCommand();
 
 const VOICE_COMMANDS: $ReadOnly<{
   [string]: ({editor: LexicalEditor, selection: RangeSelection}) => void,
@@ -103,8 +106,8 @@ function SpeechToTextPlugin(): null {
   useEffect(() => {
     return editor.registerCommand(
       SPEECT_TO_TEXT_COMMAND,
-      (payload: boolean) => {
-        setIsEnabled(payload);
+      (_isEnabled: boolean) => {
+        setIsEnabled(_isEnabled);
         return true;
       },
       EditorPriority,

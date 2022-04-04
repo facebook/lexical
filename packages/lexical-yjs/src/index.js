@@ -8,8 +8,10 @@
  */
 
 import type {Binding} from './Bindings';
+import type {LexicalCommand} from 'lexical';
 import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
 
+import {createCommand} from 'lexical';
 // $FlowFixMe: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
 
@@ -20,6 +22,9 @@ export type UserState = {
   focusPos: null | RelativePosition,
   name: string,
 };
+
+export const CONNECTED_COMMAND: LexicalCommand<boolean> = createCommand();
+export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand();
 
 export type ProviderAwareness = {
   getLocalState: () => UserState | null,

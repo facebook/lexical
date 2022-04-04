@@ -10,6 +10,7 @@
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {Cell, Grid} from './LexicalTableSelection';
 import type {
+  DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
   LexicalEditor,
@@ -35,14 +36,14 @@ export class TableNode extends GridNode {
     return new TableNode(node.__key);
   }
 
-  // static convertDOM(): DOMConversionMap | null {
-  //   return {
-  //     table: (node: Node) => ({
-  //       conversion: convertTableElement,
-  //       priority: 0,
-  //     }),
-  //   };
-  // }
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      table: (node: Node) => ({
+        conversion: convertTableElement,
+        priority: 0,
+      }),
+    };
+  }
 
   constructor(key?: NodeKey): void {
     super(key);

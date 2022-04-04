@@ -8,6 +8,7 @@
  * @flow strict
  */
 import type {
+  DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
   LexicalNode,
@@ -48,18 +49,18 @@ export class TableCellNode extends GridCellNode {
     );
   }
 
-  // static convertDOM(): DOMConversionMap | null {
-  //   return {
-  //     td: (node: Node) => ({
-  //       conversion: convertTableCellNodeElement,
-  //       priority: 0,
-  //     }),
-  //     th: (node: Node) => ({
-  //       conversion: convertTableCellNodeElement,
-  //       priority: 0,
-  //     }),
-  //   };
-  // }
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      td: (node: Node) => ({
+        conversion: convertTableCellNodeElement,
+        priority: 0,
+      }),
+      th: (node: Node) => ({
+        conversion: convertTableCellNodeElement,
+        priority: 0,
+      }),
+    };
+  }
 
   constructor(
     headerState?: TableCellHeaderState = TableCellHeaderStates.NO_STATUS,

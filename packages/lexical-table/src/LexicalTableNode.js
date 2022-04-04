@@ -9,7 +9,14 @@
 
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {Cell, Grid} from './LexicalTableSelection';
-import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
@@ -27,6 +34,15 @@ export class TableNode extends GridNode {
 
   static clone(node: TableNode): TableNode {
     return new TableNode(node.__key);
+  }
+
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      table: (node: Node) => ({
+        conversion: convertTableElement,
+        priority: 0,
+      }),
+    };
   }
 
   constructor(key?: NodeKey): void {
@@ -155,6 +171,10 @@ export function $getElementGridForTableNode(
   }
 
   return getTableGrid(tableElement);
+}
+
+export function convertTableElement(domNode: Node): DOMConversionOutput {
+  return {node: $createTableNode()};
 }
 
 export function $createTableNode(): TableNode {

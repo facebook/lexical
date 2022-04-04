@@ -27,6 +27,8 @@ import {
 } from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
 
+const IGNORE_TAGS = new Set(['STYLE']);
+
 export function getHtmlContent(editor: LexicalEditor): string | null {
   const domSelection = getDOMSelection();
   // If we haven't selected a range, then don't copy anything
@@ -163,8 +165,14 @@ function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
+  parentLexicalNode: ?LexicalNode | null,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
+
+  if (IGNORE_TAGS.has(node.nodeName)) {
+    return lexicalNodes;
+  }
+
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction ? transformFunction(node) : null;
@@ -174,9 +182,19 @@ function $createNodesFromDOM(
     postTransform = transformOutput.after;
     currentLexicalNode = transformOutput.node;
     if (currentLexicalNode !== null) {
-      lexicalNodes.push(currentLexicalNode);
       for (const [, forChildFunction] of forChildMap) {
-        forChildFunction(currentLexicalNode);
+        currentLexicalNode = forChildFunction(
+          currentLexicalNode,
+          parentLexicalNode,
+        );
+
+        if (!currentLexicalNode) {
+          break;
+        }
+      }
+
+      if (currentLexicalNode) {
+        lexicalNodes.push(currentLexicalNode);
       }
     }
 
@@ -191,7 +209,12 @@ function $createNodesFromDOM(
   let childLexicalNodes = [];
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
-      ...$createNodesFromDOM(children[i], editor, forChildMap),
+      ...$createNodesFromDOM(
+        children[i],
+        editor,
+        forChildMap,
+        currentLexicalNode,
+      ),
     );
   }
   if (postTransform != null) {
@@ -219,9 +242,12 @@ function $generateNodesFromDOM(
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
   for (let i = 0; i < elementsLength; i++) {
-    const lexicalNode = $createNodesFromDOM(elements[i], editor);
-    if (lexicalNode !== null) {
-      lexicalNodes = lexicalNodes.concat(lexicalNode);
+    const element = elements[i];
+    if (!IGNORE_TAGS.has(element.nodeName)) {
+      const lexicalNode = $createNodesFromDOM(element, editor);
+      if (lexicalNode !== null) {
+        lexicalNodes = lexicalNodes.concat(lexicalNode);
+      }
     }
   }
   return lexicalNodes;

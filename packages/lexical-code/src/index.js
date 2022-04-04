@@ -196,7 +196,7 @@ export class CodeNode extends ElementNode {
         if (isGitHubCodeTable(table)) {
           return {
             conversion: convertTableElement,
-            priority: 1,
+            priority: 4,
           };
         }
         return null;
@@ -204,10 +204,35 @@ export class CodeNode extends ElementNode {
       td: (node: Node) => {
         // $FlowFixMe[incompatible-type] element is a <td> since we matched it by nodeName
         const td: HTMLTableCellElement = node;
+        // $FlowFixMe[incompatible-type] we know this will be a table, or null.
+        const table: ?HTMLTableElement | null = td.closest('table');
+
         if (isGitHubCodeCell(td)) {
           return {
             conversion: convertTableCellElement,
-            priority: 1,
+            priority: 4,
+          };
+        }
+        if (table && isGitHubCodeTable(table)) {
+          // Return a no-op if it's a table cell in a code table, but not a code line.
+          // Otherwise it'll fall back to the T
+          return {
+            conversion: convertCodeNoop,
+            priority: 4,
+          };
+        }
+
+        return null;
+      },
+      tr: (node: Node) => {
+        // $FlowFixMe[incompatible-type] element is a <tr> since we matched it by nodeName
+        const tr: HTMLTableElement = node;
+        // $FlowFixMe[incompatible-type] we know this will be a table, or null.
+        const table: ?HTMLTableElement | null = tr.closest('table');
+        if (table && isGitHubCodeTable(table)) {
+          return {
+            conversion: convertCodeNoop,
+            priority: 4,
           };
         }
         return null;
@@ -355,9 +380,14 @@ function convertTableElement(): DOMConversionOutput {
   return {node: $createCodeNode()};
 }
 
+function convertCodeNoop(): DOMConversionOutput {
+  return {node: null};
+}
+
 function convertTableCellElement(domNode: Node): DOMConversionOutput {
   // $FlowFixMe[incompatible-type] domNode is a <td> since we matched it by nodeName
   const cell: HTMLTableCellElement = domNode;
+
   return {
     after: (childLexicalNodes) => {
       if (cell.parentNode && cell.parentNode.nextSibling) {

@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {GridRowNode} from 'lexical';
@@ -21,6 +27,15 @@ export class TableRowNode extends GridRowNode {
 
   static clone(node: TableRowNode): TableRowNode {
     return new TableRowNode(node.__height, node.__key);
+  }
+
+  static convertDOM(): DOMConversionMap | null {
+    return {
+      tr: (node: Node) => ({
+        conversion: convertTableRowElement,
+        priority: 0,
+      }),
+    };
   }
 
   constructor(height?: ?number, key?: NodeKey): void {
@@ -57,6 +72,10 @@ export class TableRowNode extends GridRowNode {
   canBeEmpty(): false {
     return false;
   }
+}
+
+export function convertTableRowElement(domNode: Node): DOMConversionOutput {
+  return {node: $createTableRowNode()};
 }
 
 export function $createTableRowNode(height?: ?number): TableRowNode {

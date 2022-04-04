@@ -754,6 +754,8 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
       if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
         lexicalNode.toggleFormat('bold');
       }
+
+      return lexicalNode;
     },
     node: null,
   };
@@ -768,6 +770,8 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
       if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
         lexicalNode.toggleFormat('bold');
       }
+
+      return lexicalNode;
     },
     node: null,
   };
@@ -791,6 +795,8 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
       if ($isTextNode(lexicalNode)) {
         lexicalNode.toggleFormat(format);
       }
+
+      return lexicalNode;
     },
     node: null,
   };

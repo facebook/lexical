@@ -297,7 +297,10 @@ export type DOMConversionFn = (
   element: Node,
   parent?: Node,
 ) => DOMConversionOutput;
-export type DOMChildConversion = (lexicalNode: LexicalNode) => void;
+export type DOMChildConversion = (
+  lexicalNode: LexicalNode,
+  parentLexicalNode: ?(LexicalNode | null),
+) => ?(LexicalNode | void | null);
 export type DOMConversionMap = Record<
   NodeName,
   (node: Node) => DOMConversion | null

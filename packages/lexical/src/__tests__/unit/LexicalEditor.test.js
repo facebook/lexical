@@ -1876,4 +1876,22 @@ describe('LexicalEditor tests', () => {
     editor.setReadOnly(false);
     expect(readOnlyFn.mock.calls).toEqual([[true], [false]]);
   });
+
+  it('does not add new listeners while triggering existing', async () => {
+    const updateListener = jest.fn();
+    init();
+    editor.registerUpdateListener(() => {
+      updateListener();
+
+      editor.registerUpdateListener(() => {
+        updateListener();
+      });
+    });
+
+    await update(() => {
+      $getRoot().getFirstChild().replace($createParagraphNode());
+    });
+
+    expect(updateListener).toHaveBeenCalledTimes(1);
+  });
 });

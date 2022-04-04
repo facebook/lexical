@@ -36,7 +36,6 @@ export default function LexicalComposer({
 }: Props): React$MixedElement {
   const composerContext = useMemo(
     () => {
-      let composerTheme: void | EditorThemeClasses;
       const {
         theme,
         namespace,
@@ -47,7 +46,7 @@ export default function LexicalComposer({
 
       const context: LexicalComposerContextType = createLexicalComposerContext(
         null,
-        composerTheme,
+        theme,
       );
       let editor = initialEditor || null;
 

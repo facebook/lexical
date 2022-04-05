@@ -776,13 +776,13 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
   }
 
   return mergeRegister(
-    editor.addNodeTransform(CodeNode, (node) =>
+    editor.registerNodeTransform(CodeNode, (node) =>
       codeNodeTransform(node, editor),
     ),
-    editor.addNodeTransform(TextNode, (node) =>
+    editor.registerNodeTransform(TextNode, (node) =>
       textNodeTransform(node, editor),
     ),
-    editor.addNodeTransform(CodeHighlightNode, (node) =>
+    editor.registerNodeTransform(CodeHighlightNode, (node) =>
       textNodeTransform(node, editor),
     ),
     editor.registerCommand(

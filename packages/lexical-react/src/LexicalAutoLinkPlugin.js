@@ -222,7 +222,7 @@ function useAutoLink(
     };
 
     return mergeRegister(
-      editor.addNodeTransform(TextNode, (textNode: TextNode) => {
+      editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
         if ($isAutoLinkNode(parent)) {
           handleLinkEdit(parent, matchers, onChangeWrapped);
@@ -233,7 +233,7 @@ function useAutoLink(
           handleBadNeighbors(textNode, onChangeWrapped);
         }
       }),
-      editor.addNodeTransform(AutoLinkNode, (linkNode: AutoLinkNode) => {
+      editor.registerNodeTransform(AutoLinkNode, (linkNode: AutoLinkNode) => {
         handleLinkEdit(linkNode, matchers, onChangeWrapped);
       }),
     );

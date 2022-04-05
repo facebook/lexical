@@ -64,7 +64,7 @@ function useEmojis(editor: LexicalEditor): void {
       throw new Error('EmojisPlugin: EmojiNode not registered on editor');
     }
 
-    return editor.addNodeTransform(TextNode, textNodeTransform);
+    return editor.registerNodeTransform(TextNode, textNodeTransform);
   }, [editor]);
 }
 

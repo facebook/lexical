@@ -213,12 +213,12 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   const conversionCache = new Map();
   const handledConversions = new Set();
   nodes.forEach((node) => {
-    const convertDOM = node.klass.convertDOM;
-    if (handledConversions.has(convertDOM)) {
+    const importDOM = node.klass.importDOM;
+    if (handledConversions.has(importDOM)) {
       return;
     }
-    handledConversions.add(convertDOM);
-    const map = convertDOM();
+    handledConversions.add(importDOM);
+    const map = importDOM();
     if (map !== null) {
       Object.keys(map).forEach((key) => {
         let currentCache = conversionCache.get(key);

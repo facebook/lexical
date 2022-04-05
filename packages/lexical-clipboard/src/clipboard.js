@@ -11,9 +11,11 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  GridSelection,
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   ParsedNodeMap,
   RangeSelection,
 } from 'lexical';
@@ -22,7 +24,9 @@ import {$cloneContents} from '@lexical/selection';
 import {
   $createNodeFromParse,
   $createParagraphNode,
+  $getNodeByKey,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
 } from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
@@ -31,9 +35,14 @@ const IGNORE_TAGS = new Set(['STYLE']);
 
 export function getHtmlContent(editor: LexicalEditor): string | null {
   const domSelection = getDOMSelection();
+  const selection = $getSelection();
   // If we haven't selected a range, then don't copy anything
   if (domSelection.isCollapsed) {
     return null;
+  }
+  if (selection !== null) {
+    const state = $cloneContents(selection);
+    return $convertSelectedLexicalContentToHtml(editor, selection, state);
   }
   const range = domSelection.getRangeAt(0);
   if (range) {
@@ -43,6 +52,59 @@ export function getHtmlContent(editor: LexicalEditor): string | null {
     return container.innerHTML;
   }
   return null;
+}
+
+export function $convertLexicalNodeToHTMLElement(
+  editor: LexicalEditor,
+  selectedNodes: Set<LexicalNode>,
+  node: LexicalNode,
+): ?HTMLElement {
+  if ($isDecoratorNode(node)) {
+    const activeDomElement = editor.getElementByKey(node.getKey());
+    return activeDomElement
+      ? node.exportDOM(activeDomElement.cloneNode(), editor)
+      : null;
+  }
+  const domElement = node.createDOM(editor._config, editor);
+  const children = $isElementNode(node) ? node.getChildren() : [];
+  for (let i = 0; i < children.length; i++) {
+    const childNode = children[i];
+    if (selectedNodes.has(childNode)) {
+      const element = $convertLexicalNodeToHTMLElement(
+        editor,
+        selectedNodes,
+        childNode,
+      );
+      if (element) domElement.append(element);
+    }
+  }
+  return node.exportDOM(domElement, editor);
+}
+
+export function $convertSelectedLexicalContentToHtml(
+  editor: LexicalEditor,
+  selection: RangeSelection | NodeSelection | GridSelection,
+  state: {
+    nodeMap: Array<[NodeKey, LexicalNode]>,
+    range: Array<NodeKey>,
+  },
+): string {
+  const container = document.createElement('div');
+  const selectedNodes = new Set(selection.getNodes());
+
+  for (let i = 0; i < state.range.length; i++) {
+    const nodeKey = state.range[i];
+    const node = $getNodeByKey(nodeKey);
+    if (node) {
+      const element = $convertLexicalNodeToHTMLElement(
+        editor,
+        selectedNodes,
+        node,
+      );
+      if (element) container.append(element);
+    }
+  }
+  return container.innerHTML;
 }
 
 export function $getLexicalContent(editor: LexicalEditor): string | null {

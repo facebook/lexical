@@ -326,8 +326,9 @@ declare export class LexicalNode {
   __parent: null | NodeKey;
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
-  static convertDOM(): DOMConversionMap | null;
+  static importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
+  exportDOM(element: HTMLElement, editor: LexicalEditor): HTMLElement;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;

@@ -50,13 +50,20 @@ export class ParagraphNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       p: (node: Node) => ({
         conversion: convertParagraphElement,
         priority: 0,
       }),
     };
+  }
+
+  exportDOM(element: HTMLElement): HTMLElement {
+    if (this.getTextContentSize() === 0) {
+      element.append(document.createElement('br'));
+    }
+    return element;
   }
 
   // Mutation

@@ -596,7 +596,12 @@ export class LexicalNode {
     invariant(false, 'updateDOM: base method not extended');
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  // $FlowFixMe: Revise typings for EditorContext
+  exportDOM(element: HTMLElement): HTMLElement {
+    return element;
+  }
+
+  static importDOM(): DOMConversionMap | null {
     return null;
   }
 

@@ -27,7 +27,7 @@ export declare class LinkNode extends ElementNode {
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean;
-  static convertDOM(): DOMConversionMap | null;
+  static importDOM(): DOMConversionMap | null;
   getURL(): string;
   setURL(url: string): void;
   insertNewAfter(selection: RangeSelection): null | ElementNode;

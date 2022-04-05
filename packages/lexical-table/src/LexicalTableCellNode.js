@@ -11,6 +11,7 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
 } from 'lexical';
@@ -49,7 +50,7 @@ export class TableCellNode extends GridCellNode {
     );
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({
         conversion: convertTableCellNodeElement,
@@ -85,6 +86,24 @@ export class TableCellNode extends GridCellNode {
       config.theme.tableCell,
       this.hasHeader() && config.theme.tableCellHeader,
     );
+
+    return element;
+  }
+
+  exportDOM(element: HTMLElement, editor: LexicalEditor): HTMLElement {
+    const maxWidth = 700;
+    const colCount = this.getParentOrThrow().getChildrenSize();
+    element.style.border = '1px solid black';
+    element.style.width = `${
+      this.getWidth() || Math.max(90, maxWidth / colCount)
+    }px`;
+
+    element.style.verticalAlign = 'top';
+    element.style.textAlign = 'start';
+
+    if (this.hasHeader()) {
+      element.style.backgroundColor = '#f2f3f5';
+    }
 
     return element;
   }

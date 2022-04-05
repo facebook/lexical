@@ -23,6 +23,7 @@ import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {getTableGrid} from './LexicalTableSelectionHelpers';
 
 export class TableNode extends GridNode {
@@ -36,7 +37,7 @@ export class TableNode extends GridNode {
     return new TableNode(node.__key);
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       table: (node: Node) => ({
         conversion: convertTableElement,
@@ -62,6 +63,25 @@ export class TableNode extends GridNode {
 
   updateDOM(): boolean {
     return false;
+  }
+
+  exportDOM(element: HTMLElement, editor: LexicalEditor): HTMLElement {
+    const newElement = element.cloneNode();
+    const colGroup = document.createElement('colgroup');
+    const tBody = document.createElement('tbody');
+    tBody.append(...element.children);
+    const firstRow = this.getFirstChildOrThrow();
+    if (!$isTableRowNode(firstRow)) {
+      throw new Error('Expected to find row node.');
+    }
+    const colCount = firstRow.getChildrenSize();
+    for (let i = 0; i < colCount; i++) {
+      const col = document.createElement('col');
+      colGroup.append(col);
+    }
+    //$FlowFixMe This function does exist and is supported by major browsers.
+    newElement.replaceChildren(colGroup, tBody);
+    return newElement;
   }
 
   canExtractContents(): false {

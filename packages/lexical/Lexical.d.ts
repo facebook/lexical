@@ -318,7 +318,7 @@ export declare class LexicalNode {
   __parent: null | NodeKey;
   getType(): string;
   clone(data: any): LexicalNode;
-  convertDOM(): DOMConversionMap | null;
+  importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey);
   getType(): string;
   isAttached(): boolean;
@@ -351,6 +351,7 @@ export declare class LexicalNode {
     includeInert?: boolean,
     includeDirectionless?: false,
   ): number;
+  exportDOM(element: HTMLElement, editor: LexicalEditor): HTMLElement;
   // $FlowFixMe
   createDOM<EditorContext extends Record<string, any>>(
     config: EditorConfig<EditorContext>,

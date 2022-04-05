@@ -66,7 +66,7 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       li: (node: Node) => ({
         conversion: convertListItemElement,

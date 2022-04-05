@@ -11,7 +11,7 @@ User types a character and you want to color the word blue if the word is now eq
 We programmatically add an `@Mention` to the editor, the `@Mention` is immediately next to another `@Mention` (`@Mention@Mention`). Since we believe this makes mentions hard to read, we want to destroy/replace both mentions and render them as plain TextNode's instead.
 
 ```
-const removeTransform = editor.addNodeTransform(TextNode, textNode => {
+const removeTransform = editor.registerNodeTransform(TextNode, textNode => {
   if (textNode.getTextContent() === 'blue') {
     textNode.setTextContent('green');
   }
@@ -21,7 +21,7 @@ const removeTransform = editor.addNodeTransform(TextNode, textNode => {
 ## Syntax
 
 ```
-editor.addNodeTransform<T: LexicalNode>(Class<T>, T): () => void
+editor.registerNodeTransform<T: LexicalNode>(Class<T>, T): () => void
 ```
 
 ## Lifecycle
@@ -54,7 +54,7 @@ Hence, we have to make sure that the transforms do not mark the node dirty unnec
 
 ```
 // When a TextNode changes (marked as dirty) make it bold
-editor.addNodeTransform(TextNode, textNode => {
+editor.registerNodeTransform(TextNode, textNode => {
   // Important: Check current format state
   if (!textNode.hasFormat('bold')) {
     textNode.toggleFormat('bold');
@@ -66,14 +66,14 @@ But oftentimes, the order is not important. The below would always end up in the
 
 ```
 // Plugin 1
-editor.addNodeTransform(TextNode, textNode => {
+editor.registerNodeTransform(TextNode, textNode => {
   // This transform runs twice but does nothing the first time because it doesn't meet the preconditions
   if (textNode.getTextContent() === 'modified') {
     textNode.setTextContent('re-modified');
   }
 }
 // Plugin 2
-editor.addNodeTransform(TextNode, textNode => {
+editor.registerNodeTransform(TextNode, textNode => {
   // This transform runs only once
   if (textNode.getTextContent() === 'original') {
     textNode.setTextContent('modified');
@@ -88,7 +88,7 @@ editor.addListener('update', ({editorState}) => {
 
 ## Transforms on parent nodes
 
-Transforms are very specific to a type of node. This applies to both the declaration (`addNodeTransform(ImageNode)`) and the times it triggers during an update cycle.
+Transforms are very specific to a type of node. This applies to both the declaration (`registerNodeTransform(ImageNode)`) and the times it triggers during an update cycle.
 
 ```
 // Won't trigger

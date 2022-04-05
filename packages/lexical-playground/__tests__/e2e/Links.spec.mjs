@@ -551,4 +551,40 @@ test.describe('Links', () => {
       `,
     );
   });
+
+  test('Can create multiline links', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello world');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Hello world');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Hello world');
+
+    await selectAll(page);
+
+    await waitForSelector(page, '.link');
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <a dir="ltr" href="https://">
+            <span data-lexical-text="true">Hello world</span>
+          </a>
+        </p>
+        <p dir="ltr">
+          <a dir="ltr" href="https://">
+            <span data-lexical-text="true">Hello world</span>
+          </a>
+        </p>
+        <p dir="ltr">
+          <a dir="ltr" href="https://">
+            <span data-lexical-text="true">Hello world</span>
+          </a>
+        </p>
+      `,
+      {ignoreClasses: true},
+    );
+  });
 });

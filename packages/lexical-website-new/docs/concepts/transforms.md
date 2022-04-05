@@ -28,7 +28,7 @@ editor.registerNodeTransform<T: LexicalNode>(Class<T>, T): () => void
 
 Transforms are executed sequentially before changes are propagated to the DOM and multiple transforms still lead to a single DOM reconciliation (the most expensive operation in Lexical's lifecycle).
 
-![Transforms lifecycle](/img/transforms-lifecycle.svg)
+![Transforms lifecycle](/img/docs/transforms-lifecycle.svg)
 
 **Beware!**
 

@@ -138,7 +138,10 @@ export type DOMConversionOutput = {
   forChild?: DOMChildConversion,
   node: LexicalNode | null,
 };
-
+export type DOMExportOutput = {
+  after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
+  element?: HTMLElement | null,
+};
 export type NodeKey = string;
 
 export class LexicalNode {
@@ -596,7 +599,20 @@ export class LexicalNode {
     invariant(false, 'updateDOM: base method not extended');
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  // $FlowFixMe: Revise typings for EditorContext
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    if ($isDecoratorNode(this)) {
+      const element = editor.getElementByKey(this.getKey());
+      return {element: element ? element.cloneNode() : null};
+    }
+
+    const element = this.createDOM(editor._config, editor);
+
+    return {element};
+  }
+
+  static importDOM(): DOMConversionMap | null {
     return null;
   }
 

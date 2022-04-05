@@ -40,7 +40,7 @@ export class LineBreakNode extends LexicalNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => ({
         conversion: convertLineBreakElement,

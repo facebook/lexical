@@ -173,7 +173,7 @@ export class HeadingNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       h1: (node: Node) => ({
         conversion: convertHeadingElement,

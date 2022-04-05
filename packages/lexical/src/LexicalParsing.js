@@ -207,7 +207,9 @@ export function internalCreateNodeFromParse(
     node.__detail = parsedNode.__detail;
   } else if ($isDecoratorNode(node)) {
     const parsedDecoratorState = parsedNode.__state;
-    node.__state = createDecoratorMapFromParse(editor, parsedDecoratorState);
+    node.__state =
+      parsedDecoratorState &&
+      createDecoratorMapFromParse(editor, parsedDecoratorState);
   }
   // The selection might refer to an old node whose key has changed. Produce a
   // new selection record with the old keys mapped to the new ones.

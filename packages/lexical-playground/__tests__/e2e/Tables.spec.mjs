@@ -438,16 +438,12 @@ test.describe('Tables', () => {
         <p><br /></p>
         <table>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">a</span>
               </p>
             </th>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">bb</span>
               </p>
@@ -465,16 +461,12 @@ test.describe('Tables', () => {
             </th>
           </tr>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">d</span>
               </p>
             </th>
-            <td
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <td style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">e</span>
               </p>
@@ -555,16 +547,12 @@ test.describe('Tables', () => {
         <p><br /></p>
         <table>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">a</span>
               </p>
             </th>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">bb</span>
               </p>
@@ -582,16 +570,12 @@ test.describe('Tables', () => {
             </th>
           </tr>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">d</span>
               </p>
             </th>
-            <td
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <td style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">e</span>
               </p>
@@ -702,16 +686,12 @@ test.describe('Tables', () => {
         <p><br /></p>
         <table>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">a</span>
               </p>
             </th>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">bb</span>
               </p>
@@ -729,16 +709,12 @@ test.describe('Tables', () => {
             </th>
           </tr>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">d</span>
               </p>
             </th>
-            <td
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <td style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <span data-lexical-text="true">e</span>
               </p>
@@ -836,16 +812,12 @@ test.describe('Tables', () => {
         <p><br /></p>
         <table>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <strong data-lexical-text="true">a</strong>
               </p>
             </th>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <strong data-lexical-text="true">bb</strong>
               </p>
@@ -863,16 +835,12 @@ test.describe('Tables', () => {
             </th>
           </tr>
           <tr>
-            <th
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <th style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <strong data-lexical-text="true">d</strong>
               </p>
             </th>
-            <td
-              style="background-color: rgb(163, 187, 255); caret-color: transparent;"
-            >
+            <td style="background-color: #ACCEF7; caret-color: transparent;">
               <p dir="ltr">
                 <strong data-lexical-text="true">e</strong>
               </p>

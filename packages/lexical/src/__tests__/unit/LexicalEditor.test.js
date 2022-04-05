@@ -246,7 +246,7 @@ describe('LexicalEditor tests', () => {
     expect(log).toEqual(['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2']);
     log = [];
 
-    editor.addNodeTransform(TextNode, () => {
+    editor.registerNodeTransform(TextNode, () => {
       log.push('TextTransform A3');
       editor.update(
         () => {
@@ -323,7 +323,7 @@ describe('LexicalEditor tests', () => {
   it('Synchronously runs three transforms, two of them depend on the other', async () => {
     init();
     // 2. Add italics
-    const italicsListener = editor.addNodeTransform(TextNode, (node) => {
+    const italicsListener = editor.registerNodeTransform(TextNode, (node) => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -333,13 +333,13 @@ describe('LexicalEditor tests', () => {
       }
     });
     // 1. Add bold
-    const boldListener = editor.addNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
     });
     // 2. Add underline
-    const underlineListener = editor.addNodeTransform(TextNode, (node) => {
+    const underlineListener = editor.registerNodeTransform(TextNode, (node) => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -369,7 +369,7 @@ describe('LexicalEditor tests', () => {
     const skipFirst = [true, true, true];
 
     // 2. (Block transform) Add text
-    const testParagraphListener = editor.addNodeTransform(
+    const testParagraphListener = editor.registerNodeTransform(
       ParagraphNode,
       (paragraph) => {
         if (skipFirst[0]) {
@@ -382,13 +382,13 @@ describe('LexicalEditor tests', () => {
       },
     );
     // 2. (Text transform) Add bold to text
-    const boldListener = editor.addNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
     });
     // 3. (Block transform) Add italics to bold text
-    const italicsListener = editor.addNodeTransform(
+    const italicsListener = editor.registerNodeTransform(
       ParagraphNode,
       (paragraph) => {
         const child = paragraph.getLastDescendant();
@@ -424,7 +424,7 @@ describe('LexicalEditor tests', () => {
     const hasRun = [false, false, false];
     init();
     // 1. [Foo] into [<empty>,Fo,o,<empty>,!,<empty>]
-    const fooListener = editor.addNodeTransform(TextNode, (node) => {
+    const fooListener = editor.registerNodeTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo' && !hasRun[0]) {
         const [before, after] = node.splitText(2);
         before.insertBefore($createTextNode(''));
@@ -435,7 +435,7 @@ describe('LexicalEditor tests', () => {
       }
     });
     // 2. [Foo!] into [<empty>,Fo,o!,<empty>,!,<empty>]
-    const megaFooListener = editor.addNodeTransform(
+    const megaFooListener = editor.registerNodeTransform(
       ParagraphNode,
       (paragraph) => {
         const child = paragraph.getFirstChild();
@@ -454,7 +454,7 @@ describe('LexicalEditor tests', () => {
       },
     );
     // 3. [Foo!!] into formatted bold [<empty>,Fo,o!!,<empty>]
-    const boldFooListener = editor.addNodeTransform(TextNode, (node) => {
+    const boldFooListener = editor.registerNodeTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
         node.toggleFormat('bold');
         const [before, after] = node.splitText(2);
@@ -482,7 +482,7 @@ describe('LexicalEditor tests', () => {
     init();
     const executeTransform = jest.fn();
     let hasBeenRemoved = false;
-    const removeListener = editor.addNodeTransform(TextNode, (node) => {
+    const removeListener = editor.registerNodeTransform(TextNode, (node) => {
       if (hasBeenRemoved) {
         executeTransform();
       }
@@ -509,13 +509,13 @@ describe('LexicalEditor tests', () => {
     init();
     let executeParagraphNodeTransform = () => {};
     let executeTextNodeTransform = () => {};
-    const removeParagraphTransform = editor.addNodeTransform(
+    const removeParagraphTransform = editor.registerNodeTransform(
       ParagraphNode,
       (node) => {
         executeParagraphNodeTransform();
       },
     );
-    const removeTextNodeTransform = editor.addNodeTransform(
+    const removeTextNodeTransform = editor.registerNodeTransform(
       TextNode,
       (node) => {
         executeTextNodeTransform();
@@ -566,7 +566,7 @@ describe('LexicalEditor tests', () => {
         paragraph0.append(...textNodes.slice(0, 3));
         paragraph1.append(...textNodes.slice(3));
       });
-      removeTransform = editor.addNodeTransform(TextNode, (node) => {
+      removeTransform = editor.registerNodeTransform(TextNode, (node) => {
         textTransformCount[node.__text]++;
       });
     });
@@ -634,7 +634,7 @@ describe('LexicalEditor tests', () => {
     const errorListener = jest.fn();
     init(errorListener);
 
-    const boldListener = editor.addNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
       node.toggleFormat('bold');
     });
 
@@ -1550,11 +1550,11 @@ describe('LexicalEditor tests', () => {
   it('can register transforms before updates', async () => {
     init();
     const emptyTransform = () => {};
-    const removeTextTransform = editor.addNodeTransform(
+    const removeTextTransform = editor.registerNodeTransform(
       TextNode,
       emptyTransform,
     );
-    const removeParagraphTransform = editor.addNodeTransform(
+    const removeParagraphTransform = editor.registerNodeTransform(
       ParagraphNode,
       emptyTransform,
     );

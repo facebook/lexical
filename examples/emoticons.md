@@ -159,7 +159,7 @@ Next, let's setup a transform to listen for changes. Transforms are special even
 
 function useEmoticons(editor) {
   useEffect(() => {
-    const removeTransform = editor.addNodeTransform(TextNode, () => {
+    const removeTransform = editor.registerNodeTransform(TextNode, () => {
       console.log('hello');
     });
     return () => {
@@ -192,7 +192,7 @@ function emoticonTransform(node) {
 
 function useEmoticons(editor) {
   useEffect(() => {
-    const removeTransform = editor.addNodeTransform(
+    const removeTransform = editor.registerNodeTransform(
       TextNode,
       emoticonTransform,
     );
@@ -226,7 +226,7 @@ function emoticonTransform(node) {
 
 function useEmoticons(editor) {
   useEffect(() => {
-    const removeTransform = editor.addNodeTransform(TextNode, emoticonTransform);
+    const removeTransform = editor.registerNodeTransform(TextNode, emoticonTransform);
     return () => {
       removeTransform();
     };

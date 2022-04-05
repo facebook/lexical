@@ -370,11 +370,11 @@ export function registerLexicalTextEntity<N: TextNode>(
     }
   };
 
-  const removePlainTextTransform = editor.addNodeTransform(
+  const removePlainTextTransform = editor.registerNodeTransform(
     TextNode,
     textNodeTransform,
   );
-  const removeReverseNodeTransform = editor.addNodeTransform<N>(
+  const removeReverseNodeTransform = editor.registerNodeTransform<N>(
     targetNode,
     reverseNodeTransform,
   );

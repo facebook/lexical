@@ -142,7 +142,7 @@ export declare class LexicalEditor {
     klass: Class<LexicalNode>,
     listener: MutationListener,
   ): () => void;
-  addNodeTransform<T extends LexicalNode>(
+  registerNodeTransform<T extends LexicalNode>(
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;

@@ -474,7 +474,7 @@ export class LexicalEditor {
       mutations.delete(listener);
     };
   }
-  addNodeTransform(
+  registerNodeTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T: LexicalNode> in the
     // declaration below guarantees these are LexicalNodes.
     klass: Class<LexicalNode>,

@@ -27,6 +27,7 @@ export type Props = $ReadOnly<{
   autoComplete?: boolean,
   autoCorrect?: boolean,
   className?: string,
+  id?: string,
   readOnly?: boolean,
   role?: string,
   spellCheck?: boolean,
@@ -50,6 +51,7 @@ export default function LexicalContentEditable({
   autoComplete,
   autoCorrect,
   className,
+  id,
   role = 'textbox',
   spellCheck = true,
   style,
@@ -91,6 +93,7 @@ export default function LexicalContentEditable({
       className={className}
       contentEditable={!isReadOnly}
       data-testid={testid}
+      id={id}
       ref={ref}
       role={isReadOnly ? null : role}
       spellCheck={spellCheck}

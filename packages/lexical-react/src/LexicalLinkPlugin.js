@@ -16,7 +16,7 @@ import {
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getSelection, $setSelection} from 'lexical';
+import {$getSelection, $isElementNode, $setSelection} from 'lexical';
 import {useEffect} from 'react';
 
 const EditorPriority: CommandListenerEditorPriority = 0;
@@ -44,8 +44,6 @@ function toggleLink(url: null | string) {
       });
     } else {
       // Add or merge LinkNodes
-      let prevParent = null;
-      let linkNode = null;
       if (nodes.length === 1) {
         const firstNode = nodes[0];
         // if the first node is a LinkNode or if its
@@ -59,15 +57,21 @@ function toggleLink(url: null | string) {
             // set parent to be the current linkNode
             // so that other nodes in the same parent
             // aren't handled separately below.
-            linkNode = parent;
             parent.setURL(url);
             return;
           }
         }
       }
+
+      let prevParent = null;
+      let linkNode = null;
       nodes.forEach((node) => {
         const parent = node.getParent();
-        if (parent === linkNode || parent === null) {
+        if (
+          parent === linkNode ||
+          parent === null ||
+          ($isElementNode(node) && !node.isInline())
+        ) {
           return;
         }
         if (!parent.is(prevParent)) {

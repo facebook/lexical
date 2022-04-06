@@ -47,6 +47,7 @@ export type ParsedElementNode = {
   __dir: 'ltr' | 'rtl' | null,
   __format: number,
   __indent: number,
+  ...
 };
 
 export type ParsedTextNode = {

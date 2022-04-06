@@ -73,6 +73,7 @@ export default function ActionsPlugins({
   const convertFromMarkdown = useCallback(() => {
     editor.update(() => {
       $convertFromMarkdownString('', editor, null);
+      $getRoot().selectEnd();
     });
   }, [editor]);
 

@@ -350,6 +350,10 @@ i.tweet {
   background-image: url(images/icons/tweet.svg);
 }
 
+i.youtube {
+  background-image: url(images/icons/youtube.svg);
+}
+
 i.left-align {
   background-image: url(images/icons/text-left.svg);
 }

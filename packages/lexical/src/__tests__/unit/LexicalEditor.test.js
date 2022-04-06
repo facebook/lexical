@@ -18,6 +18,7 @@ import {
 } from '@lexical/table';
 import {
   $createGridSelection,
+  $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
@@ -1588,6 +1589,15 @@ describe('LexicalEditor tests', () => {
     });
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith('foobar');
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const child = root.getLastDescendant();
+      child.insertAfter($createLineBreakNode());
+    });
+
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenCalledWith('foobar\n');
   });
 
   it('mutation listener', async () => {

@@ -8,6 +8,7 @@
  */
 
 import type {LexicalNode} from '../LexicalNode';
+import type {ParsedElementNode} from '../LexicalParsing';
 
 import invariant from 'shared/invariant';
 
@@ -90,6 +91,18 @@ export class RootNode extends ElementNode {
       }
     }
     return super.append(...nodesToAppend);
+  }
+
+  toJSON(): ParsedElementNode {
+    return {
+      __children: this.__children,
+      __dir: this.__dir,
+      __format: this.__format,
+      __indent: this.__indent,
+      __key: 'root',
+      __parent: null,
+      __type: 'root',
+    };
   }
 }
 

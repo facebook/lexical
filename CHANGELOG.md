@@ -1,7 +1,6 @@
 ## 0.1.17 (Apr 6, 2022)
 
 - Add useLexicaTextEntity hook for using TextEntity in React.
-- E2E test harness improvements
 - Adds a warning when cloned nodes might unexpectedly refer to the pending editor state
 - Adds support for keyboard selection in Tables.
 - Add a Twitter embed feature to the playground

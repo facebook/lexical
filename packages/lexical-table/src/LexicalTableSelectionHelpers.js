@@ -833,7 +833,7 @@ export function $updateDOMForSelection(
 
       if (lexicalNode && selectedCellNodes.has(lexicalNode)) {
         cell.highlighted = true;
-        elemStyle.setProperty('background-color', '#ACCEF7');
+        elemStyle.setProperty('background-color', 'rgb(172, 206, 247)');
         elemStyle.setProperty('caret-color', 'transparent');
         highlightedCells.push(cell);
       } else {

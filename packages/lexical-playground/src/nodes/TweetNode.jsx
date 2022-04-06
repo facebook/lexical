@@ -41,9 +41,14 @@ function TweetComponent({
       await window.twttr.widgets.createTweet(tweetID, containerRef.current);
 
       setIsLoading(false);
-      onLoad?.();
+
+      if (onLoad) {
+        onLoad();
+      }
     } catch (e) {
-      onError?.(e);
+      if (onError) {
+        onError(e);
+      }
     }
   }, [onError, onLoad, tweetID]);
 

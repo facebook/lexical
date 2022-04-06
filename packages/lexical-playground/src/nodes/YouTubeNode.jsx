@@ -23,7 +23,9 @@ function YouTubeComponent({onLoad, videoID}: YouTubeComponentProps) {
 
   useEffect(() => {
     if (videoID !== previousYouTubeIDRef.current) {
-      onLoad?.();
+      if (onLoad) {
+        onLoad();
+      }
 
       previousYouTubeIDRef.current = videoID;
     }

@@ -44,7 +44,7 @@ export type ParsedNode = {
 export type ParsedElementNode = {
   ...ParsedNode,
   __children: Array<NodeKey>,
-  __dir: number,
+  __dir: 'ltr' | 'rtl' | null,
   __format: number,
   __indent: number,
 };

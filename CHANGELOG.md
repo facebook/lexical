@@ -1,3 +1,20 @@
+## 0.1.17 (Apr 6, 2022)
+
+- Add useLexicaTextEntity hook for using TextEntity in React.
+- Adds a warning when cloned nodes might unexpectedly refer to the pending editor state
+- Adds support for keyboard selection in Tables.
+- Add a Twitter embed feature to the playground
+- Rename add* APIs to register* (e.g., addUpdateListener -> registerUpdateListener)
+- Deprecate editor prop in Lexical Composer
+- Reorganize code, creating several new packages: @lexical/code, rich-text, plain-text, dragon, history, link, overflow, markdown
+- Move withSubscription to @lexical/utils
+- Move command types out of listener callbacks and makes them an argument to registerCommand
+- Add createCommand for better command payload typing
+- Rename execCommand to dispatchCommand
+- Add id prop to LexicalContentEditable
+- Add basic support for copying and pasting tables.
+- Various bug fixes and performance improvements
+
 ## 0.1.16 (March 17, 2022)
 
 - Fix scrolling regression.

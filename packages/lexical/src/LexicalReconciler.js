@@ -520,6 +520,7 @@ function reconcileNode(
       }
     }
   } else {
+    const text = nextNode.getTextContent();
     if ($isDecoratorNode(nextNode)) {
       const decorator = nextNode.decorate(activeEditor);
       if (decorator !== null) {
@@ -527,13 +528,12 @@ function reconcileNode(
       }
     } else {
       // Handle text content, for LTR, LTR cases.
-      const text = nextNode.getTextContent();
       if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
-      subTreeTextContent += text;
-      editorTextContent += text;
     }
+    subTreeTextContent += text;
+    editorTextContent += text;
   }
   if (
     !activeEditorStateReadOnly &&

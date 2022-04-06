@@ -9,7 +9,9 @@
 - Deprecate editor prop in Lexical Composer
 - Reorganize code, creating several new packages: @lexical/code, rich-text, plain-text, dragon, history, link, overflow, markdown
 - Move withSubscription to @lexical/utils
-- Move command types out of listener callbacks and makes them an argument to registerCommandListener
+- Move command types out of listener callbacks and makes them an argument to registerCommand
+- Add createCommand for better command payload typing
+- Rename execCommand to dispatchCommand
 - Add id prop to LexicalContentEditable
 - Add basic support for copying and pasting tables.
 - Various bug fixes and performance improvements

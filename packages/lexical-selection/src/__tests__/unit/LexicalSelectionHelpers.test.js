@@ -663,16 +663,16 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const firstChild = element.getNextSibling().getFirstChild();
+        const firstChild = element;
         expect(selection.anchor).toEqual({
           key: firstChild.getKey(),
           offset: 0,
-          type: 'text',
+          type: 'element',
         });
         expect(selection.focus).toEqual({
           key: firstChild.getKey(),
           offset: 0,
-          type: 'text',
+          type: 'element',
         });
       });
 
@@ -1133,7 +1133,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const firstChild = element.getNextSibling().getFirstChild();
+        const firstChild = element.getFirstChild();
         expect(selection.anchor).toEqual({
           key: firstChild.getKey(),
           offset: 0,

@@ -36,6 +36,13 @@ const packages = {
 
 function updateVersion() {
   const version = getVersionFromFile();
+  // update monorepo package.json version
+  const basePackageJSON = fs.readJsonSync(`./package.json`);
+  basePackageJSON.version = version;
+  fs.writeJsonSync(`./package.json`, basePackageJSON, {
+    spaces: 2,
+  });
+  // update individual packages
   Object.values(packages).forEach((pkg) => {
     const packageJSON = fs.readJsonSync(`./packages/${pkg}/package.json`);
     packageJSON.version = version;

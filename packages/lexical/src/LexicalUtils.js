@@ -9,6 +9,7 @@
 
 import type {
   IntentionallyMarkedAsDirtyElement,
+  LexicalCommand,
   LexicalEditor,
   MutatedNodes,
   MutationListeners,
@@ -56,6 +57,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  triggerCommandListeners,
   updateEditor,
 } from './LexicalUpdates';
 
@@ -950,4 +952,12 @@ export function isFirefoxClipboardEvents(): boolean {
     inputType === 'insertFromPaste' ||
     inputType === 'insertFromPasteAsQuotation'
   );
+}
+
+export function dispatchCommand<P>(
+  editor: LexicalEditor,
+  type: LexicalCommand<P>,
+  payload?: P,
+): boolean {
+  return triggerCommandListeners(editor, type, payload);
 }

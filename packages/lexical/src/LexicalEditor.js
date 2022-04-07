@@ -21,12 +21,12 @@ import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {
   commitPendingUpdates,
   parseEditorState,
-  triggerCommandListeners,
   triggerListeners,
   updateEditor,
 } from './LexicalUpdates';
 import {
   createUID,
+  dispatchCommand,
   generateRandomKey,
   markAllNodesAsDirty,
 } from './LexicalUtils';
@@ -507,7 +507,7 @@ export class LexicalEditor {
     return true;
   }
   dispatchCommand<P>(type: LexicalCommand<P>, payload?: P): boolean {
-    return triggerCommandListeners(this, type, payload);
+    return dispatchCommand(this, type, payload);
   }
   getDecorators(): {[NodeKey]: mixed} {
     return this._decorators;

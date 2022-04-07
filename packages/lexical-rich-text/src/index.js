@@ -29,12 +29,15 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {addClassNamesToElement, mergeRegister} from '@lexical/utils';
+import {
+  $getNearestBlockElementAncestorOrThrow,
+  addClassNamesToElement,
+  mergeRegister,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
@@ -438,7 +441,7 @@ export function registerRichText(
           return false;
         }
         const node = selection.anchor.getNode();
-        const element = $isElementNode(node) ? node : node.getParentOrThrow();
+        const element = $getNearestBlockElementAncestorOrThrow(node);
         element.setFormat(format);
         return true;
       },
@@ -478,10 +481,9 @@ export function registerRichText(
         }
         // Handle code blocks
         const anchor = selection.anchor;
-        const parentBlock =
-          anchor.type === 'element'
-            ? anchor.getNode()
-            : anchor.getNode().getParentOrThrow();
+        const parentBlock = $getNearestBlockElementAncestorOrThrow(
+          anchor.getNode(),
+        );
         if (parentBlock.canInsertTab()) {
           editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
         } else {
@@ -503,10 +505,9 @@ export function registerRichText(
         // Handle code blocks
         const anchor = selection.anchor;
         const anchorNode = anchor.getNode();
-        const parentBlock =
-          anchor.type === 'element'
-            ? anchor.getNode()
-            : anchor.getNode().getParentOrThrow();
+        const parentBlock = $getNearestBlockElementAncestorOrThrow(
+          anchor.getNode(),
+        );
         if (parentBlock.canInsertTab()) {
           const textContent = anchorNode.getTextContent();
           const character = textContent[anchor.offset - 1];
@@ -569,10 +570,9 @@ export function registerRichText(
         event.preventDefault();
         const {anchor} = selection;
         if (selection.isCollapsed() && anchor.offset === 0) {
-          const element =
-            anchor.type === 'element'
-              ? anchor.getNode()
-              : anchor.getNode().getParentOrThrow();
+          const element = $getNearestBlockElementAncestorOrThrow(
+            anchor.getNode(),
+          );
           if (element.getIndent() > 0) {
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
           }

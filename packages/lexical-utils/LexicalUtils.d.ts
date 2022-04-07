@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode} from 'lexical';
+import type {LexicalNode, ElementNode} from 'lexical';
 export type DFSNode = $ReadOnly<{
   depth: number;
   node: LexicalNode;
@@ -37,3 +37,6 @@ declare function $findMatchingParent(
 ): LexicalNode | null;
 type Func = () => void;
 declare function mergeRegister(...func: Array<Func>): () => void;
+declare function $getNearestBlockElementAncestorOrThrow(
+  startNode: LexicalNode,
+): ElementNode;

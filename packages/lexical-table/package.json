@@ -8,13 +8,13 @@
     "table"
   ],
   "license": "MIT",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "main": "LexicalTable.js",
   "peerDependencies": {
-    "lexical": "0.1.18"
+    "lexical": "0.1.19"
   },
   "dependencies": {
-    "@lexical/utils": "0.1.18"
+    "@lexical/utils": "0.1.19"
   },
   "repository": {
     "type": "git",

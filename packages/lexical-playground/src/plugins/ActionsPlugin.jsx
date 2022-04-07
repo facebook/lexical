@@ -100,6 +100,7 @@ export default function ActionsPlugins({
         editor,
         $createHorizontalRuleNode,
       );
+      root.selectEnd();
     });
   }, [editor]);
 

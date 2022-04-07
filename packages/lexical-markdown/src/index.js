@@ -52,7 +52,7 @@ export function $convertFromMarkdownString<T>(
   markdownString: string,
   editor: LexicalEditor,
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
-) {
+): void {
   if (convertStringToLexical(markdownString, editor) != null) {
     convertMarkdownForElementNodes(editor, createHorizontalRuleNode);
   }

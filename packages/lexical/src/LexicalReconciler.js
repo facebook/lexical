@@ -174,34 +174,29 @@ function createNode(
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
   } else {
+    const text = node.getTextContent();
     if ($isDecoratorNode(node)) {
       const decorator = node.decorate(activeEditor);
-      const text = node.getTextContent();
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
       // Decorators are always non editable
       dom.contentEditable = 'false';
-      subTreeTextContent += text;
-      editorTextContent += text;
-    } else {
-      const text = node.getTextContent();
-      if ($isTextNode(node)) {
-        if (!node.isDirectionless()) {
-          subTreeDirectionedTextContent += text;
-        }
-        if (node.isInert()) {
-          const domStyle = dom.style;
-          domStyle.pointerEvents = 'none';
-          domStyle.userSelect = 'none';
-          dom.contentEditable = 'false';
-          // To support Safari
-          domStyle.setProperty('-webkit-user-select', 'none');
-        }
+    } else if ($isTextNode(node)) {
+      if (!node.isDirectionless()) {
+        subTreeDirectionedTextContent += text;
       }
-      subTreeTextContent += text;
-      editorTextContent += text;
+      if (node.isInert()) {
+        const domStyle = dom.style;
+        domStyle.pointerEvents = 'none';
+        domStyle.userSelect = 'none';
+        dom.contentEditable = 'false';
+        // To support Safari
+        domStyle.setProperty('-webkit-user-select', 'none');
+      }
     }
+    subTreeTextContent += text;
+    editorTextContent += text;
   }
   if (parentDOM !== null) {
     if (insertDOM != null) {
@@ -468,7 +463,7 @@ function reconcileNode(
       if (previousSubTreeDirectionTextContent !== undefined) {
         subTreeDirectionedTextContent += previousSubTreeDirectionTextContent;
       }
-    } else if (!$isDecoratorNode(prevNode)) {
+    } else {
       const text = prevNode.getTextContent();
       if ($isTextNode(prevNode) && !prevNode.isDirectionless()) {
         subTreeDirectionedTextContent += text;
@@ -520,20 +515,18 @@ function reconcileNode(
       }
     }
   } else {
+    const text = nextNode.getTextContent();
     if ($isDecoratorNode(nextNode)) {
       const decorator = nextNode.decorate(activeEditor);
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-    } else {
+    } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
-      const text = nextNode.getTextContent();
-      if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
-        subTreeDirectionedTextContent += text;
-      }
-      subTreeTextContent += text;
-      editorTextContent += text;
+      subTreeDirectionedTextContent += text;
     }
+    subTreeTextContent += text;
+    editorTextContent += text;
   }
   if (
     !activeEditorStateReadOnly &&

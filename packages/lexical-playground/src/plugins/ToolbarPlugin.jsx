@@ -75,6 +75,7 @@ import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
 import {INSERT_POLL_COMMAND} from './PollPlugin';
 import {INSERT_TWEET_COMMAND} from './TwitterPlugin';
+import {INSERT_YOUTUBE_COMMAND} from './YouTubePlugin';
 
 const LowPriority: CommandListenerLowPriority = 1;
 
@@ -344,6 +345,52 @@ function InsertTweetDialog({
       <Input
         label="Tweet URL"
         placeholder="i.e. https://twitter.com/jack/status/20"
+        onChange={setText}
+        value={text}
+      />
+      <div className="ToolbarPlugin__dialogActions">
+        <Button disabled={isDisabled} onClick={onClick}>
+          Confirm
+        </Button>
+      </div>
+    </>
+  );
+}
+
+// Taken from https://stackoverflow.com/a/9102270
+const YOUTUBE_ID_PARSER =
+  /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+
+const parseYouTubeVideoID = (url: string) => {
+  const urlMatches = url.match(YOUTUBE_ID_PARSER);
+
+  return urlMatches?.[2].length === 11 ? urlMatches[2] : null;
+};
+
+function InsertYouTubeDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [text, setText] = useState('');
+
+  const onClick = () => {
+    const videoID = parseYouTubeVideoID(text);
+    if (videoID) {
+      activeEditor.dispatchCommand(INSERT_YOUTUBE_COMMAND, videoID);
+    }
+    onClose();
+  };
+
+  const isDisabled = text === '' || !parseYouTubeVideoID(text);
+
+  return (
+    <>
+      <Input
+        label="YouTube URL"
+        placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
         onChange={setText}
         value={text}
       />
@@ -680,7 +727,7 @@ export default function ToolbarPlugin(): React$Node {
         LowPriority,
       ),
     );
-  }, [editor, selectedElementKey, updateToolbar]);
+  }, [editor, updateToolbar]);
 
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {
@@ -945,6 +992,19 @@ export default function ToolbarPlugin(): React$Node {
             className="toolbar-item"
             aria-label="Insert tweet">
             <i className="format tweet" />
+          </button>
+          <button
+            onClick={() => {
+              showModal('Insert YouTube Video', (onClose) => (
+                <InsertYouTubeDialog
+                  activeEditor={activeEditor}
+                  onClose={onClose}
+                />
+              ));
+            }}
+            className="toolbar-item"
+            aria-label="Insert YouTube Video">
+            <i className="format youtube" />
           </button>
           <button
             onClick={() => {

@@ -1,13 +1,18 @@
 ## 0.1.18 (Apr 6, 2022)
 
+- Fix import issue in @lexical/list
+- Fix incorrect types in @lexical/dragon
+
+## 0.1.18 (Apr 6, 2022)
+
 - Fix bad build
 
 ## 0.1.17 (Apr 6, 2022)
 
-- Fixes some outstanding issues with the textcontent listener and the removal of linebreaks.
+- Fix some outstanding issues with the textcontent listener and the removal of linebreaks.
 - Add useLexicaTextEntity hook for using TextEntity in React.
-- Adds a warning when cloned nodes might unexpectedly refer to the pending editor state
-- Adds support for keyboard selection in Tables.
+- Add a warning when cloned nodes might unexpectedly refer to the pending editor state
+- Add support for keyboard selection in Tables.
 - Rename add* APIs to register* (e.g., addUpdateListener -> registerUpdateListener)
 - Deprecate editor prop in Lexical Composer
 - Reorganize code, creating several new packages: @lexical/code, rich-text, plain-text, dragon, history, link, overflow, markdown

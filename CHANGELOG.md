@@ -1,4 +1,11 @@
-## 0.1.18 (Apr 6, 2022)
+## 0.1.20 (Apr 7, 2022)
+
+- Fix build issue with @lexical/code
+- Add $getNearestBlockElementAncestorOrThrow helper
+- Fix issues related to getting the wrong element ancestor in certain rich text features
+- Improve table resizing
+
+## 0.1.19 (Apr 7, 2022)
 
 - Fix import issue in @lexical/list
 - Fix incorrect types in @lexical/dragon

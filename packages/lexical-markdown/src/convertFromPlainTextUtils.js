@@ -48,7 +48,11 @@ export function convertStringToLexical(
   const splitLines = text.split('\n');
   const splitLinesCount = splitLines.length;
   for (let i = 0; i < splitLinesCount; i++) {
-    nodes.push($createParagraphNode().append($createTextNode(splitLines[i])));
+    if (splitLines[i].length > 0) {
+      nodes.push($createParagraphNode().append($createTextNode(splitLines[i])));
+    } else {
+      nodes.push($createParagraphNode());
+    }
   }
   if (nodes.length) {
     const root = $getRoot();

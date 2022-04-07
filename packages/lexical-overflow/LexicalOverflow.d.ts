@@ -11,11 +11,11 @@ import {ElementNode} from 'lexical';
 export declare class OverflowNode extends ElementNode {
   static getType(): string;
   static clone(node: OverflowNode): OverflowNode;
-  constructor(key?: NodeKey): void;
+  constructor(key?: NodeKey);
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   excludeFromCopy(): boolean;
 }
 export function $createOverflowNode(): OverflowNode;
-export function $isOverflowNode(node: ?LexicalNode): boolean;
+export function $isOverflowNode(node: LexicalNode | null): boolean;

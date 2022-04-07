@@ -7,4 +7,4 @@
  * @flow strict
  */
 
-export const VERSION = '0.1.19';
+export const VERSION = '0.1.20';

@@ -21,19 +21,6 @@ async function prepareLexicalPackage() {
     `cp -R ./packages/${LEXICAL_PKG}/dist/*.js ./packages/${LEXICAL_PKG}/npm`,
   );
 
-  // Remap the node extensions to their short versions
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalLinkNode.js ./packages/${LEXICAL_PKG}/npm/LinkNode.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalAutoLinkNode.js ./packages/${LEXICAL_PKG}/npm/AutoLinkNode.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalOverflowNode.js ./packages/${LEXICAL_PKG}/npm/OverflowNode.js`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalExtendedNodes.js ./packages/${LEXICAL_PKG}/npm/LexicalExtendedNode.js`,
-  );
   // Other bits
   await exec(
     `cp -R ./packages/${LEXICAL_PKG}/package.json ./packages/${LEXICAL_PKG}/npm`,
@@ -49,19 +36,6 @@ async function prepareLexicalPackage() {
   // Flow Types
   await exec(
     `cp -R ./packages/${LEXICAL_PKG}/flow/*.flow ./packages/${LEXICAL_PKG}/npm`,
-  );
-  // Remap Flow Types
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalLinkNode.js.flow ./packages/${LEXICAL_PKG}/npm/LinkNode.js.flow`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalAutoLinkNode.js.flow ./packages/${LEXICAL_PKG}/npm/AutoLinkNode.js.flow`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalOverflowNode.js.flow ./packages/${LEXICAL_PKG}/npm/OverflowNode.js.flow`,
-  );
-  await exec(
-    `mv ./packages/${LEXICAL_PKG}/npm/LexicalExtendedNodes.js.flow ./packages/${LEXICAL_PKG}/npm/LexicalExtendedNode.js.flow`,
   );
 }
 

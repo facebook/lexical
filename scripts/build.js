@@ -113,6 +113,18 @@ const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
 
 const externals = [
   'lexical',
+  'prismjs/components/prism-core',
+  'prismjs/components/prism-clike',
+  'prismjs/components/prism-javascript',
+  'prismjs/components/prism-markup',
+  'prismjs/components/prism-markdown',
+  'prismjs/components/prism-c',
+  'prismjs/components/prism-css',
+  'prismjs/components/prism-objectivec',
+  'prismjs/components/prism-sql',
+  'prismjs/components/prism-python',
+  'prismjs/components/prism-rust',
+  'prismjs/components/prism-swift',
   '@lexical/list',
   '@lexical/table',
   '@lexical/file',
@@ -240,7 +252,8 @@ ${source}`;
         },
       },
     ],
-    treeshake: 'smallest',
+    // This ensures PrismJS imports get included in the bundle
+    treeshake: name !== 'Lexical Code' ? 'smallest' : undefined,
   };
   const outputOptions = {
     esModule: false,

@@ -1,3 +1,7 @@
+## 0.1.18 (Apr 6, 2022)
+
+- Fix bad build
+
 ## 0.1.17 (Apr 6, 2022)
 
 - Fixes some outstanding issues with the textcontent listener and the removal of linebreaks.

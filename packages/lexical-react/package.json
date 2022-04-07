@@ -24,7 +24,8 @@
     "@lexical/text": "0.1.20",
     "@lexical/link": "0.1.20",
     "@lexical/overflow": "0.1.20",
-    "@lexical/history": "0.1.20"
+    "@lexical/history": "0.1.20",
+    "@lexical/markdown": "0.1.20"
   },
   "peerDependencies": {
     "lexical": "0.1.20",

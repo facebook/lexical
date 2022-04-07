@@ -7,9 +7,10 @@
  * @flow strict
  */
 
-import type {LexicalNode} from 'lexical';
+import type {ElementNode, LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode} from 'lexical';
+import invariant from 'shared/invariant';
 
 export type DFSNode = $ReadOnly<{
   depth: number,
@@ -92,6 +93,23 @@ export function $getNearestNodeOfType<T: LexicalNode>(
     parent = parent.getParent();
   }
   return parent;
+}
+
+export function $getNearestBlockElementAncestorOrThrow(
+  startNode: LexicalNode,
+): ElementNode {
+  const blockNode = $findMatchingParent(
+    startNode,
+    (node) => $isElementNode(node) && !node.isInline(),
+  );
+  if (!$isElementNode(blockNode)) {
+    invariant(
+      false,
+      'Expected node %s to have closest block element node.',
+      startNode.__key,
+    );
+  }
+  return blockNode;
 }
 
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;

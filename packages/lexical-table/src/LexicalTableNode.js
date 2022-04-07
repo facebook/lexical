@@ -68,6 +68,7 @@ export class TableNode extends GridNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     return {
+      ...super.exportDOM(editor),
       after: (tableElement) => {
         if (tableElement) {
           const newElement = tableElement.cloneNode();

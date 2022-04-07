@@ -27,6 +27,9 @@ import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
+  $isGridSelection,
+  $isRangeSelection,
+  $isTextNode,
 } from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
 
@@ -53,26 +56,62 @@ export function getHtmlContent(editor: LexicalEditor): string | null {
   return null;
 }
 
-export function $convertLexicalNodeToHTMLElement(
+export function $convertSelectedLexicalNodeToHTMLElement(
   editor: LexicalEditor,
-  selectedNodes: Set<LexicalNode>,
+  selection: RangeSelection | NodeSelection | GridSelection,
   node: LexicalNode,
 ): ?HTMLElement {
-  const {element, after} = node.exportDOM(editor);
+  let nodeToConvert = node;
+
+  if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+    const anchorOffset = selection.anchor.getCharacterOffset();
+    const focusOffset = selection.focus.getCharacterOffset();
+    const isBefore = selection.anchor.isBefore(selection.focus);
+    const isAnchor = node === selection.anchor.getNode();
+    const isFocus = node === selection.focus.getNode();
+
+    if ($isTextNode(node) && (isAnchor || isFocus)) {
+      const nodeText = node.getTextContent();
+      const nodeTextLength = nodeText.length;
+      const isFirst = isAnchor
+        ? node.isBefore(selection.focus.getNode())
+        : node.isBefore(selection.anchor.getNode());
+
+      let endOffset;
+
+      if (isFirst) {
+        endOffset = isBefore ? anchorOffset : focusOffset;
+      } else {
+        endOffset = isBefore ? focusOffset : anchorOffset;
+      }
+
+      if (endOffset === 0) {
+        return null;
+      } else if (endOffset !== nodeTextLength) {
+        nodeToConvert = node.splitText(endOffset)[isBefore && isAnchor ? 1 : 0];
+      }
+    }
+  }
+
+  const {element, after} = nodeToConvert.exportDOM(editor);
   if (!element) return null;
-  const children = $isElementNode(node) ? node.getChildren() : [];
+  const children = $isElementNode(nodeToConvert)
+    ? nodeToConvert.getChildren()
+    : [];
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
-    if (selectedNodes.has(childNode)) {
-      const newElement = $convertLexicalNodeToHTMLElement(
+
+    if (childNode.isSelected()) {
+      const newElement = $convertSelectedLexicalNodeToHTMLElement(
         editor,
-        selectedNodes,
+        selection,
         childNode,
       );
       if (newElement) element.append(newElement);
     }
   }
-  return after ? after.call(node, element) : element;
+
+  return after ? after.call(nodeToConvert, element) : element;
 }
 
 export function $convertSelectedLexicalContentToHtml(
@@ -84,15 +123,13 @@ export function $convertSelectedLexicalContentToHtml(
   },
 ): string {
   const container = document.createElement('div');
-  const selectedNodes = new Set(selection.getNodes());
-
   for (let i = 0; i < state.range.length; i++) {
     const nodeKey = state.range[i];
     const node = $getNodeByKey(nodeKey);
-    if (node) {
-      const element = $convertLexicalNodeToHTMLElement(
+    if (node && node.isSelected()) {
+      const element = $convertSelectedLexicalNodeToHTMLElement(
         editor,
-        selectedNodes,
+        selection,
         node,
       );
       if (element) container.append(element);

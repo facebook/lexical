@@ -26,6 +26,7 @@ import {
   $joinTextNodesInElementNode,
 } from '@lexical/text';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $getSelection,
@@ -88,6 +89,7 @@ export type MarkdownFormatKind =
 // calculations. For example, this includes the parent element's getTextContent() which
 // ultimately gets deposited into the joinedText field.
 export type ScanningContext = {
+  currentElementNode: null | ElementNode,
   editor: LexicalEditor,
   isAutoFormatting: boolean,
   isWithinCodeBlock: boolean,
@@ -328,6 +330,7 @@ export function getInitialScanningContext(
   triggerState: null | AutoFormatTriggerState,
 ): ScanningContext {
   return {
+    currentElementNode: null,
     editor,
     isAutoFormatting,
     isWithinCodeBlock: false,
@@ -372,14 +375,18 @@ export function getCodeBlockCriteria(): MarkdownCriteria {
   return markdownCodeBlock;
 }
 
-export function stringMatchesCodeBlock(text: string): boolean {
-  return (
-    getPatternMatchResultsWithRegEx(
-      text,
-      true,
-      false,
-      markdownCodeBlock.regEx,
-    ) != null
+export function getPatternMatchResultsForCodeBlock(
+  scanningContext: ScanningContext,
+  text: string,
+): null | PatternMatchResults {
+  const markdownCriteria = getCodeBlockCriteria();
+  return getPatternMatchResultsWithRegEx(
+    text,
+    true,
+    false,
+    scanningContext.isAutoFormatting
+      ? markdownCriteria.regExForAutoFormatting
+      : markdownCriteria.regEx,
   );
 }
 
@@ -548,8 +555,41 @@ function getNewNodeForCriteria<T>(
       case 'paragraphCodeBlock': {
         // Toggle code and paragraph nodes.
         if (scanningContext.isAutoFormatting === false) {
-          scanningContext.isWithinCodeBlock =
-            scanningContext.isWithinCodeBlock !== true;
+          const shouldToggle =
+            scanningContext.patternMatchResults.regExCaptureGroups.length > 0;
+
+          if (shouldToggle) {
+            scanningContext.isWithinCodeBlock =
+              scanningContext.isWithinCodeBlock !== true;
+
+            // When toggling, always clear the code block element node.
+            scanningContext.currentElementNode = null;
+
+            return {newNode: null, shouldDelete: true};
+          }
+
+          if (scanningContext.isWithinCodeBlock) {
+            // Create the code block and return it to the caller.
+            if (scanningContext.currentElementNode == null) {
+              const newCodeBlockNode = $createCodeNode();
+              newCodeBlockNode.append(...children);
+              scanningContext.currentElementNode = newCodeBlockNode;
+
+              return {
+                newNode: newCodeBlockNode,
+                shouldDelete: false,
+              };
+            }
+
+            // Build up the code block with a line break and the children.
+            if (scanningContext.currentElementNode != null) {
+              const codeBlockNode = scanningContext.currentElementNode;
+              const lineBreakNode = $createLineBreakNode();
+              codeBlockNode.append(lineBreakNode);
+              codeBlockNode.append(...children);
+            }
+          }
+
           return {newNode: null, shouldDelete: true};
         }
 
@@ -593,17 +633,24 @@ export function transformTextNodeForParagraphs<T>(
 ): void {
   const textNodeWithOffset = getTextNodeWithOffsetOrThrow(scanningContext);
   const element = textNodeWithOffset.node.getParentOrThrow();
-  const text = scanningContext.patternMatchResults.regExCaptureGroups[0].text;
+  if (scanningContext.patternMatchResults.regExCaptureGroups.length > 0) {
+    const text = scanningContext.patternMatchResults.regExCaptureGroups[0].text;
 
-  // Remove the text which we matched.
-  const textNode = textNodeWithOffset.node.spliceText(0, text.length, '', true);
-  if (textNode.getTextContent() === '') {
-    textNode.selectPrevious();
-    textNode.remove();
+    // Remove the text which we matched.
+    const textNode = textNodeWithOffset.node.spliceText(
+      0,
+      text.length,
+      '',
+      true,
+    );
+    if (textNode.getTextContent() === '') {
+      textNode.selectPrevious();
+      textNode.remove();
+    }
   }
 
   // Transform the current element kind to the new element kind.
-  const [newNode, shouldDelete] = getNewNodeForCriteria(
+  const {newNode, shouldDelete} = getNewNodeForCriteria(
     scanningContext,
     element,
     createHorizontalRuleNode,

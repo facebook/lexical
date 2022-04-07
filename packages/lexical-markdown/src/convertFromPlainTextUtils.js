@@ -31,9 +31,9 @@ import {getAllMarkdownCriteria} from './autoFormatUtils';
 import {
   getCodeBlockCriteria,
   getInitialScanningContext,
+  getPatternMatchResultsForCodeBlock,
   getPatternMatchResultsForParagraphs,
   resetScanningContext,
-  stringMatchesCodeBlock,
   transformTextNodeForParagraphs,
 } from './utils';
 
@@ -66,34 +66,44 @@ function convertElementNodeContainingMarkdown<T>(
 ) {
   const textContent = elementNode.getTextContent();
 
-  // Handle conversion to code block.
-  if (
-    scanningContext.isWithinCodeBlock === true &&
-    stringMatchesCodeBlock(textContent)
-  ) {
-    // Transform to code block.
-    scanningContext.markdownCriteria = getCodeBlockCriteria();
-
-    // Perform text transformation here.
-    transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
-    return;
-  }
-
   // Handle paragraph nodes below.
-  if (
-    $isParagraphNode(elementNode) &&
-    textContent.length &&
-    elementNode.getChildren().length
-  ) {
+  if ($isParagraphNode(elementNode) && elementNode.getChildren().length) {
     const paragraphNode: ParagraphNode = elementNode;
+    const firstChild = paragraphNode.getFirstChild();
+    const firstChildIsTextNode = $isTextNode(firstChild);
+
+    // Handle conversion to code block.
+    if (scanningContext.isWithinCodeBlock === true) {
+      invariant(
+        firstChild != null && firstChildIsTextNode,
+        'Expect paragraph containing only text nodes.',
+      );
+      scanningContext.textNodeWithOffset = {
+        node: firstChild,
+        offset: 0,
+      };
+      const patternMatchResults = getPatternMatchResultsForCodeBlock(
+        scanningContext,
+        textContent,
+      );
+      if (patternMatchResults != null) {
+        // Toggle transform to or from code block.
+        scanningContext.patternMatchResults = patternMatchResults;
+      }
+      scanningContext.markdownCriteria = getCodeBlockCriteria();
+
+      // Perform text transformation here.
+      transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
+      return;
+    }
+
     const allCriteria = getAllMarkdownCriteria();
     const count = allCriteria.length;
     for (let i = 0; i < count; i++) {
       const criteria = allCriteria[i];
       if (criteria.requiresParagraphStart === true) {
-        const firstChild = paragraphNode.getFirstChild();
         invariant(
-          $isTextNode(firstChild),
+          firstChild != null && firstChildIsTextNode,
           'Expect paragraph containing only text nodes.',
         );
         scanningContext.textNodeWithOffset = {
@@ -117,6 +127,7 @@ function convertElementNodeContainingMarkdown<T>(
             scanningContext,
             createHorizontalRuleNode,
           );
+          return;
         }
       }
     }

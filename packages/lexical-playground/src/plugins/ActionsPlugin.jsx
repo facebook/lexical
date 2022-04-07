@@ -86,11 +86,11 @@ export default function ActionsPlugins({
       for (let i = 0; i < count; i++) {
         const child = children[i];
         if ($isParagraphNode(child)) {
+          if (markdownString.length) {
+            markdownString += '\n';
+          }
           const text = child.getTextContent();
           if (text.length) {
-            if (markdownString.length) {
-              markdownString += '\n';
-            }
             markdownString += text;
           }
         }

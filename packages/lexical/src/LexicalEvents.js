@@ -12,7 +12,17 @@ import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
+import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
+
 import {
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $setCompositionKey,
   BLUR_COMMAND,
   CLICK_COMMAND,
   COPY_COMMAND,
@@ -41,18 +51,6 @@ import {
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
-} from 'lexical';
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
-
-import {
-  $getRoot,
-  $getSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  $setCompositionKey,
 } from '.';
 import {
   $flushMutations,

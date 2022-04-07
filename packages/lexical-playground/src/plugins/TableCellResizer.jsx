@@ -35,7 +35,7 @@ type MousePosition = {
   y: number,
 };
 
-type MouseDraggingDirection = 'left' | 'right' | 'top' | 'bottom';
+type MouseDraggingDirection = 'right' | 'bottom';
 
 const MIN_ROW_HEIGHT = 60;
 const MIN_COLUMN_WIDTH = 50;
@@ -131,7 +131,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
   }, [activeCell, draggingDirection, editor, resetState]);
 
   const isHeightChanging = (direction: MouseDraggingDirection) => {
-    if (direction === 'top' || direction === 'bottom') return true;
+    if (direction === 'bottom') return true;
     return false;
   };
 
@@ -234,9 +234,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
         if (isHeightChanging(direction)) {
           const heightChange = Math.abs(event.clientY - y);
 
-          const isShrinking =
-            (direction === 'top' && y < event.clientY) ||
-            (direction === 'bottom' && y > event.clientY);
+          const isShrinking = direction === 'bottom' && y > event.clientY;
 
           updateRowHeight(
             Math.max(
@@ -247,9 +245,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
         } else {
           const widthChange = Math.abs(event.clientX - x);
 
-          const isShrinking =
-            (direction === 'left' && x < event.clientX) ||
-            (direction === 'right' && x > event.clientX);
+          const isShrinking = direction === 'right' && x > event.clientX;
 
           updateColumnWidth(
             Math.max(
@@ -292,14 +288,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
           top: `${window.pageYOffset + top + height - 10}px`,
           width: `${width}px`,
         },
-        left: {
-          backgroundColor: 'none',
-          cursor: 'col-resize',
-          height: `${height}px`,
-          left: `${window.pageXOffset + left}px`,
-          top: `${window.pageYOffset + top}px`,
-          width: '10px',
-        },
         right: {
           backgroundColor: 'none',
           cursor: 'col-resize',
@@ -307,14 +295,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
           left: `${window.pageXOffset + left + width - 10}px`,
           top: `${window.pageYOffset + top}px`,
           width: '10px',
-        },
-        top: {
-          backgroundColor: 'none',
-          cursor: 'row-resize',
-          height: '10px',
-          left: `${window.pageXOffset + left}px`,
-          top: `${window.pageYOffset + top}px`,
-          width: `${width}px`,
         },
       };
 
@@ -341,7 +321,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
           styles[draggingDirection].height = `${tableRect.height}px`;
         }
 
-        styles[draggingDirection].backgroundColor = 'blue';
+        styles[draggingDirection].backgroundColor = '#adf';
       }
 
       return styles;
@@ -366,18 +346,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
             style={resizerStyles.right}
             onMouseDown={toggleResize('right')}
             onMouseUp={toggleResize('right')}
-          />
-          <div
-            className="TableCellResizer__resizer TableCellResizer__ui"
-            style={resizerStyles.left}
-            onMouseDown={toggleResize('left')}
-            onMouseUp={toggleResize('left')}
-          />
-          <div
-            className="TableCellResizer__resizer TableCellResizer__ui"
-            style={resizerStyles.top}
-            onMouseDown={toggleResize('top')}
-            onMouseUp={toggleResize('top')}
           />
           <div
             className="TableCellResizer__resizer TableCellResizer__ui"

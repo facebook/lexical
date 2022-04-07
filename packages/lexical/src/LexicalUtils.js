@@ -40,6 +40,7 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   ElementNode,
 } from '.';
@@ -52,6 +53,10 @@ import {
   ZERO_WIDTH_CHAR,
 } from './LexicalConstants';
 import {flushRootMutations} from './LexicalMutations';
+import {
+  $updateElementSelectionOnCreateDeleteNode,
+  moveSelectionPointToSibling,
+} from './LexicalSelection';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -261,8 +266,8 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
 }
 
 export function internalMarkSiblingsAsDirty(node: LexicalNode) {
-  const previousNode = node.getPreviousSibling();
-  const nextNode = node.getNextSibling();
+  const previousNode = $getPreviousSibling(node);
+  const nextNode = $getNextSibling(node);
   if (previousNode !== null) {
     internalMarkNodeAsDirty(previousNode);
   }
@@ -279,13 +284,13 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   if (previousCompositionKey !== null) {
     const node = $getNodeByKey(previousCompositionKey);
     if (node !== null) {
-      node.getWritable();
+      $getWritable(node);
     }
   }
   if (compositionKey !== null) {
     const node = $getNodeByKey(compositionKey);
     if (node !== null) {
-      node.getWritable();
+      $getWritable(node);
     }
   }
 }
@@ -343,7 +348,7 @@ export function cloneDecorators(editor: LexicalEditor): {[NodeKey]: mixed} {
 }
 
 export function getEditorStateTextContent(editorState: EditorState): string {
-  return editorState.read((view) => $getRoot().getTextContent());
+  return editorState.read((view) => $getTextContent($getRoot()));
 }
 
 export function markAllNodesAsDirty(editor: LexicalEditor, type: string): void {
@@ -413,7 +418,7 @@ export function getTextNodeOffset(
   node: TextNode,
   moveSelectionToEnd: boolean,
 ): number {
-  return moveSelectionToEnd ? node.getTextContentSize() : 0;
+  return moveSelectionToEnd ? $getTextContentSize(node) : 0;
 }
 
 function getNodeKeyFromDOM(
@@ -512,7 +517,7 @@ export function $updateTextNodeFromDOMContent(
     ) {
       normalizedTextContent = textContent.slice(0, -1);
     }
-    const prevTextContent = node.getTextContent();
+    const prevTextContent = $getTextContent(node);
 
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
       if (normalizedTextContent === '') {
@@ -522,7 +527,7 @@ export function $updateTextNodeFromDOMContent(
         node.remove();
         return;
       }
-      const parent = node.getParent();
+      const parent = $getParent(node);
       const prevSelection = $getPreviousSelection();
 
       if (
@@ -552,7 +557,7 @@ export function $updateTextNodeFromDOMContent(
       selection.setTextNodeRange(node, anchorOffset, node, focusOffset);
 
       if (node.isSegmented()) {
-        const originalTextContent = node.getTextContent();
+        const originalTextContent = $getTextContent(node);
         const replacement = $createTextNode(originalTextContent);
         node.replace(replacement);
         node = replacement;
@@ -573,13 +578,13 @@ function $shouldInsertTextAfterOrBeforeTextNode(
     return false;
   }
   const offset = selection.anchor.offset;
-  const parent = node.getParentOrThrow();
+  const parent = $getParentOrThrow(node);
   const isToken = node.isToken();
   const shouldInsertTextBefore =
     offset === 0 &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   const shouldInsertTextAfter =
-    node.getTextContentSize() === offset &&
+    $getTextContentSize(node) === offset &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
@@ -900,14 +905,14 @@ function resolveElement(
   isBackward: boolean,
   focusOffset: number,
 ): LexicalNode | null {
-  const parent = element.getParent();
+  const parent = $getParent(element);
   let offset = focusOffset;
   let block = element;
   if (parent !== null) {
     if (isBackward && focusOffset === 0) {
       offset = block.getIndexWithinParent();
       block = parent;
-    } else if (!isBackward && focusOffset === block.getChildrenSize()) {
+    } else if (!isBackward && focusOffset === $getChildrenSize(block)) {
       offset = block.getIndexWithinParent() + 1;
       block = parent;
     }
@@ -927,14 +932,14 @@ export function $getDecoratorNode(
     const focusNode = focus.getNode();
     if (
       (isBackward && focusOffset === 0) ||
-      (!isBackward && focusOffset === focusNode.getTextContentSize())
+      (!isBackward && focusOffset === $getTextContentSize(focusNode))
     ) {
       const possibleNode = isBackward
-        ? focusNode.getPreviousSibling()
-        : focusNode.getNextSibling();
+        ? $getPreviousSibling(focusNode)
+        : $getNextSibling(focusNode);
       if (possibleNode === null) {
         return resolveElement(
-          focusNode.getParentOrThrow(),
+          $getParentOrThrow(focusNode),
           isBackward,
           focusNode.getIndexWithinParent() + (isBackward ? 0 : 1),
         );
@@ -960,4 +965,214 @@ export function dispatchCommand<P>(
   payload?: P,
 ): boolean {
   return triggerCommandListeners(editor, type, payload);
+}
+
+export function $removeNode(
+  nodeToRemove: LexicalNode,
+  restoreSelection: boolean,
+): void {
+  errorOnReadOnly();
+  const key = nodeToRemove.__key;
+  const parent = $getParent(nodeToRemove);
+  if (parent === null) {
+    return;
+  }
+  const selection = $getSelection();
+  let selectionMoved = false;
+  if ($isRangeSelection(selection) && restoreSelection) {
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    if (anchor.key === key) {
+      moveSelectionPointToSibling(
+        anchor,
+        nodeToRemove,
+        parent,
+        nodeToRemove.getPreviousSibling(),
+        nodeToRemove.getNextSibling(),
+      );
+      selectionMoved = true;
+    }
+    if (focus.key === key) {
+      moveSelectionPointToSibling(
+        focus,
+        nodeToRemove,
+        parent,
+        nodeToRemove.getPreviousSibling(),
+        nodeToRemove.getNextSibling(),
+      );
+      selectionMoved = true;
+    }
+  }
+
+  const writableParent = $getWritable(parent);
+  const parentChildren = writableParent.__children;
+  const index = parentChildren.indexOf(key);
+  if (index === -1) {
+    invariant(false, 'Node is not a child of its parent');
+  }
+  internalMarkSiblingsAsDirty(nodeToRemove);
+  parentChildren.splice(index, 1);
+  const writableNodeToRemove = $getWritable(nodeToRemove);
+  writableNodeToRemove.__parent = null;
+
+  if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
+    $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
+  }
+  if (
+    parent !== null &&
+    !$isRootNode(parent) &&
+    !parent.canBeEmpty() &&
+    parent.isEmpty()
+  ) {
+    $removeNode(parent, restoreSelection);
+  }
+  if (parent !== null && $isRootNode(parent) && parent.isEmpty()) {
+    parent.selectEnd();
+  }
+}
+
+export function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N {
+  const node = $getNodeByKey<N>(key);
+  if (node === null) {
+    invariant(
+      false,
+      "Expected node with key %s to exist but it's not in the nodeMap.",
+      key,
+    );
+  }
+  return node;
+}
+
+export function $getPreviousSibling(node: LexicalNode): LexicalNode | null {
+  const parent = $getParent(node);
+  if (parent === null) {
+    return null;
+  }
+  const children = parent.__children;
+  const index = children.indexOf(node.__key);
+  if (index <= 0) {
+    return null;
+  }
+  return $getNodeByKey<LexicalNode>(children[index - 1]);
+}
+
+export function $getNextSibling(node: LexicalNode): LexicalNode | null {
+  const parent = $getParent(node);
+  if (parent === null) {
+    return null;
+  }
+  const children = parent.__children;
+  const childrenLength = children.length;
+  const index = children.indexOf(node.__key);
+  if (index >= childrenLength - 1) {
+    return null;
+  }
+  return $getNodeByKey<LexicalNode>(children[index + 1]);
+}
+
+export function $getWritable<N: LexicalNode>(node: N): N {
+  errorOnReadOnly();
+  const editorState = getActiveEditorState();
+  const editor = getActiveEditor();
+  const nodeMap = editorState._nodeMap;
+  const key = node.__key;
+  // Ensure we get the latest node from pending state
+  const latestNode = $getLatest(node);
+  const parent = latestNode.__parent;
+  const cloneNotNeeded = editor._cloneNotNeeded;
+  if (cloneNotNeeded.has(key)) {
+    // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
+    internalMarkNodeAsDirty(latestNode);
+    return latestNode;
+  }
+  const constructor = latestNode.constructor;
+  // $FlowFixMe: cast is valid
+  const mutableNode: N = constructor.clone(latestNode);
+  mutableNode.__parent = parent;
+  if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
+    mutableNode.__children = Array.from(latestNode.__children);
+    mutableNode.__indent = latestNode.__indent;
+    mutableNode.__format = latestNode.__format;
+    mutableNode.__dir = latestNode.__dir;
+  } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
+    mutableNode.__format = latestNode.__format;
+    mutableNode.__style = latestNode.__style;
+    mutableNode.__mode = latestNode.__mode;
+    mutableNode.__detail = latestNode.__detail;
+  } else if ($isDecoratorNode(latestNode) && $isDecoratorNode(mutableNode)) {
+    mutableNode.__state = latestNode.__state;
+  }
+  cloneNotNeeded.add(key);
+  mutableNode.__key = key;
+  internalMarkNodeAsDirty(mutableNode);
+  // Update reference in node map
+  nodeMap.set(key, mutableNode);
+  return mutableNode;
+}
+
+export function $getLatest<N: LexicalNode>(node: N): N {
+  const latest = $getNodeByKey(node.__key);
+  if (latest === null) {
+    invariant(false, 'getLatest: node not found');
+  }
+  return latest;
+}
+
+export function $getParent(node: LexicalNode): ElementNode | null {
+  const parent = $getLatest(node).__parent;
+  if (parent === null) {
+    return null;
+  }
+  return $getNodeByKey<ElementNode>(parent);
+}
+
+export function $getParentOrThrow(node: LexicalNode): ElementNode {
+  const parent = $getParent(node);
+  if (parent === null) {
+    invariant(false, 'Expected node %s to have a parent.', node.__key);
+  }
+  return parent;
+}
+
+export function $getTextContent(
+  node: LexicalNode,
+  includeInert?: boolean,
+  includeDirectionless?: false,
+): string {
+  return node.getTextContent(includeInert, includeDirectionless);
+}
+
+export function $getTextContentSize(
+  node: LexicalNode,
+  includeInert?: boolean,
+  includeDirectionless?: false,
+): number {
+  return $getTextContent(node, includeInert, includeDirectionless).length;
+}
+
+export function $getIndexWithinParent(node: LexicalNode): number {
+  const parent = $getParent(node);
+  if (parent === null) {
+    return -1;
+  }
+  const children = parent.__children;
+  return children.indexOf(node.__key);
+}
+
+export function $getChildren(node: ElementNode): Array<LexicalNode> {
+  const self = $getLatest(node);
+  const children = self.__children;
+  const childrenNodes = [];
+  for (let i = 0; i < children.length; i++) {
+    const childNode = $getNodeByKey<LexicalNode>(children[i]);
+    if (childNode !== null) {
+      childrenNodes.push(childNode);
+    }
+  }
+  return childrenNodes;
+}
+
+export function $getChildrenSize(node: ElementNode): number {
+  const self = $getLatest(node);
+  return self.__children.length;
 }

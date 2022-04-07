@@ -47,6 +47,13 @@ import {
 import {errorOnReadOnly} from '../LexicalUpdates';
 import {
   $getCompositionKey,
+  $getLatest,
+  $getNextSibling,
+  $getParentOrThrow,
+  $getPreviousSibling,
+  $getTextContent,
+  $getWritable,
+  $removeNode,
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
@@ -248,37 +255,37 @@ export class TextNode extends LexicalNode {
   }
 
   getFormat(): number {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__format;
   }
 
   getStyle(): string {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__style;
   }
 
   isToken(): boolean {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__mode === IS_TOKEN;
   }
 
   isSegmented(): boolean {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__mode === IS_SEGMENTED;
   }
 
   isInert(): boolean {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__mode === IS_INERT;
   }
 
   isDirectionless(): boolean {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return (self.__detail & IS_DIRECTIONLESS) !== 0;
   }
 
   isUnmergeable(): boolean {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return (self.__detail & IS_UNMERGEABLE) !== 0;
   }
 
@@ -298,12 +305,12 @@ export class TextNode extends LexicalNode {
     ) {
       return '';
     }
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__text;
   }
 
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     const format = self.__format;
     return toggleTextFormatType(format, type, alignWithFormat);
   }
@@ -442,15 +449,15 @@ export class TextNode extends LexicalNode {
 
   setFormat(format: number): this {
     errorOnReadOnly();
-    const self = this.getWritable();
-    this.getWritable().__format = format;
+    const self = $getWritable(this);
+    self.__format = format;
     return self;
   }
 
   setStyle(style: string): this {
     errorOnReadOnly();
-    const self = this.getWritable();
-    this.getWritable().__style = style;
+    const self = $getWritable(this);
+    self.__style = style;
     return self;
   }
 
@@ -460,27 +467,27 @@ export class TextNode extends LexicalNode {
   }
 
   toggleDirectionless(): this {
-    const self = this.getWritable();
+    const self = $getWritable(this);
     self.__detail ^= IS_DIRECTIONLESS;
     return self;
   }
 
   toggleUnmergeable(): this {
-    const self = this.getWritable();
+    const self = $getWritable(this);
     self.__detail ^= IS_UNMERGEABLE;
     return self;
   }
 
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
-    const self = this.getWritable();
+    const self = $getWritable(this);
     self.__mode = mode;
     return self;
   }
 
   setTextContent(text: string): this {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
+    const writableSelf = $getWritable(this);
     writableSelf.__text = text;
     return writableSelf;
   }
@@ -490,7 +497,7 @@ export class TextNode extends LexicalNode {
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const selection = $getSelection();
-    const text = this.getTextContent();
+    const text = $getTextContent(this);
     const key = this.__key;
     if (typeof text === 'string') {
       const lastOffset = text.length;
@@ -533,7 +540,7 @@ export class TextNode extends LexicalNode {
     moveSelection?: boolean,
   ): this {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
+    const writableSelf = $getWritable(this);
     const text = writableSelf.__text;
     const handledTextLength = newText.length;
     let index = offset;
@@ -569,8 +576,8 @@ export class TextNode extends LexicalNode {
 
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
-    const self = this.getLatest();
-    const textContent = self.getTextContent();
+    const self = $getLatest(this);
+    const textContent = $getTextContent(self);
     const key = self.__key;
     const compositionKey = $getCompositionKey();
     const offsetsSet = new Set(splitOffsets);
@@ -594,7 +601,7 @@ export class TextNode extends LexicalNode {
       return [self];
     }
     const firstPart = parts[0];
-    const parent = self.getParentOrThrow();
+    const parent = $getParentOrThrow(self);
     const parentKey = parent.__key;
     let writableNode;
     const format = self.getFormat();
@@ -612,7 +619,7 @@ export class TextNode extends LexicalNode {
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
-      writableNode = self.getWritable();
+      writableNode = $getWritable(self);
       writableNode.__text = firstPart;
     }
 
@@ -625,7 +632,7 @@ export class TextNode extends LexicalNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = $createTextNode(part).getWritable();
+      const sibling = $getWritable($createTextNode(part));
       sibling.__format = format;
       sibling.__style = style;
       sibling.__detail = detail;
@@ -667,7 +674,7 @@ export class TextNode extends LexicalNode {
 
     // Insert the nodes into the parent's children
     internalMarkSiblingsAsDirty(this);
-    const writableParent = parent.getWritable();
+    const writableParent = $getWritable(parent);
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
@@ -691,8 +698,8 @@ export class TextNode extends LexicalNode {
   }
 
   mergeWithSibling(target: TextNode): TextNode {
-    const isBefore = target === this.getPreviousSibling();
-    if (!isBefore && target !== this.getNextSibling()) {
+    const isBefore = target === $getPreviousSibling(this);
+    if (!isBefore && target !== $getNextSibling(this)) {
       invariant(
         false,
         'mergeWithSibling: sibling must be a previous or next sibling',
@@ -735,8 +742,8 @@ export class TextNode extends LexicalNode {
     const newText = isBefore ? target.__text + text : text + target.__text;
     this.setTextContent(newText);
 
-    target.remove();
-    return this.getLatest();
+    $removeNode(target, true);
+    return $getLatest(this);
   }
 
   isTextEntity(): boolean {

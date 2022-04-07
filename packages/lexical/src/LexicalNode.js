@@ -12,111 +12,33 @@ import type {RangeSelection} from './LexicalSelection';
 
 import invariant from 'shared/invariant';
 
-import {
-  $isDecoratorNode,
-  $isElementNode,
-  $isRootNode,
-  $isTextNode,
-  ElementNode,
-} from '.';
+import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
 import {
   $getSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
-  moveSelectionPointToSibling,
 } from './LexicalSelection';
-import {
-  errorOnReadOnly,
-  getActiveEditor,
-  getActiveEditorState,
-} from './LexicalUpdates';
+import {errorOnReadOnly, getActiveEditor} from './LexicalUpdates';
 import {
   $getCompositionKey,
+  $getIndexWithinParent,
+  $getLatest,
+  $getNextSibling,
   $getNodeByKey,
+  $getNodeByKeyOrThrow,
+  $getParent,
+  $getParentOrThrow,
+  $getPreviousSibling,
+  $getTextContentSize,
+  $getWritable,
+  $removeNode,
   $setCompositionKey,
   $setNodeKey,
-  internalMarkNodeAsDirty,
   internalMarkSiblingsAsDirty,
 } from './LexicalUtils';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
-
-export function removeNode(
-  nodeToRemove: LexicalNode,
-  restoreSelection: boolean,
-): void {
-  errorOnReadOnly();
-  const key = nodeToRemove.__key;
-  const parent = nodeToRemove.getParent();
-  if (parent === null) {
-    return;
-  }
-  const selection = $getSelection();
-  let selectionMoved = false;
-  if ($isRangeSelection(selection) && restoreSelection) {
-    const anchor = selection.anchor;
-    const focus = selection.focus;
-    if (anchor.key === key) {
-      moveSelectionPointToSibling(
-        anchor,
-        nodeToRemove,
-        parent,
-        nodeToRemove.getPreviousSibling(),
-        nodeToRemove.getNextSibling(),
-      );
-      selectionMoved = true;
-    }
-    if (focus.key === key) {
-      moveSelectionPointToSibling(
-        focus,
-        nodeToRemove,
-        parent,
-        nodeToRemove.getPreviousSibling(),
-        nodeToRemove.getNextSibling(),
-      );
-      selectionMoved = true;
-    }
-  }
-
-  const writableParent = parent.getWritable();
-  const parentChildren = writableParent.__children;
-  const index = parentChildren.indexOf(key);
-  if (index === -1) {
-    invariant(false, 'Node is not a child of its parent');
-  }
-  internalMarkSiblingsAsDirty(nodeToRemove);
-  parentChildren.splice(index, 1);
-  const writableNodeToRemove = nodeToRemove.getWritable();
-  writableNodeToRemove.__parent = null;
-
-  if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
-    $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
-  }
-  if (
-    parent !== null &&
-    !$isRootNode(parent) &&
-    !parent.canBeEmpty() &&
-    parent.isEmpty()
-  ) {
-    removeNode(parent, restoreSelection);
-  }
-  if (parent !== null && $isRootNode(parent) && parent.isEmpty()) {
-    parent.selectEnd();
-  }
-}
-
-export function $getNodeByKeyOrThrow<N: LexicalNode>(key: NodeKey): N {
-  const node = $getNodeByKey<N>(key);
-  if (node === null) {
-    invariant(
-      false,
-      "Expected node with key %s to exist but it's not in the nodeMap.",
-      key,
-    );
-  }
-  return node;
-}
 
 export type DOMConversion = {
   conversion: DOMConversionFn,
@@ -240,34 +162,21 @@ export class LexicalNode {
   }
 
   getIndexWithinParent(): number {
-    const parent = this.getParent();
-    if (parent === null) {
-      return -1;
-    }
-    const children = parent.__children;
-    return children.indexOf(this.__key);
+    return $getIndexWithinParent(this);
   }
 
   getParent(): ElementNode | null {
-    const parent = this.getLatest().__parent;
-    if (parent === null) {
-      return null;
-    }
-    return $getNodeByKey<ElementNode>(parent);
+    return $getParent(this);
   }
 
   getParentOrThrow(): ElementNode {
-    const parent = this.getParent();
-    if (parent === null) {
-      invariant(false, 'Expected node %s to have a parent.', this.__key);
-    }
-    return parent;
+    return $getParentOrThrow(this);
   }
 
   getTopLevelElement(): null | ElementNode {
     let node = this;
     while (node !== null) {
-      const parent = node.getParent();
+      const parent = $getParent(this);
       if ($isRootNode(parent) && $isElementNode(node)) {
         return node;
       }
@@ -290,39 +199,30 @@ export class LexicalNode {
 
   getParents(): Array<ElementNode> {
     const parents = [];
-    let node = this.getParent();
+    let node = $getParent(this);
     while (node !== null) {
       parents.push(node);
-      node = node.getParent();
+      node = $getParent(node);
     }
     return parents;
   }
 
   getParentKeys(): Array<NodeKey> {
     const parents = [];
-    let node = this.getParent();
+    let node = $getParent(this);
     while (node !== null) {
       parents.push(node.__key);
-      node = node.getParent();
+      node = $getParent(node);
     }
     return parents;
   }
 
   getPreviousSibling(): LexicalNode | null {
-    const parent = this.getParent();
-    if (parent === null) {
-      return null;
-    }
-    const children = parent.__children;
-    const index = children.indexOf(this.__key);
-    if (index <= 0) {
-      return null;
-    }
-    return $getNodeByKey<LexicalNode>(children[index - 1]);
+    return $getPreviousSibling(this);
   }
 
   getPreviousSiblings(): Array<LexicalNode> {
-    const parent = this.getParent();
+    const parent = $getParent(this);
     if (parent === null) {
       return [];
     }
@@ -334,21 +234,11 @@ export class LexicalNode {
   }
 
   getNextSibling(): LexicalNode | null {
-    const parent = this.getParent();
-    if (parent === null) {
-      return null;
-    }
-    const children = parent.__children;
-    const childrenLength = children.length;
-    const index = children.indexOf(this.__key);
-    if (index >= childrenLength - 1) {
-      return null;
-    }
-    return $getNodeByKey<LexicalNode>(children[index + 1]);
+    return $getNextSibling(this);
   }
 
   getNextSiblings(): Array<LexicalNode> {
-    const parent = this.getParent();
+    const parent = $getParent(this);
     if (parent === null) {
       return [];
     }
@@ -387,7 +277,7 @@ export class LexicalNode {
     if (object == null) {
       return false;
     }
-    return this.getKey() === object.getKey();
+    return this.__key === object.__key;
   }
 
   isBefore(targetNode: LexicalNode): boolean {
@@ -402,7 +292,7 @@ export class LexicalNode {
     let indexB = 0;
     let node = this;
     while (true) {
-      const parent = node.getParentOrThrow();
+      const parent = $getParentOrThrow(node);
       if (parent === commonAncestor) {
         indexA = parent.__children.indexOf(node.__key);
         break;
@@ -411,7 +301,7 @@ export class LexicalNode {
     }
     node = targetNode;
     while (true) {
-      const parent = node.getParentOrThrow();
+      const parent = $getParentOrThrow(node);
       if (parent === commonAncestor) {
         indexB = parent.__children.indexOf(node.__key);
         break;
@@ -431,7 +321,7 @@ export class LexicalNode {
       if (node.__key === key) {
         return true;
       }
-      node = node.getParent();
+      node = $getParent(node);
     }
     return false;
   }
@@ -464,13 +354,13 @@ export class LexicalNode {
         continue;
       }
       const nextSibling = isBefore
-        ? node.getNextSibling()
-        : node.getPreviousSibling();
+        ? $getNextSibling(node)
+        : $getPreviousSibling(node);
       if (nextSibling !== null) {
         node = nextSibling;
         continue;
       }
-      const parent = node.getParentOrThrow();
+      const parent = $getParentOrThrow(node);
       if (!visited.has(parent.__key)) {
         nodes.push(parent);
       }
@@ -487,9 +377,9 @@ export class LexicalNode {
           invariant(false, 'getNodesBetween: ancestor is null');
         }
         parentSibling = isBefore
-          ? ancestor.getNextSibling()
-          : ancestor.getPreviousSibling();
-        ancestor = ancestor.getParent();
+          ? $getNextSibling(ancestor)
+          : $getPreviousSibling(ancestor);
+        ancestor = $getParent(ancestor);
         if (ancestor !== null) {
           if (ancestor.is(dfsAncestor)) {
             dfsAncestor = null;
@@ -519,62 +409,22 @@ export class LexicalNode {
   }
 
   getLatest(): this {
-    const latest = $getNodeByKey(this.__key);
-    if (latest === null) {
-      invariant(false, 'getLatest: node not found');
-    }
-    return latest;
+    return $getLatest(this);
   }
-  // $FlowFixMe this is LexicalNode
+
   getWritable(): this {
-    errorOnReadOnly();
-    const editorState = getActiveEditorState();
-    const editor = getActiveEditor();
-    const nodeMap = editorState._nodeMap;
-    const key = this.__key;
-    // Ensure we get the latest node from pending state
-    const latestNode = this.getLatest();
-    const parent = latestNode.__parent;
-    const cloneNotNeeded = editor._cloneNotNeeded;
-    if (cloneNotNeeded.has(key)) {
-      // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
-      internalMarkNodeAsDirty(latestNode);
-      return latestNode;
-    }
-    const constructor = latestNode.constructor;
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = parent;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      mutableNode.__children = Array.from(latestNode.__children);
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    } else if ($isDecoratorNode(latestNode) && $isDecoratorNode(mutableNode)) {
-      mutableNode.__state = latestNode.__state;
-    }
-    cloneNotNeeded.add(key);
-    mutableNode.__key = key;
-    internalMarkNodeAsDirty(mutableNode);
-    // Update reference in node map
-    nodeMap.set(key, mutableNode);
-    // $FlowFixMe this is LexicalNode
-    return mutableNode;
+    return $getWritable(this);
   }
-  // TODO remove this completely
+
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     return '';
   }
-  // TODO remove this completely
+
   getTextContentSize(
     includeInert?: boolean,
     includeDirectionless?: false,
   ): number {
-    return this.getTextContent(includeInert, includeDirectionless).length;
+    return $getTextContentSize(this, includeInert, includeDirectionless);
   }
 
   // View
@@ -604,16 +454,16 @@ export class LexicalNode {
 
   remove(): void {
     errorOnReadOnly();
-    removeNode(this, true);
+    $removeNode(this, true);
   }
 
   replace(replaceWith: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const toReplaceKey = this.__key;
-    const writableReplaceWith = replaceWith.getWritable();
-    const oldParent = writableReplaceWith.getParent();
+    const writableReplaceWith = $getWritable(replaceWith);
+    const oldParent = $getParent(writableReplaceWith);
     if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
+      const writableParent = $getWritable(oldParent);
       const children = writableParent.__children;
       const index = children.indexOf(writableReplaceWith.__key);
       if (index === -1) {
@@ -622,8 +472,8 @@ export class LexicalNode {
       internalMarkSiblingsAsDirty(writableReplaceWith);
       children.splice(index, 1);
     }
-    const newParent = this.getParentOrThrow();
-    const writableParent = newParent.getWritable();
+    const newParent = $getParentOrThrow(this);
+    const writableParent = $getWritable(newParent);
     const children = writableParent.__children;
     const index = children.indexOf(this.__key);
     const newKey = writableReplaceWith.__key;
@@ -632,7 +482,7 @@ export class LexicalNode {
     }
     children.splice(index, 0, newKey);
     writableReplaceWith.__parent = newParent.__key;
-    removeNode(this, false);
+    $removeNode(this, false);
     internalMarkSiblingsAsDirty(writableReplaceWith);
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
@@ -653,14 +503,14 @@ export class LexicalNode {
 
   insertAfter(nodeToInsert: LexicalNode): LexicalNode {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
-    const writableNodeToInsert = nodeToInsert.getWritable();
-    const oldParent = writableNodeToInsert.getParent();
+    const writableSelf = $getWritable(this);
+    const writableNodeToInsert = $getWritable(nodeToInsert);
+    const oldParent = $getParent(writableNodeToInsert);
     const selection = $getSelection();
     let elementAnchorSelectionOnNode = false;
     let elementFocusSelectionOnNode = false;
     if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
+      const writableParent = $getWritable(oldParent);
       const children = writableParent.__children;
       const index = children.indexOf(writableNodeToInsert.__key);
       if (index === -1) {
@@ -669,8 +519,8 @@ export class LexicalNode {
       internalMarkSiblingsAsDirty(writableNodeToInsert);
 
       if ($isRangeSelection(selection)) {
-        const oldParentKey = oldParent.getKey();
-        const oldIndex = nodeToInsert.getIndexWithinParent();
+        const oldParentKey = oldParent.__key;
+        const oldIndex = $getIndexWithinParent(nodeToInsert);
         const anchor = selection.anchor;
         const focus = selection.focus;
         elementAnchorSelectionOnNode =
@@ -684,7 +534,7 @@ export class LexicalNode {
       }
       children.splice(index, 1);
     }
-    const writableParent = this.getParentOrThrow().getWritable();
+    const writableParent = $getWritable($getParentOrThrow(this));
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
@@ -700,7 +550,7 @@ export class LexicalNode {
         writableParent,
         index + 1,
       );
-      const writableParentKey = writableParent.getKey();
+      const writableParentKey = writableParent.__key;
       if (elementAnchorSelectionOnNode) {
         selection.anchor.set(writableParentKey, index + 2, 'element');
       }
@@ -713,11 +563,11 @@ export class LexicalNode {
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
-    const writableNodeToInsert = nodeToInsert.getWritable();
-    const oldParent = writableNodeToInsert.getParent();
+    const writableSelf = $getWritable(this);
+    const writableNodeToInsert = $getWritable(nodeToInsert);
+    const oldParent = $getParent(writableNodeToInsert);
     if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
+      const writableParent = $getWritable(oldParent);
       const children = writableParent.__children;
       const index = children.indexOf(writableNodeToInsert.__key);
       if (index === -1) {
@@ -726,7 +576,7 @@ export class LexicalNode {
       internalMarkSiblingsAsDirty(writableNodeToInsert);
       children.splice(index, 1);
     }
-    const writableParent = this.getParentOrThrow().getWritable();
+    const writableParent = $getWritable($getParentOrThrow(this));
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
@@ -749,15 +599,15 @@ export class LexicalNode {
 
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
-    const prevSibling = this.getPreviousSibling();
-    const parent = this.getParentOrThrow();
+    const prevSibling = $getPreviousSibling(this);
+    const parent = $getParentOrThrow(this);
     if (prevSibling === null) {
       return parent.select(0, 0);
     }
     if ($isElementNode(prevSibling)) {
       return prevSibling.select();
     } else if (!$isTextNode(prevSibling)) {
-      const index = prevSibling.getIndexWithinParent() + 1;
+      const index = $getIndexWithinParent(prevSibling) + 1;
       return parent.select(index, index);
     }
     return prevSibling.select(anchorOffset, focusOffset);
@@ -765,22 +615,22 @@ export class LexicalNode {
 
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
-    const nextSibling = this.getNextSibling();
-    const parent = this.getParentOrThrow();
+    const nextSibling = $getNextSibling(this);
+    const parent = $getParentOrThrow(this);
     if (nextSibling === null) {
       return parent.select();
     }
     if ($isElementNode(nextSibling)) {
       return nextSibling.select(0, 0);
     } else if (!$isTextNode(nextSibling)) {
-      const index = nextSibling.getIndexWithinParent();
+      const index = $getIndexWithinParent(nextSibling);
       return parent.select(index, index);
     }
     return nextSibling.select(anchorOffset, focusOffset);
   }
   // Proxy to mark something as dirty
   markDirty(): void {
-    this.getWritable();
+    $getWritable(this);
   }
 }
 

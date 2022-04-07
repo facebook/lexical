@@ -23,7 +23,14 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
+  $getChildren,
+  $getChildrenSize,
+  $getLatest,
   $getNodeByKey,
+  $getParent,
+  $getTextContent,
+  $getWritable,
+  $removeNode,
   internalMarkNodeAsDirty,
   internalMarkSiblingsAsDirty,
 } from '../LexicalUtils';
@@ -45,34 +52,24 @@ export class ElementNode extends LexicalNode {
   }
 
   getFormat(): number {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__format;
   }
   getIndent(): number {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     return self.__indent;
   }
   getChildren(): Array<LexicalNode> {
-    const self = this.getLatest();
-    const children = self.__children;
-    const childrenNodes = [];
-    for (let i = 0; i < children.length; i++) {
-      const childNode = $getNodeByKey<LexicalNode>(children[i]);
-      if (childNode !== null) {
-        childrenNodes.push(childNode);
-      }
-    }
-    return childrenNodes;
+    return $getChildren(this);
   }
   getChildrenKeys(): Array<NodeKey> {
-    return this.getLatest().__children;
+    return $getLatest(this).__children;
   }
   getChildrenSize(): number {
-    const self = this.getLatest();
-    return self.__children.length;
+    return $getChildrenSize(this);
   }
   isEmpty(): boolean {
-    return this.getChildrenSize() === 0;
+    return $getChildrenSize(this) === 0;
   }
   isDirty(): boolean {
     const editor = getActiveEditor();
@@ -81,7 +78,7 @@ export class ElementNode extends LexicalNode {
   }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
-    const self = this.getLatest();
+    const self = $getLatest(this);
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
       const childNode = $getNodeByKey<LexicalNode>(children[i]);
@@ -123,7 +120,7 @@ export class ElementNode extends LexicalNode {
     return node;
   }
   getDescendantByIndex(index: number): LexicalNode {
-    const children = this.getChildren();
+    const children = $getChildren(this);
     const childrenLength = children.length;
     if (childrenLength === 0) {
       return this;
@@ -144,7 +141,7 @@ export class ElementNode extends LexicalNode {
     );
   }
   getFirstChild<T: LexicalNode>(): null | T {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
@@ -160,7 +157,7 @@ export class ElementNode extends LexicalNode {
     return firstChild;
   }
   getLastChild(): null | LexicalNode {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
@@ -169,7 +166,7 @@ export class ElementNode extends LexicalNode {
     return $getNodeByKey<LexicalNode>(children[childrenLength - 1]);
   }
   getChildAtIndex(index: number): null | LexicalNode {
-    const self = this.getLatest();
+    const self = $getLatest(this);
     const children = self.__children;
     const key = children[index];
     if (key === undefined) {
@@ -179,11 +176,11 @@ export class ElementNode extends LexicalNode {
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     let textContent = '';
-    const children = this.getChildren();
+    const children = $getChildren(this);
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
-      textContent += child.getTextContent(includeInert, includeDirectionless);
+      textContent += $getTextContent(child, includeInert, includeDirectionless);
       if (
         $isElementNode(child) &&
         i !== childrenLength - 1 &&
@@ -195,7 +192,8 @@ export class ElementNode extends LexicalNode {
     return textContent;
   }
   getDirection(): 'ltr' | 'rtl' | null {
-    return this.__dir;
+    const self = $getLatest(this);
+    return self.__dir;
   }
   hasFormat(type: ElementFormatType): boolean {
     const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
@@ -209,7 +207,7 @@ export class ElementNode extends LexicalNode {
     const selection = $getSelection();
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
-    const childrenCount = this.getChildrenSize();
+    const childrenCount = $getChildrenSize(this);
     if (anchorOffset === undefined) {
       anchorOffset = childrenCount;
     }
@@ -257,14 +255,14 @@ export class ElementNode extends LexicalNode {
   }
   clear(): ElementNode {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
-    const children = this.getChildren();
-    children.forEach((child) => child.remove());
+    const writableSelf = $getWritable(this);
+    const children = $getChildren(this);
+    children.forEach((child) => $removeNode(child, true));
     return writableSelf;
   }
   append(...nodesToAppend: LexicalNode[]): ElementNode {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
+    const writableSelf = $getWritable(this);
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
     const nodesToAppendLength = nodesToAppend.length;
@@ -277,11 +275,11 @@ export class ElementNode extends LexicalNode {
       if (nodeToAppend.__key === writableSelfKey) {
         invariant(false, 'append: attemtping to append self');
       }
-      const writableNodeToAppend = nodeToAppend.getWritable();
+      const writableNodeToAppend = $getWritable(nodeToAppend);
       // Remove node from previous parent
-      const oldParent = writableNodeToAppend.getParent();
+      const oldParent = $getParent(writableNodeToAppend);
       if (oldParent !== null) {
-        const writableParent = oldParent.getWritable();
+        const writableParent = $getWritable(oldParent);
         const children = writableParent.__children;
         const index = children.indexOf(writableNodeToAppend.__key);
         if (index === -1) {
@@ -299,19 +297,19 @@ export class ElementNode extends LexicalNode {
 
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
-    const self = this.getWritable();
+    const self = $getWritable(this);
     self.__dir = direction;
     return self;
   }
   setFormat(type: ElementFormatType): this {
     errorOnReadOnly();
-    const self = this.getWritable();
+    const self = $getWritable(this);
     self.__format = ELEMENT_TYPE_TO_FORMAT[type];
     return this;
   }
   setIndent(indentLevel: number): this {
     errorOnReadOnly();
-    const self = this.getWritable();
+    const self = $getWritable(this);
     self.__indent = indentLevel;
     return this;
   }
@@ -321,7 +319,7 @@ export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): ElementNode {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
+    const writableSelf = $getWritable(this);
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
     const nodesToInsertLength = nodesToInsert.length;
@@ -330,13 +328,13 @@ export class ElementNode extends LexicalNode {
     // Remove nodes to insert from their previous parent
     for (let i = 0; i < nodesToInsertLength; i++) {
       const nodeToInsert = nodesToInsert[i];
-      const writableNodeToInsert = nodeToInsert.getWritable();
+      const writableNodeToInsert = $getWritable(nodeToInsert);
       if (nodeToInsert.__key === writableSelfKey) {
         invariant(false, 'append: attemtping to append self');
       }
-      const oldParent = writableNodeToInsert.getParent();
+      const oldParent = $getParent(writableNodeToInsert);
       if (oldParent !== null) {
-        const writableParent = oldParent.getWritable();
+        const writableParent = $getWritable(oldParent);
         const children = writableParent.__children;
         const index = children.indexOf(writableNodeToInsert.__key);
         if (index === -1) {
@@ -387,7 +385,7 @@ export class ElementNode extends LexicalNode {
             ) {
               return true;
             }
-            node = node.getParent();
+            node = $getParent(node);
           }
           return false;
         };
@@ -417,7 +415,7 @@ export class ElementNode extends LexicalNode {
         for (let i = 0; i < nodesToRemoveKeysLength; i++) {
           const nodeToRemove = $getNodeByKey<LexicalNode>(nodesToRemoveKeys[i]);
           if (nodeToRemove != null) {
-            const writableNodeToRemove = nodeToRemove.getWritable();
+            const writableNodeToRemove = $getWritable(nodeToRemove);
             writableNodeToRemove.__parent = null;
           }
         }

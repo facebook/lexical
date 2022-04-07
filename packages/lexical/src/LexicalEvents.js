@@ -55,6 +55,7 @@ import {
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
+  $getChildrenSize,
   $getNodeByKey,
   $isTokenOrInert,
   $setSelection,
@@ -172,7 +173,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         anchor.type === 'element' &&
         anchor.offset === 0 &&
         selection.isCollapsed() &&
-        $getRoot().getChildrenSize() === 1 &&
+        $getChildrenSize($getRoot()) === 1 &&
         anchor.getNode().getTopLevelElementOrThrow().isEmpty()
       ) {
         const lastSelection = editor.getEditorState()._selection;

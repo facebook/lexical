@@ -15,7 +15,13 @@ import type {
   NodeKey,
 } from '../LexicalNode';
 
-import {getCachedClassNameArray} from '../LexicalUtils';
+import {
+  $getNextSibling,
+  $getPreviousSibling,
+  $getTextContent,
+  $removeNode,
+  getCachedClassNameArray,
+} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
@@ -75,18 +81,18 @@ export class ParagraphNode extends ElementNode {
     // delete the paragraph as long as we have another sibling to go to
     if (
       children.length === 0 ||
-      ($isTextNode(children[0]) && children[0].getTextContent().trim() === '')
+      ($isTextNode(children[0]) && $getTextContent(children[0]).trim() === '')
     ) {
-      const nextSibling = this.getNextSibling();
+      const nextSibling = $getNextSibling(this);
       if (nextSibling !== null) {
         this.selectNext();
-        this.remove();
+        $removeNode(this, true);
         return true;
       }
-      const prevSibling = this.getPreviousSibling();
+      const prevSibling = $getPreviousSibling(this);
       if (prevSibling !== null) {
         this.selectPrevious();
-        this.remove();
+        $removeNode(this, true);
         return true;
       }
     }

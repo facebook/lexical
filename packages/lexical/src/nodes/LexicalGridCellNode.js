@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {LexicalNode, NodeKey} from '../LexicalNode';
 
 import {ElementNode} from './LexicalElementNode';
 

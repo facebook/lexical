@@ -10,6 +10,7 @@
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   LexicalCommand,
   LexicalNode,
 } from 'lexical';
@@ -42,8 +43,8 @@ export class HorizontalRuleNode extends DecoratorNode<React$Node> {
     };
   }
 
-  static exportDOM(): HTMLElement {
-    return document.createElement('hr');
+  exportDOM(): DOMExportOutput {
+    return {element: document.createElement('hr')};
   }
 
   createDOM(): HTMLElement {

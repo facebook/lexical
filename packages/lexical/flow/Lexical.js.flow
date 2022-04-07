@@ -319,6 +319,10 @@ export type DOMConversionOutput = {
   forChild?: DOMChildConversion,
   node: LexicalNode | null,
 };
+export type DOMExportOutput = {
+  after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
+  element?: HTMLElement | null,
+};
 export type NodeKey = string;
 declare export class LexicalNode {
   __type: string;
@@ -328,7 +332,7 @@ declare export class LexicalNode {
   static clone(data: $FlowFixMe): LexicalNode;
   static importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
-  exportDOM(element: HTMLElement, editor: LexicalEditor): HTMLElement;
+  exportDOM(editor: LexicalEditor): DOMExportOutput;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;

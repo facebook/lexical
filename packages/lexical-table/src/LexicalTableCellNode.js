@@ -10,6 +10,7 @@
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   LexicalEditor,
   LexicalNode,
@@ -90,22 +91,28 @@ export class TableCellNode extends GridCellNode {
     return element;
   }
 
-  exportDOM(element: HTMLElement, editor: LexicalEditor): HTMLElement {
-    const maxWidth = 700;
-    const colCount = this.getParentOrThrow().getChildrenSize();
-    element.style.border = '1px solid black';
-    element.style.width = `${
-      this.getWidth() || Math.max(90, maxWidth / colCount)
-    }px`;
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
 
-    element.style.verticalAlign = 'top';
-    element.style.textAlign = 'start';
+    if (element) {
+      const maxWidth = 700;
+      const colCount = this.getParentOrThrow().getChildrenSize();
+      element.style.border = '1px solid black';
+      element.style.width = `${
+        this.getWidth() || Math.max(90, maxWidth / colCount)
+      }px`;
 
-    if (this.hasHeader()) {
-      element.style.backgroundColor = '#f2f3f5';
+      element.style.verticalAlign = 'top';
+      element.style.textAlign = 'start';
+
+      if (this.hasHeader()) {
+        element.style.backgroundColor = '#f2f3f5';
+      }
     }
 
-    return element;
+    return {
+      element,
+    };
   }
 
   getTag(): string {

@@ -311,6 +311,10 @@ export type DOMConversionOutput = {
   forChild?: DOMChildConversion;
   node: LexicalNode | null;
 };
+export type DOMExportOutput = {
+  after?: (generatedElement: ?HTMLElement) => ?HTMLElement;
+  element: HTMLElement | null;
+};
 export type NodeKey = string;
 export declare class LexicalNode {
   __type: string;
@@ -351,7 +355,7 @@ export declare class LexicalNode {
     includeInert?: boolean,
     includeDirectionless?: false,
   ): number;
-  exportDOM(element: HTMLElement, editor: LexicalEditor): HTMLElement;
+  exportDOM(editor: LexicalEditor): DOMExportOutput;
   // $FlowFixMe
   createDOM<EditorContext extends Record<string, any>>(
     config: EditorConfig<EditorContext>,

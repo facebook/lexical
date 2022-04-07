@@ -26,7 +26,6 @@ import {
   $createParagraphNode,
   $getNodeByKey,
   $getSelection,
-  $isDecoratorNode,
   $isElementNode,
 } from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
@@ -59,26 +58,21 @@ export function $convertLexicalNodeToHTMLElement(
   selectedNodes: Set<LexicalNode>,
   node: LexicalNode,
 ): ?HTMLElement {
-  if ($isDecoratorNode(node)) {
-    const activeDomElement = editor.getElementByKey(node.getKey());
-    return activeDomElement
-      ? node.exportDOM(activeDomElement.cloneNode(), editor)
-      : null;
-  }
-  const domElement = node.createDOM(editor._config, editor);
+  const {element, after} = node.exportDOM(editor);
+  if (!element) return null;
   const children = $isElementNode(node) ? node.getChildren() : [];
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
     if (selectedNodes.has(childNode)) {
-      const element = $convertLexicalNodeToHTMLElement(
+      const newElement = $convertLexicalNodeToHTMLElement(
         editor,
         selectedNodes,
         childNode,
       );
-      if (element) domElement.append(element);
+      if (newElement) element.append(newElement);
     }
   }
-  return node.exportDOM(domElement, editor);
+  return after ? after.call(node, element) : element;
 }
 
 export function $convertSelectedLexicalContentToHtml(

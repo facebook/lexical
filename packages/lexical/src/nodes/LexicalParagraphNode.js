@@ -7,10 +7,15 @@
  * @flow strict
  */
 
-import type {EditorConfig, EditorThemeClasses} from '../LexicalEditor';
+import type {
+  EditorConfig,
+  EditorThemeClasses,
+  LexicalEditor,
+} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   LexicalNode,
   NodeKey,
 } from '../LexicalNode';
@@ -59,11 +64,18 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  exportDOM(element: HTMLElement): HTMLElement {
-    if (this.getTextContentSize() === 0) {
-      element.append(document.createElement('br'));
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+
+    if (element) {
+      if (this.getTextContentSize() === 0) {
+        element.append(document.createElement('br'));
+      }
     }
-    return element;
+
+    return {
+      element,
+    };
   }
 
   // Mutation

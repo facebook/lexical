@@ -10,8 +10,6 @@
 import type {AutoFormatTriggerState} from './utils';
 import type {DecoratorNode, LexicalEditor} from 'lexical';
 
-import {$getRoot} from 'lexical';
-
 import {
   findScanningContext,
   getTriggerState,
@@ -55,6 +53,7 @@ export function $convertFromMarkdownString<T>(
   editor: LexicalEditor,
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ): void {
-  convertStringToLexical(markdownString, editor);
-  convertMarkdownForElementNodes($getRoot().getChildren(), editor);
+  if (convertStringToLexical(markdownString, editor) != null) {
+    convertMarkdownForElementNodes(editor, createHorizontalRuleNode);
+  }
 }

@@ -9,10 +9,12 @@
 
 import type {ScanningContext} from './utils';
 import type {
+  DecoratorNode,
   ElementNode,
   LexicalEditor,
   LexicalNode,
   ParagraphNode,
+  RootNode,
 } from 'lexical';
 
 import {
@@ -27,42 +29,85 @@ import invariant from 'shared/invariant';
 
 import {getAllMarkdownCriteria} from './autoFormatUtils';
 import {
+  getCodeBlockCriteria,
   getInitialScanningContext,
+  getPatternMatchResultsForCodeBlock,
   getPatternMatchResultsForParagraphs,
   resetScanningContext,
+  transformTextNodeForParagraphs,
 } from './utils';
 
 export function convertStringToLexical(
   text: string,
   editor: LexicalEditor,
-): void {
-  const nodes = text
-    .split('\n')
-    .map((splitText) =>
-      $createParagraphNode().append($createTextNode(splitText)),
-    );
-
-  const root = $getRoot();
-  root.clear();
-  root.append(...nodes);
+): null | RootNode {
+  if (!text.length) {
+    return null;
+  }
+  const nodes = [];
+  const splitLines = text.split('\n');
+  const splitLinesCount = splitLines.length;
+  for (let i = 0; i < splitLinesCount; i++) {
+    if (splitLines[i].length > 0) {
+      nodes.push($createParagraphNode().append($createTextNode(splitLines[i])));
+    } else {
+      nodes.push($createParagraphNode());
+    }
+  }
+  if (nodes.length) {
+    const root = $getRoot();
+    root.clear();
+    root.append(...nodes);
+    return root;
+  }
+  return null;
 }
 
-function convertElementNodeContainingMarkdown(
+function convertElementNodeContainingMarkdown<T>(
   scanningContext: ScanningContext,
   elementNode: ElementNode,
+  createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ) {
-  // Handle code block to be done.
+  const textContent = elementNode.getTextContent();
+
   // Handle paragraph nodes below.
-  if ($isParagraphNode(elementNode)) {
+  if ($isParagraphNode(elementNode) && elementNode.getChildren().length) {
     const paragraphNode: ParagraphNode = elementNode;
+    const firstChild = paragraphNode.getFirstChild();
+    const firstChildIsTextNode = $isTextNode(firstChild);
+
+    // Handle conversion to code block.
+    if (scanningContext.isWithinCodeBlock === true) {
+      invariant(
+        firstChild != null && firstChildIsTextNode,
+        'Expect paragraph containing only text nodes.',
+      );
+      scanningContext.textNodeWithOffset = {
+        node: firstChild,
+        offset: 0,
+      };
+      const patternMatchResults = getPatternMatchResultsForCodeBlock(
+        scanningContext,
+        textContent,
+      );
+      if (patternMatchResults != null) {
+        // Toggle transform to or from code block.
+        scanningContext.patternMatchResults = patternMatchResults;
+      }
+      scanningContext.markdownCriteria = getCodeBlockCriteria();
+
+      // Perform text transformation here.
+      transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
+      return;
+    }
+
     const allCriteria = getAllMarkdownCriteria();
     const count = allCriteria.length;
     for (let i = 0; i < count; i++) {
       const criteria = allCriteria[i];
       if (criteria.requiresParagraphStart === true) {
-        const firstChild = paragraphNode.getFirstChild();
         invariant(
-          $isTextNode(firstChild),
+          firstChild != null && firstChildIsTextNode,
           'Expect paragraph containing only text nodes.',
         );
         scanningContext.textNodeWithOffset = {
@@ -81,32 +126,54 @@ function convertElementNodeContainingMarkdown(
           scanningContext.markdownCriteria = criteria;
           scanningContext.patternMatchResults = patternMatchResults;
 
-          // Todo: perform text transformation here.
+          // Perform text transformation here.
+          transformTextNodeForParagraphs(
+            scanningContext,
+            createHorizontalRuleNode,
+          );
+          return;
         }
       }
     }
   }
 }
 
-export function convertMarkdownForElementNodes(
-  elementNodes: Array<LexicalNode>,
+export function convertMarkdownForElementNodes<T>(
   editor: LexicalEditor,
+  createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ) {
   // Please see the declaration of ScanningContext for a detailed explanation.
   const scanningContext = getInitialScanningContext(editor, false, null, null);
 
-  const count = elementNodes.length;
-  for (let i = 0; i < count; i++) {
-    const elementNode = elementNodes[i];
+  const root = $getRoot();
+  let done = false;
+  let startIndex = 0;
 
-    if (
-      $isElementNode(elementNode) &&
-      elementNode.getTextContent().length &&
-      elementNode.getChildren().length
-    ) {
-      convertElementNodeContainingMarkdown(scanningContext, elementNode);
+  while (!done) {
+    done = true;
+
+    const elementNodes: Array<LexicalNode> = root.getChildren();
+    const countOfElementNodes = elementNodes.length;
+
+    for (let i = startIndex; i < countOfElementNodes; i++) {
+      const elementNode = elementNodes[i];
+
+      if ($isElementNode(elementNode)) {
+        convertElementNodeContainingMarkdown(
+          scanningContext,
+          elementNode,
+          createHorizontalRuleNode,
+        );
+      }
+      // Reset the scanning information that relates to the particular element node.
+      resetScanningContext(scanningContext);
+
+      if (root.getChildren().length !== countOfElementNodes) {
+        // The conversion added or removed an from root's children.
+        startIndex = i;
+        done = false;
+        break;
+      }
     }
-    // Reset the scanning information that relates to the particular element node.
-    resetScanningContext(scanningContext);
-  }
+  } // while
 }

@@ -26,6 +26,7 @@ import {
   $joinTextNodesInElementNode,
 } from '@lexical/text';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $getSelection,
@@ -37,7 +38,7 @@ import invariant from 'shared/invariant';
 
 /*
    How to add a new syntax to capture and transform.
-   1. Create a new enumeration by adding to AutoFormatKind.
+   1. Create a new enumeration by adding to MarkdownFormatKind.
    2. Add a new criteria with a regEx pattern. See markdownStrikethrough as an example.
    3. Add your block criteria (e.g. '# ') to allMarkdownCriteria or 
       your text criteria (e.g. *MyItalic*) to allMarkdownCriteriaForTextNodes.
@@ -64,7 +65,7 @@ export type AutoFormatTriggerState = $ReadOnly<{
 // 1. Convert the paragraph formatting: e.g. "# " converts to Heading1.
 // 2. Convert the text formatting: e.g. "**hello**" converts to bold "hello".
 
-export type AutoFormatKind =
+export type MarkdownFormatKind =
   | 'noTransformation'
   | 'paragraphH1'
   | 'paragraphH2'
@@ -88,8 +89,10 @@ export type AutoFormatKind =
 // calculations. For example, this includes the parent element's getTextContent() which
 // ultimately gets deposited into the joinedText field.
 export type ScanningContext = {
+  currentElementNode: null | ElementNode,
   editor: LexicalEditor,
   isAutoFormatting: boolean,
+  isWithinCodeBlock: boolean,
   joinedText: ?string,
   markdownCriteria: MarkdownCriteria,
   patternMatchResults: PatternMatchResults,
@@ -110,7 +113,7 @@ export type ScanningContext = {
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
 export type MarkdownCriteria = $ReadOnly<{
-  autoFormatKind: ?AutoFormatKind,
+  markdownFormatKind: ?MarkdownFormatKind,
   regEx: RegExp,
   regExForAutoFormatting: RegExp,
   requiresParagraphStart: ?boolean,
@@ -164,7 +167,7 @@ export const triggers: Array<AutoFormatTrigger> = [
 
 // Todo: speed up performance by having non-capture group variations of the regex.
 const autoFormatBase: MarkdownCriteria = {
-  autoFormatKind: null,
+  markdownFormatKind: null,
   regEx: /(?:)/,
   regExForAutoFormatting: /(?:)/,
   requiresParagraphStart: false,
@@ -177,98 +180,98 @@ const paragraphStartBase: MarkdownCriteria = {
 
 const markdownHeader1: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphH1',
+  markdownFormatKind: 'paragraphH1',
   regEx: /^(?:#)/,
   regExForAutoFormatting: /^(?:# )/,
 };
 
 const markdownHeader2: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphH2',
+  markdownFormatKind: 'paragraphH2',
   regEx: /^(?:##)/,
   regExForAutoFormatting: /^(?:## )/,
 };
 
 const markdownHeader3: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphH2',
+  markdownFormatKind: 'paragraphH2',
   regEx: /^(?:###)/,
   regExForAutoFormatting: /^(?:### )/,
 };
 
 const markdownBlockQuote: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphBlockQuote',
+  markdownFormatKind: 'paragraphBlockQuote',
   regEx: /^(?:>)/,
   regExForAutoFormatting: /^(?:> )/,
 };
 
 const markdownUnorderedListDash: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphUnorderedList',
+  markdownFormatKind: 'paragraphUnorderedList',
   regEx: /^(?:- )/,
   regExForAutoFormatting: /^(?:- )/,
 };
 
 const markdownUnorderedListAsterisk: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphUnorderedList',
+  markdownFormatKind: 'paragraphUnorderedList',
   regEx: /^(?:\* )/,
   regExForAutoFormatting: /^(?:\* )/,
 };
 
 const markdownCodeBlock: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphCodeBlock',
+  markdownFormatKind: 'paragraphCodeBlock',
   regEx: /^(```)$/,
   regExForAutoFormatting: /^(```)([a-z]*)( )/,
 };
 
 const markdownOrderedList: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'paragraphOrderedList',
+  markdownFormatKind: 'paragraphOrderedList',
   regEx: /^(\d+)\.\s/,
   regExForAutoFormatting: /^(\d+)\.\s/,
 };
 
 const markdownHorizontalRule: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'horizontalRule',
+  markdownFormatKind: 'horizontalRule',
   regEx: /^(?:\*\*\*)$/,
   regExForAutoFormatting: /^(?:\*\*\* )/,
 };
 
 const markdownHorizontalRuleUsingDashes: MarkdownCriteria = {
   ...paragraphStartBase,
-  autoFormatKind: 'horizontalRule',
+  markdownFormatKind: 'horizontalRule',
   regEx: /^(?:---)$/,
   regExForAutoFormatting: /^(?:--- )/,
 };
 
 const markdownItalic: MarkdownCriteria = {
   ...autoFormatBase,
-  autoFormatKind: 'italic',
+  markdownFormatKind: 'italic',
   regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)/,
   regExForAutoFormatting: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)(\s)$/,
 };
 
 const markdownBold: MarkdownCriteria = {
   ...autoFormatBase,
-  autoFormatKind: 'bold',
+  markdownFormatKind: 'bold',
   regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)/,
   regExForAutoFormatting: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)(\s)$/,
 };
 
 const markdownBoldWithUnderlines: MarkdownCriteria = {
   ...autoFormatBase,
-  autoFormatKind: 'bold',
+  markdownFormatKind: 'bold',
   regEx: /(__)(\s*)([^__]*)(\s*)(__)/,
   regExForAutoFormatting: /(__)(\s*)([^__]*)(\s*)(__)(\s)$/,
 };
 
 const markdownBoldItalic: MarkdownCriteria = {
   ...autoFormatBase,
-  autoFormatKind: 'bold_italic',
+  markdownFormatKind: 'bold_italic',
   regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)/,
   regExForAutoFormatting: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)(\s)$/,
 };
@@ -277,21 +280,21 @@ const markdownBoldItalic: MarkdownCriteria = {
 // the HTML tags for underline.
 const fakeMarkdownUnderline: MarkdownCriteria = {
   ...autoFormatBase,
-  autoFormatKind: 'underline',
+  markdownFormatKind: 'underline',
   regEx: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>)/,
   regExForAutoFormatting: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>)(\s)$/,
 };
 
 const markdownStrikethrough: MarkdownCriteria = {
   ...autoFormatBase,
-  autoFormatKind: 'strikethrough',
+  markdownFormatKind: 'strikethrough',
   regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)/,
   regExForAutoFormatting: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)(\s)$/,
 };
 
 const markdownLink: MarkdownCriteria = {
   ...autoFormatBase,
-  autoFormatKind: 'link',
+  markdownFormatKind: 'link',
   regEx: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))/,
   regExForAutoFormatting: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))(\s)$/,
 };
@@ -327,11 +330,13 @@ export function getInitialScanningContext(
   triggerState: null | AutoFormatTriggerState,
 ): ScanningContext {
   return {
+    currentElementNode: null,
     editor,
     isAutoFormatting,
+    isWithinCodeBlock: false,
     joinedText: null,
     markdownCriteria: {
-      autoFormatKind: 'noTransformation',
+      markdownFormatKind: 'noTransformation',
       regEx: /(?:)/, // Empty reg ex.
       regExForAutoFormatting: /(?:)/, // Empty reg ex.
       requiresParagraphStart: null,
@@ -350,7 +355,7 @@ export function resetScanningContext(
   scanningContext.joinedText = '';
 
   scanningContext.markdownCriteria = {
-    autoFormatKind: 'noTransformation',
+    markdownFormatKind: 'noTransformation',
     regEx: /(?:)/, // Empty reg ex.
     regExForAutoFormatting: /(?:)/, // Empty reg ex.
     requiresParagraphStart: null,
@@ -364,6 +369,25 @@ export function resetScanningContext(
   scanningContext.textNodeWithOffset = null;
 
   return scanningContext;
+}
+
+export function getCodeBlockCriteria(): MarkdownCriteria {
+  return markdownCodeBlock;
+}
+
+export function getPatternMatchResultsForCodeBlock(
+  scanningContext: ScanningContext,
+  text: string,
+): null | PatternMatchResults {
+  const markdownCriteria = getCodeBlockCriteria();
+  return getPatternMatchResultsWithRegEx(
+    text,
+    true,
+    false,
+    scanningContext.isAutoFormatting
+      ? markdownCriteria.regExForAutoFormatting
+      : markdownCriteria.regEx,
+  );
 }
 
 function getPatternMatchResultsWithRegEx(
@@ -429,11 +453,14 @@ export function getPatternMatchResultsForParagraphs(
   // At start of paragraph.
   if (textNodeWithOffset.node.getPreviousSibling() === null) {
     const textToSearch = textNodeWithOffset.node.getTextContent();
+
     return getPatternMatchResultsWithRegEx(
       textToSearch,
       true,
       false,
-      markdownCriteria.regExForAutoFormatting,
+      scanningContext.isAutoFormatting
+        ? markdownCriteria.regExForAutoFormatting
+        : markdownCriteria.regEx,
     );
   }
 
@@ -475,41 +502,41 @@ export function getPatternMatchResultsForText(
 function getNewNodeForCriteria<T>(
   scanningContext: ScanningContext,
   element: ElementNode,
-  createHorizontalRuleNode: () => DecoratorNode<T>,
-): null | ElementNode {
+  createHorizontalRuleNode: null | (() => DecoratorNode<T>),
+): {newNode: null | ElementNode, shouldDelete: boolean} {
   let newNode = null;
-
+  const shouldDelete = false;
   const children = element.getChildren();
   const markdownCriteria = scanningContext.markdownCriteria;
   const patternMatchResults = scanningContext.patternMatchResults;
-  if (markdownCriteria.autoFormatKind != null) {
-    switch (markdownCriteria.autoFormatKind) {
+  if (markdownCriteria.markdownFormatKind != null) {
+    switch (markdownCriteria.markdownFormatKind) {
       case 'paragraphH1': {
         newNode = $createHeadingNode('h1');
         newNode.append(...children);
-        return newNode;
+        return {newNode, shouldDelete};
       }
       case 'paragraphH2': {
         newNode = $createHeadingNode('h2');
         newNode.append(...children);
-        return newNode;
+        return {newNode, shouldDelete};
       }
       case 'paragraphH3': {
         newNode = $createHeadingNode('h3');
         newNode.append(...children);
-        return newNode;
+        return {newNode, shouldDelete};
       }
       case 'paragraphBlockQuote': {
         newNode = $createQuoteNode();
         newNode.append(...children);
-        return newNode;
+        return {newNode, shouldDelete};
       }
       case 'paragraphUnorderedList': {
         newNode = $createListNode('ul');
         const listItem = $createListItemNode();
         listItem.append(...children);
         newNode.append(listItem);
-        return newNode;
+        return {newNode, shouldDelete};
       }
       case 'paragraphOrderedList': {
         const startAsString =
@@ -523,10 +550,49 @@ function getNewNodeForCriteria<T>(
         const listItem = $createListItemNode();
         listItem.append(...children);
         newNode.append(listItem);
-        return newNode;
+        return {newNode, shouldDelete};
       }
       case 'paragraphCodeBlock': {
         // Toggle code and paragraph nodes.
+        if (scanningContext.isAutoFormatting === false) {
+          const shouldToggle =
+            scanningContext.patternMatchResults.regExCaptureGroups.length > 0;
+
+          if (shouldToggle) {
+            scanningContext.isWithinCodeBlock =
+              scanningContext.isWithinCodeBlock !== true;
+
+            // When toggling, always clear the code block element node.
+            scanningContext.currentElementNode = null;
+
+            return {newNode: null, shouldDelete: true};
+          }
+
+          if (scanningContext.isWithinCodeBlock) {
+            // Create the code block and return it to the caller.
+            if (scanningContext.currentElementNode == null) {
+              const newCodeBlockNode = $createCodeNode();
+              newCodeBlockNode.append(...children);
+              scanningContext.currentElementNode = newCodeBlockNode;
+
+              return {
+                newNode: newCodeBlockNode,
+                shouldDelete: false,
+              };
+            }
+
+            // Build up the code block with a line break and the children.
+            if (scanningContext.currentElementNode != null) {
+              const codeBlockNode = scanningContext.currentElementNode;
+              const lineBreakNode = $createLineBreakNode();
+              codeBlockNode.append(lineBreakNode);
+              codeBlockNode.append(...children);
+            }
+          }
+
+          return {newNode: null, shouldDelete: true};
+        }
+
         if (
           scanningContext.triggerState != null &&
           scanningContext.triggerState.isCodeBlock
@@ -543,12 +609,14 @@ function getNewNodeForCriteria<T>(
           }
         }
         newNode.append(...children);
-        return newNode;
+        return {newNode, shouldDelete};
       }
       case 'horizontalRule': {
-        // return null for newNode. Insert the HR here.
-        const horizontalRuleNode = createHorizontalRuleNode();
-        element.insertBefore(horizontalRuleNode);
+        if (createHorizontalRuleNode != null) {
+          // return null for newNode. Insert the HR here.
+          const horizontalRuleNode = createHorizontalRuleNode();
+          element.insertBefore(horizontalRuleNode);
+        }
         break;
       }
       default:
@@ -556,48 +624,57 @@ function getNewNodeForCriteria<T>(
     }
   }
 
-  return newNode;
+  return {newNode, shouldDelete};
 }
 
 export function transformTextNodeForParagraphs<T>(
   scanningContext: ScanningContext,
-  createHorizontalRuleNode: () => DecoratorNode<T>,
+  createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ): void {
   const textNodeWithOffset = getTextNodeWithOffsetOrThrow(scanningContext);
   const element = textNodeWithOffset.node.getParentOrThrow();
-  const text = scanningContext.patternMatchResults.regExCaptureGroups[0].text;
+  if (scanningContext.patternMatchResults.regExCaptureGroups.length > 0) {
+    const text = scanningContext.patternMatchResults.regExCaptureGroups[0].text;
 
-  // Remove the text which we matched.
-  const textNode = textNodeWithOffset.node.spliceText(0, text.length, '', true);
-  if (textNode.getTextContent() === '') {
-    textNode.selectPrevious();
-    textNode.remove();
+    // Remove the text which we matched.
+    const textNode = textNodeWithOffset.node.spliceText(
+      0,
+      text.length,
+      '',
+      true,
+    );
+    if (textNode.getTextContent() === '') {
+      textNode.selectPrevious();
+      textNode.remove();
+    }
   }
 
   // Transform the current element kind to the new element kind.
-  const elementNode = getNewNodeForCriteria(
+  const {newNode, shouldDelete} = getNewNodeForCriteria(
     scanningContext,
     element,
     createHorizontalRuleNode,
   );
 
-  if (elementNode !== null) {
-    element.replace(elementNode);
+  if (shouldDelete) {
+    element.remove();
+  } else if (newNode !== null) {
+    element.replace(newNode);
   }
 }
 
 export function transformTextNodeForText(scanningContext: ScanningContext) {
   const markdownCriteria = scanningContext.markdownCriteria;
 
-  if (markdownCriteria.autoFormatKind != null) {
-    const formatting = getTextFormatType(markdownCriteria.autoFormatKind);
+  if (markdownCriteria.markdownFormatKind != null) {
+    const formatting = getTextFormatType(markdownCriteria.markdownFormatKind);
 
     if (formatting != null) {
       transformTextNodeWithFormatting(formatting, scanningContext);
       return;
     }
 
-    if (markdownCriteria.autoFormatKind === 'link') {
+    if (markdownCriteria.markdownFormatKind === 'link') {
       transformTextNodeWithLink(scanningContext);
     }
   }
@@ -710,14 +787,14 @@ function getJoinedTextLength(patternMatchResults: PatternMatchResults): number {
 }
 
 function getTextFormatType(
-  autoFormatKind: AutoFormatKind,
+  markdownFormatKind: MarkdownFormatKind,
 ): null | Array<TextFormatType> {
-  switch (autoFormatKind) {
+  switch (markdownFormatKind) {
     case 'italic':
     case 'bold':
     case 'underline':
     case 'strikethrough':
-      return [autoFormatKind];
+      return [markdownFormatKind];
     case 'bold_italic': {
       return ['bold', 'italic'];
     }

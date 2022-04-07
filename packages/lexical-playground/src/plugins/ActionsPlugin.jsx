@@ -13,9 +13,15 @@ import {exportFile, importFile} from '@lexical/file';
 import {$convertFromMarkdownString} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
-import {$getRoot, CLEAR_EDITOR_COMMAND, READ_ONLY_COMMAND} from 'lexical';
+import {
+  $getRoot,
+  $isParagraphNode,
+  CLEAR_EDITOR_COMMAND,
+  READ_ONLY_COMMAND,
+} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
@@ -72,8 +78,29 @@ export default function ActionsPlugins({
 
   const convertFromMarkdown = useCallback(() => {
     editor.update(() => {
-      $convertFromMarkdownString('', editor, null);
-      $getRoot().selectEnd();
+      const root = $getRoot();
+      const children = root.getChildren();
+      const count = children.length;
+      let markdownString = '';
+
+      for (let i = 0; i < count; i++) {
+        const child = children[i];
+        if ($isParagraphNode(child)) {
+          if (markdownString.length) {
+            markdownString += '\n';
+          }
+          const text = child.getTextContent();
+          if (text.length) {
+            markdownString += text;
+          }
+        }
+      }
+      $convertFromMarkdownString(
+        markdownString,
+        editor,
+        $createHorizontalRuleNode,
+      );
+      root.selectEnd();
     });
   }, [editor]);
 
@@ -88,13 +115,15 @@ export default function ActionsPlugins({
           className={
             'action-button action-button-mic ' +
             (isSpeechToText ? 'active' : '')
-          }>
+          }
+        >
           <i className="mic" />
         </button>
       )}
       <button
         className="action-button import"
-        onClick={() => importFile(editor)}>
+        onClick={() => importFile(editor)}
+      >
         <i className="import" />
       </button>
       <button
@@ -104,7 +133,8 @@ export default function ActionsPlugins({
             fileName: `Playground ${new Date().toISOString()}`,
             source: 'Playground',
           })
-        }>
+        }
+      >
         <i className="export" />
       </button>
       <button className="action-button sticky" onClick={insertSticky}>
@@ -115,14 +145,16 @@ export default function ActionsPlugins({
         onClick={() => {
           editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
           editor.focus();
-        }}>
+        }}
+      >
         <i className="clear" />
       </button>
       <button
         className="action-button lock"
         onClick={() => {
           editor.setReadOnly(!editor.isReadOnly());
-        }}>
+        }}
+      >
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
       <button className="action-button" onClick={convertFromMarkdown}>
@@ -133,7 +165,8 @@ export default function ActionsPlugins({
           className="action-button connect"
           onClick={() => {
             editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
-          }}>
+          }}
+        >
           <i className={connected ? 'disconnect' : 'connect'} />
         </button>
       )}

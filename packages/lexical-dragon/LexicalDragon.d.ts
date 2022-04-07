@@ -6,6 +6,8 @@
  *
  */
 
-export default function LexicalAutoScrollPlugin(props: {
-  scrollRef: {current: HTMLElement | null};
-}): null;
+import type {LexicalEditor} from 'lexical';
+
+export default function registerDragonSupport(
+  editor: LexicalEditor,
+): () => void;

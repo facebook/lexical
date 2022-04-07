@@ -176,7 +176,7 @@ export class LexicalNode {
   getTopLevelElement(): null | ElementNode {
     let node = this;
     while (node !== null) {
-      const parent = $getParent(this);
+      const parent = $getParent(node);
       if ($isRootNode(parent) && $isElementNode(node)) {
         return node;
       }

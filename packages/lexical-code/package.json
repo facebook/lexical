@@ -20,6 +20,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
-    "directory": "packages/lexical-cod"
+    "directory": "packages/lexical-code"
   }
 }

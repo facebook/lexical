@@ -290,7 +290,8 @@ test.describe('Markdown', () => {
     await page.keyboard.type('#Heading');
     await click(page, 'i.markdown');
 
-    const html = '<p class="PlaygroundEditorTheme__paragraph"><br /></p>';
+    const html =
+      '<h1 class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Heading</span></h1>';
     await assertHTML(page, html);
   });
 });

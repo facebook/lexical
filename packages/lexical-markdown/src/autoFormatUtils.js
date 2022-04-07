@@ -123,7 +123,7 @@ function getCriteriaWithPatternMatchResults(
     if (
       (currentTriggerState != null &&
         currentTriggerState.isCodeBlock === false) ||
-      markdownCriteria.autoFormatKind === 'paragraphCodeBlock'
+      markdownCriteria.markdownFormatKind === 'paragraphCodeBlock'
     ) {
       const patternMatchResults = getPatternMatchResultsForCriteria(
         markdownCriteria,
@@ -241,7 +241,6 @@ export function findScanningContext(
       (currentTriggerState.hasParentNode === true &&
         currentTriggerState.isSimpleText &&
         currentTriggerState.isSelectionCollapsed &&
-        currentTriggerState.nodeKey === priorTriggerState.nodeKey &&
         currentTriggerState.anchorOffset !== priorTriggerState.anchorOffset &&
         triggerOffset >= 0 &&
         triggerOffset + triggerStringLength <= currentTextContentLength &&

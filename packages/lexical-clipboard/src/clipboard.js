@@ -61,14 +61,19 @@ export function $convertSelectedLexicalNodeToHTMLElement(
   let nodeToConvert = node;
 
   if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-    const anchorOffset = selection.anchor.getCharacterOffset();
-    const focusOffset = selection.focus.getCharacterOffset();
-    const isBefore = selection.anchor.isBefore(selection.focus);
-    const isAnchor = node === selection.anchor.getNode();
-    const isFocus = node === selection.focus.getNode();
-    const isSame = selection.anchor.getNode() === selection.focus.getNode();
+    const anchor = selection.anchor.getNode();
+    const focus = selection.focus.getNode();
+    const isAnchor = node.is(anchor);
+    const isFocus = node.is(focus);
 
     if ($isTextNode(node) && (isAnchor || isFocus)) {
+      const anchorOffset = selection.anchor.getCharacterOffset();
+      const focusOffset = selection.focus.getCharacterOffset();
+      const isBackward = selection.isBackward();
+
+      const isSame = anchor.is(focus);
+      const isFirst = node.is(isBackward ? focus : anchor);
+
       const nodeText = node.getTextContent();
       const nodeTextLength = nodeText.length;
 
@@ -80,22 +85,19 @@ export function $convertSelectedLexicalNodeToHTMLElement(
         const splitNodes = node.splitText(startOffset, endOffset);
         nodeToConvert = startOffset === 0 ? splitNodes[0] : splitNodes[1];
       } else {
-        const isFirst =
-          isSame || isAnchor
-            ? node.isBefore(selection.focus.getNode())
-            : node.isBefore(selection.anchor.getNode());
         let endOffset;
+
         if (isFirst) {
-          endOffset = isBefore ? anchorOffset : focusOffset;
+          endOffset = isBackward ? focusOffset : anchorOffset;
         } else {
-          endOffset = isBefore ? focusOffset : anchorOffset;
+          endOffset = isBackward ? anchorOffset : focusOffset;
         }
 
-        if (endOffset === 0) {
+        if (!isBackward && endOffset === 0) {
           return null;
         } else if (endOffset !== nodeTextLength) {
           nodeToConvert =
-            node.splitText(endOffset)[isBefore && isAnchor ? 1 : 0];
+            node.splitText(endOffset)[isFirst && endOffset !== 0 ? 1 : 0];
         }
       }
     }

@@ -452,6 +452,7 @@ declare export class GridSelection implements BaseSelection {
   insertRawText(): void;
   insertText(): void;
   isCollapsed(): false;
+  isBackward(): boolean;
   getShape(): GridSelectionShape;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;

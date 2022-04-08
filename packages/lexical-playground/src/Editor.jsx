@@ -30,6 +30,7 @@ import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
+import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
@@ -123,6 +124,7 @@ export default function Editor(): React$Node {
             <PollPlugin />
             <TwitterPlugin />
             <YouTubePlugin />
+            <ClickableLinkPlugin />
           </>
         ) : (
           <>

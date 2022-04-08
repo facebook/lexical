@@ -511,7 +511,6 @@ function updateAndRetainSelection(
   updateFn: () => boolean,
 ): void {
   const selection = $getSelection();
-  debugger;
   if (!$isRangeSelection(selection) || !selection.anchor) {
     return;
   }

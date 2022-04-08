@@ -387,7 +387,7 @@ export class LexicalNode {
     if (object == null) {
       return false;
     }
-    return this.getKey() === object.getKey();
+    return this.__key === object.__key;
   }
 
   isBefore(targetNode: LexicalNode): boolean {
@@ -669,7 +669,7 @@ export class LexicalNode {
       internalMarkSiblingsAsDirty(writableNodeToInsert);
 
       if ($isRangeSelection(selection)) {
-        const oldParentKey = oldParent.getKey();
+        const oldParentKey = oldParent.__key;
         const oldIndex = nodeToInsert.getIndexWithinParent();
         const anchor = selection.anchor;
         const focus = selection.focus;
@@ -700,7 +700,7 @@ export class LexicalNode {
         writableParent,
         index + 1,
       );
-      const writableParentKey = writableParent.getKey();
+      const writableParentKey = writableParent.__key;
       if (elementAnchorSelectionOnNode) {
         selection.anchor.set(writableParentKey, index + 2, 'element');
       }

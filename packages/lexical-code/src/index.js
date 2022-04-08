@@ -154,6 +154,8 @@ export function $isCodeHighlightNode(node: ?LexicalNode): boolean %checks {
   return node instanceof CodeHighlightNode;
 }
 
+const LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
+
 export class CodeNode extends ElementNode {
   __language: string | void;
 
@@ -175,9 +177,23 @@ export class CodeNode extends ElementNode {
     const element = document.createElement('code');
     addClassNamesToElement(element, config.theme.code);
     element.setAttribute('spellcheck', 'false');
+    const language = this.getLanguage();
+    if (language) {
+      element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+    }
     return element;
   }
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean {
+    const language = this.__language;
+    const prevLanguage = prevNode.__language;
+
+    if (language) {
+      if (language !== prevLanguage) {
+        dom.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+      }
+    } else if (prevLanguage) {
+      dom.removeAttribute(LANGUAGE_DATA_ATTRIBUTE);
+    }
     return false;
   }
 

@@ -20,11 +20,7 @@ import {
   $isTableRowNode,
   getCellFromTarget,
 } from '@lexical/table';
-import {
-  $getNearestNodeFromDOMNode,
-  $getSelection,
-  $isGridSelection,
-} from 'lexical';
+import {$getNearestNodeFromDOMNode, $getSelection} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
@@ -50,7 +46,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
     useState<MousePosition | null>(null);
 
   const [activeCell, updateActiveCell] = useState<Cell | null>(null);
-  const [isSelectingGrid, updateIsSelectingGrid] = useState<boolean>(false);
+  const [isSelecting, updateIsSelecting] = useState<boolean>(false);
   const [draggingDirection, updateDraggingDirection] =
     useState<MouseDraggingDirection | null>(null);
 
@@ -58,11 +54,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
     return editor.registerUpdateListener(({editorState}) => {
       editorState.read(() => {
         const selection = $getSelection();
-        const isGridSelection = $isGridSelection(selection);
 
-        if (isSelectingGrid !== isGridSelection) {
-          updateIsSelectingGrid(isGridSelection);
-        }
+        updateIsSelecting(!!selection);
       });
     });
   });
@@ -339,7 +332,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
 
   return (
     <div ref={resizerRef}>
-      {activeCell != null && !isSelectingGrid && (
+      {activeCell != null && !isSelecting && (
         <>
           <div
             className="TableCellResizer__resizer TableCellResizer__ui"

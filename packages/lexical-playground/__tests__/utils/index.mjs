@@ -90,7 +90,7 @@ async function assertHTMLOnPageOrFrame(
   ignoreInlineStyles,
 ) {
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
-  const actual = prettifyHTML(actualHtml, {
+  const actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
     ignoreClasses,
     ignoreInlineStyles,
   });

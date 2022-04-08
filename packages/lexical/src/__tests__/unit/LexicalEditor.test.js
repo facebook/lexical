@@ -1515,7 +1515,7 @@ describe('LexicalEditor tests', () => {
       commandListenerTwo,
       0,
     );
-    expect(editor._listeners.command).toEqual(
+    expect(editor._commands).toEqual(
       new Map([
         [
           command,
@@ -1530,7 +1530,7 @@ describe('LexicalEditor tests', () => {
       ]),
     );
     removeCommandListener();
-    expect(editor._listeners.command).toEqual(
+    expect(editor._commands).toEqual(
       new Map([
         [
           command,
@@ -1545,7 +1545,7 @@ describe('LexicalEditor tests', () => {
       ]),
     );
     removeCommandListenerTwo();
-    expect(editor._listeners.command).toEqual(new Map());
+    expect(editor._commands).toEqual(new Map());
   });
 
   it('can register transforms before updates', async () => {

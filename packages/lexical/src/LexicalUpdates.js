@@ -474,12 +474,13 @@ export function triggerCommandListeners<P>(
   for (let i = 4; i >= 0; i--) {
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];
-      const commandListeners = currentEditor._listeners.command;
+      const commandListeners = currentEditor._commands;
       const listenerInPriorityOrder = commandListeners.get(type);
       if (listenerInPriorityOrder !== undefined) {
         const listeners = listenerInPriorityOrder[i];
         if (listeners !== undefined) {
           for (const listener of listeners) {
+            // $FlowFixMe[missing-type-arg]
             if (listener(payload, editor) === true) {
               return true;
             }

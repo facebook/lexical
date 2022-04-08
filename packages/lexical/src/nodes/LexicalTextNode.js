@@ -443,14 +443,14 @@ export class TextNode extends LexicalNode {
   setFormat(format: number): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    this.getWritable().__format = format;
+    self.__format = format;
     return self;
   }
 
   setStyle(style: string): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    this.getWritable().__style = style;
+    self.__style = style;
     return self;
   }
 
@@ -460,18 +460,21 @@ export class TextNode extends LexicalNode {
   }
 
   toggleDirectionless(): this {
+    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail ^= IS_DIRECTIONLESS;
     return self;
   }
 
   toggleUnmergeable(): this {
+    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail ^= IS_UNMERGEABLE;
     return self;
   }
 
   setMode(type: TextModeType): this {
+    errorOnReadOnly();
     const mode = TEXT_MODE_TO_TYPE[type];
     const self = this.getWritable();
     self.__mode = mode;

@@ -195,7 +195,8 @@ export class ElementNode extends LexicalNode {
     return textContent;
   }
   getDirection(): 'ltr' | 'rtl' | null {
-    return this.__dir;
+    const self = this.getLatest();
+    return self.__dir;
   }
   hasFormat(type: ElementFormatType): boolean {
     const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];

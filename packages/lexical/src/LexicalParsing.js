@@ -193,7 +193,7 @@ export function internalCreateNodeFromParse(
           key,
           state,
         );
-        const newChildKey = child.getKey();
+        const newChildKey = child.__key;
         node.__children.push(newChildKey);
       }
     }

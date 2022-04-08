@@ -52,11 +52,7 @@ export type Grid = {
   rows: number,
 };
 
-const removeHighlightStyle = document.createElement('style');
-
-removeHighlightStyle.appendChild(
-  document.createTextNode('::selection{background-color: transparent}'),
-);
+let removeHighlightStyle;
 
 export class TableSelection {
   currentX: number;
@@ -92,6 +88,13 @@ export class TableSelection {
     this.focusCell = null;
 
     this.trackTableGrid();
+  }
+
+  createSelectionStyleReset() {
+    removeHighlightStyle = document.createElement('style');
+    removeHighlightStyle.appendChild(
+      document.createTextNode('::selection{background-color: transparent}'),
+    );
   }
 
   getGrid(): Grid {
@@ -173,7 +176,9 @@ export class TableSelection {
       $setSelection(null);
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 
-      const parent = removeHighlightStyle.parentNode;
+      const parent = removeHighlightStyle
+        ? removeHighlightStyle.parentNode
+        : undefined;
       if (parent != null) {
         parent.removeChild(removeHighlightStyle);
       }
@@ -209,6 +214,9 @@ export class TableSelection {
       ) {
         this.isHighlightingCells = true;
         if (document.body) {
+          if (removeHighlightStyle === undefined) {
+            this.createSelectionStyleReset();
+          }
           document.body.appendChild(removeHighlightStyle);
         }
       } else if (cellX === this.currentX && cellY === this.currentY) {

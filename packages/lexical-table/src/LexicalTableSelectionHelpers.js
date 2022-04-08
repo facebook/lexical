@@ -787,7 +787,7 @@ export function applyTableHandlers(
             $forEachGridCell(tableSelection.grid, (cell) => {
               const elem = cell.elem;
               cell.highlighted = true;
-              elem.style.setProperty('background-color', 'rgb(163, 187, 255)');
+              elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
               elem.style.setProperty('caret-color', 'transparent');
             });
             return true;
@@ -923,7 +923,7 @@ export function $updateDOMForSelection(
 
     if (selectedCellNodes.has(lexicalNode)) {
       cell.highlighted = true;
-      elem.style.setProperty('background-color', 'rgb(163, 187, 255)');
+      elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
       elem.style.setProperty('caret-color', 'transparent');
       highlightedCells.push(cell);
     } else {

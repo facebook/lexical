@@ -81,13 +81,29 @@
   background-color: rgb(240, 242, 245);
   font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
-  padding: 8px;
+  padding: 8px 8px 8px 52px;
   line-height: 1.53;
   font-size: 13px;
   margin: 0;
   margin-top: 8px;
   margin-bottom: 8px;
   tab-size: 2;
+  /* white-space: pre; */
+  overflow-x: auto;
+  position: relative;
+}
+.PlaygroundEditorTheme__code:before {
+  content: attr(data-gutter);
+  position: absolute;
+  background-color: #eeee;
+  left: 0;
+  top: 0;
+  border-right: 1px solid #ccc;
+  padding: 8px;
+  color: #777;
+  white-space: pre-wrap;
+  text-align: right;
+  min-width: 25px;
 }
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;

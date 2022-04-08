@@ -49,6 +49,7 @@ import {
   $isTextNode,
   ElementNode,
   TextNode,
+  $getNodeByKey,
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -425,50 +426,52 @@ function textNodeTransform(node: TextNode, editor: LexicalEditor): void {
   }
 }
 
-// Using `skipTransforms` to prevent extra transforms since reformatting the code
-// will not affect code block content itself.
-//
-// Using extra flag (`isHighlighting`) since both CodeNode and CodeHighlightNode
-// trasnforms might be called at the same time (e.g. new CodeHighlight node inserted) and
-// in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
-// Especially when pasting code into CodeBlock.
-let isHighlighting = false;
-function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
-  if (isHighlighting) {
+function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
+  const codeElement = editor.getElementByKey(node.getKey());
+  if (codeElement === null) {
     return;
   }
-  isHighlighting = true;
-  editor.update(
-    () => {
-      // When new code block inserted it might not have language selected
-      if (node.getLanguage() === undefined) {
-        node.setLanguage(DEFAULT_CODE_LANGUAGE);
-      }
+  const children = node.getChildren();
+  const childrenLength = children.length;
+  // $FlowFixMe: internal field
+  if (childrenLength === codeElement.__cachedChildrenLength) {
+    // Avoid updating the attribute if the children length hasn't changed.
+    return;
+  }
+  // $FlowFixMe: internal field
+  codeElement.__cachedChildrenLength = childrenLength;
+  let gutter = '1';
+  let count = 1;
+  for (let i = 0; i < childrenLength; i++) {
+    if ($isLineBreakNode(children[i])) {
+      gutter += '\n' + ++count;
+    }
+  }
+  codeElement.setAttribute('data-gutter', gutter);
+}
 
-      updateAndRetainSelection(node, () => {
-        const code = node.getTextContent();
-        const tokens = Prism.tokenize(
-          code,
-          Prism.languages[node.getLanguage() || ''] ||
-            Prism.languages[DEFAULT_CODE_LANGUAGE],
-        );
-        const highlightNodes = getHighlightNodes(tokens);
-        const diffRange = getDiffRange(node.getChildren(), highlightNodes);
-        const {from, to, nodesForReplacement} = diffRange;
-        if (from !== to || nodesForReplacement.length) {
-          node.splice(from, to - from, nodesForReplacement);
-          return true;
-        }
-        return false;
-      });
-    },
-    {
-      onUpdate: () => {
-        isHighlighting = false;
-      },
-      skipTransforms: true,
-    },
-  );
+function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
+  // When new code block inserted it might not have language selected
+  if (node.getLanguage() === undefined) {
+    node.setLanguage(DEFAULT_CODE_LANGUAGE);
+  }
+
+  updateAndRetainSelection(node, () => {
+    const code = node.getTextContent();
+    const tokens = Prism.tokenize(
+      code,
+      Prism.languages[node.getLanguage() || ''] ||
+        Prism.languages[DEFAULT_CODE_LANGUAGE],
+    );
+    const highlightNodes = getHighlightNodes(tokens);
+    const diffRange = getDiffRange(node.getChildren(), highlightNodes);
+    const {from, to, nodesForReplacement} = diffRange;
+    if (from !== to || nodesForReplacement.length) {
+      node.splice(from, to - from, nodesForReplacement);
+      return true;
+    }
+    return false;
+  });
 }
 
 function getHighlightNodes(tokens): Array<LexicalNode> {
@@ -776,6 +779,18 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
   }
 
   return mergeRegister(
+    editor.registerMutationListener(CodeNode, (mutations) => {
+      editor.update(() => {
+        for (const [key, type] of mutations) {
+          if (type !== 'destroyed') {
+            const node = $getNodeByKey(key);
+            if (node !== null) {
+              updateCodeGutter(node, editor);
+            }
+          }
+        }
+      });
+    }),
     editor.registerNodeTransform(CodeNode, (node) =>
       codeNodeTransform(node, editor),
     ),

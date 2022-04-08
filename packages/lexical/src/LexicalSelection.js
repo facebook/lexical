@@ -2223,6 +2223,10 @@ export function moveSelectionPointToSibling(
     point.set(siblingKey, offset, type);
   } else {
     offset = node.getIndexWithinParent();
+    if (offset === -1) {
+      // Move selection to end of parent
+      offset = parent.getChildrenSize();
+    }
     point.set(parent.__key, offset, 'element');
   }
 }

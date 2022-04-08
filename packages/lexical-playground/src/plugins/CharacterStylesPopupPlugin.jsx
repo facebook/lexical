@@ -9,6 +9,7 @@
 
 import type {ElementNode, LexicalEditor, RangeSelection} from 'lexical';
 
+import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isAtNodeEnd} from '@lexical/selection';
@@ -224,7 +225,10 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
           setIsLink(false);
         }
 
-        if (selection.getTextContent() !== '') {
+        if (
+          !$isCodeHighlightNode(selection.anchor.getNode()) &&
+          selection.getTextContent() !== ''
+        ) {
           setIsText($isTextNode(node));
         } else {
           setIsText(false);

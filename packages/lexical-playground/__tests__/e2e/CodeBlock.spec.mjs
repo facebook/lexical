@@ -37,6 +37,7 @@ test.describe('CodeBlock', () => {
             class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
             spellcheck="false"
             dir="ltr"
+            data-gutter="1"
           >
             <span
               class="PlaygroundEditorTheme__tokenFunction"
@@ -123,6 +124,7 @@ test.describe('CodeBlock', () => {
             class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
             spellcheck="false"
             dir="ltr"
+            data-gutter="1"
           >
             <span
               class="PlaygroundEditorTheme__tokenFunction"
@@ -186,6 +188,7 @@ test.describe('CodeBlock', () => {
             class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
             spellcheck="false"
             dir="ltr"
+            data-gutter="1"
           >
             <span data-lexical-text="true">select</span>
             <span
@@ -206,6 +209,7 @@ test.describe('CodeBlock', () => {
             class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
             spellcheck="false"
             dir="ltr"
+            data-gutter="1"
           >
             <span
               class="PlaygroundEditorTheme__tokenAttr"
@@ -265,6 +269,7 @@ test.describe('CodeBlock', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-gutter="123"
         >
           <span
             class="PlaygroundEditorTheme__tokenFunction"
@@ -356,6 +361,7 @@ test.describe('CodeBlock', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-gutter="123"
         >
           <span
             class="PlaygroundEditorTheme__tokenAttr"
@@ -433,6 +439,7 @@ test.describe('CodeBlock', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-gutter="123"
         >
           <span data-lexical-text="true"></span>
           <span
@@ -509,6 +516,7 @@ test.describe('CodeBlock', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-gutter="123"
         >
           <span data-lexical-text="true"></span>
           <span
@@ -586,6 +594,7 @@ test.describe('CodeBlock', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
+          data-gutter="123"
         >
           <span
             class="PlaygroundEditorTheme__tokenAttr"
@@ -661,6 +670,7 @@ test.describe('CodeBlock', () => {
         class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
         spellcheck="false"
         dir="ltr"
+        data-gutter="123"
       >
         <span
           class="PlaygroundEditorTheme__tokenFunction"
@@ -743,6 +753,7 @@ test.describe('CodeBlock', () => {
         class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
         spellcheck="false"
         dir="ltr"
+        data-gutter="123"
       >
         <span
           class="PlaygroundEditorTheme__tokenFunction"
@@ -871,6 +882,7 @@ test.describe('CodeBlock', () => {
       class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
       spellcheck="false"
       dir="ltr"
+      data-gutter="123"
     >
       <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
         function
@@ -1000,7 +1012,7 @@ test.describe('CodeBlock', () => {
       pastedHTML: `<meta charset='utf-8'><pre class="c-mrkdwn__pre" data-stringify-type="pre" style="box-sizing: inherit; margin: 4px 0px; padding: 8px; --saf-0:rgba(var(--sk_foreground_low,29,28,29),0.13); font-size: 12px; line-height: 1.50001; font-variant-ligatures: none; white-space: pre-wrap; word-break: break-word; word-break: normal; tab-size: 4; font-family: Monaco, Menlo, Consolas, &quot;Courier New&quot;, monospace !important; border: 1px solid var(--saf-0); border-radius: 4px; background: rgba(var(--sk_foreground_min,29,28,29),0.04); counter-reset: list-0 0 list-1 0 list-2 0 list-3 0 list-4 0 list-5 0 list-6 0 list-7 0 list-8 0 list-9 0; color: rgb(29, 28, 29); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;">function run() {\n  return [null, undefined, 2, ""];\n}</pre>`,
     },
     {
-      expectedHTML: `<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">const</span><span data-lexical-text="true"> Lexical </span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">requireCond</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'gk'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'runtime_is_dev'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span data-lexical-text="true">  </span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">true</span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">:</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'Lexical.dev'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><br><span data-lexical-text="true">  </span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">false</span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">:</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'Lexical.prod'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><br><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>`,
+      expectedHTML: `<code class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr" spellcheck="false" dir="ltr" data-gutter="1234"><span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">const</span><span data-lexical-text="true"> Lexical </span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">=</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenFunction" data-lexical-text="true">requireCond</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">(</span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'gk'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'runtime_is_dev'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">{</span><br><span data-lexical-text="true">  </span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">true</span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">:</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'Lexical.dev'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><br><span data-lexical-text="true">  </span><span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">false</span><span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">:</span><span data-lexical-text="true"> </span><span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">'Lexical.prod'</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">,</span><br><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">}</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">)</span><span class="PlaygroundEditorTheme__tokenPunctuation" data-lexical-text="true">;</span></code>`,
       name: 'CodeHub',
       pastedHTML: `<meta charset='utf-8'><div style="color: #000000;background-color: #fffffe;font-family: 'monaco,monospace', Menlo, Monaco, 'Courier New', monospace;font-weight: normal;font-size: 13px;line-height: 20px;white-space: pre;"><div><span style="color: #ff0000;">const</span><span style="color: #000000;"> </span><span style="color: #800000;">Lexical</span><span style="color: #000000;"> = </span><span style="color: #383838;">requireCond</span><span style="color: #000000;">(</span><span style="color: #863b00;">'gk'</span><span style="color: #000000;">, </span><span style="color: #863b00;">'runtime_is_dev'</span><span style="color: #000000;">, {</span></div><div><span style="color: #000000;">  </span><span style="color: #863b00;">true</span><span style="color: #000000;">: </span><span style="color: #863b00;">'Lexical.dev'</span><span style="color: #000000;">,</span></div><div><span style="color: #000000;">  </span><span style="color: #863b00;">false</span><span style="color: #000000;">: </span><span style="color: #863b00;">'Lexical.prod'</span><span style="color: #000000;">,</span></div><div><span style="color: #000000;">});</span></div></div>`,
     },

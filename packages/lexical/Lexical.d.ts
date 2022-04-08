@@ -311,6 +311,10 @@ export type DOMConversionOutput = {
   forChild?: DOMChildConversion;
   node: LexicalNode | null;
 };
+export type DOMExportOutput = {
+  after?: (generatedElement: ?HTMLElement) => ?HTMLElement;
+  element: HTMLElement | null;
+};
 export type NodeKey = string;
 export declare class LexicalNode {
   __type: string;
@@ -318,7 +322,7 @@ export declare class LexicalNode {
   __parent: null | NodeKey;
   getType(): string;
   clone(data: any): LexicalNode;
-  convertDOM(): DOMConversionMap | null;
+  importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey);
   getType(): string;
   isAttached(): boolean;
@@ -351,6 +355,7 @@ export declare class LexicalNode {
     includeInert?: boolean,
     includeDirectionless?: false,
   ): number;
+  exportDOM(editor: LexicalEditor): DOMExportOutput;
   // $FlowFixMe
   createDOM<EditorContext extends Record<string, any>>(
     config: EditorConfig<EditorContext>,
@@ -429,6 +434,7 @@ export declare class GridSelection {
   clone(): GridSelection;
   extract(): Array<LexicalNode>;
   isCollapsed(): boolean;
+  isBackward(): boolean;
   insertRawText(): void;
   insertText(): void;
   getShape(): GridSelectionShape;

@@ -29,7 +29,7 @@ export class TableRowNode extends GridRowNode {
     return new TableRowNode(node.__height, node.__key);
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       tr: (node: Node) => ({
         conversion: convertTableRowElement,

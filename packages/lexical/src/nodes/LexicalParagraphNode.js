@@ -7,10 +7,15 @@
  * @flow strict
  */
 
-import type {EditorConfig, EditorThemeClasses} from '../LexicalEditor';
+import type {
+  EditorConfig,
+  EditorThemeClasses,
+  LexicalEditor,
+} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   LexicalNode,
   NodeKey,
 } from '../LexicalNode';
@@ -50,12 +55,26 @@ export class ParagraphNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       p: (node: Node) => ({
         conversion: convertParagraphElement,
         priority: 0,
       }),
+    };
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+
+    if (element) {
+      if (this.getTextContentSize() === 0) {
+        element.append(document.createElement('br'));
+      }
+    }
+
+    return {
+      element,
     };
   }
 

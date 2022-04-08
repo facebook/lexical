@@ -319,6 +319,10 @@ export type DOMConversionOutput = {
   forChild?: DOMChildConversion,
   node: LexicalNode | null,
 };
+export type DOMExportOutput = {
+  after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
+  element?: HTMLElement | null,
+};
 export type NodeKey = string;
 declare export class LexicalNode {
   __type: string;
@@ -326,8 +330,9 @@ declare export class LexicalNode {
   __parent: null | NodeKey;
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
-  static convertDOM(): DOMConversionMap | null;
+  static importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
+  exportDOM(editor: LexicalEditor): DOMExportOutput;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;
@@ -447,6 +452,7 @@ declare export class GridSelection implements BaseSelection {
   insertRawText(): void;
   insertText(): void;
   isCollapsed(): false;
+  isBackward(): boolean;
   getShape(): GridSelectionShape;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;

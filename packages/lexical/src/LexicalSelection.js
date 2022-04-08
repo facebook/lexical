@@ -370,6 +370,10 @@ export class GridSelection implements BaseSelection {
     return false;
   }
 
+  isBackward(): boolean {
+    return this.focus.isBefore(this.anchor);
+  }
+
   extract(): Array<LexicalNode> {
     return this.getNodes();
   }

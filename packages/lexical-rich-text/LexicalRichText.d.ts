@@ -35,7 +35,7 @@ export declare class HeadingNode extends ElementNode {
   getTag(): HeadingTagType;
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean;
-  static convertDOM(): DOMConversionMap | null;
+  static importDOM(): DOMConversionMap | null;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
 }

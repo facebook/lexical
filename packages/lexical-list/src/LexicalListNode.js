@@ -77,7 +77,7 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       ol: (node: Node) => ({
         conversion: convertListNode,

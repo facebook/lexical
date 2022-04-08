@@ -401,7 +401,7 @@ export class TextNode extends LexicalNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       '#text': (node: Node) => ({
         conversion: convertTextDOMNode,

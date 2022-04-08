@@ -197,7 +197,7 @@ export class CodeNode extends ElementNode {
     return false;
   }
 
-  static convertDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap | null {
     return {
       div: (node: Node) => ({
         conversion: convertDivElement,

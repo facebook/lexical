@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {LexicalCommand, LexicalNode} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  LexicalCommand,
+  LexicalNode,
+} from 'lexical';
 
 import {createCommand, DecoratorNode} from 'lexical';
 import * as React from 'react';
@@ -26,6 +32,19 @@ export class HorizontalRuleNode extends DecoratorNode<React$Node> {
 
   static clone(node: HorizontalRuleNode): HorizontalRuleNode {
     return new HorizontalRuleNode(node.__state, node.__key);
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      hr: (node: Node) => ({
+        conversion: convertHorizontalRuleElement,
+        priority: 0,
+      }),
+    };
+  }
+
+  exportDOM(): DOMExportOutput {
+    return {element: document.createElement('hr')};
   }
 
   createDOM(): HTMLElement {
@@ -49,6 +68,10 @@ export class HorizontalRuleNode extends DecoratorNode<React$Node> {
   decorate(): React$Node {
     return <HorizontalRuleComponent />;
   }
+}
+
+function convertHorizontalRuleElement(): DOMConversionOutput {
+  return {node: $createHorizontalRuleNode()};
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {

@@ -69,26 +69,37 @@ export function $convertSelectedLexicalNodeToHTMLElement(
     const isBefore = selection.anchor.isBefore(selection.focus);
     const isAnchor = node === selection.anchor.getNode();
     const isFocus = node === selection.focus.getNode();
+    const isSame = selection.anchor.getNode() === selection.focus.getNode();
 
     if ($isTextNode(node) && (isAnchor || isFocus)) {
       const nodeText = node.getTextContent();
       const nodeTextLength = nodeText.length;
-      const isFirst = isAnchor
-        ? node.isBefore(selection.focus.getNode())
-        : node.isBefore(selection.anchor.getNode());
 
-      let endOffset;
-
-      if (isFirst) {
-        endOffset = isBefore ? anchorOffset : focusOffset;
+      if (isSame) {
+        const startOffset =
+          anchorOffset > focusOffset ? focusOffset : anchorOffset;
+        const endOffset =
+          anchorOffset > focusOffset ? anchorOffset : focusOffset;
+        const splitNodes = node.splitText(startOffset, endOffset);
+        nodeToConvert = startOffset === 0 ? splitNodes[0] : splitNodes[1];
       } else {
-        endOffset = isBefore ? focusOffset : anchorOffset;
-      }
+        const isFirst =
+          isSame || isAnchor
+            ? node.isBefore(selection.focus.getNode())
+            : node.isBefore(selection.anchor.getNode());
+        let endOffset;
+        if (isFirst) {
+          endOffset = isBefore ? anchorOffset : focusOffset;
+        } else {
+          endOffset = isBefore ? focusOffset : anchorOffset;
+        }
 
-      if (endOffset === 0) {
-        return null;
-      } else if (endOffset !== nodeTextLength) {
-        nodeToConvert = node.splitText(endOffset)[isBefore && isAnchor ? 1 : 0];
+        if (endOffset === 0) {
+          return null;
+        } else if (endOffset !== nodeTextLength) {
+          nodeToConvert =
+            node.splitText(endOffset)[isBefore && isAnchor ? 1 : 0];
+        }
       }
     }
   }

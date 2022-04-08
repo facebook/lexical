@@ -269,12 +269,40 @@ test.describe('TextEntry', () => {
     isRichText,
   }) => {
     await focusEditor(page);
-    const text = 'Hello foobar.';
-    await page.keyboard.type(text);
+    await page.keyboard.type('Hello foobar.');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Hello foobar.</span>
+        </p>
+      `,
+    );
+
     await repeat(7, async () => await page.keyboard.down('ArrowLeft'));
+
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 0, 0],
+    });
+
     await page.keyboard.down('Shift');
     await repeat(3, async () => await page.keyboard.down('ArrowRight'));
     await page.keyboard.up('Shift');
+
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 0, 0],
+      focusOffset: 9,
+      focusPath: [0, 0, 0],
+    });
+
     await page.keyboard.type('lol');
 
     await assertHTML(

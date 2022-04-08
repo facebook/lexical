@@ -628,9 +628,7 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   return false;
 }
 
-function handleMultilineIndent(
-  type: LexicalCommand<'indentContent'> | LexicalCommand<'outdentContent'>,
-): boolean {
+function handleMultilineIndent(type: LexicalCommand<void>): boolean {
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection) || selection.isCollapsed()) {
@@ -661,10 +659,7 @@ function handleMultilineIndent(
   return true;
 }
 
-function doIndent(
-  node: CodeHighlightNode,
-  type: LexicalCommand<'indentContent'> | LexicalCommand<'outdentContent'>,
-) {
+function doIndent(node: CodeHighlightNode, type: LexicalCommand<void>) {
   const text = node.getTextContent();
   if (type === INDENT_CONTENT_COMMAND) {
     // If the codeblock node doesn't start with whitespace, we don't want to
@@ -692,7 +687,7 @@ function doIndent(
 }
 
 function handleShiftLines(
-  type: LexicalCommand<'keyArrowUp'> | LexicalCommand<'keyArrowDown'>,
+  type: LexicalCommand<KeyboardEvent>,
   event: KeyboardEvent,
 ): boolean {
   // We only care about the alt+arrow keys

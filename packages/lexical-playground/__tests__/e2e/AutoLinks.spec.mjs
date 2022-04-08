@@ -21,7 +21,6 @@ import {
   initialize,
   pasteFromClipboard,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('Auto Links', () => {
@@ -158,7 +157,6 @@ test.describe('Auto Links', () => {
     await page.keyboard.type('hm');
 
     await selectAll(page);
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(

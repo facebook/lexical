@@ -14,6 +14,7 @@ import {
   focusEditor,
   html,
   initialize,
+  selectFromInsertDropdown,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -32,9 +33,7 @@ test.describe('Images', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    await waitForSelector(page, 'button .image');
-
-    await click(page, 'button .image');
+    await selectFromInsertDropdown(page, '.image');
 
     await waitForSelector(page, '.editor-image img');
 
@@ -97,9 +96,7 @@ test.describe('Images', () => {
       focusPath: [0],
     });
 
-    await click(page, 'button .image');
-
-    await waitForSelector(page, '.editor-image img');
+    await selectFromInsertDropdown(page, '.image');
 
     await click(page, '.editor-image img');
 
@@ -141,7 +138,7 @@ test.describe('Images', () => {
 
     await click(page, 'div[contenteditable="true"]');
 
-    await click(page, 'button .image');
+    await selectFromInsertDropdown(page, '.image');
 
     await waitForSelector(page, '.editor-image img');
 
@@ -199,13 +196,9 @@ test.describe('Images', () => {
 
     await focusEditor(page);
 
-    await waitForSelector(page, 'button .image');
+    await selectFromInsertDropdown(page, '.image');
 
-    await click(page, 'button .image');
-
-    await waitForSelector(page, '.editor-image img');
-
-    await click(page, 'button .image');
+    await selectFromInsertDropdown(page, '.image');
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');
@@ -290,8 +283,8 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.type('Test');
-    await click(page, 'button .image');
-    await click(page, 'button .image');
+    await selectFromInsertDropdown(page, '.image');
+    await selectFromInsertDropdown(page, '.image');
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');

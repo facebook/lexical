@@ -12,21 +12,18 @@ import {
   click,
   focusEditor,
   initialize,
+  selectFromAlignDropdown,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 async function toggleBulletList(page) {
-  await waitForSelector(page, '.block-controls');
   await click(page, '.block-controls');
-  await waitForSelector(page, '.dropdown .icon.bullet-list');
   await click(page, '.dropdown .icon.bullet-list');
 }
 
 async function clickIndentButton(page, times = 1) {
-  await waitForSelector(page, 'button .indent');
   for (let i = 0; i < times; i++) {
-    await click(page, 'button .indent');
+    await selectFromAlignDropdown(page, '.indent');
   }
 }
 

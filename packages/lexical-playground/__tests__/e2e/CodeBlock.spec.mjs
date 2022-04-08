@@ -17,13 +17,10 @@ import {
   pasteFromClipboard,
   selectOption,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 async function toggleCodeBlock(page) {
-  await waitForSelector(page, '.block-controls');
   await click(page, '.block-controls');
-  await waitForSelector(page, '.dropdown .icon.code');
   await click(page, '.dropdown .icon.code');
 }
 

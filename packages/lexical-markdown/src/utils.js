@@ -79,7 +79,10 @@ export type MarkdownFormatKind =
   | 'italic'
   | 'underline'
   | 'strikethrough'
-  | 'bold_italic'
+  | 'italic_bold'
+  | 'strikethrough_italic'
+  | 'strikethrough_bold'
+  | 'strikethrough_italic_bold'
   | 'link';
 
 // The scanning context provides the overall data structure for
@@ -181,28 +184,28 @@ const paragraphStartBase: MarkdownCriteria = {
 const markdownHeader1: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphH1',
-  regEx: /^(?:#)/,
+  regEx: /^(?:# )/,
   regExForAutoFormatting: /^(?:# )/,
 };
 
 const markdownHeader2: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphH2',
-  regEx: /^(?:##)/,
+  regEx: /^(?:## )/,
   regExForAutoFormatting: /^(?:## )/,
 };
 
 const markdownHeader3: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphH2',
-  regEx: /^(?:###)/,
+  regEx: /^(?:### )/,
   regExForAutoFormatting: /^(?:### )/,
 };
 
 const markdownBlockQuote: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphBlockQuote',
-  regEx: /^(?:>)/,
+  regEx: /^(?:> )/,
   regExForAutoFormatting: /^(?:> )/,
 };
 
@@ -251,29 +254,29 @@ const markdownHorizontalRuleUsingDashes: MarkdownCriteria = {
 const markdownItalic: MarkdownCriteria = {
   ...autoFormatBase,
   markdownFormatKind: 'italic',
-  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)/,
+  regEx: /(\*)([^\*]*)(\*)/,
   regExForAutoFormatting: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)(\s)$/,
 };
 
 const markdownBold: MarkdownCriteria = {
   ...autoFormatBase,
   markdownFormatKind: 'bold',
-  regEx: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)/,
+  regEx: /(\*\*)([^\*\*]*)(\*\*)/,
   regExForAutoFormatting: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)(\s)$/,
 };
 
-const markdownBoldWithUnderlines: MarkdownCriteria = {
+const markdownBold2: MarkdownCriteria = {
   ...autoFormatBase,
   markdownFormatKind: 'bold',
   regEx: /(__)(\s*)([^__]*)(\s*)(__)/,
   regExForAutoFormatting: /(__)(\s*)([^__]*)(\s*)(__)(\s)$/,
 };
 
-const markdownBoldItalic: MarkdownCriteria = {
+const markdownItalic2: MarkdownCriteria = {
   ...autoFormatBase,
-  markdownFormatKind: 'bold_italic',
-  regEx: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)/,
-  regExForAutoFormatting: /(\*\*\*)(\s*\b)([^\*\*\*]*)(\b\s*)(\*\*\*)(\s)$/,
+  markdownFormatKind: 'italic',
+  regEx: /(_)([^_]*)(_)/,
+  regExForAutoFormatting: /(_)()([^_]*)()(_)(\s)$/, // Maintain 7 groups.
 };
 
 // Markdown does not support underline, but we can allow folks to use
@@ -288,8 +291,36 @@ const fakeMarkdownUnderline: MarkdownCriteria = {
 const markdownStrikethrough: MarkdownCriteria = {
   ...autoFormatBase,
   markdownFormatKind: 'strikethrough',
-  regEx: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)/,
+  regEx: /(~~)([^~~]*)(~~)/,
   regExForAutoFormatting: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)(\s)$/,
+};
+
+const markdownItalicbold: MarkdownCriteria = {
+  ...autoFormatBase,
+  markdownFormatKind: 'italic_bold',
+  regEx: /(_\*\*)(\s*\b)([^_\*\*]*)(\b\s*)(_\*\*)/,
+  regExForAutoFormatting: /(_\*\*)(\s*\b)([^_\*\*]*)(\b\s*)(_\*\*)(\s)$/,
+};
+
+const markdownStrikethroughItalic: MarkdownCriteria = {
+  ...autoFormatBase,
+  markdownFormatKind: 'strikethrough_italic',
+  regEx: /(~~_)([^~~_]*)(~~_)/,
+  regExForAutoFormatting: /(~~_)(\s*\b)([^~~_]*)(\b\s*)(~~_)(\s)$/,
+};
+
+const markdownStrikethroughBold: MarkdownCriteria = {
+  ...autoFormatBase,
+  markdownFormatKind: 'strikethrough_bold',
+  regEx: /(~~\*\*)([^~~\*\*]*)(~~\*\*)/,
+  regExForAutoFormatting: /(~~\*\*)(\s*\b)([^~~\*\*]*)(\b\s*)(~~\*\*)(\s)$/,
+};
+
+const markdownStrikethroughItalicBold: MarkdownCriteria = {
+  ...autoFormatBase,
+  markdownFormatKind: 'strikethrough_italic_bold',
+  regEx: /(~~_\*\*)([^~~_\*\*]*)(~~_\*\*)/,
+  regExForAutoFormatting: /(~~_\*\*)(\s*\b)([^~~_\*\*]*)(\b\s*)(~~_\*\*)(\s)$/,
 };
 
 const markdownLink: MarkdownCriteria = {
@@ -300,12 +331,16 @@ const markdownLink: MarkdownCriteria = {
 };
 
 export const allMarkdownCriteriaForTextNodes: MarkdownCriteriaArray = [
-  markdownBoldItalic,
   markdownItalic,
   markdownBold,
-  markdownBoldWithUnderlines,
+  markdownBold2,
+  markdownItalic2, // Must appear after markdownBold2.
   fakeMarkdownUnderline,
   markdownStrikethrough,
+  markdownItalicbold,
+  markdownStrikethroughItalic,
+  markdownStrikethroughBold,
+  markdownStrikethroughItalicBold,
   markdownLink,
 ];
 
@@ -795,8 +830,14 @@ function getTextFormatType(
     case 'underline':
     case 'strikethrough':
       return [markdownFormatKind];
-    case 'bold_italic': {
-      return ['bold', 'italic'];
+    case 'italic_bold': {
+      return ['italic', 'bold'];
+    }
+    case 'strikethrough_italic': {
+      return ['strikethrough', 'italic'];
+    }
+    case 'strikethrough_bold': {
+      return ['strikethrough', 'bold'];
     }
     default:
   }

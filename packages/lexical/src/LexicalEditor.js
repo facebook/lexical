@@ -147,9 +147,10 @@ export type CommandListenerPriority =
 // eslint-disable-next-line no-unused-vars
 export type LexicalCommand<T> = $ReadOnly<{}>;
 
+// $FlowFixMe[unclear-type]
+type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
+
 type Listeners = {
-  // $FlowFixMe We don't want to require a generic within LexicalEditor just for commands.
-  command: Map<LexicalCommand<>, Array<Set<CommandListener>>>,
   decorator: Set<DecoratorListener>,
   mutation: MutationListeners,
   readonly: Set<ReadOnlyListener>,
@@ -164,8 +165,7 @@ export type ListenerType =
   | 'decorator'
   | 'textcontent'
   | 'mutation'
-  | 'readonly'
-  | 'command';
+  | 'readonly';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -306,6 +306,7 @@ export class LexicalEditor {
   _updates: Array<[() => void, void | EditorUpdateOptions]>;
   _updating: boolean;
   _listeners: Listeners;
+  _commands: Commands;
   _nodes: RegisteredNodes;
   _decorators: {[NodeKey]: mixed};
   _pendingDecorators: null | {[NodeKey]: mixed};
@@ -347,7 +348,6 @@ export class LexicalEditor {
     this._updating = false;
     // Listeners
     this._listeners = {
-      command: new Map(),
       decorator: new Set(),
       mutation: new Map(),
       readonly: new Set(),
@@ -355,6 +355,8 @@ export class LexicalEditor {
       textcontent: new Set(),
       update: new Set(),
     };
+    // Commands
+    this._commands = new Map();
     // Editor configuration for theme/context.
     this._config = config;
     // Mapping of types to their nodes
@@ -425,7 +427,7 @@ export class LexicalEditor {
     if (priority === undefined) {
       invariant(false, 'Listener for type "command" requires a "priority".');
     }
-    const commandsMap = this._listeners.command;
+    const commandsMap = this._commands;
     if (!commandsMap.has(command)) {
       commandsMap.set(command, [
         new Set(),

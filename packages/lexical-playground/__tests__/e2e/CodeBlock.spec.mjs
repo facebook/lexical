@@ -6,17 +6,26 @@
  *
  */
 
-import {moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
+import {moveToEditorBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
+  click,
   focusEditor,
   html,
   initialize,
   pasteFromClipboard,
   selectOption,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
+
+async function toggleCodeBlock(page) {
+  await waitForSelector(page, '.block-controls');
+  await click(page, '.block-controls');
+  await waitForSelector(page, '.dropdown .icon.code');
+  await click(page, '.dropdown .icon.code');
+}
 
 test.describe('CodeBlock', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
@@ -172,6 +181,78 @@ test.describe('CodeBlock', () => {
         `,
       );
     }
+  });
+
+  test('Can select multiple paragraphs and convert to code block', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('foo');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('bar');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('yar');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('meh');
+
+    await selectAll(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">foo</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">bar</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">yar</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">meh</span>
+        </p>
+      `,
+    );
+
+    await toggleCodeBlock(page);
+
+    await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="12345"
+        >
+          <span data-lexical-text="true">foo</span>
+          <br />
+          <span data-lexical-text="true">bar</span>
+          <br />
+          <span data-lexical-text="true">yar</span>
+          <br />
+          <br />
+          <span data-lexical-text="true">meh</span>
+        </code>
+      `,
+    );
   });
 
   test('Can switch highlighting language in a toolbar', async ({

@@ -434,6 +434,7 @@ export declare class GridSelection {
   clone(): GridSelection;
   extract(): Array<LexicalNode>;
   isCollapsed(): boolean;
+  isBackward(): boolean;
   insertRawText(): void;
   insertText(): void;
   getShape(): GridSelectionShape;

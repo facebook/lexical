@@ -31,29 +31,26 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
-import getDOMSelection from 'shared/getDOMSelection';
 
 const IGNORE_TAGS = new Set(['STYLE']);
 
 export function getHtmlContent(editor: LexicalEditor): string | null {
-  const domSelection = getDOMSelection();
   const selection = $getSelection();
-  // If we haven't selected a range, then don't copy anything
-  if (domSelection.isCollapsed) {
+
+  if (selection == null) {
+    throw new Error('Expected valid LexicalSelection');
+  }
+
+  // If we haven't selected anything
+  if (
+    ($isRangeSelection(selection) && selection.isCollapsed()) ||
+    selection.getNodes().length === 0
+  ) {
     return null;
   }
-  if (selection !== null) {
-    const state = $cloneContents(selection);
-    return $convertSelectedLexicalContentToHtml(editor, selection, state);
-  }
-  const range = domSelection.getRangeAt(0);
-  if (range) {
-    const container = document.createElement('div');
-    const frag = range.cloneContents();
-    container.appendChild(frag);
-    return container.innerHTML;
-  }
-  return null;
+
+  const state = $cloneContents(selection);
+  return $convertSelectedLexicalContentToHtml(editor, selection, state);
 }
 
 export function $convertSelectedLexicalNodeToHTMLElement(

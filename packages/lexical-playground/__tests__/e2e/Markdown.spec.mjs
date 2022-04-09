@@ -26,7 +26,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
   isCollab,
 ) {
   await assertHTML(page, forwardHTML);
-  if (isCollab) {
+  if (isCollab || undoHTML === 'none') {
     // Collab uses its own undo/redo
     return;
   }
@@ -130,6 +130,35 @@ test.describe('Markdown', () => {
       markdownText: '--- ',
 
       undoHTML: '', // HR Rule.
+    },
+    {
+      expectation:
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough" data-lexical-text="true">test</strong><span data-lexical-text="true"></span></p>',
+      isBlockTest: true,
+      markdownText: '~~_**test**_~~ ',
+      undoHTML: 'none', // strikethru, italic, bold
+    },
+    {
+      expectation:
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><em class="PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough" data-lexical-text="true">test</em><span data-lexical-text="true"></span></p>',
+      isBlockTest: true,
+      markdownText: '~~_test_~~ ',
+      undoHTML: 'none', // strikethru, italic
+    },
+    {
+      expectation:
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textStrikethrough" data-lexical-text="true">test</strong><span data-lexical-text="true"></span></p>',
+      isBlockTest: true,
+      markdownText: '~~**test**~~ ',
+      undoHTML: 'none', // strikethru, bold
+    },
+
+    {
+      expectation:
+        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic" data-lexical-text="true">test</strong><span data-lexical-text="true"></span></p>',
+      isBlockTest: true,
+      markdownText: '_**test**_ ',
+      undoHTML: 'none', // italic, bold
     },
   ];
   // forward case is the normal case.
@@ -279,7 +308,7 @@ test.describe('Markdown', () => {
       });
     }
   }
-  test(`Should test markdown convertion from plain text to Lexical.`, async ({
+  test(`Should test markdown conversion from plain text to Lexical.`, async ({
     page,
     isPlainText,
     isCollab,
@@ -287,7 +316,7 @@ test.describe('Markdown', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    await page.keyboard.type('#Heading');
+    await page.keyboard.type('# Heading');
     await click(page, 'i.markdown');
 
     const html =

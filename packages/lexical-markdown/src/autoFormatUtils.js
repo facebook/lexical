@@ -36,7 +36,8 @@ import {
   getInitialScanningContext,
   getPatternMatchResultsForParagraphs,
   getPatternMatchResultsForText,
-  transformTextNodeForParagraphs,
+  getTextNodeWithOffsetOrThrow,
+  transformTextNodeForElementNode,
   transformTextNodeForText,
   triggers,
 } from './utils';
@@ -58,7 +59,13 @@ export function transformTextNodeForMarkdownCriteria<T>(
   createHorizontalRuleNode: () => DecoratorNode<T>,
 ) {
   if (scanningContext.markdownCriteria.requiresParagraphStart === true) {
-    transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
+    const elementNode =
+      getTextNodeWithOffsetOrThrow(scanningContext).node.getParentOrThrow();
+    transformTextNodeForElementNode(
+      elementNode,
+      scanningContext,
+      createHorizontalRuleNode,
+    );
   } else {
     transformTextNodeForText(scanningContext);
   }

@@ -265,39 +265,8 @@ export class ElementNode extends LexicalNode {
   }
   append(...nodesToAppend: LexicalNode[]): ElementNode {
     errorOnReadOnly();
-    const writableSelf = this.getWritable();
-    const writableSelfKey = writableSelf.__key;
-    const writableSelfChildren = writableSelf.__children;
-    const nodesToAppendLength = nodesToAppend.length;
-    const lastChild = this.getLastChild();
-    if (lastChild !== null) {
-      internalMarkNodeAsDirty(lastChild);
-    }
-    for (let i = 0; i < nodesToAppendLength; i++) {
-      const nodeToAppend = nodesToAppend[i];
-      if (nodeToAppend.__key === writableSelfKey) {
-        invariant(false, 'append: attemtping to append self');
-      }
-      const writableNodeToAppend = nodeToAppend.getWritable();
-      // Remove node from previous parent
-      const oldParent = writableNodeToAppend.getParent();
-      if (oldParent !== null) {
-        const writableParent = oldParent.getWritable();
-        const children = writableParent.__children;
-        const index = children.indexOf(writableNodeToAppend.__key);
-        if (index === -1) {
-          invariant(false, 'Node is not a child of its parent');
-        }
-        children.splice(index, 1);
-      }
-      // Set child parent to self
-      writableNodeToAppend.__parent = writableSelfKey;
-      const newKey = writableNodeToAppend.__key;
-      writableSelfChildren.push(newKey);
-    }
-    return writableSelf;
+    return this.splice(this.getChildrenSize(), 0, nodesToAppend);
   }
-
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
     const self = this.getWritable();
@@ -363,16 +332,24 @@ export class ElementNode extends LexicalNode {
     }
 
     // Remove defined range of children
-    const nodesToRemoveKeys = writableSelfChildren.splice(
-      start,
-      deleteCount,
-      ...nodesToInsertKeys,
-    );
+    let nodesToRemoveKeys;
+
+    // Using faster push when only appending nodes
+    if (start === writableSelfChildren.length) {
+      writableSelfChildren.push(...nodesToInsertKeys);
+      nodesToRemoveKeys = [];
+    } else {
+      nodesToRemoveKeys = writableSelfChildren.splice(
+        start,
+        deleteCount,
+        ...nodesToInsertKeys,
+      );
+    }
 
     // In case of deletion we need to adjust selection, unlink removed nodes
     // and clean up node itself if it becomes empty. None of these needed
     // for insertion-only cases
-    if (deleteCount) {
+    if (nodesToRemoveKeys.length) {
       // Adjusting selection, in case node that was anchor/focus will be deleted
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {

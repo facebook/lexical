@@ -623,21 +623,25 @@ export class LexicalNode {
     removeNode(this, true);
   }
 
+  removeFromParent(writableNode: LexicalNode): void {
+    const oldParent = writableNode.getParent();
+    if (oldParent !== null) {
+      const writableParent = oldParent.getWritable();
+      const children = writableParent.__children;
+      const index = children.indexOf(writableNode.__key);
+      if (index === -1) {
+        invariant(false, 'Node is not a child of its parent');
+      }
+      internalMarkSiblingsAsDirty(writableNode);
+      children.splice(index, 1);
+    }
+  }
+
   replace(replaceWith: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const toReplaceKey = this.__key;
     const writableReplaceWith = replaceWith.getWritable();
-    const oldParent = writableReplaceWith.getParent();
-    if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
-      const children = writableParent.__children;
-      const index = children.indexOf(writableReplaceWith.__key);
-      if (index === -1) {
-        invariant(false, 'Node is not a child of its parent');
-      }
-      internalMarkSiblingsAsDirty(writableReplaceWith);
-      children.splice(index, 1);
-    }
+    this.removeFromParent(writableReplaceWith);
     const newParent = this.getParentOrThrow();
     const writableParent = newParent.getWritable();
     const children = writableParent.__children;
@@ -673,20 +677,13 @@ export class LexicalNode {
     const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
     const selection = $getSelection();
+    const oldIndex = nodeToInsert.getIndexWithinParent();
     let elementAnchorSelectionOnNode = false;
     let elementFocusSelectionOnNode = false;
     if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
-      const children = writableParent.__children;
-      const index = children.indexOf(writableNodeToInsert.__key);
-      if (index === -1) {
-        invariant(false, 'Node is not a child of its parent');
-      }
-      internalMarkSiblingsAsDirty(writableNodeToInsert);
-
+      this.removeFromParent(writableNodeToInsert);
       if ($isRangeSelection(selection)) {
         const oldParentKey = oldParent.__key;
-        const oldIndex = nodeToInsert.getIndexWithinParent();
         const anchor = selection.anchor;
         const focus = selection.focus;
         elementAnchorSelectionOnNode =
@@ -698,7 +695,6 @@ export class LexicalNode {
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
       }
-      children.splice(index, 1);
     }
     const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
@@ -731,17 +727,7 @@ export class LexicalNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
-    const oldParent = writableNodeToInsert.getParent();
-    if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
-      const children = writableParent.__children;
-      const index = children.indexOf(writableNodeToInsert.__key);
-      if (index === -1) {
-        invariant(false, 'Node is not a child of its parent');
-      }
-      internalMarkSiblingsAsDirty(writableNodeToInsert);
-      children.splice(index, 1);
-    }
+    this.removeFromParent(writableNodeToInsert);
     const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;

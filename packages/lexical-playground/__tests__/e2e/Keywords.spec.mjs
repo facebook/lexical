@@ -355,56 +355,30 @@ test.describe('Keywords', () => {
 
     await page.keyboard.press('Space');
 
-    if (browserName === 'firefox' && !isCollab) {
-      await assertHTML(
-        page,
-        html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span
+            class="keyword"
+            style="cursor: default;"
+            data-lexical-text="true"
           >
-            <span
-              style="cursor: default;"
-              class="keyword"
-              data-lexical-text="true"
-            >
-              congrats
-            </span>
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              Bob!
-            </strong>
-          </p>
-        `,
-      );
-    } else {
-      await assertHTML(
-        page,
-        html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
+            congrats
+          </span>
+          <span data-lexical-text="true"></span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true"
           >
-            <span
-              class="keyword"
-              style="cursor: default;"
-              data-lexical-text="true"
-            >
-              congrats
-            </span>
-            <span data-lexical-text="true"></span>
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              Bob!
-            </strong>
-          </p>
-        `,
-      );
-    }
+            Bob!
+          </strong>
+        </p>
+      `,
+    );
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0, 1, 0],

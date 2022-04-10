@@ -493,7 +493,7 @@ export class RangeSelection implements BaseSelection {
     return (
       this.anchor.is(selection.anchor) &&
       this.focus.is(selection.focus) &&
-      selection.format === this.format
+      this.format === selection.format
     );
   }
 

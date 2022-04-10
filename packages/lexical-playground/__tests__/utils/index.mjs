@@ -23,6 +23,7 @@ export const IS_COLLAB =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
+const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 
 export async function initialize({
   page,
@@ -32,8 +33,7 @@ export async function initialize({
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
-  appSettings.disableBeforeInput =
-    process.env.E2E_EVENTS_MODE === 'legacy-events';
+  appSettings.disableBeforeInput = LEGACY_EVENTS;
   if (isCollab) {
     appSettings.isCollab = isCollab;
     appSettings.collabId = uuidv4();
@@ -57,6 +57,7 @@ export const test = base.extend({
   isCollab: IS_COLLAB,
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
+  legacyEvents: LEGACY_EVENTS,
 });
 
 export {expect} from '@playwright/test';

@@ -490,7 +490,11 @@ export class RangeSelection implements BaseSelection {
     if (!$isRangeSelection(selection)) {
       return false;
     }
-    return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
+    return (
+      this.anchor.is(selection.anchor) &&
+      this.focus.is(selection.focus) &&
+      selection.format === this.format
+    );
   }
 
   isBackward(): boolean {

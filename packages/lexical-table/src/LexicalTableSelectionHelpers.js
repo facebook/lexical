@@ -63,7 +63,7 @@ export function applyTableHandlers(
   attachTableSelectionToTableElement(tableElement, tableSelection);
 
   let isMouseDown = false;
-  let hijackedRangeSelection = false;
+  let isRangeSelectionHijacked = false;
 
   tableElement.addEventListener('dblclick', (event: MouseEvent) => {
     // $FlowFixMe: event.target is always a Node on the DOM
@@ -106,7 +106,7 @@ export function applyTableHandlers(
 
   // This is adjusting the focus of the selection.
   tableElement.addEventListener('mousemove', (event: MouseEvent) => {
-    if (hijackedRangeSelection) {
+    if (isRangeSelectionHijacked) {
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
@@ -754,18 +754,18 @@ export function applyTableHandlers(
         ) {
           const anchorNode = selection.anchor.getNode();
           const focusNode = selection.focus.getNode();
+          const isAnchorInside = tableNode.isParentOf(anchorNode);
+          const isFocusInside = tableNode.isParentOf(focusNode);
           const containsPartialTable =
-            (tableNode.isParentOf(anchorNode) &&
-              !tableNode.isParentOf(focusNode)) ||
-            (tableNode.isParentOf(focusNode) &&
-              !tableNode.isParentOf(anchorNode));
+            (isAnchorInside && !isFocusInside) ||
+            (isFocusInside && !isAnchorInside);
           if (containsPartialTable) {
             const isBackward = selection.isBackward();
             const startNode = isBackward ? focusNode : anchorNode;
             const modifiedSelection = $createRangeSelection();
             const tableIndex = tableNode.getIndexWithinParent();
             const parentKey = tableNode.getParentOrThrow().getKey();
-            hijackedRangeSelection = true;
+            isRangeSelectionHijacked = true;
             tableSelection.disableHighlightStyle();
             (isBackward
               ? modifiedSelection.focus
@@ -794,7 +794,7 @@ export function applyTableHandlers(
           }
         }
 
-        if (hijackedRangeSelection && !tableNode.isSelected()) {
+        if (isRangeSelectionHijacked && !tableNode.isSelected()) {
           tableSelection.enableHighlightStyle();
           $forEachGridCell(tableSelection.grid, (cell) => {
             const elem = cell.elem;
@@ -806,7 +806,7 @@ export function applyTableHandlers(
               elem.removeAttribute('style');
             }
           });
-          hijackedRangeSelection = false;
+          isRangeSelectionHijacked = false;
           return true;
         }
 

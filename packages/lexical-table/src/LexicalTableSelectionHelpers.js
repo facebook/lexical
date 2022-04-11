@@ -13,16 +13,21 @@ import type {
   CommandListenerCriticalPriority,
   GridSelection,
   LexicalEditor,
+  LexicalNode,
+  RangeSelection,
 } from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {
+  $createRangeSelection,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
   $isGridSelection,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
+  $setSelection,
   DELETE_CHARACTER_COMMAND,
   FORMAT_TEXT_COMMAND,
   INSERT_TEXT_COMMAND,
@@ -32,6 +37,7 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_TAB_COMMAND,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -57,6 +63,7 @@ export function applyTableHandlers(
   attachTableSelectionToTableElement(tableElement, tableSelection);
 
   let isMouseDown = false;
+  let isRangeSelectionHijacked = false;
 
   tableElement.addEventListener('dblclick', (event: MouseEvent) => {
     // $FlowFixMe: event.target is always a Node on the DOM
@@ -81,7 +88,6 @@ export function applyTableHandlers(
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
       if (cell !== null) {
-        isMouseDown = true;
         tableSelection.setAnchorCellForSelection(cell);
 
         document.addEventListener(
@@ -100,6 +106,12 @@ export function applyTableHandlers(
 
   // This is adjusting the focus of the selection.
   tableElement.addEventListener('mousemove', (event: MouseEvent) => {
+    if (isRangeSelectionHijacked) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+
     if (isMouseDown) {
       // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target);
@@ -117,6 +129,7 @@ export function applyTableHandlers(
           tableSelection.adjustFocusCellForSelection(cell);
         }
       }
+    } else {
     }
   });
 
@@ -135,6 +148,8 @@ export function applyTableHandlers(
 
   // Clear selection when clicking outside of dom.
   const mouseDownCallback = (event) => {
+    isMouseDown = true;
+
     if (event.button !== 0) {
       return;
     }
@@ -156,6 +171,16 @@ export function applyTableHandlers(
 
   tableSelection.listenersToRemove.add(() =>
     window.removeEventListener('mousedown', mouseDownCallback),
+  );
+
+  const mouseUpCallback = (event) => {
+    isMouseDown = false;
+  };
+
+  window.addEventListener('mouseup', mouseUpCallback);
+
+  tableSelection.listenersToRemove.add(() =>
+    window.removeEventListener('mouseup', mouseUpCallback),
   );
 
   tableSelection.listenersToRemove.add(
@@ -716,6 +741,80 @@ export function applyTableHandlers(
       CriticalPriority,
     ),
   );
+
+  tableSelection.listenersToRemove.add(
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      (payload) => {
+        const selection = $getSelection();
+        if (
+          selection &&
+          $isRangeSelection(selection) &&
+          !selection.isCollapsed()
+        ) {
+          const anchorNode = selection.anchor.getNode();
+          const focusNode = selection.focus.getNode();
+          const isAnchorInside = tableNode.isParentOf(anchorNode);
+          const isFocusInside = tableNode.isParentOf(focusNode);
+          const containsPartialTable =
+            (isAnchorInside && !isFocusInside) ||
+            (isFocusInside && !isAnchorInside);
+          if (containsPartialTable) {
+            const isBackward = selection.isBackward();
+            const startNode = isBackward ? focusNode : anchorNode;
+            const modifiedSelection = $createRangeSelection();
+            const tableIndex = tableNode.getIndexWithinParent();
+            const parentKey = tableNode.getParentOrThrow().getKey();
+            isRangeSelectionHijacked = true;
+            tableSelection.disableHighlightStyle();
+            (isBackward
+              ? modifiedSelection.focus
+              : modifiedSelection.anchor
+            ).set(
+              startNode.getKey(),
+              (isBackward ? selection.focus : selection.anchor).offset,
+              $isTextNode(startNode) ? 'text' : 'element',
+            );
+            (isBackward
+              ? modifiedSelection.anchor
+              : modifiedSelection.focus
+            ).set(
+              parentKey,
+              isBackward ? tableIndex - 1 : tableIndex + 1,
+              'element',
+            );
+            $setSelection(modifiedSelection);
+            $forEachGridCell(tableSelection.grid, (cell) => {
+              const elem = cell.elem;
+              cell.highlighted = true;
+              elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
+              elem.style.setProperty('caret-color', 'transparent');
+            });
+            return true;
+          }
+        }
+
+        if (isRangeSelectionHijacked && !tableNode.isSelected()) {
+          tableSelection.enableHighlightStyle();
+          $forEachGridCell(tableSelection.grid, (cell) => {
+            const elem = cell.elem;
+            cell.highlighted = false;
+            elem.style.removeProperty('background-color');
+            elem.style.removeProperty('caret-color');
+
+            if (!elem.getAttribute('style')) {
+              elem.removeAttribute('style');
+            }
+          });
+          isRangeSelectionHijacked = false;
+          return true;
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
   return tableSelection;
 }
 
@@ -814,40 +913,53 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
 
 export function $updateDOMForSelection(
   grid: Grid,
-  gridSelection: GridSelection | null,
+  selection: GridSelection | RangeSelection | null,
+): Array<Cell> {
+  const highlightedCells = [];
+  const selectedCellNodes = new Set(selection ? selection.getNodes() : []);
+
+  $forEachGridCell(grid, (cell, lexicalNode) => {
+    const elem = cell.elem;
+
+    if (selectedCellNodes.has(lexicalNode)) {
+      cell.highlighted = true;
+      elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
+      elem.style.setProperty('caret-color', 'transparent');
+      highlightedCells.push(cell);
+    } else {
+      cell.highlighted = false;
+      elem.style.removeProperty('background-color');
+      elem.style.removeProperty('caret-color');
+
+      if (!elem.getAttribute('style')) {
+        elem.removeAttribute('style');
+      }
+    }
+  });
+
+  return highlightedCells;
+}
+
+export function $forEachGridCell(
+  grid: Grid,
+  cb: (
+    cell: Cell,
+    lexicalNode: LexicalNode,
+    cords: {x: number, y: number},
+  ) => void,
 ): Array<Cell> {
   const highlightedCells = [];
   const {cells} = grid;
-
-  const selectedCellNodes = new Set(
-    gridSelection ? gridSelection.getNodes() : [],
-  );
-
   for (let y = 0; y < cells.length; y++) {
     const row = cells[y];
-
     for (let x = 0; x < row.length; x++) {
       const cell = row[x];
-      const elemStyle = cell.elem.style;
       const lexicalNode = $getNearestNodeFromDOMNode(cell.elem);
-
-      if (lexicalNode && selectedCellNodes.has(lexicalNode)) {
-        cell.highlighted = true;
-        elemStyle.setProperty('background-color', 'rgb(172, 206, 247)');
-        elemStyle.setProperty('caret-color', 'transparent');
-        highlightedCells.push(cell);
-      } else {
-        cell.highlighted = false;
-        elemStyle.removeProperty('background-color');
-        elemStyle.removeProperty('caret-color');
-
-        if (!cell.elem.getAttribute('style')) {
-          cell.elem.removeAttribute('style');
-        }
+      if (lexicalNode !== null) {
+        cb(cell, lexicalNode, {x, y});
       }
     }
   }
-
   return highlightedCells;
 }
 

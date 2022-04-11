@@ -78,17 +78,19 @@ type RootListener = (
 ) => void;
 type TextContentListener = (text: string) => void;
 type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
+type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 export type ReadOnlyListener = (readOnly: boolean) => void;
+
+type InternalCommandListener = CommandListener<any>;
+
 type Listeners = {
   decorator: Set<DecoratorListener>;
   mutation: MutationListeners;
   textcontent: Set<TextContentListener>;
   root: Set<RootListener>;
   update: Set<UpdateListener>;
+  command: Map<string, Array<Set<InternalCommandListener>>>;
 };
-type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
-// $FlowFixMe[unclear-type]
-type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
   klass: Class<LexicalNode>;
@@ -111,7 +113,6 @@ export declare class LexicalEditor {
   _updating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
-  _commands: Commands;
   _nodes: RegisteredNodes;
   _onError: ErrorHandler;
   _decorators: Record<NodeKey, unknown>;

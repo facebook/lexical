@@ -153,7 +153,7 @@ function $createPoint(
 }
 
 function selectPointOnNode(point: PointType, node: LexicalNode): void {
-  const key = node.__key;
+  const key = node.getKey();
   let offset = point.offset;
   let type = 'element';
   if ($isTextNode(node)) {
@@ -201,9 +201,9 @@ function $transferStartingElementPointToTextPoint(
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
-    end.set(textNode.__key, 0, 'text');
+    end.set(textNode.getKey(), 0, 'text');
   }
-  start.set(textNode.__key, 0, 'text');
+  start.set(textNode.getKey(), 0, 'text');
 }
 
 function $setPointValues(
@@ -490,11 +490,7 @@ export class RangeSelection implements BaseSelection {
     if (!$isRangeSelection(selection)) {
       return false;
     }
-    return (
-      this.anchor.is(selection.anchor) &&
-      this.focus.is(selection.focus) &&
-      this.format === selection.format
-    );
+    return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
   }
 
   isBackward(): boolean {
@@ -815,12 +811,12 @@ export class RangeSelection implements BaseSelection {
             lastNode = textNode;
           }
           lastNode = lastNode.spliceText(0, endOffset, '');
-          markedNodeKeysForKeep.add(lastNode.__key);
+          markedNodeKeysForKeep.add(lastNode.getKey());
         } else {
           lastNode.remove();
         }
       } else {
-        markedNodeKeysForKeep.add(lastNode.__key);
+        markedNodeKeysForKeep.add(lastNode.getKey());
       }
 
       // Either move the remaining nodes of the last parent to after
@@ -874,7 +870,7 @@ export class RangeSelection implements BaseSelection {
               childrenLength === 0 ||
               children[childrenLength - 1].is(lastRemovedParent)
             ) {
-              markedNodeKeysForKeep.delete(parent.__key);
+              markedNodeKeysForKeep.delete(parent.getKey());
               lastRemovedParent = parent;
             }
             parent = parent.getParent();
@@ -907,7 +903,7 @@ export class RangeSelection implements BaseSelection {
       // Remove all selected nodes that haven't already been removed.
       for (let i = 1; i < selectedNodesLength; i++) {
         const selectedNode = selectedNodes[i];
-        const key = selectedNode.__key;
+        const key = selectedNode.getKey();
         if (!markedNodeKeysForKeep.has(key)) {
           selectedNode.remove();
         }
@@ -1026,11 +1022,11 @@ export class RangeSelection implements BaseSelection {
       // deal with all the nodes in between
       for (let i = 1; i < lastIndex; i++) {
         const selectedNode = selectedNodes[i];
-        const selectedNodeKey = selectedNode.__key;
+        const selectedNodeKey = selectedNode.getKey();
         if (
           $isTextNode(selectedNode) &&
-          selectedNodeKey !== firstNode.__key &&
-          selectedNodeKey !== lastNode.__key &&
+          selectedNodeKey !== firstNode.getKey() &&
+          selectedNodeKey !== lastNode.getKey() &&
           !selectedNode.isToken()
         ) {
           const selectedNextFormat = selectedNode.getFormatFlags(
@@ -1471,11 +1467,11 @@ export class RangeSelection implements BaseSelection {
         let elementKey;
 
         if ($isElementNode(sibling)) {
-          elementKey = sibling.__key;
+          elementKey = sibling.getKey();
           offset = isBackward ? sibling.getChildrenSize() : 0;
         } else {
           offset = possibleNode.getIndexWithinParent();
-          elementKey = parent.__key;
+          elementKey = parent.getKey();
           if (!isBackward) {
             offset++;
           }
@@ -2078,7 +2074,7 @@ export function $updateElementSelectionOnCreateDeleteNode(
   if (!parentNode.is(anchorNode) && !parentNode.is(focusNode)) {
     return;
   }
-  const parentKey = parentNode.__key;
+  const parentKey = parentNode.getKey();
   // Single node. We shift selection but never redimension it
   if (selection.isCollapsed()) {
     const selectionOffset = anchor.offset;
@@ -2138,8 +2134,8 @@ function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
       if (anchorOffsetAtEnd) {
         newOffset = child.getTextContentSize();
       }
-      anchor.set(child.__key, newOffset, 'text');
-      focus.set(child.__key, newOffset, 'text');
+      anchor.set(child.getKey(), newOffset, 'text');
+      focus.set(child.getKey(), newOffset, 'text');
     }
     return;
   }
@@ -2154,7 +2150,7 @@ function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
       if (anchorOffsetAtEnd) {
         newOffset = child.getTextContentSize();
       }
-      anchor.set(child.__key, newOffset, 'text');
+      anchor.set(child.getKey(), newOffset, 'text');
     }
   }
   if ($isElementNode(focusNode)) {
@@ -2168,7 +2164,7 @@ function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
       if (focusOffsetAtEnd) {
         newOffset = child.getTextContentSize();
       }
-      focus.set(child.__key, newOffset, 'text');
+      focus.set(child.getKey(), newOffset, 'text');
     }
   }
 }

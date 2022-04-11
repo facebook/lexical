@@ -27,6 +27,7 @@ import {
   $setSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -52,21 +53,29 @@ export type Grid = {
   rows: number,
 };
 
-let removeHighlightStyle;
+if (CAN_USE_DOM) {
+  const disableNativeSelectionUi = document.createElement('style');
 
-function createSelectionStyleReset() {
-  removeHighlightStyle = document.createElement('style');
-  removeHighlightStyle.appendChild(
-    document.createTextNode('::selection{background-color: transparent}'),
-  );
-}
+  disableNativeSelectionUi.innerHTML = `
+    table.disable-selection {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none; 
+      -khtml-user-select: none; 
+      -moz-user-select: none; 
+      -ms-user-select: none; 
+      user-select: none;
+    }
+  
+    .disable-selection span::selection{
+      background-color: transparent;
+    }
+    .disable-selection br::selection{
+      background-color: transparent;
+    }
+  `;
 
-function removeSelectionStyleReset() {
-  const parent = removeHighlightStyle
-    ? removeHighlightStyle.parentNode
-    : undefined;
-  if (parent != null) {
-    parent.removeChild(removeHighlightStyle);
+  if (document.body) {
+    document.body.append(disableNativeSelectionUi);
   }
 }
 
@@ -185,7 +194,29 @@ export class TableSelection {
       $setSelection(null);
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 
-      removeSelectionStyleReset();
+      this.enableHighlightStyle();
+    });
+  }
+
+  enableHighlightStyle() {
+    this.editor.update(() => {
+      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
+      if (!tableElement) {
+        throw new Error('Expected to find TableElement in DOM');
+      }
+
+      tableElement.classList.remove('disable-selection');
+    });
+  }
+
+  disableHighlightStyle() {
+    this.editor.update(() => {
+      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
+      if (!tableElement) {
+        throw new Error('Expected to find TableElement in DOM');
+      }
+
+      tableElement.classList.add('disable-selection');
     });
   }
 
@@ -217,12 +248,7 @@ export class TableSelection {
         (this.startX !== cellX || this.startY !== cellY || ignoreStart)
       ) {
         this.isHighlightingCells = true;
-        if (document.body) {
-          if (removeHighlightStyle === undefined) {
-            createSelectionStyleReset();
-          }
-          document.body.appendChild(removeHighlightStyle);
-        }
+        this.disableHighlightStyle();
       } else if (cellX === this.currentX && cellY === this.currentY) {
         return;
       }

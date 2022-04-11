@@ -14,6 +14,7 @@ import type {
   ParagraphNode,
   RangeSelection,
   EditorThemeClasses,
+  LexicalEditor,
 } from 'lexical';
 
 import {ElementNode} from 'lexical';
@@ -72,3 +73,5 @@ declare export function $createCodeHighlightNode(
 declare export function $isCodeHighlightNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof CodeHighlightNode);
+
+declare export function registerCodeHighlighting(editor: LexicalEditor): () => void;

@@ -98,7 +98,7 @@
 .PlaygroundEditorTheme__code:before {
   content: attr(data-gutter);
   position: absolute;
-  background-color: #eeee;
+  background-color: #eee;
   left: 0;
   top: 0;
   border-right: 1px solid #ccc;

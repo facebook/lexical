@@ -22,7 +22,11 @@ import {
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
-import {$getNodeByKey, internalMarkNodeAsDirty} from '../LexicalUtils';
+import {
+  $getNodeByKey,
+  internalMarkNodeAsDirty,
+  removeFromParent,
+} from '../LexicalUtils';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
 
@@ -300,7 +304,7 @@ export class ElementNode extends LexicalNode {
       if (nodeToInsert.__key === writableSelfKey) {
         invariant(false, 'append: attemtping to append self');
       }
-      this.removeFromParent(writableNodeToInsert);
+      removeFromParent(writableNodeToInsert);
       // Set child parent to self
       writableNodeToInsert.__parent = writableSelfKey;
       const newKey = writableNodeToInsert.__key;

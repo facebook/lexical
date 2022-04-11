@@ -38,6 +38,7 @@ import {
   $setNodeKey,
   internalMarkNodeAsDirty,
   internalMarkSiblingsAsDirty,
+  removeFromParent,
 } from './LexicalUtils';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
@@ -623,25 +624,11 @@ export class LexicalNode {
     removeNode(this, true);
   }
 
-  removeFromParent(writableNode: LexicalNode): void {
-    const oldParent = writableNode.getParent();
-    if (oldParent !== null) {
-      const writableParent = oldParent.getWritable();
-      const children = writableParent.__children;
-      const index = children.indexOf(writableNode.__key);
-      if (index === -1) {
-        invariant(false, 'Node is not a child of its parent');
-      }
-      internalMarkSiblingsAsDirty(writableNode);
-      children.splice(index, 1);
-    }
-  }
-
   replace(replaceWith: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const toReplaceKey = this.__key;
     const writableReplaceWith = replaceWith.getWritable();
-    this.removeFromParent(writableReplaceWith);
+    removeFromParent(writableReplaceWith);
     const newParent = this.getParentOrThrow();
     const writableParent = newParent.getWritable();
     const children = writableParent.__children;
@@ -681,7 +668,7 @@ export class LexicalNode {
     let elementAnchorSelectionOnNode = false;
     let elementFocusSelectionOnNode = false;
     if (oldParent !== null) {
-      this.removeFromParent(writableNodeToInsert);
+      removeFromParent(writableNodeToInsert);
       if ($isRangeSelection(selection)) {
         const oldParentKey = oldParent.__key;
         const anchor = selection.anchor;
@@ -727,7 +714,7 @@ export class LexicalNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
-    this.removeFromParent(writableNodeToInsert);
+    removeFromParent(writableNodeToInsert);
     const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;

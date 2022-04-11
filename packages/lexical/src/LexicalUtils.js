@@ -237,6 +237,20 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
+export function removeFromParent(writableNode: LexicalNode): void {
+  const oldParent = writableNode.getParent();
+  if (oldParent !== null) {
+    const writableParent = oldParent.getWritable();
+    const children = writableParent.__children;
+    const index = children.indexOf(writableNode.__key);
+    if (index === -1) {
+      invariant(false, 'Node is not a child of its parent');
+    }
+    internalMarkSiblingsAsDirty(writableNode);
+    children.splice(index, 1);
+  }
+}
+
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
 export function internalMarkNodeAsDirty(node: LexicalNode): void {

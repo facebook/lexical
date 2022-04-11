@@ -158,6 +158,7 @@ test.describe('Markdown', () => {
         '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic" data-lexical-text="true">test</strong><span data-lexical-text="true"></span></p>',
       isBlockTest: true,
       markdownText: '_**test**_ ',
+
       undoHTML: 'none', // italic, bold
     },
   ];

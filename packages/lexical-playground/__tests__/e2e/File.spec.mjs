@@ -63,24 +63,14 @@ test.describe('File', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
           >
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              one
-            </strong>
+            <span data-lexical-text="true">one</span>
           </li>
           <li
             value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
           >
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              two
-            </strong>
+            <span data-lexical-text="true">two</span>
           </li>
         </ol>
       `,
@@ -129,24 +119,14 @@ test.describe('File', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
           >
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              one
-            </strong>
+            <span data-lexical-text="true">one</span>
           </li>
           <li
             value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
           >
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              two
-            </strong>
+            <span data-lexical-text="true">two</span>
           </li>
         </ol>
       `,

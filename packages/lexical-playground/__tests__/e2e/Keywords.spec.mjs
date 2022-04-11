@@ -249,6 +249,7 @@ test.describe('Keywords', () => {
     browserName,
     isCollab,
     isPlainText,
+    legacyEvents,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
@@ -355,62 +356,45 @@ test.describe('Keywords', () => {
 
     await page.keyboard.press('Space');
 
-    if (browserName === 'firefox' && !isCollab) {
-      await assertHTML(
-        page,
-        html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span
+            class="keyword"
+            style="cursor: default;"
+            data-lexical-text="true"
           >
-            <span
-              style="cursor: default;"
-              class="keyword"
-              data-lexical-text="true"
-            >
-              congrats
-            </span>
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              Bob!
-            </strong>
-          </p>
-        `,
-      );
+            congrats
+          </span>
+          <span data-lexical-text="true"></span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true"
+          >
+            Bob!
+          </strong>
+        </p>
+      `,
+    );
+    if (browserName === 'firefox' && legacyEvents) {
+      await assertSelection(page, {
+        anchorOffset: 1,
+        anchorPath: [0, 2, 0],
+        focusOffset: 1,
+        focusPath: [0, 2, 0],
+      });
     } else {
-      await assertHTML(
-        page,
-        html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
-            <span
-              class="keyword"
-              style="cursor: default;"
-              data-lexical-text="true"
-            >
-              congrats
-            </span>
-            <span data-lexical-text="true"></span>
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true"
-            >
-              Bob!
-            </strong>
-          </p>
-        `,
-      );
+      await assertSelection(page, {
+        anchorOffset: 1,
+        anchorPath: [0, 1, 0],
+        focusOffset: 1,
+        focusPath: [0, 1, 0],
+      });
     }
-    await assertSelection(page, {
-      anchorOffset: 1,
-      anchorPath: [0, 1, 0],
-      focusOffset: 1,
-      focusPath: [0, 1, 0],
-    });
   });
 
   test('Can type "Everyone congrats!" where "Everyone " and "!" are bold', async ({

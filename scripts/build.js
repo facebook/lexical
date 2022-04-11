@@ -88,6 +88,7 @@ const wwwMappings = {
   '@lexical/utils': 'LexicalUtils',
   '@lexical/yjs': 'LexicalYjs',
   lexical: 'Lexical',
+  'prismjs/components/prism-core': 'prismjs',
   'react-dom': 'ReactDOMComet',
 };
 
@@ -253,7 +254,7 @@ ${source}`;
       },
     ],
     // This ensures PrismJS imports get included in the bundle
-    treeshake: name !== 'Lexical Code' ? 'smallest' : undefined,
+    treeshake: isWWW || name !== 'Lexical Code' ? 'smallest' : undefined,
   };
   const outputOptions = {
     esModule: false,

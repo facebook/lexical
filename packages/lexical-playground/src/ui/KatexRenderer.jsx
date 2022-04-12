@@ -24,15 +24,19 @@ export default function KatexRenderer({
   const katexElementRef = useRef(null);
 
   useEffect(() => {
-    katex.render(equation, katexElementRef.current, {
-      displayMode: !inline, // true === block display //
-      errorColor: '#cc0000',
-      output: 'html',
-      strict: 'warn',
-      throwOnError: false,
-      trust: false,
-    });
-  }, [equation, katexElementRef, inline]);
+    const katexElement = katexElementRef.current;
+
+    if (katexElement !== null) {
+      katex.render(equation, katexElement, {
+        displayMode: !inline, // true === block display //
+        errorColor: '#cc0000',
+        output: 'html',
+        strict: 'warn',
+        throwOnError: false,
+        trust: false,
+      });
+    }
+  }, [equation, inline]);
 
   return (
     <span role="button" tabIndex={-1} onClick={onClick} ref={katexElementRef} />

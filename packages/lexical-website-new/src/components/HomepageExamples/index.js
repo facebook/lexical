@@ -31,7 +31,7 @@ const EXAMPLES = [
   {
     content: (
       <>
-        At it's core, Lexical is a text-editing engine - a platform for building
+        At its core, Lexical is a text-editing engine - a platform for building
         feature-rich editors for the web. At the same time, we believe users
         shouldn't have to rewrite the same rich text functionality over and over
         in every implementation. Lexical exposes a set of individual, modular

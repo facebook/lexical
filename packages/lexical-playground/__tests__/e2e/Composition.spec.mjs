@@ -182,9 +182,7 @@ test.describe('Composition', () => {
   test.describe('IME', () => {
     test('Can type Hiragana via IME', async ({page, browserName}) => {
       // We don't yet support FF.
-      if (browserName === 'firefox') {
-        return;
-      }
+      test.skip(browserName === 'firefox');
 
       await focusEditor(page);
 
@@ -226,9 +224,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      if (browserName === 'firefox') {
-        return;
-      }
+      test.skip(browserName === 'firefox');
 
       await focusEditor(page);
 
@@ -281,11 +277,10 @@ test.describe('Composition', () => {
     test('Can type Hiragana via IME into a new bold format', async ({
       page,
       browserName,
+      isPlainText,
     }) => {
       // We don't yet support FF.
-      if (browserName === 'firefox') {
-        return;
-      }
+      test.skip(browserName === 'firefox' || isPlainText);
 
       await focusEditor(page);
 
@@ -442,9 +437,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      if (browserName === 'firefox') {
-        return;
-      }
+      test.skip(browserName === 'firefox');
 
       await focusEditor(page);
 
@@ -499,9 +492,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      if (browserName === 'firefox') {
-        return;
-      }
+      test.skip(browserName === 'firefox');
 
       await focusEditor(page);
 
@@ -553,9 +544,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      if (browserName === 'firefox') {
-        return;
-      }
+      test.skip(browserName === 'firefox');
 
       await focusEditor(page);
 
@@ -633,9 +622,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      if (browserName === 'firefox') {
-        return;
-      }
+      test.skip(browserName === 'firefox');
 
       await focusEditor(page);
 

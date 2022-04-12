@@ -26,19 +26,34 @@ const CONTRIBUTORS = [
     name: 'Acy Watson',
   },
   {
-    imageUrl: 'https://github.com/trueadm.png',
-    link: 'https://github.com/trueadm',
-    name: 'Dominic Gannaway',
+    imageUrl: 'https://github.com/fantactuka.png',
+    link: 'https://github.com/fantactuka',
+    name: 'Maksim Horbachevsky',
   },
   {
-    imageUrl: 'https://github.com/zurfyx.png',
-    link: 'https://github.com/zurfyx',
-    name: 'Gerard Rovira',
+    imageUrl: 'https://github.com/prontiol.png',
+    link: 'https://github.com/prontiol',
+    name: 'Denys Mikhailenko',
   },
   {
-    imageUrl: 'https://github.com/acywatson.png',
-    link: 'https://github.com/acywatson',
-    name: 'Acy Watson',
+    imageUrl: 'https://github.com/thegreatercurve.png',
+    link: 'https://github.com/thegreatercurve',
+    name: 'John Flockton',
+  },
+  {
+    imageUrl: 'https://github.com/tylerjbainbridge.png',
+    link: 'https://github.com/tylerjbainbridge',
+    name: 'Tyler Bainbridge',
+  },
+  {
+    imageUrl: 'https://github.com/yangshun.png',
+    link: 'https://github.com/yangshun',
+    name: 'Yangshun Tay',
+  },
+  {
+    imageUrl: 'https://github.com/kraisler.png',
+    link: 'https://github.com/kraisler',
+    name: 'Ken Kraisler',
   },
 ];
 

@@ -17,50 +17,43 @@ const EXAMPLES = [
   {
     content: (
       <>
-        Feature 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-        do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-        ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-        aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-        in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-        Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
-        officia deserunt mollit anim id est laborum.
+        It's super easy to get started with Lexical in any environment. Lexical
+        is framework agnostic, but provides a set of bindings for React to help
+        you get off the ground even quicker. After the initial setup,
+        delightfully ergonomic APIs make building custom functionality
+        straightforward and downright fun!
       </>
     ),
     id: 'example-feature-1',
-    label: 'Easy Setup',
+    label: 'Simple Setup',
     src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark&view=editor',
   },
   {
     content: (
       <>
-        Feature 2. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-        do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-        ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-        aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-        in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-        Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
-        officia deserunt mollit anim id est laborum.
+        At its core, Lexical is a text-editing engine - a platform for building
+        feature-rich editors for the web. At the same time, we believe users
+        shouldn't have to rewrite the same rich text functionality over and over
+        in every implementation. Lexical exposes a set of individual, modular
+        packages that can be used to add common features like lists, links, and
+        tables.
       </>
     ),
     id: 'example-feature-2',
-    label: 'Powerful Transforms',
-    src: 'https://codesandbox.io/embed/lexical-plain-text-example-forked-qdxhy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEmoticonPlugin.js&theme=dark&view=editor',
+    label: 'Powerful Features',
+    src: 'https://codesandbox.io/embed/lexical-rich-text-example-5tncvy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark&view=editor',
   },
   {
     content: (
       <>
-        Feature 3. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-        do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-        ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-        aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-        in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-        Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
-        officia deserunt mollit anim id est laborum.
+        Lexical emphasizes extensibility. Nodes can be extended to add or change
+        behavior and simple, imperative APIs make it a breeze to build for
+        custom use cases.
       </>
     ),
     id: 'example-feature-3',
-    label: 'Works Anywhere',
-    src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark&view=editor',
+    label: 'Built to Extend',
+    src: 'https://codesandbox.io/embed/lexical-plain-text-example-forked-qdxhy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEmoticonPlugin.js&theme=dark&view=editor',
   },
 ];
 

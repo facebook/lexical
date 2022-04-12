@@ -8,13 +8,12 @@
 
 import {
   assertHTML,
-  click,
   focusEditor,
   html,
   initialize,
   repeat,
+  selectFromAlignDropdown,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('Element format', () => {
@@ -32,11 +31,9 @@ test.describe('Element format', () => {
     await repeat(10, async () => {
       await page.keyboard.press('ArrowLeft');
     });
-    await waitForSelector(page, '.format.indent');
-    await click(page, '.format.indent');
-    await click(page, '.format.indent');
-    await waitForSelector(page, '.format.center-align');
-    await click(page, '.format.center-align');
+    await selectFromAlignDropdown(page, '.indent');
+    await selectFromAlignDropdown(page, '.indent');
+    await selectFromAlignDropdown(page, '.center-align');
 
     await assertHTML(
       page,

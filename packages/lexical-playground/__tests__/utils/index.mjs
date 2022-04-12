@@ -48,6 +48,10 @@ export async function initialize({
   const url = `http://localhost:${E2E_PORT}/${
     isCollab ? 'split/' : ''
   }?${urlParams.toString()}`;
+
+  // Having more horizontal space prevents redundant text wraps for tests
+  // which affects CMD+ArrowRight/Left navigation
+  page.setViewportSize({height: 1000, width: isCollab ? 2000 : 1000});
   await page.goto(url);
 }
 
@@ -78,7 +82,6 @@ export async function repeat(times, cb) {
 
 export async function clickSelectors(page, selectors) {
   for (let i = 0; i < selectors.length; i++) {
-    await waitForSelector(page, selectors[i]);
     await click(page, selectors[i]);
   }
 }
@@ -389,8 +392,10 @@ export async function waitForSelector(page, selector, options) {
 export async function click(page, selector, options) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
+    await leftFrame.waitForSelector(selector, options);
     await leftFrame.click(selector, options);
   } else {
+    await page.waitForSelector(selector, options);
     await page.click(selector, options);
   }
 }
@@ -438,8 +443,7 @@ export async function clearEditor(page) {
 }
 
 export async function insertImage(page, caption = null) {
-  await waitForSelector(page, 'button .image');
-  await click(page, 'button .image');
+  await selectFromInsertDropdown(page, '.image');
   await waitForSelector(page, '.editor-image img');
 
   if (caption !== null) {
@@ -498,4 +502,22 @@ export function html(partials, ...params) {
     }
   }
   return output;
+}
+
+export async function selectFromInsertDropdown(page, selector) {
+  await click(page, '.toolbar-item[aria-label="Insert"]');
+  await click(page, '.dropdown ' + selector);
+}
+
+export async function selectFromAlignDropdown(page, selector) {
+  await click(page, '.toolbar-item[aria-label="Align"]');
+  await click(page, '.dropdown ' + selector);
+}
+
+export async function insertTable(page) {
+  await selectFromInsertDropdown(page, '.item .table');
+  await click(
+    page,
+    'div[data-test-id="table-model-confirm-insert"] > .Button__root',
+  );
 }

@@ -49,7 +49,6 @@ test.describe('Links', () => {
     );
 
     // link
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -81,7 +80,6 @@ test.describe('Links', () => {
 
     // set url
     await waitForSelector(page, '.link-input');
-    await waitForSelector(page, '.link-edit');
     await click(page, '.link-edit');
     await focus(page, '.link-input');
     await page.keyboard.type('facebook.com');
@@ -113,7 +111,6 @@ test.describe('Links', () => {
     });
 
     // unlink
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -155,7 +152,6 @@ test.describe('Links', () => {
     );
 
     // link
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -194,7 +190,6 @@ test.describe('Links', () => {
       `,
     );
 
-    await waitForSelector(page, '.link');
     await click(page, '.link');
     await assertHTML(
       page,
@@ -263,7 +258,6 @@ test.describe('Links', () => {
     await selectCharacters(page, 'right', 5);
 
     // link
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -301,7 +295,6 @@ test.describe('Links', () => {
     }
 
     // set url
-    await waitForSelector(page, '.link-input');
     await click(page, '.link-edit');
     await focus(page, '.link-input');
     await page.keyboard.type('facebook.com');
@@ -343,7 +336,6 @@ test.describe('Links', () => {
     }
 
     // unlink
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -388,7 +380,6 @@ test.describe('Links', () => {
     await selectCharacters(page, 'left', 5);
 
     // link
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -427,7 +418,6 @@ test.describe('Links', () => {
     }
 
     // set url
-    await waitForSelector(page, '.link-input');
     await click(page, '.link-edit');
     await focus(page, '.link-input');
     await page.keyboard.type('facebook.com');
@@ -469,7 +459,6 @@ test.describe('Links', () => {
     }
 
     // unlink
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -503,7 +492,6 @@ test.describe('Links', () => {
       await page.keyboard.press('ArrowLeft');
     });
 
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -527,9 +515,7 @@ test.describe('Links', () => {
 
     await page.keyboard.press('ArrowLeft');
 
-    await waitForSelector(page, '.block-controls');
     await click(page, '.block-controls');
-    await waitForSelector(page, '.dropdown .icon.large-heading');
     await click(page, '.dropdown .icon.large-heading');
 
     await assertHTML(
@@ -562,7 +548,6 @@ test.describe('Links', () => {
 
     await selectAll(page);
 
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(

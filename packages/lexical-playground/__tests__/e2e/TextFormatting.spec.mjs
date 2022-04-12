@@ -423,7 +423,6 @@ test.describe('TextFormatting', () => {
     await page.keyboard.press('u');
     await keyUpCtrlOrMeta(page);
 
-    await waitForSelector(page, '.strikethrough');
     await click(page, '.strikethrough');
 
     await assertHTML(
@@ -451,7 +450,6 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await waitForSelector(page, '.strikethrough');
     await click(page, '.strikethrough');
 
     await assertHTML(

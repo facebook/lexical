@@ -16,6 +16,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #eee;
+  padding: 0 20px;
 }
 
 header {
@@ -42,9 +43,9 @@ header h1 {
 }
 
 .editor-shell {
-  margin: 20px auto 20px auto;
+  margin: 20px auto;
   border-radius: 2px;
-  width: 1080px;
+  max-width: 1000px;
   color: #000;
   position: relative;
   line-height: 20px;
@@ -71,7 +72,7 @@ header h1 {
 
 .test-recorder-output {
   margin: 20px auto 20px auto;
-  width: 1080px;
+  width: 100%;
 }
 
 pre {
@@ -334,6 +335,10 @@ i.horizontal-rule {
   background-image: url(images/icons/horizontal-rule.svg);
 }
 
+.icon.plus {
+  background-image: url(images/icons/plus.svg);
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }
@@ -354,6 +359,7 @@ i.youtube {
   background-image: url(images/icons/youtube.svg);
 }
 
+.icon.left-align,
 i.left-align {
   background-image: url(images/icons/text-left.svg);
 }
@@ -597,7 +603,7 @@ select.font-family {
   background-color: #fff;
   border-radius: 8px;
   border: 0;
-  min-width: 268px;
+  max-width: 250px;
 }
 
 .dropdown .item .active {
@@ -623,7 +629,7 @@ select.font-family {
   display: flex;
   line-height: 20px;
   flex-grow: 1;
-  width: 200px;
+  min-width: 150px;
 }
 
 .dropdown .item .icon {
@@ -634,6 +640,19 @@ select.font-family {
   margin-right: 12px;
   line-height: 16px;
   background-size: contain;
+}
+
+.dropdown .divider {
+  width: auto;
+  background-color: #eee;
+  margin: 4px 8px;
+  height: 1px;
+}
+
+@media screen and (max-width: 1000px) {
+  .dropdown-button-text {
+    display: none !important;
+  }
 }
 
 .icon.paragraph {
@@ -1096,6 +1115,7 @@ i.chevron-down {
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
   vertical-align: middle;
+  overflow: auto;
 }
 
 .toolbar button.toolbar-item {
@@ -1106,6 +1126,7 @@ i.chevron-down {
   padding: 8px;
   cursor: pointer;
   vertical-align: middle;
+  flex-shrink: 0;
 }
 
 .toolbar button.toolbar-item:disabled {
@@ -1166,15 +1187,14 @@ i.chevron-down {
 .toolbar .toolbar-item .text {
   display: flex;
   line-height: 20px;
-  width: 200px;
   vertical-align: middle;
   font-size: 14px;
   color: #777;
   text-overflow: ellipsis;
-  width: 70px;
   overflow: hidden;
   height: 20px;
   text-align: left;
+  padding-right: 10px;
 }
 
 .toolbar .toolbar-item .icon {

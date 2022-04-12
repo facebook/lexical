@@ -67,6 +67,7 @@ import {createPortal} from 'react-dom';
 
 import useModal from '../hooks/useModal';
 import Button from '../ui/Button';
+import DropDown from '../ui/DropDown';
 import Input from '../ui/Input';
 import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
@@ -288,7 +289,8 @@ function InsertTableDialog({
       <Input label="No of columns" onChange={setColumns} value={columns} />
       <div
         className="ToolbarPlugin__dialogActions"
-        data-test-id="table-model-confirm-insert">
+        data-test-id="table-model-confirm-insert"
+      >
         <Button onClick={onClick}>Confirm</Button>
       </div>
     </>
@@ -421,51 +423,13 @@ function InsertEquationDialog({
   return <KatexEquationAlterer onConfirm={onEquationConfirm} />;
 }
 
-function BlockOptionsDropdownList({
+function BlockFormatDropDown({
   editor,
   blockType,
-  toolbarRef,
-  setShowBlockOptionsDropDown,
 }: {
   blockType: string,
   editor: LexicalEditor,
-  setShowBlockOptionsDropDown: (boolean) => void,
-  toolbarRef: {current: null | HTMLElement},
 }): React$Node {
-  const dropDownRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const toolbar = toolbarRef.current;
-    const dropDown = dropDownRef.current;
-
-    if (toolbar !== null && dropDown !== null) {
-      const {top, left} = toolbar.getBoundingClientRect();
-      dropDown.style.top = `${top + 40}px`;
-      dropDown.style.left = `${left}px`;
-    }
-  }, [dropDownRef, toolbarRef]);
-
-  useEffect(() => {
-    const dropDown = dropDownRef.current;
-    const toolbar = toolbarRef.current;
-
-    if (dropDown !== null && toolbar !== null) {
-      const handle = (event: MouseEvent) => {
-        // $FlowFixMe: no idea why flow is complaining
-        const target: HTMLElement = event.target;
-
-        if (!dropDown.contains(target) && !toolbar.contains(target)) {
-          setShowBlockOptionsDropDown(false);
-        }
-      };
-      document.addEventListener('click', handle);
-
-      return () => {
-        document.removeEventListener('click', handle);
-      };
-    }
-  }, [dropDownRef, setShowBlockOptionsDropDown, toolbarRef]);
-
   const formatParagraph = () => {
     if (blockType !== 'paragraph') {
       editor.update(() => {
@@ -476,7 +440,6 @@ function BlockOptionsDropdownList({
         }
       });
     }
-    setShowBlockOptionsDropDown(false);
   };
 
   const formatLargeHeading = () => {
@@ -489,7 +452,6 @@ function BlockOptionsDropdownList({
         }
       });
     }
-    setShowBlockOptionsDropDown(false);
   };
 
   const formatSmallHeading = () => {
@@ -502,7 +464,6 @@ function BlockOptionsDropdownList({
         }
       });
     }
-    setShowBlockOptionsDropDown(false);
   };
 
   const formatBulletList = () => {
@@ -511,7 +472,6 @@ function BlockOptionsDropdownList({
     } else {
       editor.dispatchCommand(REMOVE_LIST_COMMAND);
     }
-    setShowBlockOptionsDropDown(false);
   };
 
   const formatNumberedList = () => {
@@ -520,7 +480,6 @@ function BlockOptionsDropdownList({
     } else {
       editor.dispatchCommand(REMOVE_LIST_COMMAND);
     }
-    setShowBlockOptionsDropDown(false);
   };
 
   const formatQuote = () => {
@@ -533,7 +492,6 @@ function BlockOptionsDropdownList({
         }
       });
     }
-    setShowBlockOptionsDropDown(false);
   };
 
   const formatCode = () => {
@@ -554,11 +512,15 @@ function BlockOptionsDropdownList({
         }
       });
     }
-    setShowBlockOptionsDropDown(false);
   };
 
   return (
-    <div className="dropdown" ref={dropDownRef}>
+    <DropDown
+      buttonClassName="toolbar-item block-controls"
+      buttonIconClassName={'icon block-type ' + blockType}
+      buttonLabel={blockTypeToBlockName[blockType]}
+      buttonAriaLabel="Formatting Options"
+    >
       <button className="item" onClick={formatParagraph}>
         <span className="icon paragraph" />
         <span className="text">Normal</span>
@@ -594,7 +556,7 @@ function BlockOptionsDropdownList({
         <span className="text">Code Block</span>
         {blockType === 'code' && <span className="active" />}
       </button>
-    </div>
+    </DropDown>
   );
 }
 
@@ -628,7 +590,6 @@ function Select({
 export default function ToolbarPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
-  const toolbarRef = useRef(null);
   const [blockType, setBlockType] = useState('paragraph');
   const [selectedElementKey, setSelectedElementKey] = useState(null);
   const [fontSize, setFontSize] = useState<string>('15px');
@@ -643,8 +604,6 @@ export default function ToolbarPlugin(): React$Node {
   const [canRedo, setCanRedo] = useState(false);
   const [modal, showModal] = useModal();
   const [isRTL, setIsRTL] = useState(false);
-  const [showBlockOptionsDropDown, setShowBlockOptionsDropDown] =
-    useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
 
   const updateToolbar = useCallback(() => {
@@ -787,14 +746,15 @@ export default function ToolbarPlugin(): React$Node {
   );
 
   return (
-    <div className="toolbar" ref={toolbarRef}>
+    <div className="toolbar">
       <button
         disabled={!canUndo}
         onClick={() => {
           activeEditor.dispatchCommand(UNDO_COMMAND);
         }}
         className="toolbar-item spaced"
-        aria-label="Undo">
+        aria-label="Undo"
+      >
         <i className="format undo" />
       </button>
       <button
@@ -803,32 +763,14 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.dispatchCommand(REDO_COMMAND);
         }}
         className="toolbar-item"
-        aria-label="Redo">
+        aria-label="Redo"
+      >
         <i className="format redo" />
       </button>
       <Divider />
       {supportedBlockTypes.has(blockType) && activeEditor === editor && (
         <>
-          <button
-            className="toolbar-item block-controls"
-            onClick={() =>
-              setShowBlockOptionsDropDown(!showBlockOptionsDropDown)
-            }
-            aria-label="Formatting Options">
-            <span className={'icon block-type ' + blockType} />
-            <span className="text">{blockTypeToBlockName[blockType]}</span>
-            <i className="chevron-down" />
-          </button>
-          {showBlockOptionsDropDown &&
-            createPortal(
-              <BlockOptionsDropdownList
-                editor={activeEditor}
-                blockType={blockType}
-                toolbarRef={toolbarRef}
-                setShowBlockOptionsDropDown={setShowBlockOptionsDropDown}
-              />,
-              document.body,
-            )}
+          <BlockFormatDropDown blockType={blockType} editor={editor} />
           <Divider />
         </>
       )}
@@ -887,7 +829,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-            aria-label="Format Bold">
+            aria-label="Format Bold"
+          >
             <i className="format bold" />
           </button>
           <button
@@ -895,7 +838,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-            aria-label="Format Italics">
+            aria-label="Format Italics"
+          >
             <i className="format italic" />
           </button>
           <button
@@ -903,7 +847,8 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-            aria-label="Format Underline">
+            aria-label="Format Underline"
+          >
             <i className="format underline" />
           </button>
           <button
@@ -916,7 +861,8 @@ export default function ToolbarPlugin(): React$Node {
             className={
               'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
             }
-            aria-label="Format Strikethrough">
+            aria-label="Format Strikethrough"
+          >
             <i className="format strikethrough" />
           </button>
           <button
@@ -924,13 +870,15 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
-            aria-label="Insert Code">
+            aria-label="Insert Code"
+          >
             <i className="format code" />
           </button>
           <button
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-            aria-label="Insert Link">
+            aria-label="Insert Link"
+          >
             <i className="format link" />
           </button>
           {isLink &&
@@ -938,148 +886,175 @@ export default function ToolbarPlugin(): React$Node {
               <FloatingLinkEditor editor={activeEditor} />,
               document.body,
             )}
-          <button
-            onClick={() => {
-              activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND);
-            }}
-            className="toolbar-item spaced"
-            aria-label="Insert Horizontal Rule">
-            <i className="format horizontal-rule" />
-          </button>
-          <button
-            onClick={() => {
-              activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND);
-            }}
-            className="toolbar-item spaced"
-            aria-label="Insert Image">
-            <i className="format image" />
-          </button>
-          <button
-            onClick={() => {
-              activeEditor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND);
-            }}
-            className="toolbar-item spaced"
-            aria-label="Insert Excalidraw">
-            <i className="format diagram-2" />
-          </button>
-          <button
-            onClick={() => {
-              showModal('Insert Table', (onClose) => (
-                <InsertTableDialog
-                  activeEditor={activeEditor}
-                  onClose={onClose}
-                />
-              ));
-            }}
-            className="toolbar-item"
-            aria-label="Insert Table">
-            <i className="format table" />
-          </button>
-          <button
-            onClick={() => {
-              showModal('Insert Poll', (onClose) => (
-                <InsertPollDialog
-                  activeEditor={activeEditor}
-                  onClose={onClose}
-                />
-              ));
-            }}
-            className="toolbar-item"
-            aria-label="Insert Poll">
-            <i className="format poll" />
-          </button>
-          <button
-            onClick={() => {
-              showModal('Insert Tweet', (onClose) => (
-                <InsertTweetDialog
-                  activeEditor={activeEditor}
-                  onClose={onClose}
-                />
-              ));
-            }}
-            className="toolbar-item"
-            aria-label="Insert tweet">
-            <i className="format tweet" />
-          </button>
-          <button
-            onClick={() => {
-              showModal('Insert YouTube Video', (onClose) => (
-                <InsertYouTubeDialog
-                  activeEditor={activeEditor}
-                  onClose={onClose}
-                />
-              ));
-            }}
-            className="toolbar-item"
-            aria-label="Insert YouTube Video">
-            <i className="format youtube" />
-          </button>
-          <button
-            onClick={() => {
-              showModal('Insert Equation', (onClose) => (
-                <InsertEquationDialog
-                  activeEditor={activeEditor}
-                  onClose={onClose}
-                />
-              ));
-            }}
-            className="toolbar-item"
-            aria-label="Insert Equation">
-            <i className="format equation" />
-          </button>
+          <Divider />
+          <DropDown
+            buttonClassName="toolbar-item spaced"
+            buttonLabel="Insert"
+            buttonIconClassName="icon plus"
+          >
+            <button
+              onClick={() => {
+                activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND);
+              }}
+              className="item"
+            >
+              <i className="icon horizontal-rule" />
+              <span className="text">Horizontal Rule</span>
+            </button>
+            <button
+              onClick={() => {
+                activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND);
+              }}
+              className="item"
+            >
+              <i className="icon image" />
+              <span className="text">Image</span>
+            </button>
+            <button
+              onClick={() => {
+                activeEditor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND);
+              }}
+              className="item"
+            >
+              <i className="icon diagram-2" />
+              <span className="text">Excalidraw</span>
+            </button>
+            <button
+              onClick={() => {
+                showModal('Insert Table', (onClose) => (
+                  <InsertTableDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item"
+            >
+              <i className="icon table" />
+              <span className="text">Table</span>
+            </button>
+            <button
+              onClick={() => {
+                showModal('Insert Poll', (onClose) => (
+                  <InsertPollDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item"
+            >
+              <i className="icon poll" />
+              <span className="text">Poll</span>
+            </button>
+            <button
+              onClick={() => {
+                showModal('Insert Tweet', (onClose) => (
+                  <InsertTweetDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item"
+            >
+              <i className="icon tweet" />
+              <span className="text">tweet</span>
+            </button>
+            <button
+              onClick={() => {
+                showModal('Insert YouTube Video', (onClose) => (
+                  <InsertYouTubeDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item"
+            >
+              <i className="icon youtube" />
+              <span className="text">YouTube Video</span>
+            </button>
+            <button
+              onClick={() => {
+                showModal('Insert Equation', (onClose) => (
+                  <InsertEquationDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item"
+            >
+              <i className="icon equation" />
+              <span className="text">Equation</span>
+            </button>
+          </DropDown>
         </>
       )}
+      <Divider />
+      <DropDown
+        buttonLabel="Align"
+        buttonIconClassName="icon left-align"
+        buttonClassName="toolbar-item spaced"
+      >
+        <button
+          onClick={() => {
+            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
+          }}
+          className="item"
+        >
+          <i className="icon left-align" />
+          <span className="text">Left Align</span>
+        </button>
+        <button
+          onClick={() => {
+            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+          }}
+          className="item"
+        >
+          <i className="icon center-align" />
+          <span className="text">Center Align</span>
+        </button>
+        <button
+          onClick={() => {
+            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
+          }}
+          className="item"
+        >
+          <i className="icon right-align" />
+          <span className="text">Right Align</span>
+        </button>
+        <button
+          onClick={() => {
+            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
+          }}
+          className="item"
+        >
+          <i className="icon justify-align" />
+          <span className="text">Justify Align</span>
+        </button>
+        <Divider />
+        <button
+          onClick={() => {
+            activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
+          }}
+          className="item"
+        >
+          <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
+          <span className="text">Outdent</span>
+        </button>
+        <button
+          onClick={() => {
+            activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND);
+          }}
+          className="item"
+        >
+          <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
+          <span className="text">Indent</span>
+        </button>
+      </DropDown>
 
-      <Divider />
-      <button
-        onClick={() => {
-          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
-        }}
-        className="toolbar-item spaced"
-        aria-label="Left Align">
-        <i className="format left-align" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
-        }}
-        className="toolbar-item spaced"
-        aria-label="Center Align">
-        <i className="format center-align" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
-        }}
-        className="toolbar-item spaced"
-        aria-label="Right Align">
-        <i className="format right-align" />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
-        }}
-        className="toolbar-item"
-        aria-label="Justify Align">
-        <i className="format justify-align" />
-      </button>
-      <Divider />
-      <button
-        onClick={() => {
-          activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
-        }}
-        className="toolbar-item spaced"
-        aria-label="Outdent">
-        <i className={'format ' + (isRTL ? 'indent' : 'outdent')} />
-      </button>
-      <button
-        onClick={() => {
-          activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND);
-        }}
-        className="toolbar-item"
-        aria-label="Indent">
-        <i className={'format ' + (isRTL ? 'outdent' : 'indent')} />
-      </button>
       {modal}
     </div>
   );

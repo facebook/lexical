@@ -15,7 +15,6 @@ import {
   initialize,
   repeat,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #1083', () => {
@@ -29,7 +28,6 @@ test.describe('Regression test #1083', () => {
 
     await page.keyboard.type('Hello');
     await selectAll(page);
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await moveToLineEnd(page);
@@ -80,7 +78,6 @@ test.describe('Regression test #1083', () => {
       await page.keyboard.press('ArrowLeft');
     });
     await page.keyboard.up('Shift');
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await moveToLineEnd(page);

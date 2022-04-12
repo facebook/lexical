@@ -10,13 +10,13 @@ import {moveToLineBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
-  click,
   copyToClipboard,
   focusEditor,
   html,
   initialize,
   pasteFromClipboard,
   repeat,
+  selectFromInsertDropdown,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -31,9 +31,7 @@ test.describe('HorizontalRule', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    await waitForSelector(page, 'button .horizontal-rule');
-
-    await click(page, 'button .horizontal-rule');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
 
     await waitForSelector(page, 'hr');
 
@@ -190,9 +188,7 @@ test.describe('HorizontalRule', () => {
       `,
     );
 
-    await waitForSelector(page, 'button .horizontal-rule');
-
-    await click(page, 'button .horizontal-rule');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
 
     await waitForSelector(page, 'hr');
 
@@ -262,9 +258,7 @@ test.describe('HorizontalRule', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, 'button .horizontal-rule');
-
-    await click(page, 'button .horizontal-rule');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
 
     await waitForSelector(page, 'hr');
 
@@ -306,9 +300,7 @@ test.describe('HorizontalRule', () => {
 
     await focusEditor(page);
 
-    await waitForSelector(page, 'button .horizontal-rule');
-
-    await click(page, 'button .horizontal-rule');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
 
     await waitForSelector(page, 'hr');
 

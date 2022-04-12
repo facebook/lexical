@@ -24,8 +24,8 @@ import {
   IS_LINUX,
   IS_WINDOWS,
   pasteFromClipboard,
+  selectFromAlignDropdown,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('CopyAndPaste', () => {
@@ -1212,7 +1212,6 @@ test.describe('CopyAndPaste', () => {
     //      |- Text "World"
     await page.keyboard.type('Hello');
     await selectAll(page);
-    await waitForSelector(page, '.link');
     await click(page, '.link');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Space');
@@ -1350,7 +1349,6 @@ test.describe('CopyAndPaste', () => {
 
     await selectAll(page);
 
-    await waitForSelector(page, '.link');
     await click(page, '.link');
 
     await assertHTML(
@@ -1363,7 +1361,6 @@ test.describe('CopyAndPaste', () => {
     );
 
     await click(page, '.link');
-    await waitForSelector(page, '.link-input');
     await click(page, '.link-edit');
     await focus(page, '.link-input');
     await page.keyboard.type('facebook.com');
@@ -1406,16 +1403,14 @@ test.describe('CopyAndPaste', () => {
       focusPath: [0, 1, 0, 0],
     });
 
-    await waitForSelector(page, '.indent');
-    await click(page, '.indent');
+    await selectFromAlignDropdown(page, '.indent');
 
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world!</span></li></ul></li></ul>',
     );
 
-    await waitForSelector(page, '.outdent');
-    await click(page, '.outdent');
+    await selectFromAlignDropdown(page, '.outdent');
 
     await assertHTML(
       page,

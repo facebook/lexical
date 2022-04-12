@@ -15,27 +15,11 @@ import {
   focusEditor,
   html,
   initialize,
+  insertTable,
   IS_COLLAB,
   pasteFromClipboard,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
-
-async function insertTable(page) {
-  // Open modal
-  await waitForSelector(page, 'button .table');
-  await click(page, 'button .table');
-
-  // Confirm default 3x3 dimensions
-  await waitForSelector(
-    page,
-    'div[data-test-id="table-model-confirm-insert"] > .Button__root',
-  );
-  await click(
-    page,
-    'div[data-test-id="table-model-confirm-insert"] > .Button__root',
-  );
-}
 
 async function fillTablePartiallyWithText(page) {
   await page.keyboard.type('a');

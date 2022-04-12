@@ -278,7 +278,7 @@ test.describe('Composition', () => {
       });
     });
 
-    test.only('Can type Hiragana via IME into a new bold format', async ({
+    test('Can type Hiragana via IME into a new bold format', async ({
       page,
       browserName,
     }) => {

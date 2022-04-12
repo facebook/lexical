@@ -23,7 +23,7 @@ type Props = {
   /**
    * The initial set of elements to draw into the scene
    */
-  initialElements?: $ReadOnlyArray<ExcalidrawElementFragment>,
+  initialElements: $ReadOnlyArray<ExcalidrawElementFragment>,
   /**
    * Controls the visibility of the modal
    */
@@ -42,8 +42,6 @@ type Props = {
   onSave: ($ReadOnlyArray<ExcalidrawElementFragment>) => mixed,
 };
 
-const DEFAULT_INITIAL_ELEMENTS = [];
-
 /**
  * @explorer-desc
  * A component which renders a modal with Excalidraw (a painting app)
@@ -51,18 +49,27 @@ const DEFAULT_INITIAL_ELEMENTS = [];
  */
 export default function ExcalidrawModal({
   onSave,
-  initialElements = DEFAULT_INITIAL_ELEMENTS,
+  initialElements,
   isShown = false,
   onHide,
   onDelete,
 }: Props): React.MixedElement | null {
   const excalidrawRef = useRef(null);
-  const [elemenets, setElements] = useState(initialElements);
+  const [elements, setElements] =
+    useState<$ReadOnlyArray<ExcalidrawElementFragment>>(initialElements);
 
   const save = () => {
-    if (elemenets.filter((el) => !el.isDeleted).length > 0) {
-      onSave(elemenets);
+    if (elements.filter((el) => !el.isDeleted).length > 0) {
+      onSave(elements);
     } else {
+      // delete node if the scene is clear
+      onDelete();
+    }
+    onHide();
+  };
+
+  const discard = () => {
+    if (elements.filter((el) => !el.isDeleted).length === 0) {
       // delete node if the scene is clear
       onDelete();
     }
@@ -92,7 +99,7 @@ export default function ExcalidrawModal({
           }}
         />
         <div className="ExcalidrawModal__actions">
-          <button className="action-button" onClick={onHide}>
+          <button className="action-button" onClick={discard}>
             Discard
           </button>
           <button className="action-button" onClick={save}>

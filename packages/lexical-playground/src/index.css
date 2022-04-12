@@ -1465,3 +1465,15 @@ i.chevron-down {
   background-color: #eee;
   margin: 0 4px;
 }
+
+.excalidraw-button {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+}
+
+.excalidraw-button.selected {
+  outline: 2px solid rgb(60, 132, 244);
+  user-select: none;
+}

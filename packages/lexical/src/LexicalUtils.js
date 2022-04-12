@@ -28,7 +28,7 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
-import {IS_APPLE} from 'shared/environment';
+import {IS_APPLE, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -530,10 +530,18 @@ export function $updateTextNodeFromDOMContent(
 
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
       if (normalizedTextContent === '') {
-        if (isComposing) {
-          $setCompositionKey(null);
+        $setCompositionKey(null);
+        if (!IS_SAFARI) {
+          // For composition (mainly Android), we have to remove the node on a later update
+          const editor = getActiveEditor();
+          setTimeout(() => {
+            editor.update(() => {
+              node.remove();
+            });
+          }, 20);
+        } else {
+          node.remove();
         }
-        node.remove();
         return;
       }
       const parent = node.getParent();

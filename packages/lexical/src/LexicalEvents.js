@@ -215,7 +215,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   // We let the browser do its own thing for composition.
   if (
     inputType === 'deleteCompositionText' ||
-    inputType === 'insertCompositionText' ||
     // If we're pasting in FF, we shouldn't get this event
     // as the `paste` event should have triggered, unless the
     // user has dom.event.clipboardevents.enabled disabled in
@@ -223,6 +222,43 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     // pasted content in the DOM mutation phase.
     (IS_FIREFOX && isFirefoxClipboardEvents())
   ) {
+    return;
+  } else if (inputType === 'insertCompositionText') {
+    // This logic handles insertion of text between different
+    // format text types. We have to detect a change in type
+    // during composition and see if the previous text contains
+    // part of the composed text to work out the actual text that
+    // we need to insert.
+    const composedText = event.data;
+    if (composedText) {
+      updateEditor(editor, () => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          const anchor = selection.anchor;
+          const node = anchor.getNode();
+          const prevNode = node.getPreviousSibling();
+          if (
+            anchor.offset === 0 &&
+            $isTextNode(node) &&
+            $isTextNode(prevNode) &&
+            node.getTextContent() === ' ' &&
+            prevNode.getFormat() !== selection.format
+          ) {
+            const prevTextContent = prevNode.getTextContent();
+            if (composedText.indexOf(prevTextContent) === 0) {
+              const insertedText = composedText.slice(prevTextContent.length);
+              dispatchCommand(editor, INSERT_TEXT_COMMAND, insertedText);
+              setTimeout(() => {
+                updateEditor(editor, () => {
+                  node.select();
+                });
+              }, 20);
+            }
+          }
+        }
+      });
+    }
     return;
   }
 
@@ -408,7 +444,8 @@ function onCompositionStart(
       if (
         !lastKeyWasMaybeAndroidSoftKey ||
         anchor.type === 'element' ||
-        !selection.isCollapsed()
+        !selection.isCollapsed() ||
+        selection.anchor.getNode().getFormat() !== selection.format
       ) {
         // We insert an empty space, ready for the composition
         // to get inserted into the new node we create. If

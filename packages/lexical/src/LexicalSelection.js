@@ -772,6 +772,8 @@ export class RangeSelection implements BaseSelection {
             const [targetNode] = firstNode.splitText(startOffset);
             targetNode.insertAfter(textNode);
           }
+          // When composing, we need to adjust the anchor offset so that
+          // we correctly replace that right range.
           if (textNode.isComposing() && this.anchor.type === 'text') {
             this.anchor.offset -= text.length;
           }
@@ -784,6 +786,8 @@ export class RangeSelection implements BaseSelection {
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
       } else if (firstNode.isComposing() && this.anchor.type === 'text') {
+        // When composing, we need to adjust the anchor offset so that
+        // we correctly replace that right range.
         this.anchor.offset -= text.length;
       }
     } else {
@@ -897,6 +901,8 @@ export class RangeSelection implements BaseSelection {
         if (firstNode.getTextContent() === '') {
           firstNode.remove();
         } else if (firstNode.isComposing() && this.anchor.type === 'text') {
+          // When composing, we need to adjust the anchor offset so that
+          // we correctly replace that right range.
           this.anchor.offset -= text.length;
         }
       } else if (startOffset === firstNodeTextLength) {
@@ -932,6 +938,9 @@ export class RangeSelection implements BaseSelection {
 
     if (this.isCollapsed()) {
       this.toggleFormat(formatType);
+      // When changing format, we should stop composition
+      $setCompositionKey(null);
+      firstNode.markDirty();
       return;
     }
     const anchor = this.anchor;

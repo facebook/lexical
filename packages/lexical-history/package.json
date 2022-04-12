@@ -8,13 +8,13 @@
     "history"
   ],
   "license": "MIT",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "main": "LexicalHistory.js",
   "peerDependencies": {
-    "lexical": "0.1.20"
+    "lexical": "0.1.21"
   },
   "dependencies": {
-    "@lexical/utils": "0.1.20"
+    "@lexical/utils": "0.1.21"
   },
   "repository": {
     "type": "git",

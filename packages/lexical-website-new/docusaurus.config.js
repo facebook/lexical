@@ -120,7 +120,7 @@ const config = {
       },
       navbar: {
         items: [
-          {label: 'Tutorial', position: 'left', to: '/docs/intro'},
+          //{label: 'Tutorial', position: 'left', to: '/docs/intro'},
           {
             label: 'Playground',
             position: 'left',

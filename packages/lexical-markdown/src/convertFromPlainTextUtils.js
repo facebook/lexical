@@ -34,7 +34,7 @@ import {
   getPatternMatchResultsForCodeBlock,
   getPatternMatchResultsForParagraphs,
   resetScanningContext,
-  transformTextNodeForParagraphs,
+  transformTextNodeForElementNode,
 } from './utils';
 
 export function convertStringToLexical(
@@ -71,67 +71,74 @@ function convertElementNodeContainingMarkdown<T>(
   const textContent = elementNode.getTextContent();
 
   // Handle paragraph nodes below.
-  if ($isParagraphNode(elementNode) && elementNode.getChildren().length) {
+  if ($isParagraphNode(elementNode)) {
     const paragraphNode: ParagraphNode = elementNode;
     const firstChild = paragraphNode.getFirstChild();
     const firstChildIsTextNode = $isTextNode(firstChild);
 
     // Handle conversion to code block.
     if (scanningContext.isWithinCodeBlock === true) {
-      invariant(
-        firstChild != null && firstChildIsTextNode,
-        'Expect paragraph containing only text nodes.',
-      );
-      scanningContext.textNodeWithOffset = {
-        node: firstChild,
-        offset: 0,
-      };
-      const patternMatchResults = getPatternMatchResultsForCodeBlock(
-        scanningContext,
-        textContent,
-      );
-      if (patternMatchResults != null) {
-        // Toggle transform to or from code block.
-        scanningContext.patternMatchResults = patternMatchResults;
-      }
-      scanningContext.markdownCriteria = getCodeBlockCriteria();
-
-      // Perform text transformation here.
-      transformTextNodeForParagraphs(scanningContext, createHorizontalRuleNode);
-      return;
-    }
-
-    const allCriteria = getAllMarkdownCriteria();
-    const count = allCriteria.length;
-    for (let i = 0; i < count; i++) {
-      const criteria = allCriteria[i];
-      if (criteria.requiresParagraphStart === true) {
-        invariant(
-          firstChild != null && firstChildIsTextNode,
-          'Expect paragraph containing only text nodes.',
-        );
+      if (firstChild != null && firstChildIsTextNode) {
+        // Test if we encounter ending code block.
         scanningContext.textNodeWithOffset = {
           node: firstChild,
           offset: 0,
         };
-        scanningContext.joinedText = paragraphNode.getTextContent();
-
-        const patternMatchResults = getPatternMatchResultsForParagraphs(
-          criteria,
+        const patternMatchResults = getPatternMatchResultsForCodeBlock(
           scanningContext,
+          textContent,
         );
-
         if (patternMatchResults != null) {
-          // Lazy fill-in the particular format criteria and any matching result information.
-          scanningContext.markdownCriteria = criteria;
+          // Toggle transform to or from code block.
           scanningContext.patternMatchResults = patternMatchResults;
+        }
+      }
 
-          // Perform text transformation here.
-          transformTextNodeForParagraphs(
-            scanningContext,
-            createHorizontalRuleNode,
+      scanningContext.markdownCriteria = getCodeBlockCriteria();
+
+      // Perform text transformation here.
+      transformTextNodeForElementNode(
+        elementNode,
+        scanningContext,
+        createHorizontalRuleNode,
+      );
+      return;
+    }
+
+    if (elementNode.getChildren().length) {
+      const allCriteria = getAllMarkdownCriteria();
+      const count = allCriteria.length;
+      for (let i = 0; i < count; i++) {
+        const criteria = allCriteria[i];
+        if (criteria.requiresParagraphStart === true) {
+          invariant(
+            firstChild != null && firstChildIsTextNode,
+            'Expect paragraph containing only text nodes.',
           );
-          return;
+          scanningContext.textNodeWithOffset = {
+            node: firstChild,
+            offset: 0,
+          };
+          scanningContext.joinedText = paragraphNode.getTextContent();
+
+          const patternMatchResults = getPatternMatchResultsForParagraphs(
+            criteria,
+            scanningContext,
+          );
+
+          if (patternMatchResults != null) {
+            // Lazy fill-in the particular format criteria and any matching result information.
+            scanningContext.markdownCriteria = criteria;
+            scanningContext.patternMatchResults = patternMatchResults;
+
+            // Perform text transformation here.
+            transformTextNodeForElementNode(
+              elementNode,
+              scanningContext,
+              createHorizontalRuleNode,
+            );
+            return;
+          }
         }
       }
     }

@@ -940,7 +940,6 @@ export class RangeSelection implements BaseSelection {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
       $setCompositionKey(null);
-      firstNode.markDirty();
       return;
     }
     const anchor = this.anchor;

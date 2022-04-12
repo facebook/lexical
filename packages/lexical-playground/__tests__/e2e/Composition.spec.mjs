@@ -13,6 +13,8 @@ import {
   focusEditor,
   html,
   initialize,
+  keyDownCtrlOrMeta,
+  keyUpCtrlOrMeta,
   repeat,
   test,
   waitForSelector,
@@ -272,6 +274,55 @@ test.describe('Composition', () => {
         anchorOffset: 6,
         anchorPath: [0, 1, 0],
         focusOffset: 6,
+        focusPath: [0, 1, 0],
+      });
+    });
+
+    test.only('Can type Hiragana via IME into a new bold format', async ({
+      page,
+      browserName,
+    }) => {
+      // We don't yet support FF.
+      if (browserName === 'firefox') {
+        return;
+      }
+
+      await focusEditor(page);
+
+      await page.keyboard.type('Hello');
+
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('b');
+      await keyUpCtrlOrMeta(page);
+
+      await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await page.keyboard.imeSetComposition('す', 1, 1);
+      await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await page.keyboard.imeSetComposition('すし', 2, 2);
+      await page.keyboard.insertText('すし');
+
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr"
+          >
+            <span data-lexical-text="true">Hello</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true"
+            >
+              すし
+            </strong>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 1, 0],
+        focusOffset: 2,
         focusPath: [0, 1, 0],
       });
     });

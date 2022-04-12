@@ -772,6 +772,9 @@ export class RangeSelection implements BaseSelection {
             const [targetNode] = firstNode.splitText(startOffset);
             targetNode.insertAfter(textNode);
           }
+          if (textNode.isComposing() && this.anchor.type === 'text') {
+            this.anchor.offset -= text.length;
+          }
           return;
         }
       }

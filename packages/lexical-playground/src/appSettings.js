@@ -16,12 +16,14 @@ export type SettingName =
   | 'isCharLimitUtf8'
   | 'isAutocomplete'
   | 'showTreeView'
-  | 'showNestedEditorTreeView';
+  | 'showNestedEditorTreeView'
+  | 'emptyEditor';
 
 export type Settings = {[SettingName]: boolean};
 
 export const DEFAULT_SETTINGS: Settings = {
   disableBeforeInput: false,
+  emptyEditor: false,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,

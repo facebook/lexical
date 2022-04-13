@@ -10,6 +10,7 @@
 import * as React from 'react';
 import {useMemo, useState} from 'react';
 
+import {isPlayground} from './appSettings';
 import {useSettings} from './context/SettingsContext';
 import Switch from './ui/Switch';
 
@@ -47,7 +48,7 @@ export default function Settings(): React$Node {
       />
       {showSettings ? (
         <div className="switches">
-          {isRichText && (
+          {isRichText && isPlayground && (
             <Switch
               onClick={() => {
                 setOption('isCollab', !isCollab);
@@ -57,17 +58,19 @@ export default function Settings(): React$Node {
               text="Collaboration"
             />
           )}
-          <Switch
-            onClick={() => {
-              if (isSplitScreen) {
-                window.parent.location.href = `http://localhost:${port}/${search}`;
-              } else {
-                window.location.href = `http://localhost:${port}/split/${search}`;
-              }
-            }}
-            checked={isSplitScreen}
-            text="Split Screen"
-          />
+          {isPlayground && (
+            <Switch
+              onClick={() => {
+                if (isSplitScreen) {
+                  window.parent.location.href = `http://localhost:${port}/${search}`;
+                } else {
+                  window.location.href = `http://localhost:${port}/split/${search}`;
+                }
+              }}
+              checked={isSplitScreen}
+              text="Split Screen"
+            />
+          )}
           <Switch
             onClick={() => setOption('measureTypingPerf', !measureTypingPerf)}
             checked={measureTypingPerf}

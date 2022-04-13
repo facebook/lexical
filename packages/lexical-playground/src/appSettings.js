@@ -31,3 +31,6 @@ export const DEFAULT_SETTINGS: Settings = {
   showNestedEditorTreeView: false,
   showTreeView: true,
 };
+
+export const isPlayground =
+  window.location.hostname === 'playground.lexical.dev';

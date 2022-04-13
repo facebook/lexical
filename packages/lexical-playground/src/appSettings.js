@@ -38,4 +38,4 @@ const hostName = window.location.hostname;
 
 export const isDevPlayground: boolean =
   hostName !== 'playground.lexical.dev' &&
-  hostName !== 'https://lexical-playground.vercel.app/';
+  hostName !== 'lexical-playground.vercel.app';

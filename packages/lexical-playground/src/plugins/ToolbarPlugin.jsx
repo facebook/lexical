@@ -959,7 +959,7 @@ export default function ToolbarPlugin(): React$Node {
               className="item"
             >
               <i className="icon tweet" />
-              <span className="text">tweet</span>
+              <span className="text">Tweet</span>
             </button>
             <button
               onClick={() => {

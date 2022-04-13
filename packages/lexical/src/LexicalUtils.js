@@ -401,7 +401,7 @@ export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
   const editorState = getActiveEditorState();
-  editorState._selection = selection;
+  editorState._selection = selection === null ? selection : selection.clone();
 }
 
 export function $flushMutations(): void {

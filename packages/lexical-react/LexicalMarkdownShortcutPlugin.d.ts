@@ -6,4 +6,4 @@
  *
  */
 
-export default function LexicalMarkdownShortcutPlugin(): React.ReactNode;
+export default function LexicalMarkdownShortcutPlugin(): JSX.Element | null;

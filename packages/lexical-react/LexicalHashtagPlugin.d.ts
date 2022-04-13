@@ -6,4 +6,4 @@
  *
  */
 
-export default function LexicalHashtagPlugin(): React.ReactNode;
+export default function LexicalHashtagPlugin(): JSX.Element | null;

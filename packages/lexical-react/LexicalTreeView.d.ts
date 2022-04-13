@@ -14,4 +14,4 @@ export default function TreeView(props: {
   timeTravelButtonClassName: string;
   viewClassName: string;
   editor: LexicalEditor;
-}): React.ReactNode;
+}): JSX.Element | null;

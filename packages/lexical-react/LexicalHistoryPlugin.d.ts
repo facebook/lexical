@@ -25,5 +25,5 @@ export type HistoryState = {
 };
 export function HistoryPlugin(arg0: {
   externalHistoryState?: HistoryState;
-}): React.ReactNode;
+}): JSX.Element | null;
 export function createEmptyHistoryState(): HistoryState;

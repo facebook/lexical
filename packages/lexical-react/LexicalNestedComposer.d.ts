@@ -13,5 +13,5 @@ export default function LexicalNestedComposer(arg0: {
     decoratorEditor: DecoratorEditor;
     theme?: EditorThemeClasses;
   };
-  children: React.ReactNode;
-}): React.ReactNode;
+  children: JSX.Element | null;
+}): JSX.Element | null;

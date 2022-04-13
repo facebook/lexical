@@ -33,7 +33,7 @@ function setPopupPosition(editor, rect) {
     editor.style.left = '-1000px';
   } else {
     editor.style.opacity = '1';
-    editor.style.top = `${rect.top - rect.height * 2.5 + window.pageYOffset}px`;
+    editor.style.top = `${rect.top - 45 + window.pageYOffset}px`;
     editor.style.left = `${
       rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2
     }px`;

@@ -29,4 +29,6 @@ export type Props = $ReadOnly<{
   tabIndex?: number;
   testid?: string;
 }>;
-export default function LexicalContentEditable(props: Props): React.ReactNode;
+export default function LexicalContentEditable(
+  props: Props,
+): JSX.Element | null;

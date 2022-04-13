@@ -17,4 +17,4 @@ export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 export default function LexicalAutoLinkPlugin(props: {
   matchers: Array<LinkMatcher>;
   onChange?: ChangeHandler;
-}): React.ReactNode;
+}): JSX.Element | null;

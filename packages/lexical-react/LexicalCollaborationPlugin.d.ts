@@ -51,6 +51,6 @@ export function CollaborationPlugin(arg0: {
   providerFactory: ProviderFactory;
   shouldBootstrap: boolean;
   username?: string;
-}): React.ReactNode;
+}): JSX.Element | null;
 export declare var CollaborationContext: React.Context<CollaborationContextType>;
 export function useCollaborationContext(): CollaborationContextType;

@@ -8,4 +8,4 @@
 
 export default function LexicalCharacterLimitPlugin(props: {
   charset: 'UTF-8' | 'UTF-16';
-}): React.ReactNode;
+}): JSX.Element | null;

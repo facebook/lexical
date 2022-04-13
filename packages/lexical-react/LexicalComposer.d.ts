@@ -17,6 +17,6 @@ type Props = {
     theme?: EditorThemeClasses;
     onError: (error: Error, editor: LexicalEditor) => void;
   };
-  children: React.ReactNode;
+  children: JSX.Element | null;
 };
-export default function LexicalComposer(arg0: Props): React.ReactNode;
+export default function LexicalComposer(arg0: Props): JSX.Element | null;

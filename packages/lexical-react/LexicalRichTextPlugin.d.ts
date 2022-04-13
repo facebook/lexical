@@ -9,7 +9,7 @@
 import type {EditorState} from 'lexical';
 type InitialEditorStateType = null | string | EditorState | (() => void);
 export default function RichTextPlugin(arg0: {
-  contentEditable: React.ReactNode;
+  contentEditable: JSX.Element | null;
   initialEditorState?: InitialEditorStateType;
-  placeholder: React.ReactNode;
-}): React.ReactNode;
+  placeholder: JSX.Element | null;
+}): JSX.Element | null;

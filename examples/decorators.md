@@ -70,7 +70,7 @@ function VideoPlugin(): React$Node {
   useEffect(() => {
     // Similar with command listener, which returns unlisten callback
     const removeListener = editor.registerCommand(
-      CommandPayload,
+      INSERT_VIDEO_COMMAND,
       (payload) => {
         // Adding custom command that will be handled by this plugin
         editor.update(() => {

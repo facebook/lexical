@@ -1,3 +1,19 @@
+## 0.2.0 (Apr 13, 2022)
+
+- Remove DecoratorNode state
+- Redefine TS React.Node type
+- Add markdown indented list support
+- Fix IME issue when applying text format
+
+## 0.1.21 (Apr 12, 2022)
+
+- Add line numbers in Code Highlight plugin.
+- Remove top-level document reference to fix SSR.
+- Show highlight language over code block
+- Fix bug in RangeSelection.is that was causing incorrect formatting.
+- Improve copy/paste for Tables and Lists
+- Handle RangeSelection Containing Partial Table Selection
+
 ## 0.1.20 (Apr 7, 2022)
 
 - Fix build issue with @lexical/code

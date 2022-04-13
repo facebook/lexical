@@ -1113,6 +1113,7 @@ export class RangeSelection implements BaseSelection {
 
     const firstNode = nodes[0];
     let didReplaceOrMerge = false;
+    let lastNodeInserted = null;
 
     // Time to insert the nodes!
     for (let i = 0; i < nodes.length; i++) {
@@ -1178,11 +1179,13 @@ export class RangeSelection implements BaseSelection {
             const childrenLength = children.length;
             if ($isElementNode(target)) {
               for (let s = 0; s < childrenLength; s++) {
-                target.append(children[s]);
+                lastNodeInserted = children[s];
+                target.append(lastNodeInserted);
               }
             } else {
               for (let s = childrenLength - 1; s >= 0; s--) {
-                target.insertAfter(children[s]);
+                lastNodeInserted = children[s];
+                target.insertAfter(lastNodeInserted);
               }
               target = target.getParentOrThrow();
             }
@@ -1211,6 +1214,7 @@ export class RangeSelection implements BaseSelection {
       }
       didReplaceOrMerge = false;
       if ($isElementNode(target)) {
+        lastNodeInserted = node;
         if ($isDecoratorNode(node) && node.isTopLevel()) {
           target = target.insertAfter(node);
         } else if (!$isElementNode(node)) {
@@ -1241,6 +1245,7 @@ export class RangeSelection implements BaseSelection {
         !$isElementNode(node) ||
         ($isDecoratorNode(target) && target.isTopLevel())
       ) {
+        lastNodeInserted = node;
         target = target.insertAfter(node);
       } else {
         target = node.getParentOrThrow();
@@ -1266,7 +1271,11 @@ export class RangeSelection implements BaseSelection {
     }
 
     if ($isElementNode(target)) {
-      const lastChild = target.getLastDescendant();
+      // If the last node to be inserted was a text node,
+      // then we should attempt to move selection to that.
+      const lastChild = $isTextNode(lastNodeInserted)
+        ? lastNodeInserted
+        : target.getLastDescendant();
       if (!selectStart) {
         // Handle moving selection to end for elements
         if (lastChild === null) {

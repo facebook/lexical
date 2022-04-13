@@ -8,12 +8,9 @@
  */
 
 import type {
-  AutoFormatTrigger,
   AutoFormatTriggerState,
-  MarkdownCriteria,
   MarkdownCriteriaArray,
   MarkdownCriteriaWithPatternMatchResults,
-  PatternMatchResults,
   ScanningContext,
 } from './utils';
 import type {TextNodeWithOffset} from '@lexical/text';
@@ -31,58 +28,15 @@ import {$isListItemNode} from '@lexical/list';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
 
 import {
-  allMarkdownCriteria,
-  allMarkdownCriteriaForTextNodes,
+  getAllMarkdownCriteria,
+  getAllMarkdownCriteriaForTextNodes,
+  getAllTriggers,
   getInitialScanningContext,
-  getPatternMatchResultsForParagraphs,
-  getPatternMatchResultsForText,
+  getPatternMatchResultsForCriteria,
   getTextNodeWithOffsetOrThrow,
-  transformTextNodeForElementNode,
-  transformTextNodeForText,
+  transformTextNodeForMarkdownCriteria,
   triggers,
 } from './utils';
-
-export function getAllTriggers(): Array<AutoFormatTrigger> {
-  return triggers;
-}
-
-export function getAllMarkdownCriteriaForTextNodes(): MarkdownCriteriaArray {
-  return allMarkdownCriteriaForTextNodes;
-}
-
-export function getAllMarkdownCriteria(): MarkdownCriteriaArray {
-  return allMarkdownCriteria;
-}
-
-export function transformTextNodeForMarkdownCriteria<T>(
-  scanningContext: ScanningContext,
-  createHorizontalRuleNode: () => DecoratorNode<T>,
-) {
-  if (scanningContext.markdownCriteria.requiresParagraphStart === true) {
-    const elementNode =
-      getTextNodeWithOffsetOrThrow(scanningContext).node.getParentOrThrow();
-    transformTextNodeForElementNode(
-      elementNode,
-      scanningContext,
-      createHorizontalRuleNode,
-    );
-  } else {
-    transformTextNodeForText(scanningContext);
-  }
-}
-
-function getPatternMatchResultsForCriteria(
-  markdownCriteria: MarkdownCriteria,
-  scanningContext: ScanningContext,
-): null | PatternMatchResults {
-  if (markdownCriteria.requiresParagraphStart === true) {
-    return getPatternMatchResultsForParagraphs(
-      markdownCriteria,
-      scanningContext,
-    );
-  }
-  return getPatternMatchResultsForText(markdownCriteria, scanningContext);
-}
 
 function getTextNodeForAutoFormatting(
   selection: null | RangeSelection | NodeSelection | GridSelection,
@@ -105,8 +59,12 @@ export function updateAutoFormatting<T>(
 ): void {
   editor.update(
     () => {
+      const elementNode =
+        getTextNodeWithOffsetOrThrow(scanningContext).node.getParentOrThrow();
+
       transformTextNodeForMarkdownCriteria(
         scanningContext,
+        elementNode,
         createHorizontalRuleNode,
       );
     },
@@ -244,6 +202,9 @@ export function findScanningContext(
     const triggerOffset =
       currentTriggerState.anchorOffset - triggerStringLength;
 
+    // Todo: these checks help w/ performance, yet we can do more.
+    // We might consider looking for ** + space or __ + space and so on to boost performance
+    // even further. Make sure the patter is driven from the trigger state type.
     if (
       (currentTriggerState.hasParentNode === true &&
         currentTriggerState.isSimpleText &&

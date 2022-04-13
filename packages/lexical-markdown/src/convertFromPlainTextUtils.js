@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {TextNode} from '../../lexical/flow/Lexical';
 import type {ScanningContext} from './utils';
 import type {
   DecoratorNode,
@@ -27,14 +28,15 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {getAllMarkdownCriteria} from './autoFormatUtils';
 import {
+  getAllMarkdownCriteriaForParagraphs,
+  getAllMarkdownCriteriaForTextNodes,
   getCodeBlockCriteria,
   getInitialScanningContext,
   getPatternMatchResultsForCodeBlock,
-  getPatternMatchResultsForParagraphs,
+  getPatternMatchResultsForCriteria,
   resetScanningContext,
-  transformTextNodeForElementNode,
+  transformTextNodeForMarkdownCriteria,
 } from './utils';
 
 export function convertStringToLexical(
@@ -63,7 +65,71 @@ export function convertStringToLexical(
   return null;
 }
 
-function convertElementNodeContainingMarkdown<T>(
+export function convertMarkdownForElementNodes<T>(
+  editor: LexicalEditor,
+  createHorizontalRuleNode: null | (() => DecoratorNode<T>),
+) {
+  // Please see the declaration of ScanningContext for a detailed explanation.
+  const scanningContext = getInitialScanningContext(editor, false, null, null);
+
+  const root = $getRoot();
+  let done = false;
+  let startIndex = 0;
+
+  // Handle the paragraph level markdown.
+  while (!done) {
+    done = true;
+    const elementNodes: Array<LexicalNode> = root.getChildren();
+    const countOfElementNodes = elementNodes.length;
+
+    for (let i = startIndex; i < countOfElementNodes; i++) {
+      const elementNode = elementNodes[i];
+
+      if ($isElementNode(elementNode)) {
+        convertParagraphLevelMarkdown(
+          scanningContext,
+          elementNode,
+          createHorizontalRuleNode,
+        );
+      }
+      // Reset the scanning information that relates to the particular element node.
+      resetScanningContext(scanningContext);
+
+      if (root.getChildren().length !== countOfElementNodes) {
+        // The conversion added or removed an from root's children.
+        startIndex = i;
+        done = false;
+        break;
+      }
+    }
+  } // while
+
+  done = false;
+  startIndex = 0;
+
+  // Handle the text level markdown.
+  while (!done) {
+    done = true;
+    const elementNodes: Array<LexicalNode> = root.getChildren();
+    const countOfElementNodes = elementNodes.length;
+
+    for (let i = startIndex; i < countOfElementNodes; i++) {
+      const elementNode = elementNodes[i];
+
+      if ($isElementNode(elementNode)) {
+        convertTextLevelMarkdown(
+          scanningContext,
+          elementNode,
+          createHorizontalRuleNode,
+        );
+      }
+      // Reset the scanning information that relates to the particular element node.
+      resetScanningContext(scanningContext);
+    }
+  } // while
+}
+
+function convertParagraphLevelMarkdown<T>(
   scanningContext: ScanningContext,
   elementNode: ElementNode,
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
@@ -97,90 +163,165 @@ function convertElementNodeContainingMarkdown<T>(
       scanningContext.markdownCriteria = getCodeBlockCriteria();
 
       // Perform text transformation here.
-      transformTextNodeForElementNode(
-        elementNode,
+      transformTextNodeForMarkdownCriteria(
         scanningContext,
+        elementNode,
         createHorizontalRuleNode,
       );
       return;
     }
 
     if (elementNode.getChildren().length) {
-      const allCriteria = getAllMarkdownCriteria();
+      const allCriteria = getAllMarkdownCriteriaForParagraphs();
       const count = allCriteria.length;
+
+      scanningContext.joinedText = paragraphNode.getTextContent();
+      invariant(
+        firstChild != null && firstChildIsTextNode,
+        'Expect paragraph containing only text nodes.',
+      );
+      scanningContext.textNodeWithOffset = {
+        node: firstChild,
+        offset: 0,
+      };
+
       for (let i = 0; i < count; i++) {
         const criteria = allCriteria[i];
-        if (criteria.requiresParagraphStart === true) {
-          invariant(
-            firstChild != null && firstChildIsTextNode,
-            'Expect paragraph containing only text nodes.',
-          );
-          scanningContext.textNodeWithOffset = {
-            node: firstChild,
-            offset: 0,
-          };
-          scanningContext.joinedText = paragraphNode.getTextContent();
-
-          const patternMatchResults = getPatternMatchResultsForParagraphs(
-            criteria,
+        if (criteria.requiresParagraphStart === false) {
+          return;
+        }
+        const patternMatchResults = getPatternMatchResultsForCriteria(
+          criteria,
+          scanningContext,
+        );
+        if (patternMatchResults != null) {
+          scanningContext.markdownCriteria = criteria;
+          scanningContext.patternMatchResults = patternMatchResults;
+          // Perform text transformation here.
+          transformTextNodeForMarkdownCriteria(
             scanningContext,
+            elementNode,
+            createHorizontalRuleNode,
           );
-
-          if (patternMatchResults != null) {
-            // Lazy fill-in the particular format criteria and any matching result information.
-            scanningContext.markdownCriteria = criteria;
-            scanningContext.patternMatchResults = patternMatchResults;
-
-            // Perform text transformation here.
-            transformTextNodeForElementNode(
-              elementNode,
-              scanningContext,
-              createHorizontalRuleNode,
-            );
-            return;
-          }
+          return;
         }
       }
     }
   }
 }
 
-export function convertMarkdownForElementNodes<T>(
-  editor: LexicalEditor,
+function convertTextLevelMarkdown<T>(
+  scanningContext: ScanningContext,
+  elementNode: ElementNode,
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ) {
-  // Please see the declaration of ScanningContext for a detailed explanation.
-  const scanningContext = getInitialScanningContext(editor, false, null, null);
+  const firstChild = elementNode.getFirstChild();
+  if ($isTextNode(firstChild)) {
+    // This function will convert all text nodes within the elementNode.
+    convertMarkdownForTextCriteria(
+      scanningContext,
+      elementNode,
+      createHorizontalRuleNode,
+    );
+    return;
+  }
 
-  const root = $getRoot();
-  let done = false;
+  // Handle the case where the elementNode has child elementNodes like lists.
+  // Since we started at a text import, we don't need to worry about anything but textNodes.
+  const children: Array<LexicalNode> = elementNode.getChildren();
+  const countOfChildren = children.length;
+
+  for (let i = 0; i < countOfChildren; i++) {
+    const node = children[i];
+    if ($isElementNode(node)) {
+      // Recurse down until we find a text node.
+      convertTextLevelMarkdown(scanningContext, node, createHorizontalRuleNode);
+    }
+  }
+}
+
+function convertMarkdownForTextCriteria<T>(
+  scanningContext: ScanningContext,
+  elementNode: ElementNode,
+  createHorizontalRuleNode: null | (() => DecoratorNode<T>),
+) {
+  invariant(
+    scanningContext.textNodeWithOffset == null,
+    'Scanning context was not reset.',
+  );
+
+  // Cycle through all the criteria and convert all text patterns in the parent element.
+  const allCriteria = getAllMarkdownCriteriaForTextNodes();
+  const count = allCriteria.length;
+
+  const textContent = elementNode.getTextContent();
+  let done = textContent.length > 0;
   let startIndex = 0;
-
   while (!done) {
     done = true;
+    for (let i = startIndex; i < count; i++) {
+      const criteria = allCriteria[i];
 
-    const elementNodes: Array<LexicalNode> = root.getChildren();
-    const countOfElementNodes = elementNodes.length;
+      if (scanningContext.textNodeWithOffset == null) {
+        // Need to search through the very last text node in the element.
+        const lastTextNode = getLastTextNodeInElementNode(elementNode);
+        if (lastTextNode == null) {
+          // If we have no more text nodes, then there's nothing to search and transform.
+          return;
+        }
+        scanningContext.textNodeWithOffset = {
+          node: lastTextNode,
+          offset: lastTextNode.getTextContent().length,
+        };
+      }
 
-    for (let i = startIndex; i < countOfElementNodes; i++) {
-      const elementNode = elementNodes[i];
+      const patternMatchResults = getPatternMatchResultsForCriteria(
+        criteria,
+        scanningContext,
+      );
 
-      if ($isElementNode(elementNode)) {
-        convertElementNodeContainingMarkdown(
+      if (patternMatchResults != null) {
+        scanningContext.markdownCriteria = criteria;
+        scanningContext.patternMatchResults = patternMatchResults;
+
+        // Perform text transformation here.
+        transformTextNodeForMarkdownCriteria(
           scanningContext,
           elementNode,
           createHorizontalRuleNode,
         );
-      }
-      // Reset the scanning information that relates to the particular element node.
-      resetScanningContext(scanningContext);
 
-      if (root.getChildren().length !== countOfElementNodes) {
-        // The conversion added or removed an from root's children.
+        resetScanningContext(scanningContext);
+
+        const currentTextContent = elementNode.getTextContent();
+        if (currentTextContent.length === 0) {
+          // Nothing left to convert.
+          return;
+        }
+
+        if (currentTextContent === textContent) {
+          // Nothing was changed by this transformation, so move on to the next crieteria.
+          continue;
+        }
+
+        // The text was changed. Perhaps there is another hit for the same criteria.
         startIndex = i;
         done = false;
         break;
       }
     }
-  } // while
+  }
+}
+
+function getLastTextNodeInElementNode(
+  elementNode: ElementNode,
+): null | TextNode {
+  const children: Array<LexicalNode> = elementNode.getChildren();
+  const countOfChildren = children.length;
+  for (let i = countOfChildren - 1; i >= 0; i--) {
+    if ($isTextNode(children[i])) {
+      return children[i];
+    }
+  }
+  return null;
 }

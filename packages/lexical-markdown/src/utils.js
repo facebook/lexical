@@ -278,7 +278,7 @@ const markdownInlineCode: MarkdownCriteria = {
 const markdownItalic: MarkdownCriteria = {
   ...autoFormatBase,
   markdownFormatKind: 'italic',
-  regEx: /(\*)([^\*]*)(\*)/,
+  regEx: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)()/,
   regExForAutoFormatting: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)(\s)$/,
 };
 
@@ -357,7 +357,7 @@ const markdownLink: MarkdownCriteria = {
   regExForAutoFormatting: /(\[)(.+)(\]\()([^ ]+)(?: \"(?:.+)\")?(\))(\s)$/,
 };
 
-export const allMarkdownCriteriaForTextNodes: MarkdownCriteriaArray = [
+const allMarkdownCriteriaForTextNodes: MarkdownCriteriaArray = [
   // Place the combination formats ahead of the individual formats.
 
   // Combos
@@ -377,7 +377,7 @@ export const allMarkdownCriteriaForTextNodes: MarkdownCriteriaArray = [
   markdownLink,
 ];
 
-export const allMarkdownCriteria: MarkdownCriteriaArray = [
+const allMarkdownCriteriaForParagraphs: MarkdownCriteriaArray = [
   markdownHeader1,
   markdownHeader2,
   markdownHeader3,
@@ -390,8 +390,28 @@ export const allMarkdownCriteria: MarkdownCriteriaArray = [
   markdownCodeBlock,
   markdownHorizontalRule,
   markdownHorizontalRuleUsingDashes,
+];
+
+export const allMarkdownCriteria: MarkdownCriteriaArray = [
+  ...allMarkdownCriteriaForParagraphs,
   ...allMarkdownCriteriaForTextNodes,
 ];
+
+export function getAllTriggers(): Array<AutoFormatTrigger> {
+  return triggers;
+}
+
+export function getAllMarkdownCriteriaForParagraphs(): MarkdownCriteriaArray {
+  return allMarkdownCriteriaForParagraphs;
+}
+
+export function getAllMarkdownCriteriaForTextNodes(): MarkdownCriteriaArray {
+  return allMarkdownCriteriaForTextNodes;
+}
+
+export function getAllMarkdownCriteria(): MarkdownCriteriaArray {
+  return allMarkdownCriteria;
+}
 
 export function getInitialScanningContext(
   editor: LexicalEditor,
@@ -422,7 +442,7 @@ export function getInitialScanningContext(
 export function resetScanningContext(
   scanningContext: ScanningContext,
 ): ScanningContext {
-  scanningContext.joinedText = '';
+  scanningContext.joinedText = null;
 
   scanningContext.markdownCriteria = {
     markdownFormatKind: 'noTransformation',
@@ -443,6 +463,19 @@ export function resetScanningContext(
 
 export function getCodeBlockCriteria(): MarkdownCriteria {
   return markdownCodeBlock;
+}
+
+export function getPatternMatchResultsForCriteria(
+  markdownCriteria: MarkdownCriteria,
+  scanningContext: ScanningContext,
+): null | PatternMatchResults {
+  if (markdownCriteria.requiresParagraphStart === true) {
+    return getPatternMatchResultsForParagraphs(
+      markdownCriteria,
+      scanningContext,
+    );
+  }
+  return getPatternMatchResultsForText(markdownCriteria, scanningContext);
 }
 
 export function getPatternMatchResultsForCodeBlock(
@@ -520,7 +553,7 @@ export function getTextNodeWithOffsetOrThrow(
   return textNodeWithOffset;
 }
 
-export function getPatternMatchResultsForParagraphs(
+function getPatternMatchResultsForParagraphs(
   markdownCriteria: MarkdownCriteria,
   scanningContext: ScanningContext,
 ): null | PatternMatchResults {
@@ -543,7 +576,7 @@ export function getPatternMatchResultsForParagraphs(
   return null;
 }
 
-export function getPatternMatchResultsForText(
+function getPatternMatchResultsForText(
   markdownCriteria: MarkdownCriteria,
   scanningContext: ScanningContext,
 ): null | PatternMatchResults {
@@ -567,11 +600,16 @@ export function getPatternMatchResultsForText(
     }
   }
 
+  const matchMustAppearAtEndOfString =
+    markdownCriteria.regExForAutoFormatting === true;
+
   return getPatternMatchResultsWithRegEx(
     scanningContext.joinedText,
     false,
-    true,
-    markdownCriteria.regExForAutoFormatting,
+    matchMustAppearAtEndOfString,
+    scanningContext.isAutoFormatting
+      ? markdownCriteria.regExForAutoFormatting
+      : markdownCriteria.regEx,
   );
 }
 
@@ -725,6 +763,7 @@ function getNewNodeForCriteria<T>(
   return {newNode, shouldDelete};
 }
 
+
 function createListOrMergeWithPrevious(
   element: ElementNode,
   children: Array<LexicalNode>,
@@ -753,7 +792,23 @@ function createListOrMergeWithPrevious(
   }
 }
 
-export function transformTextNodeForElementNode<T>(
+export function transformTextNodeForMarkdownCriteria<T>(
+  scanningContext: ScanningContext,
+  elementNode: ElementNode,
+  createHorizontalRuleNode: null | (() => DecoratorNode<T>),
+) {
+  if (scanningContext.markdownCriteria.requiresParagraphStart === true) {
+    transformTextNodeForElementNode(
+      elementNode,
+      scanningContext,
+      createHorizontalRuleNode,
+    );
+  } else {
+    transformTextNodeForText(scanningContext);
+  }
+}
+
+function transformTextNodeForElementNode<T>(
   elementNode: ElementNode,
   scanningContext: ScanningContext,
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
@@ -792,7 +847,7 @@ export function transformTextNodeForElementNode<T>(
   }
 }
 
-export function transformTextNodeForText(scanningContext: ScanningContext) {
+function transformTextNodeForText(scanningContext: ScanningContext) {
   const markdownCriteria = scanningContext.markdownCriteria;
 
   if (markdownCriteria.markdownFormatKind != null) {

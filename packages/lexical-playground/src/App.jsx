@@ -10,6 +10,7 @@
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import * as React from 'react';
 
+import {isPlayground} from './appSettings';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
 import Editor from './Editor';
@@ -43,7 +44,7 @@ function App(): React$Node {
           <Editor />
         </div>
         <Settings />
-        <TestRecorderPlugin />
+        {isPlayground && <TestRecorderPlugin />}
         {measureTypingPerf && <TypingPerfPlugin />}
       </SharedHistoryContext>
     </LexicalComposer>

@@ -432,7 +432,7 @@ ${steps.map(formatStep).join(`\n`)}
   return [button, output];
 }
 
-export default function TreeViewPlugin(): React$Node {
+export default function TestRecorderPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
   const [testRecorderButton, testRecorderOutput] = useTestRecorder(editor);
 

@@ -10,7 +10,7 @@
 import * as React from 'react';
 import {useMemo, useState} from 'react';
 
-import {isPlayground} from './appSettings';
+import {isDevPlayground} from './appSettings';
 import {useSettings} from './context/SettingsContext';
 import Switch from './ui/Switch';
 
@@ -48,7 +48,7 @@ export default function Settings(): React$Node {
       />
       {showSettings ? (
         <div className="switches">
-          {isRichText && isPlayground && (
+          {isRichText && isDevPlayground && (
             <Switch
               onClick={() => {
                 setOption('isCollab', !isCollab);
@@ -58,7 +58,7 @@ export default function Settings(): React$Node {
               text="Collaboration"
             />
           )}
-          {isPlayground && (
+          {isDevPlayground && (
             <Switch
               onClick={() => {
                 if (isSplitScreen) {

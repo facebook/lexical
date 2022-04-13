@@ -34,5 +34,8 @@ export const DEFAULT_SETTINGS: Settings = {
   showTreeView: true,
 };
 
-export const isPlayground =
-  window.location.hostname === 'playground.lexical.dev';
+const hostName = window.location.hostname;
+
+export const isDevPlayground: boolean =
+  hostName !== 'playground.lexical.dev' &&
+  hostName !== 'lexical-playground.vercel.app';

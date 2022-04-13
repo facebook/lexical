@@ -757,11 +757,9 @@ export function applyTableHandlers(
           const focusNode = selection.focus.getNode();
           const isAnchorInside = tableNode.isParentOf(anchorNode);
           const isFocusInside = tableNode.isParentOf(focusNode);
-
           const containsPartialTable =
             (isAnchorInside && !isFocusInside) ||
             (isFocusInside && !isAnchorInside);
-
           if (containsPartialTable) {
             const isBackward = selection.isBackward();
             const startNode = isBackward ? focusNode : anchorNode;

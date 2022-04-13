@@ -27,9 +27,13 @@ header {
   justify-content: center;
 }
 
-header img {
+header a {
   max-width: 220px;
   margin: 20px 0 0 0;
+  display: block;
+}
+
+header img {
   display: block;
   height: 100%;
   width: 100%;

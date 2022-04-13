@@ -290,6 +290,12 @@ Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 4. Go to the repository page in GitHub and click on "Compare & pull request"
    - The [GitHub CLI](https://cli.github.com/manual/gh_pr_create) allows you to skip the web interface for this step (and much more)
 
+## Support
+
+If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integations, feel free to add yourself to [our Discord sever](https://discord.gg/Pg4n9psf).
+
+Lexical engineers are checking this regularly.
+
 ## Running tests
 
 - `npm run test-unit` runs only unit tests.

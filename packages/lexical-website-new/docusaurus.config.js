@@ -73,7 +73,7 @@ const config = {
           {
             items: [
               {
-                href: 'https://stackoverflow.com/questions/tagged/lexical',
+                href: 'https://stackoverflow.com/questions/tagged/lexicaljs',
                 label: 'Stack Overflow',
               },
               {
@@ -85,10 +85,6 @@ const config = {
           },
           {
             items: [
-              {
-                label: 'Blog',
-                to: '/blog',
-              },
               {
                 href: 'https://github.com/facebook/lexical',
                 label: 'GitHub',

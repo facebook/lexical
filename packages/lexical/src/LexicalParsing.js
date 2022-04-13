@@ -9,25 +9,16 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {LexicalNode, NodeKey} from './LexicalNode';
-import type {
-  DecoratorArray,
-  DecoratorMap,
-  DecoratorStateValue,
-} from './nodes/LexicalDecoratorNode';
 
 import invariant from 'shared/invariant';
 
-import {$isDecoratorNode, $isElementNode, $isRootNode, $isTextNode} from '.';
+import {$isElementNode, $isRootNode, $isTextNode, createEditor} from '.';
 import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  parseEditorState,
 } from './LexicalUpdates';
-import {
-  createDecoratorArray,
-  createDecoratorEditor,
-  createDecoratorMap,
-} from './nodes/LexicalDecoratorNode';
 
 export type NodeParserState = {
   originalSelection: null | ParsedSelection,
@@ -99,60 +90,6 @@ export function $createNodeFromParse(
   return internalCreateNodeFromParse(parsedNode, parsedNodeMap, editor, null);
 }
 
-function createDecoratorValueFromParse(
-  editor: LexicalEditor,
-  parsedValue,
-): DecoratorStateValue {
-  let value;
-
-  if (
-    typeof parsedValue === 'string' ||
-    typeof parsedValue === 'number' ||
-    typeof parsedValue === 'boolean' ||
-    parsedValue === null
-  ) {
-    value = parsedValue;
-  } else if (typeof parsedValue === 'object') {
-    const bindingType = parsedValue.type;
-    if (bindingType === 'editor') {
-      value = createDecoratorEditor(parsedValue.id, parsedValue.editorState);
-    } else if (bindingType === 'array') {
-      value = createDecoratorArrayFromParse(editor, parsedValue);
-    } else {
-      value = createDecoratorMapFromParse(editor, parsedValue);
-    }
-  } else {
-    invariant(false, 'Should never happen');
-  }
-  return value;
-}
-
-function createDecoratorArrayFromParse(
-  editor: LexicalEditor,
-  parsedDecoratorState,
-): DecoratorArray {
-  const parsedArray = parsedDecoratorState.array;
-  const array = [];
-  for (let i = 0; i < parsedArray.length; i++) {
-    const parsedValue = parsedArray[i];
-    array.push(createDecoratorValueFromParse(editor, parsedValue));
-  }
-  return createDecoratorArray(editor, array);
-}
-
-function createDecoratorMapFromParse(
-  editor: LexicalEditor,
-  parsedDecoratorState,
-): DecoratorMap {
-  const parsedMap = parsedDecoratorState.map;
-  const map = new Map();
-  for (let i = 0; i < parsedMap.length; i++) {
-    const [key, parsedValue] = parsedMap[i];
-    map.set(key, createDecoratorValueFromParse(editor, parsedValue));
-  }
-  return createDecoratorMap(editor, map);
-}
-
 export function internalCreateNodeFromParse(
   parsedNode: $FlowFixMe,
   parsedNodeMap: ParsedNodeMap,
@@ -164,6 +101,23 @@ export function internalCreateNodeFromParse(
   const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
+  }
+  // Check for properties that are editors
+  for (const property in parsedNode) {
+    const value = parsedNode[property];
+    if (value != null && typeof value === 'object') {
+      const parsedEditorState = value.editorState;
+      if (parsedEditorState != null) {
+        const nestedEditor = createEditor();
+        nestedEditor._nodes = editor._nodes;
+        nestedEditor._parentEditor = editor._parentEditor;
+        nestedEditor._pendingEditorState = parseEditorState(
+          parsedEditorState,
+          nestedEditor,
+        );
+        parsedNode[property] = nestedEditor;
+      }
+    }
   }
   const NodeKlass = registeredNode.klass;
   const parsedKey = parsedNode.__key;
@@ -205,11 +159,6 @@ export function internalCreateNodeFromParse(
     node.__style = parsedNode.__style;
     node.__mode = parsedNode.__mode;
     node.__detail = parsedNode.__detail;
-  } else if ($isDecoratorNode(node)) {
-    const parsedDecoratorState = parsedNode.__state;
-    node.__state =
-      parsedDecoratorState &&
-      createDecoratorMapFromParse(editor, parsedDecoratorState);
   }
   // The selection might refer to an old node whose key has changed. Produce a
   // new selection record with the old keys mapped to the new ones.

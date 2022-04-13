@@ -23,12 +23,8 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
-  isDecoratorArray,
-  isDecoratorMap,
 } from 'lexical';
 import {
-  Array as YArray,
-  Map as YMap,
   // $FlowFixMe: need Flow typings for yjs
   YMapEvent,
   // $FlowFixMe: need Flow typings for yjs
@@ -46,11 +42,6 @@ import {
   syncLocalCursorPosition,
 } from './SyncCursors';
 import {
-  mutationFromCollab,
-  syncYjsDecoratorArrayValueToLexical,
-  syncYjsDecoratorMapToLexical,
-} from './SyncDecoratorStates';
-import {
   doesSelectionNeedRecovering,
   getOrInitCollabNodeFromSharedType,
   syncWithTransaction,
@@ -62,66 +53,6 @@ function syncEvent(
 ): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
-  // $FlowFixMe: internal field
-  const decoratorStateValue = target._lexicalValue;
-
-  // Check if this event relates to a decorator state change.
-  if (
-    decoratorStateValue !== undefined &&
-    collabNode instanceof CollabDecoratorNode
-  ) {
-    if (target instanceof YMap) {
-      // Sync decorator state value
-      syncYjsDecoratorMapToLexical(
-        binding,
-        collabNode,
-        target,
-        decoratorStateValue,
-        event.keysChanged,
-      );
-    } else if (
-      target instanceof YArray &&
-      isDecoratorArray(decoratorStateValue)
-    ) {
-      // Sync decorator state value
-      const deltas = event.delta;
-      let offset = 0;
-      for (let i = 0; i < deltas.length; i++) {
-        const delta = deltas[i];
-        const retainOp = delta.retain;
-        const deleteOp = delta.delete;
-        const insertOp = delta.insert;
-
-        if (retainOp !== undefined) {
-          offset += retainOp;
-        } else if (deleteOp !== undefined) {
-          mutationFromCollab(() => {
-            const elements = decoratorStateValue._array.slice(
-              offset,
-              offset + deleteOp,
-            );
-            elements.forEach((element) => {
-              if (isDecoratorArray(element) || isDecoratorMap(element)) {
-                element.destroy();
-              }
-            });
-            decoratorStateValue.splice(offset, deleteOp);
-          });
-        } else if (insertOp !== undefined) {
-          syncYjsDecoratorArrayValueToLexical(
-            binding,
-            collabNode,
-            target,
-            decoratorStateValue,
-            offset,
-          );
-        } else {
-          throw new Error('Not supported');
-        }
-      }
-    }
-    return;
-  }
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     const {keysChanged, childListChanged, delta} = event;

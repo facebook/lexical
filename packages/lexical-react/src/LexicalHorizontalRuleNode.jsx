@@ -31,7 +31,7 @@ export class HorizontalRuleNode extends DecoratorNode<React$Node> {
   }
 
   static clone(node: HorizontalRuleNode): HorizontalRuleNode {
-    return new HorizontalRuleNode(node.__state, node.__key);
+    return new HorizontalRuleNode(node.__key);
   }
 
   static importDOM(): DOMConversionMap | null {

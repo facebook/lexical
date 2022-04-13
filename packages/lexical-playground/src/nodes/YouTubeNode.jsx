@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {DecoratorMap, LexicalNode, NodeKey} from 'lexical';
+import type {LexicalNode, NodeKey} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
@@ -52,11 +52,11 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
   }
 
   static clone(node: YouTubeNode): YouTubeNode {
-    return new YouTubeNode(node.__id, node.__state, node.__key);
+    return new YouTubeNode(node.__id, node.__key);
   }
 
-  constructor(id: string, state?: DecoratorMap, key?: NodeKey) {
-    super(state, key);
+  constructor(id: string, key?: NodeKey) {
+    super(key);
 
     this.__id = id;
   }

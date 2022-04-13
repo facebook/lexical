@@ -98,7 +98,6 @@ const moduleResolution = [
   'LexicalComposer',
   'LexicalComposerContext',
   'useLexicalIsTextContentEmpty',
-  'useLexicalDecoratorMap',
   'useLexicalTextEntity',
   'LexicalContentEditable',
   'LexicalNestedComposer',

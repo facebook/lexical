@@ -517,6 +517,9 @@ export class LexicalEditor {
   getRootElement(): null | HTMLElement {
     return this._rootElement;
   }
+  getKey(): string {
+    return this._key;
+  }
   setRootElement(nextRootElement: null | HTMLElement): void {
     const prevRootElement = this._rootElement;
     if (nextRootElement !== prevRootElement) {
@@ -580,7 +583,8 @@ export class LexicalEditor {
     commitPendingUpdates(this);
   }
   parseEditorState(stringifiedEditorState: string): EditorState {
-    return parseEditorState(stringifiedEditorState, this);
+    const parsedEditorState = JSON.parse(stringifiedEditorState);
+    return parseEditorState(parsedEditorState, this);
   }
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
     updateEditor(this, updateFn, options);
@@ -629,5 +633,10 @@ export class LexicalEditor {
   setReadOnly(readOnly: boolean): void {
     this._readOnly = readOnly;
     triggerListeners('readonly', this, true, readOnly);
+  }
+  toJSON(): {editorState: EditorState} {
+    return {
+      editorState: this._editorState,
+    };
   }
 }

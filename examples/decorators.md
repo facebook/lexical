@@ -13,11 +13,11 @@ export class VideoNode extends DecoratorNode {
   }
 
   static clone(node: VideoNode): VideoNode {
-    return new VideoNode(node.__url, node.__state, node.__key);
+    return new VideoNode(node.__url, node.__key);
   }
 
-  constructor(url: string, state?: DecoratorMap, key?: NodeKey) {
-    super(state, key);
+  constructor(url: string, key?: NodeKey) {
+    super(key);
     this.__url = url;
   }
 

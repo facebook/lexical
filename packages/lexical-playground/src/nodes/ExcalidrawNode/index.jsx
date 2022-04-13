@@ -9,7 +9,6 @@
 
 import type {
   CommandListenerLowPriority,
-  DecoratorMap,
   EditorConfig,
   LexicalEditor,
   LexicalNode,
@@ -147,11 +146,11 @@ export class ExcalidrawNode extends DecoratorNode<React$Node> {
   }
 
   static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(node.__data, node.__state, node.__key);
+    return new ExcalidrawNode(node.__data, node.__key);
   }
 
-  constructor(data?: string = '[]', state?: DecoratorMap, key?: NodeKey) {
-    super(state, key);
+  constructor(data?: string = '[]', key?: NodeKey) {
+    super(key);
     this.__data = data;
   }
 

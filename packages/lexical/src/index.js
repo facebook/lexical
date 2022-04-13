@@ -30,16 +30,7 @@ import {
   $setSelection,
 } from './LexicalUtils';
 import {VERSION} from './LexicalVersion';
-import {
-  $isDecoratorNode,
-  createDecoratorArray,
-  createDecoratorEditor,
-  createDecoratorMap,
-  DecoratorNode,
-  isDecoratorArray,
-  isDecoratorEditor,
-  isDecoratorMap,
-} from './nodes/LexicalDecoratorNode';
+import {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 import {$isGridCellNode, GridCellNode} from './nodes/LexicalGridCellNode';
 import {$isGridNode, GridNode} from './nodes/LexicalGridNode';
@@ -86,18 +77,12 @@ export {
   $nodesOfType,
   $setCompositionKey,
   $setSelection,
-  createDecoratorArray,
-  createDecoratorEditor,
-  createDecoratorMap,
   createEditor,
   DecoratorNode,
   ElementNode,
   GridCellNode,
   GridNode,
   GridRowNode,
-  isDecoratorArray,
-  isDecoratorEditor,
-  isDecoratorMap,
   ParagraphNode,
   TextNode,
   VERSION,

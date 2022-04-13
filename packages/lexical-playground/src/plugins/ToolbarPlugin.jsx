@@ -335,7 +335,7 @@ function InsertTweetDialog({
   const [text, setText] = useState('');
 
   const onClick = () => {
-    const tweetID = text.split('status/')?.[1];
+    const tweetID = text.split('status/')?.[1]?.split('?')?.[0];
     activeEditor.dispatchCommand(INSERT_TWEET_COMMAND, tweetID);
     onClose();
   };

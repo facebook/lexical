@@ -95,6 +95,7 @@ export class TableSelection {
   focusCellNodeKey: NodeKey | null;
   editor: LexicalEditor;
   gridSelection: GridSelection | null;
+  hasHijackedSelectionStyles: boolean;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
@@ -111,6 +112,7 @@ export class TableSelection {
     this.focusCellNodeKey = null;
     this.anchorCell = null;
     this.focusCell = null;
+    this.hasHijackedSelectionStyles = false;
 
     this.trackTableGrid();
   }
@@ -189,6 +191,7 @@ export class TableSelection {
       this.focusCellNodeKey = null;
       this.anchorCell = null;
       this.focusCell = null;
+      this.hasHijackedSelectionStyles = false;
 
       $updateDOMForSelection(grid, null);
       $setSelection(null);
@@ -206,6 +209,7 @@ export class TableSelection {
       }
 
       tableElement.classList.remove('disable-selection');
+      this.hasHijackedSelectionStyles = false;
     });
   }
 
@@ -217,6 +221,7 @@ export class TableSelection {
       }
 
       tableElement.classList.add('disable-selection');
+      this.hasHijackedSelectionStyles = true;
     });
   }
 

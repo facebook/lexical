@@ -105,7 +105,7 @@ editor surfaces. Lexical's underlying engine provides three main parts:
 
 By design, the core of Lexical tries to be as minimal as possible. Lexical doesn't directly concern itself with things that monolithic editors tend to do – such as UI components, toolbars or rich-text features and markdown. Instead the logic for those features can be included via a plugin interface and used as and when they're needed. This ensures great extensibilty and keeps code-sizes to a minimal – ensuring apps only pay the cost for what they actually import.
 
-For React apps, Lexical has tight intergration with React 18+ via the optional `@lexical/react` package. This package provides
+For React apps, Lexical has tight integration with React 18+ via the optional `@lexical/react` package. This package provides
 production-ready utility functions, helpers and React hooks that make it seemless to create text editors within React.
 
 ## Working with Lexical
@@ -301,7 +301,7 @@ Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 
 ## Support
 
-If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integations, feel free to add yourself to [our Discord sever](https://discord.gg/Pg4n9psf).
+If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integrations, feel free to add yourself to [our Discord server](https://discord.gg/Pg4n9psf).
 
 Lexical engineers are checking this regularly.
 

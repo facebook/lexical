@@ -59,13 +59,18 @@ As any other custom Lexical node, decorator nodes need to be registered _before_
 ```
 
 ```js
+// Create a custom command with a typed payload.
+type CommandPayload = string;
+export const INSERT_VIDEO_COMMAND: LexicalCommand<CommandPayload> =
+  createCommand();
+
 function VideoPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     // Similar with command listener, which returns unlisten callback
     const removeListener = editor.registerCommand(
-      'insertVideo',
+      CommandPayload,
       (payload) => {
         // Adding custom command that will be handled by this plugin
         editor.update(() => {
@@ -94,12 +99,14 @@ function VideoPlugin(): React$Node {
 Then assuming we have a some UE insert a video into the editor:
 
 ```js
+import {INSERT_VIDEO_COMMAND} from 'VideoPlugin';
+
 function ToolbarVideoButton(): React$Node {
   const [editor] = useLexicalComposerContext();
   const insertVideo = useCallback(
     (url) => {
       // Executing command defined in a plugin
-      editor.dispatchCommand('insertVideo', url);
+      editor.dispatchCommand(INSERT_VIDEO_COMMAND, url);
     },
     [editor],
   );

@@ -32,7 +32,7 @@ declare module 'yjs' {
     observeDeep(fn: Function): void;
     on(type: string, () => void): void;
     parent: null | XmlText | XmlElement;
-    setAttribute(string: string, value: string | number): void;
+    setAttribute(string: string, value: string | number | Doc): void;
     toDelta(): Array<TextOperation>;
     toJSON(): Object;
     unobserve(fn: Function): void;

@@ -7,14 +7,7 @@
  * @flow strict
  */
 
-import type {
-  DecoratorEditor,
-  DecoratorMap,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
+import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import './StickyNode.css';
 
@@ -26,11 +19,10 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
-import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import {
   $getNodeByKey,
   $setSelection,
-  createDecoratorEditor,
+  createEditor,
   DecoratorNode,
 } from 'lexical';
 import * as React from 'react';
@@ -59,10 +51,10 @@ function StickyComponent({
   y,
   nodeKey,
   color,
-  decoratorStateMap,
+  caption,
 }: {
+  caption: LexicalEditor,
   color: 'pink' | 'yellow',
-  decoratorStateMap: DecoratorMap,
   nodeKey: NodeKey,
   x: number,
   y: number,
@@ -86,11 +78,6 @@ function StickyComponent({
   });
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
-  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditor>(
-    decoratorStateMap,
-    'caption',
-    () => createDecoratorEditor(),
-  );
 
   useEffect(() => {
     const position = positioningRef.current;
@@ -235,8 +222,7 @@ function StickyComponent({
           document.addEventListener('pointerup', handlePointerUp);
           event.preventDefault();
         }
-      }}
-    >
+      }}>
       <button onClick={handleDelete} className="delete">
         X
       </button>
@@ -244,14 +230,11 @@ function StickyComponent({
         <i className="bucket" />
       </button>
       <LexicalNestedComposer
-        initialConfig={{
-          decoratorEditor: decoratorEditor,
-          theme: StickyEditorTheme,
-        }}
-      >
+        initialEditor={caption}
+        initialTheme={StickyEditorTheme}>
         {isCollab ? (
           <CollaborationPlugin
-            id={decoratorEditor.id}
+            id={caption.getKey()}
             providerFactory={createWebsocketProvider}
             shouldBootstrap={true}
           />
@@ -277,6 +260,7 @@ export class StickyNode extends DecoratorNode<React$Node> {
   __x: number;
   __y: number;
   __color: 'pink' | 'yellow';
+  __caption: LexicalEditor;
 
   static getType(): string {
     return 'sticky';
@@ -287,7 +271,7 @@ export class StickyNode extends DecoratorNode<React$Node> {
       node.__x,
       node.__y,
       node.__color,
-      node.__state,
+      node.__caption,
       node.__key,
     );
   }
@@ -296,12 +280,13 @@ export class StickyNode extends DecoratorNode<React$Node> {
     x: number,
     y: number,
     color: 'pink' | 'yellow',
-    state?: DecoratorMap,
+    caption?: LexicalEditor,
     key?: NodeKey,
   ) {
-    super(state, key);
+    super(key);
     this.__x = x;
     this.__y = y;
+    this.__caption = caption || createEditor();
     this.__color = color;
   }
 
@@ -334,7 +319,7 @@ export class StickyNode extends DecoratorNode<React$Node> {
         x={this.__x}
         y={this.__y}
         nodeKey={this.getKey()}
-        decoratorStateMap={this.__state}
+        caption={this.__caption}
       />,
       document.body,
     );

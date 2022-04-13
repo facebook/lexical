@@ -233,18 +233,15 @@ function $applyAllTransforms(
 }
 
 export function parseEditorState(
-  stringifiedEditorState: string,
+  parsedEditorState: ParsedEditorState,
   editor: LexicalEditor,
 ): EditorState {
-  const parsedEditorState: ParsedEditorState = JSON.parse(
-    stringifiedEditorState,
-  );
   const nodeMap = new Map();
   const editorState = new EditorState(nodeMap);
   const nodeParserState: NodeParserState = {
     originalSelection: parsedEditorState._selection,
   };
-  const previousActiveEditorState = editorState;
+  const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   activeEditorState = editorState;

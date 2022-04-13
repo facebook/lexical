@@ -16,8 +16,9 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
+  createEditor,
 } from 'lexical';
-import {Map as YMap, XmlElement, XmlText} from 'yjs';
+import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
 import {
   $createCollabDecoratorNode,
@@ -36,7 +37,6 @@ const excludedProperties: Set<string> = new Set([
   '__parent',
   '__cachedText',
   '__text',
-  '__state',
 ]);
 
 export function getIndexOfYjsNode(
@@ -223,11 +223,22 @@ export function syncPropertiesFromYjs(
     }
     // $FlowFixMe: intentional
     const prevValue = lexicalNode[property];
-    const nextValue =
+    let nextValue =
       sharedType instanceof YMap
         ? sharedType.get(property)
         : sharedType.getAttribute(property);
     if (prevValue !== nextValue) {
+      if (nextValue instanceof Doc) {
+        const yjsDocMap = binding.docMap;
+        if (prevValue instanceof Doc) {
+          yjsDocMap.delete(prevValue.guid);
+        }
+        const nestedEditor = createEditor();
+        const key = nextValue.guid;
+        nestedEditor._key = key;
+        yjsDocMap.set(key, nextValue);
+        nextValue = nestedEditor;
+      }
       if (writableNode === undefined) {
         writableNode = lexicalNode.getWritable();
       }
@@ -253,15 +264,29 @@ export function syncPropertiesFromLexical(
     });
     nodeProperties.set(type, properties);
   }
+  const EditorClass = binding.editor.constructor;
 
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
     const prevValue =
       // $FlowFixMe: intentional override
       prevLexicalNode === null ? undefined : prevLexicalNode[property];
+
     // $FlowFixMe: intentional override
-    const nextValue = nextLexicalNode[property];
+    let nextValue = nextLexicalNode[property];
     if (prevValue !== nextValue) {
+      if (nextValue instanceof EditorClass) {
+        const yjsDocMap = binding.docMap;
+        if (prevValue instanceof EditorClass) {
+          yjsDocMap.delete(prevValue._key);
+        }
+        const doc = new Doc();
+        // $FlowFixMe: guid exists
+        const key = doc.guid;
+        nextValue._key = key;
+        yjsDocMap.set(key, doc);
+        nextValue = doc;
+      }
       if (sharedType instanceof YMap) {
         sharedType.set(property, nextValue);
       } else {

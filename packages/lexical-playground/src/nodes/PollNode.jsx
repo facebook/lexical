@@ -7,25 +7,26 @@
  * @flow strict
  */
 
-import type {
-  DecoratorArray,
-  DecoratorMap,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
+import type {LexicalNode, NodeKey} from 'lexical';
 
 import './PollNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
-import {createDecoratorArray, createDecoratorMap, DecoratorNode} from 'lexical';
+import {$getNodeByKey, DecoratorNode} from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useMemo, useRef} from 'react';
 
 import Button from '../ui/Button';
 import joinClasses from '../utils/join-classes';
+
+type Options = $ReadOnlyArray<Option>;
+
+type Option = $ReadOnly<{
+  text: string,
+  uid: string,
+  votes: Array<number>,
+}>;
 
 function createUID(): string {
   return Math.random()
@@ -34,61 +35,52 @@ function createUID(): string {
     .substr(0, 5);
 }
 
-function createPollOptionMap(
-  editor: LexicalEditor,
-  text: string,
-): DecoratorMap {
-  return createDecoratorMap(
-    editor,
-    new Map([
-      ['text', text],
-      ['uid', createUID()],
-      ['votes', createDecoratorArray(editor)],
-    ]),
-  );
+function createPollOption(text?: string = ''): Option {
+  return {
+    text,
+    uid: createUID(),
+    votes: [],
+  };
 }
 
-function getTotalVotes(options: DecoratorArray): number {
-  // $FlowFixMe: need to revise type
-  const votes: number = options.reduce((totalVotes, next) => {
-    // $FlowFixMe: need to revise type
-    return totalVotes + next.get('votes').getLength();
-  }, 0);
+function cloneOption(
+  option: Option,
+  text: string,
+  votes?: Array<number>,
+): Option {
+  return {
+    text,
+    uid: option.uid,
+    votes: votes || Array.from(option.votes),
+  };
+}
 
-  return votes;
+function getTotalVotes(options: Options): number {
+  return options.reduce((totalVotes, next) => {
+    return totalVotes + next.votes.length;
+  }, 0);
 }
 
 function PollOptionComponent({
-  editor,
-  decoratorMap,
+  option,
   index,
   options,
   totalVotes,
-  updateTotalVotes,
+  withPollNode,
 }: {
-  decoratorMap: DecoratorMap,
-  editor: LexicalEditor,
   index: number,
-  options: DecoratorArray,
+  option: Option,
+  options: Options,
   totalVotes: number,
-  updateTotalVotes: () => void,
+  withPollNode: ((PollNode) => void) => void,
 }): React$Node {
-  // TODO we should try and avoid pulling in collab here
   const {clientID} = useCollaborationContext();
-  const [text, setText] = useLexicalDecoratorMap(decoratorMap, 'text', '');
-  const [votesArray] = useLexicalDecoratorMap(decoratorMap, 'votes', () =>
-    createDecoratorArray(editor),
-  );
   const checkboxRef = useRef(null);
+  const votesArray = option.votes;
   const checkedIndex = votesArray.indexOf(clientID);
   const checked = checkedIndex !== -1;
-  const votes = votesArray.getLength();
-
-  useEffect(() => {
-    return votesArray.observe(() => {
-      updateTotalVotes();
-    });
-  }, [updateTotalVotes, votesArray]);
+  const votes = votesArray.length;
+  const text = option.text;
 
   return (
     <div className="PollNode__optionContainer">
@@ -96,18 +88,15 @@ function PollOptionComponent({
         className={joinClasses(
           'PollNode__optionCheckboxWrapper',
           checked && 'PollNode__optionCheckboxChecked',
-        )}
-      >
+        )}>
         <input
           ref={checkboxRef}
           className="PollNode__optionCheckbox"
           type="checkbox"
           onChange={(e) => {
-            if (checked) {
-              votesArray.splice(checkedIndex, 1);
-            } else {
-              votesArray.push(clientID);
-            }
+            withPollNode((node) => {
+              node.toggleVote(option, clientID);
+            });
           }}
           checked={checked}
         />
@@ -124,19 +113,25 @@ function PollOptionComponent({
           className="PollNode__optionInput"
           type="text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            withPollNode((node) => {
+              node.setOptionText(option, e.target.value);
+            });
+          }}
           placeholder={`Option ${index + 1}`}
         />
       </div>
       <button
-        disabled={options.getLength() < 3}
+        disabled={options.length < 3}
         className={joinClasses(
           'PollNode__optionDelete',
-          options.getLength() < 3 && 'PollNode__optionDeleteDisabled',
+          options.length < 3 && 'PollNode__optionDeleteDisabled',
         )}
         arial-label="Remove"
         onClick={() => {
-          options.splice(index, 1);
+          withPollNode((node) => {
+            node.deleteOption(option);
+          });
         }}
       />
     </div>
@@ -144,52 +139,53 @@ function PollOptionComponent({
 }
 
 function PollComponent({
-  decoratorMap,
   question,
+  options,
+  nodeKey,
 }: {
-  decoratorMap: DecoratorMap,
+  nodeKey: NodeKey,
+  options: Options,
   question: string,
 }): React$Node {
   const [editor] = useLexicalComposerContext();
-  const [options] = useLexicalDecoratorMap(decoratorMap, 'options', () =>
-    createDecoratorArray(editor, [
-      createPollOptionMap(editor, ''),
-      createPollOptionMap(editor, ''),
-    ]),
-  );
-  const [totalVotes, setTotalVotes] = useState(() => getTotalVotes(options));
+  const totalVotes = useMemo(() => getTotalVotes(options), [options]);
 
-  const updateTotalVotes = useCallback(() => {
-    setTotalVotes(getTotalVotes(options));
-  }, [options]);
+  const withPollNode = useCallback(
+    (cb: (node: PollNode) => void): void => {
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isPollNode(node)) {
+          cb(node);
+        }
+      });
+    },
+    [editor, nodeKey],
+  );
+
+  const addOption = useCallback(() => {
+    withPollNode((node) => {
+      node.addOption(createPollOption());
+    });
+  }, [withPollNode]);
 
   return (
     <div className="PollNode__container">
       <h2 className="PollNode__heading">{question}</h2>
       {options.map((option, index) => {
-        // $FlowFixMe: need to revise type
-        const key: string = option.get('uid');
-        // $FlowFixMe: need to revise type
-        const decoratorMapForOption: DecoratorMap = option;
+        const key = option.uid;
         return (
           <PollOptionComponent
-            editor={editor}
             key={key}
-            decoratorMap={decoratorMapForOption}
+            withPollNode={withPollNode}
+            option={option}
             index={index}
             options={options}
             totalVotes={totalVotes}
-            updateTotalVotes={updateTotalVotes}
           />
         );
       })}
       <div className="PollNode__footer">
-        <Button
-          onClick={() => {
-            options.push(createPollOptionMap(editor, ''));
-          }}
-          small={true}
-        >
+        <Button onClick={addOption} small={true}>
           Add Option
         </Button>
       </div>
@@ -199,18 +195,61 @@ function PollComponent({
 
 export class PollNode extends DecoratorNode<React$Node> {
   __question: string;
+  __options: Options;
 
   static getType(): string {
     return 'poll';
   }
 
   static clone(node: PollNode): PollNode {
-    return new PollNode(node.__question, node.__state, node.__key);
+    return new PollNode(node.__question, node.__options, node.__key);
   }
 
-  constructor(question: string, state?: DecoratorMap, key?: NodeKey) {
-    super(state, key);
+  constructor(question: string, options?: Options, key?: NodeKey) {
+    super(key);
     this.__question = question;
+    this.__options = options || [createPollOption(), createPollOption()];
+  }
+
+  addOption(option: Option): void {
+    const self = this.getWritable();
+    const options = Array.from(self.__options);
+    options.push(option);
+    self.__options = options;
+  }
+
+  deleteOption(option: Option): void {
+    const self = this.getWritable();
+    const options = Array.from(self.__options);
+    const index = options.indexOf(option);
+    options.splice(index, 1);
+    self.__options = options;
+  }
+
+  setOptionText(option: Option, text: string): void {
+    const self = this.getWritable();
+    const clonedOption = cloneOption(option, text);
+    const options = Array.from(self.__options);
+    const index = options.indexOf(option);
+    options[index] = clonedOption;
+    self.__options = options;
+  }
+
+  toggleVote(option: Option, clientID: number): void {
+    const self = this.getWritable();
+    const votes = option.votes;
+    const votesClone = Array.from(votes);
+    const voteIndex = votes.indexOf(clientID);
+    if (voteIndex === -1) {
+      votesClone.push(clientID);
+    } else {
+      votesClone.splice(voteIndex, 1);
+    }
+    const clonedOption = cloneOption(option, option.text, votesClone);
+    const options = Array.from(self.__options);
+    const index = options.indexOf(option);
+    options[index] = clonedOption;
+    self.__options = options;
   }
 
   createDOM(): HTMLElement {
@@ -225,7 +264,11 @@ export class PollNode extends DecoratorNode<React$Node> {
 
   decorate(): React$Node {
     return (
-      <PollComponent question={this.__question} decoratorMap={this.__state} />
+      <PollComponent
+        question={this.__question}
+        options={this.__options}
+        nodeKey={this.__key}
+      />
     );
   }
 }

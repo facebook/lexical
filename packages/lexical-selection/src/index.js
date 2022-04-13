@@ -49,8 +49,6 @@ function $cloneWithProperties<T: LexicalNode>(node: T): T {
     clone.__style = latest.__style;
     clone.__mode = latest.__mode;
     clone.__detail = latest.__detail;
-  } else if ($isDecoratorNode(latest) && $isDecoratorNode(clone)) {
-    clone.__state = latest.__state;
   }
   // $FlowFixMe
   return clone;

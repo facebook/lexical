@@ -9,17 +9,11 @@
 
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
-import type {DecoratorMap, DecoratorNode, NodeKey, NodeMap} from 'lexical';
+import type {DecoratorNode, NodeKey, NodeMap} from 'lexical';
 import type {XmlElement} from 'yjs';
 
 import {$getNodeByKey, $isDecoratorNode} from 'lexical';
-import {Map as YMap} from 'yjs';
 
-import {
-  observeDecoratorMap,
-  syncLexicalDecoratorMapToYjs,
-  syncYjsDecoratorMapToLexical,
-} from './SyncDecoratorStates';
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
 export class CollabDecoratorNode {
@@ -78,9 +72,6 @@ export class CollabDecoratorNode {
   ): void {
     const prevLexicalNode = this.getPrevNode(prevNodeMap);
     const xmlElem = this._xmlElem;
-    const prevDecoratorMap: DecoratorMap | null =
-      prevLexicalNode === null ? null : prevLexicalNode.__state;
-    const nextDecoratorMap: DecoratorMap = nextLexicalNode.__state;
 
     syncPropertiesFromLexical(
       binding,
@@ -88,18 +79,6 @@ export class CollabDecoratorNode {
       prevLexicalNode,
       nextLexicalNode,
     );
-
-    // Handle bindings
-    if (prevDecoratorMap !== nextDecoratorMap) {
-      const yjsMap = new YMap();
-      xmlElem.insert(0, [yjsMap]);
-      // $FlowFixMe: internal field
-      yjsMap._lexicalValue = nextDecoratorMap;
-      // $FlowFixMe: internal field
-      yjsMap._collabNode = this;
-      syncLexicalDecoratorMapToYjs(binding, this, nextDecoratorMap, yjsMap);
-      observeDecoratorMap(binding, this, nextDecoratorMap, yjsMap);
-    }
   }
 
   syncPropertiesFromYjs(
@@ -111,17 +90,7 @@ export class CollabDecoratorNode {
       throw new Error('Should never happen');
     }
     const xmlElem = this._xmlElem;
-    // $FlowFixMe: should always be true
-    const yjsMap: YMap = xmlElem.firstChild;
-    const decoratorMap = lexicalNode.__state;
-    // $FlowFixMe: internal field
-    yjsMap._lexicalValue = decoratorMap;
-    // $FlowFixMe: internal field
-    yjsMap._collabNode = this;
-
     syncPropertiesFromYjs(binding, xmlElem, lexicalNode, keysChanged);
-    syncYjsDecoratorMapToLexical(binding, this, yjsMap, decoratorMap, null);
-    observeDecoratorMap(binding, this, decoratorMap, yjsMap);
   }
 
   destroy(binding: Binding): void {

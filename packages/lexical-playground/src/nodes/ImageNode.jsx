@@ -9,8 +9,6 @@
 
 import type {
   CommandListenerLowPriority,
-  DecoratorEditor,
-  DecoratorMap,
   EditorConfig,
   LexicalEditor,
   LexicalNode,
@@ -30,7 +28,6 @@ import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
-import useLexicalDecoratorMap from '@lexical/react/useLexicalDecoratorMap';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -38,7 +35,7 @@ import {
   $getSelection,
   $isNodeSelection,
   CLICK_COMMAND,
-  createDecoratorEditor,
+  createEditor,
   DecoratorNode,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
@@ -245,8 +242,7 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}
-        >
+          }}>
           Add Caption
         </button>
       )}
@@ -287,16 +283,16 @@ function ImageComponent({
   maxWidth,
   resizable,
   showCaption,
-  state,
+  caption,
 }: {
   altText: string,
+  caption: LexicalEditor,
   height: 'inherit' | number,
   maxWidth: number,
   nodeKey: NodeKey,
   resizable: boolean,
   showCaption: boolean,
   src: string,
-  state: DecoratorMap,
   width: 'inherit' | number,
 }): React.Node {
   const ref = useRef(null);
@@ -306,11 +302,6 @@ function ImageComponent({
   const {yjsDocMap} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
-  const [decoratorEditor] = useLexicalDecoratorMap<DecoratorEditor>(
-    state,
-    'caption',
-    () => createDecoratorEditor(),
-  );
   const [selection, setSelection] = useState(null);
 
   const onDelete = useCallback(
@@ -373,7 +364,7 @@ function ImageComponent({
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isImageNode(node)) {
-        node.setCaption(true);
+        node.setShowCaption(true);
       }
     });
   }, [editor, nodeKey]);
@@ -427,11 +418,7 @@ function ImageComponent({
         />
         {showCaption && (
           <div className="image-caption-container">
-            <LexicalNestedComposer
-              initialConfig={{
-                decoratorEditor: decoratorEditor,
-              }}
-            >
+            <LexicalNestedComposer initialEditor={caption}>
               <MentionsPlugin />
               <TablesPlugin />
               <TableCellActionMenuPlugin />
@@ -442,7 +429,7 @@ function ImageComponent({
               <KeywordsPlugin />
               {isCollab ? (
                 <CollaborationPlugin
-                  id={decoratorEditor.id}
+                  id={caption.getKey()}
                   providerFactory={createWebsocketProvider}
                   shouldBootstrap={true}
                 />
@@ -487,7 +474,8 @@ export class ImageNode extends DecoratorNode<React$Node> {
   __width: 'inherit' | number;
   __height: 'inherit' | number;
   __maxWidth: number;
-  __caption: boolean;
+  __showCaption: boolean;
+  __caption: LexicalEditor;
 
   static getType(): string {
     return 'image';
@@ -498,9 +486,9 @@ export class ImageNode extends DecoratorNode<React$Node> {
       node.__src,
       node.__altText,
       node.__maxWidth,
-      node.__state,
       node.__width,
       node.__height,
+      node.__showCaption,
       node.__caption,
       node.__key,
     );
@@ -510,19 +498,20 @@ export class ImageNode extends DecoratorNode<React$Node> {
     src: string,
     altText: string,
     maxWidth: number,
-    state?: DecoratorMap,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
-    caption?: boolean,
+    showCaption?: boolean,
+    caption?: LexicalEditor,
     key?: NodeKey,
   ) {
-    super(state, key);
+    super(key);
     this.__src = src;
     this.__altText = altText;
     this.__maxWidth = maxWidth;
     this.__width = width || 'inherit';
     this.__height = height || 'inherit';
-    this.__caption = caption || false;
+    this.__showCaption = showCaption || false;
+    this.__caption = caption || createEditor();
   }
 
   setWidthAndHeight(
@@ -534,9 +523,9 @@ export class ImageNode extends DecoratorNode<React$Node> {
     writable.__height = height;
   }
 
-  setCaption(caption: boolean): void {
+  setShowCaption(showCaption: boolean): void {
     const writable = this.getWritable();
-    writable.__caption = caption;
+    writable.__showCaption = showCaption;
   }
 
   // View
@@ -564,8 +553,8 @@ export class ImageNode extends DecoratorNode<React$Node> {
         height={this.__height}
         maxWidth={this.__maxWidth}
         nodeKey={this.getKey()}
-        state={this.__state}
-        showCaption={this.__caption}
+        showCaption={this.__showCaption}
+        caption={this.__caption}
         resizable={true}
       />
     );

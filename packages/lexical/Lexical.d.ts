@@ -552,104 +552,6 @@ export function $getPreviousSelection():
   | GridSelection;
 
 /**
- * Decorator State
- */
-export type DecoratorStateValue =
-  | DecoratorMap
-  | DecoratorEditor
-  | DecoratorArray
-  | null
-  | boolean
-  | number
-  | string;
-export declare class DecoratorEditor {
-  id: string;
-  editorState: null | EditorState | string;
-  editor: null | LexicalEditor;
-  constructor(id?: string, editorState?: string | EditorState);
-  init(editor: LexicalEditor): void;
-  set(editor: LexicalEditor): void;
-  toJSON(): $ReadOnly<{
-    id: string;
-    type: 'editor';
-    editorState: null | string;
-  }>;
-  isEmpty(): boolean;
-}
-export type DecoratorMapObserver = (
-  key: string,
-  value: DecoratorStateValue,
-) => void;
-export type DecoratorArrayObserver = (
-  index: number,
-  delCont: number,
-  value: void | DecoratorStateValue,
-) => void;
-export declare class DecoratorMap {
-  _editor: LexicalEditor;
-  _map: Map<string, DecoratorStateValue>;
-  constructor(editor: LexicalEditor, map?: Map<string, DecoratorStateValue>);
-  get(key: string): void | DecoratorStateValue;
-  has(key: string): boolean;
-  set(key: string, value: DecoratorStateValue): void;
-  observe(observer: DecoratorMapObserver): () => void;
-  destroy(): void;
-  toJSON(): {
-    type: 'map';
-    map: Array<[string, DecoratorStateValue]>;
-  };
-}
-export function createDecoratorEditor(
-  id?: string,
-  editorState?: string | EditorState,
-): DecoratorEditor;
-export function isDecoratorEditor(obj: unknown | null | undefined): boolean;
-export function createDecoratorMap(
-  editor: LexicalEditor,
-  map?: Map<string, DecoratorStateValue>,
-): DecoratorMap;
-export function isDecoratorMap(obj: unknown | null | undefined): boolean;
-export declare class DecoratorArray {
-  _editor: LexicalEditor;
-  _observers: Set<DecoratorArrayObserver>;
-  _array: Array<DecoratorStateValue>;
-  constructor(editor: LexicalEditor, array?: Array<DecoratorStateValue>);
-  observe(observer: DecoratorArrayObserver): () => void;
-  map<V>(
-    fn: (
-      arg0: DecoratorStateValue,
-      arg1: number,
-      arg2: Array<DecoratorStateValue>,
-    ) => V,
-  ): Array<V>;
-  reduce(
-    fn: (
-      arg0: DecoratorStateValue,
-      arg1: DecoratorStateValue,
-    ) => DecoratorStateValue,
-    initial?: DecoratorStateValue,
-  ): DecoratorStateValue | void;
-  push(value: DecoratorStateValue): void;
-  getLength(): number;
-  splice(
-    insertIndex: number,
-    delCount: number,
-    value?: DecoratorStateValue,
-  ): void;
-  indexOf(value: DecoratorStateValue): number;
-  destroy(): void;
-  toJSON(): {
-    type: 'array';
-    array: Array<DecoratorStateValue>;
-  };
-}
-export function createDecoratorArray(
-  editor: LexicalEditor,
-  list?: Array<DecoratorStateValue>,
-): DecoratorArray;
-export function isDecoratorArray(x?: unknown): boolean;
-
-/**
  * LexicalTextNode
  */
 export type TextFormatType =
@@ -811,8 +713,7 @@ export function $isElementNode(node: LexicalNode | null | undefined): boolean;
  * LexicalDecoratorNode
  */
 export declare class DecoratorNode<X> extends LexicalNode {
-  __state: DecoratorMap;
-  constructor(state?: DecoratorMap, key?: NodeKey);
+  constructor(key?: NodeKey);
   decorate(editor: LexicalEditor): X;
   isIsolated(): boolean;
 }

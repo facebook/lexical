@@ -14,7 +14,7 @@ Here are some examples of what you can do with Lexical:
 
 ## Getting started with React
 
-> Note: Lexical is not only limited to React. Lexical can support any underling DOM based library once bindings for that library have been created.
+> Note: Lexical is not only limited to React. Lexical can support any underlying DOM based library once bindings for that library have been created.
 
 Install `lexical` and `@lexical/react`:
 

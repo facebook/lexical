@@ -38,7 +38,9 @@ function App(): React$Node {
     <LexicalComposer initialConfig={initialConfig}>
       <SharedHistoryContext>
         <header>
-          <img src={logo} alt="Lexical Logo" />
+          <a href="https://lexical.dev" target="_blank" rel="noopener">
+            <img src={logo} alt="Lexical Logo" />
+          </a>
         </header>
         <div className="editor-shell">
           <Editor />

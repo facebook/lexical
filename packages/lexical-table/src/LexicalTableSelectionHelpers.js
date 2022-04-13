@@ -194,12 +194,6 @@ export function applyTableHandlers(
         const direction = 'down';
 
         if ($isRangeSelection(selection)) {
-          if (isRangeSelectionHijacked) {
-            // const nextSibling = tableNode.getNextSibling();
-            // nextSibling
-            // return;
-          }
-
           if (selection.isCollapsed()) {
             const tableCellNode = $findMatchingParent(
               selection.anchor.getNode(),

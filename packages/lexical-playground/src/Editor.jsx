@@ -20,6 +20,8 @@ import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcu
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
+import {$createHeadingNode} from '@lexical/rich-text';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import * as React from 'react';
 import {useRef} from 'react';
 
@@ -54,6 +56,34 @@ import Placeholder from './ui/Placeholder';
 const skipCollaborationInit =
   window.parent != null && window.parent.frames.right === window;
 
+function prepopulatedRichText() {
+  const root = $getRoot();
+  if (root.getFirstChild() === null) {
+    const heading = $createHeadingNode('h1');
+    heading.append($createTextNode('Welcome to the playground'));
+    root.append(heading);
+    const paragraph = $createParagraphNode();
+    paragraph.append(
+      $createTextNode('This is an '),
+      $createTextNode('example').toggleFormat('bold'),
+      $createTextNode(' editor component built with '),
+      $createTextNode('@lexical/react').toggleFormat('code'),
+      $createTextNode('.'),
+      $createTextNode(' Try writing in some text with '),
+      $createTextNode('different').toggleFormat('italic'),
+      $createTextNode(' formats.'),
+    );
+    root.append(paragraph);
+    const paragraph2 = $createParagraphNode();
+    paragraph2.append(
+      $createTextNode(
+        'Make sure to check out the various plugins in the toolbar. You can also use #hashtags or @-mentions too!',
+      ),
+    );
+    root.append(paragraph2);
+  }
+}
+
 export default function Editor(): React$Node {
   const {historyState} = useSharedHistoryContext();
   const {
@@ -64,6 +94,7 @@ export default function Editor(): React$Node {
       isCharLimitUtf8,
       isRichText,
       showTreeView,
+      emptyEditor,
     },
   } = useSettings();
   const text = isCollab
@@ -81,8 +112,7 @@ export default function Editor(): React$Node {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}
-        ref={scrollRef}
-      >
+        ref={scrollRef}>
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />
@@ -110,7 +140,9 @@ export default function Editor(): React$Node {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              initialEditorState={isCollab ? null : undefined}
+              initialEditorState={
+                isCollab ? null : emptyEditor ? undefined : prepopulatedRichText
+              }
             />
             <LexicalMarkdownShortcutPlugin />
             <CodeHighlightPlugin />

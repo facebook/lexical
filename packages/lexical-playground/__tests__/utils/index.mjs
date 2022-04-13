@@ -33,6 +33,7 @@ export async function initialize({
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
+  appSettings.emptyEditor = true;
   appSettings.disableBeforeInput = LEGACY_EVENTS;
   if (isCollab) {
     appSettings.isCollab = isCollab;

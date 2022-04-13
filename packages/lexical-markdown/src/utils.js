@@ -12,6 +12,7 @@ import type {
   DecoratorNode,
   ElementNode,
   LexicalEditor,
+  LexicalNode,
   NodeKey,
   RangeSelection,
   TextFormatType,
@@ -19,7 +20,7 @@ import type {
 
 import {$createCodeNode} from '@lexical/code';
 import {TOGGLE_LINK_COMMAND} from '@lexical/link';
-import {$createListItemNode, $createListNode} from '@lexical/list';
+import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
   $findNodeWithOffsetFromJoinedText,
@@ -77,6 +78,7 @@ export type MarkdownFormatKind =
   | 'horizontalRule'
   // PostComposer Todo add inline code much like 'bold' works. | 'inline_code'
   | 'bold'
+  | 'code'
   | 'italic'
   | 'underline'
   | 'strikethrough'
@@ -212,15 +214,15 @@ const markdownBlockQuote: MarkdownCriteria = {
 const markdownUnorderedListDash: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphUnorderedList',
-  regEx: /^(?:- )/,
-  regExForAutoFormatting: /^(?:- )/,
+  regEx: /^(\s{0,10})(?:- )/,
+  regExForAutoFormatting: /^(\s{0,10})(?:- )/,
 };
 
 const markdownUnorderedListAsterisk: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphUnorderedList',
-  regEx: /^(?:\* )/,
-  regExForAutoFormatting: /^(?:\* )/,
+  regEx: /^(\s{0,10})(?:\* )/,
+  regExForAutoFormatting: /^(\s{0,10})(?:\* )/,
 };
 
 const markdownCodeBlock: MarkdownCriteria = {
@@ -233,8 +235,8 @@ const markdownCodeBlock: MarkdownCriteria = {
 const markdownOrderedList: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphOrderedList',
-  regEx: /^(\d+)\.\s/,
-  regExForAutoFormatting: /^(\d+)\.\s/,
+  regEx: /^(\s{0,10})(\d+)\.\s/,
+  regExForAutoFormatting: /^(\s{0,10})(\d+)\.\s/,
 };
 
 const markdownHorizontalRule: MarkdownCriteria = {
@@ -249,6 +251,13 @@ const markdownHorizontalRuleUsingDashes: MarkdownCriteria = {
   markdownFormatKind: 'horizontalRule',
   regEx: /^(?:---)$/,
   regExForAutoFormatting: /^(?:--- )/,
+};
+
+const markdownInlineCode: MarkdownCriteria = {
+  ...autoFormatBase,
+  markdownFormatKind: 'code',
+  regEx: /(`)([^`]*)(`)/,
+  regExForAutoFormatting: /(`)(\s*\b)([^`]*)(\b\s*)(`)(\s)$/,
 };
 
 const markdownItalic: MarkdownCriteria = {
@@ -343,6 +352,7 @@ export const allMarkdownCriteriaForTextNodes: MarkdownCriteriaArray = [
   markdownStrikethroughBold,
 
   // Individuals
+  markdownInlineCode,
   markdownItalic,
   markdownBold,
   markdownBold2,
@@ -581,15 +591,15 @@ function getNewNodeForCriteria<T>(
         return {newNode, shouldDelete};
       }
       case 'paragraphUnorderedList': {
-        // PostComposer Todo: obtain prior list and append to it.
-        newNode = $createListNode('ul');
-        const listItem = $createListItemNode();
-        listItem.append(...children);
-        newNode.append(listItem);
-        return {newNode, shouldDelete};
+        createListOrMergeWithPrevious(
+          element,
+          children,
+          patternMatchResults,
+          'ul',
+        );
+        return {newNode: null, shouldDelete: false};
       }
       case 'paragraphOrderedList': {
-        // PostComposer Todo: obtain prior list and append to it.
         const startAsString =
           patternMatchResults.regExCaptureGroups.length > 1
             ? patternMatchResults.regExCaptureGroups[
@@ -600,16 +610,17 @@ function getNewNodeForCriteria<T>(
         // For conversion, don't use start number.
         // For short-cuts aka autoFormatting, use start number.
         // Later, this should be surface dependent and externalized.
-        if (scanningContext.isAutoFormatting) {
-          const start = parseInt(startAsString, 10);
-          newNode = $createListNode('ol', start);
-        } else {
-          newNode = $createListNode('ol');
-        }
-        const listItem = $createListItemNode();
-        listItem.append(...children);
-        newNode.append(listItem);
-        return {newNode, shouldDelete};
+        const start = scanningContext.isAutoFormatting
+          ? parseInt(startAsString, 10)
+          : undefined;
+        createListOrMergeWithPrevious(
+          element,
+          children,
+          patternMatchResults,
+          'ol',
+          start,
+        );
+        return {newNode: null, shouldDelete: false};
       }
       case 'paragraphCodeBlock': {
         // Toggle code and paragraph nodes.
@@ -685,6 +696,34 @@ function getNewNodeForCriteria<T>(
   }
 
   return {newNode, shouldDelete};
+}
+
+function createListOrMergeWithPrevious(
+  element: ElementNode,
+  children: Array<LexicalNode>,
+  patternMatchResults: PatternMatchResults,
+  tag: 'ol' | 'ul',
+  start?: number,
+): void {
+  const listItem = $createListItemNode();
+  const indentMatch =
+    patternMatchResults.regExCaptureGroups[0].text.match(/^\s*/);
+  const indent = indentMatch ? Math.floor(indentMatch[0].length / 4) : 0;
+  listItem.append(...children);
+  // Checking if previous element is a list, and if so append
+  // new list item inside instead of creating new list
+  const prevElement = element.getPreviousSibling();
+  if ($isListNode(prevElement) && prevElement.getTag() === tag) {
+    prevElement.append(listItem);
+    element.remove();
+  } else {
+    const list = $createListNode(tag, start);
+    list.append(listItem);
+    element.replace(list);
+  }
+  if (indent) {
+    listItem.setIndent(indent);
+  }
 }
 
 export function transformTextNodeForElementNode<T>(
@@ -857,6 +896,7 @@ function getTextFormatType(
     case 'bold':
     case 'underline':
     case 'strikethrough':
+    case 'code':
       return [markdownFormatKind];
     case 'strikethrough_italic_bold': {
       return ['strikethrough', 'italic', 'bold'];

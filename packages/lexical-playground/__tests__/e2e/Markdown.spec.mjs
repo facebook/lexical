@@ -12,9 +12,11 @@ import {
   assertSelection,
   click,
   focusEditor,
+  html,
   initialize,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
+  pasteFromClipboard,
   repeat,
   test,
 } from '../utils/index.mjs';
@@ -316,12 +318,74 @@ test.describe('Markdown', () => {
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);
-
-    await page.keyboard.type('# Heading');
+    const text = [
+      '# Heading',
+      '- unordered list',
+      '    - nested',
+      '1. ordered list',
+      '    1. nested',
+    ].join('\n');
+    await pasteFromClipboard(page, {
+      'text/plain': text,
+    });
     await click(page, 'i.markdown');
 
-    const html =
-      '<h1 class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Heading</span></h1>';
-    await assertHTML(page, html);
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr"
+        >
+          <span data-lexical-text="true">Heading</span>
+        </h1>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1"
+          >
+            <span data-lexical-text="true">unordered list</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2"
+          >
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1"
+              >
+                <span data-lexical-text="true">nested</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1"
+          >
+            <span data-lexical-text="true">ordered list</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="2"
+          >
+            <ol class="PlaygroundEditorTheme__ol2">
+              <li
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1"
+              >
+                <span data-lexical-text="true">nested</span>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      `,
+    );
   });
 });

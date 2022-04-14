@@ -18,3 +18,16 @@ e2e-screenshots
 test-results
 
 npm-debug.log*
+/.eslintignore
+/.eslintrc.js
+/babel.config.js
+/dangerfile.js
+/.prettierignore
+/.prettierrc.js
+/.watchmanconfig
+/.lintstagedrc.js
+/playwright.config.js
+/jest.config.js
+/.flowconfig
+/.husky
+/.vscode

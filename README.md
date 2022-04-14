@@ -31,9 +31,9 @@ import {useEffect} from 'react';
 import LexicalComposer from '@lexical/react/LexicalComposer';
 import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 
 const theme = {
   // Theme styling goes here

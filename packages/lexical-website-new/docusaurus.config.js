@@ -119,7 +119,7 @@ const config = {
           {
             label: 'Playground',
             position: 'left',
-            to: 'https://lexical-playground.vercel.app/',
+            to: 'https://playground.lexical.dev/',
           },
           {
             docId: 'intro',

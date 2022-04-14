@@ -523,3 +523,23 @@ export async function insertTable(page) {
     'div[data-test-id="table-model-confirm-insert"] > .Button__root',
   );
 }
+
+export async function enableCompositionKeyEvents(page) {
+  const targetPage = IS_COLLAB ? await page.frame('left') : page;
+  await targetPage.evaluate(() => {
+    window.addEventListener(
+      'compositionstart',
+      () => {
+        document.activeElement.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            bubbles: true,
+            cancelable: true,
+            key: 'Unidentified',
+            keyCode: 220,
+          }),
+        );
+      },
+      true,
+    );
+  });
+}

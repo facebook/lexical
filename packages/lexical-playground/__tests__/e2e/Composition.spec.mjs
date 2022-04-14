@@ -10,6 +10,7 @@ import {moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
+  enableCompositionKeyEvents,
   focusEditor,
   html,
   initialize,
@@ -185,6 +186,7 @@ test.describe('Composition', () => {
       test.skip(browserName === 'firefox');
 
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
@@ -227,6 +229,7 @@ test.describe('Composition', () => {
       test.skip(browserName === 'firefox');
 
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.down('Shift');
       await page.keyboard.press('Enter');
@@ -283,6 +286,7 @@ test.describe('Composition', () => {
       test.skip(browserName === 'firefox' || isPlainText);
 
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('Hello');
 
@@ -328,6 +332,7 @@ test.describe('Composition', () => {
     }) => {
       test.skip(browserName === 'firefox');
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.type(':):)');
 
@@ -440,6 +445,7 @@ test.describe('Composition', () => {
       test.skip(browserName === 'firefox');
 
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('Luke');
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -495,6 +501,7 @@ test.describe('Composition', () => {
       test.skip(browserName === 'firefox');
 
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('Luke');
       await waitForSelector(page, '#mentions-typeahead ul li');
@@ -547,6 +554,7 @@ test.describe('Composition', () => {
       test.skip(browserName === 'firefox');
 
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('#');
 
@@ -625,6 +633,7 @@ test.describe('Composition', () => {
       test.skip(browserName === 'firefox');
 
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);

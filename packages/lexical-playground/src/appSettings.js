@@ -21,9 +21,14 @@ export type SettingName =
 
 export type Settings = {[SettingName]: boolean};
 
+const hostName = window.location.hostname;
+export const isDevPlayground: boolean =
+  hostName !== 'playground.lexical.dev' &&
+  hostName !== 'lexical-playground.vercel.app';
+
 export const DEFAULT_SETTINGS: Settings = {
   disableBeforeInput: false,
-  emptyEditor: false,
+  emptyEditor: isDevPlayground,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,
@@ -33,9 +38,3 @@ export const DEFAULT_SETTINGS: Settings = {
   showNestedEditorTreeView: false,
   showTreeView: true,
 };
-
-const hostName = window.location.hostname;
-
-export const isDevPlayground: boolean =
-  hostName !== 'playground.lexical.dev' &&
-  hostName !== 'lexical-playground.vercel.app';

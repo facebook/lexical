@@ -17,6 +17,6 @@ type Props = {
     theme?: EditorThemeClasses;
     onError: (error: Error, editor: LexicalEditor) => void;
   };
-  children: JSX.Element | null;
+  children: JSX.Element | JSX.Element[] | null;
 };
 export default function LexicalComposer(arg0: Props): JSX.Element | null;

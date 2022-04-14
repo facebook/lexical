@@ -71,6 +71,8 @@ export type MarkdownFormatKind =
   | 'paragraphH1'
   | 'paragraphH2'
   | 'paragraphH3'
+  | 'paragraphH4'
+  | 'paragraphH5'
   | 'paragraphBlockQuote'
   | 'paragraphUnorderedList'
   | 'paragraphOrderedList'
@@ -199,11 +201,24 @@ const markdownHeader2: MarkdownCriteria = {
 
 const markdownHeader3: MarkdownCriteria = {
   ...paragraphStartBase,
-  markdownFormatKind: 'paragraphH2',
+  markdownFormatKind: 'paragraphH3',
   regEx: /^(?:### )/,
   regExForAutoFormatting: /^(?:### )/,
 };
 
+const markdownHeader4: MarkdownCriteria = {
+  ...paragraphStartBase,
+  markdownFormatKind: 'paragraphH4',
+  regEx: /^(?:#### )/,
+  regExForAutoFormatting: /^(?:#### )/,
+};
+
+const markdownHeader5: MarkdownCriteria = {
+  ...paragraphStartBase,
+  markdownFormatKind: 'paragraphH5',
+  regEx: /^(?:##### )/,
+  regExForAutoFormatting: /^(?:##### )/,
+};
 const markdownBlockQuote: MarkdownCriteria = {
   ...paragraphStartBase,
   markdownFormatKind: 'paragraphBlockQuote',
@@ -366,6 +381,8 @@ export const allMarkdownCriteria: MarkdownCriteriaArray = [
   markdownHeader1,
   markdownHeader2,
   markdownHeader3,
+  markdownHeader4,
+  markdownHeader5,
   markdownBlockQuote,
   markdownUnorderedListDash,
   markdownUnorderedListAsterisk,
@@ -582,6 +599,16 @@ function getNewNodeForCriteria<T>(
       }
       case 'paragraphH3': {
         newNode = $createHeadingNode('h3');
+        newNode.append(...children);
+        return {newNode, shouldDelete};
+      }
+      case 'paragraphH4': {
+        newNode = $createHeadingNode('h4');
+        newNode.append(...children);
+        return {newNode, shouldDelete};
+      }
+      case 'paragraphH5': {
+        newNode = $createHeadingNode('h5');
         newNode.append(...children);
         return {newNode, shouldDelete};
       }

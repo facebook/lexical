@@ -38,7 +38,7 @@ Editor States are also fully serializable to JSON and can easily be serialized b
 When you want to change something in an Editor State, you must do it via an update, `editor.update(() => {...})`. The closure passed
 to the update call is important. It's a place where you have full "lexical" context of the active editor state, and it exposes
 access to the underling Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
-where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropiate error.
+where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropriate error.
 For those familiar with React Hooks, you can think of these has having a similar functionality (except `$` functions can be used in any order).
 
 ### DOM Reconciler

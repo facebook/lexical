@@ -52,7 +52,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from '.';
-import {DOM_ELEMENT_TYPE} from './LexicalConstants';
+import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -139,12 +139,14 @@ function onSelectionChange(
     const {anchorNode, focusNode} = domSelection;
     // If native DOM selection is on a DOM element, then
     // we should continue as usual, as Lexical's selection
-    // may have normalized to a better child.
+    // may have normalized to a better child. If the DOM
+    // element is a text node, we can safely apply this
+    // optimization and skip the selection change entirely.
     if (
       anchorNode !== null &&
       focusNode !== null &&
-      anchorNode.nodeType !== DOM_ELEMENT_TYPE &&
-      focusNode.nodeType !== DOM_ELEMENT_TYPE
+      anchorNode.nodeType === DOM_TEXT_TYPE &&
+      focusNode.nodeType === DOM_TEXT_TYPE
     ) {
       return;
     }

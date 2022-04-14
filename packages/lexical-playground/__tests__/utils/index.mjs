@@ -486,6 +486,7 @@ export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
     .format(output, {
       attributeGroups: ['$DEFAULT', '^data-'],
       attributeSort: 'ASC',
+      bracketSameLine: true,
       htmlWhitespaceSensitivity: 'ignore',
       parser: 'html',
     })

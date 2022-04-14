@@ -45,8 +45,7 @@ const entries = [
   ['Squid', '0,220,255'],
 ];
 
-const randomEntry =
-  entries[Math.floor(Math.random() * (entries.length - 1 - 0 + 1) + 0)];
+const randomEntry = entries[Math.floor(Math.random() * entries.length)];
 
 export function CollaborationPlugin({
   id,

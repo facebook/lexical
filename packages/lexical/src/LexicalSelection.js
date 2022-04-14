@@ -1113,7 +1113,6 @@ export class RangeSelection implements BaseSelection {
 
     const firstNode = nodes[0];
     let didReplaceOrMerge = false;
-    let lastNodeInserted = null;
 
     // Time to insert the nodes!
     for (let i = 0; i < nodes.length; i++) {
@@ -1179,13 +1178,11 @@ export class RangeSelection implements BaseSelection {
             const childrenLength = children.length;
             if ($isElementNode(target)) {
               for (let s = 0; s < childrenLength; s++) {
-                lastNodeInserted = children[s];
-                target.append(lastNodeInserted);
+                target.append(children[s]);
               }
             } else {
               for (let s = childrenLength - 1; s >= 0; s--) {
-                lastNodeInserted = children[s];
-                target.insertAfter(lastNodeInserted);
+                target.insertAfter(children[s]);
               }
               target = target.getParentOrThrow();
             }
@@ -1214,7 +1211,6 @@ export class RangeSelection implements BaseSelection {
       }
       didReplaceOrMerge = false;
       if ($isElementNode(target)) {
-        lastNodeInserted = node;
         if ($isDecoratorNode(node) && node.isTopLevel()) {
           target = target.insertAfter(node);
         } else if (!$isElementNode(node)) {
@@ -1245,7 +1241,6 @@ export class RangeSelection implements BaseSelection {
         !$isElementNode(node) ||
         ($isDecoratorNode(target) && target.isTopLevel())
       ) {
-        lastNodeInserted = node;
         target = target.insertAfter(node);
       } else {
         target = node.getParentOrThrow();
@@ -1271,11 +1266,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     if ($isElementNode(target)) {
-      // If the last node to be inserted was a text node,
-      // then we should attempt to move selection to that.
-      const lastChild = $isTextNode(lastNodeInserted)
-        ? lastNodeInserted
-        : target.getLastDescendant();
+      const lastChild = target.getLastDescendant();
       if (!selectStart) {
         // Handle moving selection to end for elements
         if (lastChild === null) {
@@ -1345,17 +1336,23 @@ export class RangeSelection implements BaseSelection {
       const textContent = anchorNode.getTextContent();
       const textContentLength = textContent.length;
       currentElement = anchorNode.getParentOrThrow();
-
       if (anchorOffset === 0) {
         nodesToMove.push(anchorNode);
-      } else if (anchorOffset !== textContentLength) {
-        if (currentElement.isInline()) {
+      } else {
+        const isInline = currentElement.isInline();
+        if (isInline) {
+          // For inline nodes, we want to move all the siblings to the new paragraph
+          // if selection is at the end, we just move the siblings. Otherwise, we also
+          // split the text node and add that below.
           nodesToMove = currentElement.getNextSiblings().reverse();
-        } else {
-          nodesToMove = anchorNode.getNextSiblings().reverse();
         }
-        const [, splitNode] = anchorNode.splitText(anchorOffset);
-        nodesToMove.push(splitNode);
+        if (anchorOffset !== textContentLength) {
+          if (!isInline) {
+            nodesToMove = anchorNode.getNextSiblings().reverse();
+          }
+          const [, splitNode] = anchorNode.splitText(anchorOffset);
+          nodesToMove.push(splitNode);
+        }
       }
     } else {
       currentElement = anchor.getNode();
@@ -1396,11 +1393,13 @@ export class RangeSelection implements BaseSelection {
           const nodeToMove = nodesToMove[i];
           if (firstChild === null) {
             if (isInline) {
+              // For inline nodes, we start with the nodes that were previously in the parent
               newElement?.getParentOrThrow().append(nodeToMove);
             } else {
               newElement.append(nodeToMove);
             }
           } else if (isInline && i === nodesToMoveLength - 1) {
+            // The last node is the split text child of the inline node.
             newElement.append(nodeToMove);
           } else {
             firstChild.insertBefore(nodeToMove);

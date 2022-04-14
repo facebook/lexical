@@ -524,17 +524,21 @@ export async function insertTable(page) {
 }
 
 export async function enableCompositionKeyEvents(page) {
-  await page.evaluate(() => {
-    const activeElement = document.activeElement;
-    if (activeElement) {
-      activeElement.addEventListener('compositionstart', () => {
-        activeElement.dispatchEvent(new KeyboardEvent('keydown', {
-          bubbles: true,
-          cancelable: true,
-          key: 'Unidentified',
-          keyCode: 220,
-        }));
-      }, true)
-    }
+  const targetPage = IS_COLLAB ? await page.frame('left') : page;
+  await targetPage.evaluate(() => {
+    window.addEventListener(
+      'compositionstart',
+      () => {
+        document.activeElement.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            bubbles: true,
+            cancelable: true,
+            key: 'Unidentified',
+            keyCode: 220,
+          }),
+        );
+      },
+      true,
+    );
   });
 }

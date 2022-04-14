@@ -1344,12 +1344,16 @@ export class RangeSelection implements BaseSelection {
       const anchorNode = anchor.getNode();
       const textContent = anchorNode.getTextContent();
       const textContentLength = textContent.length;
-      nodesToMove = anchorNode.getNextSiblings().reverse();
       currentElement = anchorNode.getParentOrThrow();
 
       if (anchorOffset === 0) {
         nodesToMove.push(anchorNode);
       } else if (anchorOffset !== textContentLength) {
+        if (currentElement.isInline()) {
+          nodesToMove = currentElement.getNextSiblings().reverse();
+        } else {
+          nodesToMove = anchorNode.getNextSiblings().reverse();
+        }
         const [, splitNode] = anchorNode.splitText(anchorOffset);
         nodesToMove.push(splitNode);
       }
@@ -1368,6 +1372,12 @@ export class RangeSelection implements BaseSelection {
       }
       nodesToMove = currentElement.getChildren().slice(anchorOffset).reverse();
     }
+    if (anchorOffset === 0 && nodesToMove.length > 0) {
+      if (currentElement.isInline()) {
+        currentElement.getParentOrThrow().insertBefore($createParagraphNode());
+        return;
+      }
+    }
     const newElement = currentElement.insertNewAfter(this);
     if (newElement === null) {
       // Handle as a line break insertion
@@ -1380,11 +1390,17 @@ export class RangeSelection implements BaseSelection {
         return;
       }
       let firstChild = null;
-
+      const isInline = newElement.isInline();
       if (nodesToMoveLength !== 0) {
         for (let i = 0; i < nodesToMoveLength; i++) {
           const nodeToMove = nodesToMove[i];
           if (firstChild === null) {
+            if (isInline) {
+              newElement?.getParentOrThrow().append(nodeToMove);
+            } else {
+              newElement.append(nodeToMove);
+            }
+          } else if (isInline && i === nodesToMoveLength - 1) {
             newElement.append(nodeToMove);
           } else {
             firstChild.insertBefore(nodeToMove);

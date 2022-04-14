@@ -708,7 +708,7 @@ function handleShiftLines(
 ): boolean {
   // We only care about the alt+arrow keys
   const selection = $getSelection();
-  if (!event.altKey || !$isRangeSelection(selection)) {
+  if (!$isRangeSelection(selection)) {
     return false;
   }
 
@@ -719,11 +719,44 @@ function handleShiftLines(
   const focusOffset = focus.offset;
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
+  const arrowIsUp = type === KEY_ARROW_UP_COMMAND;
 
   // Ensure the selection is within the codeblock
   if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
     return false;
   }
+  if (!event.altKey) {
+    // Handle moving selection out of the code block, given there are no
+    // sibling thats can natively take the selection.
+    if (selection.isCollapsed()) {
+      const codeNode = anchorNode.getParentOrThrow();
+      if (
+        arrowIsUp &&
+        anchorOffset === 0 &&
+        anchorNode.getPreviousSibling() === null
+      ) {
+        const codeNodeSibling = codeNode.getPreviousSibling();
+        if (codeNodeSibling === null) {
+          codeNode.selectPrevious();
+          event.preventDefault();
+          return true;
+        }
+      } else if (
+        !arrowIsUp &&
+        anchorOffset === anchorNode.getTextContentSize() &&
+        anchorNode.getNextSibling() === null
+      ) {
+        const codeNodeSibling = codeNode.getNextSibling();
+        if (codeNodeSibling === null) {
+          codeNode.selectNext();
+          event.preventDefault();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   const start = getFirstCodeHighlightNodeOfLine(anchorNode);
   const end = getLastCodeHighlightNodeOfLine(focusNode);
   if (start == null || end == null) {
@@ -744,7 +777,6 @@ function handleShiftLines(
   event.preventDefault();
   event.stopPropagation(); // required to stop cursor movement under Firefox
 
-  const arrowIsUp = type === KEY_ARROW_UP_COMMAND;
   const linebreak = arrowIsUp
     ? start.getPreviousSibling()
     : end.getNextSibling();

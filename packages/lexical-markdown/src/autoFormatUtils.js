@@ -32,6 +32,7 @@ import {
   getAllMarkdownCriteriaForTextNodes,
   getAllTriggers,
   getInitialScanningContext,
+  getParentElementNodeOrThrow,
   getPatternMatchResultsForCriteria,
   getTextNodeWithOffsetOrThrow,
   transformTextNodeForMarkdownCriteria,
@@ -93,6 +94,7 @@ function getCriteriaWithPatternMatchResults(
       const patternMatchResults = getPatternMatchResultsForCriteria(
         markdownCriteria,
         scanningContext,
+        getParentElementNodeOrThrow(scanningContext),
       );
       if (patternMatchResults != null) {
         return {

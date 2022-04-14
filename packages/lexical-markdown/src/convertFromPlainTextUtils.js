@@ -33,6 +33,7 @@ import {
   getAllMarkdownCriteriaForTextNodes,
   getCodeBlockCriteria,
   getInitialScanningContext,
+  getParentElementNodeOrThrow,
   getPatternMatchResultsForCodeBlock,
   getPatternMatchResultsForCriteria,
   resetScanningContext,
@@ -193,6 +194,7 @@ function convertParagraphLevelMarkdown<T>(
         const patternMatchResults = getPatternMatchResultsForCriteria(
           criteria,
           scanningContext,
+          getParentElementNodeOrThrow(scanningContext),
         );
         if (patternMatchResults != null) {
           scanningContext.markdownCriteria = criteria;
@@ -254,8 +256,8 @@ function convertMarkdownForTextCriteria<T>(
   const allCriteria = getAllMarkdownCriteriaForTextNodes();
   const count = allCriteria.length;
 
-  const textContent = elementNode.getTextContent();
-  let done = textContent.length > 0;
+  let textContent = elementNode.getTextContent();
+  let done = textContent.length === 0;
   let startIndex = 0;
   while (!done) {
     done = true;
@@ -278,6 +280,7 @@ function convertMarkdownForTextCriteria<T>(
       const patternMatchResults = getPatternMatchResultsForCriteria(
         criteria,
         scanningContext,
+        elementNode,
       );
 
       if (patternMatchResults != null) {
@@ -305,6 +308,7 @@ function convertMarkdownForTextCriteria<T>(
         }
 
         // The text was changed. Perhaps there is another hit for the same criteria.
+        textContent = currentTextContent;
         startIndex = i;
         done = false;
         break;

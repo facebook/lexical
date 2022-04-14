@@ -466,28 +466,53 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   codeElement.setAttribute('data-gutter', gutter);
 }
 
+// Using `skipTransforms` to prevent extra transforms since reformatting the code
+// will not affect code block content itself.
+//
+// Using extra flag (`isHighlighting`) since both CodeNode and CodeHighlightNode
+// trasnforms might be called at the same time (e.g. new CodeHighlight node inserted) and
+// in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
+// Especially when pasting code into CodeBlock.
+let isHighlighting = false;
 function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
+  if (isHighlighting) {
+    return;
+  }
+  isHighlighting = true;
   // When new code block inserted it might not have language selected
   if (node.getLanguage() === undefined) {
     node.setLanguage(DEFAULT_CODE_LANGUAGE);
   }
 
-  updateAndRetainSelection(node, () => {
-    const code = node.getTextContent();
-    const tokens = Prism.tokenize(
-      code,
-      Prism.languages[node.getLanguage() || ''] ||
-        Prism.languages[DEFAULT_CODE_LANGUAGE],
-    );
-    const highlightNodes = getHighlightNodes(tokens);
-    const diffRange = getDiffRange(node.getChildren(), highlightNodes);
-    const {from, to, nodesForReplacement} = diffRange;
-    if (from !== to || nodesForReplacement.length) {
-      node.splice(from, to - from, nodesForReplacement);
-      return true;
-    }
-    return false;
-  });
+  // Using nested update call to pass `skipTransforms` since we don't want
+  // each individual codehighlight node to be transformed again as it's already
+  // in its final state
+  editor.update(
+    () => {
+      updateAndRetainSelection(node, () => {
+        const code = node.getTextContent();
+        const tokens = Prism.tokenize(
+          code,
+          Prism.languages[node.getLanguage() || ''] ||
+            Prism.languages[DEFAULT_CODE_LANGUAGE],
+        );
+        const highlightNodes = getHighlightNodes(tokens);
+        const diffRange = getDiffRange(node.getChildren(), highlightNodes);
+        const {from, to, nodesForReplacement} = diffRange;
+        if (from !== to || nodesForReplacement.length) {
+          node.splice(from, to - from, nodesForReplacement);
+          return true;
+        }
+        return false;
+      });
+    },
+    {
+      onUpdate: () => {
+        isHighlighting = false;
+      },
+      skipTransforms: true,
+    },
+  );
 }
 
 function getHighlightNodes(tokens): Array<LexicalNode> {

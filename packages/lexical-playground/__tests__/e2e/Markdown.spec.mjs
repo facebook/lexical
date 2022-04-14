@@ -77,6 +77,27 @@ test.describe('Markdown', () => {
       undoHTML: '', // H2.
     },
     {
+      expectation: '<h3 class="PlaygroundEditorTheme__h3"><br></h3>',
+      isBlockTest: true,
+      markdownText: '### ',
+
+      undoHTML: '', // H3.
+    },
+    {
+      expectation: '<h4 class="PlaygroundEditorTheme__h4"><br></h4>',
+      isBlockTest: true,
+      markdownText: '#### ',
+
+      undoHTML: '', // H4.
+    },
+    {
+      expectation: '<h5 class="PlaygroundEditorTheme__h5"><br></h5>',
+      isBlockTest: true,
+      markdownText: '##### ',
+
+      undoHTML: '', // H5.
+    },
+    {
       expectation:
         '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-highlight-language="javascript"><br></code>',
       isBlockTest: true,
@@ -335,28 +356,24 @@ test.describe('Markdown', () => {
       html`
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Heading</span>
         </h1>
         <ul class="PlaygroundEditorTheme__ul">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
-            value="1"
-          >
+            value="1">
             <span data-lexical-text="true">unordered list</span>
           </li>
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="2"
-          >
+            value="2">
             <ul class="PlaygroundEditorTheme__ul">
               <li
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                value="1"
-              >
+                value="1">
                 <span data-lexical-text="true">nested</span>
               </li>
             </ul>
@@ -366,20 +383,17 @@ test.describe('Markdown', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
-            value="1"
-          >
+            value="1">
             <span data-lexical-text="true">ordered list</span>
           </li>
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
-            value="2"
-          >
+            value="2">
             <ol class="PlaygroundEditorTheme__ol2">
               <li
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                value="1"
-              >
+                value="1">
                 <span data-lexical-text="true">nested</span>
               </li>
             </ol>

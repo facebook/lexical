@@ -1,9 +1,15 @@
 'use strict';
+const path = require('path');
+
+const _dirname = process.cwd();
 
 module.exports = {
   plugins: [
     [
-      require('./scripts/error-codes/transform-error-messages'),
+      require(path.join(
+        _dirname,
+        './scripts/error-codes/transform-error-messages',
+      )),
       {noMinify: true},
     ],
   ],

@@ -142,7 +142,7 @@ the editor and are prefixed with `register`. Another important feature is that a
 
 ```js
 const unregisterListener = editor.registerUpdateListener(({editorState}) => {
-  // An update has occured!
+  // An update has occurred!
   console.log(editorState);
 });
 

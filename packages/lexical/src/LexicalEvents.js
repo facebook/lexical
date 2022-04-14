@@ -126,12 +126,17 @@ if (CAN_USE_BEFORE_INPUT) {
 
 let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
+let isSelectionChangeFromReconcile = false;
 
 function onSelectionChange(
   domSelection: Selection,
   editor: LexicalEditor,
   isActive: boolean,
 ): void {
+  if (isSelectionChangeFromReconcile) {
+    isSelectionChangeFromReconcile = false;
+    return;
+  }
   updateEditor(editor, () => {
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
@@ -714,4 +719,8 @@ function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
     // For top-level editors cleanup map
     activeNestedEditorsMap.delete(editor._key);
   }
+}
+
+export function markSelectionChangeFromReconcile(): void {
+  isSelectionChangeFromReconcile = true;
 }

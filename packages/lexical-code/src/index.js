@@ -725,37 +725,38 @@ function handleShiftLines(
   if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
     return false;
   }
-  // Handle moving selection out of the code block, given there are no
-  // sibling thats can natively take the selection.
-  if (selection.isCollapsed()) {
-    const codeNode = anchorNode.getParentOrThrow();
-    if (
-      arrowIsUp &&
-      anchorOffset === 0 &&
-      anchorNode.getPreviousSibling() === null
-    ) {
-      const codeNodeSibling = codeNode.getPreviousSibling();
-      if (codeNodeSibling === null) {
-        codeNode.selectPrevious();
-        event.preventDefault();
-        return true;
-      }
-    } else if (
-      !arrowIsUp &&
-      anchorOffset === anchorNode.getTextContentSize() &&
-      anchorNode.getNextSibling() === null
-    ) {
-      const codeNodeSibling = codeNode.getNextSibling();
-      if (codeNodeSibling === null) {
-        codeNode.selectNext();
-        event.preventDefault();
-        return true;
+  if (!event.altKey) {
+    // Handle moving selection out of the code block, given there are no
+    // sibling thats can natively take the selection.
+    if (selection.isCollapsed()) {
+      const codeNode = anchorNode.getParentOrThrow();
+      if (
+        arrowIsUp &&
+        anchorOffset === 0 &&
+        anchorNode.getPreviousSibling() === null
+      ) {
+        const codeNodeSibling = codeNode.getPreviousSibling();
+        if (codeNodeSibling === null) {
+          codeNode.selectPrevious();
+          event.preventDefault();
+          return true;
+        }
+      } else if (
+        !arrowIsUp &&
+        anchorOffset === anchorNode.getTextContentSize() &&
+        anchorNode.getNextSibling() === null
+      ) {
+        const codeNodeSibling = codeNode.getNextSibling();
+        if (codeNodeSibling === null) {
+          codeNode.selectNext();
+          event.preventDefault();
+          return true;
+        }
       }
     }
-  }
-  if (!event.altKey) {
     return false;
   }
+
   const start = getFirstCodeHighlightNodeOfLine(anchorNode);
   const end = getLastCodeHighlightNodeOfLine(focusNode);
   if (start == null || end == null) {

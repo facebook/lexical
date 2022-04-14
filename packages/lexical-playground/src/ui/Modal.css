@@ -29,7 +29,6 @@
   display: flex;
   flex-grow: 0px;
   background-color: #fff;
-  max-height: 300px;
   flex-direction: column;
   position: relative;
   box-shadow: 0 0 20px 0 #444;
@@ -60,5 +59,4 @@
 }
 .Modal__content {
   padding-top: 20px;
-  padding-bottom: 20px;
 }

@@ -74,7 +74,7 @@ React wrapper for `@lexical/list` that adds support for lists (ordered and unord
 
 ### `LexicalTablePlugin`
 
-React wrapper for `@lexical/table` that adds support for tales
+React wrapper for `@lexical/table` that adds support for tables
 
 ```jsx
 <LexicalTablePlugin />

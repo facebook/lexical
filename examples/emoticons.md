@@ -129,7 +129,7 @@ export function $createEmoticonNode(className, emoticonText) {
 }
 ```
 
-In $createEmoticonNode, you'll notice that we call setMode on he instance before returning it. Setting the mode to "token" changes the behavior of the node in response to events such as a backspace, where it ensures that the entire node is treated as a single entity and appropriately deleted.
+In $createEmoticonNode, you'll notice that we call setMode on the instance before returning it. Setting the mode to "token" changes the behavior of the node in response to events such as a backspace, where it ensures that the entire node is treated as a single entity and appropriately deleted.
 
 Now that we have our custom EmoticonNode, we'll learn how to listen for and respond to change in the editor via a transform.
 

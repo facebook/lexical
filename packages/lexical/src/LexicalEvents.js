@@ -273,6 +273,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       // Used for Android
       $setCompositionKey(null);
       event.preventDefault();
+      lastKeyDownTimeStamp = 0;
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
       // Fixes an Android bug where selection flickers when backspacing
       setTimeout(() => {
@@ -448,7 +449,9 @@ function onCompositionStart(
       const anchor = selection.anchor;
       $setCompositionKey(anchor.key);
       if (
-        event.timeStamp < lastKeyDownTimeStamp + 30 ||
+        // If it has been 100ms since the last keydown, then we should
+        // apply the empty space heuristic.
+        event.timeStamp < lastKeyDownTimeStamp + 100 ||
         anchor.type === 'element' ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format

@@ -747,6 +747,7 @@ export function applyTableHandlers(
       SELECTION_CHANGE_COMMAND,
       (payload) => {
         const selection = $getSelection();
+
         if (
           selection &&
           $isRangeSelection(selection) &&
@@ -766,7 +767,6 @@ export function applyTableHandlers(
             const tableIndex = tableNode.getIndexWithinParent();
             const parentKey = tableNode.getParentOrThrow().getKey();
             isRangeSelectionHijacked = true;
-            tableSelection.disableHighlightStyle();
             (isBackward
               ? modifiedSelection.focus
               : modifiedSelection.anchor
@@ -784,30 +784,22 @@ export function applyTableHandlers(
               'element',
             );
             $setSelection(modifiedSelection);
-            $forEachGridCell(tableSelection.grid, (cell) => {
-              const elem = cell.elem;
-              cell.highlighted = true;
-              elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
-              elem.style.setProperty('caret-color', 'transparent');
-            });
+            $addHighlightStyleToTable(tableSelection);
             return true;
           }
         }
 
-        if (isRangeSelectionHijacked && !tableNode.isSelected()) {
-          tableSelection.enableHighlightStyle();
-          $forEachGridCell(tableSelection.grid, (cell) => {
-            const elem = cell.elem;
-            cell.highlighted = false;
-            elem.style.removeProperty('background-color');
-            elem.style.removeProperty('caret-color');
-
-            if (!elem.getAttribute('style')) {
-              elem.removeAttribute('style');
-            }
-          });
+        if (
+          tableSelection.hasHijackedSelectionStyles &&
+          !tableNode.isSelected()
+        ) {
+          $removeHighlightStyleToTable(tableSelection);
           isRangeSelectionHijacked = false;
-          return true;
+        } else if (
+          !tableSelection.hasHijackedSelectionStyles &&
+          tableNode.isSelected()
+        ) {
+          $addHighlightStyleToTable(tableSelection);
         }
 
         return false;
@@ -947,8 +939,7 @@ export function $forEachGridCell(
     lexicalNode: LexicalNode,
     cords: {x: number, y: number},
   ) => void,
-): Array<Cell> {
-  const highlightedCells = [];
+) {
   const {cells} = grid;
   for (let y = 0; y < cells.length; y++) {
     const row = cells[y];
@@ -960,7 +951,29 @@ export function $forEachGridCell(
       }
     }
   }
-  return highlightedCells;
+}
+
+export function $addHighlightStyleToTable(tableSelection: TableSelection) {
+  tableSelection.disableHighlightStyle();
+  $forEachGridCell(tableSelection.grid, (cell) => {
+    const elem = cell.elem;
+    cell.highlighted = true;
+    elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
+    elem.style.setProperty('caret-color', 'transparent');
+  });
+}
+
+export function $removeHighlightStyleToTable(tableSelection: TableSelection) {
+  tableSelection.enableHighlightStyle();
+  $forEachGridCell(tableSelection.grid, (cell) => {
+    const elem = cell.elem;
+    cell.highlighted = false;
+    elem.style.removeProperty('background-color');
+    elem.style.removeProperty('caret-color');
+    if (!elem.getAttribute('style')) {
+      elem.removeAttribute('style');
+    }
+  });
 }
 
 const selectGridNodeInDirection = (

@@ -440,9 +440,11 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const node = selection.anchor.getNode();
-        const element = $getNearestBlockElementAncestorOrThrow(node);
-        element.setFormat(format);
+        const nodes = selection.getNodes();
+        for (const node of nodes) {
+          const element = $getNearestBlockElementAncestorOrThrow(node);
+          element.setFormat(format);
+        }
         return true;
       },
       0,

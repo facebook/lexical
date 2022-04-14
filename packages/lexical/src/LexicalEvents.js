@@ -123,7 +123,7 @@ if (CAN_USE_BEFORE_INPUT) {
   rootElementEvents.push(['drop', PASS_THROUGH_COMMAND]);
 }
 
-let lastKeyWasMaybeAndroidSoftKey = false;
+let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 
 function onSelectionChange(
@@ -274,6 +274,12 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       $setCompositionKey(null);
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+      // Fixes an Android bug where selection flickers when backspacing
+      setTimeout(() => {
+        editor.update(() => {
+          $setCompositionKey(null);
+        });
+      }, 100);
       return;
     }
     const data = event.data;
@@ -442,7 +448,7 @@ function onCompositionStart(
       const anchor = selection.anchor;
       $setCompositionKey(anchor.key);
       if (
-        !lastKeyWasMaybeAndroidSoftKey ||
+        event.timeStamp < lastKeyDownTimeStamp + 30 ||
         anchor.type === 'element' ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
@@ -464,33 +470,42 @@ function onCompositionEnd(
   updateEditor(editor, () => {
     const compositionKey = editor._compositionKey;
     $setCompositionKey(null);
-    // Handle termination of composition, as it can sometimes
-    // move to an adjacent DOM node when backspacing.
-    if (compositionKey !== null && event.data === '') {
-      const node = $getNodeByKey(compositionKey);
-      const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
-      if (textNode !== null && $isTextNode(node)) {
-        $updateTextNodeFromDOMContent(
-          node,
-          textNode.nodeValue,
-          null,
-          null,
-          true,
-        );
+    const data = event.data;
+    // Handle termination of composition.
+    if (compositionKey !== null && data != null) {
+      // It can sometimes move to an adjacent DOM node when backspacing.
+      // So check for the empty case.
+      if (data === '') {
+        const node = $getNodeByKey(compositionKey);
+        const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
+        if (textNode !== null && $isTextNode(node)) {
+          $updateTextNodeFromDOMContent(
+            node,
+            textNode.nodeValue,
+            null,
+            null,
+            true,
+          );
+        }
+        return;
+      } else if (data[data.length - 1] === '\n') {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          // If the last character is a line break, we also need to insert
+          // a line break.
+          const focus = selection.focus;
+          selection.anchor.set(focus.key, focus.offset, focus.type);
+          dispatchCommand(editor, KEY_ENTER_COMMAND, null);
+          return;
+        }
       }
-      return;
     }
     $updateSelectedTextFromDOM(editor, event);
   });
 }
 
-function updateAndroidSoftKeyFlagIfAny(event: KeyboardEvent): void {
-  lastKeyWasMaybeAndroidSoftKey =
-    event.key === 'Unidentified' && event.keyCode === 229;
-}
-
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
-  updateAndroidSoftKeyFlagIfAny(event);
+  lastKeyDownTimeStamp = event.timeStamp;
   if (editor.isComposing()) {
     return;
   }

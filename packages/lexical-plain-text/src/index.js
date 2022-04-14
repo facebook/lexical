@@ -303,12 +303,14 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       KEY_ENTER_COMMAND,
-      (event: KeyboardEvent) => {
+      (event: KeyboardEvent | null) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        event.preventDefault();
+        if (event !== null) {
+          event.preventDefault();
+        }
         return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
       },
       0,

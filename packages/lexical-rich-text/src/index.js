@@ -598,15 +598,16 @@ export function registerRichText(
     ),
     editor.registerCommand(
       KEY_ENTER_COMMAND,
-      (payload) => {
+      (event: KeyboardEvent | null) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: KeyboardEvent = payload;
-        event.preventDefault();
-        if (event.shiftKey) {
-          return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+        if (event !== null) {
+          event.preventDefault();
+          if (event.shiftKey) {
+            return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+          }
         }
         return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       },

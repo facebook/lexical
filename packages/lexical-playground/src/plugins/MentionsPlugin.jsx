@@ -605,8 +605,7 @@ function MentionsTypeaheadItem({
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       {result}
     </li>
   );
@@ -752,13 +751,14 @@ function MentionsTypeahead({
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
-        (payload) => {
-          const event: KeyboardEvent = payload;
+        (event: KeyboardEvent | null) => {
           if (results === null || selectedIndex === null) {
             return false;
           }
-          event.preventDefault();
-          event.stopImmediatePropagation();
+          if (event !== null) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
           applyCurrentSelected();
           return true;
         },
@@ -783,8 +783,7 @@ function MentionsTypeahead({
       aria-label="Suggested mentions"
       id="mentions-typeahead"
       ref={divRef}
-      role="listbox"
-    >
+      role="listbox">
       <ul>
         {results.slice(0, SUGGESTION_LIST_LENGTH_LIMIT).map((result, i) => (
           <MentionsTypeaheadItem

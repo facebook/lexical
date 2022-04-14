@@ -38,7 +38,8 @@ export const KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
 export const KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
-export const KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent> = createCommand();
+export const KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent | null> =
+  createCommand();
 export const KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
 export const KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent> =

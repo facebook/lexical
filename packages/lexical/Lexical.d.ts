@@ -31,7 +31,7 @@ export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
-export var KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent | null>;
 export var KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;

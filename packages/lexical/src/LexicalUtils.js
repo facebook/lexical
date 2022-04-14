@@ -401,12 +401,12 @@ export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
   const editorState = getActiveEditorState();
-  let nextSelection = selection;
-  if (selection !== null) {
-    nextSelection = selection.clone();
-    nextSelection.dirty = true;
+  if (__DEV__ && selection !== null && Object.isFrozen(selection)) {
+    console.warn(
+      '$setSelection called on frozen selection object. Ensure selection is cloned before passing in.',
+    );
   }
-  editorState._selection = nextSelection;
+  editorState._selection = selection;
 }
 
 export function $flushMutations(): void {

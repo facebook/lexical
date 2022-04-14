@@ -75,6 +75,12 @@ export async function deleteNextWord(page) {
   await keyUpCtrlOrAlt(page);
 }
 
+export async function deleteBackward(page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.press('h');
+  await page.keyboard.up('Control');
+}
+
 export async function deleteForward(page) {
   await page.keyboard.down('Control');
   await page.keyboard.press('d');

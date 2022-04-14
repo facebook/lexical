@@ -135,7 +135,7 @@ Now that we have our custom EmoticonNode, we'll learn how to listen for and resp
 
 ### Register a Transform
 
-Since we're usin Lexical react, we can take advantage of Lexical's plugin system to encapsulate all of the logic related to setting up and tearing down our Emoticon feature. Let's start by creating a new Lexical plugin, which is just a React component:
+Since we're using Lexical react, we can take advantage of Lexical's plugin system to encapsulate all of the logic related to setting up and tearing down our Emoticon feature. Let's start by creating a new Lexical plugin, which is just a React component:
 
 ```jsx
 // EmoticonPlugin.js

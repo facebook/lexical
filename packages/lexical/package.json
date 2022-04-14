@@ -1,6 +1,6 @@
 {
   "name": "lexical",
-  "description": "Lexical is an extensible text editor library that provides excellent reliability, accessible and performance.",
+  "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessible and performance.",
   "keywords": [
     "react",
     "lexical",

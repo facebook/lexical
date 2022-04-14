@@ -2,7 +2,7 @@
 
 > Note: this document is still a work-in-progress and things are likely still in flux.
 
-Lexical was built from the ground up to be lean and extensible.
+Lexical was built from the ground up to be a lean and extensible text-editing framework.
 
 You can think of Lexical as more of a text editing engine, rather than a monolithic text
 editor that provides everything out-of-the-box. It might help to think of Lexical as
@@ -18,9 +18,9 @@ editor state is what is currently being constructed to be shown in the future. O
 Lexical's core concerns itself with four main concerns:
 
 - Updates: the act of making changes to editor state
-- Transforms: the process of acting on ongoing updates
+- Node Transforms: the process of acting on ongoing updates
 - Reconcilation: the process of patching the DOM with the latest editor state
-- Listening: the process of reacting to changes that occur internally
+- Listening/Commands: the process of reacting to changes that occur internally
 
 Additionally, Lexical uses DOM mutation observers to ensure that any outside changes to
 the editor DOM element are either reverted back to Lexical's current editor state, or are

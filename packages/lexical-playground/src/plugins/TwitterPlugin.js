@@ -10,15 +10,19 @@
 import type {LexicalCommand} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $getSelection,
   $isRangeSelection,
-  $isRootNode,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
   createCommand,
+  INSERT_TEXT_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
 
+import {$createEmbedNode, $isEmbedNode} from '../nodes/EmbedNode.jsx';
 import {$createTweetNode, TweetNode} from '../nodes/TweetNode.jsx';
 
 export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand();
@@ -31,20 +35,42 @@ export default function TwitterPlugin(): React$Node {
       throw new Error('TwitterPlugin: TweetNode not registered on editor');
     }
 
-    return editor.registerCommand(
-      INSERT_TWEET_COMMAND,
-      (payload) => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          const tweetNode = $createTweetNode(payload);
-          if ($isRootNode(selection.anchor.getNode())) {
-            selection.insertParagraph();
+    return mergeRegister(
+      editor.registerCommand(
+        INSERT_TWEET_COMMAND,
+        (payload) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
           }
-          selection.insertNodes([tweetNode]);
-        }
-        return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
+          const focusNode = selection.focus.getNode();
+          if (focusNode !== null) {
+            const tweetNode = $createTweetNode(payload);
+            const embedNode = $createEmbedNode();
+            const topLevelNode = focusNode.getTopLevelElementOrThrow();
+            topLevelNode.insertAfter(embedNode);
+            embedNode.append(tweetNode);
+            embedNode.insertAfter($createParagraphNode());
+          }
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerCommand(
+        INSERT_TEXT_COMMAND,
+        (payload) => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return false;
+          }
+          const focusNode = selection.focus.getNode();
+          const parentEmbedNode = $findMatchingParent(focusNode, (node) =>
+            $isEmbedNode(node),
+          );
+          return parentEmbedNode !== null;
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
     );
   }, [editor]);
   return null;

@@ -18,6 +18,7 @@ import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 
+import {EmbedNode} from './EmbedNode.jsx';
 import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
@@ -54,6 +55,7 @@ const PlaygroundNodes: Array<Class<LexicalNode>> = [
   TypeaheadNode,
   KeywordNode,
   HorizontalRuleNode,
+  EmbedNode,
   TweetNode,
   YouTubeNode,
 ];

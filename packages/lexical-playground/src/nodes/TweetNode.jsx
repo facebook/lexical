@@ -9,6 +9,8 @@
 
 import type {LexicalNode, NodeKey} from 'lexical';
 
+import './TweetNode.css';
+
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
@@ -74,7 +76,7 @@ function TweetComponent({
   return (
     <>
       {isLoading ? loadingComponent : null}
-      <div ref={containerRef} />
+      <div className="TweetNode__container" ref={containerRef} />
     </>
   );
 }
@@ -97,7 +99,9 @@ export class TweetNode extends DecoratorNode<React$Node> {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('div');
+    const elem = document.createElement('div');
+    elem.style.display = 'inline-block';
+    return elem;
   }
 
   updateDOM(): false {

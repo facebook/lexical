@@ -215,6 +215,12 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
   }, [editor, updateLinkEditor]);
 
   useEffect(() => {
+    editor.getEditorState().read(() => {
+      updateLinkEditor();
+    });
+  }, [editor, updateLinkEditor])
+
+  useEffect(() => {
     if (isEditMode && inputRef.current) {
       inputRef.current.focus();
     }
@@ -289,8 +295,7 @@ function InsertTableDialog({
       <Input label="No of columns" onChange={setColumns} value={columns} />
       <div
         className="ToolbarPlugin__dialogActions"
-        data-test-id="table-model-confirm-insert"
-      >
+        data-test-id="table-model-confirm-insert">
         <Button onClick={onClick}>Confirm</Button>
       </div>
     </>
@@ -519,8 +524,7 @@ function BlockFormatDropDown({
       buttonClassName="toolbar-item block-controls"
       buttonIconClassName={'icon block-type ' + blockType}
       buttonLabel={blockTypeToBlockName[blockType]}
-      buttonAriaLabel="Formatting Options"
-    >
+      buttonAriaLabel="Formatting Options">
       <button className="item" onClick={formatParagraph}>
         <span className="icon paragraph" />
         <span className="text">Normal</span>
@@ -659,16 +663,13 @@ export default function ToolbarPlugin(): React$Node {
   }, [activeEditor]);
 
   useEffect(() => {
-    return activeEditor.registerUpdateListener(({editorState}) => {
-      editorState.read(() => {
-        updateToolbar();
-      });
-    });
-  }, [activeEditor, updateToolbar]);
-
-  useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
+      activeEditor.registerUpdateListener(({editorState}) => {
+        editorState.read(() => {
+          updateToolbar();
+        });
+      }),
+      activeEditor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         (_payload, newEditor) => {
           updateToolbar();
@@ -677,7 +678,7 @@ export default function ToolbarPlugin(): React$Node {
         },
         LowPriority,
       ),
-      editor.registerCommand(
+      activeEditor.registerCommand(
         CAN_UNDO_COMMAND,
         (payload) => {
           setCanUndo(payload);
@@ -685,7 +686,7 @@ export default function ToolbarPlugin(): React$Node {
         },
         LowPriority,
       ),
-      editor.registerCommand(
+      activeEditor.registerCommand(
         CAN_REDO_COMMAND,
         (payload) => {
           setCanRedo(payload);
@@ -694,7 +695,7 @@ export default function ToolbarPlugin(): React$Node {
         LowPriority,
       ),
     );
-  }, [editor, updateToolbar]);
+  }, [activeEditor, updateToolbar]);
 
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {
@@ -753,8 +754,7 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.dispatchCommand(UNDO_COMMAND);
         }}
         className="toolbar-item spaced"
-        aria-label="Undo"
-      >
+        aria-label="Undo">
         <i className="format undo" />
       </button>
       <button
@@ -763,8 +763,7 @@ export default function ToolbarPlugin(): React$Node {
           activeEditor.dispatchCommand(REDO_COMMAND);
         }}
         className="toolbar-item"
-        aria-label="Redo"
-      >
+        aria-label="Redo">
         <i className="format redo" />
       </button>
       <Divider />
@@ -829,8 +828,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-            aria-label="Format Bold"
-          >
+            aria-label="Format Bold">
             <i className="format bold" />
           </button>
           <button
@@ -838,8 +836,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-            aria-label="Format Italics"
-          >
+            aria-label="Format Italics">
             <i className="format italic" />
           </button>
           <button
@@ -847,8 +844,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-            aria-label="Format Underline"
-          >
+            aria-label="Format Underline">
             <i className="format underline" />
           </button>
           <button
@@ -861,8 +857,7 @@ export default function ToolbarPlugin(): React$Node {
             className={
               'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
             }
-            aria-label="Format Strikethrough"
-          >
+            aria-label="Format Strikethrough">
             <i className="format strikethrough" />
           </button>
           <button
@@ -870,15 +865,13 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
-            aria-label="Insert Code"
-          >
+            aria-label="Insert Code">
             <i className="format code" />
           </button>
           <button
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-            aria-label="Insert Link"
-          >
+            aria-label="Insert Link">
             <i className="format link" />
           </button>
           {isLink &&
@@ -890,14 +883,12 @@ export default function ToolbarPlugin(): React$Node {
           <DropDown
             buttonClassName="toolbar-item spaced"
             buttonLabel="Insert"
-            buttonIconClassName="icon plus"
-          >
+            buttonIconClassName="icon plus">
             <button
               onClick={() => {
                 activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND);
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon horizontal-rule" />
               <span className="text">Horizontal Rule</span>
             </button>
@@ -905,8 +896,7 @@ export default function ToolbarPlugin(): React$Node {
               onClick={() => {
                 activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND);
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon image" />
               <span className="text">Image</span>
             </button>
@@ -914,8 +904,7 @@ export default function ToolbarPlugin(): React$Node {
               onClick={() => {
                 activeEditor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND);
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon diagram-2" />
               <span className="text">Excalidraw</span>
             </button>
@@ -928,8 +917,7 @@ export default function ToolbarPlugin(): React$Node {
                   />
                 ));
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon table" />
               <span className="text">Table</span>
             </button>
@@ -942,8 +930,7 @@ export default function ToolbarPlugin(): React$Node {
                   />
                 ));
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon poll" />
               <span className="text">Poll</span>
             </button>
@@ -956,8 +943,7 @@ export default function ToolbarPlugin(): React$Node {
                   />
                 ));
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon tweet" />
               <span className="text">Tweet</span>
             </button>
@@ -970,8 +956,7 @@ export default function ToolbarPlugin(): React$Node {
                   />
                 ));
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon youtube" />
               <span className="text">YouTube Video</span>
             </button>
@@ -984,8 +969,7 @@ export default function ToolbarPlugin(): React$Node {
                   />
                 ));
               }}
-              className="item"
-            >
+              className="item">
               <i className="icon equation" />
               <span className="text">Equation</span>
             </button>
@@ -996,14 +980,12 @@ export default function ToolbarPlugin(): React$Node {
       <DropDown
         buttonLabel="Align"
         buttonIconClassName="icon left-align"
-        buttonClassName="toolbar-item spaced"
-      >
+        buttonClassName="toolbar-item spaced">
         <button
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
           }}
-          className="item"
-        >
+          className="item">
           <i className="icon left-align" />
           <span className="text">Left Align</span>
         </button>
@@ -1011,8 +993,7 @@ export default function ToolbarPlugin(): React$Node {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
           }}
-          className="item"
-        >
+          className="item">
           <i className="icon center-align" />
           <span className="text">Center Align</span>
         </button>
@@ -1020,8 +1001,7 @@ export default function ToolbarPlugin(): React$Node {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
           }}
-          className="item"
-        >
+          className="item">
           <i className="icon right-align" />
           <span className="text">Right Align</span>
         </button>
@@ -1029,8 +1009,7 @@ export default function ToolbarPlugin(): React$Node {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
           }}
-          className="item"
-        >
+          className="item">
           <i className="icon justify-align" />
           <span className="text">Justify Align</span>
         </button>
@@ -1039,8 +1018,7 @@ export default function ToolbarPlugin(): React$Node {
           onClick={() => {
             activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
           }}
-          className="item"
-        >
+          className="item">
           <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
           <span className="text">Outdent</span>
         </button>
@@ -1048,8 +1026,7 @@ export default function ToolbarPlugin(): React$Node {
           onClick={() => {
             activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND);
           }}
-          className="item"
-        >
+          className="item">
           <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
           <span className="text">Indent</span>
         </button>

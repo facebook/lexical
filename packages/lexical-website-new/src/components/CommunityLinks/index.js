@@ -92,7 +92,7 @@ const links = [
         Discord
       </Translate>
     ),
-    url: 'https://discord.com/channels/953974421008293909/953974421486436393',
+    url: 'https://discord.gg/KmG4wQnnD9',
   },
 ];
 

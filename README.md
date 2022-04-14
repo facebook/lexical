@@ -336,7 +336,7 @@ Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 
 ## Support
 
-If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integrations, feel free to add yourself to [our Discord server](https://discord.gg/Pg4n9psf).
+If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integrations, feel free to add yourself to [our Discord server](https://discord.gg/KmG4wQnnD9).
 
 Lexical engineers are checking this regularly.
 

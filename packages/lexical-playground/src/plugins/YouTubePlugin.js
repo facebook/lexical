@@ -11,9 +11,9 @@ import type {LexicalCommand} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $createParagraphNode,
   $getSelection,
   $isRangeSelection,
+  $isRootNode,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
 } from 'lexical';
@@ -36,17 +36,11 @@ export default function YouTubePlugin(): React$Node {
       (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
-          const focusNode = selection.focus.getNode();
-          if (focusNode !== null) {
-            const youTubeNode = $createYouTubeNode(payload);
-            selection.focus
-              .getNode()
-              .getTopLevelElementOrThrow()
-              .insertAfter(youTubeNode);
-            const paragraphNode = $createParagraphNode();
-            youTubeNode.insertAfter(paragraphNode);
-            paragraphNode.select();
+          const tweetNode = $createYouTubeNode(payload);
+          if ($isRootNode(selection.anchor.getNode())) {
+            selection.insertParagraph();
           }
+          selection.insertNodes([tweetNode]);
         }
         return true;
       },

@@ -5,7 +5,7 @@ sidebar_position: 1
 # Quick Start (Vanilla JS)
 
 This section covers how to use Lexical, independently of any framework or library. For those intending to use Lexical in their React applications,
-it's advisable to [check out the source-code for the hooks that are shipped in `@lexical/react`](https://github.com/facebook/lexical/tree/main/packages/lexical-react/src).
+it's advisable to [check out the Getting Started with React page](https://lexical.dev/docs/getting-started/react).
 
 ### Creating an editor and using it
 

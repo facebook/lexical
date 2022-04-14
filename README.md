@@ -133,7 +133,7 @@ Lexical has its own DOM reconciler that takes a set of Editor States (always the
 on them. It then uses this diff to update only the parts of the DOM that need changing. You can think of this as a kind-of virtual DOM,
 except Lexical is able to skip doing much of the diffing work, as it knows what was mutated in a given update. The DOM reconciler
 adopts performance optimizations that benefit the typical heuristics of a content editable – and is able to ensure consistency for
-LTR and RTL langauges automatically.
+LTR and RTL languages automatically.
 
 ### Listeners, Node Transforms and Commands
 

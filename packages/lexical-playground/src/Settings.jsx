@@ -30,13 +30,12 @@ export default function Settings(): React$Node {
     },
   } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
-  const [port, isSplitScreen, search] = useMemo(() => {
-    const _port = windowLocation.port;
+  const [isSplitScreen, search] = useMemo(() => {
     const parentWindow = window.parent;
     const _search = windowLocation.search;
     const _isSplitScreen =
       parentWindow && parentWindow.location.pathname === '/split/';
-    return [_port, _isSplitScreen, _search];
+    return [_isSplitScreen, _search];
   }, [windowLocation]);
 
   return (
@@ -62,9 +61,9 @@ export default function Settings(): React$Node {
             <Switch
               onClick={() => {
                 if (isSplitScreen) {
-                  window.parent.location.href = `http://localhost:${port}/${search}`;
+                  window.parent.location.href = `/${search}`;
                 } else {
-                  window.location.href = `http://localhost:${port}/split/${search}`;
+                  window.location.href = `/split/${search}`;
                 }
               }}
               checked={isSplitScreen}

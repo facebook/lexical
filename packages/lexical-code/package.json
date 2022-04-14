@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@lexical/utils": "0.2.0",
-    "prismjs": "^1.25.0"
+    "prismjs": "^1.27.0"
   },
   "repository": {
     "type": "git",

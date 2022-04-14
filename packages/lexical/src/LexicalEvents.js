@@ -52,6 +52,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from '.';
+import {DOM_ELEMENT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -135,7 +136,18 @@ function onSelectionChange(
 ): void {
   if (isSelectionChangeFromReconcile) {
     isSelectionChangeFromReconcile = false;
-    return;
+    const {anchorNode, focusNode} = domSelection;
+    // If native DOM selection is on a DOM element, then
+    // we should continue as usual, as Lexical's selection
+    // may have normalized to a better child.
+    if (
+      anchorNode !== null &&
+      focusNode !== null &&
+      anchorNode.nodeType !== DOM_ELEMENT_TYPE &&
+      focusNode.nodeType !== DOM_ELEMENT_TYPE
+    ) {
+      return;
+    }
   }
   updateEditor(editor, () => {
     // Non-active editor don't need any extra logic for selection, it only needs update

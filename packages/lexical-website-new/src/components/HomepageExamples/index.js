@@ -26,7 +26,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-1',
     label: 'Simple Setup',
-    src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark&view=editor',
+    src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark',
   },
   {
     content: (
@@ -41,7 +41,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-2',
     label: 'Powerful Features',
-    src: 'https://codesandbox.io/embed/lexical-rich-text-example-5tncvy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark&view=editor',
+    src: 'https://codesandbox.io/embed/lexical-rich-text-example-5tncvy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark',
   },
   {
     content: (

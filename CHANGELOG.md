@@ -1,3 +1,14 @@
+## 0.2.1 (Apr 14, 2022)
+
+- Fix selection issue with insertNodes
+- Fix rich text align for multiple nodes
+- Improve CodeBlock selection escaping
+- Fix detection of iOS browser
+- Fix Ctrl+H Delete backward
+- Fix type of children in TypeScript declarations
+- Fix android GBoard issues
+- Various other fixes and improvements
+
 ## 0.2.0 (Apr 13, 2022)
 
 - Remove DecoratorNode state

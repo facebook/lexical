@@ -1,7 +1,7 @@
 {
   "name": "lexical-monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessible and performance.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -105,6 +105,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-babel": "^5.3.1",
     "eslint-plugin-flowtype": "^8.0.3",
+    "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jest": "^24.4.0",
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "eslint-plugin-no-function-declare-after-return": "^1.1.0",

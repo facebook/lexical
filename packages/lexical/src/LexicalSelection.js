@@ -1336,10 +1336,10 @@ export class RangeSelection implements BaseSelection {
       const textContent = anchorNode.getTextContent();
       const textContentLength = textContent.length;
       currentElement = anchorNode.getParentOrThrow();
+      const isInline = currentElement.isInline();
       if (anchorOffset === 0) {
         nodesToMove.push(anchorNode);
       } else {
-        const isInline = currentElement.isInline();
         if (isInline) {
           // For inline nodes, we want to move all the siblings to the new paragraph
           // if selection is at the end, we just move the siblings. Otherwise, we also
@@ -1394,7 +1394,7 @@ export class RangeSelection implements BaseSelection {
           if (firstChild === null) {
             if (isInline) {
               // For inline nodes, we start with the nodes that were previously in the parent
-              newElement?.getParentOrThrow().append(nodeToMove);
+              newElement.getParentOrThrow().append(nodeToMove);
             } else {
               newElement.append(nodeToMove);
             }

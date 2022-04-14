@@ -515,6 +515,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     if (isBackspace(keyCode)) {
       dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event);
     } else {
+      event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
     }
   } else if (isEscape(keyCode)) {

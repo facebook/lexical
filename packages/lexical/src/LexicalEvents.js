@@ -426,7 +426,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     } else {
       $updateSelectedTextFromDOM(editor, null);
     }
-    // Also flush any other mutations that might have occured
+    // Also flush any other mutations that might have occurred
     // since the change.
     $flushMutations();
   });

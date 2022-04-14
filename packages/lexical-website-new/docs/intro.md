@@ -17,7 +17,7 @@ editor surfaces. Lexical's has a few concepts that are worth exploring:
 
 Editor instances are the core thing that wires everything together. You can attach a contenteditable DOM element to editor instances, and also
 register listeners and commands. Most importantly, the editor allows for updates to its `EditorState`. You can create an editor instance
-using the `createEditor()` API, however you normally don't have to worry when using framworking bindings such as `@lexical/react` as this
+using the `createEditor()` API, however you normally don't have to worry when using framework bindings such as `@lexical/react` as this
 is handled for you.
 
 ### Editor States
@@ -47,7 +47,7 @@ Lexical has its own DOM reconciler that takes a set of Editor States (always the
 on them. It then uses this diff to update only the parts of the DOM that need changing. You can think of this as a kind-of virtual DOM,
 except Lexical is able to skip doing much of the diffing work, as it knows what was mutated in a given update. The DOM reconciler
 adopts performance optimizations that benefit the typical heuristics of a content editable – and is able to ensure consistency for
-LTR and RTL langauges automatically.
+LTR and RTL languages automatically.
 
 ### Listeners, Node Transforms and Commands
 
@@ -56,11 +56,11 @@ the editor and are prefixed with `register`. Another important feature is that a
 
 ```js
 const unregisterListener = editor.registerUpdateListener(({editorState}) => {
-  // An update has occured!
+  // An update has occurred!
   console.log(editorState);
 });
 
-// Ensure we remove the listener late!
+// Ensure we remove the listener later!
 unregisterListener();
 ```
 

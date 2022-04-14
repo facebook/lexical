@@ -141,7 +141,7 @@ export function $flushMutations(
           }
         } else if (type === 'childList') {
           shouldRevertSelection = true;
-          // We attempt to "undo" any changes that have occured outside
+          // We attempt to "undo" any changes that have occurred outside
           // of Lexical. We want Lexical's editor state to be source of truth.
           // To the user, these will look like no-ops.
           const addedDOMs = mutation.addedNodes;

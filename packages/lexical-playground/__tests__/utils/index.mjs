@@ -523,16 +523,18 @@ export async function insertTable(page) {
   );
 }
 
-export async function compositionKeyDown(page) {
+export async function enableCompositionKeyEvents(page) {
   await page.evaluate(() => {
     const activeElement = document.activeElement;
     if (activeElement) {
-      activeElement.dispatchEvent(new KeyboardEvent('keydown', {
-        bubbles: true,
-        cancelable: true,
-        key: 'Unidentified',
-        keyCode: 220,
-      }))
+      activeElement.addEventListener('compositionstart', () => {
+        activeElement.dispatchEvent(new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          key: 'Unidentified',
+          keyCode: 220,
+        }));
+      }, true)
     }
   });
 }

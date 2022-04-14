@@ -96,6 +96,7 @@ type RootElementEvents = Array<
 >;
 
 const PASS_THROUGH_COMMAND = Object.freeze({});
+const ANDROID_COMPOSITION_LATENCY = 30;
 
 const rootElementEvents: RootElementEvents = [
   // $FlowIgnore bad event inheritance
@@ -253,7 +254,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
                 updateEditor(editor, () => {
                   node.select();
                 });
-              }, 20);
+              }, ANDROID_COMPOSITION_LATENCY);
             }
           }
         }
@@ -280,7 +281,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         editor.update(() => {
           $setCompositionKey(null);
         });
-      }, 100);
+      }, ANDROID_COMPOSITION_LATENCY);
       return;
     }
     const data = event.data;
@@ -449,9 +450,9 @@ function onCompositionStart(
       const anchor = selection.anchor;
       $setCompositionKey(anchor.key);
       if (
-        // If it has been 100ms since the last keydown, then we should
+        // If it has been 30ms since the last keydown, then we should
         // apply the empty space heuristic.
-        event.timeStamp < lastKeyDownTimeStamp + 100 ||
+        event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
         anchor.type === 'element' ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format

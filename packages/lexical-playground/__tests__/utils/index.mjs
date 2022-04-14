@@ -522,3 +522,17 @@ export async function insertTable(page) {
     'div[data-test-id="table-model-confirm-insert"] > .Button__root',
   );
 }
+
+export async function compositionKeyDown(page) {
+  await page.evaluate(() => {
+    const activeElement = document.activeElement;
+    if (activeElement) {
+      activeElement.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key: 'Unidentified',
+        keyCode: 220,
+      }))
+    }
+  });
+}

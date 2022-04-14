@@ -10,6 +10,7 @@ import {moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
+  compositionKeyDown,
   focusEditor,
   html,
   initialize,
@@ -186,6 +187,7 @@ test.describe('Composition', () => {
 
       await focusEditor(page);
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -238,6 +240,7 @@ test.describe('Composition', () => {
 
       await page.keyboard.press('ArrowLeft');
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -290,6 +293,7 @@ test.describe('Composition', () => {
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -333,6 +337,7 @@ test.describe('Composition', () => {
 
       await page.keyboard.press('ArrowLeft');
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -398,6 +403,7 @@ test.describe('Composition', () => {
         focusPath: [0, 0, 0, 0],
       });
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -447,6 +453,7 @@ test.describe('Composition', () => {
 
       await waitForSelector(page, '.mention');
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -506,6 +513,7 @@ test.describe('Composition', () => {
         await page.keyboard.press('ArrowLeft');
       });
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -550,6 +558,7 @@ test.describe('Composition', () => {
 
       await page.keyboard.type('#');
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -591,6 +600,7 @@ test.describe('Composition', () => {
 
       await moveToLineBeginning(page);
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -626,6 +636,7 @@ test.describe('Composition', () => {
 
       await focusEditor(page);
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);
@@ -652,6 +663,7 @@ test.describe('Composition', () => {
       await page.keyboard.type(' ');
       await page.keyboard.press('ArrowLeft');
 
+      await compositionKeyDown(page);
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
       await page.keyboard.imeSetComposition('すｓ', 2, 2);

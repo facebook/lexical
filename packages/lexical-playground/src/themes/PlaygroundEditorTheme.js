@@ -50,6 +50,9 @@ const theme: EditorThemeClasses = {
   heading: {
     h1: 'PlaygroundEditorTheme__h1',
     h2: 'PlaygroundEditorTheme__h2',
+    h3: 'PlaygroundEditorTheme__h3',
+    h4: 'PlaygroundEditorTheme__h4',
+    h5: 'PlaygroundEditorTheme__h5',
   },
   image: 'editor-image',
   link: 'PlaygroundEditorTheme__link',

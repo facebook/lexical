@@ -86,17 +86,18 @@ const supportedBlockTypes = new Set([
   'code',
   'h1',
   'h2',
+  'h3',
   'ul',
   'ol',
 ]);
 
 const blockTypeToBlockName = {
   code: 'Code Block',
-  h1: 'Large Heading',
-  h2: 'Small Heading',
-  h3: 'Heading',
-  h4: 'Heading',
-  h5: 'Heading',
+  h1: 'Heading 1',
+  h2: 'Heading 2',
+  h3: 'Heading 3',
+  h4: 'Heading 4',
+  h5: 'Heading 5',
   ol: 'Numbered List',
   paragraph: 'Normal',
   quote: 'Quote',
@@ -471,6 +472,18 @@ function BlockFormatDropDown({
     }
   };
 
+  const formatVerySmallHeading = () => {
+    if (blockType !== 'h3') {
+      editor.update(() => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          $wrapLeafNodesInElements(selection, () => $createHeadingNode('h3'));
+        }
+      });
+    }
+  };
+
   const formatBulletList = () => {
     if (blockType !== 'ul') {
       editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
@@ -531,14 +544,19 @@ function BlockFormatDropDown({
         {blockType === 'paragraph' && <span className="active" />}
       </button>
       <button className="item" onClick={formatLargeHeading}>
-        <span className="icon large-heading" />
-        <span className="text">Large Heading</span>
+        <span className="icon h1" />
+        <span className="text">Heading 1</span>
         {blockType === 'h1' && <span className="active" />}
       </button>
       <button className="item" onClick={formatSmallHeading}>
-        <span className="icon small-heading" />
-        <span className="text">Small Heading</span>
+        <span className="icon h2" />
+        <span className="text">Heading 2</span>
         {blockType === 'h2' && <span className="active" />}
+      </button>
+      <button className="item" onClick={formatVerySmallHeading}>
+        <span className="icon h3" />
+        <span className="text">Heading 3</span>
+        {blockType === 'h3' && <span className="active" />}
       </button>
       <button className="item" onClick={formatBulletList}>
         <span className="icon bullet-list" />

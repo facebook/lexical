@@ -215,6 +215,12 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
   }, [editor, updateLinkEditor]);
 
   useEffect(() => {
+    editor.getEditorState().read(() => {
+      updateLinkEditor();
+    });
+  }, [editor, updateLinkEditor])
+
+  useEffect(() => {
     if (isEditMode && inputRef.current) {
       inputRef.current.focus();
     }

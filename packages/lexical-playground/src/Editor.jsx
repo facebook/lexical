@@ -112,7 +112,8 @@ export default function Editor(): React$Node {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}
-        ref={scrollRef}>
+        ref={scrollRef}
+      >
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />

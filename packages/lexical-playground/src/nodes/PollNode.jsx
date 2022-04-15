@@ -88,7 +88,8 @@ function PollOptionComponent({
         className={joinClasses(
           'PollNode__optionCheckboxWrapper',
           checked && 'PollNode__optionCheckboxChecked',
-        )}>
+        )}
+      >
         <input
           ref={checkboxRef}
           className="PollNode__optionCheckbox"

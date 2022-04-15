@@ -55,7 +55,7 @@ assigned to node.
 
 By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private
 and their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
-mangles and minfies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
+mangles and minifies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
 to be extended outside of your build~
 
 If you are adding a property that you expect to be modifiable or accessable, then you should always create a set of `get*()`
@@ -85,7 +85,8 @@ class MyNode extends SomeOtherNode {
 
 ## Creating custom nodes
 
-As mentioned above, Lexical exposes three base nodes that can be extended.
+As mentioned above, Lexical exposes three base nodes that can be extended. In
+order to get the text content of the entire editor, you should use `rootNode.getTextContent()`.
 
 > Did you know? Nodes such as `ElementNode` are already extended in the core
 by Lexical, such as `PargraphNode` and`RootNode`!

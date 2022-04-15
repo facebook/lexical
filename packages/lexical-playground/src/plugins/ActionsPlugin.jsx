@@ -25,7 +25,6 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
-import {$createStickyNode} from '../nodes/StickyNode';
 import {
   SPEECT_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
@@ -68,14 +67,6 @@ export default function ActionsPlugins({
     );
   }, [editor]);
 
-  const insertSticky = useCallback(() => {
-    editor.update(() => {
-      const root = $getRoot();
-      const stickyNode = $createStickyNode(0, 0);
-      root.append(stickyNode);
-    });
-  }, [editor]);
-
   const convertFromMarkdown = useCallback(() => {
     editor.update(() => {
       const root = $getRoot();
@@ -115,15 +106,13 @@ export default function ActionsPlugins({
           className={
             'action-button action-button-mic ' +
             (isSpeechToText ? 'active' : '')
-          }
-        >
+          }>
           <i className="mic" />
         </button>
       )}
       <button
         className="action-button import"
-        onClick={() => importFile(editor)}
-      >
+        onClick={() => importFile(editor)}>
         <i className="import" />
       </button>
       <button
@@ -133,28 +122,22 @@ export default function ActionsPlugins({
             fileName: `Playground ${new Date().toISOString()}`,
             source: 'Playground',
           })
-        }
-      >
+        }>
         <i className="export" />
-      </button>
-      <button className="action-button sticky" onClick={insertSticky}>
-        <i className="sticky" />
       </button>
       <button
         className="action-button clear"
         onClick={() => {
           editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
           editor.focus();
-        }}
-      >
+        }}>
         <i className="clear" />
       </button>
       <button
         className="action-button lock"
         onClick={() => {
           editor.setReadOnly(!editor.isReadOnly());
-        }}
-      >
+        }}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
       <button className="action-button" onClick={convertFromMarkdown}>
@@ -165,8 +148,7 @@ export default function ActionsPlugins({
           className="action-button connect"
           onClick={() => {
             editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
-          }}
-        >
+          }}>
           <i className={connected ? 'disconnect' : 'connect'} />
         </button>
       )}

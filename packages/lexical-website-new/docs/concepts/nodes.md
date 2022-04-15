@@ -1,8 +1,8 @@
 ---
-sidebar_position: 3
+sidebar_position: 1
 ---
 
-# Extending Nodes
+# Nodes
 
 ## Base Nodes
 
@@ -207,24 +207,19 @@ export class ColoredNode extends TextNode {
   }
 
   static clone(node: ColoredNode): ColoredNode {
-    return new ColoredNode(
-      node.__text,
-      node.__color,
-      node.__key,
-    );
+    return new ColoredNode(node.__text, node.__color, node.__key);
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
     element.style.color = this.__color;
     return element;
   }
 
-  updateDOM<EditorContext>(
-    // $FlowFixMe
+  updateDOM(
     prevNode: ColoredNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     const isUpdated = super.updateDOM(prevNode, dom, config);
     if (prevNode.__color !== this.__color) {
@@ -242,7 +237,6 @@ export function $isColoredNode(node: ?LexicalNode): boolean {
   return node instanceof ColoredNode;
 }
 ```
-
 
 ### Extending `DecoratorNode`
 

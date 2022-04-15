@@ -17,7 +17,6 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
-  NodeKey,
 } from '../LexicalNode';
 
 import {getCachedClassNameArray} from '../LexicalUtils';
@@ -31,10 +30,6 @@ export class ParagraphNode extends ElementNode {
 
   static clone(node: ParagraphNode): ParagraphNode {
     return new ParagraphNode(node.__key);
-  }
-
-  constructor(key?: NodeKey): void {
-    super(key);
   }
 
   // View

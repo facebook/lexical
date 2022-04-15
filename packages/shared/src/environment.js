@@ -26,7 +26,10 @@ export const CAN_USE_BEFORE_INPUT: boolean =
 export const IS_SAFARI: boolean =
   CAN_USE_DOM && /Version\/[\d\.]+.*Safari/.test(navigator.userAgent);
 
-export const IS_IOS: boolean = CAN_USE_DOM && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+export const IS_IOS: boolean =
+  CAN_USE_DOM &&
+  /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+  !window.MSStream;
 
 // Keep these in case we need to use them in the future.
 // export const IS_WINDOWS: boolean = CAN_USE_DOM && /Win/.test(navigator.platform);

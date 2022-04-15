@@ -11,7 +11,7 @@ User types a character and you want to color the word blue if the word is now eq
 We programmatically add an `@Mention` to the editor, the `@Mention` is immediately next to another `@Mention` (`@Mention@Mention`). Since we believe this makes mentions hard to read, we want to destroy/replace both mentions and render them as plain TextNode's instead.
 
 ```js
-const removeTransform = editor.registerNodeTransform(TextNode, textNode => {
+const removeTransform = editor.registerNodeTransform(TextNode, (textNode) => {
   if (textNode.getTextContent() === 'blue') {
     textNode.setTextContent('green');
   }
@@ -37,7 +37,7 @@ In most cases, it is possible to achieve the same or very similar result through
 Additionally, each cycle creates a brand new EditorState object which can interfere with plugins like HistoryPlugin (undo-redo) if not handled correctly.
 
 ```js
-editor.addUpdateListener(()=> {
+editor.addUpdateListener(() => {
   editor.update(() => {
     // Don't do this
   });

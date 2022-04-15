@@ -74,4 +74,6 @@ declare export function $isCodeHighlightNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof CodeHighlightNode);
 
-declare export function registerCodeHighlighting(editor: LexicalEditor): () => void;
+declare export function registerCodeHighlighting(
+  editor: LexicalEditor,
+): () => void;

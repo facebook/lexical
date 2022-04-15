@@ -14,6 +14,7 @@ import type {
   GridSelection,
   LexicalEditor,
   LexicalNode,
+  NodeSelection,
   RangeSelection,
 } from 'lexical';
 
@@ -148,14 +149,14 @@ export function applyTableHandlers(
 
   // Clear selection when clicking outside of dom.
   const mouseDownCallback = (event) => {
-    isMouseDown = true;
-
-    if (event.button !== 0) {
-      return;
-    }
-
     editor.update(() => {
       const selection = $getSelection();
+
+      if (event.button !== 0) {
+        return;
+      }
+
+      isMouseDown = true;
 
       if (
         $isGridSelection(selection) &&
@@ -188,6 +189,10 @@ export function applyTableHandlers(
       KEY_ARROW_DOWN_COMMAND,
       (payload) => {
         const selection = $getSelection();
+
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
 
         const event: KeyboardEvent = payload;
 
@@ -292,6 +297,10 @@ export function applyTableHandlers(
       (payload) => {
         const selection = $getSelection();
 
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
+
         const event: KeyboardEvent = payload;
 
         const direction = 'up';
@@ -395,6 +404,10 @@ export function applyTableHandlers(
       (payload) => {
         const selection = $getSelection();
 
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
+
         const event: KeyboardEvent = payload;
 
         const direction = 'backward';
@@ -491,6 +504,10 @@ export function applyTableHandlers(
       KEY_ARROW_RIGHT_COMMAND,
       (payload) => {
         const selection = $getSelection();
+
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
 
         const event: KeyboardEvent = payload;
 
@@ -593,6 +610,10 @@ export function applyTableHandlers(
       () => {
         const selection = $getSelection();
 
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
+
         if ($isGridSelection(selection)) {
           tableSelection.clearText();
           return true;
@@ -626,6 +647,10 @@ export function applyTableHandlers(
       (payload) => {
         const selection = $getSelection();
 
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
+
         if ($isGridSelection(selection)) {
           const event: KeyboardEvent = payload;
           event.preventDefault();
@@ -655,6 +680,10 @@ export function applyTableHandlers(
       (payload) => {
         const selection = $getSelection();
 
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
+
         if ($isGridSelection(selection)) {
           tableSelection.formatCells(payload);
           return true;
@@ -680,6 +709,10 @@ export function applyTableHandlers(
       (payload) => {
         const selection = $getSelection();
 
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
+
         if ($isGridSelection(selection)) {
           tableSelection.clearHighlight();
           return false;
@@ -704,6 +737,10 @@ export function applyTableHandlers(
       KEY_TAB_COMMAND,
       (payload) => {
         const selection = $getSelection();
+
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
 
         if ($isRangeSelection(selection)) {
           const tableCellNode = $findMatchingParent(
@@ -747,6 +784,10 @@ export function applyTableHandlers(
       SELECTION_CHANGE_COMMAND,
       (payload) => {
         const selection = $getSelection();
+
+        if (!$isSelectionInTable(selection, tableNode)) {
+          return false;
+        }
 
         if (
           selection &&
@@ -1090,6 +1131,20 @@ const adjustFocusNodeInDirection = (
 
   return false;
 };
+
+function $isSelectionInTable(
+  selection: null | GridSelection | RangeSelection | NodeSelection,
+  tableNode: TableNode,
+): boolean {
+  if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+    const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
+    const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
+
+    return isAnchorInside && isFocusInside;
+  }
+
+  return false;
+}
 
 function selectTableCellNode(tableCell) {
   const possibleParagraph = tableCell

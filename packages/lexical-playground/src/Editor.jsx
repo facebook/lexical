@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import {$createLinkNode} from '@lexical/link';
+import {$createListItemNode, $createListNode} from '@lexical/list';
 import AutoFocusPlugin from '@lexical/react/LexicalAutoFocusPlugin';
 import AutoScrollPlugin from '@lexical/react/LexicalAutoScrollPlugin';
 import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
@@ -20,7 +22,7 @@ import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcu
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
-import {$createHeadingNode} from '@lexical/rich-text';
+import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import * as React from 'react';
 import {useRef} from 'react';
@@ -62,14 +64,22 @@ function prepopulatedRichText() {
     const heading = $createHeadingNode('h1');
     heading.append($createTextNode('Welcome to the playground'));
     root.append(heading);
+    const quote = $createQuoteNode();
+    quote.append(
+      $createTextNode(
+        `In case you were wondering what the black box at the bottom is – it's the debug view, showing the current state of editor. ` +
+          `You can hide it by pressing on the settings control in the bottom-right of your screen and toggling the debug view setting.`,
+      ),
+    );
+    root.append(quote);
     const paragraph = $createParagraphNode();
     paragraph.append(
-      $createTextNode('This is an '),
-      $createTextNode('example').toggleFormat('bold'),
-      $createTextNode(' editor component built with '),
+      $createTextNode('The playground is a demo environment built with '),
       $createTextNode('@lexical/react').toggleFormat('code'),
       $createTextNode('.'),
-      $createTextNode(' Try writing in some text with '),
+      $createTextNode(' Try typing in '),
+      $createTextNode('some text').toggleFormat('bold'),
+      $createTextNode(' with '),
       $createTextNode('different').toggleFormat('italic'),
       $createTextNode(' formats.'),
     );
@@ -81,6 +91,43 @@ function prepopulatedRichText() {
       ),
     );
     root.append(paragraph2);
+    const paragraph3 = $createParagraphNode();
+    paragraph3.append(
+      $createTextNode(`If you'd like to find out more about Lexical, you can:`),
+    );
+    root.append(paragraph3);
+    const list = $createListNode('ul');
+    list.append(
+      $createListItemNode().append(
+        $createTextNode(`Visit the `),
+        $createLinkNode('https://lexical.dev/').append(
+          $createTextNode('Lexical website'),
+        ),
+        $createTextNode(` for documentation and more information.`),
+      ),
+      $createListItemNode().append(
+        $createTextNode(`Check out the code on our `),
+        $createLinkNode('https://github.com/facebook/lexical').append(
+          $createTextNode('GitHub repository'),
+        ),
+        $createTextNode(`.`),
+      ),
+      $createListItemNode().append(
+        $createTextNode(`Join our `),
+        $createLinkNode('https://discord.com/invite/KmG4wQnnD9').append(
+          $createTextNode('Discord Server'),
+        ),
+        $createTextNode(` and chat with the team.`),
+      ),
+    );
+    root.append(list);
+    const paragraph4 = $createParagraphNode();
+    paragraph4.append(
+      $createTextNode(
+        `Lastly, we're constantly adding cool new features to this playground. So make sure you check back here when you next get a chance :).`,
+      ),
+    );
+    root.append(paragraph4);
   }
 }
 
@@ -112,8 +159,7 @@ export default function Editor(): React$Node {
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
           !isRichText ? 'plain-text' : ''
         }`}
-        ref={scrollRef}
-      >
+        ref={scrollRef}>
         <AutoFocusPlugin />
         <LexicalClearEditorPlugin />
         <MentionsPlugin />

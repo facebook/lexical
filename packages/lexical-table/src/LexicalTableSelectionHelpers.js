@@ -29,6 +29,7 @@ import {
   $isTextNode,
   $setSelection,
   DELETE_CHARACTER_COMMAND,
+  FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   INSERT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -734,6 +735,20 @@ export function applyTableHandlers(
 
             return true;
           }
+        }
+
+        return false;
+      },
+      CriticalPriority,
+    ),
+  );
+
+  tableSelection.listenersToRemove.add(
+    editor.registerCommand(
+      FOCUS_COMMAND,
+      (payload) => {
+        if (tableNode.isSelected()) {
+          return true;
         }
 
         return false;

@@ -785,10 +785,6 @@ export function applyTableHandlers(
       (payload) => {
         const selection = $getSelection();
 
-        if (!$isSelectionInTable(selection, tableNode)) {
-          return false;
-        }
-
         if (
           selection &&
           $isRangeSelection(selection) &&
@@ -1139,10 +1135,8 @@ function $isSelectionInTable(
   if ($isRangeSelection(selection) || $isGridSelection(selection)) {
     const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
     const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
-
     return isAnchorInside && isFocusInside;
   }
-
   return false;
 }
 

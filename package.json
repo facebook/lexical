@@ -14,9 +14,8 @@
   "engineStrict": true,
   "scripts": {
     "start": "NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
-    "start:website": "concurrently \"npm:build\" \"npm run start --prefix packages/lexical-website -- -p 3030\"",
+    "start:website": "npm run start --prefix packages/lexical-website-new -- --port 3001",
     "dev": "npm run dev --prefix packages/lexical-playground",
-    "dev:website": "concurrently \"npm:build\" \"npm run dev --prefix packages/lexical-website -- -p 3030\"",
     "build": "node scripts/build.js --clean",
     "build-prod": "node scripts/build.js --prod --clean",
     "build-release": "node scripts/build.js --prod --release --clean",

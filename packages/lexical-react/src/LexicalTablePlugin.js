@@ -8,11 +8,7 @@
  */
 
 import type {TableSelection} from '@lexical/table';
-import type {
-  CommandListenerEditorPriority,
-  ElementNode,
-  NodeKey,
-} from 'lexical';
+import type {NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -29,11 +25,11 @@ import {
   $getSelection,
   $isRangeSelection,
   $isRootNode,
+  COMMAND_PRIORITY_EDITOR,
+  ElementNode,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function TablePlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -81,7 +77,7 @@ export default function TablePlugin(): React$Node {
         }
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     );
   }, [editor]);
 

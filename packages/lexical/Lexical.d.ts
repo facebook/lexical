@@ -222,17 +222,12 @@ export type EditorConfig<EditorContext> = {
   context: EditorContext;
   disableEvents?: boolean;
 };
-export type CommandListenerEditorPriority = 0;
-export type CommandListenerLowPriority = 1;
-export type CommandListenerNormalPriority = 2;
-export type CommandListenerHighPriority = 3;
-export type CommandListenerCriticalPriority = 4;
-type CommandListenerPriority =
-  | CommandListenerEditorPriority
-  | CommandListenerLowPriority
-  | CommandListenerNormalPriority
-  | CommandListenerHighPriority
-  | CommandListenerCriticalPriority;
+export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+export const COMMAND_PRIORITY_EDITOR = 0;
+export const COMMAND_PRIORITY_LOW = 1;
+export const COMMAND_PRIORITY_NORMAL = 2;
+export const COMMAND_PRIORITY_HIGH = 3;
+export const COMMAND_PRIORITY_CRITICAL = 4;
 export type IntentionallyMarkedAsDirtyElement = boolean;
 export function createEditor<EditorContext>(editorConfig?: {
   namespace?: string;

@@ -7,13 +7,7 @@
  * @flow strict
  */
 
-import type {
-  CommandListenerLowPriority,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
+import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import './ImageNode.css';
 
@@ -35,6 +29,7 @@ import {
   $getSelection,
   $isNodeSelection,
   CLICK_COMMAND,
+  COMMAND_PRIORITY_LOW,
   createEditor,
   DecoratorNode,
   KEY_BACKSPACE_COMMAND,
@@ -54,8 +49,6 @@ import TableCellActionMenuPlugin from '../plugins/TableActionMenuPlugin';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import ContentEditable from '../ui/ContentEditable';
 import Placeholder from '../ui/Placeholder';
-
-const LowPriority: CommandListenerLowPriority = 1;
 
 const imageCache = new Set();
 
@@ -242,8 +235,7 @@ function ImageResizer({
           ref={buttonRef}
           onClick={() => {
             setShowCaption(!showCaption);
-          }}
-        >
+          }}>
           Add Caption
         </button>
       )}
@@ -346,10 +338,18 @@ function ImageComponent({
 
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(KEY_DELETE_COMMAND, onDelete, LowPriority),
-      editor.registerCommand(KEY_BACKSPACE_COMMAND, onDelete, LowPriority),
+      editor.registerCommand(
+        KEY_DELETE_COMMAND,
+        onDelete,
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_BACKSPACE_COMMAND,
+        onDelete,
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   }, [
     clearSelection,

@@ -747,11 +747,7 @@ export function applyTableHandlers(
     editor.registerCommand(
       FOCUS_COMMAND,
       (payload) => {
-        if (tableNode.isSelected()) {
-          return true;
-        }
-
-        return false;
+        return tableNode.isSelected();
       },
       CriticalPriority,
     ),

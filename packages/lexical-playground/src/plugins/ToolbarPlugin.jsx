@@ -219,7 +219,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
     editor.getEditorState().read(() => {
       updateLinkEditor();
     });
-  }, [editor, updateLinkEditor])
+  }, [editor, updateLinkEditor]);
 
   useEffect(() => {
     if (isEditMode && inputRef.current) {
@@ -638,29 +638,7 @@ export default function ToolbarPlugin(): React$Node {
           : anchorNode.getTopLevelElementOrThrow();
       const elementKey = element.getKey();
       const elementDOM = activeEditor.getElementByKey(elementKey);
-      if (elementDOM !== null) {
-        setSelectedElementKey(elementKey);
-        if ($isListNode(element)) {
-          const parentList = $getNearestNodeOfType(anchorNode, ListNode);
-          const type = parentList ? parentList.getTag() : element.getTag();
-          setBlockType(type);
-        } else {
-          const type = $isHeadingNode(element)
-            ? element.getTag()
-            : element.getType();
-          setBlockType(type);
-          if ($isCodeNode(element)) {
-            setCodeLanguage(element.getLanguage() || getDefaultCodeLanguage());
-          }
-        }
-      }
-      // Hande buttons
-      setFontSize(
-        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
-      );
-      setFontFamily(
-        $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
-      );
+
       // Update text format
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
@@ -677,6 +655,31 @@ export default function ToolbarPlugin(): React$Node {
       } else {
         setIsLink(false);
       }
+
+      if (elementDOM !== null) {
+        setSelectedElementKey(elementKey);
+        if ($isListNode(element)) {
+          const parentList = $getNearestNodeOfType(anchorNode, ListNode);
+          const type = parentList ? parentList.getTag() : element.getTag();
+          setBlockType(type);
+        } else {
+          const type = $isHeadingNode(element)
+            ? element.getTag()
+            : element.getType();
+          setBlockType(type);
+          if ($isCodeNode(element)) {
+            setCodeLanguage(element.getLanguage() || getDefaultCodeLanguage());
+            return;
+          }
+        }
+      }
+      // Hande buttons
+      setFontSize(
+        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+      );
+      setFontFamily(
+        $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
+      );
     }
   }, [activeEditor]);
 

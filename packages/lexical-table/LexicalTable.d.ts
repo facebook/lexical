@@ -15,6 +15,8 @@ import type {
   RangeSelection,
   ElementNode,
   LexicalEditor,
+  TextFormatType,
+  LexicalCommand,
 } from 'lexical';
 import {TableSelection} from './src/TableSelection';
 
@@ -210,7 +212,7 @@ declare function $deleteTableColumn(
 /**
  * LexicalTableSelection.js
  */
-declare class TableSelection {
+export declare class TableSelection {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
@@ -222,7 +224,7 @@ declare class TableSelection {
   startY: number;
   nodeKey: string;
   editor: LexicalEditor;
-  constructor(editor: LexicalEditor, nodeKey: string): void;
+  constructor(editor: LexicalEditor, nodeKey: string);
   getGrid(): Grid;
   removeListeners(): void;
   trackTableGrid(): void;

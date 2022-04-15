@@ -120,7 +120,7 @@ declare export class LexicalEditor {
   _pendingDecorators: null | {
     [NodeKey]: mixed,
   };
-  _config: EditorConfig<{...}>;
+  _config: EditorConfig;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;

@@ -55,7 +55,7 @@ assigned to node.
 
 By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private
 and their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
-mangles and minfies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
+mangles and minifies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
 to be extended outside of your build~
 
 If you are adding a property that you expect to be modifiable or accessable, then you should always create a set of `get*()`

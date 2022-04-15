@@ -22,7 +22,7 @@ Of these nodes, three of them are exposed from the `lexical` package, making the
 - `TextNode`
 - `DecoratorNode`
 
-### `RootNode`
+### [`RootNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalRootNode.js)
 
 There is only ever a single `RootNode` in an `EditorState` and it is always at the top and it represents the
 `contenteditable` itself. This means that the `RootNode` does not have a parent or siblings and also.
@@ -30,22 +30,31 @@ There is only ever a single `RootNode` in an `EditorState` and it is always at t
 - To get the text content of the entire editor, you should use `rootNode.getTextContent()`.
 - To avoid selection issues, Lexical forbids insertion of text nodes directly into a `RootNode`.
 
-### `LineBreakNode`
+### [`LineBreakNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalLineBreakNode.js)
 
 You should never have `'\n'` in your text nodes, instead you should use the `LineBreakNode` which represents
 `'\n'`, and more importantly, can work consistently between browsers and operating systems.
 
-### `ElementNode`
+### [`ElementNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalElementNode.js)
 
-> TODO
+Used as parent for other nodes, can be block level (`ParagraphNode`, `HeadingNode`) and inline (`LinkNode`).
+Has various methods which define its behaviour that can be overridden during extension (`isInline`, `canBeEmpty`, `canInsertTextBefore` and more)
 
-### `TextNode`
+### [`TextNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalTextNode.js)
 
-> TODO
+Leaf type of node that contains text. It also includes few text-specific properties:
 
-### `DecoratorNode`
+- `format` any combination of `bold`, `italic`, `underline`, `strikethrough`, `code`, `subscript` and `superscript`
+- `mode`
+  - `token` - acts as immutable node, can't change its content and is deleted all at once
+  - `inert` - similar to `token`, but also set `contenteditable=false` so can't put cursor inside or partially select it
+  - `segmented` - its content deleted by segments (one word at a time), it is editable although node becomes non-segmented once its content is updated
+- `style` can be used to apply inline css styles to text
 
-> TODO
+### [`DecoratorNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalDecoratorNode.js)
+
+Wrapper node to insert arbitrary view (component) inside the editor. Decorator node rendering is framework-agnostic and with
+can output components from React, vanila js or other frameworks.
 
 ## Node Properties
 
@@ -57,7 +66,7 @@ assigned to node.
 By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private
 and their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
 mangles and minifies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
-to be extended outside of your build~
+to be extended outside of your build.
 
 If you are adding a property that you expect to be modifiable or accessable, then you should always create a set of `get*()`
 and `set*()` methods on your node for this property. Inside these methods, you'll need to invoke some very important methods
@@ -136,8 +145,7 @@ class MyCustomNode extends SomeOtherNode {
 
 As mentioned above, Lexical exposes three base nodes that can be extended.
 
-> Did you know? Nodes such as `ElementNode` are already extended in the core
-by Lexical, such as `PargraphNode` and`RootNode`!
+> Did you know? Nodes such as `ElementNode` are already extended in the core by Lexical, such as `PargraphNode` and `RootNode`!
 
 ### Extending `ElementNode`
 
@@ -185,8 +193,94 @@ export function $isCustomParagraphNode(node: ?LexicalNode): boolean {
 
 ### Extending `TextNode`
 
-> TODO
+```js
+export class ColoredNode extends TextNode {
+  __color: string;
+
+  constructor(text: string, color: string, key?: NodeKey): void {
+    super(text, key);
+    this.__color = color;
+  }
+
+  static getType(): string {
+    return 'colored';
+  }
+
+  static clone(node: ColoredNode): ColoredNode {
+    return new ColoredNode(
+      node.__text,
+      node.__color,
+      node.__key,
+    );
+  }
+
+  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+    const element = super.createDOM(config);
+    element.style.color = this.__color;
+    return element;
+  }
+
+  updateDOM<EditorContext>(
+    // $FlowFixMe
+    prevNode: ColoredNode,
+    dom: HTMLElement,
+    config: EditorConfig<EditorContext>,
+  ): boolean {
+    const isUpdated = super.updateDOM(prevNode, dom, config);
+    if (prevNode.__color !== this.__color) {
+      element.style.color = this.__color;
+    }
+    return isUpdated;
+  }
+}
+
+export function $createColoredNode(text: string, color: string): ColoredNode {
+  return new ColoredNode(text, color);
+}
+
+export function $isColoredNode(node: ?LexicalNode): boolean {
+  return node instanceof ColoredNode;
+}
+```
+
 
 ### Extending `DecoratorNode`
 
-> TODO
+```js
+export class VideoNode extends DecoratorNode<React$Node> {
+  __id: string;
+
+  static getType(): string {
+    return 'video';
+  }
+
+  static clone(node: VideoNode): VideoNode {
+    return new VideoNode(node.__id, node.__key);
+  }
+
+  constructor(id: string, key?: NodeKey) {
+    super(key);
+    this.__id = id;
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+
+  decorate(): React$Node {
+    return <VideoPlayer videoID={this.__id} />;
+  }
+}
+
+export function $createVideoNode(id: string): VideoNode {
+  return new VideoNode(id);
+}
+
+export function $isVideoNode(node: ?LexicalNode): boolean {
+  return node instanceof VideoNode;
+}
+```

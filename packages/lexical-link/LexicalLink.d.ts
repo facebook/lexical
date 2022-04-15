@@ -22,11 +22,11 @@ export declare class LinkNode extends ElementNode {
   static getType(): string;
   static clone(node: LinkNode): LinkNode;
   constructor(url: string, key?: NodeKey);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
-  updateDOM<EditorContext>(
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(
     prevNode: LinkNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean;
   static importDOM(): DOMConversionMap | null;
   getURL(): string;

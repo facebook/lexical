@@ -128,7 +128,7 @@ export class EquationNode extends DecoratorNode<React$Node> {
     this.__inline = inline ?? false;
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     return document.createElement(this.__inline ? 'span' : 'div');
   }
 

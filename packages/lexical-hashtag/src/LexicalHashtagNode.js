@@ -25,7 +25,7 @@ export class HashtagNode extends TextNode {
     super(text, key);
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
     addClassNamesToElement(element, config.theme.hashtag);
     return element;

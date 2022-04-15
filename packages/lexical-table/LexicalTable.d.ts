@@ -47,7 +47,7 @@ export declare class TableCellNode extends ElementNode {
     width?: ?number,
     key?: NodeKey,
   );
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
@@ -78,7 +78,7 @@ export declare class TableNode extends ElementNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
   constructor(grid?: Grid, key?: NodeKey);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   canInsertTab(): true;
@@ -103,7 +103,7 @@ declare class TableRowNode extends ElementNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(key?: NodeKey, height?: ?number);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,

@@ -51,8 +51,7 @@ export default function LexicalComposer({
       let editor = initialEditor || null;
 
       if (editor === null) {
-        const newEditor = createEditor<LexicalComposerContextType>({
-          context,
+        const newEditor = createEditor({
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),

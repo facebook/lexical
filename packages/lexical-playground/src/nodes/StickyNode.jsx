@@ -291,7 +291,7 @@ export class StickyNode extends DecoratorNode<React$Node> {
     this.__color = color;
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const div = document.createElement('div');
     div.style.display = 'contents';
     return div;

@@ -19,8 +19,7 @@ import {useMemo} from 'react';
 
 import useLexicalEditor from './DEPRECATED_useLexicalEditor';
 
-export default function useLexical<EditorContext>(editorConfig: {
-  context?: EditorContext,
+export default function useLexical(editorConfig: {
   disableEvents?: boolean,
   editorState?: EditorState,
   namespace?: string,

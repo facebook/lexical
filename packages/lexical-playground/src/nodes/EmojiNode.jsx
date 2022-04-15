@@ -27,7 +27,7 @@ export class EmojiNode extends TextNode {
     this.__className = className;
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const dom = document.createElement('span');
     const inner = super.createDOM(config);
     dom.className = this.__className;
@@ -36,10 +36,10 @@ export class EmojiNode extends TextNode {
     return dom;
   }
 
-  updateDOM<EditorContext>(
+  updateDOM(
     prevNode: TextNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     // $FlowFixMe: this will always be an element or null
     const inner: null | HTMLElement = dom.firstChild;

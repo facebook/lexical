@@ -43,7 +43,7 @@ export class TableRowNode extends GridRowNode {
     this.__height = height;
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('tr');
 
     if (this.__height) {

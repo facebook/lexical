@@ -43,6 +43,7 @@ import {
   IS_ALIGN_RIGHT,
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
+import {markSelectionChangeFromReconcile} from './LexicalEvents';
 import {
   cloneDecorators,
   getDOMTextNode,
@@ -871,6 +872,7 @@ function reconcileSelection(
     if (nextSelection.isCollapsed() && rootElement === activeElement) {
       scrollIntoViewIfNeeded(editor, nextAnchorNode, rootElement);
     }
+    markSelectionChangeFromReconcile();
   } catch (error) {
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it

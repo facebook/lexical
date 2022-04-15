@@ -222,7 +222,8 @@ function StickyComponent({
           document.addEventListener('pointerup', handlePointerUp);
           event.preventDefault();
         }
-      }}>
+      }}
+    >
       <button onClick={handleDelete} className="delete">
         X
       </button>
@@ -231,7 +232,8 @@ function StickyComponent({
       </button>
       <LexicalNestedComposer
         initialEditor={caption}
-        initialTheme={StickyEditorTheme}>
+        initialTheme={StickyEditorTheme}
+      >
         {isCollab ? (
           <CollaborationPlugin
             id={caption.getKey()}

@@ -131,7 +131,8 @@ function ExcalidrawComponent({
       />
       <button
         ref={buttonRef}
-        className={`excalidraw-button ${isSelected ? 'selected' : ''}`}>
+        className={`excalidraw-button ${isSelected ? 'selected' : ''}`}
+      >
         <ExcalidrawImage className="image" elements={elements} />
       </button>
     </>

@@ -8,6 +8,6 @@
 
 import {$ReadOnly} from 'utility-types';
 type Props = $ReadOnly<{
-  scrollRef: { current: HTMLElement | null };
+  scrollRef: {current: HTMLElement | null};
 }>;
 export default function LexicalAutoScrollPlugin(props: Props): null;

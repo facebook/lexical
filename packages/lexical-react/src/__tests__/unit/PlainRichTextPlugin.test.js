@@ -85,7 +85,8 @@ describe('LexicalNodeHelpers tests', () => {
                       OverflowNode,
                     ],
               theme: {},
-            }}>
+            }}
+          >
             <GrabEditor />
             {plugin === 'PlainTextPlugin' ? (
               <PlainTextPlugin

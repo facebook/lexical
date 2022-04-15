@@ -243,7 +243,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
     });
   }, [editor]);
 
-  if (!isText) {
+  if (!isText || !isLink) {
     return null;
   }
 

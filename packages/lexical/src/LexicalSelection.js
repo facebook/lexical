@@ -1370,20 +1370,24 @@ export class RangeSelection implements BaseSelection {
       }
       nodesToMove = currentElement.getChildren().slice(anchorOffset).reverse();
     }
-    if (anchorOffset === 0 && nodesToMove.length > 0) {
-      if (currentElement.isInline()) {
-        currentElement.getParentOrThrow().insertBefore($createParagraphNode());
-        return;
-      }
+    const nodesToMoveLength = nodesToMove.length;
+    if (
+      anchorOffset === 0 &&
+      nodesToMoveLength > 0 &&
+      currentElement.isInline()
+    ) {
+      currentElement.getParentOrThrow().insertBefore($createParagraphNode());
+      return;
     }
     const newElement = currentElement.insertNewAfter(this);
     if (newElement === null) {
       // Handle as a line break insertion
       this.insertLineBreak();
     } else if ($isElementNode(newElement)) {
-      const nodesToMoveLength = nodesToMove.length;
-      // Move the new element to be before the current element
-      if (anchorOffset === 0 && nodesToMoveLength > 0) {
+      // If we're at the beginning of the current element, move the new element to be before the current element
+      const isBeginning =
+        anchorOffset === 0 && currentElement.getFirstChildOrThrow().is(anchor);
+      if (isBeginning && nodesToMoveLength > 0) {
         currentElement.insertBefore(newElement);
         return;
       }

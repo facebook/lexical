@@ -46,6 +46,7 @@ import {$getNearestNodeOfType, mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
+  $getRoot,
   $getSelection,
   $isRangeSelection,
   CAN_REDO_COMMAND,
@@ -66,6 +67,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import useModal from '../hooks/useModal';
+import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
 import DropDown from '../ui/DropDown';
 import Input from '../ui/Input';
@@ -993,6 +995,18 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon equation" />
               <span className="text">Equation</span>
+            </button>
+            <button
+              onClick={() => {
+                editor.update(() => {
+                  const root = $getRoot();
+                  const stickyNode = $createStickyNode(0, 0);
+                  root.append(stickyNode);
+                });
+              }}
+              className="item">
+              <i className="icon sticky" />
+              <span className="text">Sticky Note</span>
             </button>
           </DropDown>
         </>

@@ -1330,28 +1330,29 @@ export class RangeSelection implements BaseSelection {
     const anchorOffset = anchor.offset;
     let currentElement;
     let nodesToMove = [];
-
+    let siblingsToMove = [];
     if (anchor.type === 'text') {
       const anchorNode = anchor.getNode();
-      const textContent = anchorNode.getTextContent();
-      const textContentLength = textContent.length;
       currentElement = anchorNode.getParentOrThrow();
       const isInline = currentElement.isInline();
+      const textContentLength = isInline
+        ? currentElement.getTextContentSize()
+        : anchorNode.getTextContentSize();
       if (anchorOffset === 0) {
         nodesToMove.push(anchorNode);
       } else {
         if (isInline) {
           // For inline nodes, we want to move all the siblings to the new paragraph
           // if selection is at the end, we just move the siblings. Otherwise, we also
-          // split the text node and add that below.
-          nodesToMove = currentElement.getNextSiblings().reverse();
+          // split the text node and add that and it's siblings below.
+          siblingsToMove = currentElement.getNextSiblings();
         }
         if (anchorOffset !== textContentLength) {
-          if (!isInline) {
-            nodesToMove = anchorNode.getNextSiblings().reverse();
+          nodesToMove = anchorNode.getNextSiblings().reverse();
+          if (!isInline || anchorOffset !== anchorNode.getTextContentSize()) {
+            const [, splitNode] = anchorNode.splitText(anchorOffset);
+            nodesToMove.push(splitNode);
           }
-          const [, splitNode] = anchorNode.splitText(anchorOffset);
-          nodesToMove.push(splitNode);
         }
       }
     } else {
@@ -1387,19 +1388,19 @@ export class RangeSelection implements BaseSelection {
         return;
       }
       let firstChild = null;
-      const isInline = newElement.isInline();
+      const siblingsToMoveLength = siblingsToMove.length;
+      const parent = newElement.getParentOrThrow();
+      // For inline elements, we append the siblings to the parent.
+      if (siblingsToMoveLength > 0) {
+        for (let i = 0; i < siblingsToMoveLength; i++) {
+          const siblingToMove = siblingsToMove[i];
+          parent.append(siblingToMove);
+        }
+      }
       if (nodesToMoveLength !== 0) {
         for (let i = 0; i < nodesToMoveLength; i++) {
           const nodeToMove = nodesToMove[i];
           if (firstChild === null) {
-            if (isInline) {
-              // For inline nodes, we start with the nodes that were previously in the parent
-              newElement.getParentOrThrow().append(nodeToMove);
-            } else {
-              newElement.append(nodeToMove);
-            }
-          } else if (isInline && i === nodesToMoveLength - 1) {
-            // The last node is the split text child of the inline node.
             newElement.append(nodeToMove);
           } else {
             firstChild.insertBefore(nodeToMove);

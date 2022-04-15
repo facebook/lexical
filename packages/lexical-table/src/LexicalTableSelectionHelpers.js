@@ -27,7 +27,6 @@ import {
   $isGridSelection,
   $isParagraphNode,
   $isRangeSelection,
-  $isTextNode,
   $setSelection,
   DELETE_CHARACTER_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -799,27 +798,21 @@ export function applyTableHandlers(
             (isFocusInside && !isAnchorInside);
           if (containsPartialTable) {
             const isBackward = selection.isBackward();
-            const startNode = isBackward ? focusNode : anchorNode;
             const modifiedSelection = $createRangeSelection();
             const tableIndex = tableNode.getIndexWithinParent();
             const parentKey = tableNode.getParentOrThrow().getKey();
-            isRangeSelectionHijacked = true;
-            (isBackward
-              ? modifiedSelection.focus
-              : modifiedSelection.anchor
-            ).set(
-              startNode.getKey(),
-              (isBackward ? selection.focus : selection.anchor).offset,
-              $isTextNode(startNode) ? 'text' : 'element',
+            modifiedSelection.anchor.set(
+              selection.anchor.key,
+              selection.anchor.offset,
+              selection.anchor.type,
             );
-            (isBackward
-              ? modifiedSelection.anchor
-              : modifiedSelection.focus
-            ).set(
+            // Set selection to before or after table on the root node.
+            modifiedSelection.focus.set(
               parentKey,
               isBackward ? tableIndex - 1 : tableIndex + 1,
               'element',
             );
+            isRangeSelectionHijacked = true;
             $setSelection(modifiedSelection);
             $addHighlightStyleToTable(tableSelection);
             return true;

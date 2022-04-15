@@ -24,11 +24,15 @@ Of these nodes, three of them are exposed from the `lexical` package, making the
 
 ### `RootNode`
 
-> TODO
+There is only ever a single `RootNode` in an `EditorState` and it is always at the top and it represents the
+`contenteditable` itself. This means that the `RootNode` does not have a parent or siblings and also.
+
+To avoid selection issues, Lexical forbids insertion of text nodes directly into a `RootNode`.
 
 ### `LineBreakNode`
 
-> TODO
+You should never have `'\n'` in your text nodes, instead you should use the `LineBreakNode` which represents
+`'\n'`, and more importantly, can work consistently between browsers and operating systems.
 
 ### `ElementNode`
 

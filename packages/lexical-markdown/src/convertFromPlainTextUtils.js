@@ -247,10 +247,7 @@ function convertMarkdownForTextCriteria<T>(
   elementNode: ElementNode,
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ) {
-  invariant(
-    scanningContext.textNodeWithOffset == null,
-    'Scanning context was not reset.',
-  );
+  resetScanningContext(scanningContext);
 
   // Cycle through all the criteria and convert all text patterns in the parent element.
   const allCriteria = getAllMarkdownCriteriaForTextNodes();

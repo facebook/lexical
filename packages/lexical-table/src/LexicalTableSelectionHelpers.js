@@ -149,14 +149,14 @@ export function applyTableHandlers(
 
   // Clear selection when clicking outside of dom.
   const mouseDownCallback = (event) => {
+    isMouseDown = true;
+
+    if (event.button !== 0) {
+      return;
+    }
+
     editor.update(() => {
       const selection = $getSelection();
-
-      if (event.button !== 0) {
-        return;
-      }
-
-      isMouseDown = true;
 
       if (
         $isGridSelection(selection) &&

@@ -24,6 +24,7 @@
 .PlaygroundEditorTheme__quote {
   margin: 0;
   margin-left: 20px;
+  margin-bottom: 10px;
   font-size: 15px;
   color: rgb(101, 103, 107);
   border-left-color: rgb(206, 208, 212);

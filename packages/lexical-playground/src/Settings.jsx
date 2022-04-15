@@ -78,14 +78,14 @@ export default function Settings(): React$Node {
           <Switch
             onClick={() => setOption('showTreeView', !showTreeView)}
             checked={showTreeView}
-            text="Tree View"
+            text="Debug View"
           />
           <Switch
             onClick={() =>
               setOption('showNestedEditorTreeView', !showNestedEditorTreeView)
             }
             checked={showNestedEditorTreeView}
-            text="Nested Editors Tree View"
+            text="Nested Editors Debug View"
           />
           <Switch
             onClick={() => {

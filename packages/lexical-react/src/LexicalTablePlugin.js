@@ -8,7 +8,7 @@
  */
 
 import type {TableSelection} from '@lexical/table';
-import type {NodeKey} from 'lexical';
+import type {ElementNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -26,7 +26,6 @@ import {
   $isRangeSelection,
   $isRootNode,
   COMMAND_PRIORITY_EDITOR,
-  ElementNode,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';

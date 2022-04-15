@@ -7,7 +7,14 @@
  * @flow strict
  */
 
-import {createEditor} from './LexicalEditor';
+import {
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_NORMAL,
+  createEditor,
+} from './LexicalEditor';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
   $createEmptyGridSelection as $createGridSelection,
@@ -77,6 +84,11 @@ export {
   $nodesOfType,
   $setCompositionKey,
   $setSelection,
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_NORMAL,
   createEditor,
   DecoratorNode,
   ElementNode,

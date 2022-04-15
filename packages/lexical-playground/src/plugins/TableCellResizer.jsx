@@ -37,7 +37,7 @@ type MousePosition = {
 
 type MouseDraggingDirection = 'right' | 'bottom';
 
-const MIN_ROW_HEIGHT = 60;
+const MIN_ROW_HEIGHT = 33;
 const MIN_COLUMN_WIDTH = 50;
 
 function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {

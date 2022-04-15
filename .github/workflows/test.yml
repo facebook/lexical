@@ -4,8 +4,12 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'packages/lexical-website-new/**'
   pull_request:
     types: [opened, synchronize, reopened]
+    paths-ignore:
+      - 'packages/lexical-website-new/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -135,8 +135,7 @@
 }
 .PlaygroundEditorTheme__tableCell {
   border: 1px solid black;
-  padding: 8px;
-  height: 40px;
+  padding: 6px 8px;
   min-width: 75px;
   vertical-align: top;
   text-align: start;

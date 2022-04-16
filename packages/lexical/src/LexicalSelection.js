@@ -1385,8 +1385,12 @@ export class RangeSelection implements BaseSelection {
       this.insertLineBreak();
     } else if ($isElementNode(newElement)) {
       // If we're at the beginning of the current element, move the new element to be before the current element
+      const currentElementFirstChild = currentElement.getFirstChild();
       const isBeginning =
-        anchorOffset === 0 && currentElement.getFirstChildOrThrow().is(anchor);
+        anchorOffset === 0 &&
+        (currentElement.is(anchor.getNode()) ||
+          (currentElementFirstChild &&
+            currentElementFirstChild.is(anchor.getNode())));
       if (isBeginning && nodesToMoveLength > 0) {
         currentElement.insertBefore(newElement);
         return;

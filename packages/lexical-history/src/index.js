@@ -8,7 +8,6 @@
  */
 
 import type {
-  CommandListenerEditorPriority,
   EditorState,
   GridSelection,
   IntentionallyMarkedAsDirtyElement,
@@ -29,6 +28,7 @@ import {
   CAN_UNDO_COMMAND,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
@@ -44,8 +44,6 @@ const COMPOSING_CHARACTER = 1;
 const INSERT_CHARACTER_AFTER_SELECTION = 2;
 const DELETE_CHARACTER_BEFORE_SELECTION = 3;
 const DELETE_CHARACTER_AFTER_SELECTION = 4;
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export type HistoryStateEntry = {
   editor: LexicalEditor,
@@ -376,7 +374,7 @@ export function registerHistory(
         undo(editor, historyState);
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       REDO_COMMAND,
@@ -384,7 +382,7 @@ export function registerHistory(
         redo(editor, historyState);
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       CLEAR_EDITOR_COMMAND,
@@ -392,7 +390,7 @@ export function registerHistory(
         clearHistory(historyState);
         return false;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       CLEAR_HISTORY_COMMAND,
@@ -400,7 +398,7 @@ export function registerHistory(
         clearHistory(historyState);
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerUpdateListener(applyChange),
   );

@@ -42,6 +42,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   CLICK_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
@@ -354,7 +355,7 @@ export function registerRichText(
         selection.deleteCharacter(isBackward);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DELETE_WORD_COMMAND,
@@ -367,7 +368,7 @@ export function registerRichText(
         selection.deleteWord(isBackward);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DELETE_LINE_COMMAND,
@@ -380,7 +381,7 @@ export function registerRichText(
         selection.deleteLine(isBackward);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       INSERT_TEXT_COMMAND,
@@ -406,7 +407,7 @@ export function registerRichText(
         }
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       REMOVE_TEXT_COMMAND,
@@ -418,7 +419,7 @@ export function registerRichText(
         selection.removeText();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       FORMAT_TEXT_COMMAND,
@@ -431,7 +432,7 @@ export function registerRichText(
         selection.formatText(format);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       FORMAT_ELEMENT_COMMAND,
@@ -447,7 +448,7 @@ export function registerRichText(
         }
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       INSERT_LINE_BREAK_COMMAND,
@@ -460,7 +461,7 @@ export function registerRichText(
         selection.insertLineBreak(selectStart);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
@@ -472,7 +473,7 @@ export function registerRichText(
         selection.insertParagraph();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
@@ -495,7 +496,7 @@ export function registerRichText(
         }
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
@@ -523,7 +524,7 @@ export function registerRichText(
         }
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
@@ -541,7 +542,7 @@ export function registerRichText(
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_ARROW_RIGHT_COMMAND,
@@ -559,7 +560,7 @@ export function registerRichText(
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
@@ -581,7 +582,7 @@ export function registerRichText(
         }
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_DELETE_COMMAND,
@@ -594,7 +595,7 @@ export function registerRichText(
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_ENTER_COMMAND,
@@ -611,7 +612,7 @@ export function registerRichText(
         }
         return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
@@ -626,7 +627,7 @@ export function registerRichText(
           event.shiftKey ? OUTDENT_CONTENT_COMMAND : INDENT_CONTENT_COMMAND,
         );
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_ESCAPE_COMMAND,
@@ -638,7 +639,7 @@ export function registerRichText(
         editor.blur();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DROP_COMMAND,
@@ -651,7 +652,7 @@ export function registerRichText(
         event.preventDefault();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DRAGSTART_COMMAND,
@@ -665,7 +666,7 @@ export function registerRichText(
         event.preventDefault();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       COPY_COMMAND,
@@ -678,7 +679,7 @@ export function registerRichText(
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       CUT_COMMAND,
@@ -691,7 +692,7 @@ export function registerRichText(
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       PASTE_COMMAND,
@@ -703,7 +704,7 @@ export function registerRichText(
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
   );
   initializeEditor(editor, initialEditorState);

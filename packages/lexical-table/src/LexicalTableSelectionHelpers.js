@@ -10,7 +10,6 @@
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
-  CommandListenerCriticalPriority,
   GridSelection,
   LexicalEditor,
   LexicalNode,
@@ -28,6 +27,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
+  COMMAND_PRIORITY_CRITICAL,
   DELETE_CHARACTER_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -43,8 +43,6 @@ import {
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {TableSelection} from './LexicalTableSelection';
-
-const CriticalPriority: CommandListenerCriticalPriority = 4;
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -288,7 +286,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -395,7 +393,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -496,7 +494,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -601,7 +599,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -638,7 +636,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -671,7 +669,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -700,7 +698,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -729,7 +727,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   tableSelection.listenersToRemove.add(
@@ -775,7 +773,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
 
@@ -785,7 +783,7 @@ export function applyTableHandlers(
       (payload) => {
         return tableNode.isSelected();
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
 
@@ -845,7 +843,7 @@ export function applyTableHandlers(
 
         return false;
       },
-      CriticalPriority,
+      COMMAND_PRIORITY_CRITICAL,
     ),
   );
   return tableSelection;

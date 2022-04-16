@@ -7,17 +7,17 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHorizontalRuleNode,
   INSERT_HORIZONTAL_RULE_COMMAND,
 } from '@lexical/react/LexicalHorizontalRuleNode';
-import {$getSelection, $isRangeSelection} from 'lexical';
+import {
+  $getSelection,
+  $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
+} from 'lexical';
 import {useEffect} from 'react';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export default function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
@@ -43,7 +43,7 @@ export default function HorizontalRulePlugin(): null {
 
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     );
   }, [editor]);
 

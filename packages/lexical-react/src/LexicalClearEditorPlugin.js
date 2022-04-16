@@ -13,6 +13,7 @@ import {
   $getRoot,
   $getSelection,
   CLEAR_EDITOR_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
@@ -42,7 +43,7 @@ export default function LexicalClearEditorPlugin({onClear}: Props): React$Node {
         });
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     );
   }, [editor, onClear]);
 

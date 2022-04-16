@@ -7,11 +7,7 @@
  * @flow strict
  */
 
-import type {
-  CommandListenerLowPriority,
-  LexicalEditor,
-  RangeSelection,
-} from 'lexical';
+import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
@@ -19,6 +15,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_LOW,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -112,8 +109,6 @@ const AtSignMentionsRegexAliasRegex = new RegExp(
     '})' +
     ')$',
 );
-
-const LowPriority: CommandListenerLowPriority = 1;
 
 // At most, 5 suggestions are shown in the popup.
 const SUGGESTION_LIST_LENGTH_LIMIT = 5;
@@ -704,7 +699,7 @@ function MentionsTypeahead({
           }
           return true;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
@@ -719,7 +714,7 @@ function MentionsTypeahead({
           }
           return true;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
@@ -733,7 +728,7 @@ function MentionsTypeahead({
           close();
           return true;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_TAB_COMMAND,
@@ -747,7 +742,7 @@ function MentionsTypeahead({
           applyCurrentSelected();
           return true;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
@@ -762,7 +757,7 @@ function MentionsTypeahead({
           applyCurrentSelected();
           return true;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [

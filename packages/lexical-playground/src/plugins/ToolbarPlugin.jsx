@@ -7,11 +7,7 @@
  * @flow strict
  */
 
-import type {
-  CommandListenerLowPriority,
-  LexicalEditor,
-  RangeSelection,
-} from 'lexical';
+import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import {
   $createCodeNode,
@@ -51,6 +47,7 @@ import {
   $isRangeSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
+  COMMAND_PRIORITY_LOW,
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -79,8 +76,6 @@ import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
 import {INSERT_POLL_COMMAND} from './PollPlugin';
 import {INSERT_TWEET_COMMAND} from './TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from './YouTubePlugin';
-
-const LowPriority: CommandListenerLowPriority = 1;
 
 const supportedBlockTypes = new Set([
   'paragraph',
@@ -212,7 +207,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
           updateLinkEditor();
           return true;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [editor, updateLinkEditor]);
@@ -699,7 +694,7 @@ export default function ToolbarPlugin(): React$Node {
           setActiveEditor(newEditor);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       activeEditor.registerCommand(
         CAN_UNDO_COMMAND,
@@ -707,7 +702,7 @@ export default function ToolbarPlugin(): React$Node {
           setCanUndo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
       activeEditor.registerCommand(
         CAN_REDO_COMMAND,
@@ -715,7 +710,7 @@ export default function ToolbarPlugin(): React$Node {
           setCanRedo(payload);
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [activeEditor, updateToolbar]);

@@ -7,11 +7,7 @@
  * @flow strict
  */
 
-import type {
-  CommandListenerHighPriority,
-  ElementNode,
-  RangeSelection,
-} from 'lexical';
+import type {RangeSelection} from 'lexical';
 
 import {$getListDepth, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -19,6 +15,8 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  COMMAND_PRIORITY_CRITICAL,
+  ElementNode,
   INDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
@@ -43,8 +41,6 @@ function getElementNodesInSelection(
     nodesInSelection.map((n) => ($isElementNode(n) ? n : n.getParentOrThrow())),
   );
 }
-
-const highPriority: CommandListenerHighPriority = 3;
 
 function isIndentPermitted(maxDepth: number): boolean {
   const selection = $getSelection();
@@ -83,7 +79,7 @@ export default function ListMaxIndentLevelPlugin({maxDepth}: Props): null {
     return editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => !isIndentPermitted(maxDepth ?? 7),
-      highPriority,
+      COMMAND_PRIORITY_CRITICAL,
     );
   }, [editor, maxDepth]);
 

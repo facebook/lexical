@@ -17,7 +17,7 @@ your surface and the requirements. Furthermore, in frameworks that support lazy-
 
 ## What can be built with Lexical?
 
-Lexical is a framework, rather than a stand-alone editor library. You can think of Lexical as a UI engine that lets developers move-fast and create different types of text editor that scale to their specific requirements. Here are some (but not all) examples of what you can do with Lexical:
+Lexical makes it possible to easily create complex text editing experiences that otherwise would be very complex with the built-in browser tooling. We built Lexical to enable developers to move-fast and create different types text experiences that scale to specific requirements. Here are some (but not all) examples of what you can do with Lexical:
 
 - Simple plain-text editors that have more requirements than a `<textarea>`, such as requiring features like mentions, custom emojis, links and hashtags.
 - More complex rich-text editors that can be used to post content on blogs, social media, messaging applications.

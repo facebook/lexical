@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalCommand} from 'lexical';
+import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -15,8 +15,6 @@ import {
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
-  LexicalEditor,
-  RangeSelection,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';

@@ -42,9 +42,9 @@ function HomepageHeader() {
           </Link>
           <Link
             className="button button--outline margin-left--sm"
-            to="/docs/intro"
+            to="https://playground.lexical.dev"
           >
-            Learn More
+            Visit Playground
           </Link>
         </div>
       </div>

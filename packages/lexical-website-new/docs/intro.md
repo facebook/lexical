@@ -8,6 +8,29 @@ sidebar_position: 1
 
 Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 
+Lexical works by attaching itself to a `contentEditable` element and from there you can work with Lexical's declarative APIs to make
+things happen without needing to worry about specific edge-cases around the DOM. In fact, you rarely need to interact with the DOM at all in 
+most cases (unless you build your own custom nodes).
+
+The core package of Lexical is only 22kb in file size (min+gzip) and you only ever pay the cost for what you need. So Lexical can grow with
+your surface and the requirements. Furthermore, in frameworks that support lazy-loading, you can defer Lexical plugins till when the user actually interacts with the editor itself – which can greatly help improve performance.
+
+## What can be built with Lexical?
+
+Lexical is a framework, rather than a standalone monolithic editor library. You can think of Lexical as a UI engine that lets developers create
+any type of text editor (within the constraints of the browser!):
+
+- Simple plain-text editors that have more requirements than a `<textarea>`, such as requiring features like mentions, custom emojis, links and hashtags.
+- More complex rich-text editors that can be used to post content on blogs, social media, messenging applications.
+- A full-blown WYSIWYG editor that can be used in a CMS or rich content editor.
+- A complex code editor with line numbers, syntax highlighting, bracket closing, etc.
+- Real-time collaborative text editing experiences that combine many of the above points.
+
+You can think of Lexical as a text editor UI framework. Whilst Lexical is currently only usable on the web, the team is also experimenting
+with building native versions of Lexical for other platforms.
+
+## Lexical's Design
+
 The core of Lexical is a dependency-free text editor framework that allows developers to build powerful, simple and complex,
 editor surfaces. Lexical's has a few concepts that are worth exploring:
 

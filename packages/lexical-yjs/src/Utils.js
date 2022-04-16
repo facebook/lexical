@@ -277,15 +277,23 @@ export function syncPropertiesFromLexical(
     if (prevValue !== nextValue) {
       if (nextValue instanceof EditorClass) {
         const yjsDocMap = binding.docMap;
+        let prevDoc;
         if (prevValue instanceof EditorClass) {
-          yjsDocMap.delete(prevValue._key);
+          const prevKey = prevValue._key;
+          prevDoc = yjsDocMap.get(prevKey);
+          yjsDocMap.delete(prevKey);
         }
-        const doc = new Doc();
+        // If we already have a document, use it.
+        const doc = prevDoc || new Doc();
         // $FlowFixMe: guid exists
         const key = doc.guid;
         nextValue._key = key;
         yjsDocMap.set(key, doc);
         nextValue = doc;
+        // Mark the node dirty as we've assigned a new key to it
+        binding.editor.update(() => {
+          nextLexicalNode.markDirty();
+        });
       }
       if (sharedType instanceof YMap) {
         sharedType.set(property, nextValue);

@@ -10,6 +10,7 @@
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
 import type {EditorThemeClasses, LexicalEditor} from 'lexical';
 
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
@@ -53,10 +54,15 @@ export default function LexicalNestedComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+  // If collaboration is enabled, make sure we don't render the children
+  // until the collaboration subdocument is ready.
+  const {yjsDocMap} = useCollaborationContext();
+  const isCollab = yjsDocMap.get('main') !== undefined;
+  const isCollabReady = yjsDocMap.has(initialEditor.getKey());
 
   return (
     <LexicalComposerContext.Provider value={composerContext}>
-      {children}
+      {!isCollab || isCollabReady ? children : null}
     </LexicalComposerContext.Provider>
   );
 }

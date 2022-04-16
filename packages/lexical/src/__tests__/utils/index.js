@@ -13,6 +13,7 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
+import LexicalComposer from '@lexical/react/src/LexicalComposer';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {createEditor, DecoratorNode, ElementNode, TextNode} from 'lexical';
@@ -27,6 +28,41 @@ type TestEnv = {
   editor: LexicalEditor | null,
   outerHTML: string,
 };
+
+export function TestComposer({config = {}, children}) {
+  const customNodes = config.nodes || [];
+  return (
+    <LexicalComposer
+      initialConfig={{
+        onError: (e) => {
+          throw e;
+        },
+        ...config,
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          TableNode,
+          TableCellNode,
+          TableRowNode,
+          HashtagNode,
+          CodeHighlightNode,
+          AutoLinkNode,
+          LinkNode,
+          OverflowNode,
+          TestElementNode,
+          TestSegmentedNode,
+          TestExcludeFromCopyElementNode,
+          TestDecoratorNode,
+          ...customNodes,
+        ],
+      }}>
+      {children}
+    </LexicalComposer>
+  );
+}
 
 export function createTestEditor(config = {}): LexicalEditor {
   const customNodes = config.nodes || [];

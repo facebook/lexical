@@ -12,7 +12,9 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
-import useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
+import LexicalContentEditable from '@lexical/react/src/LexicalContentEditable';
+import RichTextPlugin from '@lexical/react/src/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   applySelectionInputs,
@@ -20,7 +22,7 @@ import {
   setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {createEditor} from 'lexical';
+import {TestComposer} from 'lexical/src/__tests__/utils';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -52,89 +54,87 @@ describe('LexicalEventHelpers', () => {
     container = null;
   });
 
-  function useLexicalEditor(rootElementRef) {
-    const editor = React.useMemo(
-      () =>
-        createEditor({
-          nodes: [
-            LinkNode,
-            HeadingNode,
-            ListNode,
-            ListItemNode,
-            QuoteNode,
-            CodeNode,
-            TableNode,
-            TableCellNode,
-            TableRowNode,
-            HashtagNode,
-            CodeHighlightNode,
-            AutoLinkNode,
-            LinkNode,
-            OverflowNode,
-          ],
-          theme: {
-            code: 'editor-code',
-            heading: {
-              h1: 'editor-heading-h1',
-              h2: 'editor-heading-h2',
-              h3: 'editor-heading-h3',
-              h4: 'editor-heading-h4',
-              h5: 'editor-heading-h5',
-            },
-            image: 'editor-image',
-            list: {
-              listitem: 'editor-listitem',
-              olDepth: ['editor-list-ol'],
-              ulDepth: ['editor-list-ul'],
-            },
-            paragraph: 'editor-paragraph',
-            placeholder: 'editor-placeholder',
-            quote: 'editor-quote',
-            text: {
-              bold: 'editor-text-bold',
-              code: 'editor-text-code',
-              hashtag: 'editor-text-hashtag',
-              italic: 'editor-text-italic',
-              link: 'editor-text-link',
-              strikethrough: 'editor-text-strikethrough',
-              underline: 'editor-text-underline',
-              underlineStrikethrough: 'editor-text-underlineStrikethrough',
-            },
-          },
-        }),
-      [],
-    );
-
-    React.useEffect(() => {
-      const rootElement = rootElementRef.current;
-      editor.setRootElement(rootElement);
-    }, [rootElementRef, editor]);
-
-    return editor;
-  }
-
   let editor = null;
 
   async function init() {
-    const ref = React.createRef();
-
     function TestBase() {
-      editor = useLexicalEditor(ref);
-      const props = useLexicalRichText(editor);
-      return <div ref={ref} contentEditable={true} {...props} />;
+      function TestPlugin() {
+        [editor] = useLexicalComposerContext();
+      }
+
+      return (
+        <TestComposer
+          config={{
+            nodes: [
+              LinkNode,
+              HeadingNode,
+              ListNode,
+              ListItemNode,
+              QuoteNode,
+              CodeNode,
+              TableNode,
+              TableCellNode,
+              TableRowNode,
+              HashtagNode,
+              CodeHighlightNode,
+              AutoLinkNode,
+              LinkNode,
+              OverflowNode,
+            ],
+            theme: {
+              code: 'editor-code',
+              heading: {
+                h1: 'editor-heading-h1',
+                h2: 'editor-heading-h2',
+                h3: 'editor-heading-h3',
+                h4: 'editor-heading-h4',
+                h5: 'editor-heading-h5',
+              },
+              image: 'editor-image',
+              list: {
+                listitem: 'editor-listitem',
+                olDepth: ['editor-list-ol'],
+                ulDepth: ['editor-list-ul'],
+              },
+              paragraph: 'editor-paragraph',
+              placeholder: 'editor-placeholder',
+              quote: 'editor-quote',
+              text: {
+                bold: 'editor-text-bold',
+                code: 'editor-text-code',
+                hashtag: 'editor-text-hashtag',
+                italic: 'editor-text-italic',
+                link: 'editor-text-link',
+                strikethrough: 'editor-text-strikethrough',
+                underline: 'editor-text-underline',
+                underlineStrikethrough: 'editor-text-underlineStrikethrough',
+              },
+            },
+          }}>
+          <RichTextPlugin
+            contentEditable={
+              // eslint-disable-next-line jsx-a11y/aria-role
+              <LexicalContentEditable role={null} spellCheck={null} />
+            }
+          />
+          <TestPlugin />
+        </TestComposer>
+      );
     }
 
     ReactTestUtils.act(() => {
       createRoot(container).render(<TestBase />);
     });
-    ref.current.focus();
+    editor.getRootElement().focus();
     await Promise.resolve().then();
     // Focus first element
-    setNativeSelectionWithPaths(ref.current, [0, 0], 0, [0, 0], 0);
+    setNativeSelectionWithPaths(editor.getRootElement(), [0, 0], 0, [0, 0], 0);
   }
 
   async function update(fn) {
-    editor.update(fn);
+    await ReactTestUtils.act(async () => {
+      await editor.update(fn);
+    });
     return Promise.resolve().then();
   }
 

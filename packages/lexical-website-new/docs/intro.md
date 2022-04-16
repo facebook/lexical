@@ -8,6 +8,27 @@ sidebar_position: 1
 
 Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 
+Lexical works by attaching itself to a `contentEditable` element and from there you can work with Lexical's declarative APIs to make
+things happen without needing to worry about specific edge-cases around the DOM. In fact, you rarely need to interact with the DOM at all in 
+most cases (unless you build your own custom nodes).
+
+The core package of Lexical is only 22kb in file size (min+gzip) and you only ever pay the cost for what you need. So Lexical can grow with
+your surface and the requirements. Furthermore, in frameworks that support lazy-loading, you can defer Lexical plugins till when the user actually interacts with the editor itself – which can greatly help improve performance.
+
+## What can be built with Lexical?
+
+Lexical is a framework, rather than a stand-alone editor library. You can think of Lexical as a UI engine that lets developers move-fast and create different types of text editor that scale to their specific requirements. Here are some (but not all) examples of what you can do with Lexical:
+
+- Simple plain-text editors that have more requirements than a `<textarea>`, such as requiring features like mentions, custom emojis, links and hashtags.
+- More complex rich-text editors that can be used to post content on blogs, social media, messaging applications.
+- A full-blown WYSIWYG editor that can be used in a CMS or rich content editor.
+- Real-time collaborative text editing experiences that combine many of the above points.
+
+You can think of Lexical as a text editor UI framework. Whilst Lexical is currently only usable on the web, the team is also experimenting
+with building native versions of Lexical for other platforms. At Meta, Lexical powers web text editing experiences for hundreds of millions of users everyday across Facebook, Workplace, Messenger, WhatsApp and Instagram.
+
+## Lexical's Design
+
 The core of Lexical is a dependency-free text editor framework that allows developers to build powerful, simple and complex,
 editor surfaces. Lexical's has a few concepts that are worth exploring:
 
@@ -27,7 +48,7 @@ An Editor State is the underlying data model that represents what you want to sh
 
 Editor States are immutable once created, and in order to create one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update
-workflow to preventing cascading/waterfalling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
+workflow to preventing cascading/water-falling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
 
 Editor States are also fully serializable to JSON and can easily be serialized back into to editor using `editor.parseEditorState()`.
 

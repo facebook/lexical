@@ -103,13 +103,17 @@ export default function ActionsPlugins({
           className={
             'action-button action-button-mic ' +
             (isSpeechToText ? 'active' : '')
-          }>
+          }
+          title="Mic"
+          aria-label="Mic">
           <i className="mic" />
         </button>
       )}
       <button
         className="action-button import"
-        onClick={() => importFile(editor)}>
+        onClick={() => importFile(editor)}
+        title="Import"
+        aria-label="Import">
         <i className="import" />
       </button>
       <button
@@ -119,7 +123,9 @@ export default function ActionsPlugins({
             fileName: `Playground ${new Date().toISOString()}`,
             source: 'Playground',
           })
-        }>
+        }
+        title="Export"
+        aria-label="Export">
         <i className="export" />
       </button>
       <button
@@ -127,17 +133,25 @@ export default function ActionsPlugins({
         onClick={() => {
           editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
           editor.focus();
-        }}>
+        }}
+        title="Clear"
+        aria-label="Clear">
         <i className="clear" />
       </button>
       <button
         className="action-button lock"
         onClick={() => {
           editor.setReadOnly(!editor.isReadOnly());
-        }}>
+        }}
+        title={isReadOnly ? 'Unlock' : 'Lock'}
+        aria-label={isReadOnly ? 'Unlock' : 'Lock'}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
-      <button className="action-button" onClick={convertFromMarkdown}>
+      <button
+        className="action-button"
+        onClick={convertFromMarkdown}
+        title="Markdown"
+        aria-label="Markdown">
         <i className="markdown" />
       </button>
       {isCollab && (
@@ -145,7 +159,9 @@ export default function ActionsPlugins({
           className="action-button connect"
           onClick={() => {
             editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
-          }}>
+          }}
+          title={connected ? 'Disconnect' : 'Connect'}
+          aria-label={connected ? 'Disconnect' : 'Connect'}>
           <i className={connected ? 'disconnect' : 'connect'} />
         </button>
       )}

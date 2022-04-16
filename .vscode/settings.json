@@ -8,8 +8,5 @@
       "source.fixAll.eslint",
       "source.fixAll.format"
     ]
-  },
-  "cSpell.enableFiletypes": [
-    "markdown"
-  ]
+  }
 }

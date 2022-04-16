@@ -8,7 +8,9 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import ContentEditable from '@lexical/react/src/LexicalContentEditable';
+import RichTextPlugin from '@lexical/react/src/LexicalRichTextPlugin';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -42,6 +44,7 @@ import {
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
+  TestComposer,
 } from '../utils';
 
 // No idea why we suddenly need to do this, but it fixes the tests
@@ -903,18 +906,24 @@ describe('LexicalEditor tests', () => {
       const listener = jest.fn();
 
       function Test({divKey}) {
-        editor = React.useMemo(() => createTestEditor(), []);
-        DEPRECATED__useLexicalRichText(editor);
+        function TestPlugin() {
+          [editor] = useLexicalComposerContext();
 
-        React.useEffect(() => {
-          editor.registerRootListener(listener);
-        }, []);
+          React.useEffect(() => {
+            editor.registerRootListener(listener);
+          }, []);
+        }
 
-        const ref = React.useCallback((node) => {
-          editor.setRootElement(node);
-        }, []);
-
-        return <div key={divKey} ref={ref} contentEditable={true} />;
+        return (
+          <TestComposer>
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable key={divKey} role={null} spellCheck={null} />
+              }
+            />
+            <TestPlugin />
+          </TestComposer>
+        );
       }
 
       ReactTestUtils.act(() => {
@@ -932,7 +941,7 @@ describe('LexicalEditor tests', () => {
       ReactTestUtils.act(() => {
         reactRoot.render(<Test divKey={1} />);
       });
-      expect(listener).toHaveBeenCalledTimes(3);
+      expect(listener).toHaveBeenCalledTimes(4);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );

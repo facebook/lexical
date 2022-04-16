@@ -8,7 +8,10 @@
 
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
-import DEPRECATED_useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
+import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
+import LexicalContentEditable from '@lexical/react/src/LexicalContentEditable';
+import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
+import RichTextPlugin from '@lexical/react/src/LexicalRichTextPlugin';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -20,7 +23,7 @@ import {
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
-  createTestEditor,
+  TestComposer,
 } from 'lexical/src/__tests__/utils';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -78,74 +81,71 @@ describe('LexicalSelection tests', () => {
     container = null;
   });
 
-  function useLexicalEditor(rootElementRef) {
-    const editor = React.useMemo(
-      () =>
-        createTestEditor({
-          theme: {
-            code: 'editor-code',
-            heading: {
-              h1: 'editor-heading-h1',
-              h2: 'editor-heading-h2',
-              h3: 'editor-heading-h3',
-              h4: 'editor-heading-h4',
-              h5: 'editor-heading-h5',
-            },
-            image: 'editor-image',
-            list: {
-              ol: 'editor-list-ol',
-              ul: 'editor-list-ul',
-            },
-            listitem: 'editor-listitem',
-            paragraph: 'editor-paragraph',
-            placeholder: 'editor-placeholder',
-            quote: 'editor-quote',
-            text: {
-              bold: 'editor-text-bold',
-              code: 'editor-text-code',
-              hashtag: 'editor-text-hashtag',
-              italic: 'editor-text-italic',
-              link: 'editor-text-link',
-              strikethrough: 'editor-text-strikethrough',
-              underline: 'editor-text-underline',
-              underlineStrikethrough: 'editor-text-underlineStrikethrough',
-            },
-          },
-        }),
-      [],
-    );
-
-    React.useEffect(() => {
-      const rootElement = rootElementRef.current;
-
-      editor.setRootElement(rootElement);
-    }, [rootElementRef, editor]);
-
-    return editor;
-  }
-
   let editor = null;
 
   async function init() {
-    const ref = React.createRef();
-
     function TestBase() {
-      editor = useLexicalEditor(ref);
-      const props = DEPRECATED_useLexicalRichText(editor);
-      return <div ref={ref} contentEditable={true} {...props} />;
+      function TestPlugin() {
+        [editor] = useLexicalComposerContext();
+      }
+
+      return (
+        <TestComposer
+          config={{
+            theme: {
+              code: 'editor-code',
+              heading: {
+                h1: 'editor-heading-h1',
+                h2: 'editor-heading-h2',
+                h3: 'editor-heading-h3',
+                h4: 'editor-heading-h4',
+                h5: 'editor-heading-h5',
+              },
+              image: 'editor-image',
+              list: {
+                ol: 'editor-list-ol',
+                ul: 'editor-list-ul',
+              },
+              listitem: 'editor-listitem',
+              paragraph: 'editor-paragraph',
+              placeholder: 'editor-placeholder',
+              quote: 'editor-quote',
+              text: {
+                bold: 'editor-text-bold',
+                code: 'editor-text-code',
+                hashtag: 'editor-text-hashtag',
+                italic: 'editor-text-italic',
+                link: 'editor-text-link',
+                strikethrough: 'editor-text-strikethrough',
+                underline: 'editor-text-underline',
+                underlineStrikethrough: 'editor-text-underlineStrikethrough',
+              },
+            },
+          }}>
+          <RichTextPlugin
+            contentEditable={
+              <LexicalContentEditable role={null} spellCheck={null} />
+            }
+          />
+          <HistoryPlugin />
+          <TestPlugin />
+        </TestComposer>
+      );
     }
 
     ReactTestUtils.act(() => {
       createRoot(container).render(<TestBase />);
     });
-    ref.current.focus();
+    editor.getRootElement().focus();
     await Promise.resolve().then();
     // Focus first element
-    setNativeSelectionWithPaths(ref.current, [0, 0], 0, [0, 0], 0);
+    setNativeSelectionWithPaths(editor.getRootElement(), [0, 0], 0, [0, 0], 0);
   }
 
   async function update(fn) {
-    editor.update(fn);
+    await ReactTestUtils.act(async () => {
+      await editor.update(fn);
+    });
     return Promise.resolve().then();
   }
 
@@ -904,17 +904,19 @@ describe('LexicalSelection tests', () => {
   });
 
   test('getNodes resolves nested block nodes', async () => {
-    await editor.update(() => {
-      const root = $getRoot();
-      const paragraph = root.getFirstChild();
-      const elementNode = $createTestElementNode();
-      const text = $createTextNode();
-      paragraph.append(elementNode);
-      elementNode.append(text);
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = root.getFirstChild();
+        const elementNode = $createTestElementNode();
+        const text = $createTextNode();
+        paragraph.append(elementNode);
+        elementNode.append(text);
 
-      const selectedNodes = $getSelection().getNodes();
-      expect(selectedNodes.length).toBe(1);
-      expect(selectedNodes[0].getKey()).toBe(text.getKey());
+        const selectedNodes = $getSelection().getNodes();
+        expect(selectedNodes.length).toBe(1);
+        expect(selectedNodes[0].getKey()).toBe(text.getKey());
+      });
     });
   });
 
@@ -1422,41 +1424,43 @@ describe('LexicalSelection tests', () => {
           // eslint-disable-next-line no-only-tests/no-only-tests
           const test_ = only === true ? test.only : test;
           test_(name, async () => {
-            await editor.update(() => {
-              const root = $getRoot();
-              const paragraph = root.getFirstChild();
-              const textNode = $createTextNode('foo');
-              // Note: line break can't be selected by the DOM
-              const linebreak = $createLineBreakNode();
-              const selection: Selection = $getSelection();
-              const anchor = selection.anchor;
-              const focus = selection.focus;
+            await ReactTestUtils.act(async () => {
+              await editor.update(() => {
+                const root = $getRoot();
+                const paragraph = root.getFirstChild();
+                const textNode = $createTextNode('foo');
+                // Note: line break can't be selected by the DOM
+                const linebreak = $createLineBreakNode();
+                const selection: Selection = $getSelection();
+                const anchor = selection.anchor;
+                const focus = selection.focus;
 
-              paragraph.append(textNode, linebreak);
+                paragraph.append(textNode, linebreak);
 
-              fnBefore(paragraph, textNode);
+                fnBefore(paragraph, textNode);
 
-              anchor.set(paragraph.getKey(), anchorOffset, 'block');
-              focus.set(paragraph.getKey(), focusOffset, 'block');
+                anchor.set(paragraph.getKey(), anchorOffset, 'block');
+                focus.set(paragraph.getKey(), focusOffset, 'block');
 
-              const {
-                expectedAnchor,
-                expectedAnchorOffset,
-                expectedFocus,
-                expectedFocusOffset,
-              } = fn(paragraph, textNode);
+                const {
+                  expectedAnchor,
+                  expectedAnchorOffset,
+                  expectedFocus,
+                  expectedFocusOffset,
+                } = fn(paragraph, textNode);
 
-              if (invertSelection !== true) {
-                expect(selection.anchor.key).toBe(expectedAnchor.__key);
-                expect(selection.anchor.offset).toBe(expectedAnchorOffset);
-                expect(selection.focus.key).toBe(expectedFocus.__key);
-                expect(selection.focus.offset).toBe(expectedFocusOffset);
-              } else {
-                expect(selection.anchor.key).toBe(expectedFocus.__key);
-                expect(selection.anchor.offset).toBe(expectedFocusOffset);
-                expect(selection.focus.key).toBe(expectedAnchor.__key);
-                expect(selection.focus.offset).toBe(expectedAnchorOffset);
-              }
+                if (invertSelection !== true) {
+                  expect(selection.anchor.key).toBe(expectedAnchor.__key);
+                  expect(selection.anchor.offset).toBe(expectedAnchorOffset);
+                  expect(selection.focus.key).toBe(expectedFocus.__key);
+                  expect(selection.focus.offset).toBe(expectedFocusOffset);
+                } else {
+                  expect(selection.anchor.key).toBe(expectedFocus.__key);
+                  expect(selection.anchor.offset).toBe(expectedFocusOffset);
+                  expect(selection.focus.key).toBe(expectedAnchor.__key);
+                  expect(selection.focus.offset).toBe(expectedAnchorOffset);
+                }
+              });
             });
           });
         },
@@ -1465,95 +1469,101 @@ describe('LexicalSelection tests', () => {
 
   describe('Selection correctly resolves to a sibling ElementNode when a node is removed', () => {
     test('', async () => {
-      await editor.update(() => {
-        const root = $getRoot();
-        const listNode = $createListNode();
-        const listItemNode = $createListItemNode();
-        const paragraph = $createParagraphNode();
-        root.append(listNode);
-        listNode.append(listItemNode);
-        listItemNode.select();
-        listNode.insertAfter(paragraph);
-        listItemNode.remove();
-        const selection = $getSelection();
-        expect(selection.anchor.getNode().__type).toBe('paragraph');
-        expect(selection.focus.getNode().__type).toBe('paragraph');
+      await ReactTestUtils.act(async () => {
+        await editor.update(() => {
+          const root = $getRoot();
+          const listNode = $createListNode();
+          const listItemNode = $createListItemNode();
+          const paragraph = $createParagraphNode();
+          root.append(listNode);
+          listNode.append(listItemNode);
+          listItemNode.select();
+          listNode.insertAfter(paragraph);
+          listItemNode.remove();
+          const selection = $getSelection();
+          expect(selection.anchor.getNode().__type).toBe('paragraph');
+          expect(selection.focus.getNode().__type).toBe('paragraph');
+        });
       });
     });
   });
 
   describe('Selection correctly resolves to a sibling ElementNode that has multiple children with the correct offset when a node is removed', () => {
     test('', async () => {
-      await editor.update(() => {
-        // Arrange
+      await ReactTestUtils.act(async () => {
+        await editor.update(() => {
+          // Arrange
 
-        // Root
-        //  |- Paragraph
-        //    |- Link
-        //      |- Text
-        //      |- LineBreak
-        //      |- Text
-        //    |- Text
-        const root = $getRoot();
-        const paragraph = $createParagraphNode();
-        const link = $createLinkNode();
-        const textOne = $createTextNode('Hello');
-        const br = $createLineBreakNode();
-        const textTwo = $createTextNode('world');
-        const textThree = $createTextNode(' ');
-        root.append(paragraph);
-        link.append(textOne);
-        link.append(br);
-        link.append(textTwo);
-        paragraph.append(link);
-        paragraph.append(textThree);
-        textThree.select();
+          // Root
+          //  |- Paragraph
+          //    |- Link
+          //      |- Text
+          //      |- LineBreak
+          //      |- Text
+          //    |- Text
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const link = $createLinkNode();
+          const textOne = $createTextNode('Hello');
+          const br = $createLineBreakNode();
+          const textTwo = $createTextNode('world');
+          const textThree = $createTextNode(' ');
+          root.append(paragraph);
+          link.append(textOne);
+          link.append(br);
+          link.append(textTwo);
+          paragraph.append(link);
+          paragraph.append(textThree);
+          textThree.select();
 
-        // Act
-        textThree.remove();
+          // Act
+          textThree.remove();
 
-        // Assert
-        const selection = $getSelection();
-        const expectedKey = link.getKey();
-        const {anchor, focus} = selection;
-        expect(anchor.getNode().getKey()).toBe(expectedKey);
-        expect(focus.getNode().getKey()).toBe(expectedKey);
-        expect(anchor.offset).toBe(3);
-        expect(focus.offset).toBe(3);
+          // Assert
+          const selection = $getSelection();
+          const expectedKey = link.getKey();
+          const {anchor, focus} = selection;
+          expect(anchor.getNode().getKey()).toBe(expectedKey);
+          expect(focus.getNode().getKey()).toBe(expectedKey);
+          expect(anchor.offset).toBe(3);
+          expect(focus.offset).toBe(3);
+        });
       });
     });
   });
 
   test('isBackward', async () => {
-    await editor.update(() => {
-      const root = $getRoot();
-      const paragraph = root.getFirstChild();
-      const paragraphKey = paragraph.getKey();
-      const textNode = $createTextNode('foo');
-      const textNodeKey = textNode.getKey();
-      // Note: line break can't be selected by the DOM
-      const linebreak = $createLineBreakNode();
-      const selection: Selection = $getSelection();
-      const anchor = selection.anchor;
-      const focus = selection.focus;
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = root.getFirstChild();
+        const paragraphKey = paragraph.getKey();
+        const textNode = $createTextNode('foo');
+        const textNodeKey = textNode.getKey();
+        // Note: line break can't be selected by the DOM
+        const linebreak = $createLineBreakNode();
+        const selection: Selection = $getSelection();
+        const anchor = selection.anchor;
+        const focus = selection.focus;
 
-      paragraph.append(textNode, linebreak);
+        paragraph.append(textNode, linebreak);
 
-      anchor.set(textNodeKey, 0, 'text');
-      focus.set(textNodeKey, 0, 'text');
-      expect(selection.isBackward()).toBe(false);
+        anchor.set(textNodeKey, 0, 'text');
+        focus.set(textNodeKey, 0, 'text');
+        expect(selection.isBackward()).toBe(false);
 
-      anchor.set(paragraphKey, 1, 'block');
-      focus.set(paragraphKey, 1, 'block');
-      expect(selection.isBackward()).toBe(false);
+        anchor.set(paragraphKey, 1, 'block');
+        focus.set(paragraphKey, 1, 'block');
+        expect(selection.isBackward()).toBe(false);
 
-      anchor.set(paragraphKey, 0, 'block');
-      focus.set(paragraphKey, 1, 'block');
-      expect(selection.isBackward()).toBe(false);
+        anchor.set(paragraphKey, 0, 'block');
+        focus.set(paragraphKey, 1, 'block');
+        expect(selection.isBackward()).toBe(false);
 
-      anchor.set(paragraphKey, 1, 'block');
-      focus.set(paragraphKey, 0, 'block');
-      expect(selection.isBackward()).toBe(true);
+        anchor.set(paragraphKey, 1, 'block');
+        focus.set(paragraphKey, 0, 'block');
+        expect(selection.isBackward()).toBe(true);
+      });
     });
   });
 
@@ -1620,23 +1630,25 @@ describe('LexicalSelection tests', () => {
       }, [])
       .forEach(({name, fn, invertSelection}) => {
         it(name, async () => {
-          await editor.update(() => {
-            const root = $getRoot();
-            const paragraph = root.getFirstChild();
-            const textNode1 = $createTextNode('1');
-            const textNode2 = $createTextNode('2');
-            const decorator = $createTestDecoratorNode();
-            paragraph.append(textNode1, decorator, textNode2);
-            const selection: Selection = $getSelection();
-            const expectedTextContent = fn({
-              anchor: invertSelection ? selection.focus : selection.anchor,
-              decorator,
-              focus: invertSelection ? selection.anchor : selection.focus,
-              paragraph,
-              textNode1,
-              textNode2,
+          await ReactTestUtils.act(async () => {
+            await editor.update(() => {
+              const root = $getRoot();
+              const paragraph = root.getFirstChild();
+              const textNode1 = $createTextNode('1');
+              const textNode2 = $createTextNode('2');
+              const decorator = $createTestDecoratorNode();
+              paragraph.append(textNode1, decorator, textNode2);
+              const selection: Selection = $getSelection();
+              const expectedTextContent = fn({
+                anchor: invertSelection ? selection.focus : selection.anchor,
+                decorator,
+                focus: invertSelection ? selection.anchor : selection.focus,
+                paragraph,
+                textNode1,
+                textNode2,
+              });
+              expect(selection.getTextContent()).toBe(expectedTextContent);
             });
-            expect(selection.getTextContent()).toBe(expectedTextContent);
           });
         });
       });

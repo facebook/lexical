@@ -19,13 +19,12 @@ import {
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_EDITOR,
-  READ_ONLY_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
 import {
-  SPEECT_TO_TEXT_COMMAND,
+  SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
 } from './SpeechToTextPlugin';
 
@@ -43,15 +42,9 @@ export default function ActionsPlugins({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
-        READ_ONLY_COMMAND,
-        (payload) => {
-          const readOnly = payload;
-          setIsReadyOnly(readOnly);
-          return false;
-        },
-        COMMAND_PRIORITY_EDITOR,
-      ),
+      editor.registerReadOnlyListener((readOnly) => {
+        setIsReadyOnly(readOnly);
+      }),
       editor.registerCommand(
         CONNECTED_COMMAND,
         (payload) => {
@@ -97,7 +90,7 @@ export default function ActionsPlugins({
       {SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {
-            editor.dispatchCommand(SPEECT_TO_TEXT_COMMAND, !isSpeechToText);
+            editor.dispatchCommand(SPEECH_TO_TEXT_COMMAND, !isSpeechToText);
             setIsSpeechToText(!isSpeechToText);
           }}
           className={
@@ -139,7 +132,7 @@ export default function ActionsPlugins({
         <i className="clear" />
       </button>
       <button
-        className="action-button lock"
+        className={`action-button ${isReadOnly ? 'unlock' : 'lock'}`}
         onClick={() => {
           editor.setReadOnly(!editor.isReadOnly());
         }}

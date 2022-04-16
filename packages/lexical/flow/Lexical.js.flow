@@ -48,7 +48,6 @@ declare export var CAN_REDO_COMMAND: LexicalCommand<boolean>;
 declare export var CAN_UNDO_COMMAND: LexicalCommand<boolean>;
 declare export var FOCUS_COMMAND: LexicalCommand<FocusEvent>;
 declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
-declare export var READ_ONLY_COMMAND: LexicalCommand<void>;
 
 declare export function createCommand<T>(): LexicalCommand<T>;
 

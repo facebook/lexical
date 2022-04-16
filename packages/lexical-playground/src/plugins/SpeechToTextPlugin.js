@@ -22,7 +22,7 @@ import {useEffect, useRef, useState} from 'react';
 
 import useReport from '../hooks/useReport';
 
-export const SPEECT_TO_TEXT_COMMAND: LexicalCommand<boolean> = createCommand();
+export const SPEECH_TO_TEXT_COMMAND: LexicalCommand<boolean> = createCommand();
 
 const VOICE_COMMANDS: $ReadOnly<{
   [string]: ({editor: LexicalEditor, selection: RangeSelection}) => void,
@@ -99,7 +99,7 @@ function SpeechToTextPlugin(): null {
 
   useEffect(() => {
     return editor.registerCommand(
-      SPEECT_TO_TEXT_COMMAND,
+      SPEECH_TO_TEXT_COMMAND,
       (_isEnabled: boolean) => {
         setIsEnabled(_isEnabled);
         return true;

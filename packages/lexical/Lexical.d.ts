@@ -53,7 +53,6 @@ export var INSERT_TABLE_COMMAND: LexicalCommand<{
   rows: string;
   columns: string;
 }>;
-export var READ_ONLY_COMMAND: LexicalCommand<void>;
 
 export declare function createCommand<T>(): LexicalCommand<T>;
 

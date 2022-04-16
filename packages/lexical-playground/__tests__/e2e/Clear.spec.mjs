@@ -26,22 +26,36 @@ test.describe('Clear', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">foo</span>
         </p>
       `,
     );
 
     await click(page, '.action-button.clear');
+
+    await page.click('text=Cancel');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">foo</span>
+        </p>
+      `,
+    );
+
+    await click(page, '.action-button.clear');
+    await page.click('button:has-text("Clear")');
+
     await page.keyboard.type('bar');
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">bar</span>
         </p>
       `,

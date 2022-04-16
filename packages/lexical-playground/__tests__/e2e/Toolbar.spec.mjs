@@ -40,26 +40,16 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <img
-              alt="Yellow flower in tilt shift lens"
-              src="${IMAGE_URL}"
-              style="height: inherit; max-width: 500px; width: inherit" />
-            <div class="image-caption-container">
+        <p>
+          <span contenteditable="false" data-lexical-decorator="true">
+            <img alt="Yellow flower in tilt shift lens" src="${IMAGE_URL}" />
+            <div>
               <div
-                class="ImageNode__contentEditable"
                 contenteditable="true"
                 role="textbox"
                 spellcheck="true"
-                style="user-select: text; white-space: pre-wrap; word-break: break-word"
                 data-lexical-editor="true">
-                <p
-                  class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                  dir="ltr">
+                <p dir="ltr">
                   <span data-lexical-text="true">
                     Yellow flower in tilt shift lens
                   </span>
@@ -70,6 +60,10 @@ test.describe('Toolbar', () => {
           <br />
         </p>
       `,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
     );
 
     // Delete image
@@ -78,8 +72,12 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p><br /></p>
       `,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
     );
 
     // Add table
@@ -89,107 +87,102 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p>
           <br />
         </p>
-        <table class="PlaygroundEditorTheme__table">
+        <table>
           <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
           </tr>
           <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
           </tr>
           <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
           </tr>
           <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
           </tr>
           <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <th>
+              <p><br /></p>
             </th>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            <td>
+              <p><br /></p>
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p><br /></p>
       `,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
     );
   });
 });

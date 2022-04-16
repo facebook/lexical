@@ -34,7 +34,7 @@ test.describe('Clear', () => {
 
     await click(page, '.action-button.clear');
 
-    await page.click('text=Cancel');
+    await click(page, 'button:has-text("Cancel")');
     await assertHTML(
       page,
       html`
@@ -47,8 +47,8 @@ test.describe('Clear', () => {
     );
 
     await click(page, '.action-button.clear');
-    await page.click('button:has-text("Clear")');
 
+    await click(page, 'button:has-text("Clear")');
     await page.keyboard.type('bar');
     await assertHTML(
       page,

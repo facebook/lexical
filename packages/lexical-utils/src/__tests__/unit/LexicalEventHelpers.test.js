@@ -12,7 +12,6 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
-import LexicalComposer from '@lexical/react/src/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import LexicalContentEditable from '@lexical/react/src/LexicalContentEditable';
 import RichTextPlugin from '@lexical/react/src/LexicalRichTextPlugin';
@@ -23,6 +22,7 @@ import {
   setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {TestComposer} from 'lexical/src/__tests__/utils';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -63,8 +63,8 @@ describe('LexicalEventHelpers', () => {
       }
 
       return (
-        <LexicalComposer
-          initialConfig={{
+        <TestComposer
+          config={{
             nodes: [
               LinkNode,
               HeadingNode,
@@ -113,11 +113,12 @@ describe('LexicalEventHelpers', () => {
           }}>
           <RichTextPlugin
             contentEditable={
+              // eslint-disable-next-line jsx-a11y/aria-role
               <LexicalContentEditable role={null} spellCheck={null} />
             }
           />
           <TestPlugin />
-        </LexicalComposer>
+        </TestComposer>
       );
     }
 

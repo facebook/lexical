@@ -918,6 +918,7 @@ describe('LexicalEditor tests', () => {
           <TestComposer>
             <RichTextPlugin
               contentEditable={
+                // eslint-disable-next-line jsx-a11y/aria-role
                 <ContentEditable key={divKey} role={null} spellCheck={null} />
               }
             />

@@ -124,6 +124,7 @@ describe('LexicalSelection tests', () => {
           }}>
           <RichTextPlugin
             contentEditable={
+              // eslint-disable-next-line jsx-a11y/aria-role
               <LexicalContentEditable role={null} spellCheck={null} />
             }
           />

@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {LexicalEditor} from 'lexical';
+
 import {exportFile, importFile} from '@lexical/file';
 import {$convertFromMarkdownString} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
@@ -23,6 +25,8 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
+import useModal from '../hooks/useModal';
+import Button from '../ui/Button';
 import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
@@ -37,6 +41,7 @@ export default function ActionsPlugins({
   const [isReadOnly, setIsReadyOnly] = useState(() => editor.isReadOnly());
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [modal, showModal] = useModal();
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
 
@@ -124,8 +129,9 @@ export default function ActionsPlugins({
       <button
         className="action-button clear"
         onClick={() => {
-          editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
-          editor.focus();
+          showModal('Clear editor', (onClose) => (
+            <ShowClearDialog editor={editor} onClose={onClose} />
+          ));
         }}
         title="Clear"
         aria-label="Clear">
@@ -158,6 +164,38 @@ export default function ActionsPlugins({
           <i className={connected ? 'disconnect' : 'connect'} />
         </button>
       )}
+      {modal}
     </div>
+  );
+}
+
+function ShowClearDialog({
+  editor,
+  onClose,
+}: {
+  editor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  return (
+    <>
+      Are you sure you want to clear the editor?
+      <div className="Modal__content">
+        <Button
+          onClick={() => {
+            editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
+            editor.focus();
+            onClose();
+          }}>
+          Clear
+        </Button>{' '}
+        <Button
+          onClick={() => {
+            editor.focus();
+            onClose();
+          }}>
+          Cancel
+        </Button>
+      </div>
+    </>
   );
 }

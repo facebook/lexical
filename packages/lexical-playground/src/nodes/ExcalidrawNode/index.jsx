@@ -7,13 +7,7 @@
  * @flow strict
  */
 
-import type {
-  CommandListenerLowPriority,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
+import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
@@ -23,6 +17,7 @@ import {
   $getSelection,
   $isNodeSelection,
   CLICK_COMMAND,
+  COMMAND_PRIORITY_LOW,
   DecoratorNode,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
@@ -32,8 +27,6 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import ExcalidrawImage from './ExcalidrawImage';
 import ExcalidrawModal from './ExcalidrawModal';
-
-const LowPriority: CommandListenerLowPriority = 1;
 
 function ExcalidrawComponent({
   nodeKey,
@@ -87,10 +80,18 @@ function ExcalidrawComponent({
 
           return false;
         },
-        LowPriority,
+        COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(KEY_DELETE_COMMAND, onDelete, LowPriority),
-      editor.registerCommand(KEY_BACKSPACE_COMMAND, onDelete, LowPriority),
+      editor.registerCommand(
+        KEY_DELETE_COMMAND,
+        onDelete,
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_BACKSPACE_COMMAND,
+        onDelete,
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   }, [clearSelection, editor, isSelected, onDelete, setSelected]);
 
@@ -131,8 +132,7 @@ function ExcalidrawComponent({
       />
       <button
         ref={buttonRef}
-        className={`excalidraw-button ${isSelected ? 'selected' : ''}`}
-      >
+        className={`excalidraw-button ${isSelected ? 'selected' : ''}`}>
         <ExcalidrawImage className="image" elements={elements} />
       </button>
     </>

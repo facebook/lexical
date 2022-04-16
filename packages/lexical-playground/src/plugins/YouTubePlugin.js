@@ -7,20 +7,19 @@
  * @flow strict
  */
 
-import type {CommandListenerEditorPriority, LexicalCommand} from 'lexical';
+import type {LexicalCommand} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
   createCommand,
 } from 'lexical';
 import {useEffect} from 'react';
 
 import {$createYouTubeNode, YouTubeNode} from '../nodes/YouTubeNode.jsx';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export const INSERT_YOUTUBE_COMMAND: LexicalCommand<string> = createCommand();
 
@@ -51,7 +50,7 @@ export default function YouTubePlugin(): React$Node {
         }
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     );
   }, [editor]);
   return null;

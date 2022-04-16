@@ -7,26 +7,22 @@
  * @flow strict
  */
 
-import type {
-  CommandListenerEditorPriority,
-  LexicalCommand,
-  LexicalEditor,
-  RangeSelection,
-} from 'lexical';
+import type {LexicalCommand} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
   $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
   createCommand,
+  LexicalEditor,
+  RangeSelection,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 
 import useReport from '../hooks/useReport';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export const SPEECT_TO_TEXT_COMMAND: LexicalCommand<boolean> = createCommand();
 
@@ -110,7 +106,7 @@ function SpeechToTextPlugin(): null {
         setIsEnabled(_isEnabled);
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     );
   }, [editor]);
 

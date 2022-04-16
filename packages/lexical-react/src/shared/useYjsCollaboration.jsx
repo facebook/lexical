@@ -8,7 +8,7 @@
  */
 
 import type {Binding, Provider} from '@lexical/yjs';
-import type {CommandListenerEditorPriority, LexicalEditor} from 'lexical';
+import type {LexicalEditor} from 'lexical';
 import type {Doc} from 'yjs';
 
 import {mergeRegister} from '@lexical/utils';
@@ -28,6 +28,7 @@ import {
   $getRoot,
   $getSelection,
   BLUR_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
   REDO_COMMAND,
   UNDO_COMMAND,
@@ -36,8 +37,6 @@ import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
-
-const EditorPriority: CommandListenerEditorPriority = 0;
 
 export function useYjsCollaboration(
   editor: LexicalEditor,
@@ -194,7 +193,7 @@ export function useYjsCollaboration(
         }
         return true;
       },
-      EditorPriority,
+      COMMAND_PRIORITY_EDITOR,
     );
   }, [connect, disconnect, editor]);
 
@@ -215,7 +214,7 @@ export function useYjsFocusTracking(
           setLocalStateFocus(provider, name, color, true);
           return true;
         },
-        EditorPriority,
+        COMMAND_PRIORITY_EDITOR,
       ),
       editor.registerCommand(
         BLUR_COMMAND,
@@ -223,7 +222,7 @@ export function useYjsFocusTracking(
           setLocalStateFocus(provider, name, color, false);
           return true;
         },
-        EditorPriority,
+        COMMAND_PRIORITY_EDITOR,
       ),
     );
   }, [color, editor, name, provider]);
@@ -253,7 +252,7 @@ export function useYjsHistory(
           undo();
           return true;
         },
-        EditorPriority,
+        COMMAND_PRIORITY_EDITOR,
       ),
       editor.registerCommand(
         REDO_COMMAND,
@@ -261,7 +260,7 @@ export function useYjsHistory(
           redo();
           return true;
         },
-        EditorPriority,
+        COMMAND_PRIORITY_EDITOR,
       ),
     );
   });

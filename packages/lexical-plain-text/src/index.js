@@ -23,6 +23,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
@@ -155,7 +156,7 @@ export function registerPlainText(
         selection.deleteCharacter(isBackward);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DELETE_WORD_COMMAND,
@@ -167,7 +168,7 @@ export function registerPlainText(
         selection.deleteWord(isBackward);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DELETE_LINE_COMMAND,
@@ -179,7 +180,7 @@ export function registerPlainText(
         selection.deleteLine(isBackward);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       INSERT_TEXT_COMMAND,
@@ -203,7 +204,7 @@ export function registerPlainText(
         }
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       REMOVE_TEXT_COMMAND,
@@ -215,7 +216,7 @@ export function registerPlainText(
         selection.removeText();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       INSERT_LINE_BREAK_COMMAND,
@@ -227,7 +228,7 @@ export function registerPlainText(
         selection.insertLineBreak(selectStart);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
@@ -239,7 +240,7 @@ export function registerPlainText(
         selection.insertLineBreak();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
@@ -257,7 +258,7 @@ export function registerPlainText(
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_ARROW_RIGHT_COMMAND,
@@ -275,7 +276,7 @@ export function registerPlainText(
         }
         return false;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
@@ -287,7 +288,7 @@ export function registerPlainText(
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_DELETE_COMMAND,
@@ -299,7 +300,7 @@ export function registerPlainText(
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       KEY_ENTER_COMMAND,
@@ -313,7 +314,7 @@ export function registerPlainText(
         }
         return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       COPY_COMMAND,
@@ -325,7 +326,7 @@ export function registerPlainText(
         onCopyForPlainText(event, editor);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       CUT_COMMAND,
@@ -337,7 +338,7 @@ export function registerPlainText(
         onCutForPlainText(event, editor);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       PASTE_COMMAND,
@@ -349,7 +350,7 @@ export function registerPlainText(
         onPasteForPlainText(event, editor);
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DROP_COMMAND,
@@ -362,7 +363,7 @@ export function registerPlainText(
         event.preventDefault();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       DRAGSTART_COMMAND,
@@ -375,7 +376,7 @@ export function registerPlainText(
         event.preventDefault();
         return true;
       },
-      0,
+      COMMAND_PRIORITY_EDITOR,
     ),
   );
   initializeEditor(editor, initialEditorState);

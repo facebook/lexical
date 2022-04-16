@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import DEPRECATED__useLexicalRichText from '@lexical/react/DEPRECATED_useLexicalRichText';
 import {
   $createTableCellNode,
@@ -28,7 +26,9 @@ import {
   $isTextNode,
   $setCompositionKey,
   $setSelection,
+  COMMAND_PRIORITY_EDITOR,
   ElementNode,
+  LexicalEditor,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -1485,7 +1485,7 @@ describe('LexicalEditor tests', () => {
     const removeCommandListener = editor.registerCommand(
       command,
       commandListener,
-      0,
+      COMMAND_PRIORITY_EDITOR,
     );
     editor.dispatchCommand(command, payload);
     editor.dispatchCommand(command, payload);
@@ -1508,12 +1508,12 @@ describe('LexicalEditor tests', () => {
     const removeCommandListener = editor.registerCommand(
       command,
       commandListener,
-      0,
+      COMMAND_PRIORITY_EDITOR,
     );
     const removeCommandListenerTwo = editor.registerCommand(
       command,
       commandListenerTwo,
-      0,
+      COMMAND_PRIORITY_EDITOR,
     );
     expect(editor._commands).toEqual(
       new Map([

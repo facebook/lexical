@@ -54,6 +54,7 @@ import {
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   OUTDENT_CONTENT_COMMAND,
+  COMMAND_PRIORITY_LOW,
 } from 'lexical';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -871,22 +872,22 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       (payload): boolean => handleMultilineIndent(INDENT_CONTENT_COMMAND),
-      1,
+      COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       (payload): boolean => handleMultilineIndent(OUTDENT_CONTENT_COMMAND),
-      1,
+      COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
       (payload): boolean => handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
-      1,
+      COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
       (payload): boolean => handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
-      1,
+      COMMAND_PRIORITY_LOW,
     ),
   );
 }

@@ -7,17 +7,13 @@
  * @flow strict
  */
 
-import type {
-  CommandListenerHighPriority,
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
+  COMMAND_PRIORITY_HIGH,
   DecoratorNode,
   KEY_ESCAPE_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -27,8 +23,6 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';
-
-const HighPriority: CommandListenerHighPriority = 3;
 
 type EquationComponentProps = {
   equation: string,
@@ -75,7 +69,7 @@ function EquationComponent({
             }
             return false;
           },
-          HighPriority,
+          COMMAND_PRIORITY_HIGH,
         ),
         editor.registerCommand(
           KEY_ESCAPE_COMMAND,
@@ -88,7 +82,7 @@ function EquationComponent({
             }
             return false;
           },
-          HighPriority,
+          COMMAND_PRIORITY_HIGH,
         ),
       );
     }

@@ -664,10 +664,11 @@ export function isBold(
 
 export function isItalic(
   keyCode: number,
+  altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 73 && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 73 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function isUnderline(

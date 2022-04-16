@@ -583,7 +583,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isUnderline(keyCode, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
-  } else if (isItalic(keyCode, metaKey, ctrlKey)) {
+  } else if (isItalic(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
   } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {

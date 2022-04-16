@@ -681,21 +681,24 @@ export default function ToolbarPlugin(): React$Node {
   }, [activeEditor]);
 
   useEffect(() => {
+    return editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      (_payload, newEditor) => {
+        updateToolbar();
+        setActiveEditor(newEditor);
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+  }, [editor, updateToolbar]);
+
+  useEffect(() => {
     return mergeRegister(
       activeEditor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
           updateToolbar();
         });
       }),
-      activeEditor.registerCommand(
-        SELECTION_CHANGE_COMMAND,
-        (_payload, newEditor) => {
-          updateToolbar();
-          setActiveEditor(newEditor);
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
       activeEditor.registerCommand(
         CAN_UNDO_COMMAND,
         (payload) => {

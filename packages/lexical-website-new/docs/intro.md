@@ -20,7 +20,7 @@ your surface and the requirements. Furthermore, in frameworks that support lazy-
 Lexical is a framework, rather than a stand-alone editor library. You can think of Lexical as a UI engine that lets developers move-fast and create different types of text editor that scale to their specific requirements. Here are some (but not all) examples of what you can do with Lexical:
 
 - Simple plain-text editors that have more requirements than a `<textarea>`, such as requiring features like mentions, custom emojis, links and hashtags.
-- More complex rich-text editors that can be used to post content on blogs, social media, messenging applications.
+- More complex rich-text editors that can be used to post content on blogs, social media, messaging applications.
 - A full-blown WYSIWYG editor that can be used in a CMS or rich content editor.
 - Real-time collaborative text editing experiences that combine many of the above points.
 
@@ -48,7 +48,7 @@ An Editor State is the underlying data model that represents what you want to sh
 
 Editor States are immutable once created, and in order to create one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update
-workflow to preventing cascading/waterfalling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
+workflow to preventing cascading/water-falling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
 
 Editor States are also fully serializable to JSON and can easily be serialized back into to editor using `editor.parseEditorState()`.
 

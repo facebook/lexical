@@ -9,6 +9,13 @@
 
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
+import type {
+  GridSelection,
+  LexicalEditor,
+  LexicalNode,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -24,7 +31,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
-  GridSelection,
   INSERT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -32,10 +38,6 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_TAB_COMMAND,
-  LexicalEditor,
-  LexicalNode,
-  NodeSelection,
-  RangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 

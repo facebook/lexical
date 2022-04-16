@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {RangeSelection} from 'lexical';
+
 import {$getListDepth, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -16,7 +18,6 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   ElementNode,
   INDENT_CONTENT_COMMAND,
-  RangeSelection,
 } from 'lexical';
 import {useEffect} from 'react';
 

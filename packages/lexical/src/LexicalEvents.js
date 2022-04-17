@@ -577,13 +577,13 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isDeleteLineForward(keyCode, metaKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, false);
-  } else if (isBold(keyCode, metaKey, ctrlKey)) {
+  } else if (isBold(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
-  } else if (isUnderline(keyCode, metaKey, ctrlKey)) {
+  } else if (isUnderline(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
-  } else if (isItalic(keyCode, metaKey, ctrlKey)) {
+  } else if (isItalic(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
   } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {

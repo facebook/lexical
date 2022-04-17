@@ -309,10 +309,11 @@ function ImageComponent({
           }
           setSelected(false);
         });
+        URL.revokeObjectURL(src);
       }
       return false;
     },
-    [editor, isSelected, nodeKey, setSelected],
+    [editor, isSelected, nodeKey, setSelected, src],
   );
 
   useEffect(() => {

@@ -291,17 +291,57 @@ function InsertImageUriDialogBody({
       <Input
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
-        onChange={setSrc}
+        onChange={(e) => setSrc(e.target.value)}
         value={src}
       />
       <Input
         label="Alt Text"
         placeholder="Random unsplash image"
-        onChange={setAltText}
+        onChange={(e) => setAltText(e.target.value)}
         value={altText}
       />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={isDisabled} onClick={() => onClick({altText, src})}>
+          Confirm
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function InsertImageUploadedDialogBody({
+  onClick,
+}: {
+  onClick: (payload: {altText: string, src: string}) => void,
+}) {
+  const [files, setFiles] = useState<null | File[]>(null);
+  const [altText, setAltText] = useState('');
+
+  const isDisabled = !files || files.length === 0;
+
+  const getSrc = () => {
+    if (!files || files.length === 0) return '';
+    return URL.createObjectURL(files[0]);
+  };
+
+  return (
+    <>
+      <Input
+        label="Image Upload"
+        onChange={(e) => setFiles(e.target.files)}
+        type="file"
+        accept="image/*"
+      />
+      <Input
+        label="Alt Text"
+        placeholder="Descriptive alternative text"
+        onChange={(e) => setAltText(e.target.value)}
+        value={altText}
+      />
+      <div className="ToolbarPlugin__dialogActions">
+        <Button
+          disabled={isDisabled}
+          onClick={() => onClick({altText, src: getSrc()})}>
           Confirm
         </Button>
       </div>
@@ -342,9 +382,15 @@ function InsertImageDialog({
             onClick={() => setMode('url')}>
             URL
           </Button>
+          <Button
+            data-test-id="image-modal-option-file"
+            onClick={() => setMode('file')}>
+            File
+          </Button>
         </div>
       )}
       {mode === 'url' && <InsertImageUriDialogBody onClick={onClick} />}
+      {mode === 'file' && <InsertImageUploadedDialogBody onClick={onClick} />}
     </>
   );
 }
@@ -366,8 +412,16 @@ function InsertTableDialog({
 
   return (
     <>
-      <Input label="No of rows" onChange={setRows} value={rows} />
-      <Input label="No of columns" onChange={setColumns} value={columns} />
+      <Input
+        label="No of rows"
+        onChange={(e) => setRows(e.current.target)}
+        value={rows}
+      />
+      <Input
+        label="No of columns"
+        onChange={(e) => setColumns(e.current.target)}
+        value={columns}
+      />
       <div
         className="ToolbarPlugin__dialogActions"
         data-test-id="table-model-confirm-insert">
@@ -393,7 +447,11 @@ function InsertPollDialog({
 
   return (
     <>
-      <Input label="Poll Question" onChange={setQuestion} value={question} />
+      <Input
+        label="Poll Question"
+        onChange={(e) => setQuestion(e.target.value)}
+        value={question}
+      />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm
@@ -427,7 +485,7 @@ function InsertTweetDialog({
       <Input
         label="Tweet URL"
         placeholder="i.e. https://twitter.com/jack/status/20"
-        onChange={setText}
+        onChange={(e) => setText(e.target.value)}
         value={text}
       />
       <div className="ToolbarPlugin__dialogActions">
@@ -473,7 +531,7 @@ function InsertYouTubeDialog({
       <Input
         label="YouTube URL"
         placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
-        onChange={setText}
+        onChange={(e) => setText(e.target.value)}
         value={text}
       />
       <div className="ToolbarPlugin__dialogActions">

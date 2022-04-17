@@ -20,7 +20,7 @@ export declare class LinkNode extends ElementNode {
   __url: string;
   static getType(): string;
   static clone(node: LinkNode): LinkNode;
-  constructor(url: string, key?: NodeKey): void;
+  constructor(url: string, key?: NodeKey);
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM<EditorContext>(
     prevNode: LinkNode,

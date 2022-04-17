@@ -9,8 +9,8 @@
 import type {LexicalNode, LexicalCommand} from 'lexical';
 import {DecoratorNode} from 'lexical';
 export declare class HorizontalRuleNode extends DecoratorNode<JSX.Element | null> {
-  getType(): string;
-  clone(node: HorizontalRuleNode): HorizontalRuleNode;
+  static getType(): string;
+  static clone(node: HorizontalRuleNode): HorizontalRuleNode;
   createDOM(): HTMLElement;
   getTextContent(): '\n';
   isTopLevel(): true;

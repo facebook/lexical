@@ -52,7 +52,7 @@ export declare class OffsetView {
     offsetMap: OffsetMap,
     firstNode: null | OffsetNode,
     blockOffsetSize: number,
-  ): void;
+  );
   createSelectionFromOffsets(
     originalStart: number,
     originalEnd: number,

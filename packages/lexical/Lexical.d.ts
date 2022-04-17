@@ -563,8 +563,8 @@ export declare class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  getType(): string;
-  clone(node: any): TextNode;
+  static getType(): string;
+  static clone(node: any): TextNode;
   constructor(text: string, key?: NodeKey);
   getFormat(): number;
   getStyle(): string;
@@ -617,8 +617,8 @@ export function $isTextNode(node: LexicalNode | null | undefined): boolean;
  * LexicalLineBreakNode
  */
 export declare class LineBreakNode extends LexicalNode {
-  getType(): string;
-  clone(node: LineBreakNode): LineBreakNode;
+  static getType(): string;
+  static clone(node: LineBreakNode): LineBreakNode;
   constructor(key?: NodeKey);
   getTextContent(): '\n';
   createDOM(): HTMLElement;
@@ -632,8 +632,8 @@ export function $isLineBreakNode(node: LexicalNode | null | undefined): boolean;
  */
 export declare class RootNode extends ElementNode {
   __cachedText: null | string;
-  getType(): string;
-  clone(): RootNode;
+  static getType(): string;
+  static clone(): RootNode;
   constructor();
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   select(): RangeSelection;
@@ -717,8 +717,8 @@ export function $isDecoratorNode(node: LexicalNode | null | undefined): boolean;
  * LexicalHorizontalRuleNode
  */
 export declare class HorizontalRuleNode extends LexicalNode {
-  getType(): string;
-  clone(node: HorizontalRuleNode): HorizontalRuleNode;
+  static getType(): string;
+  static clone(node: HorizontalRuleNode): HorizontalRuleNode;
   constructor(key?: NodeKey);
   createDOM(): HTMLElement;
   updateDOM(): false;

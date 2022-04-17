@@ -17,12 +17,12 @@ import type {
   LexicalEditor,
 } from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {ElementNode, TextNode} from 'lexical';
 
 declare class CodeNode extends ElementNode {
   static getType(): string;
   static clone(node: CodeNode): CodeNode;
-  constructor(key?: NodeKey): void;
+  constructor(key?: NodeKey);
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
@@ -44,11 +44,9 @@ declare function getLastCodeHighlightNodeOfLine(
   anchor: LexicalNode,
 ): ?CodeHighlightNode;
 
-import {TextNode} from 'lexical';
-
 declare class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
-  constructor(text: string, highlightType?: string, key?: NodeKey): void;
+  constructor(text: string, highlightType?: string, key?: NodeKey);
   static getType(): string;
   static clone(node: CodeHighlightNode): CodeHighlightNode;
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;

@@ -450,6 +450,11 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
+      // For Android
+      if (editor._compositionKey !== null) {
+        lastKeyDownTimeStamp = 0;
+        $setCompositionKey(null);
+      }
     } else {
       $updateSelectedTextFromDOM(editor, null);
     }

@@ -13,13 +13,13 @@
   margin-top: 20px;
 }
 
-.ToolbarPlugin__dialogImageActions {
+.ToolbarPlugin__dialogButtonsList {
   display: flex;
   flex-direction: column;
   justify-content: right;
   margin-top: 20px;
 }
 
-.ToolbarPlugin__dialogImageActions button {
+.ToolbarPlugin__dialogButtonsList button {
   margin-bottom: 20px;
 }

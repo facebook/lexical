@@ -529,7 +529,7 @@ export async function insertRandomImage(page) {
   await selectFromInsertDropdown(page, '.image');
   await click(
     page,
-    '.ToolbarPlugin__dialogImageActions > .Button__root >> nth=0',
+    '.ToolbarPlugin__dialogButtonsList > .Button__root >> nth=0',
   );
 }
 

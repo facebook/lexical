@@ -295,7 +295,7 @@ function InsertImageDialog({
   return (
     <>
       {!mode && (
-        <div className="ToolbarPlugin__dialogImageActions">
+        <div className="ToolbarPlugin__dialogButtonsList">
           <Button onClick={onClick()}>Sample</Button>
           <Button onClick={() => setMode('url')}>URL</Button>
           <Button disabled={true} onClick={() => setMode('file')}>

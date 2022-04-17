@@ -14,6 +14,7 @@ import path from 'path';
 import fs from 'fs';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 import babel from '@rollup/plugin-babel';
+import mix, {vercelAdapter} from 'vite-plugin-mix'
 
 const moduleResolution = [
   {find: /lexical$/, replacement: path.resolve('../lexical/src/index.js')},
@@ -168,6 +169,10 @@ export default defineConfig({
     }),
     flowPlugin(),
     react(),
+    mix({
+      handler: './src/server.js',
+      adapter: vercelAdapter(),
+    }),
   ],
   resolve: {
     alias: moduleResolution,

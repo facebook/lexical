@@ -28,7 +28,8 @@
     "@excalidraw/excalidraw": "0.11.0",
     "yjs": ">=13.5.22",
     "y-websocket": ">=1.3.x",
-    "katex": "^0.15.2"
+    "katex": "^0.15.2",
+    "vite-plugin-mix": "0.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^1.0.7",

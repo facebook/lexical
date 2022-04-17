@@ -444,19 +444,19 @@ export async function clearEditor(page) {
   await page.keyboard.press('Backspace');
 }
 
-export async function insertImage(page, caption = null) {
+export async function insertSampleImage(page) {
   await selectFromInsertDropdown(page, '.image');
-  await waitForSelector(page, '.editor-image img');
+  await click(page, 'button[data-test-id="image-modal-option-sample"]');
+}
 
-  if (caption !== null) {
-    await click(page, '.editor-image img');
-    await click(page, '.image-caption-button');
-    await waitForSelector(page, '.editor-image img.focused', {
-      state: 'detached',
-    });
-    await focusEditor(page, '.image-caption-container');
-    await page.keyboard.type(caption);
-  }
+export async function insertImageCaption(page, caption) {
+  await click(page, '.editor-image img');
+  await click(page, '.image-caption-button');
+  await waitForSelector(page, '.editor-image img.focused', {
+    state: 'detached',
+  });
+  await focusEditor(page, '.image-caption-container');
+  await page.keyboard.type(caption);
 }
 
 export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
@@ -523,11 +523,6 @@ export async function insertTable(page) {
     page,
     'div[data-test-id="table-model-confirm-insert"] > .Button__root',
   );
-}
-
-export async function insertSampleImage(page) {
-  await selectFromInsertDropdown(page, '.image');
-  await click(page, 'button[data-test-id="image-modal-option-sample"]');
 }
 
 export async function enableCompositionKeyEvents(page) {

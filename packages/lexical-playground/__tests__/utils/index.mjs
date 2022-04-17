@@ -525,7 +525,7 @@ export async function insertTable(page) {
   );
 }
 
-export async function insertRandomImage(page) {
+export async function insertSampleImage(page) {
   await selectFromInsertDropdown(page, '.image');
   await click(
     page,

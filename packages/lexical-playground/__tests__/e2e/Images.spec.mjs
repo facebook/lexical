@@ -14,7 +14,7 @@ import {
   focusEditor,
   html,
   initialize,
-  insertRandomImage,
+  insertSampleImage,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -33,7 +33,7 @@ test.describe('Images', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    await insertRandomImage(page);
+    await insertSampleImage(page);
 
     await waitForSelector(page, '.editor-image img');
 
@@ -94,7 +94,7 @@ test.describe('Images', () => {
       focusPath: [0],
     });
 
-    await insertRandomImage(page);
+    await insertSampleImage(page);
 
     await click(page, '.editor-image img');
 
@@ -134,7 +134,7 @@ test.describe('Images', () => {
 
     await click(page, 'div[contenteditable="true"]');
 
-    await insertRandomImage(page);
+    await insertSampleImage(page);
 
     await waitForSelector(page, '.editor-image img');
 
@@ -190,9 +190,9 @@ test.describe('Images', () => {
 
     await focusEditor(page);
 
-    await insertRandomImage(page);
+    await insertSampleImage(page);
 
-    await insertRandomImage(page);
+    await insertSampleImage(page);
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');
@@ -271,8 +271,8 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.type('Test');
-    await insertRandomImage(page);
-    await insertRandomImage(page);
+    await insertSampleImage(page);
+    await insertSampleImage(page);
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');

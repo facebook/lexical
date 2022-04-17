@@ -11,6 +11,7 @@ import {
   assertHTML,
   click,
   E2E_PORT,
+  focus,
   focusEditor,
   html,
   initialize,
@@ -36,7 +37,7 @@ test.describe('Toolbar', () => {
     await selectFromInsertDropdown(page, '.image');
     await click(page, '.editor-image img');
     await click(page, '.image-caption-button');
-    await page.focus('.ImageNode__contentEditable');
+    await focus(page, '.ImageNode__contentEditable');
     await page.keyboard.type('Yellow flower in tilt shift lens');
     await assertHTML(
       page,

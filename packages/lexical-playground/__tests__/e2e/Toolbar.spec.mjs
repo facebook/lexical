@@ -11,11 +11,11 @@ import {
   assertHTML,
   click,
   E2E_PORT,
+  evaluate,
   focus,
   focusEditor,
   html,
   initialize,
-  IS_COLLAB,
   selectFromInsertDropdown,
   test,
 } from '../utils/index.mjs';
@@ -71,8 +71,7 @@ test.describe('Toolbar', () => {
 
     // Delete image
     // TODO Revisit the a11y side of NestedEditors
-    const targetPage = IS_COLLAB ? await page.frame('left') : page;
-    await targetPage.evaluate(() => {
+    await evaluate(page, () => {
       const p = document.querySelector('[contenteditable="true"] p');
       document.getSelection().setBaseAndExtent(p, 0, p, 0);
     });

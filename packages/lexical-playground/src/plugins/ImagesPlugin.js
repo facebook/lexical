@@ -19,12 +19,11 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
-import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<{
-  altText?: string,
-  src?: string,
+  altText: string,
+  src: string,
 }> = createCommand();
 
 export default function ImagesPlugin(): React$Node {
@@ -43,11 +42,7 @@ export default function ImagesPlugin(): React$Node {
           if ($isRootNode(selection.anchor.getNode())) {
             selection.insertParagraph();
           }
-          const imageNode = $createImageNode(
-            payload?.src || yellowFlowerImage,
-            payload?.altText || 'Yellow flower in tilt shift lens',
-            500,
-          );
+          const imageNode = $createImageNode(payload.src, payload.altText, 500);
           selection.insertNodes([imageNode]);
         }
         return true;

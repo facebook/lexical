@@ -267,7 +267,7 @@ Finally, we need to wire this plugin up to an Editor so we can actually use it.
 
 export default function Editor() {
   return (
-    <LexicalComposer initialConfig={{theme={ExampleTheme}, nodes: [EmoticonNode]}}>
+    <LexicalComposer initialConfig={{theme: ExampleTheme, nodes: [EmoticonNode]}}>
       <div className="editor-container">
         <PlainTextPlugin
           contentEditable={<ContentEditable className="editor-input" />}

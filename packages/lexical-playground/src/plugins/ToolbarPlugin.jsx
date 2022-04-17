@@ -291,13 +291,13 @@ function InsertImageUriDialogBody({
       <Input
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
-        onChange={(e) => setSrc(e.target.value)}
+        onChange={setSrc}
         value={src}
       />
       <Input
         label="Alt Text"
         placeholder="Random unsplash image"
-        onChange={(e) => setAltText(e.target.value)}
+        onChange={setAltText}
         value={altText}
       />
       <div className="ToolbarPlugin__dialogActions">
@@ -416,16 +416,8 @@ function InsertTableDialog({
 
   return (
     <>
-      <Input
-        label="No of rows"
-        onChange={(e) => setRows(e.current.target)}
-        value={rows}
-      />
-      <Input
-        label="No of columns"
-        onChange={(e) => setColumns(e.current.target)}
-        value={columns}
-      />
+      <Input label="No of rows" onChange={setRows} value={rows} />
+      <Input label="No of columns" onChange={setColumns} value={columns} />
       <div
         className="ToolbarPlugin__dialogActions"
         data-test-id="table-model-confirm-insert">
@@ -451,11 +443,7 @@ function InsertPollDialog({
 
   return (
     <>
-      <Input
-        label="Poll Question"
-        onChange={(e) => setQuestion(e.target.value)}
-        value={question}
-      />
+      <Input label="Poll Question" onChange={setQuestion} value={question} />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm
@@ -489,7 +477,7 @@ function InsertTweetDialog({
       <Input
         label="Tweet URL"
         placeholder="i.e. https://twitter.com/jack/status/20"
-        onChange={(e) => setText(e.target.value)}
+        onChange={setText}
         value={text}
       />
       <div className="ToolbarPlugin__dialogActions">
@@ -535,7 +523,7 @@ function InsertYouTubeDialog({
       <Input
         label="YouTube URL"
         placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
-        onChange={(e) => setText(e.target.value)}
+        onChange={setText}
         value={text}
       />
       <div className="ToolbarPlugin__dialogActions">

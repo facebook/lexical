@@ -11,26 +11,33 @@ import './Input.css';
 
 import * as React from 'react';
 
-type Props = $ReadOnly<
-  {
-    label: string,
-  } & React.ElementProps<'input'>,
->;
+type Props = $ReadOnly<{
+  accept?: string,
+  label: string,
+  onChange: React.ElementProps<'input'>['onChange'],
+  placeholder?: string,
+  type?: string,
+  value?: string,
+}>;
 
 export default function Input({
+  accept,
   label,
+  value,
+  onChange,
   placeholder = '',
   type = 'text',
-  ...other
 }: Props): React$Node {
   return (
     <div className="Input__wrapper">
       <label className="Input__label">{label}</label>
       <input
-        {...other}
         type={type}
+        value={value || undefined}
+        accept={accept || undefined}
         className="Input__input"
         placeholder={placeholder}
+        onChange={onChange}
       />
     </div>
   );

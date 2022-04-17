@@ -656,10 +656,11 @@ export function isTab(
 
 export function isBold(
   keyCode: number,
+  altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 66 && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 66 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function isItalic(
@@ -673,10 +674,11 @@ export function isItalic(
 
 export function isUnderline(
   keyCode: number,
+  altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 85 && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 85 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function isParagraph(keyCode: number, shiftKey: boolean): boolean {

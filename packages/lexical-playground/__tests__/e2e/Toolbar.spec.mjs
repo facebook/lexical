@@ -11,6 +11,8 @@ import {
   assertHTML,
   click,
   E2E_PORT,
+  evaluate,
+  focus,
   focusEditor,
   html,
   initialize,
@@ -36,7 +38,7 @@ test.describe('Toolbar', () => {
     await selectFromInsertDropdown(page, '.image');
     await click(page, '.editor-image img');
     await click(page, '.image-caption-button');
-    await page.focus('.ImageNode__contentEditable');
+    await focus(page, '.ImageNode__contentEditable');
     await page.keyboard.type('Yellow flower in tilt shift lens');
     await assertHTML(
       page,
@@ -69,7 +71,7 @@ test.describe('Toolbar', () => {
 
     // Delete image
     // TODO Revisit the a11y side of NestedEditors
-    await page.evaluate(() => {
+    await evaluate(page, () => {
       const p = document.querySelector('[contenteditable="true"] p');
       document.getSelection().setBaseAndExtent(p, 0, p, 0);
     });

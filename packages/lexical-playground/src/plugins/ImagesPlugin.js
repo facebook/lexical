@@ -19,10 +19,12 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
-import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
-export const INSERT_IMAGE_COMMAND: LexicalCommand<void> = createCommand();
+export const INSERT_IMAGE_COMMAND: LexicalCommand<{
+  altText: string,
+  src: string,
+}> = createCommand();
 
 export default function ImagesPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
@@ -34,17 +36,13 @@ export default function ImagesPlugin(): React$Node {
 
     return editor.registerCommand(
       INSERT_IMAGE_COMMAND,
-      () => {
+      (payload) => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           if ($isRootNode(selection.anchor.getNode())) {
             selection.insertParagraph();
           }
-          const imageNode = $createImageNode(
-            yellowFlowerImage,
-            'Yellow flower in tilt shift lens',
-            500,
-          );
+          const imageNode = $createImageNode(payload.src, payload.altText, 500);
           selection.insertNodes([imageNode]);
         }
         return true;

@@ -9,6 +9,8 @@
 
 import type {LexicalEditor, RangeSelection} from 'lexical';
 
+import './ToolbarPlugin.css';
+
 import {
   $createCodeNode,
   $isCodeNode,
@@ -65,6 +67,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import useModal from '../hooks/useModal';
+import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
 import DropDown from '../ui/DropDown';
@@ -270,6 +273,79 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
         </>
       )}
     </div>
+  );
+}
+
+function InsertImageUriDialogBody({
+  onClick,
+}: {
+  onClick: (payload: {altText: string, src: string}) => void,
+}) {
+  const [src, setSrc] = useState('');
+  const [altText, setAltText] = useState('');
+
+  const isDisabled = src === '';
+
+  return (
+    <>
+      <Input
+        label="Image URL"
+        placeholder="i.e. https://source.unsplash.com/random"
+        onChange={setSrc}
+        value={src}
+      />
+      <Input
+        label="Alt Text"
+        placeholder="Random unsplash image"
+        onChange={setAltText}
+        value={altText}
+      />
+      <div className="ToolbarPlugin__dialogActions">
+        <Button disabled={isDisabled} onClick={() => onClick({altText, src})}>
+          Confirm
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function InsertImageDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [mode, setMode] = useState<null | 'url' | 'file'>(null);
+
+  const onClick = (payload: {altText: string, src: string}) => {
+    activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
+    onClose();
+  };
+
+  return (
+    <>
+      {!mode && (
+        <div className="ToolbarPlugin__dialogButtonsList">
+          <Button
+            data-test-id="image-modal-option-sample"
+            onClick={() =>
+              onClick({
+                altText: 'Yellow flower in tilt shift lens',
+                src: yellowFlowerImage,
+              })
+            }>
+            Sample
+          </Button>
+          <Button
+            data-test-id="image-modal-option-url"
+            onClick={() => setMode('url')}>
+            URL
+          </Button>
+        </div>
+      )}
+      {mode === 'url' && <InsertImageUriDialogBody onClick={onClick} />}
+    </>
   );
 }
 
@@ -916,7 +992,12 @@ export default function ToolbarPlugin(): React$Node {
             </button>
             <button
               onClick={() => {
-                activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND);
+                showModal('Insert Image', (onClose) => (
+                  <InsertImageDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
               }}
               className="item">
               <i className="icon image" />

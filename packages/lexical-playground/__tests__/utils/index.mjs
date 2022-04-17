@@ -525,6 +525,11 @@ export async function insertTable(page) {
   );
 }
 
+export async function insertSampleImage(page) {
+  await selectFromInsertDropdown(page, '.image');
+  await click(page, 'button[data-test-id="image-modal-option-sample"]');
+}
+
 export async function enableCompositionKeyEvents(page) {
   const targetPage = IS_COLLAB ? await page.frame('left') : page;
   await targetPage.evaluate(() => {

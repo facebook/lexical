@@ -14,11 +14,13 @@ import * as React from 'react';
 import joinClasses from '../utils/join-classes';
 
 export default function Button({
+  'data-test-id': dataTestId,
   children,
   onClick,
   disabled,
   small,
 }: {
+  'data-test-id'?: string,
   children: React$Node,
   disabled?: boolean,
   onClick: () => void,
@@ -33,7 +35,7 @@ export default function Button({
         small && 'Button__small',
       )}
       onClick={onClick}
-    >
+      {...(dataTestId && {'data-test-id': dataTestId})}>
       {children}
     </button>
   );

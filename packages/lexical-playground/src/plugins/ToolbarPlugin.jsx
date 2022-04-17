@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {InsertImagePayload} from './ImagesPlugin';
 import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import './ToolbarPlugin.css';
@@ -279,7 +280,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
 function InsertImageUriDialogBody({
   onClick,
 }: {
-  onClick: (payload: {altText: string, src: string}) => void,
+  onClick: (payload: InsertImagePayload) => void,
 }) {
   const [src, setSrc] = useState('');
   const [altText, setAltText] = useState('');
@@ -317,7 +318,7 @@ function InsertImageUriDialogBody({
 function InsertImageUploadedDialogBody({
   onClick,
 }: {
-  onClick: (payload: {altText: string, src: string}) => void,
+  onClick: (payload: InsertImagePayload) => void,
 }) {
   const [src, setSrc] = useState('');
   const [altText, setAltText] = useState('');
@@ -372,7 +373,7 @@ function InsertImageDialog({
 }): React$Node {
   const [mode, setMode] = useState<null | 'url' | 'file'>(null);
 
-  const onClick = (payload: {altText: string, src: string}) => {
+  const onClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
     onClose();
   };

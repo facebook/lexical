@@ -12,6 +12,7 @@ import './Input.css';
 import * as React from 'react';
 
 type Props = $ReadOnly<{
+  'data-test-id'?: string,
   accept?: string,
   label: string,
   onChange: React.ElementProps<'input'>['onChange'],
@@ -27,6 +28,7 @@ export default function Input({
   onChange,
   placeholder = '',
   type = 'text',
+  'data-test-id': dataTestId,
 }: Props): React$Node {
   return (
     <div className="Input__wrapper">
@@ -38,6 +40,7 @@ export default function Input({
         className="Input__input"
         placeholder={placeholder}
         onChange={onChange}
+        data-test-id={dataTestId || undefined}
       />
     </div>
   );

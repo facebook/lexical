@@ -291,17 +291,22 @@ function InsertImageUriDialogBody({
       <Input
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
-        onChange={setSrc}
+        onChange={(e) => setSrc(e.target.value)}
         value={src}
+        data-test-id="image-modal-url-input"
       />
       <Input
         label="Alt Text"
         placeholder="Random unsplash image"
-        onChange={setAltText}
+        onChange={(e) => setAltText(e.target.value)}
         value={altText}
+        data-test-id="image-modal-alt-text-input"
       />
       <div className="ToolbarPlugin__dialogActions">
-        <Button disabled={isDisabled} onClick={() => onClick({altText, src})}>
+        <Button
+          data-test-id="image-modal-confirm-btn"
+          disabled={isDisabled}
+          onClick={() => onClick({altText, src})}>
           Confirm
         </Button>
       </div>
@@ -337,15 +342,20 @@ function InsertImageUploadedDialogBody({
         onChange={(e) => loadImage(e.target.files)}
         type="file"
         accept="image/*"
+        data-test-id="image-modal-file-upload"
       />
       <Input
         label="Alt Text"
         placeholder="Descriptive alternative text"
         onChange={(e) => setAltText(e.target.value)}
         value={altText}
+        data-test-id="image-modal-alt-text-input"
       />
       <div className="ToolbarPlugin__dialogActions">
-        <Button disabled={isDisabled} onClick={() => onClick({altText, src})}>
+        <Button
+          data-test-id="image-modal-file-upload-btn"
+          disabled={isDisabled}
+          onClick={() => onClick({altText, src})}>
           Confirm
         </Button>
       </div>
@@ -416,8 +426,16 @@ function InsertTableDialog({
 
   return (
     <>
-      <Input label="No of rows" onChange={setRows} value={rows} />
-      <Input label="No of columns" onChange={setColumns} value={columns} />
+      <Input
+        label="No of rows"
+        onChange={(e) => setRows(e.target.value)}
+        value={rows}
+      />
+      <Input
+        label="No of columns"
+        onChange={(e) => setColumns(e.target.value)}
+        value={columns}
+      />
       <div
         className="ToolbarPlugin__dialogActions"
         data-test-id="table-model-confirm-insert">
@@ -443,7 +461,11 @@ function InsertPollDialog({
 
   return (
     <>
-      <Input label="Poll Question" onChange={setQuestion} value={question} />
+      <Input
+        label="Poll Question"
+        onChange={(e) => setQuestion(e.target.value)}
+        value={question}
+      />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm
@@ -477,7 +499,7 @@ function InsertTweetDialog({
       <Input
         label="Tweet URL"
         placeholder="i.e. https://twitter.com/jack/status/20"
-        onChange={setText}
+        onChange={(e) => setText(e.target.value)}
         value={text}
       />
       <div className="ToolbarPlugin__dialogActions">
@@ -523,7 +545,7 @@ function InsertYouTubeDialog({
       <Input
         label="YouTube URL"
         placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
-        onChange={setText}
+        onChange={(e) => setText(e.target.value)}
         value={text}
       />
       <div className="ToolbarPlugin__dialogActions">

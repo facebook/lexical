@@ -225,7 +225,8 @@ test.describe('Toolbar', () => {
       `,
     );
 
-    await click(page, '.editor-image img');
+    await focus(page, '.editor-image');
+    await page.pause();
     await selectFromAlignDropdown(page, '.center-align');
     await assertHTML(
       page,
@@ -237,8 +238,14 @@ test.describe('Toolbar', () => {
             data-lexical-decorator="true">
             <img
               alt="Yellow flower in tilt shift lens"
+              class="focused"
               src="${IMAGE_URL}"
               style="height: inherit; max-width: 500px; width: inherit" />
+            <button class="image-caption-button">Add Caption</button>
+            <div class="image-resizer-ne"></div>
+            <div class="image-resizer-se"></div>
+            <div class="image-resizer-sw"></div>
+            <div class="image-resizer-nw"></div>
           </span>
           <br />
         </p>

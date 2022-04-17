@@ -525,6 +525,14 @@ export async function insertTable(page) {
   );
 }
 
+export async function insertRandomImage(page) {
+  await selectFromInsertDropdown(page, '.image');
+  await click(
+    page,
+    '.ToolbarPlugin__dialogImageActions > .Button__root >> nth=0',
+  );
+}
+
 export async function enableCompositionKeyEvents(page) {
   const targetPage = IS_COLLAB ? await page.frame('left') : page;
   await targetPage.evaluate(() => {

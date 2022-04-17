@@ -16,6 +16,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertSampleImage,
   selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
@@ -36,7 +37,7 @@ test.describe('Toolbar', () => {
     await focusEditor(page);
 
     // Add caption
-    await selectFromInsertDropdown(page, '.image');
+    await insertSampleImage(page);
     await click(page, '.editor-image img');
     await click(page, '.image-caption-button');
     await focus(page, '.ImageNode__contentEditable');
@@ -199,7 +200,7 @@ test.describe('Toolbar', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    await selectFromInsertDropdown(page, '.image');
+    await insertSampleImage(page);
     await click(page, '.editor-image img');
     await assertHTML(
       page,

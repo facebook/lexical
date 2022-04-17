@@ -16,6 +16,7 @@ import {
   focusEditor,
   html,
   initialize,
+  selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
 } from '../utils/index.mjs';
@@ -191,6 +192,64 @@ test.describe('Toolbar', () => {
         ignoreClasses: true,
         ignoreInlineStyles: true,
       },
+    );
+  });
+
+  test('Center align image', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await selectFromInsertDropdown(page, '.image');
+    await click(page, '.editor-image img');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img
+              alt="Yellow flower in tilt shift lens"
+              class="focused"
+              src="${IMAGE_URL}"
+              style="height: inherit; max-width: 500px; width: inherit" />
+            <button class="image-caption-button">Add Caption</button>
+            <div class="image-resizer-ne"></div>
+            <div class="image-resizer-se"></div>
+            <div class="image-resizer-sw"></div>
+            <div class="image-resizer-nw"></div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+
+    await focus(page, '.editor-image');
+    await page.pause();
+    await selectFromAlignDropdown(page, '.center-align');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img
+              alt="Yellow flower in tilt shift lens"
+              class="focused"
+              src="${IMAGE_URL}"
+              style="height: inherit; max-width: 500px; width: inherit" />
+            <button class="image-caption-button">Add Caption</button>
+            <div class="image-resizer-ne"></div>
+            <div class="image-resizer-se"></div>
+            <div class="image-resizer-sw"></div>
+            <div class="image-resizer-nw"></div>
+          </span>
+          <br />
+        </p>
+      `,
     );
   });
 });

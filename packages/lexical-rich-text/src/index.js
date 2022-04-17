@@ -438,7 +438,7 @@ export function registerRichText(
       FORMAT_ELEMENT_COMMAND,
       (format: ElementFormatType) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
+        if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
           return false;
         }
         const nodes = selection.getNodes();

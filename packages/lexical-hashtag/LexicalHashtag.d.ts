@@ -10,8 +10,8 @@ import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 import {TextNode} from 'lexical';
 
 export declare class HashtagNode extends TextNode {
-  getType(): string;
-  clone(node: HashtagNode): HashtagNode;
+  static getType(): string;
+  static clone(node: HashtagNode): HashtagNode;
   constructor(text: string, key?: NodeKey);
   createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
   canInsertTextBefore(): boolean;

@@ -17,7 +17,7 @@ import type {
   LexicalEditor,
 } from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {ElementNode, TextNode} from 'lexical';
 
 declare export class CodeNode extends ElementNode {
   static getType(): string;
@@ -45,8 +45,6 @@ declare export function getFirstCodeHighlightNodeOfLine(
 declare export function getLastCodeHighlightNodeOfLine(
   anchor: LexicalNode,
 ): ?CodeHighlightNode;
-
-import {TextNode} from 'lexical';
 
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;

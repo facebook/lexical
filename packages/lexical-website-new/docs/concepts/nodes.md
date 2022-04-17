@@ -7,7 +7,7 @@ sidebar_position: 1
 ## Base Nodes
 
 Nodes are core concept in Lexical. Not only do they form the visual editor view, as part of the `EditorState`, but they also represent the
-underlying data model for what is stored in the edtior at any given time. Lexical has a single core based node, called `LexicalNode` that
+underlying data model for what is stored in the editor at any given time. Lexical has a single core based node, called `LexicalNode` that
 is extended internally to create Lexical's five base nodes:
 
 - `RootNode`

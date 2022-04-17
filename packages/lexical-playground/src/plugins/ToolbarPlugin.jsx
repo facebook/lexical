@@ -717,7 +717,7 @@ export default function ToolbarPlugin(): React$Node {
         COMMAND_PRIORITY_CRITICAL,
       ),
     );
-  }, [activeEditor, editor, updateToolbar]);
+  }, [activeEditor, updateToolbar]);
 
   const applyStyleText = useCallback(
     (styles: {[string]: string}) => {

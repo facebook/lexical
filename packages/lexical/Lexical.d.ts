@@ -144,7 +144,7 @@ export declare class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand(type: string, payload: P): boolean;
+  dispatchCommand<P>(type: string, payload: P): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): Record<NodeKey, X>;
   getRootElement(): null | HTMLElement;
@@ -292,8 +292,8 @@ export type DOMConversionFn = (
 ) => DOMConversionOutput;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
-  parentLexicalNode: ?(LexicalNode | null),
-) => ?(LexicalNode | void | null);
+  parentLexicalNode: LexicalNode | null,
+) => LexicalNode | void | null;
 export type DOMConversionMap = Record<
   NodeName,
   (node: Node) => DOMConversion | null
@@ -305,7 +305,7 @@ export type DOMConversionOutput = {
   node: LexicalNode | null;
 };
 export type DOMExportOutput = {
-  after?: (generatedElement: ?HTMLElement) => ?HTMLElement;
+  after?: (generatedElement: HTMLElement | null) => HTMLElement | null;
   element: HTMLElement | null;
 };
 export type NodeKey = string;
@@ -360,7 +360,7 @@ export declare class LexicalNode {
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean;
-  remove(): void;
+  remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
   insertBefore(nodeToInsert: LexicalNode): LexicalNode;

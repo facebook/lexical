@@ -510,7 +510,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
     const latest = node.getLatest();
     const parentNode = node.getParent();
     if (latest.__children.length === 0) {
-      node.remove();
+      node.remove(true);
     }
     node = parentNode;
   }

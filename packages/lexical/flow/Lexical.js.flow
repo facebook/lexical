@@ -369,7 +369,7 @@ declare export class LexicalNode {
     dom: HTMLElement,
     config: EditorConfig<EditorContext>,
   ): boolean;
-  remove(): void;
+  remove(preserveEmptyParent?: boolean): void;
   replace<N: LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
   insertBefore(nodeToInsert: LexicalNode): LexicalNode;

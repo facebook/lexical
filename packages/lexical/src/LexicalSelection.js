@@ -1339,19 +1339,30 @@ export class RangeSelection implements BaseSelection {
     const anchorOffset = anchor.offset;
     let currentElement;
     let nodesToMove = [];
-
+    let siblingsToMove = [];
     if (anchor.type === 'text') {
       const anchorNode = anchor.getNode();
-      const textContent = anchorNode.getTextContent();
-      const textContentLength = textContent.length;
-      nodesToMove = anchorNode.getNextSiblings().reverse();
       currentElement = anchorNode.getParentOrThrow();
-
+      const isInline = currentElement.isInline();
+      const textContentLength = isInline
+        ? currentElement.getTextContentSize()
+        : anchorNode.getTextContentSize();
       if (anchorOffset === 0) {
         nodesToMove.push(anchorNode);
-      } else if (anchorOffset !== textContentLength) {
-        const [, splitNode] = anchorNode.splitText(anchorOffset);
-        nodesToMove.push(splitNode);
+      } else {
+        if (isInline) {
+          // For inline nodes, we want to move all the siblings to the new paragraph
+          // if selection is at the end, we just move the siblings. Otherwise, we also
+          // split the text node and add that and it's siblings below.
+          siblingsToMove = currentElement.getNextSiblings();
+        }
+        if (anchorOffset !== textContentLength) {
+          nodesToMove = anchorNode.getNextSiblings().reverse();
+          if (!isInline || anchorOffset !== anchorNode.getTextContentSize()) {
+            const [, splitNode] = anchorNode.splitText(anchorOffset);
+            nodesToMove.push(splitNode);
+          }
+        }
       }
     } else {
       currentElement = anchor.getNode();
@@ -1368,19 +1379,41 @@ export class RangeSelection implements BaseSelection {
       }
       nodesToMove = currentElement.getChildren().slice(anchorOffset).reverse();
     }
+    const nodesToMoveLength = nodesToMove.length;
+    if (
+      anchorOffset === 0 &&
+      nodesToMoveLength > 0 &&
+      currentElement.isInline()
+    ) {
+      currentElement.getParentOrThrow().insertBefore($createParagraphNode());
+      return;
+    }
     const newElement = currentElement.insertNewAfter(this);
     if (newElement === null) {
       // Handle as a line break insertion
       this.insertLineBreak();
     } else if ($isElementNode(newElement)) {
-      const nodesToMoveLength = nodesToMove.length;
-      // Move the new element to be before the current element
-      if (anchorOffset === 0 && nodesToMoveLength > 0) {
+      // If we're at the beginning of the current element, move the new element to be before the current element
+      const currentElementFirstChild = currentElement.getFirstChild();
+      const isBeginning =
+        anchorOffset === 0 &&
+        (currentElement.is(anchor.getNode()) ||
+          (currentElementFirstChild &&
+            currentElementFirstChild.is(anchor.getNode())));
+      if (isBeginning && nodesToMoveLength > 0) {
         currentElement.insertBefore(newElement);
         return;
       }
       let firstChild = null;
-
+      const siblingsToMoveLength = siblingsToMove.length;
+      const parent = newElement.getParentOrThrow();
+      // For inline elements, we append the siblings to the parent.
+      if (siblingsToMoveLength > 0) {
+        for (let i = 0; i < siblingsToMoveLength; i++) {
+          const siblingToMove = siblingsToMove[i];
+          parent.append(siblingToMove);
+        }
+      }
       if (nodesToMoveLength !== 0) {
         for (let i = 0; i < nodesToMoveLength; i++) {
           const nodeToMove = nodesToMove[i];

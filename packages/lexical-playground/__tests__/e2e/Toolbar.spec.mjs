@@ -237,7 +237,7 @@ test.describe('Toolbar', () => {
             data-lexical-decorator="true">
             <img
               alt="Yellow flower in tilt shift lens"
-              src="/src/images/yellow-flower.jpg"
+              src="${IMAGE_URL}"
               style="height: inherit; max-width: 500px; width: inherit" />
           </span>
           <br />

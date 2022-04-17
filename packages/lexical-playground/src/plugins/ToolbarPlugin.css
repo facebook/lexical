@@ -12,3 +12,14 @@
   justify-content: right;
   margin-top: 20px;
 }
+
+.ToolbarPlugin__dialogImageActions {
+  display: flex;
+  flex-direction: column;
+  justify-content: right;
+  margin-top: 20px;
+}
+
+.ToolbarPlugin__dialogImageActions button {
+  margin-bottom: 20px;
+}

@@ -9,6 +9,8 @@
 
 import type {LexicalEditor, RangeSelection} from 'lexical';
 
+import './ToolbarPlugin.css';
+
 import {
   $createCodeNode,
   $isCodeNode,
@@ -270,6 +272,53 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
         </>
       )}
     </div>
+  );
+}
+
+function InsertImageDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor,
+  onClose: () => void,
+}): React$Node {
+  const [text, setText] = useState('');
+  const [mode, setMode] = useState<'url' | 'file' | ''>('');
+
+  const onClick = (payload) => () => {
+    activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
+    onClose();
+  };
+
+  const isDisabled = text === '';
+
+  return (
+    <>
+      {!mode && (
+        <div className="ToolbarPlugin__dialogImageActions">
+          <Button onClick={onClick()}>Sample</Button>
+          <Button onClick={() => setMode('url')}>URL</Button>
+          <Button disabled={true} onClick={() => setMode('file')}>
+            File
+          </Button>
+        </div>
+      )}
+      {mode === 'url' && (
+        <>
+          <Input
+            label="Image URL"
+            placeholder="i.e. https://source.unsplash.com/random"
+            onChange={setText}
+            value={text}
+          />
+          <div className="ToolbarPlugin__dialogActions">
+            <Button disabled={isDisabled} onClick={onClick({src: text})}>
+              Confirm
+            </Button>
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
@@ -916,7 +965,13 @@ export default function ToolbarPlugin(): React$Node {
             </button>
             <button
               onClick={() => {
-                activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND);
+                // activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND);
+                showModal('Insert Image', (onClose) => (
+                  <InsertImageDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
               }}
               className="item">
               <i className="icon image" />

@@ -97,7 +97,7 @@ function Editor() {
 ## Lexical is a framework
 
 The core of Lexical is a dependency-free text editor framework that allows developers to build powerful, simple and complex,
-editor surfaces. Lexical's has a few concepts that are worth exploring:
+editor surfaces. Lexical has a few concepts that are worth exploring:
 
 ### Editor instances
 

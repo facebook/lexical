@@ -41,6 +41,7 @@ export default function ActionsPlugins({
   const [isReadOnly, setIsReadyOnly] = useState(() => editor.isReadOnly());
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [modal, showModal] = useModal();
   const {yjsDocMap} = useCollaborationContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
@@ -60,6 +61,26 @@ export default function ActionsPlugins({
         COMMAND_PRIORITY_EDITOR,
       ),
     );
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const children = root.getChildren();
+
+        if (children.length > 1) {
+          setIsEditorEmpty(false);
+        } else {
+          if ($isParagraphNode(children[0])) {
+            const paragraphChildren = children[0].getChildren();
+            setIsEditorEmpty(paragraphChildren.length === 0);
+          } else {
+            setIsEditorEmpty(false);
+          }
+        }
+      });
+    });
   }, [editor]);
 
   const convertFromMarkdown = useCallback(() => {
@@ -128,6 +149,7 @@ export default function ActionsPlugins({
       </button>
       <button
         className="action-button clear"
+        disabled={isEditorEmpty}
         onClick={() => {
           showModal('Clear editor', (onClose) => (
             <ShowClearDialog editor={editor} onClose={onClose} />

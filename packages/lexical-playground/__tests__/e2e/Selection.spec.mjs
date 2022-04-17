@@ -12,7 +12,8 @@ import {
   expect,
   focusEditor,
   initialize,
-  insertImage,
+  insertImageCaption,
+  insertSampleImage,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -60,7 +61,8 @@ test.describe('Selection', () => {
       );
 
     await focusEditor(page);
-    await insertImage(page, 'Hello world');
+    await insertSampleImage(page);
+    await insertImageCaption(page, 'Hello world');
     expect(await hasSelection('.image-caption-container')).toBe(true);
     expect(await hasSelection('.editor-shell')).toBe(false);
 

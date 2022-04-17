@@ -314,21 +314,27 @@ function InsertImageUploadedDialogBody({
 }: {
   onClick: (payload: {altText: string, src: string}) => void,
 }) {
-  const [files, setFiles] = useState<null | File[]>(null);
+  const [src, setSrc] = useState('');
   const [altText, setAltText] = useState('');
 
-  const isDisabled = !files || files.length === 0;
+  const isDisabled = src === '';
 
-  const getSrc = () => {
-    if (!files || files.length === 0) return '';
-    return URL.createObjectURL(files[0]);
+  const loadImage = (files: File[]) => {
+    const reader = new FileReader();
+    reader.onload = function () {
+      if (typeof reader.result === 'string') {
+        setSrc(reader.result);
+      }
+      return '';
+    };
+    reader.readAsDataURL(files[0]);
   };
 
   return (
     <>
       <Input
         label="Image Upload"
-        onChange={(e) => setFiles(e.target.files)}
+        onChange={(e) => loadImage(e.target.files)}
         type="file"
         accept="image/*"
       />
@@ -339,9 +345,7 @@ function InsertImageUploadedDialogBody({
         value={altText}
       />
       <div className="ToolbarPlugin__dialogActions">
-        <Button
-          disabled={isDisabled}
-          onClick={() => onClick({altText, src: getSrc()})}>
+        <Button disabled={isDisabled} onClick={() => onClick({altText, src})}>
           Confirm
         </Button>
       </div>

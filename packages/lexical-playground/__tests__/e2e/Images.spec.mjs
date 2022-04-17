@@ -44,13 +44,11 @@ test.describe('Images', () => {
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <br />
         </p>
@@ -107,14 +105,12 @@ test.describe('Images', () => {
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
               style="height: inherit; max-width: 500px; width: inherit;"
-              class="focused"
-            />
+              class="focused" />
             <button class="image-caption-button">Add Caption</button>
             <div class="image-resizer-ne"></div>
             <div class="image-resizer-se"></div>
@@ -151,13 +147,11 @@ test.describe('Images', () => {
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <br />
         </p>
@@ -211,24 +205,20 @@ test.describe('Images', () => {
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <br />
         </p>
@@ -249,13 +239,11 @@ test.describe('Images', () => {
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <br />
         </p>
@@ -295,30 +283,25 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <br />
         </p>
@@ -336,19 +319,16 @@ test.describe('Images', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Test</span>
           <span
             class="editor-image"
             contenteditable="false"
-            data-lexical-decorator="true"
-          >
+            data-lexical-decorator="true">
             <img
               src="${IMAGE_URL}"
               alt="Yellow flower in tilt shift lens"
-              style="height: inherit; max-width: 500px; width: inherit;"
-            />
+              style="height: inherit; max-width: 500px; width: inherit;" />
           </span>
           <br />
         </p>

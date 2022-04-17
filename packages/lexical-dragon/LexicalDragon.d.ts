@@ -8,6 +8,6 @@
 
 import type {LexicalEditor} from 'lexical';
 
-export default function registerDragonSupport(
+export function registerDragonSupport(
   editor: LexicalEditor,
 ): () => void;

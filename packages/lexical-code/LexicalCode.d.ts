@@ -34,18 +34,18 @@ declare class CodeNode extends ElementNode {
   getLanguage(): string | void;
 }
 declare function $createCodeNode(): CodeNode;
-declare function $isCodeNode(node: ?LexicalNode): boolean;
+declare function $isCodeNode(node: null | undefined | LexicalNode): boolean;
 
 declare function getFirstCodeHighlightNodeOfLine(
   anchor: LexicalNode,
-): ?CodeHighlightNode;
+): null | undefined | CodeHighlightNode;
 
 declare function getLastCodeHighlightNodeOfLine(
   anchor: LexicalNode,
-): ?CodeHighlightNode;
+): null | undefined | CodeHighlightNode;
 
 declare class CodeHighlightNode extends TextNode {
-  __highlightType: ?string;
+  __highlightType: null | undefined | string;
   constructor(text: string, highlightType?: string, key?: NodeKey);
   static getType(): string;
   static clone(node: CodeHighlightNode): CodeHighlightNode;
@@ -60,8 +60,8 @@ declare class CodeHighlightNode extends TextNode {
 }
 declare function getHighlightThemeClass(
   theme: EditorThemeClasses,
-  highlightType: ?string,
-): ?string;
+  highlightType: null | undefined | string,
+): null | undefined | string;
 declare function $createCodeHighlightNode(
   text: string,
   highlightType?: string,

@@ -6,6 +6,7 @@
  *
  */
 
+import {selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
@@ -67,7 +68,12 @@ test.describe('Toolbar', () => {
     );
 
     // Delete image
-    await click(page, '.editor-image img');
+    // TODO Revisit the a11y side of NestedEditors
+    await page.evaluate(() => {
+      const p = document.querySelector('[contenteditable="true"] p');
+      document.getSelection().setBaseAndExtent(p, 0, p, 0);
+    });
+    await selectAll(page);
     await page.keyboard.press('Delete');
     await assertHTML(
       page,

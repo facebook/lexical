@@ -1,6 +1,14 @@
-# Lexical
+<h1 align="center">
+  <a href="https://lexical.dev">Lexical</a>
+</h1>
 
-> Note: Lexical is currently in early development and APIs and packages are likely to change quite often.
+<p align="center">
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/facebook/lexical/Lexical%20Tests">
+  <img alt="npm" src="https://img.shields.io/npm/v/lexical"> <img alt="Discord" src="https://img.shields.io/discord/953974421008293909">
+  <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/lexicaljs?style=social">
+</p>
+
+**⚠️ Lexical is currently in early development and APIs and packages are likely to change quite often.**
 
 Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 

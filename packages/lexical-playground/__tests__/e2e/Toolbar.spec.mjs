@@ -15,6 +15,7 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_COLLAB,
   selectFromInsertDropdown,
   test,
 } from '../utils/index.mjs';
@@ -70,7 +71,8 @@ test.describe('Toolbar', () => {
 
     // Delete image
     // TODO Revisit the a11y side of NestedEditors
-    await page.evaluate(() => {
+    const targetPage = IS_COLLAB ? await page.frame('left') : page;
+    await targetPage.evaluate(() => {
       const p = document.querySelector('[contenteditable="true"] p');
       document.getSelection().setBaseAndExtent(p, 0, p, 0);
     });

@@ -36,6 +36,7 @@ export var KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent>;
+export var KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent>;
 export var INDENT_CONTENT_COMMAND: LexicalCommand<void>;
 export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
 export var DROP_COMMAND: LexicalCommand<DragEvent>;

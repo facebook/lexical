@@ -103,7 +103,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-ci:mac
+      - run: npm run run-e2e-ci:mac
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -146,7 +146,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-ci:other
+      - run: npm run run-e2e-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -185,7 +185,7 @@ jobs:
       - run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-ci:other
+      - run: npm run run-e2e-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -220,7 +220,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-collab-ci:mac
+      - run: npm run run-e2e-collab-ci:mac
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -259,7 +259,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-collab-ci:other
+      - run: npm run run-e2e-collab-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -294,7 +294,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-collab-ci:other
+      - run: npm run run-e2e-collab-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3

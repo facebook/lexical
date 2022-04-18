@@ -839,6 +839,15 @@ export function isMoveDown(
   return isArrowDown(keyCode) && !ctrlKey && !metaKey;
 }
 
+export function isModifier(
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return ctrlKey || shiftKey || altKey || metaKey;
+}
+
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
   if (IS_APPLE) {
     return metaKey;

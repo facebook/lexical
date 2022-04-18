@@ -29,10 +29,10 @@ export default function FileInput({
       <label className="Input__label">{label}</label>
       <input
         type="file"
-        accept={accept || undefined}
+        accept={accept}
         className="Input__input"
         onChange={(e) => onChange(e.target.files)}
-        data-test-id={dataTestId || undefined}
+        data-test-id={dataTestId}
       />
     </div>
   );

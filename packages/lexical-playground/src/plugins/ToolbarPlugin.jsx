@@ -73,9 +73,9 @@ import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
 import DropDown from '../ui/DropDown';
 import FileInput from '../ui/FileInput.jsx';
-import Input from '../ui/Input';
 import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
+import TextInput from '../ui/TextInput';
 import {INSERT_EQUATION_COMMAND} from './EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
@@ -290,14 +290,14 @@ function InsertImageUriDialogBody({
 
   return (
     <>
-      <Input
+      <TextInput
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
         onChange={setSrc}
         value={src}
         data-test-id="image-modal-url-input"
       />
-      <Input
+      <TextInput
         label="Alt Text"
         placeholder="Random unsplash image"
         onChange={setAltText}
@@ -345,7 +345,7 @@ function InsertImageUploadedDialogBody({
         accept="image/*"
         data-test-id="image-modal-file-upload"
       />
-      <Input
+      <TextInput
         label="Alt Text"
         placeholder="Descriptive alternative text"
         onChange={setAltText}
@@ -427,8 +427,8 @@ function InsertTableDialog({
 
   return (
     <>
-      <Input label="No of rows" onChange={setRows} value={rows} />
-      <Input label="No of columns" onChange={setColumns} value={columns} />
+      <TextInput label="No of rows" onChange={setRows} value={rows} />
+      <TextInput label="No of columns" onChange={setColumns} value={columns} />
       <div
         className="ToolbarPlugin__dialogActions"
         data-test-id="table-model-confirm-insert">
@@ -454,7 +454,11 @@ function InsertPollDialog({
 
   return (
     <>
-      <Input label="Poll Question" onChange={setQuestion} value={question} />
+      <TextInput
+        label="Poll Question"
+        onChange={setQuestion}
+        value={question}
+      />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm
@@ -485,7 +489,7 @@ function InsertTweetDialog({
 
   return (
     <>
-      <Input
+      <TextInput
         label="Tweet URL"
         placeholder="i.e. https://twitter.com/jack/status/20"
         onChange={setText}
@@ -531,7 +535,7 @@ function InsertYouTubeDialog({
 
   return (
     <>
-      <Input
+      <TextInput
         label="YouTube URL"
         placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
         onChange={setText}

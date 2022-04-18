@@ -19,7 +19,7 @@ type Props = $ReadOnly<{
   value: string,
 }>;
 
-export default function Input({
+export default function TextInput({
   label,
   value,
   onChange,
@@ -37,7 +37,7 @@ export default function Input({
         onChange={(e) => {
           onChange(e.target.value);
         }}
-        data-test-id={dataTestId || undefined}
+        data-test-id={dataTestId}
       />
     </div>
   );

@@ -78,7 +78,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.8]
-        browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
     env:
@@ -104,7 +103,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - run: npm run test-e2e-ci:mac
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -118,7 +117,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.8]
-        browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
     env:
@@ -148,7 +146,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - run: npm run test-e2e-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -162,7 +160,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.8]
-        browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
     env:
@@ -188,7 +185,7 @@ jobs:
       - run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - run: npm run test-e2e-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -202,7 +199,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.8]
-        browser: ['chromium', 'firefox', 'webkit']
     env:
       CI: true
     steps:
@@ -224,7 +220,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - run: npm run test-e2e-collab-ci:mac
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -238,7 +234,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.8]
-        browser: ['chromium', 'firefox']
     env:
       CI: true
     steps:
@@ -264,7 +259,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - run: npm run test-e2e-collab-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3
@@ -278,7 +273,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.8]
-        browser: ['chromium', 'firefox']
     env:
       CI: true
     steps:
@@ -300,7 +294,7 @@ jobs:
         run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
+      - run: npm run test-e2e-collab-ci:other
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3

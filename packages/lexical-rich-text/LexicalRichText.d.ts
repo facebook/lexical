@@ -12,7 +12,10 @@ import type {
   LexicalNode,
   NodeKey,
   ParagraphNode,
+  HeadingNode,
 } from 'lexical';
+import {ElementNode} from 'lexical';
+
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 export declare class QuoteNode extends ElementNode {

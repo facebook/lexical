@@ -583,37 +583,15 @@ function BlockFormatDropDown({
     }
   };
 
-  const formatLargeHeading = () => {
-    if (blockType !== 'h1') {
+  const formatHeading = (headingSize) => {
+    if (blockType !== headingSize) {
       editor.update(() => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $wrapLeafNodesInElements(selection, () => $createHeadingNode('h1'));
-        }
-      });
-    }
-  };
-
-  const formatSmallHeading = () => {
-    if (blockType !== 'h2') {
-      editor.update(() => {
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          $wrapLeafNodesInElements(selection, () => $createHeadingNode('h2'));
-        }
-      });
-    }
-  };
-
-  const formatVerySmallHeading = () => {
-    if (blockType !== 'h3') {
-      editor.update(() => {
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          $wrapLeafNodesInElements(selection, () => $createHeadingNode('h3'));
+          $wrapLeafNodesInElements(selection, () =>
+            $createHeadingNode(headingSize),
+          );
         }
       });
     }
@@ -678,17 +656,17 @@ function BlockFormatDropDown({
         <span className="text">Normal</span>
         {blockType === 'paragraph' && <span className="active" />}
       </button>
-      <button className="item" onClick={formatLargeHeading}>
+      <button className="item" onClick={() => formatHeading('h1')}>
         <span className="icon h1" />
         <span className="text">Heading 1</span>
         {blockType === 'h1' && <span className="active" />}
       </button>
-      <button className="item" onClick={formatSmallHeading}>
+      <button className="item" onClick={() => formatHeading('h2')}>
         <span className="icon h2" />
         <span className="text">Heading 2</span>
         {blockType === 'h2' && <span className="active" />}
       </button>
-      <button className="item" onClick={formatVerySmallHeading}>
+      <button className="item" onClick={() => formatHeading('h3')}>
         <span className="icon h3" />
         <span className="text">Heading 3</span>
         {blockType === 'h3' && <span className="active" />}

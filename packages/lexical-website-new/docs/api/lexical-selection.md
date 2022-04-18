@@ -1,5 +1,7 @@
 ---
+title: ''
 sidebar_position: 2
+sidebar_label: '@lexical/selection'
 ---
 
-# @lexical/selection
+{@import ../../../lexical-selection/README.md}

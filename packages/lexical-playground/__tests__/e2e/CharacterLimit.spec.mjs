@@ -96,8 +96,7 @@ function testSuite(charset) {
           <span data-lexical-text="true">1234</span>
           <span
             class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -263,8 +262,7 @@ function testSuite(charset) {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">234</span>
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
@@ -281,13 +279,11 @@ function testSuite(charset) {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">234</span>
             <span
               class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-              dir="ltr"
-            >
+              dir="ltr">
               <span class="emoji happysmile" data-lexical-text="true">
                 <span class="emoji-inner">🙂</span>
               </span>
@@ -372,13 +368,11 @@ function testSuite(charset) {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">ààààà</span>
             <span
               class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-              dir="ltr"
-            >
+              dir="ltr">
               <span data-lexical-text="true">à</span>
             </span>
           </p>
@@ -390,13 +384,11 @@ function testSuite(charset) {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">àà</span>
             <span
               class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-              dir="ltr"
-            >
+              dir="ltr">
               <span data-lexical-text="true">àààà</span>
             </span>
           </p>
@@ -416,12 +408,10 @@ function testSuite(charset) {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span
               class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-              dir="ltr"
-            >
+              dir="ltr">
               <span data-lexical-text="true">👨‍👩‍👦‍👦</span>
             </span>
           </p>
@@ -434,13 +424,11 @@ function testSuite(charset) {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr"
-            >
+              dir="ltr">
               <span data-lexical-text="true">👨‍👩</span>
               <span
                 class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-                dir="ltr"
-              >
+                dir="ltr">
                 <span data-lexical-text="true">‍👦‍👦</span>
               </span>
             </p>
@@ -452,13 +440,11 @@ function testSuite(charset) {
           html`
             <p
               class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr"
-            >
+              dir="ltr">
               <span data-lexical-text="true">👨</span>
               <span
                 class="PlaygroundEditorTheme__characterLimit PlaygroundEditorTheme__ltr"
-                dir="ltr"
-              >
+                dir="ltr">
                 <span data-lexical-text="true">‍👩‍👦‍👦</span>
               </span>
             </p>

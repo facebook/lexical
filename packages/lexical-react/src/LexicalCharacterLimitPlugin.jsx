@@ -64,8 +64,7 @@ export default function CharacterLimitPlugin({
     <span
       className={`characters-limit ${
         remainingCharacters < 0 ? 'characters-limit-exceeded' : ''
-      }`}
-    >
+      }`}>
       {remainingCharacters}
     </span>
   );

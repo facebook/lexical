@@ -64,8 +64,7 @@ export default function HomepageExamples() {
     <Tabs.Root
       value={activeItemID}
       orientation="horizontal"
-      onValueChange={setActiveItemID}
-    >
+      onValueChange={setActiveItemID}>
       <div className="container">
         <Tabs.List asChild={true} className="pills" loop={true}>
           <ul>
@@ -77,8 +76,7 @@ export default function HomepageExamples() {
                     activeItemID === id && 'pills__item--active',
                   )}
                   tabIndex={0}
-                  role="tab"
-                >
+                  role="tab">
                   {label}
                 </li>
               </Tabs.Trigger>
@@ -93,8 +91,7 @@ export default function HomepageExamples() {
                 <div>
                   <Link
                     className="button button--primary margin-top--md"
-                    to="/docs/intro"
-                  >
+                    to="/docs/intro">
                     Get Started
                   </Link>
                 </div>

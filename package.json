@@ -40,7 +40,7 @@
     "test-e2e-collab:firefox": "cross-env E2E_BROWSER=firefox E2E_EDITOR_MODE=rich-text-with-collab playwright test --project=\"firefox\"",
     "test-e2e-collab:webkit": "cross-env E2E_BROWSER=webkit E2E_EDITOR_MODE=rich-text-with-collab playwright test --project=\"webkit\"",
     "test-e2e-ci:mac": "npm-run-all test-e2e-ci:*",
-    "test-e2e-ci:other": "npm-run-all test-e2e-ci:!(webkit)",
+    "test-e2e-ci:other": "npm-run-all 'test-e2e-ci:!(webkit)'",
     "test-e2e-ci:chromium": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:chromium",
     "test-e2e-ci:firefox": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:firefox",
     "test-e2e-ci:webkit": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:webkit",

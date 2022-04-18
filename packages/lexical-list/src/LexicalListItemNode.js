@@ -139,7 +139,7 @@ export class ListItemNode extends ElementNode {
       );
     }
 
-    // Attempt to merge tables if the list is of the same type.
+    // Attempt to merge if the list is of the same type.
     if ($isListNode(node) && node.getTag() === listNode.getTag()) {
       let child = node;
       const children = node.getChildren();

@@ -536,6 +536,11 @@ export function html(partials, ...params) {
   return output;
 }
 
+export async function selectFromFormatDropdown(page, selector) {
+  await click(page, '.toolbar-item[aria-label="Formatting Options"]');
+  await click(page, '.dropdown ' + selector);
+}
+
 export async function selectFromInsertDropdown(page, selector) {
   await click(page, '.toolbar-item[aria-label="Insert"]');
   await click(page, '.dropdown ' + selector);

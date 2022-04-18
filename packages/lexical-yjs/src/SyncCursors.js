@@ -283,6 +283,8 @@ function updateCursor(
   let selectionRectsLength = selectionRects.length;
   const selectionsLength = selections.length;
 
+  let prevRect;
+
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
 
@@ -290,26 +292,25 @@ function updateCursor(
     // the same rect twice for some elements. A more sophisticated thing to do here is to
     // merge all the rects together into a set of rects that don't overlap, so we don't
     // generate backgrounds that are too dark.
-    if (i > 0) {
-      const prevRect = selectionRects[i - 1];
-      if (
-        prevRect.top === selectionRect.top &&
-        prevRect.left === selectionRect.left &&
-        prevRect.width === selectionRect.width &&
-        prevRect.height === selectionRect.height
-      ) {
-        selectionRects.splice(i--, 1);
-        selectionRectsLength--;
-        continue;
-      }
-    }
+    const isDuplicateRect =
+      prevRect &&
+      prevRect.top === selectionRect.top &&
+      prevRect.left === selectionRect.left &&
+      prevRect.width === selectionRect.width &&
+      prevRect.height === selectionRect.height;
 
-    if (selectionRect.width + rootPadding === rootRect.width) {
-      // Exclude selections that span the entire element
+    // Exclude selections that span the entire element
+    const selectionSpansElement =
+      selectionRect.width + rootPadding === rootRect.width;
+
+    if (isDuplicateRect || selectionSpansElement) {
       selectionRects.splice(i--, 1);
       selectionRectsLength--;
       continue;
     }
+
+    prevRect = selectionRect;
+
     let selection = selections[i];
     if (selection === undefined) {
       selection = document.createElement('span');

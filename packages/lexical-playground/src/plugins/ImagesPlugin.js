@@ -21,10 +21,10 @@ import {useEffect} from 'react';
 
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
-export type InsertImagePayload = {
+export type InsertImagePayload = $ReadOnly<{
   altText: string,
   src: string,
-};
+}>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand();

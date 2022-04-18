@@ -296,7 +296,6 @@ function updateCursor(
         prevRect.top === selectionRect.top &&
         prevRect.left === selectionRect.left &&
         prevRect.width === selectionRect.width &&
-        prevRect.height === selectionRect.height &&
         prevRect.height === selectionRect.height
       ) {
         selectionRects.splice(i--, 1);

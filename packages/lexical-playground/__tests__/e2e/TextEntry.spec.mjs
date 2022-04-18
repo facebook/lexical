@@ -6,7 +6,12 @@
  *
  */
 
-import {moveToLineBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  moveLeft,
+  moveToLineBeginning,
+  selectAll,
+  selectCharacters,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -30,8 +35,7 @@ test.describe('TextEntry', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hello Lexical</span>
         </p>
       `,
@@ -59,8 +63,7 @@ test.describe('TextEntry', () => {
       html`
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hello</span>
         </h1>
       `,
@@ -80,8 +83,7 @@ test.describe('TextEntry', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <h1
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hello</span>
         </h1>
       `,
@@ -111,8 +113,7 @@ test.describe('TextEntry', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Foo</span>
         </p>
       `,
@@ -159,7 +160,7 @@ test.describe('TextEntry', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('This is another block.');
     await page.keyboard.down('Shift');
-    await repeat(6, async () => await page.keyboard.down('ArrowLeft'));
+    await moveLeft(page, 6);
     if (isRichText) {
       await assertSelection(page, {
         anchorOffset: 22,
@@ -186,14 +187,12 @@ test.describe('TextEntry', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">Hello World.</span>
           </p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">This is another paragraph.</span>
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
@@ -213,8 +212,7 @@ test.describe('TextEntry', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">Hello World.</span>
             <br />
             <span data-lexical-text="true">This is another paragraph.</span>
@@ -250,8 +248,7 @@ test.describe('TextEntry', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Delete some of these characte</span>
         </p>
       `,
@@ -276,8 +273,7 @@ test.describe('TextEntry', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hello foobar.</span>
         </p>
       `,
@@ -292,9 +288,7 @@ test.describe('TextEntry', () => {
       focusPath: [0, 0, 0],
     });
 
-    await page.keyboard.down('Shift');
-    await repeat(3, async () => await page.keyboard.down('ArrowRight'));
-    await page.keyboard.up('Shift');
+    await selectCharacters(page, 'right', 3);
 
     await assertSelection(page, {
       anchorOffset: 6,
@@ -310,8 +304,7 @@ test.describe('TextEntry', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hello lolbar.</span>
         </p>
       `,
@@ -335,12 +328,9 @@ test.describe('TextEntry', () => {
     await page.keyboard.type(text);
     await keyDownCtrlOrAlt(page);
     await page.keyboard.down('Shift');
-    await page.keyboard.press('ArrowLeft');
     // Chrome stops words on punctuation, so we need to trigger
     // the left arrow key one more time.
-    if (browserName === 'chromium') {
-      await page.keyboard.press('ArrowLeft');
-    }
+    await moveLeft(page, browserName === 'chromium' ? 2 : 1);
     await page.keyboard.up('Shift');
     await keyUpCtrlOrAlt(page);
     // Ensure the selection is now covering the whole word and period.
@@ -358,8 +348,7 @@ test.describe('TextEntry', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Delete some of these</span>
         </p>
       `,
@@ -544,8 +533,7 @@ test.describe('TextEntry', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
-            dir="rtl"
-          >
+            dir="rtl">
             <span data-lexical-text="true">هَ</span>
           </p>
           <p class="PlaygroundEditorTheme__paragraph">
@@ -562,8 +550,7 @@ test.describe('TextEntry', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__rtl"
-            dir="rtl"
-          >
+            dir="rtl">
             <span data-lexical-text="true">هَ</span>
             <br />
             <br />

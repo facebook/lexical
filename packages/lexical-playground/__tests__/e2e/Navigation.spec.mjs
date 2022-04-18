@@ -15,14 +15,14 @@ import {
   moveToParagraphBeginning,
   moveToParagraphEnd,
   moveToPrevWord,
+  selectCharacters,
+  toggleBold,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertSelection,
   focusEditor,
   initialize,
   IS_WINDOWS,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
   test,
 } from '../utils/index.mjs';
 
@@ -489,24 +489,14 @@ test.describe('Keyboard Navigation', () => {
     if (isRichText) {
       // select "de" and make it bold
       await moveToPrevWord(page);
-      await page.keyboard.down('Shift');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.up('Shift');
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('b');
-      await keyUpCtrlOrMeta(page);
+      await selectCharacters(page, 'right', 2);
+      await toggleBold(page);
       // select "ab" and make it bold
       await moveToPrevWord(page);
       await moveToPrevWord(page);
       await moveToPrevWord(page);
-      await page.keyboard.down('Shift');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.up('Shift');
-      await keyDownCtrlOrMeta(page);
-      await page.keyboard.press('b');
-      await keyUpCtrlOrMeta(page);
+      await selectCharacters(page, 'right', 2);
+      await toggleBold(page);
       await moveToLineEnd(page);
       await assertSelection(page, {
         anchorOffset: 3,

@@ -6,6 +6,7 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -27,8 +28,7 @@ test.describe('Regression test #221', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yolo
           </span>
@@ -42,16 +42,14 @@ test.describe('Regression test #221', () => {
       focusPath: [0, 0, 0],
     });
 
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 2);
     await page.keyboard.press('Space');
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yo
           </span>
@@ -76,8 +74,7 @@ test.describe('Regression test #221', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yolo
           </span>
@@ -99,8 +96,7 @@ test.describe('Regression test #221', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yolo
           </span>
@@ -124,8 +120,7 @@ test.describe('Regression test #221', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yolo
           </span>
@@ -147,8 +142,7 @@ test.describe('Regression test #221', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yol
           </span>

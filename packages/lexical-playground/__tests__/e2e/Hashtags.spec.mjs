@@ -8,6 +8,7 @@
 
 import {
   deleteNextWord,
+  moveLeft,
   moveToEditorBeginning,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -34,8 +35,7 @@ test.describe('Hashtags', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yolo
           </span>
@@ -56,8 +56,7 @@ test.describe('Hashtags', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #yolonce
           </span>
@@ -71,17 +70,14 @@ test.describe('Hashtags', () => {
       focusPath: [0, 0, 0],
     });
 
-    await repeat(10, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 10);
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">yolonce</span>
         </p>
       `,
@@ -105,8 +101,7 @@ test.describe('Hashtags', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #hello
           </span>
@@ -121,9 +116,7 @@ test.describe('Hashtags', () => {
       focusPath: [0, 1, 0],
     });
 
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 5);
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0, 1, 0],
@@ -137,8 +130,7 @@ test.describe('Hashtags', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #helloworld
           </span>
@@ -158,8 +150,7 @@ test.describe('Hashtags', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #hello
           </span>
@@ -174,7 +165,7 @@ test.describe('Hashtags', () => {
       focusPath: [0, 1, 0],
     });
 
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page);
     if (browserName === 'firefox') {
       await assertSelection(page, {
         anchorOffset: 0,
@@ -197,8 +188,7 @@ test.describe('Hashtags', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #helloworld
           </span>
@@ -228,8 +218,7 @@ test.describe('Hashtags', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #hello
           </span>

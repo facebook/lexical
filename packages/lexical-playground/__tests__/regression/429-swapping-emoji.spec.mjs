@@ -6,13 +6,13 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -29,8 +29,7 @@ test.describe('Regression test #429', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="emoji happysmile" data-lexical-text="true">
             <span class="emoji-inner">🙂</span>
           </span>
@@ -48,9 +47,7 @@ test.describe('Regression test #429', () => {
       focusPath: [0, 2, 0, 0],
     });
 
-    await repeat(6, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 6);
     await page.keyboard.press('Enter');
     if (isRichText) {
       await assertHTML(
@@ -59,8 +56,7 @@ test.describe('Regression test #429', () => {
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -83,8 +79,7 @@ test.describe('Regression test #429', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <br />
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
@@ -110,8 +105,7 @@ test.describe('Regression test #429', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="emoji happysmile" data-lexical-text="true">
             <span class="emoji-inner">🙂</span>
           </span>

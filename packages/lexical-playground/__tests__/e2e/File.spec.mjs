@@ -6,16 +6,18 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  moveRight,
+  selectAll,
+  selectCharacters,
+  toggleBold,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
   focusEditor,
   html,
   initialize,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
-  repeat,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -28,15 +30,9 @@ test.describe('File', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('Hello World');
-    await page.keyboard.down('Shift');
-    await repeat('World'.length, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
-    await page.keyboard.press('ArrowRight');
+    await selectCharacters(page, 'left', 'World'.length);
+    await toggleBold(page);
+    await moveRight(page);
     await page.keyboard.press('Enter');
     await page.keyboard.type('1. one');
     await page.keyboard.press('Enter');
@@ -47,13 +43,11 @@ test.describe('File', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             World
           </strong>
         </p>
@@ -61,15 +55,13 @@ test.describe('File', () => {
           <li
             value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">one</span>
           </li>
           <li
             value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">two</span>
           </li>
         </ol>
@@ -103,13 +95,11 @@ test.describe('File', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             World
           </strong>
         </p>
@@ -117,15 +107,13 @@ test.describe('File', () => {
           <li
             value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">one</span>
           </li>
           <li
             value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">two</span>
           </li>
         </ol>

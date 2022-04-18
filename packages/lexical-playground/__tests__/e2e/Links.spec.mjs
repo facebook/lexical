@@ -23,7 +23,6 @@ import {
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -466,9 +465,7 @@ test.describe('Links', () => {
     await focusEditor(page);
     await page.keyboard.type('Hello world');
 
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 5);
 
     await click(page, '.link');
 

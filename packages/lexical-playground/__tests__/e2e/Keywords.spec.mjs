@@ -7,16 +7,16 @@
  */
 
 import {
+  moveLeft,
+  moveToPrevWord,
+  toggleBold,
+} from '../keyboardShortcuts/index.mjs';
+import {
   assertHTML,
   assertSelection,
   focusEditor,
   html,
   initialize,
-  keyDownCtrlOrAlt,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrAlt,
-  keyUpCtrlOrMeta,
-  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -37,13 +37,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -63,8 +61,7 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">congratsc</span>
         </p>
       `,
@@ -84,13 +81,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true">c</span>
@@ -112,21 +107,18 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true"></span>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -139,9 +131,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 2, 0],
     });
 
-    await repeat(8, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 8);
     if (browserName === 'firefox') {
       await assertSelection(page, {
         anchorOffset: 0,
@@ -165,8 +155,7 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">congratscongrats</span>
         </p>
       `,
@@ -185,21 +174,18 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true"></span>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -222,13 +208,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true">[Team]!</span>
@@ -262,13 +246,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -281,9 +263,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type(' Bob!');
 
@@ -292,19 +272,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Bob!
           </strong>
         </p>
@@ -317,9 +294,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 1, 0],
     });
 
-    await repeat(4, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 4);
 
     await assertSelection(page, {
       anchorOffset: 1,
@@ -335,13 +310,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">congrats</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Bob!
           </strong>
         </p>
@@ -361,20 +334,17 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true"></span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Bob!
           </strong>
         </p>
@@ -404,10 +374,7 @@ test.describe('Keywords', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
-
+    await toggleBold(page);
     await page.keyboard.type('Everyone ');
 
     await assertHTML(
@@ -415,12 +382,10 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
         </p>
@@ -433,9 +398,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('congrats');
 
@@ -444,19 +407,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -476,19 +436,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true">!</span>
@@ -509,19 +466,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -534,9 +488,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('!');
 
@@ -545,25 +497,21 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             !
           </strong>
         </p>
@@ -583,19 +531,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -608,9 +553,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrAlt(page);
-    await page.keyboard.press('ArrowLeft');
-    await keyUpCtrlOrAlt(page);
+    await moveToPrevWord(page);
 
     await page.keyboard.press('Backspace');
 
@@ -619,12 +562,10 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span data-lexical-text="true">congrats</span>
@@ -645,19 +586,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>

@@ -9,6 +9,7 @@
 import {
   moveToLineBeginning,
   moveToLineEnd,
+  selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -30,8 +31,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">This is an emoji</span>
           <span class="emoji happysmile" data-lexical-text="true">
             <span class="emoji-inner">🙂</span>
@@ -52,8 +52,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">This is an emoji</span>
         </p>
       `,
@@ -98,8 +97,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">This is an emoji</span>
         </p>
       `,
@@ -124,8 +122,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="emoji happysmile" data-lexical-text="true">
             <span class="emoji-inner">🙂</span>
           </span>
@@ -159,8 +156,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="emoji happysmile" data-lexical-text="true">
             <span class="emoji-inner">🙂</span>
           </span>
@@ -194,8 +190,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span class="emoji happysmile" data-lexical-text="true">
             <span class="emoji-inner">🙂</span>
           </span>
@@ -244,8 +239,7 @@ test.describe('Emoticons', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -293,8 +287,7 @@ test.describe('Emoticons', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -346,8 +339,7 @@ test.describe('Emoticons', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -382,8 +374,7 @@ test.describe('Emoticons', () => {
           </p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -414,8 +405,7 @@ test.describe('Emoticons', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>
@@ -576,8 +566,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Hey</span>
           <span class="emoji happysmile" data-lexical-text="true">
             <span class="emoji-inner">🙂</span>
@@ -617,8 +606,7 @@ test.describe('Emoticons', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">a</span>
         </p>
       `,
@@ -631,19 +619,14 @@ test.describe('Emoticons', () => {
     });
     await page.keyboard.press('Backspace');
     await page.keyboard.type(':) foo');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await selectCharacters(page, 'left', 5);
     await page.keyboard.type('a');
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">a</span>
         </p>
       `,

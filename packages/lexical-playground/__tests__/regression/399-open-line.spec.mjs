@@ -6,6 +6,7 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -13,7 +14,6 @@ import {
   html,
   initialize,
   IS_MAC,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -38,14 +38,12 @@ test.describe('Regression test #399', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">foo</span>
           </p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">bar</span>
           </p>
         `,
@@ -62,8 +60,7 @@ test.describe('Regression test #399', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">foo</span>
             <br />
             <span data-lexical-text="true">bar</span>
@@ -78,9 +75,7 @@ test.describe('Regression test #399', () => {
       });
     }
 
-    await repeat(3, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 3);
     await page.keyboard.press('Control+KeyO');
     if (isRichText) {
       await assertHTML(
@@ -88,14 +83,12 @@ test.describe('Regression test #399', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">foo</span>
           </p>
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <br />
             <span data-lexical-text="true">bar</span>
           </p>
@@ -113,8 +106,7 @@ test.describe('Regression test #399', () => {
         html`
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr"
-          >
+            dir="ltr">
             <span data-lexical-text="true">foo</span>
             <br />
             <br />

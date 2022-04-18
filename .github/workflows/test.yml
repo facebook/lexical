@@ -41,6 +41,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - run: npm run ci-check
       - run: npm run build
       # - run: npm run prepare-size-compare
@@ -71,6 +73,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - run: npm run test-unit
 
   e2e-mac:
@@ -102,6 +106,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - name: Download browsers
         run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -146,6 +152,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - name: Download browsers
         run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -186,6 +194,8 @@ jobs:
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - name: Download browsers
         run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
@@ -222,6 +232,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - name: Download browsers
         run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
@@ -262,6 +274,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - name: Download browsers
         run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}
@@ -298,6 +312,8 @@ jobs:
       - name: Install dependencies
         #   if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+      - name: Symlink-config
+        run: npx symlink-config
       - name: Download browsers
         run: npx playwright install
       - run: npm run test-e2e-collab-ci:${{ matrix.browser }}

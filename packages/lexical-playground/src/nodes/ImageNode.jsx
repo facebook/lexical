@@ -98,7 +98,7 @@ function LazyImage({
   );
 }
 
-function ImageResizer({
+export function ImageResizer({
   onResizeStart,
   onResizeEnd,
   imageRef,

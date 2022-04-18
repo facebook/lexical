@@ -1,4 +1,10 @@
-## 0.2.1 (Apr 14, 2022)
+## 0.2.2 (April 18, 2022)
+
+- Command priorities are now constants exposed by lexical
+- More fixes to Android GBoard
+- Fixed some any d.ts types
+
+## 0.2.1 (April 14, 2022)
 
 - Fix selection issue with insertNodes
 - Fix rich text align for multiple nodes
@@ -9,14 +15,14 @@
 - Fix android GBoard issues
 - Various other fixes and improvements
 
-## 0.2.0 (Apr 13, 2022)
+## 0.2.0 (April 13, 2022)
 
 - Remove DecoratorNode state
 - Redefine TS React.Node type
 - Add markdown indented list support
 - Fix IME issue when applying text format
 
-## 0.1.21 (Apr 12, 2022)
+## 0.1.21 (April 12, 2022)
 
 - Add line numbers in Code Highlight plugin.
 - Remove top-level document reference to fix SSR.
@@ -25,23 +31,23 @@
 - Improve copy/paste for Tables and Lists
 - Handle RangeSelection Containing Partial Table Selection
 
-## 0.1.20 (Apr 7, 2022)
+## 0.1.20 (April 7, 2022)
 
 - Fix build issue with @lexical/code
 - Add $getNearestBlockElementAncestorOrThrow helper
 - Fix issues related to getting the wrong element ancestor in certain rich text features
 - Improve table resizing
 
-## 0.1.19 (Apr 7, 2022)
+## 0.1.19 (April 7, 2022)
 
 - Fix import issue in @lexical/list
 - Fix incorrect types in @lexical/dragon
 
-## 0.1.18 (Apr 6, 2022)
+## 0.1.18 (April 6, 2022)
 
 - Fix bad build
 
-## 0.1.17 (Apr 6, 2022)
+## 0.1.17 (April 6, 2022)
 
 - Fix some outstanding issues with the textcontent listener and the removal of linebreaks.
 - Add useLexicaTextEntity hook for using TextEntity in React.

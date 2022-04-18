@@ -9,7 +9,7 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "Lexical.js",
   "typings": "Lexical.d.ts",
   "repository": {

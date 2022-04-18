@@ -6,14 +6,17 @@
  *
  */
 
-import {moveToLineEnd, selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  moveToLineEnd,
+  selectAll,
+  selectCharacters,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -71,11 +74,7 @@ test.describe('Regression test #1083', () => {
     await page.keyboard.type('Say');
 
     await page.keyboard.type('Hello');
-    await page.keyboard.down('Shift');
-    await repeat('Hello'.length, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await selectCharacters(page, 'left', 'Hello'.length);
     await click(page, '.link');
 
     await moveToLineEnd(page);
@@ -99,11 +98,7 @@ test.describe('Regression test #1083', () => {
       `,
     );
 
-    await page.keyboard.down('Shift');
-    await repeat('HelloWorld'.length, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await selectCharacters(page, 'left', 'HelloWorld'.length);
     await page.keyboard.press('Backspace');
 
     await assertHTML(

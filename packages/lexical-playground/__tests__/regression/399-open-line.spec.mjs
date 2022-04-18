@@ -6,6 +6,7 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -13,7 +14,6 @@ import {
   html,
   initialize,
   IS_MAC,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -75,9 +75,7 @@ test.describe('Regression test #399', () => {
       });
     }
 
-    await repeat(3, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 3);
     await page.keyboard.press('Control+KeyO');
     if (isRichText) {
       await assertHTML(

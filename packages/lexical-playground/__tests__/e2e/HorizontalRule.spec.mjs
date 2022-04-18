@@ -6,7 +6,11 @@
  *
  */
 
-import {moveToLineBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  moveLeft,
+  moveToLineBeginning,
+  selectAll,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -240,8 +244,7 @@ test.describe('HorizontalRule', () => {
       `,
     );
 
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 2);
 
     await assertSelection(page, {
       anchorOffset: 2,

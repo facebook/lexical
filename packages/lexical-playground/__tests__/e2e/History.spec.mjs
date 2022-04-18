@@ -6,7 +6,7 @@
  *
  */
 
-import {redo, toggleBold, undo} from '../keyboardShortcuts/index.mjs';
+import {moveLeft, redo, toggleBold, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -32,9 +32,7 @@ test.describe('History', () => {
     await page.keyboard.type(' world');
     await page.keyboard.press('Enter');
     await page.keyboard.type('hello world again');
-    await repeat(6, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 6);
     await page.keyboard.type(', again and');
 
     if (isRichText) {

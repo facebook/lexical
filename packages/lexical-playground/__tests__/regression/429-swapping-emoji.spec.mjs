@@ -6,13 +6,13 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -47,9 +47,7 @@ test.describe('Regression test #429', () => {
       focusPath: [0, 2, 0, 0],
     });
 
-    await repeat(6, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 6);
     await page.keyboard.press('Enter');
     if (isRichText) {
       await assertHTML(

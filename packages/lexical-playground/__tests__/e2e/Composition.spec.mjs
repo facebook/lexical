@@ -6,7 +6,7 @@
  *
  */
 
-import {moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
+import {moveLeft, moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -494,9 +494,7 @@ test.describe('Composition', () => {
 
       await waitForSelector(page, '.mention');
 
-      await repeat(9, async () => {
-        await page.keyboard.press('ArrowLeft');
-      });
+      await moveLeft(page, 9);
 
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);

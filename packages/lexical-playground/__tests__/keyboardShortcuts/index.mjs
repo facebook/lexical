@@ -176,3 +176,15 @@ export async function toggleBold(page) {
   await page.keyboard.press('b');
   await keyUpCtrlOrMeta(page);
 }
+
+export async function toggleUnderline(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('u');
+  await keyUpCtrlOrMeta(page);
+}
+
+export async function toggleItalic(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('i');
+  await keyUpCtrlOrMeta(page);
+}

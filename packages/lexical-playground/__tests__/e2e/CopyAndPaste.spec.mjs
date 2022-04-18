@@ -7,6 +7,7 @@
  */
 
 import {
+  moveLeft,
   moveToLineBeginning,
   moveToLineEnd,
   moveToPrevWord,
@@ -755,9 +756,7 @@ test.describe('CopyAndPaste', () => {
 
     await page.keyboard.down('Shift');
     await moveToLineBeginning(page);
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 3);
     await page.keyboard.up('Shift');
 
     await assertSelection(page, {
@@ -839,9 +838,7 @@ test.describe('CopyAndPaste', () => {
 
     await page.keyboard.down('Shift');
     await moveToLineBeginning(page);
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 3);
     await page.keyboard.up('Shift');
 
     await assertSelection(page, {
@@ -1056,8 +1053,7 @@ test.describe('CopyAndPaste', () => {
     await moveToLineBeginning(page);
     await page.keyboard.press('ArrowDown');
     await moveToLineEnd(page);
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 2);
 
     await assertHTML(
       page,

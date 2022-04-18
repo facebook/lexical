@@ -6,7 +6,15 @@
  *
  */
 
-import {moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
+import {
+  moveLeft,
+  moveRight,
+  moveToLineBeginning,
+  selectCharacters,
+  toggleBold,
+  toggleItalic,
+  toggleUnderline,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -14,9 +22,6 @@ import {
   focusEditor,
   html,
   initialize,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
-  repeat,
   selectOption,
   test,
   waitForSelector,
@@ -32,9 +37,7 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello');
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await page.keyboard.type(' World');
     await assertHTML(
       page,
@@ -58,9 +61,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await page.keyboard.type('!');
     await assertHTML(
       page,
@@ -94,9 +95,7 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello');
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('i');
-    await keyUpCtrlOrMeta(page);
+    await toggleItalic(page);
     await page.keyboard.type(' World');
     await assertHTML(
       page,
@@ -120,9 +119,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('i');
-    await keyUpCtrlOrMeta(page);
+    await toggleItalic(page);
     await page.keyboard.type('!');
     await assertHTML(
       page,
@@ -156,12 +153,8 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
     await assertSelection(page, {
       anchorOffset: 11,
       anchorPath: [0, 0, 0],
@@ -169,9 +162,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await assertHTML(
       page,
       html`
@@ -195,9 +186,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await assertHTML(
       page,
       html`
@@ -240,9 +229,7 @@ test.describe('TextFormatting', () => {
       delay: 100,
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.type('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await assertHTML(
       page,
       html`
@@ -272,12 +259,8 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
     await assertSelection(page, {
       anchorOffset: 11,
       anchorPath: [0, 0, 0],
@@ -285,9 +268,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('i');
-    await keyUpCtrlOrMeta(page);
+    await toggleItalic(page);
     await assertHTML(
       page,
       html`
@@ -311,9 +292,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('i');
-    await keyUpCtrlOrMeta(page);
+    await toggleItalic(page);
     await assertHTML(
       page,
       html`
@@ -340,12 +319,8 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
     await assertSelection(page, {
       anchorOffset: 11,
       anchorPath: [0, 0, 0],
@@ -353,9 +328,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('u');
-    await keyUpCtrlOrMeta(page);
+    await toggleUnderline(page);
     await assertHTML(
       page,
       html`
@@ -379,9 +352,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('u');
-    await keyUpCtrlOrMeta(page);
+    await toggleUnderline(page);
     await assertHTML(
       page,
       html`
@@ -399,9 +370,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('u');
-    await keyUpCtrlOrMeta(page);
+    await toggleUnderline(page);
 
     await click(page, '.strikethrough');
 
@@ -462,12 +431,8 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
 
     await assertSelection(page, {
       anchorOffset: 11,
@@ -508,12 +473,9 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
 
     await assertSelection(page, {
       anchorOffset: 11,
@@ -609,12 +571,8 @@ test.describe('TextFormatting', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
     await assertSelection(page, {
       anchorOffset: 11,
       anchorPath: [0, 0, 0],
@@ -622,9 +580,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await assertHTML(
       page,
       html`
@@ -648,12 +604,9 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.up('Shift');
+    await moveLeft(page);
+    await moveRight(page);
+    await selectCharacters(page, 'right', 2);
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0, 1, 0],
@@ -661,9 +614,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('i');
-    await keyUpCtrlOrMeta(page);
+    await toggleItalic(page);
     await assertHTML(
       page,
       html`
@@ -697,9 +648,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 2, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await assertHTML(
       page,
       html`
@@ -733,13 +682,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 2, 0],
     });
 
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowRight');
-    });
-    await page.keyboard.up('Shift');
+    await moveLeft(page, 2);
+    await selectCharacters(page, 'right', 5);
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0, 1, 0],
@@ -747,9 +691,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 3, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
     await assertHTML(
       page,
       html`
@@ -773,9 +715,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 2, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('i');
-    await keyUpCtrlOrMeta(page);
+    await toggleItalic(page);
     await assertHTML(
       page,
       html`
@@ -809,9 +749,7 @@ test.describe('TextFormatting', () => {
       });
     }
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('i');
-    await keyUpCtrlOrMeta(page);
+    await toggleItalic(page);
     await assertHTML(
       page,
       html`
@@ -839,15 +777,11 @@ test.describe('TextFormatting', () => {
     await focusEditor(page);
     await page.keyboard.type('123');
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('456');
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('789');
 
@@ -857,15 +791,11 @@ test.describe('TextFormatting', () => {
 
     await page.keyboard.type('abc');
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('def');
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('ghi');
 
@@ -904,14 +834,11 @@ test.describe('TextFormatting', () => {
     await page.keyboard.press('ArrowUp');
     await moveToLineBeginning(page);
 
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('ArrowRight');
+    await moveRight(page, 2);
 
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowDown');
-    await repeat(8, async () => {
-      await page.keyboard.press('ArrowRight');
-    });
+    await moveRight(page, 8);
     await page.keyboard.down('Shift');
 
     await page.keyboard.type('c');

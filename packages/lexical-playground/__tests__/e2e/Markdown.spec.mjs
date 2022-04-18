@@ -6,17 +6,21 @@
  *
  */
 
-import {redo, undo} from '../keyboardShortcuts/index.mjs';
+import {
+  moveLeft,
+  moveRight,
+  redo,
+  selectCharacters,
+  toggleUnderline,
+  undo,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
   focusEditor,
   initialize,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
   pasteFromClipboard,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -230,9 +234,7 @@ test.describe('Markdown', () => {
 
         await focusEditor(page);
         await page.keyboard.type(text);
-        await repeat(text.length, async () => {
-          await page.keyboard.press('ArrowLeft');
-        });
+        await moveLeft(page, text.length);
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 0, 0],
@@ -240,9 +242,7 @@ test.describe('Markdown', () => {
           focusPath: [0, 0, 0],
         });
 
-        await repeat(1 + markdownText.length, async () => {
-          await page.keyboard.press('ArrowRight');
-        });
+        await moveRight(page, 1 + markdownText.length);
 
         // Trigger markdown.
         await page.keyboard.type(' ');
@@ -266,9 +266,7 @@ test.describe('Markdown', () => {
 
         await focusEditor(page);
         await page.keyboard.type(text);
-        await repeat(text.length, async () => {
-          await page.keyboard.press('ArrowLeft');
-        });
+        await moveLeft(page, text.length);
         await assertSelection(page, {
           anchorOffset: 0,
           anchorPath: [0, 0, 0],
@@ -277,48 +275,28 @@ test.describe('Markdown', () => {
         });
 
         // Select first 2 characters.
-        await page.keyboard.down('Shift');
-        await repeat(2, async () => {
-          await page.keyboard.press('ArrowRight');
-        });
-        await page.keyboard.up('Shift');
+        await selectCharacters(page, 'right', 2);
 
         // Make underline.
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('u');
-        await keyUpCtrlOrMeta(page);
+        await toggleUnderline(page);
 
         // Back to beginning.
-        await repeat(2, async () => {
-          await page.keyboard.press('ArrowLeft');
-        });
+        await moveLeft(page, 2);
 
         // Move to end.
-        await repeat(text.length, async () => {
-          await page.keyboard.press('ArrowRight');
-        });
+        await moveRight(page, text.length);
 
         // Select last two characters.
-        await page.keyboard.down('Shift');
-        await repeat(2, async () => {
-          await page.keyboard.press('ArrowLeft');
-        });
-        await page.keyboard.up('Shift');
+        await selectCharacters(page, 'left', 2);
 
         // Make underline.
-        await keyDownCtrlOrMeta(page);
-        await page.keyboard.press('u');
-        await keyUpCtrlOrMeta(page);
+        await toggleUnderline(page);
 
         // Back to beginning of text.
-        await repeat(text.length, async () => {
-          await page.keyboard.press('ArrowLeft');
-        });
+        await moveLeft(page, text.length);
 
         // Move after markdown text.
-        await repeat(1 + markdownText.length, async () => {
-          await page.keyboard.press('ArrowRight');
-        });
+        await moveRight(page, 1 + markdownText.length);
 
         // Trigger markdown.
         await page.keyboard.type(' ');

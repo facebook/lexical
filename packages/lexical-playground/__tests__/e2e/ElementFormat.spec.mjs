@@ -6,12 +6,12 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   focusEditor,
   html,
   initialize,
-  repeat,
   selectFromAlignDropdown,
   test,
 } from '../utils/index.mjs';
@@ -28,9 +28,7 @@ test.describe('Element format', () => {
   }) => {
     await focusEditor(page);
     await page.keyboard.type('Hello https://lexical.io world');
-    await repeat(10, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 10);
     await selectFromAlignDropdown(page, '.indent');
     await selectFromAlignDropdown(page, '.indent');
     await selectFromAlignDropdown(page, '.center-align');

@@ -7,16 +7,16 @@
  */
 
 import {
+  moveLeft,
+  moveToPrevWord,
+  toggleBold,
+} from '../keyboardShortcuts/index.mjs';
+import {
   assertHTML,
   assertSelection,
   focusEditor,
   html,
   initialize,
-  keyDownCtrlOrAlt,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrAlt,
-  keyUpCtrlOrMeta,
-  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -131,9 +131,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 2, 0],
     });
 
-    await repeat(8, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 8);
     if (browserName === 'firefox') {
       await assertSelection(page, {
         anchorOffset: 0,
@@ -265,9 +263,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type(' Bob!');
 
@@ -298,9 +294,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 1, 0],
     });
 
-    await repeat(4, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 4);
 
     await assertSelection(page, {
       anchorOffset: 1,
@@ -380,10 +374,7 @@ test.describe('Keywords', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
-
+    await toggleBold(page);
     await page.keyboard.type('Everyone ');
 
     await assertHTML(
@@ -407,9 +398,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 0, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('congrats');
 
@@ -499,9 +488,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
+    await toggleBold(page);
 
     await page.keyboard.type('!');
 
@@ -566,9 +553,7 @@ test.describe('Keywords', () => {
       focusPath: [0, 1, 0],
     });
 
-    await keyDownCtrlOrAlt(page);
-    await page.keyboard.press('ArrowLeft');
-    await keyUpCtrlOrAlt(page);
+    await moveToPrevWord(page);
 
     await page.keyboard.press('Backspace');
 

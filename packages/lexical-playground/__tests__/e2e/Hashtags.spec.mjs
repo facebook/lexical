@@ -8,6 +8,7 @@
 
 import {
   deleteNextWord,
+  moveLeft,
   moveToEditorBeginning,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -69,9 +70,7 @@ test.describe('Hashtags', () => {
       focusPath: [0, 0, 0],
     });
 
-    await repeat(10, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 10);
     await page.keyboard.press('Delete');
     await assertHTML(
       page,
@@ -117,9 +116,7 @@ test.describe('Hashtags', () => {
       focusPath: [0, 1, 0],
     });
 
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 5);
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0, 1, 0],
@@ -168,7 +165,7 @@ test.describe('Hashtags', () => {
       focusPath: [0, 1, 0],
     });
 
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page);
     if (browserName === 'firefox') {
       await assertSelection(page, {
         anchorOffset: 0,

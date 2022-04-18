@@ -9,6 +9,7 @@
 import {
   moveToLineBeginning,
   moveToLineEnd,
+  selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -618,11 +619,7 @@ test.describe('Emoticons', () => {
     });
     await page.keyboard.press('Backspace');
     await page.keyboard.type(':) foo');
-    await page.keyboard.down('Shift');
-    await repeat(5, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
+    await selectCharacters(page, 'left', 5);
     await page.keyboard.type('a');
     await assertHTML(
       page,

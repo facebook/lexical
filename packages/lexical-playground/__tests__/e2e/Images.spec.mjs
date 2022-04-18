@@ -6,6 +6,7 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -197,8 +198,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 2);
 
     await assertHTML(
       page,
@@ -277,8 +277,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 2);
 
     await assertHTML(
       page,

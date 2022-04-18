@@ -6,6 +6,7 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -41,8 +42,7 @@ test.describe('Regression test #221', () => {
       focusPath: [0, 0, 0],
     });
 
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 2);
     await page.keyboard.press('Space');
     await assertHTML(
       page,

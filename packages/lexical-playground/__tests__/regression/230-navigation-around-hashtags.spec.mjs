@@ -6,13 +6,13 @@
  *
  */
 
+import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -25,9 +25,7 @@ test.describe('Regression test #230', () => {
     await focusEditor(page);
     await page.keyboard.type('#foo');
     await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
-    await repeat(4, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 4);
     await page.keyboard.type('a');
     await page.keyboard.press('Backspace');
     await page.keyboard.press('ArrowRight');

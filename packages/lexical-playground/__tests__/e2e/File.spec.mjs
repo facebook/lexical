@@ -6,7 +6,12 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  moveRight,
+  selectAll,
+  selectCharacters,
+  toggleBold,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
@@ -14,9 +19,6 @@ import {
   html,
   initialize,
   insertUploadImage,
-  keyDownCtrlOrMeta,
-  keyUpCtrlOrMeta,
-  repeat,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -29,15 +31,9 @@ test.describe('File', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('Hello World');
-    await page.keyboard.down('Shift');
-    await repeat('World'.length, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
-    await page.keyboard.up('Shift');
-    await keyDownCtrlOrMeta(page);
-    await page.keyboard.press('b');
-    await keyUpCtrlOrMeta(page);
-    await page.keyboard.press('ArrowRight');
+    await selectCharacters(page, 'left', 'World'.length);
+    await toggleBold(page);
+    await moveRight(page);
     await page.keyboard.press('Enter');
     await page.keyboard.type('1. one');
     await page.keyboard.press('Enter');

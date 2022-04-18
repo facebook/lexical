@@ -41,3 +41,7 @@
   align-items: center;
   background-color: #eee;
 }
+.ExcalidrawModal__discardModal {
+  margin-top: 20px;
+  text-align: center;
+}

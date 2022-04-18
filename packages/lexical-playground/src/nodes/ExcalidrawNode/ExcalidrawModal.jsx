@@ -15,6 +15,9 @@ import Excalidraw from '@excalidraw/excalidraw';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
+import Button from '../../ui/Button';
+import Modal from '../../ui/Modal';
+
 type ExcalidrawElementFragment = {
   isDeleted?: boolean,
 };
@@ -55,6 +58,7 @@ export default function ExcalidrawModal({
   onDelete,
 }: Props): React.MixedElement | null {
   const excalidrawRef = useRef(null);
+  const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<$ReadOnlyArray<ExcalidrawElementFragment>>(initialElements);
 
@@ -72,9 +76,38 @@ export default function ExcalidrawModal({
     if (elements.filter((el) => !el.isDeleted).length === 0) {
       // delete node if the scene is clear
       onDelete();
+    } else {
+      //Otherwise, show confirmation dialog before closing
+      setDiscardModalOpen(true);
     }
-    onHide();
   };
+
+  function ShowDiscardDialog(): React$Node {
+    return (
+      <Modal
+        title="Discard"
+        onClose={() => {
+          setDiscardModalOpen(false);
+        }}>
+        Are you sure you want to discard the changes?
+        <div className="ExcalidrawModal__discardModal">
+          <Button
+            onClick={() => {
+              setDiscardModalOpen(false);
+              onHide();
+            }}>
+            Discard
+          </Button>{' '}
+          <Button
+            onClick={() => {
+              setDiscardModalOpen(false);
+            }}>
+            Cancel
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
 
   useEffect(() => {
     excalidrawRef?.current?.updateScene({elements: initialElements});
@@ -97,6 +130,7 @@ export default function ExcalidrawModal({
   return (
     <div className="ExcalidrawModal__modal">
       <div className="ExcalidrawModal__row">
+        {discardModalOpen && <ShowDiscardDialog />}
         <_Excalidraw
           onChange={onChange}
           initialData={{

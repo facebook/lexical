@@ -349,24 +349,31 @@ test.describe('Images', () => {
 
     await focusEditor(page);
 
-    await insertUploadImage(
-      page,
-      'packages/lexical-playground/src/images/yellow-flower-small.jpg',
-      'a pretty yellow flower :)',
-    );
-    await page.keyboard.press('Enter');
-
     await insertUrlImage(
       page,
       'https://lexical.dev/img/logo.svg',
       'lexical logo',
     );
-    await page.keyboard.press('Enter');
+
+    await insertUploadImage(
+      page,
+      'packages/lexical-playground/src/images/yellow-flower-small.jpg',
+      'a pretty yellow flower :)',
+    );
 
     await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img
+              src="https://lexical.dev/img/logo.svg"
+              alt="lexical logo"
+              style="height: inherit; max-width: 500px; width: inherit;" />
+          </span>
           <span
             class="editor-image"
             contenteditable="false"
@@ -378,19 +385,6 @@ test.describe('Images', () => {
           </span>
           <br />
         </p>
-        <p class="PlaygroundEditorTheme__paragraph">
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <img
-              src="https://lexical.dev/img/logo.svg"
-              alt="lexical logo"
-              style="height: inherit; max-width: 500px; width: inherit;" />
-          </span>
-          <br />
-        </p>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

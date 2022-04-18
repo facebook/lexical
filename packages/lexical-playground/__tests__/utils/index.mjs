@@ -452,10 +452,10 @@ export async function insertSampleImage(page) {
 export async function insertUrlImage(page, url, altText) {
   await selectFromInsertDropdown(page, '.image');
   await click(page, 'button[data-test-id="image-modal-option-url"]');
-  await page.focus('input[data-test-id="image-modal-url-input"]');
+  await focus(page, 'input[data-test-id="image-modal-url-input"]');
   await page.keyboard.type(url);
   if (altText) {
-    await page.focus('input[data-test-id="image-modal-alt-text-input"]');
+    await focus(page, 'input[data-test-id="image-modal-alt-text-input"]');
     await page.keyboard.type(altText);
   }
   await click(page, 'button[data-test-id="image-modal-confirm-btn"]');
@@ -464,12 +464,15 @@ export async function insertUrlImage(page, url, altText) {
 export async function insertUploadImage(page, files, altText) {
   await selectFromInsertDropdown(page, '.image');
   await click(page, 'button[data-test-id="image-modal-option-file"]');
-  await page.setInputFiles(
+
+  const frame = IS_COLLAB ? await page.frame('left') : page;
+  await frame.setInputFiles(
     'input[data-test-id="image-modal-file-upload"]',
     files,
   );
+
   if (altText) {
-    await page.focus('input[data-test-id="image-modal-alt-text-input"]');
+    await focus(page, 'input[data-test-id="image-modal-alt-text-input"]');
     await page.keyboard.type(altText);
   }
   await click(page, 'button[data-test-id="image-modal-file-upload-btn"]');

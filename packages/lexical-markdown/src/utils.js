@@ -767,7 +767,6 @@ function getNewNodeForCriteria<T>(
   return {newNode, shouldDelete};
 }
 
-
 function createListOrMergeWithPrevious(
   element: ElementNode,
   children: Array<LexicalNode>,

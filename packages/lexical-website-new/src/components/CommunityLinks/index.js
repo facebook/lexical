@@ -20,8 +20,7 @@ const links = [
     description: (
       <Translate
         id="pages.community.links.github.description"
-        description="Description of Github community"
-      >
+        description="Description of Github community">
         Some copy about stack overflow Some copy about stack overflowSome copy
         about stack overflow
       </Translate>
@@ -35,8 +34,7 @@ const links = [
     title: (
       <Translate
         id="pages.community.links.github.title"
-        description="Hyperlink to Github"
-      >
+        description="Hyperlink to Github">
         GitHub
       </Translate>
     ),
@@ -46,8 +44,7 @@ const links = [
     description: (
       <Translate
         id="pages.community.links.stackoverflow.description"
-        description="Description of StackOverflow community"
-      >
+        description="Description of StackOverflow community">
         Some copy about stack overflow Some copy about stack overflowSome copy
         about stack overflow
       </Translate>
@@ -61,8 +58,7 @@ const links = [
     title: (
       <Translate
         id="pages.community.links.stackoverflow.title"
-        description="Hyperlink to Stack Overflow"
-      >
+        description="Hyperlink to Stack Overflow">
         Stack Overflow
       </Translate>
     ),
@@ -72,8 +68,7 @@ const links = [
     description: (
       <Translate
         id="pages.community.links.discord.description"
-        description="Description of Discord community"
-      >
+        description="Description of Discord community">
         Some copy about stack overflow Some copy about stack overflowSome copy
         about stack overflow
       </Translate>
@@ -87,8 +82,7 @@ const links = [
     title: (
       <Translate
         id="pages.community.links.discord.title"
-        description="Hyperlink to Discord"
-      >
+        description="Hyperlink to Discord">
         Discord
       </Translate>
     ),

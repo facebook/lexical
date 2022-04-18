@@ -68,8 +68,7 @@ export default function DropDown({
         aria-label={buttonAriaLabel || buttonLabel}
         className={buttonClassName}
         onClick={() => setShowDropDown(!showDropDown)}
-        ref={buttonRef}
-      >
+        ref={buttonRef}>
         {buttonIconClassName && <span className={buttonIconClassName} />}
         {buttonLabel && (
           <span className="text dropdown-button-text">{buttonLabel}</span>

@@ -33,8 +33,7 @@ test.describe('Regression test #379', () => {
           <span
             class="mention"
             style="background-color: rgba(24, 119, 232, 0.2);"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Luke Skywalker
           </span>
         </p>
@@ -56,8 +55,7 @@ test.describe('Regression test #379', () => {
           <span
             class="mention"
             style="background-color: rgba(24, 119, 232, 0.2);"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Luke Skywalker
           </span>
         </p>

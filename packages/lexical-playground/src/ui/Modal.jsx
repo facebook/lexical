@@ -51,8 +51,7 @@ function PortalImpl({
         <button
           className="Modal__closeButton"
           aria-label="Close modal"
-          onClick={onClose}
-        >
+          onClick={onClose}>
           X
         </button>
         <div className="Modal__content">{children}</div>

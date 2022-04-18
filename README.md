@@ -23,7 +23,7 @@ For documentation and more information about Lexical, be sure to [visit the Lexi
 
 Here are some examples of what you can do with Lexical:
 
-- [Lexical Playground](https://lexical-playground.vercel.app/)
+- [Lexical Playground](https://playground.lexical.dev)
 - [Plain text sandbox](https://codesandbox.io/s/lexical-plain-text-example-g932e)
 - [Rich text sandbox](https://codesandbox.io/s/lexical-rich-text-example-5tncvy)
 

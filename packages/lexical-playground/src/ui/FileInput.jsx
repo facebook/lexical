@@ -13,30 +13,25 @@ import * as React from 'react';
 
 type Props = $ReadOnly<{
   'data-test-id'?: string,
+  accept?: string,
   label: string,
-  onChange: (string) => void,
-  placeholder?: string,
-  value: string,
+  onChange: (File[]) => void,
 }>;
 
-export default function Input({
+export default function FileInput({
+  accept,
   label,
-  value,
   onChange,
-  placeholder = '',
   'data-test-id': dataTestId,
 }: Props): React$Node {
   return (
     <div className="Input__wrapper">
       <label className="Input__label">{label}</label>
       <input
-        type="text"
+        type="file"
+        accept={accept || undefined}
         className="Input__input"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
+        onChange={(e) => onChange(e.target.files)}
         data-test-id={dataTestId || undefined}
       />
     </div>

@@ -37,13 +37,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -63,8 +61,7 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">congratsc</span>
         </p>
       `,
@@ -84,13 +81,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true">c</span>
@@ -112,21 +107,18 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true"></span>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -165,8 +157,7 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">congratscongrats</span>
         </p>
       `,
@@ -185,21 +176,18 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true"></span>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -222,13 +210,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true">[Team]!</span>
@@ -262,13 +248,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -292,19 +276,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Bob!
           </strong>
         </p>
@@ -335,13 +316,11 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">congrats</span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Bob!
           </strong>
         </p>
@@ -361,20 +340,17 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true"></span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Bob!
           </strong>
         </p>
@@ -415,12 +391,10 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
         </p>
@@ -444,19 +418,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -476,19 +447,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <span data-lexical-text="true">!</span>
@@ -509,19 +477,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -545,25 +510,21 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             !
           </strong>
         </p>
@@ -583,19 +544,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>
@@ -619,12 +577,10 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span data-lexical-text="true">congrats</span>
@@ -645,19 +601,16 @@ test.describe('Keywords', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             Everyone
           </strong>
           <span
             class="keyword"
             style="cursor: default;"
-            data-lexical-text="true"
-          >
+            data-lexical-text="true">
             congrats
           </span>
         </p>

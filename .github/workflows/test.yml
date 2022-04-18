@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint: 
+  lint:
     runs-on: ubuntu-latest
     strategy:
       matrix:

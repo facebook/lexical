@@ -18,8 +18,7 @@ const FeatureList = [
     description: (
       <Translate
         id="page.home.features.reliable"
-        description="short description of why Lexical is reliable"
-      >
+        description="short description of why Lexical is reliable">
         Lexical is comprised of editor instances that each attach to a single
         content editable element. A set of editor states represent the current
         and pending states of the editor at any given time.
@@ -32,8 +31,7 @@ const FeatureList = [
     description: (
       <Translate
         id="page.home.features.accessible"
-        description="short description of why Lexical is accessible"
-      >
+        description="short description of why Lexical is accessible">
         Lexical is designed for everyone. It follows best practices established
         in WCAG and is compatible with screen readers and other assistive
         technologies.
@@ -46,8 +44,7 @@ const FeatureList = [
     description: (
       <Translate
         id="page.home.features.fast"
-        description="short description of why Lexical is fast"
-      >
+        description="short description of why Lexical is fast">
         Lexical is minimal. It doesn't directly concern itself with UI
         components, toolbars or rich-text features and markdown. The logic for
         these features can be included via a plugin interface.

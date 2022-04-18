@@ -18,6 +18,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertUploadImage,
   sleep,
   test,
 } from '../utils/index.mjs';

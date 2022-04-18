@@ -45,7 +45,7 @@
     "test-e2e-ci:firefox": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:firefox",
     "test-e2e-ci:webkit": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:webkit",
     "test-e2e-collab-ci:mac": "npm-run-all test-e2e-collab-ci:*",
-    "test-e2e-collab-ci:other": "npm-run-all test-e2e-collab-ci:!(webkit)",
+    "test-e2e-collab-ci:other": "npm-run-all 'test-e2e-collab-ci:!(webkit)'",
     "test-e2e-collab-ci:chromium": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci-collab 4000 test-e2e-collab:chromium",
     "test-e2e-collab-ci:firefox": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci-collab 4000 test-e2e-collab:firefox",
     "test-e2e-collab-ci:webkit": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci-collab 4000 test-e2e-collab:webkit",

@@ -63,8 +63,7 @@ export default function CommunityContributors() {
       <h2>
         <Translate
           id="pages.community.contributors.subHeader"
-          description="Subtitle of section on contributors"
-        >
+          description="Subtitle of section on contributors">
           Contributors
         </Translate>
       </h2>
@@ -73,8 +72,7 @@ export default function CommunityContributors() {
           <p>
             <Translate
               id="pages.community.contributors.subtext"
-              description="The descriptive text of the header section of the community page"
-            >
+              description="The descriptive text of the header section of the community page">
               Lexical development is led by small team at Meta. It also receives
               contributions from people all over the world. Here are just a few
               members.
@@ -84,12 +82,10 @@ export default function CommunityContributors() {
             <a
               href="https://github.com/facebook/lexical/graphs/contributors"
               target="_blank"
-              rel="noopener"
-            >
+              rel="noopener">
               <Translate
                 id="pages.community.contributors.gitHubLink"
-                description="Link to GitHub's contribute page for the repository"
-              >
+                description="Link to GitHub's contribute page for the repository">
                 See the rest of the contributors on Github.
               </Translate>
             </a>
@@ -112,8 +108,7 @@ export default function CommunityContributors() {
                   className="avatar__name"
                   href={link}
                   target="_blank"
-                  rel="noopener"
-                >
+                  rel="noopener">
                   {name}
                 </a>
               </div>

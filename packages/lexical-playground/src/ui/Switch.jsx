@@ -29,8 +29,7 @@ export default function Switch({
         role="switch"
         aria-checked={checked}
         id={buttonId}
-        onClick={onClick}
-      >
+        onClick={onClick}>
         <span />
       </button>
     </div>

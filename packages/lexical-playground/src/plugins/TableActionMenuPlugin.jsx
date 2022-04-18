@@ -333,8 +333,7 @@ function TableActionMenu({
       ref={dropDownRef}
       onClick={(e) => {
         e.stopPropagation();
-      }}
-    >
+      }}>
       <button className="item" onClick={() => insertTableRowAtSelection(false)}>
         <span className="text">
           Insert{' '}
@@ -352,8 +351,7 @@ function TableActionMenu({
       <hr />
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(false)}
-      >
+        onClick={() => insertTableColumnAtSelection(false)}>
         <span className="text">
           Insert{' '}
           {selectionCounts.columns === 1
@@ -364,8 +362,7 @@ function TableActionMenu({
       </button>
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(true)}
-      >
+        onClick={() => insertTableColumnAtSelection(true)}>
         <span className="text">
           Insert{' '}
           {selectionCounts.columns === 1
@@ -518,8 +515,7 @@ function TableCellActionMenuContainer(): React.MixedElement {
               e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}
-            ref={menuRootRef}
-          >
+            ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
           {isMenuOpen && (

@@ -20,16 +20,14 @@ export default function CommunityHeader() {
         <h1>
           <Translate
             id="pages.community.header.title"
-            description="The title of the header section of the community page"
-          >
+            description="The title of the header section of the community page">
             We're here to help
           </Translate>
         </h1>
         <p>
           <Translate
             id="pages.community.header.subtext"
-            description="The descriptive text of the header section of the community page"
-          >
+            description="The descriptive text of the header section of the community page">
             We are deeply committed to being open-source. That means openly
             helping each other in improving Lexical. We've listed some
             Lexical-related communities that you should check out.

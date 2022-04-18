@@ -50,8 +50,7 @@ describe('LexicalNodeHelpers tests', () => {
             namespace: 'PlaygroundEditor',
             nodes: [],
             theme,
-          }}
-        >
+          }}>
           <TestPlugin />
         </LexicalComposer>
       );

@@ -42,8 +42,7 @@ test.describe('HorizontalRule', () => {
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -102,21 +101,18 @@ test.describe('HorizontalRule', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Some text</span>
         </p>
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Some more text</span>
         </p>
       `,
@@ -181,8 +177,7 @@ test.describe('HorizontalRule', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Test</span>
         </p>
       `,
@@ -197,15 +192,13 @@ test.describe('HorizontalRule', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Test</span>
         </p>
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -241,8 +234,7 @@ test.describe('HorizontalRule', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Test</span>
         </p>
       `,
@@ -267,21 +259,18 @@ test.describe('HorizontalRule', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">Te</span>
         </p>
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr"
-        >
+          dir="ltr">
           <span data-lexical-text="true">st</span>
         </p>
       `,
@@ -311,8 +300,7 @@ test.describe('HorizontalRule', () => {
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -344,8 +332,7 @@ test.describe('HorizontalRule', () => {
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -371,16 +358,14 @@ test.describe('HorizontalRule', () => {
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <div
           contenteditable="false"
           style="display: contents;"
-          data-lexical-decorator="true"
-        >
+          data-lexical-decorator="true">
           <hr />
         </div>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>

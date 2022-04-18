@@ -41,8 +41,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npm run lint
-      - run: npm run flow
+      - run: npm run ci-check
       - run: npm run build
       # - run: npm run prepare-size-compare
       # - run: yarn danger ci

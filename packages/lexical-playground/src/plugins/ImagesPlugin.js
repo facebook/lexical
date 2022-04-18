@@ -21,10 +21,13 @@ import {useEffect} from 'react';
 
 import {$createImageNode, ImageNode} from '../nodes/ImageNode';
 
-export const INSERT_IMAGE_COMMAND: LexicalCommand<{
+export type InsertImagePayload = $ReadOnly<{
   altText: string,
   src: string,
-}> = createCommand();
+}>;
+
+export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
+  createCommand();
 
 export default function ImagesPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();

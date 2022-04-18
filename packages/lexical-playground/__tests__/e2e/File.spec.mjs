@@ -13,6 +13,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertUploadImage,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   repeat,
@@ -41,36 +42,52 @@ test.describe('File', () => {
     await page.keyboard.type('1. one');
     await page.keyboard.press('Enter');
     await page.keyboard.type('two');
+    await page.keyboard.press('Enter');
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+    await insertUploadImage(page, [
+      'packages/lexical-playground/src/images/yellow-flower-small.jpg',
+    ]);
+
+    const expectedHtml = html`
+      <p
+        class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+        dir="ltr">
+        <span data-lexical-text="true">Hello</span>
+        <strong
+          class="PlaygroundEditorTheme__textBold"
+          data-lexical-text="true">
+          World
+        </strong>
+      </p>
+      <ol class="PlaygroundEditorTheme__ol1">
+        <li
+          value="1"
+          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Hello</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            World
-          </strong>
-        </p>
-        <ol class="PlaygroundEditorTheme__ol1">
-          <li
-            value="1"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">one</span>
-          </li>
-          <li
-            value="2"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">two</span>
-          </li>
-        </ol>
-      `,
-    );
+          <span data-lexical-text="true">one</span>
+        </li>
+        <li
+          value="2"
+          class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">two</span>
+        </li>
+        <li value="3" class="PlaygroundEditorTheme__listItem">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img
+              src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAAagAwAEAAAAAQAAAAcAAAAA/8IAEQgABwAGAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAMCBAEFAAYHCAkKC//EAMMQAAEDAwIEAwQGBAcGBAgGcwECAAMRBBIhBTETIhAGQVEyFGFxIweBIJFCFaFSM7EkYjAWwXLRQ5I0ggjhU0AlYxc18JNzolBEsoPxJlQ2ZJR0wmDShKMYcOInRTdls1V1pJXDhfLTRnaA40dWZrQJChkaKCkqODk6SElKV1hZWmdoaWp3eHl6hoeIiYqQlpeYmZqgpaanqKmqsLW2t7i5usDExcbHyMnK0NTV1tfY2drg5OXm5+jp6vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAQIAAwQFBgcICQoL/8QAwxEAAgIBAwMDAgMFAgUCBASHAQACEQMQEiEEIDFBEwUwIjJRFEAGMyNhQhVxUjSBUCSRoUOxFgdiNVPw0SVgwUThcvEXgmM2cCZFVJInotIICQoYGRooKSo3ODk6RkdISUpVVldYWVpkZWZnaGlqc3R1dnd4eXqAg4SFhoeIiYqQk5SVlpeYmZqgo6SlpqeoqaqwsrO0tba3uLm6wMLDxMXGx8jJytDT1NXW19jZ2uDi4+Tl5ufo6ery8/T19vf4+fr/2wBDAAIDAwMEAwQFBQQGBgYGBggIBwcICA0JCgkKCQ0TDA4MDA4MExEUEQ8RFBEeGBUVGB4jHRwdIyolJSo1MjVFRVz/2wBDAQIDAwMEAwQFBQQGBgYGBggIBwcICA0JCgkKCQ0TDA4MDA4MExEUEQ8RFBEeGBUVGB4jHRwdIyolJSo1MjVFRVz/2gAMAwEAAhEDEQAAAfBeXfV/i9n/2gAIAQEAAQUCmlT7p//aAAgBAxEBPwGWbIKo/wBmP+0f/9oACAECEQE/AYYoHddn7pf7V//aAAgBAQAGPwKFaUpWtZJJVUl//8QAMxABAAMAAgICAgIDAQEAAAILAREAITFBUWFxgZGhscHw0RDh8SAwQFBgcICQoLDA0OD/2gAIAQEAAT8hFyPFTveHPBl//9oADAMBAAIRAxEAABCL/8QAMxEBAQEAAwABAgUFAQEAAQEJAQARITEQQVFhIHHwkYGhsdHB4fEwQFBgcICQoLDA0OD/2gAIAQMRAT8QYOAdB9nP5t//2gAIAQIRAT8QEWh51X58fxf/2gAIAQEAAT8QJfU4BLBcKyeUzf/Z"
+              alt=""
+              style="height: inherit; max-width: 500px; width: inherit;" />
+          </span>
+          <br />
+        </li>
+      </ol>
+    `;
+
+    await assertHTML(page, expectedHtml);
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
@@ -94,34 +111,6 @@ test.describe('File', () => {
     await click(page, '.action-button.import');
     await sleep(200);
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            World
-          </strong>
-        </p>
-        <ol class="PlaygroundEditorTheme__ol1">
-          <li
-            value="1"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">one</span>
-          </li>
-          <li
-            value="2"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">two</span>
-          </li>
-        </ol>
-      `,
-    );
+    await assertHTML(page, expectedHtml);
   });
 });

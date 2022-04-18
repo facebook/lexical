@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {InsertImagePayload} from './ImagesPlugin';
 import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import './ToolbarPlugin.css';
@@ -71,9 +72,10 @@ import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
 import DropDown from '../ui/DropDown';
-import Input from '../ui/Input';
+import FileInput from '../ui/FileInput.jsx';
 import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
+import TextInput from '../ui/TextInput';
 import {INSERT_EQUATION_COMMAND} from './EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
@@ -279,7 +281,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): React$Node {
 function InsertImageUriDialogBody({
   onClick,
 }: {
-  onClick: (payload: {altText: string, src: string}) => void,
+  onClick: (payload: InsertImagePayload) => void,
 }) {
   const [src, setSrc] = useState('');
   const [altText, setAltText] = useState('');
@@ -288,20 +290,73 @@ function InsertImageUriDialogBody({
 
   return (
     <>
-      <Input
+      <TextInput
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
         onChange={setSrc}
         value={src}
+        data-test-id="image-modal-url-input"
       />
-      <Input
+      <TextInput
         label="Alt Text"
         placeholder="Random unsplash image"
         onChange={setAltText}
         value={altText}
+        data-test-id="image-modal-alt-text-input"
       />
       <div className="ToolbarPlugin__dialogActions">
-        <Button disabled={isDisabled} onClick={() => onClick({altText, src})}>
+        <Button
+          data-test-id="image-modal-confirm-btn"
+          disabled={isDisabled}
+          onClick={() => onClick({altText, src})}>
+          Confirm
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function InsertImageUploadedDialogBody({
+  onClick,
+}: {
+  onClick: (payload: InsertImagePayload) => void,
+}) {
+  const [src, setSrc] = useState('');
+  const [altText, setAltText] = useState('');
+
+  const isDisabled = src === '';
+
+  const loadImage = (files: File[]) => {
+    const reader = new FileReader();
+    reader.onload = function () {
+      if (typeof reader.result === 'string') {
+        setSrc(reader.result);
+      }
+      return '';
+    };
+    reader.readAsDataURL(files[0]);
+  };
+
+  return (
+    <>
+      <FileInput
+        label="Image Upload"
+        onChange={loadImage}
+        accept="image/*"
+        data-test-id="image-modal-file-upload"
+      />
+      <TextInput
+        label="Alt Text"
+        placeholder="Descriptive alternative text"
+        onChange={setAltText}
+        value={altText}
+        data-test-id="image-modal-alt-text-input"
+      />
+      <div className="ToolbarPlugin__dialogActions">
+        <Button
+          data-test-id="image-modal-file-upload-btn"
+          disabled={isDisabled}
+          onClick={() => onClick({altText, src})}>
           Confirm
         </Button>
       </div>
@@ -318,7 +373,7 @@ function InsertImageDialog({
 }): React$Node {
   const [mode, setMode] = useState<null | 'url' | 'file'>(null);
 
-  const onClick = (payload: {altText: string, src: string}) => {
+  const onClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
     onClose();
   };
@@ -342,9 +397,15 @@ function InsertImageDialog({
             onClick={() => setMode('url')}>
             URL
           </Button>
+          <Button
+            data-test-id="image-modal-option-file"
+            onClick={() => setMode('file')}>
+            File
+          </Button>
         </div>
       )}
       {mode === 'url' && <InsertImageUriDialogBody onClick={onClick} />}
+      {mode === 'file' && <InsertImageUploadedDialogBody onClick={onClick} />}
     </>
   );
 }
@@ -366,8 +427,8 @@ function InsertTableDialog({
 
   return (
     <>
-      <Input label="No of rows" onChange={setRows} value={rows} />
-      <Input label="No of columns" onChange={setColumns} value={columns} />
+      <TextInput label="No of rows" onChange={setRows} value={rows} />
+      <TextInput label="No of columns" onChange={setColumns} value={columns} />
       <div
         className="ToolbarPlugin__dialogActions"
         data-test-id="table-model-confirm-insert">
@@ -393,7 +454,11 @@ function InsertPollDialog({
 
   return (
     <>
-      <Input label="Poll Question" onChange={setQuestion} value={question} />
+      <TextInput
+        label="Poll Question"
+        onChange={setQuestion}
+        value={question}
+      />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm
@@ -424,7 +489,7 @@ function InsertTweetDialog({
 
   return (
     <>
-      <Input
+      <TextInput
         label="Tweet URL"
         placeholder="i.e. https://twitter.com/jack/status/20"
         onChange={setText}
@@ -470,7 +535,7 @@ function InsertYouTubeDialog({
 
   return (
     <>
-      <Input
+      <TextInput
         label="YouTube URL"
         placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
         onChange={setText}

@@ -24,6 +24,8 @@ import {
   createTestEditor,
 } from 'lexical/src/__tests__/utils';
 
+import {setAnchorPoint, setFocusPoint} from '../utils';
+
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.
 global.IS_REACT_ACT_ENVIRONMENT = true;
@@ -41,32 +43,6 @@ function createParagraphWithNodes(editor, nodes) {
     paragraph.append(textNode);
   }
   return paragraph;
-}
-
-function setAnchorPoint(point) {
-  let selection = $getSelection();
-  if (selection === null) {
-    const dummyTextNode = $createTextNode();
-    dummyTextNode.select();
-    selection = $getSelection();
-  }
-  const anchor = selection.anchor;
-  anchor.type = point.type;
-  anchor.offset = point.offset;
-  anchor.key = point.key;
-}
-
-function setFocusPoint(point) {
-  let selection = $getSelection();
-  if (selection === null) {
-    const dummyTextNode = $createTextNode();
-    dummyTextNode.select();
-    selection = $getSelection();
-  }
-  const focus = selection.focus;
-  focus.type = point.type;
-  focus.offset = point.offset;
-  focus.key = point.key;
 }
 
 describe('LexicalSelectionHelpers tests', () => {

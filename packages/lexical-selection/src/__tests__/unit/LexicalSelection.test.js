@@ -23,14 +23,14 @@ import {
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
+  createTestEditor,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  applySelectionInputs,
+import { applySelectionInputs,
   convertToImmutableNode,
   convertToSegmentedNode,
   deleteBackward,
@@ -50,6 +50,7 @@ import {
   pastePlain,
   printWhitespace,
   redo,
+setAnchorPoint, setFocusPoint,
   setNativeSelectionWithPaths,
   undo,
 } from '../utils';
@@ -1653,5 +1654,81 @@ describe('LexicalSelection tests', () => {
           });
         });
       });
+  });
+
+  describe('insertParagraph', () => {
+    test('three text nodes at offset 0 on third node', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update((state: State) => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello ');
+        const text2 = $createTextNode('awesome');
+        text2.toggleFormat('bold');
+        const text3 = $createTextNode(' world');
+
+        paragraph.append(text, text2, text3);
+        root.append(paragraph);
+
+        setAnchorPoint({
+          key: text3.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text3.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+        const selection = $getSelection();
+
+        selection.insertParagraph();
+      });
+
+      expect(element.innerHTML).toBe(
+        '<p dir="ltr"><span data-lexical-text="true">Hello </span><strong data-lexical-text="true">awesome</strong></p><p dir="ltr"><span data-lexical-text="true"> world</span></p>',
+      );
+    });
+
+    test('four text nodes at offset 0 on third node', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update((state: State) => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello ');
+        const text2 = $createTextNode('awesome ');
+        text2.toggleFormat('bold');
+        const text3 = $createTextNode('beautiful');
+        const text4 = $createTextNode(' world');
+        text4.toggleFormat('bold');
+
+        paragraph.append(text, text2, text3, text4);
+        root.append(paragraph);
+
+        setAnchorPoint({
+          key: text3.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text3.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+        const selection = $getSelection();
+
+        selection.insertParagraph();
+      });
+
+      expect(element.innerHTML).toBe(
+        '<p dir="ltr"><span data-lexical-text="true">Hello </span><strong data-lexical-text="true">awesome </strong></p><p dir="ltr"><span data-lexical-text="true">beautiful</span><strong data-lexical-text="true"> world</strong></p>',
+      );
+    });
   });
 });

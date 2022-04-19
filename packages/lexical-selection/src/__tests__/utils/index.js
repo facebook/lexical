@@ -765,3 +765,29 @@ export async function applySelectionInputs(inputs, update, editor) {
     }
   }
 }
+
+export function setAnchorPoint(point) {
+  let selection = $getSelection();
+  if (selection === null) {
+    const dummyTextNode = $createTextNode();
+    dummyTextNode.select();
+    selection = $getSelection();
+  }
+  const anchor = selection.anchor;
+  anchor.type = point.type;
+  anchor.offset = point.offset;
+  anchor.key = point.key;
+}
+
+export function setFocusPoint(point) {
+  let selection = $getSelection();
+  if (selection === null) {
+    const dummyTextNode = $createTextNode();
+    dummyTextNode.select();
+    selection = $getSelection();
+  }
+  const focus = selection.focus;
+  focus.type = point.type;
+  focus.offset = point.offset;
+  focus.key = point.key;
+}

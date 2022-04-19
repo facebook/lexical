@@ -12,7 +12,7 @@ When registering a `command` you supply a `priority` and can return `true` to ma
 
 ## `createCommand(...)`
 
-You can check out all of the existing commands in [`LexicalCommands.js`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.js), but if you'd like to create a custom command for your own use case check out the typed `createCommand(...)` function.
+You can view all of the existing commands in [`LexicalCommands.js`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.js), but if you need a custom command for your own use case check out the typed `createCommand(...)` function.
 
 ```js
 const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand();
@@ -55,7 +55,7 @@ const formatBulletList = () => {
 };
 ```
 
-Which is later received in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.js#L65).
+Which is later handled in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.js#L65) to insert the list into the editor.
 
 ```js
 editor.registerCommand(
@@ -82,7 +82,7 @@ const removeListener = editor.registerCommand(
 removeListener(); // Cleans up the listener.
 ```
 
-Returning in a React `useEffect` is a common pattern for easy clean-up.
+A common pattern for easy clean-up is returning a `registerCommand` call within a React `useEffect`.
 
 ```jsx
 useEffect(() => {

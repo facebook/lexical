@@ -4,9 +4,9 @@ sidebar_position: 2
 
 # Commands
 
-Commands are a very powerful feature of Lexical that let you register listeners for events like `INSERT_TEXT_COMMAND` or `KEY_TAB_COMMAND` and contextually react to them wherever you want.
+Commands are a very powerful feature of Lexical that lets you register listeners for events like `INSERT_TEXT_COMMAND` or `KEY_TAB_COMMAND` and contextually react to them _wherever_ & _however_ you'd like.
 
-This is a common pattern for building [`Toolbars`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.jsx) or complex `Plugins` and `Nodes` such as the [`TablePlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-table) which require custom behavior for `selection`, `keyboard events`, and more.
+This is a pattern is useful for building [`Toolbars`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.jsx) or complex `Plugins` and `Nodes` such as the [`TablePlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-table) which require special handling for `selection`, `keyboard events`, and more.
 
 When registering a `command` you supply a `priority` and can return `true` to mark it as "handled" which stops other listeners from receiving the event. And if they're not handled explicitely by you, they're likely handled by default in the [`RichTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.js) or the [`PlainTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-plain-text/src/index.js).
 

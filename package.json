@@ -73,7 +73,7 @@
     "debug-test-unit": "node --inspect-brk node_modules/.bin/jest --runInBand --collectCoverage=false",
     "lint": "node ./scripts/tasks/eslint.js",
     "prettier": "prettier --list-different .",
-    "ci-check": "npm-run-all --parallel flow prettier lint",
+    "ci-check": "npm-run-all --parallel flow lint",
     "prettier:fix": "prettier --write .",
     "prepare-ci": "npm run build --prefix packages/lexical-playground && serve packages/lexical-playground/build -l 4000",
     "prepare-ci-collab": "npm run build --prefix packages/lexical-playground && concurrently \"npm run collab\" \"serve packages/lexical-playground/build -l 4000\"",

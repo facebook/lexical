@@ -30,7 +30,8 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import { applySelectionInputs,
+import {
+  applySelectionInputs,
   convertToImmutableNode,
   convertToSegmentedNode,
   deleteBackward,
@@ -50,7 +51,8 @@ import { applySelectionInputs,
   pastePlain,
   printWhitespace,
   redo,
-setAnchorPoint, setFocusPoint,
+  setAnchorPoint,
+  setFocusPoint,
   setNativeSelectionWithPaths,
   undo,
 } from '../utils';

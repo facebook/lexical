@@ -74,13 +74,17 @@ function TweetComponent({
   return (
     <>
       {isLoading ? loadingComponent : null}
-      <div ref={containerRef} />
+      <div
+        style={{display: 'inline-block', width: '550px'}}
+        ref={containerRef}
+      />
     </>
   );
 }
 
 export class TweetNode extends DecoratorNode<React$Node> {
   __id: string;
+  __format: string;
 
   static getType(): string {
     return 'tweet';
@@ -97,15 +101,24 @@ export class TweetNode extends DecoratorNode<React$Node> {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('div');
+    const elem = document.createElement('div');
+    if (this.__format) {
+      elem.style.textAlign = this.__format;
+    }
+    return elem;
   }
 
-  updateDOM(): false {
-    return false;
+  updateDOM(prevNode: TweetNode): boolean {
+    return prevNode.__format !== this.__format;
   }
 
   decorate(): React$Node {
     return <TweetComponent loadingComponent="Loading..." tweetID={this.__id} />;
+  }
+
+  setFormat(alignment: string): void {
+    const self = this.getWritable();
+    self.__format = alignment;
   }
 }
 

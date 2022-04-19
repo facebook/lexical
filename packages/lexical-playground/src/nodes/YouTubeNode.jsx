@@ -46,6 +46,7 @@ function YouTubeComponent({onLoad, videoID}: YouTubeComponentProps) {
 
 export class YouTubeNode extends DecoratorNode<React$Node> {
   __id: string;
+  __format: ?string;
 
   static getType(): string {
     return 'youtube';
@@ -57,20 +58,28 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
 
   constructor(id: string, key?: NodeKey) {
     super(key);
-
     this.__id = id;
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('div');
+    const elem = document.createElement('div');
+    if (this.__format) {
+      elem.style.textAlign = this.__format;
+    }
+    return elem;
   }
 
-  updateDOM(): false {
-    return false;
+  updateDOM(prevNode: YouTubeNode): boolean {
+    return prevNode.__format !== this.__format;
   }
 
   decorate(): React$Node {
     return <YouTubeComponent videoID={this.__id} />;
+  }
+
+  setFormat(alignment: string): void {
+    const self = this.getWritable();
+    self.__format = alignment;
   }
 }
 

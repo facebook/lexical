@@ -44,6 +44,9 @@ declare function getLastCodeHighlightNodeOfLine(
   anchor: LexicalNode,
 ): null | undefined | CodeHighlightNode;
 
+declare function getDefaultCodeLanguage(): string;
+declare function getCodeLanguages(): Array<string>;
+
 declare class CodeHighlightNode extends TextNode {
   __highlightType: null | undefined | string;
   constructor(text: string, highlightType?: string, key?: NodeKey);

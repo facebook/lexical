@@ -424,6 +424,10 @@ i.equation {
   background-image: url(images/icons/plus-slash-minus.svg);
 }
 
+i.gif {
+  background-image: url(images/icons/filetype-gif.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);

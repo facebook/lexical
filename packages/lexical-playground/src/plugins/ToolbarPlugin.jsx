@@ -68,6 +68,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import useModal from '../hooks/useModal';
+import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
@@ -886,6 +887,9 @@ export default function ToolbarPlugin(): React$Node {
     },
     [activeEditor, selectedElementKey],
   );
+  const insertGifOnClick = (payload: InsertImagePayload) => {
+    activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
+  };
 
   return (
     <div className="toolbar">
@@ -1045,6 +1049,17 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon image" />
               <span className="text">Image</span>
+            </button>
+            <button
+              onClick={() =>
+                insertGifOnClick({
+                  altText: 'Cat typing on a laptop',
+                  src: catTypingGif,
+                })
+              }
+              className="item">
+              <i className="icon gif" />
+              <span className="text">GIF</span>
             </button>
             <button
               onClick={() => {

@@ -1,3 +1,11 @@
+## 0.2.3 (April 19, 2022)
+
+- Fix bug in lists causing extra list items to be appended in some cases. (#1802)
+- Fix double selection issue in collab (#1856)
+- Add KEY_MODIFIER_COMMAND (#1859)
+- Fix bug with alignment for root level decorator nodes v2 (#1867)
+- Fix issue with inserting paragraphs between text nodes. (#1864)
+
 ## 0.2.2 (April 18, 2022)
 
 - Command priorities are now constants exposed by lexical

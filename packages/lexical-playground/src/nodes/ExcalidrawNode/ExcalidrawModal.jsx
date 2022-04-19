@@ -14,11 +14,13 @@ import './ExcalidrawModal.css';
 import Excalidraw from '@excalidraw/excalidraw';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
+// $FlowFixMe: Flow doesn't see react-dom module
+import {createPortal} from 'react-dom';
 
 import Button from '../../ui/Button';
 import Modal from '../../ui/Modal';
 
-type ExcalidrawElementFragment = {
+export type ExcalidrawElementFragment = {
   isDeleted?: boolean,
 };
 
@@ -56,7 +58,7 @@ export default function ExcalidrawModal({
   isShown = false,
   onHide,
   onDelete,
-}: Props): React.MixedElement | null {
+}: Props): React.Portal | null {
   const excalidrawRef = useRef(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
@@ -127,7 +129,7 @@ export default function ExcalidrawModal({
   const _Excalidraw =
     Excalidraw.$$typeof != null ? Excalidraw : Excalidraw.default;
 
-  return (
+  return createPortal(
     <div className="ExcalidrawModal__modal">
       <div className="ExcalidrawModal__row">
         {discardModalOpen && <ShowDiscardDialog />}
@@ -147,6 +149,7 @@ export default function ExcalidrawModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

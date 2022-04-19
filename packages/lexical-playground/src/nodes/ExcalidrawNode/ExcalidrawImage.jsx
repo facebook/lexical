@@ -49,6 +49,16 @@ type Props = {
 // We don't want them to be used in open source
 const removeStyleFromSvg_HACK = (svg) => {
   const styleTag = svg?.firstElementChild?.firstElementChild;
+
+  // Generated SVG is getting double-sized by height and width attributes
+  // We want to match the real size of the SVG element
+  const viewBox = svg.getAttribute('viewBox');
+  if (viewBox != null) {
+    const viewBoxDimentions = viewBox.split(' ');
+    svg.setAttribute('width', viewBoxDimentions[2]);
+    svg.setAttribute('height', viewBoxDimentions[3]);
+  }
+
   if (styleTag && styleTag.tagName === 'style') {
     styleTag.remove();
   }

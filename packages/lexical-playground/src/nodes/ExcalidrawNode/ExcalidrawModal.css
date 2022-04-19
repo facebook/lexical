@@ -32,8 +32,8 @@
 }
 .ExcalidrawModal__modal {
   position: fixed;
-  z-index: 2;
-  top: 10px;
+  z-index: 10;
+  top: 50px;
   width: 100%;
   left: 0;
   display: flex;
@@ -42,6 +42,6 @@
   background-color: #eee;
 }
 .ExcalidrawModal__discardModal {
-  margin-top: 20px;
+  margin-top: 60px;
   text-align: center;
 }

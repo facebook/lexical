@@ -25,8 +25,7 @@ export class EmbedNode extends ElementNode {
   }
 
   createDOM(): HTMLElement {
-    const elem = document.createElement('div');
-    return elem;
+    return document.createElement('div');
   }
 
   updateDOM(): false {

@@ -62,7 +62,9 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('span');
+    const elem = document.createElement('div');
+    elem.style.display = 'inline-block';
+    return elem;
   }
 
   updateDOM(): false {

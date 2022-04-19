@@ -6,13 +6,13 @@ sidebar_position: 2
 
 Commands are a very powerful feature of Lexical that lets you register listeners for events like `INSERT_TEXT_COMMAND` or `KEY_TAB_COMMAND` and contextually react to them _wherever_ & _however_ you'd like.
 
-This is a pattern is useful for building [`Toolbars`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.jsx) or complex `Plugins` and `Nodes` such as the [`TablePlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-table) which require special handling for `selection`, `keyboard events`, and more.
+This is pattern is useful for building [`Toolbars`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.jsx) or complex `Plugins` and `Nodes` such as the [`TablePlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-table) which require special handling for `selection`, `keyboard events`, and more.
 
-When registering a `command` you supply a `priority` and can return `true` to mark it as "handled" which stops other listeners from receiving the event. And if they're not handled explicitely by you, they're likely handled by default in the [`RichTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.js) or the [`PlainTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-plain-text/src/index.js).
+When registering a `command` you supply a `priority` and can return `true` to mark it as "handled", which stops other listeners from receiving the event. If a command isn't handled explicitely by you, it's likely handled by default in the [`RichTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.js) or the [`PlainTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-plain-text/src/index.js).
 
 ## `createCommand(...)`
 
-You can check out all of the existing commands in [`LexicalCommands.js`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.js), but if you'd like to create a custom command for your own use case, you can use the typed `createCommand(...)` function.
+You can check out all of the existing commands in [`LexicalCommands.js`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.js), but if you'd like to create a custom command for your own use case check out the typed `createCommand(...)` function.
 
 ```js
 const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand();

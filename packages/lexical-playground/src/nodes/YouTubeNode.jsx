@@ -7,18 +7,19 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
 
 type YouTubeComponentProps = $ReadOnly<{
+  format: ?ElementFormatType,
   onLoad?: () => void,
   videoID: string,
 }>;
 
-function YouTubeComponent({onLoad, videoID}: YouTubeComponentProps) {
+function YouTubeComponent({onLoad, format, videoID}: YouTubeComponentProps) {
   const previousYouTubeIDRef = useRef(null);
 
   useEffect(() => {
@@ -32,21 +33,23 @@ function YouTubeComponent({onLoad, videoID}: YouTubeComponentProps) {
   }, [onLoad, videoID]);
 
   return (
-    <iframe
-      width="560"
-      height="315"
-      src={`https://www.youtube.com/embed/${videoID}`}
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen={true}
-      title="YouTube video"
-    />
+    <div style={{textAlign: format}}>
+      <iframe
+        width="560"
+        height="315"
+        src={`https://www.youtube.com/embed/${videoID}`}
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen={true}
+        title="YouTube video"
+      />
+    </div>
   );
 }
 
 export class YouTubeNode extends DecoratorNode<React$Node> {
   __id: string;
-  __format: ?string;
+  __format: ?ElementFormatType;
 
   static getType(): string {
     return 'youtube';
@@ -62,24 +65,20 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
   }
 
   createDOM(): HTMLElement {
-    const elem = document.createElement('div');
-    if (this.__format) {
-      elem.style.textAlign = this.__format;
-    }
-    return elem;
+    return document.createElement('div');
   }
 
-  updateDOM(prevNode: YouTubeNode): boolean {
-    return prevNode.__format !== this.__format;
+  updateDOM(): false {
+    return false;
   }
 
   decorate(): React$Node {
-    return <YouTubeComponent videoID={this.__id} />;
+    return <YouTubeComponent format={this.__format} videoID={this.__id} />;
   }
 
-  setFormat(alignment: string): void {
+  setFormat(format: ElementFormatType): void {
     const self = this.getWritable();
-    self.__format = alignment;
+    self.__format = format;
   }
 }
 

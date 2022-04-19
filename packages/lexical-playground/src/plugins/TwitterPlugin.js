@@ -31,6 +31,7 @@ import {
   $isTweetNode,
   TweetNode,
 } from '../nodes/TweetNode.jsx';
+import {$isYouTubeNode} from '../nodes/YouTubeNode.jsx';
 
 export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand();
 
@@ -73,11 +74,7 @@ export default function TwitterPlugin(): React$Node {
           }
           const nodes = selection.getNodes();
           for (const node of nodes) {
-            if ($isTweetNode(node)) {
-              // const element = editor.getElementByKey(node.getKey());
-              // if (element !== null) {
-              //   element.style.textAlign = format;
-              // }
+            if ($isTweetNode(node) || $isYouTubeNode(node)) {
               node.setFormat(format);
             } else {
               const element = $getNearestBlockElementAncestorOrThrow(node);

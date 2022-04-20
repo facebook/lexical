@@ -18,6 +18,10 @@ export class DecoratorBlockNode extends DecoratorNode<React$Node> {
     return document.createElement('div');
   }
 
+  updateDOM(): false {
+    return false;
+  }
+
   setFormat(format: ElementFormatType): void {
     const self = this.getWritable();
     self.__format = format;

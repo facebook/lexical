@@ -18,10 +18,10 @@ import {
 } from '../utils/index.mjs';
 
 const TEST_URL = 'https://www.youtube.com/embed/jNQXAC9IVRw';
-test.describe('Embed blocks', () => {
+test.describe('BlockWithAlignableContents', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Can create embed blocks for YouTube videos', async ({
+  test('Can create full width blocks for YouTube videos', async ({
     page,
     isPlainText,
   }) => {
@@ -64,7 +64,7 @@ test.describe('Embed blocks', () => {
     );
   });
 
-  test('Can align contents within embed blocks', async ({
+  test('Can align contents within full width blocks', async ({
     page,
     isPlainText,
   }) => {

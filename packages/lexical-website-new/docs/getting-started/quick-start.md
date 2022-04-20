@@ -77,7 +77,7 @@ based on the changes from the update.
 Here's an example of how you can update an editor instance:
 
 ```js
-import {$getRoot, $getSelection, $createParagraphNode} from 'lexical';
+import {$getRoot, $getSelection, $createParagraphNode, $createTextNode} from 'lexical';
 
 // Inside the `editor.update` you can use special $ prefixed helper functions.
 // These functions cannot be used outside the closure, and will error if you try.

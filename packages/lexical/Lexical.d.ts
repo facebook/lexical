@@ -716,21 +716,6 @@ export declare class DecoratorNode<X> extends LexicalNode {
 export function $isDecoratorNode(node: LexicalNode | null | undefined): boolean;
 
 /**
- * LexicalHorizontalRuleNode
- */
-export declare class HorizontalRuleNode extends LexicalNode {
-  static getType(): string;
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode;
-  constructor(key?: NodeKey);
-  createDOM(): HTMLElement;
-  updateDOM(): false;
-}
-export function $createHorizontalRuleNode(): HorizontalRuleNode;
-export function $isHorizontalRuleNode(
-  node: LexicalNode | null | undefined,
-): boolean;
-
-/**
  * LexicalParagraphNode
  */
 export declare class ParagraphNode extends ElementNode {

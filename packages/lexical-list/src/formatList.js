@@ -169,11 +169,11 @@ export function removeList(editor: LexicalEditor): void {
 
 export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
-  let listItemNodesLength = listItemNodes.length;
-  for (let i = 0; i < listItemNodesLength; i++) {
-    const listItemNode = listItemNodes[i];
-    if (isNestedListNode(listItemNode)) {
-      continue;
+  const removed = new Set();
+
+  listItemNodes.forEach((listItemNode) => {
+    if (isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
+      return;
     }
     const parent = listItemNode.getParent();
     const nextSibling = listItemNode.getNextSibling();
@@ -188,13 +188,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
           const children = nextInnerList.getChildren();
           innerList.append(...children);
           nextSibling.remove();
-          for (let j = 0; j < listItemNodesLength; j++) {
-            if (listItemNodes[j].getKey() === nextSibling.getKey()) {
-              listItemNodes.splice(j, 1);
-              listItemNodesLength--;
-              break;
-            }
-          }
+          removed.add(nextSibling.getKey());
         }
         innerList.getChildren().forEach((child) => child.markDirty());
       }
@@ -233,7 +227,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
     if ($isListNode(parent)) {
       parent.getChildren().forEach((child) => child.markDirty());
     }
-  }
+  });
 }
 
 export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {

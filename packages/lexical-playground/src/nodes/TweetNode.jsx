@@ -9,7 +9,8 @@
 
 import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
-import {DecoratorNode} from 'lexical';
+import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -21,6 +22,7 @@ const getHasScriptCached = () =>
 type TweetComponentProps = $ReadOnly<{
   format: ?ElementFormatType,
   loadingComponent?: React$Node,
+  nodeKey: NodeKey,
   onError?: (error?: Error) => void,
   onLoad?: () => void,
   tweetID: string,
@@ -29,6 +31,7 @@ type TweetComponentProps = $ReadOnly<{
 function TweetComponent({
   format,
   loadingComponent,
+  nodeKey,
   onError,
   onLoad,
   tweetID,
@@ -74,19 +77,18 @@ function TweetComponent({
   }, [createTweet, onError, tweetID]);
 
   return (
-    <div style={{textAlign: format}}>
+    <BlockWithAlignableContents format={format} nodeKey={nodeKey}>
       {isLoading ? loadingComponent : null}
       <div
         style={{display: 'inline-block', width: '550px'}}
         ref={containerRef}
       />
-    </div>
+    </BlockWithAlignableContents>
   );
 }
 
-export class TweetNode extends DecoratorNode<React$Node> {
+export class TweetNode extends DecoratorBlockNode<React$Node> {
   __id: string;
-  __format: ?ElementFormatType;
 
   static getType(): string {
     return 'tweet';
@@ -102,19 +104,12 @@ export class TweetNode extends DecoratorNode<React$Node> {
     this.__id = id;
   }
 
-  createDOM(): HTMLElement {
-    return document.createElement('div');
-  }
-
-  updateDOM(): false {
-    return false;
-  }
-
   decorate(): React$Node {
     return (
       <TweetComponent
         format={this.__format}
         loadingComponent="Loading..."
+        nodeKey={this.getKey()}
         tweetID={this.__id}
       />
     );

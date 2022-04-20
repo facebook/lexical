@@ -9,31 +9,19 @@
 
 import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
-import {DecoratorNode} from 'lexical';
+import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
-import {useEffect, useRef} from 'react';
 
 type YouTubeComponentProps = $ReadOnly<{
   format: ?ElementFormatType,
-  onLoad?: () => void,
+  nodeKey: NodeKey,
   videoID: string,
 }>;
 
-function YouTubeComponent({onLoad, format, videoID}: YouTubeComponentProps) {
-  const previousYouTubeIDRef = useRef(null);
-
-  useEffect(() => {
-    if (videoID !== previousYouTubeIDRef.current) {
-      if (onLoad) {
-        onLoad();
-      }
-
-      previousYouTubeIDRef.current = videoID;
-    }
-  }, [onLoad, videoID]);
-
+function YouTubeComponent({format, nodeKey, videoID}: YouTubeComponentProps) {
   return (
-    <div style={{textAlign: format}}>
+    <BlockWithAlignableContents format={format} nodeKey={nodeKey}>
       <iframe
         width="560"
         height="315"
@@ -43,13 +31,12 @@ function YouTubeComponent({onLoad, format, videoID}: YouTubeComponentProps) {
         allowFullScreen={true}
         title="YouTube video"
       />
-    </div>
+    </BlockWithAlignableContents>
   );
 }
 
-export class YouTubeNode extends DecoratorNode<React$Node> {
+export class YouTubeNode extends DecoratorBlockNode<React$Node> {
   __id: string;
-  __format: ?ElementFormatType;
 
   static getType(): string {
     return 'youtube';
@@ -64,21 +51,18 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
     this.__id = id;
   }
 
-  createDOM(): HTMLElement {
-    return document.createElement('div');
-  }
-
   updateDOM(): false {
     return false;
   }
 
   decorate(): React$Node {
-    return <YouTubeComponent format={this.__format} videoID={this.__id} />;
-  }
-
-  setFormat(format: ElementFormatType): void {
-    const self = this.getWritable();
-    self.__format = format;
+    return (
+      <YouTubeComponent
+        format={this.__format}
+        nodeKey={this.getKey()}
+        videoID={this.__id}
+      />
+    );
   }
 }
 

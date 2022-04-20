@@ -537,13 +537,17 @@ function InsertYouTubeDialog({
   return (
     <>
       <TextInput
+        data-test-id="youtube-embed-modal-url"
         label="YouTube URL"
         placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
         onChange={setText}
         value={text}
       />
       <div className="ToolbarPlugin__dialogActions">
-        <Button disabled={isDisabled} onClick={onClick}>
+        <Button
+          data-test-id="youtube-embed-modal-submit-btn"
+          disabled={isDisabled}
+          onClick={onClick}>
           Confirm
         </Button>
       </div>

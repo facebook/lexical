@@ -61,5 +61,8 @@ export const CAN_REDO_COMMAND: LexicalCommand<boolean> = createCommand();
 export const CAN_UNDO_COMMAND: LexicalCommand<boolean> = createCommand();
 export const FOCUS_COMMAND: LexicalCommand<FocusEvent> = createCommand();
 export const BLUR_COMMAND: LexicalCommand<FocusEvent> = createCommand();
+<<<<<<< Updated upstream
 export const KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
+=======
+>>>>>>> Stashed changes

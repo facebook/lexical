@@ -253,7 +253,7 @@ export function createEditor<EditorContext>(editorConfig?: {
     ParagraphNode,
     ...(config.nodes || []),
   ];
-  const onError = config.onError;
+  const onError = config.onError || console.warn;
   const isReadOnly = config.readOnly || false;
 
   const registeredNodes = new Map();

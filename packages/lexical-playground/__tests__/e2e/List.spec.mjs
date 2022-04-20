@@ -248,7 +248,9 @@ test.describe('Nested List', () => {
     );
   });
 
-  test(`Can indent a list item in between nested lists`, async ({page}) => {
+  test(`Can indent a list with a list item in between nested lists`, async ({
+    page,
+  }) => {
     await focusEditor(page);
     await toggleBulletList(page);
     await page.keyboard.type('foo');
@@ -259,8 +261,8 @@ test.describe('Nested List', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('baz');
     await clickIndentButton(page);
-    await page.keyboard.press('ArrowUp');
 
+    await selectAll(page);
     await clickIndentButton(page);
     await assertHTML(
       page,
@@ -268,14 +270,22 @@ test.describe('Nested List', () => {
         <ul>
           <li value="1">
             <ul>
-              <li value="1" dir="ltr">
-                <span data-lexical-text="true">foo</span>
+              <li value="1">
+                <ul>
+                  <li value="1" dir="ltr">
+                    <span data-lexical-text="true">foo</span>
+                  </li>
+                </ul>
               </li>
-              <li value="2" dir="ltr">
+              <li value="1" dir="ltr">
                 <span data-lexical-text="true">bar</span>
               </li>
-              <li value="3" dir="ltr">
-                <span data-lexical-text="true">baz</span>
+              <li value="2">
+                <ul>
+                  <li value="1" dir="ltr">
+                    <span data-lexical-text="true">baz</span>
+                  </li>
+                </ul>
               </li>
             </ul>
           </li>

@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {ExcalidrawElementFragment} from './ExcalidrawModal';
 import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -35,8 +36,10 @@ function ExcalidrawComponent({
   data: string,
   nodeKey: NodeKey,
 }): React.Node {
-  const [isModalOpen, setModalOpen] = useState<boolean>(data === '[]');
   const [editor] = useLexicalComposerContext();
+  const [isModalOpen, setModalOpen] = useState<boolean>(
+    data === '[]' && !editor.isReadOnly(),
+  );
   const buttonRef = useRef<HTMLElement | null>(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
@@ -58,6 +61,13 @@ function ExcalidrawComponent({
     },
     [editor, isSelected, nodeKey, setSelected],
   );
+
+  // Set editor to readOnly if excalidraw is open to prevent unwanted changes
+  useEffect(() => {
+    if (isModalOpen) {
+      editor.setReadOnly(true);
+    }
+  }, [isModalOpen, editor]);
 
   useEffect(() => {
     return mergeRegister(
@@ -105,11 +115,18 @@ function ExcalidrawComponent({
   }, [editor, nodeKey]);
 
   const setData = useCallback(
-    (newData: string) => {
+    (newData: $ReadOnlyArray<ExcalidrawElementFragment>) => {
+      if (editor.isReadOnly()) {
+        return;
+      }
       return editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isExcalidrawNode(node)) {
-          node.setData(newData);
+          if (newData.length > 0) {
+            node.setData(JSON.stringify(newData));
+          } else {
+            node.remove();
+          }
         }
       });
     },
@@ -124,9 +141,13 @@ function ExcalidrawComponent({
         initialElements={elements}
         isShown={isModalOpen}
         onDelete={deleteNode}
-        onHide={() => setModalOpen(false)}
+        onHide={() => {
+          editor.setReadOnly(false);
+          setModalOpen(false);
+        }}
         onSave={(newData) => {
-          setData(JSON.stringify(newData));
+          editor.setReadOnly(false);
+          setData(newData);
           setModalOpen(false);
         }}
       />

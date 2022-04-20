@@ -169,8 +169,10 @@ export function removeList(editor: LexicalEditor): void {
 
 export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
+  const removed = new Set();
+
   listItemNodes.forEach((listItemNode) => {
-    if (isNestedListNode(listItemNode)) {
+    if (isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
       return;
     }
     const parent = listItemNode.getParent();
@@ -185,7 +187,8 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
         if ($isListNode(nextInnerList)) {
           const children = nextInnerList.getChildren();
           innerList.append(...children);
-          nextInnerList.remove();
+          nextSibling.remove();
+          removed.add(nextSibling.getKey());
         }
         innerList.getChildren().forEach((child) => child.markDirty());
       }

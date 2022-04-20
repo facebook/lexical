@@ -248,6 +248,53 @@ test.describe('Nested List', () => {
     );
   });
 
+  test(`Can indent a list with a list item in between nested lists`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('foo');
+    await clickIndentButton(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('bar');
+    await clickOutdentButton(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('baz');
+    await clickIndentButton(page);
+
+    await selectAll(page);
+    await clickIndentButton(page);
+    await assertHTML(
+      page,
+      html`
+        <ul>
+          <li value="1">
+            <ul>
+              <li value="1">
+                <ul>
+                  <li value="1" dir="ltr">
+                    <span data-lexical-text="true">foo</span>
+                  </li>
+                </ul>
+              </li>
+              <li value="1" dir="ltr">
+                <span data-lexical-text="true">bar</span>
+              </li>
+              <li value="2">
+                <ul>
+                  <li value="1" dir="ltr">
+                    <span data-lexical-text="true">baz</span>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+      {ignoreClasses: true},
+    );
+  });
+
   test(`Can create a list and then toggle it back to original state.`, async ({
     page,
   }) => {

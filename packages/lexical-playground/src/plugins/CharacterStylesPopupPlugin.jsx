@@ -27,18 +27,21 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 
-function setPopupPosition(editor, rect) {
-  if (rect === null) {
-    editor.style.opacity = '0';
-    editor.style.top = '-1000px';
-    editor.style.left = '-1000px';
-  } else {
-    editor.style.opacity = '1';
-    editor.style.top = `${rect.top - 8 + window.pageYOffset}px`;
-    editor.style.left = `${
-      rect.left + 230 + window.pageXOffset - editor.offsetWidth + rect.width
-    }px`;
+function setPopupPosition(
+  editor: HTMLElement,
+  rect: ClientRect,
+  rootElementRect: ClientRect,
+): void {
+  let top = rect.top - 8 + window.pageYOffset;
+  let left =
+    rect.left + 230 + window.pageXOffset - editor.offsetWidth + rect.width;
+  if (rect.width >= rootElementRect.width - 20) {
+    left = rect.left;
+    top = rect.top - 50 + window.pageYOffset;
   }
+  editor.style.opacity = '1';
+  editor.style.top = `${top}px`;
+  editor.style.left = `${left}px`;
 }
 
 function FloatingCharacterStylesEditor({
@@ -87,7 +90,9 @@ function FloatingCharacterStylesEditor({
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);
+      const rootElementRect = rootElement.getBoundingClientRect();
       let rect;
+
       if (nativeSelection.anchorNode === rootElement) {
         let inner = rootElement;
         while (inner.firstElementChild != null) {
@@ -99,7 +104,7 @@ function FloatingCharacterStylesEditor({
       }
 
       if (!mouseDownRef.current) {
-        setPopupPosition(popupCharStylesEditorElem, rect);
+        setPopupPosition(popupCharStylesEditorElem, rect, rootElementRect);
       }
     }
   }, [editor]);
@@ -203,43 +208,61 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
   const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [isCode, setIsCode] = useState(false);
 
-  useEffect(() => {
-    return editor.registerUpdateListener(({editorState}) => {
-      editorState.read(() => {
-        const selection = $getSelection();
+  const updatePopup = useCallback(() => {
+    editor.getEditorState().read(() => {
+      const selection = $getSelection();
+      const nativeSelection = window.getSelection();
+      const rootElement = editor.getRootElement();
 
-        if (!$isRangeSelection(selection)) {
-          return;
-        }
+      if (
+        !$isRangeSelection(selection) ||
+        rootElement === null ||
+        !rootElement.contains(nativeSelection.anchorNode)
+      ) {
+        setIsText(false);
+        return;
+      }
 
-        const node = getSelectedNode(selection);
+      const node = getSelectedNode(selection);
 
-        // Update text format
-        setIsBold(selection.hasFormat('bold'));
-        setIsItalic(selection.hasFormat('italic'));
-        setIsUnderline(selection.hasFormat('underline'));
-        setIsStrikethrough(selection.hasFormat('strikethrough'));
-        setIsCode(selection.hasFormat('code'));
+      // Update text format
+      setIsBold(selection.hasFormat('bold'));
+      setIsItalic(selection.hasFormat('italic'));
+      setIsUnderline(selection.hasFormat('underline'));
+      setIsStrikethrough(selection.hasFormat('strikethrough'));
+      setIsCode(selection.hasFormat('code'));
 
-        // Update links
-        const parent = node.getParent();
-        if ($isLinkNode(parent) || $isLinkNode(node)) {
-          setIsLink(true);
-        } else {
-          setIsLink(false);
-        }
+      // Update links
+      const parent = node.getParent();
+      if ($isLinkNode(parent) || $isLinkNode(node)) {
+        setIsLink(true);
+      } else {
+        setIsLink(false);
+      }
 
-        if (
-          !$isCodeHighlightNode(selection.anchor.getNode()) &&
-          selection.getTextContent() !== ''
-        ) {
-          setIsText($isTextNode(node));
-        } else {
-          setIsText(false);
-        }
-      });
+      if (
+        !$isCodeHighlightNode(selection.anchor.getNode()) &&
+        selection.getTextContent() !== ''
+      ) {
+        setIsText($isTextNode(node));
+      } else {
+        setIsText(false);
+      }
     });
   }, [editor]);
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', updatePopup);
+    return () => {
+      document.removeEventListener('selectionchange', updatePopup);
+    };
+  }, [updatePopup]);
+
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      updatePopup();
+    });
+  }, [editor, updatePopup]);
 
   if (!isText || isLink) {
     return null;

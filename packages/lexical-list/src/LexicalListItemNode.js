@@ -271,8 +271,8 @@ export class ListItemNode extends ElementNode {
     if ($isListItemNode(nodeToInsert)) {
       const parent = this.getParentOrThrow();
       if ($isListNode(parent)) {
-        // mark subsequent list items dirty so we update their value attribute.
-        updateChildrenListItemValue(parent);
+        const siblings = this.getNextSiblings();
+        updateChildrenListItemValue(parent, siblings);
       }
     }
     return super.insertBefore(nodeToInsert);

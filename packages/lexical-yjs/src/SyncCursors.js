@@ -24,12 +24,12 @@ import type {
   XmlText,
 } from 'yjs';
 
+import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
-  $isTextNode,
 } from 'lexical';
 import {
   compareRelativePositions,
@@ -55,7 +55,6 @@ export type CursorSelection = {
     offset: number,
   },
   name: HTMLSpanElement,
-  range: Range,
   selections: Array<HTMLElement>,
 };
 
@@ -138,18 +137,6 @@ function destroyCursor(binding: Binding, cursor: Cursor) {
   }
 }
 
-function getDOMTextNode(element: Node | null): Text | null {
-  let node = element;
-  while (node != null) {
-    if (node.nodeType === 3) {
-      // $FlowFixMe: this is a Text
-      return node;
-    }
-    node = node.firstChild;
-  }
-  return null;
-}
-
 function createCursorSelection(
   cursor: Cursor,
   anchorKey: NodeKey,
@@ -176,17 +163,8 @@ function createCursorSelection(
       offset: focusOffset,
     },
     name,
-    range: document.createRange(),
     selections: [],
   };
-}
-
-function getDOMIndexWithinParent(node: Node): [Node, number] {
-  const parent = node.parentNode;
-  if (parent == null) {
-    throw new Error('Should never happen');
-  }
-  return [parent, Array.from(parent.childNodes).indexOf(node)];
 }
 
 function updateCursor(
@@ -213,7 +191,6 @@ function updateCursor(
   } else {
     cursor.selection = nextSelection;
   }
-  const range = nextSelection.range;
   const caret = nextSelection.caret;
   const color = nextSelection.color;
   const selections = nextSelection.selections;
@@ -223,101 +200,32 @@ function updateCursor(
   const focusKey = focus.key;
   const anchorNode = nodeMap.get(anchorKey);
   const focusNode = nodeMap.get(focusKey);
-  let anchorDOM = editor.getElementByKey(anchorKey);
-  let focusDOM = editor.getElementByKey(focusKey);
-  let anchorOffset = anchor.offset;
-  let focusOffset = focus.offset;
-
-  if ($isTextNode(anchorNode)) {
-    anchorDOM = getDOMTextNode(anchorDOM);
-  }
-  if ($isTextNode(focusNode)) {
-    focusDOM = getDOMTextNode(focusDOM);
-  }
-  if (
-    anchorNode === undefined ||
-    focusNode === undefined ||
-    anchorDOM === null ||
-    focusDOM === null
-  ) {
+  if (anchorNode == null || focusNode == null) {
     return;
   }
-  if (anchorDOM.nodeName === 'BR') {
-    [anchorDOM, anchorOffset] = getDOMIndexWithinParent(anchorDOM);
-  }
-  if (focusDOM.nodeName === 'BR') {
-    [focusDOM, focusOffset] = getDOMIndexWithinParent(focusDOM);
-  }
-  const firstChild = anchorDOM.firstChild;
-  if (
-    anchorDOM === focusDOM &&
-    firstChild != null &&
-    firstChild.nodeName === 'BR' &&
-    anchorOffset === 0 &&
-    focusOffset === 0
-  ) {
-    focusOffset = 1;
-  }
-  try {
-    range.setStart(anchorDOM, anchorOffset);
-    range.setEnd(focusDOM, focusOffset);
-  } catch (e) {
+  const range = createDOMRange(
+    editor,
+    anchorNode,
+    anchor.offset,
+    focusNode,
+    focus.offset,
+  );
+  if (range === null) {
     return;
   }
-
-  if (
-    range.collapsed &&
-    (anchorOffset !== focusOffset || anchorKey !== focusKey)
-  ) {
-    // Range is backwards, we need to reverse it
-    range.setStart(focusDOM, focusOffset);
-    range.setEnd(anchorDOM, anchorOffset);
-  }
-  // We need to
-  const rootRect = rootElement.getBoundingClientRect();
-  const computedStyle = getComputedStyle(rootElement);
-  const rootPadding =
-    parseFloat(computedStyle.paddingLeft) +
-    parseFloat(computedStyle.paddingRight);
-  const selectionRects = Array.from(range.getClientRects());
-  let selectionRectsLength = selectionRects.length;
   const selectionsLength = selections.length;
-
-  let prevRect;
+  const selectionRects = createRectsFromDOMRange(editor, range);
+  const selectionRectsLength = selectionRects.length;
 
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
-
-    // Exclude a rect that is the exact same as the last rect. getClientRects() can return
-    // the same rect twice for some elements. A more sophisticated thing to do here is to
-    // merge all the rects together into a set of rects that don't overlap, so we don't
-    // generate backgrounds that are too dark.
-    const isDuplicateRect =
-      prevRect &&
-      prevRect.top === selectionRect.top &&
-      prevRect.left === selectionRect.left &&
-      prevRect.width === selectionRect.width &&
-      prevRect.height === selectionRect.height;
-
-    // Exclude selections that span the entire element
-    const selectionSpansElement =
-      selectionRect.width + rootPadding === rootRect.width;
-
-    if (isDuplicateRect || selectionSpansElement) {
-      selectionRects.splice(i--, 1);
-      selectionRectsLength--;
-      continue;
-    }
-
-    prevRect = selectionRect;
-
     let selection = selections[i];
     if (selection === undefined) {
       selection = document.createElement('span');
       selections[i] = selection;
       cursorsContainer.appendChild(selection);
     }
-    const style = `position:absolute;top:${selectionRect.top}px;left:${selectionRect.left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:10;`;
+    const style = `position:absolute;top:${selectionRect.top}px;left:${selectionRect.left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
     selection.style.cssText = style;
     if (i === selectionRectsLength - 1) {
       if (caret.parentNode !== selection) {

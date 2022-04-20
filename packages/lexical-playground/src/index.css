@@ -129,9 +129,6 @@ pre::-webkit-scrollbar-thumb {
   background-color: #444;
 }
 
-.editor-dev-button + .editor-dev-button {
-  margin-left: 8px;
-}
 
 .editor-dev-button::after {
   content: '';
@@ -195,13 +192,13 @@ pre::-webkit-scrollbar-thumb {
 
 #options-button {
   position: fixed;
-  right: 20px;
+  left: 20px;
   bottom: 20px;
 }
 
 #test-recorder-button {
   position: fixed;
-  right: 70px;
+  left: 70px;
   bottom: 20px;
 }
 
@@ -700,7 +697,7 @@ select.font-family {
 .switches {
   z-index: 6;
   position: fixed;
-  right: 10px;
+  left: 10px;
   bottom: 70px;
   animation: slide-in 0.4s ease;
 }
@@ -708,7 +705,7 @@ select.font-family {
 @keyframes slide-in {
   0% {
     opacity: 0;
-    transform: translateX(200px);
+    transform: translateX(-200px);
   }
   100% {
     opacity: 1;
@@ -1140,6 +1137,7 @@ button.action-button:disabled {
   border-top-right-radius: 10px;
   vertical-align: middle;
   overflow: auto;
+  height: 36px;
 }
 
 .toolbar button.toolbar-item {

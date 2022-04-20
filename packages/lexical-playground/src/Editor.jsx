@@ -36,6 +36,7 @@ import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
 import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
+import CommentPlugin from './plugins/CommentPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
@@ -171,15 +172,11 @@ export default function Editor(): React$Node {
         <LexicalClearEditorPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
-        <ExcalidrawPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
-        <HorizontalRulePlugin />
         <SpeechToTextPlugin />
-        <AutoLinkPlugin />
-        <CharacterStylesPopupPlugin />
-        <EquationsPlugin />
         <AutoScrollPlugin scrollRef={scrollRef} />
+        {!isCollab && <CommentPlugin />}
         {isRichText ? (
           <>
             {isCollab ? (
@@ -211,6 +208,11 @@ export default function Editor(): React$Node {
             <TwitterPlugin />
             <YouTubePlugin />
             <ClickableLinkPlugin />
+            <HorizontalRulePlugin />
+            <AutoLinkPlugin />
+            <CharacterStylesPopupPlugin />
+            <EquationsPlugin />
+            <ExcalidrawPlugin />
           </>
         ) : (
           <>

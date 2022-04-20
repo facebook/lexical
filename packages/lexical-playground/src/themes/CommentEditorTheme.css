@@ -6,7 +6,8 @@
  *
  *
  */
- 
-.TableCellResizer__resizer {
-  position: absolute;
+
+.CommentEditorTheme__paragraph {
+  margin: 0;
+  position: 'relative';
 }

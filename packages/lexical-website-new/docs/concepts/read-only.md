@@ -9,8 +9,10 @@ Lexical supports two modes:
 - Read mode
 - Edit mode
 
-The default behavior for Lexical is edit mode, or more accurately not read only mode. In order to find the
-current mode of the editor you can use:
+The default behavior for Lexical is edit mode, or more accurately not read only mode. Under-the-hood, the main
+implementation detail is that the `contentEditable` is being set to `"false"` or `"true"` depending on the mode.
+Specific plugins can listen to the mode change too – allowing them to customize parts of the UI depending on the
+mode.
 
 ## Setting the mode
 
@@ -38,6 +40,8 @@ editor.setReadOnly(true);
 ```
 
 ## Reading the mode
+
+In order to find the current mode of the editor you can use:
 
 ```js
 const readOnly = editor.isReadOnly(); // Returns true or false

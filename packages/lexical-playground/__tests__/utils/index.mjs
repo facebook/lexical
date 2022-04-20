@@ -478,6 +478,13 @@ export async function insertUploadImage(page, files, altText) {
   await click(page, 'button[data-test-id="image-modal-file-upload-btn"]');
 }
 
+export async function insertYouTubeEmbed(page, url) {
+  await selectFromInsertDropdown(page, '.youtube');
+  await focus(page, 'input[data-test-id="youtube-embed-modal-url"]');
+  await page.keyboard.type(url);
+  await click(page, 'button[data-test-id="youtube-embed-modal-submit-btn"]');
+}
+
 export async function insertImageCaption(page, caption) {
   await click(page, '.editor-image img');
   await click(page, '.image-caption-button');

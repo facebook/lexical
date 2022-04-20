@@ -11,29 +11,18 @@ import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
-import {useEffect, useRef} from 'react';
+
+import EmbedBlock from '../ui/EmbedBlock.jsx';
 
 type YouTubeComponentProps = $ReadOnly<{
   format: ?ElementFormatType,
-  onLoad?: () => void,
+  nodeKey: NodeKey,
   videoID: string,
 }>;
 
-function YouTubeComponent({onLoad, format, videoID}: YouTubeComponentProps) {
-  const previousYouTubeIDRef = useRef(null);
-
-  useEffect(() => {
-    if (videoID !== previousYouTubeIDRef.current) {
-      if (onLoad) {
-        onLoad();
-      }
-
-      previousYouTubeIDRef.current = videoID;
-    }
-  }, [onLoad, videoID]);
-
+function YouTubeComponent({format, nodeKey, videoID}: YouTubeComponentProps) {
   return (
-    <div style={{textAlign: format}}>
+    <EmbedBlock format={format} nodeKey={nodeKey}>
       <iframe
         width="560"
         height="315"
@@ -43,7 +32,7 @@ function YouTubeComponent({onLoad, format, videoID}: YouTubeComponentProps) {
         allowFullScreen={true}
         title="YouTube video"
       />
-    </div>
+    </EmbedBlock>
   );
 }
 
@@ -73,7 +62,13 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
   }
 
   decorate(): React$Node {
-    return <YouTubeComponent format={this.__format} videoID={this.__id} />;
+    return (
+      <YouTubeComponent
+        format={this.__format}
+        nodeKey={this.getKey()}
+        videoID={this.__id}
+      />
+    );
   }
 
   setFormat(format: ElementFormatType): void {

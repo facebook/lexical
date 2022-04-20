@@ -13,6 +13,8 @@ import {DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
+import EmbedBlock from '../ui/EmbedBlock.jsx';
+
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
 const getHasScriptCached = () =>
@@ -74,13 +76,13 @@ function TweetComponent({
   }, [createTweet, onError, tweetID]);
 
   return (
-    <div style={{textAlign: format}}>
+    <EmbedBlock format={format} nodeKey={this.getKey()}>
       {isLoading ? loadingComponent : null}
       <div
         style={{display: 'inline-block', width: '550px'}}
         ref={containerRef}
       />
-    </div>
+    </EmbedBlock>
   );
 }
 

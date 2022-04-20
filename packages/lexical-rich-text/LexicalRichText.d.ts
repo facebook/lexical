@@ -12,7 +12,7 @@ import type {
   LexicalNode,
   NodeKey,
   ParagraphNode,
-  HeadingNode,
+  LexicalEditor,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 

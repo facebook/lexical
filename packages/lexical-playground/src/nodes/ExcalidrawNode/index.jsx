@@ -37,9 +37,8 @@ function ExcalidrawComponent({
   nodeKey: NodeKey,
 }): React.Node {
   const [editor] = useLexicalComposerContext();
-  const shouldModalOpenInitially = data === '[]' && !editor.isReadOnly();
   const [isModalOpen, setModalOpen] = useState<boolean>(
-    shouldModalOpenInitially,
+    data === '[]' && !editor.isReadOnly(),
   );
   const buttonRef = useRef<HTMLElement | null>(null);
   const [isSelected, setSelected, clearSelection] =

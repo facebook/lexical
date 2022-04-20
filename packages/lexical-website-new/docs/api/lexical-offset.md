@@ -1,5 +1,7 @@
 ---
-sidebar_position: 4
+title: ''
+sidebar_position: 12
+sidebar_label: '@lexical/offset'
 ---
 
-# @lexical/offset
+{@import ../../../lexical-offset/README.md}

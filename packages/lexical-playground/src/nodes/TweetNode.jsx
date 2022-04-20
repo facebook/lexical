@@ -9,11 +9,10 @@
 
 import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
-import {DecoratorNode} from 'lexical';
+import {LexicalBlockDecoratorNode} from '@lexical/react/LexicalBlockDecoratorNode';
+import {LexicalBlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-
-import EmbedBlock from '../ui/EmbedBlock.jsx';
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
@@ -23,6 +22,7 @@ const getHasScriptCached = () =>
 type TweetComponentProps = $ReadOnly<{
   format: ?ElementFormatType,
   loadingComponent?: React$Node,
+  nodeKey: NodeKey,
   onError?: (error?: Error) => void,
   onLoad?: () => void,
   tweetID: string,
@@ -31,6 +31,7 @@ type TweetComponentProps = $ReadOnly<{
 function TweetComponent({
   format,
   loadingComponent,
+  nodeKey,
   onError,
   onLoad,
   tweetID,
@@ -76,19 +77,18 @@ function TweetComponent({
   }, [createTweet, onError, tweetID]);
 
   return (
-    <EmbedBlock format={format} nodeKey={this.getKey()}>
+    <LexicalBlockWithAlignableContents format={format} nodeKey={nodeKey}>
       {isLoading ? loadingComponent : null}
       <div
         style={{display: 'inline-block', width: '550px'}}
         ref={containerRef}
       />
-    </EmbedBlock>
+    </LexicalBlockWithAlignableContents>
   );
 }
 
-export class TweetNode extends DecoratorNode<React$Node> {
+export class TweetNode extends LexicalBlockDecoratorNode {
   __id: string;
-  __format: ?ElementFormatType;
 
   static getType(): string {
     return 'tweet';
@@ -104,19 +104,12 @@ export class TweetNode extends DecoratorNode<React$Node> {
     this.__id = id;
   }
 
-  createDOM(): HTMLElement {
-    return document.createElement('div');
-  }
-
-  updateDOM(): false {
-    return false;
-  }
-
   decorate(): React$Node {
     return (
       <TweetComponent
         format={this.__format}
         loadingComponent="Loading..."
+        nodeKey={this.getKey()}
         tweetID={this.__id}
       />
     );

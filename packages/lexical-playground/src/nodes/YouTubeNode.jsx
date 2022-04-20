@@ -9,10 +9,9 @@
 
 import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
-import {DecoratorNode} from 'lexical';
+import {LexicalBlockDecoratorNode} from '@lexical/react/LexicalBlockDecoratorNode';
+import {LexicalBlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import * as React from 'react';
-
-import EmbedBlock from '../ui/EmbedBlock.jsx';
 
 type YouTubeComponentProps = $ReadOnly<{
   format: ?ElementFormatType,
@@ -22,7 +21,7 @@ type YouTubeComponentProps = $ReadOnly<{
 
 function YouTubeComponent({format, nodeKey, videoID}: YouTubeComponentProps) {
   return (
-    <EmbedBlock format={format} nodeKey={nodeKey}>
+    <LexicalBlockWithAlignableContents format={format} nodeKey={nodeKey}>
       <iframe
         width="560"
         height="315"
@@ -32,13 +31,12 @@ function YouTubeComponent({format, nodeKey, videoID}: YouTubeComponentProps) {
         allowFullScreen={true}
         title="YouTube video"
       />
-    </EmbedBlock>
+    </LexicalBlockWithAlignableContents>
   );
 }
 
-export class YouTubeNode extends DecoratorNode<React$Node> {
+export class YouTubeNode extends LexicalBlockDecoratorNode {
   __id: string;
-  __format: ?ElementFormatType;
 
   static getType(): string {
     return 'youtube';
@@ -53,10 +51,6 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
     this.__id = id;
   }
 
-  createDOM(): HTMLElement {
-    return document.createElement('div');
-  }
-
   updateDOM(): false {
     return false;
   }
@@ -69,11 +63,6 @@ export class YouTubeNode extends DecoratorNode<React$Node> {
         videoID={this.__id}
       />
     );
-  }
-
-  setFormat(format: ElementFormatType): void {
-    const self = this.getWritable();
-    self.__format = format;
   }
 }
 

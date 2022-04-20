@@ -9,6 +9,7 @@
 
 import type {ElementFormatType, NodeKey} from 'lexical';
 
+import {$isLexicalBlockDecoratorNode} from '@lexical/react/LexicalBlockDecoratorNode';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
 import {
@@ -18,6 +19,7 @@ import {
 import {
   $getNodeByKey,
   $getSelection,
+  $isDecoratorNode,
   $isNodeSelection,
   $isRangeSelection,
   CLICK_COMMAND,
@@ -29,16 +31,13 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect, useRef} from 'react';
 
-import {$isTweetNode} from '../nodes/TweetNode.jsx';
-import {$isYouTubeNode} from '../nodes/YouTubeNode.jsx';
-
 type Props = $ReadOnly<{
   children: React$Node,
   format: ?ElementFormatType,
   nodeKey: NodeKey,
 }>;
 
-export default function EmbedBlock({
+export function LexicalBlockWithAlignableContents({
   children,
   format,
   nodeKey,
@@ -47,6 +46,7 @@ export default function EmbedBlock({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const ref = useRef();
+
   const onDelete = useCallback(
     (payload) => {
       if (isSelected && $isNodeSelection($getSelection())) {
@@ -54,7 +54,7 @@ export default function EmbedBlock({
         event.preventDefault();
         editor.update(() => {
           const node = $getNodeByKey(nodeKey);
-          if ($isYouTubeNode(node) || $isTweetNode(node)) {
+          if ($isDecoratorNode(node) && node.isTopLevel()) {
             node.remove();
           }
           setSelected(false);
@@ -74,13 +74,13 @@ export default function EmbedBlock({
             const selection = $getSelection();
             if ($isNodeSelection(selection)) {
               const node = $getNodeByKey(nodeKey);
-              if ($isYouTubeNode(node) || $isTweetNode(node)) {
+              if ($isDecoratorNode(node) && node.isTopLevel()) {
                 node.setFormat(payload);
               }
             } else if ($isRangeSelection(selection)) {
               const nodes = selection.getNodes();
               for (const node of nodes) {
-                if ($isYouTubeNode(node) || $isTweetNode(node)) {
+                if ($isLexicalBlockDecoratorNode(node) && node.isTopLevel()) {
                   node.setFormat(payload);
                 } else {
                   const element = $getNearestBlockElementAncestorOrThrow(node);

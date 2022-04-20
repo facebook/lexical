@@ -1,0 +1,26 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {ElementFormatType, LexicalNode, LexicalCommand} from 'lexical';
+
+import {DecoratorNode} from 'lexical';
+
+declare export class LexicalBlockDecoratorNode
+  extends DecoratorNode<React$Node>
+{
+  __format: ?ElementFormatType;
+  createDOM(): HTMLElement;
+  isTopLevel(): true;
+  setFormat(format: ElementFormatType): void;
+}
+
+declare export function $createLexicalBlockDecoratorNode(): LexicalBlockDecoratorNode;
+declare export function $isLexicalBlockDecoratorNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof LexicalBlockDecoratorNode);

@@ -15,6 +15,7 @@ import type {
   RangeSelection,
   LexicalCommand,
 } from 'lexical';
+import {ElementNode} from 'lexical';
 
 export declare class LinkNode extends ElementNode {
   __url: string;

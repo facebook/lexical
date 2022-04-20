@@ -762,6 +762,7 @@ declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
   decorate(editor: LexicalEditor): X;
   isIsolated(): boolean;
+  isTopLevel(): boolean;
 }
 declare export function $isDecoratorNode(
   node: ?LexicalNode,

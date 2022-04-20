@@ -9,8 +9,8 @@
 
 import type {ElementFormatType, NodeKey} from 'lexical';
 
-import {$isLexicalBlockDecoratorNode} from '@lexical/react/LexicalBlockDecoratorNode';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
 import {
   $getNearestBlockElementAncestorOrThrow,
@@ -37,7 +37,7 @@ type Props = $ReadOnly<{
   nodeKey: NodeKey,
 }>;
 
-export function LexicalBlockWithAlignableContents({
+export function BlockWithAlignableContents({
   children,
   format,
   nodeKey,
@@ -74,13 +74,13 @@ export function LexicalBlockWithAlignableContents({
             const selection = $getSelection();
             if ($isNodeSelection(selection)) {
               const node = $getNodeByKey(nodeKey);
-              if ($isDecoratorNode(node) && node.isTopLevel()) {
+              if ($isDecoratorBlockNode(node)) {
                 node.setFormat(payload);
               }
             } else if ($isRangeSelection(selection)) {
               const nodes = selection.getNodes();
               for (const node of nodes) {
-                if ($isLexicalBlockDecoratorNode(node) && node.isTopLevel()) {
+                if ($isDecoratorBlockNode(node)) {
                   node.setFormat(payload);
                 } else {
                   const element = $getNearestBlockElementAncestorOrThrow(node);

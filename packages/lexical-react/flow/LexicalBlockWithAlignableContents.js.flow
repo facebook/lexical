@@ -21,4 +21,4 @@ type Props = $ReadOnly<{
   nodeKey: NodeKey,
 }>;
 
-declare export function LexicalBlockWithAlignableContents(Props): React$Node;
+declare export function BlockWithAlignableContents(Props): React$Node;

@@ -11,15 +11,11 @@ import type {ElementFormatType, LexicalNode} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
 
-export class LexicalBlockDecoratorNode extends DecoratorNode<React$Node> {
+export class DecoratorBlockNode extends DecoratorNode<React$Node> {
   __format: ?ElementFormatType;
 
   createDOM(): HTMLElement {
     return document.createElement('div');
-  }
-
-  isTopLevel(): true {
-    return true;
   }
 
   setFormat(format: ElementFormatType): void {
@@ -28,12 +24,10 @@ export class LexicalBlockDecoratorNode extends DecoratorNode<React$Node> {
   }
 }
 
-export function $createLexicalBlockDecoratorNode(): LexicalBlockDecoratorNode {
-  return new LexicalBlockDecoratorNode();
+export function $createDecoratorBlockNode(): DecoratorBlockNode {
+  return new DecoratorBlockNode();
 }
 
-export function $isLexicalBlockDecoratorNode(
-  node: ?LexicalNode,
-): boolean %checks {
-  return node instanceof LexicalBlockDecoratorNode;
+export function $isDecoratorBlockNode(node: ?LexicalNode): boolean %checks {
+  return node instanceof DecoratorBlockNode;
 }

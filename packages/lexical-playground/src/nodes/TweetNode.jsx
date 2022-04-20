@@ -9,8 +9,8 @@
 
 import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
-import {LexicalBlockDecoratorNode} from '@lexical/react/LexicalBlockDecoratorNode';
-import {LexicalBlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
+import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -77,17 +77,17 @@ function TweetComponent({
   }, [createTweet, onError, tweetID]);
 
   return (
-    <LexicalBlockWithAlignableContents format={format} nodeKey={nodeKey}>
+    <BlockWithAlignableContents format={format} nodeKey={nodeKey}>
       {isLoading ? loadingComponent : null}
       <div
         style={{display: 'inline-block', width: '550px'}}
         ref={containerRef}
       />
-    </LexicalBlockWithAlignableContents>
+    </BlockWithAlignableContents>
   );
 }
 
-export class TweetNode extends LexicalBlockDecoratorNode {
+export class TweetNode extends DecoratorBlockNode<React$Node> {
   __id: string;
 
   static getType(): string {

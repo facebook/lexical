@@ -102,7 +102,7 @@ const moduleResolution = [
   'LexicalContentEditable',
   'LexicalNestedComposer',
   'LexicalHorizontalRuleNode',
-  'LexicalBlockDecoratorNode',
+  'LexicalDecoratorBlockNode',
   'LexicalBlockWithAlignableContents',
   'useLexicalNodeSelection',
   'LexicalMarkdownShortcutPlugin',

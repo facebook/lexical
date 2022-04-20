@@ -48,17 +48,9 @@ export default function ActionsPlugins({
 
   useEffect(() => {
     return mergeRegister(
-<<<<<<< Updated upstream
       editor.registerReadOnlyListener((readOnly) => {
         setIsReadyOnly(readOnly);
       }),
-=======
-      editor.registerReadOnlyListener(
-        (readOnly) => {
-          setIsReadyOnly(readOnly);
-        },
-      ),
->>>>>>> Stashed changes
       editor.registerCommand(
         CONNECTED_COMMAND,
         (payload) => {

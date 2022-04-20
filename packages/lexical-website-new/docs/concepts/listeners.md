@@ -32,6 +32,28 @@ The update listener callbacks receives a single argument containing the follow p
 - `prevEditorState` the previous Editor State
 - `tags` a Set of all tags that were passed to the update
 
+One thing to be aware of is "waterfall" updates. This is where you might schedule an update inside an update
+listener, as show below:
+
+```js
+editor.registerUpdateListener(({editorState}) => {
+  // Read the editorState and maybe get some value.
+  editorState.read(() => {
+    // ...
+  });
+
+  // Then schedule another update.
+  editor.update(() => {
+    // ...
+  });
+});
+```
+
+The problem with this pattern is that it means we end up doing two DOM updates, when we likely could have
+done it in a single DOM update. This can have an impact on performance, which is important in text editor.
+To avoid this, we recommend looking into [Node Transforms](https://lexical.dev/docs/concepts/transforms), which allow you to listen to node changes and
+transform them as part of the same given update, meaning no waterfalls!
+
 ## `registerTextContentListener`
 
 Get notified when Lexical commits an update to the DOM and the text content of the editor changes from

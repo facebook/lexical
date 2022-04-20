@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # Editor State
 
-### Understanding the Editor State
+## Understanding the Editor State
 
 With Lexical, the source of truth is not the DOM, but rather an underlying state model
 that Lexical maintains and associates with an editor instance. You can get the latest
@@ -12,7 +12,7 @@ editor state from an editor by calling `editor.getEditorState()`.
 
 Editor states have two phases:
 
-- During an update they can be thought of as "mutable". See "Updating an editor" below to
+- During an update they can be thought of as "mutable". See "Updating state" below to
   mutate an editor state.
 - After an update, the editor state is then locked and deemed immutable from there one. This
   editor state can therefore be thought of as a "snapshot".
@@ -61,7 +61,7 @@ const editorStateRef = useRef();
 Note that Lexical uses `initialEditorState` only once (when it's being initialized) and passing different value later
 won't be reflected in editor. See "Update state" below for proper ways of updating editor state.
 
-### Updating state
+## Updating state
 
 The most common way to update the editor is to use `editor.update()`. Calling this function
 requires a function to be passed in that will provide access to mutate the underlying
@@ -116,7 +116,7 @@ const editorState = editor.parseEditorState(editorStateJSONString);
 editor.setEditorState(editorState);
 ```
 
-### State update listener
+## State update listener
 
 If you want to know when the editor updates so you can react to the changes, you can add an update
 listener to the editor, as shown below:

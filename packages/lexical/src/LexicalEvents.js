@@ -52,6 +52,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from '.';
+import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
 import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
@@ -79,6 +80,7 @@ import {
   isFirefoxClipboardEvents,
   isItalic,
   isLineBreak,
+  isModifier,
   isMoveBackward,
   isMoveDown,
   isMoveForward,
@@ -599,6 +601,10 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND);
+  }
+
+  if (isModifier(ctrlKey, shiftKey, altKey, metaKey)) {
+    dispatchCommand(editor, KEY_MODIFIER_COMMAND, event);
   }
 }
 

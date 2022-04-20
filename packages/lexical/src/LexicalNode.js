@@ -46,6 +46,7 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export function removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
+  preserveEmptyParent?: boolean,
 ): void {
   errorOnReadOnly();
   const key = nodeToRemove.__key;
@@ -95,6 +96,7 @@ export function removeNode(
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   }
   if (
+    !preserveEmptyParent &&
     parent !== null &&
     !$isRootNode(parent) &&
     !parent.canBeEmpty() &&
@@ -617,9 +619,9 @@ export class LexicalNode {
 
   // Setters and mutators
 
-  remove(): void {
+  remove(preserveEmptyParent?: boolean): void {
     errorOnReadOnly();
-    removeNode(this, true);
+    removeNode(this, true, preserveEmptyParent);
   }
 
   replace(replaceWith: LexicalNode): LexicalNode {

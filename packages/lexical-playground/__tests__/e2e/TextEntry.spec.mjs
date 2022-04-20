@@ -11,6 +11,7 @@ import {
   moveToLineBeginning,
   selectAll,
   selectCharacters,
+  toggleBold,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -94,6 +95,40 @@ test.describe('TextEntry', () => {
       focusOffset: 0,
       focusPath: [1, 0, 0],
     });
+  });
+
+  test(`Can insert a paragraph between two text nodes`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hello ');
+    await toggleBold(page);
+    await page.keyboard.type('world');
+    await moveLeft(page, 5);
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+        </p>
+        <p dir="ltr">
+          <strong data-lexical-text="true">world</strong>
+        </p>
+      `,
+      {ignoreClasses: true},
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 0, 0],
+      focusOffset: 0,
+      focusPath: [1, 0, 0],
+    });
+
+    await page.keyboard.press('Enter');
   });
 
   test(`Can type 'Hello Lexical' in the editor and replace it with foo`, async ({

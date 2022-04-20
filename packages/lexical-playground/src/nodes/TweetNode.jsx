@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';
@@ -19,6 +19,7 @@ const getHasScriptCached = () =>
   document.querySelector(`script[src="${WIDGET_SCRIPT_URL}"]`);
 
 type TweetComponentProps = $ReadOnly<{
+  format: ?ElementFormatType,
   loadingComponent?: React$Node,
   onError?: (error?: Error) => void,
   onLoad?: () => void,
@@ -26,6 +27,7 @@ type TweetComponentProps = $ReadOnly<{
 }>;
 
 function TweetComponent({
+  format,
   loadingComponent,
   onError,
   onLoad,
@@ -72,15 +74,19 @@ function TweetComponent({
   }, [createTweet, onError, tweetID]);
 
   return (
-    <>
+    <div style={{textAlign: format}}>
       {isLoading ? loadingComponent : null}
-      <div ref={containerRef} />
-    </>
+      <div
+        style={{display: 'inline-block', width: '550px'}}
+        ref={containerRef}
+      />
+    </div>
   );
 }
 
 export class TweetNode extends DecoratorNode<React$Node> {
   __id: string;
+  __format: ?ElementFormatType;
 
   static getType(): string {
     return 'tweet';
@@ -105,7 +111,18 @@ export class TweetNode extends DecoratorNode<React$Node> {
   }
 
   decorate(): React$Node {
-    return <TweetComponent loadingComponent="Loading..." tweetID={this.__id} />;
+    return (
+      <TweetComponent
+        format={this.__format}
+        loadingComponent="Loading..."
+        tweetID={this.__id}
+      />
+    );
+  }
+
+  setFormat(format: ElementFormatType): void {
+    const self = this.getWritable();
+    self.__format = format;
   }
 }
 

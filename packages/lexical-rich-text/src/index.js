@@ -68,6 +68,7 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
+import {IS_IOS} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
@@ -605,6 +606,13 @@ export function registerRichText(
           return false;
         }
         if (event !== null) {
+          // If we have beforeinput, then we can avoid blocking
+          // the default behavior. This ensures that the iOS can
+          // intercept that we're actually inserting a paragraph,
+          // and autocomplete, autocapitialize etc work as intended.
+          if (IS_IOS) {
+            return false;
+          }
           event.preventDefault();
           if (event.shiftKey) {
             return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);

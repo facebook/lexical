@@ -16,7 +16,12 @@ import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {$rootTextContentCurry} from '@lexical/text';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+} from 'lexical';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -108,6 +113,117 @@ describe('LexicalNodeHelpers tests', () => {
 
       const text = editor.getEditorState().read($rootTextContentCurry);
       expect(text).toBe('foo');
+    });
+  }
+
+  for (const plugin of ['PlainTextPlugin', 'RichTextPlugin']) {
+    it(`${plugin} custom initialEditorState`, async () => {
+      let editor;
+
+      const initialEditorStateJson = `
+      {
+        "_nodeMap": [
+          [
+            "root",
+            {
+              "__children": ["2"],
+              "__dir": "ltr",
+              "__format": 0,
+              "__indent": 0,
+              "__key": "root",
+              "__parent": null,
+              "__type": "root"
+            }
+          ],
+          [
+            "2",
+            {
+              "__type": "paragraph",
+              "__parent": "root",
+              "__key": "2",
+              "__children": ["3"],
+              "__format": 0,
+              "__indent": 0,
+              "__dir": "ltr"
+            }
+          ],
+          [
+            "3",
+            {
+              "__type": "text",
+              "__parent": "2",
+              "__key": "3",
+              "__text": "foo",
+              "__format": 0,
+              "__style": "",
+              "__mode": 0,
+              "__detail": 0
+            }
+          ]
+        ],
+        "_selection": {
+          "anchor": { "key": "3", "offset": 1, "type": "text" },
+          "focus": { "key": "3", "offset": 1, "type": "text" },
+          "type": "range"
+        }
+      }
+      `;
+
+      function GrabEditor() {
+        [editor] = useLexicalComposerContext();
+        return null;
+      }
+
+      function App() {
+        return (
+          <LexicalComposer
+            initialConfig={{
+              namespace: 'PlaygroundEditor',
+              nodes:
+                plugin === 'PlainTextPlugin'
+                  ? []
+                  : [
+                      HeadingNode,
+                      ListNode,
+                      ListItemNode,
+                      QuoteNode,
+                      CodeNode,
+                      TableNode,
+                      TableCellNode,
+                      TableRowNode,
+                      HashtagNode,
+                      CodeHighlightNode,
+                      AutoLinkNode,
+                      LinkNode,
+                      OverflowNode,
+                    ],
+              theme: {},
+            }}>
+            <GrabEditor />
+            {plugin === 'PlainTextPlugin' ? (
+              <PlainTextPlugin
+                contentEditable={<LexicalContentEditable />}
+                initialEditorState={initialEditorStateJson}
+              />
+            ) : (
+              <RichTextPlugin
+                contentEditable={<LexicalContentEditable />}
+                initialEditorState={initialEditorStateJson}
+              />
+            )}
+          </LexicalComposer>
+        );
+      }
+
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(<App />);
+      });
+
+      await editor.getEditorState().read(() => {
+        expect($rootTextContentCurry()).toBe('foo');
+        expect($getSelection().anchor.getNode().getTextContent()).toBe('foo');
+        expect($getSelection().focus.getNode().getTextContent()).toBe('foo');
+      });
     });
   }
 });

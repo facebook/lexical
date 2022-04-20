@@ -1342,6 +1342,7 @@ export class RangeSelection implements BaseSelection {
     let siblingsToMove = [];
     if (anchor.type === 'text') {
       const anchorNode = anchor.getNode();
+      nodesToMove = anchorNode.getNextSiblings().reverse();
       currentElement = anchorNode.getParentOrThrow();
       const isInline = currentElement.isInline();
       const textContentLength = isInline
@@ -1357,7 +1358,6 @@ export class RangeSelection implements BaseSelection {
           siblingsToMove = currentElement.getNextSiblings();
         }
         if (anchorOffset !== textContentLength) {
-          nodesToMove = anchorNode.getNextSiblings().reverse();
           if (!isInline || anchorOffset !== anchorNode.getTextContentSize()) {
             const [, splitNode] = anchorNode.splitText(anchorOffset);
             nodesToMove.push(splitNode);

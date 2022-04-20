@@ -22,6 +22,7 @@ import {
   html,
   initialize,
   selectFromAlignDropdown,
+  selectFromFormatDropdown,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -1003,6 +1004,118 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">a</span></li></ul><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+    );
+  });
+
+  test(`Converts a List with one ListItem to a Paragraph when Normal is selected in the format menu`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('a');
+    await assertHTML(
+      page,
+      html`
+        <ul>
+          <li value="1" dir="ltr">
+            <span data-lexical-text="true">a</span>
+          </li>
+        </ul>
+      `,
+      {ignoreClasses: true},
+    );
+    await selectFromFormatDropdown(page, '.paragraph');
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr"><span data-lexical-text="true">a</span></p>
+      `,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Converts the last ListItem in a List with multiple ListItem to a Paragraph when Normal is selected in the format menu`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('a');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await assertHTML(
+      page,
+      html`
+        <ul>
+          <li value="1" dir="ltr">
+            <span data-lexical-text="true">a</span>
+          </li>
+          <li value="2" dir="ltr">
+            <span data-lexical-text="true">b</span>
+          </li>
+        </ul>
+      `,
+      {ignoreClasses: true},
+    );
+    await selectFromFormatDropdown(page, '.paragraph');
+    await assertHTML(
+      page,
+      html`
+        <ul>
+          <li value="1" dir="ltr">
+            <span data-lexical-text="true">a</span>
+          </li>
+        </ul>
+        <p dir="ltr"><span data-lexical-text="true">b</span></p>
+      `,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Converts the middle ListItem in a List with multiple ListItem to a Paragraph when Normal is selected in the format menu`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await toggleBulletList(page);
+    await page.keyboard.type('a');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('c');
+    await page.keyboard.press('ArrowUp');
+    await assertHTML(
+      page,
+      html`
+        <ul>
+          <li value="1" dir="ltr">
+            <span data-lexical-text="true">a</span>
+          </li>
+          <li value="2" dir="ltr">
+            <span data-lexical-text="true">b</span>
+          </li>
+          <li value="3" dir="ltr">
+            <span data-lexical-text="true">c</span>
+          </li>
+        </ul>
+      `,
+      {ignoreClasses: true},
+    );
+    await selectFromFormatDropdown(page, '.paragraph');
+    await assertHTML(
+      page,
+      html`
+        <ul>
+          <li value="1" dir="ltr">
+            <span data-lexical-text="true">a</span>
+          </li>
+        </ul>
+        <p dir="ltr"><span data-lexical-text="true">b</span></p>
+        <ul>
+          <li value="1" dir="ltr">
+            <span data-lexical-text="true">c</span>
+          </li>
+        </ul>
+      `,
+      {ignoreClasses: true},
     );
   });
 });

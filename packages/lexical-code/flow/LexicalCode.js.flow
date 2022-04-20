@@ -46,6 +46,9 @@ declare export function getLastCodeHighlightNodeOfLine(
   anchor: LexicalNode,
 ): ?CodeHighlightNode;
 
+declare export function getDefaultCodeLanguage(): string;
+declare export function getCodeLanguages(): Array<string>;
+
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
   constructor(text: string, highlightType?: string, key?: NodeKey): void;

@@ -32,7 +32,7 @@ import {
   SUPPORT_SPEECH_RECOGNITION,
 } from './SpeechToTextPlugin';
 
-export default function ActionsPlugins({
+export default function ActionsPlugin({
   isRichText,
 }: {
   isRichText: boolean,

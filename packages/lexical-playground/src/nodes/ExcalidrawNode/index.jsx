@@ -177,7 +177,7 @@ export class ExcalidrawNode extends DecoratorNode<React$Node> {
   }
 
   // View
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const span = document.createElement('span');
     const theme = config.theme;
     const className = theme.image;

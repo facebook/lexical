@@ -55,7 +55,7 @@ export class ListNode extends ElementNode {
 
   // View
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const tag = this.__tag;
     const dom = document.createElement(tag);
     if (this.__start !== 1) {
@@ -65,10 +65,10 @@ export class ListNode extends ElementNode {
     return dom;
   }
 
-  updateDOM<EditorContext>(
+  updateDOM(
     prevNode: ListNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     if (prevNode.__tag !== this.__tag) {
       return true;

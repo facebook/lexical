@@ -55,7 +55,7 @@ import {
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
 let editorTextContent = '';
-let activeEditorConfig: EditorConfig<{...}>;
+let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
 let activeEditorNodes: RegisteredNodes;
 let treatAllNodesAsDirty: boolean = false;

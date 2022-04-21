@@ -15,6 +15,8 @@ import type {
   RangeSelection,
   ElementNode,
   LexicalEditor,
+  TextFormatType,
+  LexicalCommand,
 } from 'lexical';
 import {TableSelection} from './src/TableSelection';
 
@@ -47,7 +49,7 @@ export declare class TableCellNode extends ElementNode {
     width?: ?number,
     key?: NodeKey,
   );
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
@@ -78,7 +80,7 @@ export declare class TableNode extends ElementNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
   constructor(grid?: Grid, key?: NodeKey);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   canInsertTab(): true;
@@ -103,7 +105,7 @@ declare class TableRowNode extends ElementNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(key?: NodeKey, height?: ?number);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
@@ -210,7 +212,7 @@ declare function $deleteTableColumn(
 /**
  * LexicalTableSelection.js
  */
-declare class TableSelection {
+export declare class TableSelection {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
@@ -222,7 +224,7 @@ declare class TableSelection {
   startY: number;
   nodeKey: string;
   editor: LexicalEditor;
-  constructor(editor: LexicalEditor, nodeKey: string): void;
+  constructor(editor: LexicalEditor, nodeKey: string);
   getGrid(): Grid;
   removeListeners(): void;
   trackTableGrid(): void;

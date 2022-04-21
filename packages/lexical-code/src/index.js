@@ -90,7 +90,7 @@ export class CodeHighlightNode extends TextNode {
     );
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
     const className = getHighlightThemeClass(
       config.theme,
@@ -100,11 +100,11 @@ export class CodeHighlightNode extends TextNode {
     return element;
   }
 
-  updateDOM<EditorContext>(
+  updateDOM(
     // $FlowFixMe
     prevNode: CodeHighlightNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     const update = super.updateDOM(prevNode, dom, config);
     const prevClassName = getHighlightThemeClass(
@@ -174,7 +174,7 @@ export class CodeNode extends ElementNode {
   }
 
   // View
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('code');
     addClassNamesToElement(element, config.theme.code);
     element.setAttribute('spellcheck', 'false');

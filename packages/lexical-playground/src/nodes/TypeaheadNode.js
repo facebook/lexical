@@ -20,7 +20,7 @@ export class TypeaheadNode extends TextNode {
     return 'typeahead';
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.cssText = 'color: #ccc;';
     return dom;

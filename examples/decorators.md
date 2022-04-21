@@ -21,7 +21,7 @@ export class VideoNode extends DecoratorNode {
     this.__url = url;
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const div = document.createElement('div');
     div.style.display = 'contents';
     return div;

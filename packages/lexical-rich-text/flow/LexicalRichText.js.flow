@@ -22,7 +22,7 @@ declare export class QuoteNode extends ElementNode {
   static getType(): string;
   static clone(node: QuoteNode): QuoteNode;
   constructor(key?: NodeKey): void;
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
@@ -38,7 +38,7 @@ declare export class HeadingNode extends ElementNode {
   static clone(node: HeadingNode): HeadingNode;
   constructor(tag: HeadingTagType, key?: NodeKey): void;
   getTag(): HeadingTagType;
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean;
   static importDOM(): DOMConversionMap | null;
   insertNewAfter(): ParagraphNode;

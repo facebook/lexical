@@ -36,18 +36,18 @@ export class LinkNode extends ElementNode {
     this.__url = url;
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('a');
     element.href = this.__url;
     addClassNamesToElement(element, config.theme.link);
     return element;
   }
 
-  updateDOM<EditorContext>(
+  updateDOM(
     // $FlowFixMe: not sure how to fix this
     prevNode: LinkNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     // $FlowFixMe: not sure how to fix this
     const anchor: HTMLAnchorElement = dom;

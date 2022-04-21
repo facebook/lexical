@@ -48,17 +48,17 @@ export class ListItemNode extends ElementNode {
 
   // View
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
     element.value = getListItemValue(this);
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
 
-  updateDOM<EditorContext>(
+  updateDOM(
     prevNode: ListItemNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     //$FlowFixMe - this is always HTMLListItemElement
     dom.value = getListItemValue(this);

@@ -116,7 +116,7 @@ export declare class LexicalEditor {
   _onError: ErrorHandler;
   _decorators: Record<NodeKey, unknown>;
   _pendingDecorators: null | Record<NodeKey, unknown>;
-  _config: EditorConfig<{}>;
+  _config: EditorConfig;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
@@ -216,10 +216,9 @@ export type EditorThemeClasses = {
   // Handle other generic values
   [key: string]: EditorThemeClassName | Record<string, EditorThemeClassName>;
 };
-export type EditorConfig<EditorContext> = {
+export type EditorConfig = {
   namespace: string;
   theme: EditorThemeClasses;
-  context: EditorContext;
   disableEvents?: boolean;
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
@@ -229,11 +228,10 @@ export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 export type IntentionallyMarkedAsDirtyElement = boolean;
-export function createEditor<EditorContext>(editorConfig?: {
+export function createEditor(editorConfig?: {
   namespace?: string;
   editorState?: EditorState;
   theme?: EditorThemeClasses;
-  context?: EditorContext;
   parentEditor?: LexicalEditor;
   nodes?: Array<Class<LexicalNode>>;
   onError: (error: Error) => void;
@@ -350,17 +348,8 @@ export declare class LexicalNode {
     includeDirectionless?: false,
   ): number;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
-  // $FlowFixMe
-  createDOM<EditorContext extends Record<string, any>>(
-    config: EditorConfig<EditorContext>,
-    editor: LexicalEditor,
-  ): HTMLElement;
-  // $FlowFixMe
-  updateDOM<EditorContext extends Record<string, any>>( // $FlowFixMe
-    prevNode: any,
-    dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
-  ): boolean;
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
+  updateDOM(prevNode: any, dom: HTMLElement, config: EditorConfig): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
@@ -585,14 +574,12 @@ export declare class TextNode extends LexicalNode {
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   // $FlowFixMe
-  createDOM<EditorContext extends Record<string, any>>(
-    config: EditorConfig<EditorContext>,
-  ): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   // $FlowFixMe
-  updateDOM<EditorContext extends Record<string, any>>(
+  updateDOM(
     prevNode: TextNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean;
   selectionTransform(
     prevSelection: null | RangeSelection | NodeSelection | GridSelection,
@@ -753,7 +740,7 @@ export declare class ParagraphNode extends ElementNode {
   getType(): string;
   clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;

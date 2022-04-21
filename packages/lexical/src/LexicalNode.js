@@ -583,24 +583,18 @@ export class LexicalNode {
 
   // View
 
-  // $FlowFixMe: Revise typings for EditorContext
-  createDOM<EditorContext: Object>(
-    config: EditorConfig<EditorContext>,
-    editor: LexicalEditor,
-  ): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     invariant(false, 'createDOM: base method not extended');
   }
-  // $FlowFixMe: Revise typings for EditorContext
-  updateDOM<EditorContext: Object>(
+
+  updateDOM(
     // $FlowFixMe: TODO
     prevNode: any,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
   }
-
-  // $FlowFixMe: Revise typings for EditorContext
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     if ($isDecoratorNode(this)) {

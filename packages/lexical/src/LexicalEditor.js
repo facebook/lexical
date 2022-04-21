@@ -94,8 +94,7 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 
-export type EditorConfig<EditorContext> = {
-  context: EditorContext,
+export type EditorConfig = {
   disableEvents?: boolean,
   namespace: string,
   theme: EditorThemeClasses,
@@ -227,8 +226,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor<EditorContext>(editorConfig?: {
-  context?: EditorContext,
+export function createEditor(editorConfig?: {
   disableEvents?: boolean,
   editorState?: EditorState,
   namespace?: string,
@@ -241,7 +239,6 @@ export function createEditor<EditorContext>(editorConfig?: {
   const config = editorConfig || {};
   const namespace = config.namespace || createUID();
   const theme = config.theme || {};
-  const context = config.context || {};
   const parentEditor = config.parentEditor || null;
   const disableEvents = config.disableEvents || false;
   const editorState = createEmptyEditorState();
@@ -272,8 +269,6 @@ export function createEditor<EditorContext>(editorConfig?: {
     parentEditor,
     registeredNodes,
     {
-      // $FlowFixMe: we use our internal type to simpify the generics
-      context,
       disableEvents,
       namespace,
       theme,
@@ -304,7 +299,7 @@ export class LexicalEditor {
   _nodes: RegisteredNodes;
   _decorators: {[NodeKey]: mixed};
   _pendingDecorators: null | {[NodeKey]: mixed};
-  _config: EditorConfig<{...}>;
+  _config: EditorConfig;
   _dirtyType: 0 | 1 | 2;
   _cloneNotNeeded: Set<NodeKey>;
   _dirtyLeaves: Set<NodeKey>;
@@ -321,7 +316,7 @@ export class LexicalEditor {
     editorState: EditorState,
     parentEditor: null | LexicalEditor,
     nodes: RegisteredNodes,
-    config: EditorConfig<{...}>,
+    config: EditorConfig,
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     readOnly: boolean,

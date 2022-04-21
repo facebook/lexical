@@ -1,3 +1,12 @@
+## 0.2.4 (April 21, 2022)
+- Add subscript/superscript elements to TextNode (#1903)
+- Do not reconcile selection during readOnly (#1900)
+- Add embed block to playground (#1895)
+- Fix list outdent & indent bug (#1883)
+- Excalidraw fixes (#1871)
+- Updates to type definitions for Flow and TS
+- Updates to documentation
+
 ## 0.2.3 (April 19, 2022)
 
 - Fix bug in lists causing extra list items to be appended in some cases. (#1802)

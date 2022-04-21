@@ -9,14 +9,19 @@
 
 import type {LexicalEditor} from 'lexical';
 
+import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {exportFile, importFile} from '@lexical/file';
-import {$convertFromMarkdownString} from '@lexical/markdown';
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
+  $createTextNode,
   $getRoot,
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
@@ -83,30 +88,28 @@ export default function ActionsPlugin({
     });
   }, [editor]);
 
-  const convertFromMarkdown = useCallback(() => {
+  const handleMarkdownToggle = useCallback(() => {
     editor.update(() => {
       const root = $getRoot();
-      const children = root.getChildren();
-      const count = children.length;
-      let markdownString = '';
-
-      for (let i = 0; i < count; i++) {
-        const child = children[i];
-        if ($isParagraphNode(child)) {
-          if (markdownString.length) {
-            markdownString += '\n';
-          }
-          const text = child.getTextContent();
-          if (text.length) {
-            markdownString += text;
-          }
-        }
+      const firstChild = root.getFirstChild();
+      if (
+        root.getChildrenSize() === 1 &&
+        $isCodeNode(firstChild) &&
+        firstChild.getLanguage() === 'markdown'
+      ) {
+        $convertFromMarkdownString(
+          firstChild.getTextContent(),
+          editor,
+          $createHorizontalRuleNode,
+        );
+      } else {
+        const markdown = $convertToMarkdownString();
+        root
+          .clear()
+          .append(
+            $createCodeNode('markdown').append($createTextNode(markdown)),
+          );
       }
-      $convertFromMarkdownString(
-        markdownString,
-        editor,
-        $createHorizontalRuleNode,
-      );
       root.selectEnd();
     });
   }, [editor]);
@@ -170,7 +173,7 @@ export default function ActionsPlugin({
       </button>
       <button
         className="action-button"
-        onClick={convertFromMarkdown}
+        onClick={handleMarkdownToggle}
         title="Markdown"
         aria-label="Markdown">
         <i className="markdown" />

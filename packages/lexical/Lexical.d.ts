@@ -348,15 +348,8 @@ export declare class LexicalNode {
     includeDirectionless?: false,
   ): number;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
-  createDOM(
-    config: EditorConfig,
-    editor: LexicalEditor,
-  ): HTMLElement;
-  updateDOM(
-    prevNode: any,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
+  updateDOM(prevNode: any, dom: HTMLElement, config: EditorConfig): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;

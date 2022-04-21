@@ -735,6 +735,7 @@ export function updateEditorState(
 
   const domSelection = getDOMSelection();
   if (
+    !editor._readOnly &&
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)
   ) {

@@ -556,7 +556,7 @@ export class LexicalNode {
       mutableNode.__format = latestNode.__format;
       mutableNode.__dir = latestNode.__dir;
     } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      const marks = latestNode.__marks
+      const marks = latestNode.__marks;
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
       mutableNode.__mode = latestNode.__mode;

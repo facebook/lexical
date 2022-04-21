@@ -22,7 +22,6 @@ import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
-
 function diffTextContentAndApplyDelta(
   collabNode: CollabTextNode,
   key: NodeKey,

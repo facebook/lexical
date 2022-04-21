@@ -553,7 +553,7 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 type TextMode = 'normal' | 'token' | 'segmented' | 'inert';
-export type TextMark = {end: null | number, id: string, start: null | number};
+export type TextMark = {end: null | number; id: string; start: null | number};
 
 export type TextMarks = Array<TextMark>;
 export declare class TextNode extends LexicalNode {

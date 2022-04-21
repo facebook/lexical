@@ -67,7 +67,7 @@ describe('LexicalTextMarks tests', () => {
         testMarks,
         (textNode) => {
           const sibling = $createTextNode('123');
-          sibling.setMark('bar', 1, 2)
+          sibling.setMark('bar', 1, 2);
           textNode.insertBefore(sibling);
         },
         () => {
@@ -115,7 +115,7 @@ describe('LexicalTextMarks tests', () => {
         testMarks,
         (textNode) => {
           const sibling = $createTextNode('123');
-          sibling.setMark('bar', 1, 2)
+          sibling.setMark('bar', 1, 2);
           textNode.insertAfter(sibling);
         },
         () => {

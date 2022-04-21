@@ -169,26 +169,6 @@ function $cloneContentsImpl(
     const focus = selection.focus;
     const anchorOffset = anchor.getCharacterOffset();
     const focusOffset = focus.getCharacterOffset();
-    const anchorNode = anchor.getNode();
-    const focusNode = focus.getNode();
-    const anchorNodeParent = anchorNode.getParentOrThrow();
-    // Handle a single text node extraction
-    if (
-      anchorNode === focusNode &&
-      $isTextNode(anchorNode) &&
-      (anchorNodeParent.canBeEmpty() || anchorNodeParent.getChildrenSize() > 1)
-    ) {
-      const clonedFirstNode = $cloneWithProperties<TextNode>(anchorNode);
-      const isBefore = focusOffset > anchorOffset;
-      const startOffset = isBefore ? anchorOffset : focusOffset;
-      const endOffset = isBefore ? focusOffset : anchorOffset;
-      clonedFirstNode.__text = clonedFirstNode.__text.slice(
-        startOffset,
-        endOffset,
-      );
-      const key = clonedFirstNode.getKey();
-      return {nodeMap: [[key, clonedFirstNode]], range: [key]};
-    }
     const nodes = selection.getNodes();
     if (nodes.length === 0) {
       return {nodeMap: [], range: []};

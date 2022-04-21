@@ -566,6 +566,9 @@ export declare class TextNode extends LexicalNode {
   static getType(): string;
   static clone(node: any): TextNode;
   constructor(text: string, key?: NodeKey);
+  getMark(id: string): null | TextMark;
+  setMark(id: string, start: null | number, end: null | number): void;
+  deleteMark(id: string): void;
   getFormat(): number;
   getStyle(): string;
   isToken(): boolean;

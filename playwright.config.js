@@ -26,12 +26,10 @@ const config = {
   retries: IS_CI ? 4 : 1,
   timeout: 150000,
   use: {
-    
-    
     navigationTimeout: 30000,
     // this causes issues in the CI on on current version.
-//trace: 'retain-on-failure',
-video: 'on-first-retry',
+    //trace: 'retain-on-failure',
+    video: 'on-first-retry',
   },
 };
 module.exports = config;

@@ -20,6 +20,7 @@ import type {
 } from '../LexicalSelection';
 
 import invariant from 'shared/invariant';
+import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {
   IS_BOLD,
@@ -590,7 +591,25 @@ export class TextNode extends LexicalNode {
   setTextContent(text: string): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
-    writableSelf.__text = text;
+    const marks = writableSelf.__marks;
+    if (marks !== null) {
+      const selection = $getSelection();
+      let cursorOffset = text.length;
+      if ($isRangeSelection(selection) && selection.isCollapsed()) {
+        const anchor = selection.anchor;
+        if (anchor.key === this.__key) {
+          cursorOffset = anchor.offset;
+        }
+      }
+      const diff = simpleDiffWithCursor(
+        writableSelf.__text,
+        text,
+        cursorOffset,
+      );
+      this.spliceText(diff.index, diff.remove, diff.insert);
+    } else {
+      writableSelf.__text = text;
+    }
     return writableSelf;
   }
 
@@ -670,7 +689,8 @@ export class TextNode extends LexicalNode {
     if (marks !== null) {
       updateTextMarks(writableSelf, marks, offset, delCount, handledTextLength);
     }
-    return writableSelf.setTextContent(updatedText);
+    writableSelf.__text = updatedText;
+    return writableSelf;
   }
 
   canInsertTextBefore(): boolean {
@@ -798,9 +818,7 @@ export class TextNode extends LexicalNode {
               ? start - partSize
               : null;
           const nextEnd =
-            !foundEnd &&
-            end !== null &&
-            nextPartSize >= end
+            !foundEnd && end !== null && nextPartSize >= end
               ? end - partSize
               : null;
 

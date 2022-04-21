@@ -74,7 +74,9 @@ module.exports = {
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getDOMSelection$':
           '<rootDir>/packages/shared/src/getDOMSelection.js',
-        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
+          '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
+        '^shared/simpleDiffWithCursor$':
+          '<rootDir>/packages/shared/src/simpleDiffWithCursor.js',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.js',
         formatProdErrorMessage:

@@ -61,6 +61,33 @@ describe('LexicalTextMarks tests', () => {
       );
     });
 
+    test('Can handle text node merging + extra marks (before)', () => {
+      const testMarks = [{end: 3, id: 'foo', start: 1}];
+      setupTestCase(
+        testMarks,
+        (textNode) => {
+          const sibling = $createTextNode('123');
+          sibling.setMark('bar', 1, 2)
+          textNode.insertBefore(sibling);
+        },
+        () => {
+          const root = $getRoot();
+          const textNode = root.getFirstDescendant();
+          expect(textNode.getTextContent()).toBe('123hello world');
+          expect(textNode.getMark('foo')).toEqual({
+            end: 6,
+            id: 'foo',
+            start: 4,
+          });
+          expect(textNode.getMark('bar')).toEqual({
+            end: 2,
+            id: 'bar',
+            start: 1,
+          });
+        },
+      );
+    });
+
     test('Can handle text node merging (after)', () => {
       const testMarks = [{end: 3, id: 'foo', start: 1}];
       setupTestCase(
@@ -77,6 +104,33 @@ describe('LexicalTextMarks tests', () => {
             end: 3,
             id: 'foo',
             start: 1,
+          });
+        },
+      );
+    });
+
+    test('Can handle text node merging + extra marks (after)', () => {
+      const testMarks = [{end: 3, id: 'foo', start: 1}];
+      setupTestCase(
+        testMarks,
+        (textNode) => {
+          const sibling = $createTextNode('123');
+          sibling.setMark('bar', 1, 2)
+          textNode.insertAfter(sibling);
+        },
+        () => {
+          const root = $getRoot();
+          const textNode = root.getFirstDescendant();
+          expect(textNode.getTextContent()).toBe('hello world123');
+          expect(textNode.getMark('foo')).toEqual({
+            end: 3,
+            id: 'foo',
+            start: 1,
+          });
+          expect(textNode.getMark('bar')).toEqual({
+            end: 13,
+            id: 'bar',
+            start: 12,
           });
         },
       );
@@ -215,6 +269,48 @@ describe('LexicalTextMarks tests', () => {
         textNode.spliceText(1, 4, 'ello');
         expect(textNode.getTextContent()).toBe('hello world');
         expect(textNode.getMark('foo')).toEqual(null);
+      });
+    });
+  });
+
+  describe('setTextContent', () => {
+    test('Can handle altering text before the mark', () => {
+      const testMarks = [{end: 3, id: 'foo', start: 1}];
+      setupTestCase(testMarks, (textNode) => {
+        expect(textNode.getMark('foo')).toEqual({end: 3, id: 'foo', start: 1});
+        textNode.setTextContent('123hello world');
+        expect(textNode.getTextContent()).toBe('123hello world');
+        expect(textNode.getMark('foo')).toEqual({end: 6, id: 'foo', start: 4});
+      });
+    });
+
+    test('Can handle altering text after the mark', () => {
+      const testMarks = [{end: 3, id: 'foo', start: 1}];
+      setupTestCase(testMarks, (textNode) => {
+        expect(textNode.getMark('foo')).toEqual({end: 3, id: 'foo', start: 1});
+        textNode.setTextContent('hello world123');
+        expect(textNode.getTextContent()).toBe('hello world123');
+        expect(textNode.getMark('foo')).toEqual({end: 3, id: 'foo', start: 1});
+      });
+    });
+
+    test('Can handle altering inside the mark', () => {
+      const testMarks = [{end: 3, id: 'foo', start: 1}];
+      setupTestCase(testMarks, (textNode) => {
+        expect(textNode.getMark('foo')).toEqual({end: 3, id: 'foo', start: 1});
+        textNode.setTextContent('he123llo world');
+        expect(textNode.getTextContent()).toBe('he123llo world');
+        expect(textNode.getMark('foo')).toEqual({end: 6, id: 'foo', start: 1});
+      });
+    });
+
+    test('Can handle altering part of the mark', () => {
+      const testMarks = [{end: 3, id: 'foo', start: 1}];
+      setupTestCase(testMarks, (textNode) => {
+        expect(textNode.getMark('foo')).toEqual({end: 3, id: 'foo', start: 1});
+        textNode.setTextContent('he123 world');
+        expect(textNode.getTextContent()).toBe('he123 world');
+        expect(textNode.getMark('foo')).toEqual({end: 2, id: 'foo', start: 1});
       });
     });
   });

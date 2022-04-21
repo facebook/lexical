@@ -53,7 +53,6 @@ import {
 } from './LexicalUtils';
 
 export type TextPointType = {
-  getCharacterOffset: () => number,
   getNode: () => TextNode,
   is: (PointType) => boolean,
   isAtNodeEnd: () => boolean,
@@ -65,7 +64,6 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
-  getCharacterOffset: () => number,
   getNode: () => ElementNode,
   is: (PointType) => boolean,
   isAtNodeEnd: () => boolean,
@@ -111,9 +109,6 @@ class Point {
       return aOffset < bOffset;
     }
     return aNode.isBefore(bNode);
-  }
-  getCharacterOffset(): number {
-    return this.type === 'text' ? this.offset : 0;
   }
   getNode(): LexicalNode {
     const key = this.key;
@@ -319,22 +314,14 @@ export type GridSelectionShape = {
 
 export class GridSelection implements BaseSelection {
   gridKey: NodeKey;
-  anchorCellKey: NodeKey;
-  focusCellKey: NodeKey;
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
 
-  constructor(
-    gridKey: NodeKey,
-    anchorCellKey: NodeKey,
-    focusCellKey: NodeKey,
-  ): void {
+  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void {
     this.gridKey = gridKey;
-    this.anchorCellKey = anchorCellKey;
-    this.anchor = $createPoint(anchorCellKey, 0, 'element');
-    this.focusCellKey = focusCellKey;
-    this.focus = $createPoint(focusCellKey, 0, 'element');
+    this.anchor = anchor;
+    this.focus = focus;
     this.dirty = false;
   }
 
@@ -344,26 +331,18 @@ export class GridSelection implements BaseSelection {
     if (!$isGridSelection(selection)) {
       return false;
     }
-    return (
-      this.gridKey === selection.gridKey &&
-      this.anchorCellKey === selection.anchorCellKey &&
-      this.focusCellKey === selection.focusCellKey
-    );
+    return this.gridKey === selection.gridKey && this.anchor.is(this.focus);
   }
 
   set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
     this.dirty = true;
     this.gridKey = gridKey;
-    this.anchorCellKey = anchorCellKey;
-    this.focusCellKey = focusCellKey;
+    this.anchor.key = anchorCellKey;
+    this.focus.key = focusCellKey;
   }
 
   clone(): GridSelection {
-    return new GridSelection(
-      this.gridKey,
-      this.anchorCellKey,
-      this.focusCellKey,
-    );
+    return new GridSelection(this.gridKey, this.anchor, this.focus);
   }
 
   isCollapsed(): boolean {
@@ -372,6 +351,10 @@ export class GridSelection implements BaseSelection {
 
   isBackward(): boolean {
     return this.focus.isBefore(this.anchor);
+  }
+
+  getCharacterOffsets(): [number, number] {
+    return getCharacterOffsets(this);
   }
 
   extract(): Array<LexicalNode> {
@@ -387,14 +370,14 @@ export class GridSelection implements BaseSelection {
   }
 
   getShape(): GridSelectionShape {
-    const anchorCellNode = $getNodeByKey(this.anchorCellKey);
+    const anchorCellNode = $getNodeByKey(this.anchor.key);
     invariant(anchorCellNode, 'getNodes: expected to find AnchorNode');
     const anchorCellNodeIndex = anchorCellNode.getIndexWithinParent();
     const anchorCelRoweIndex = anchorCellNode
       .getParentOrThrow()
       .getIndexWithinParent();
 
-    const focusCellNode = $getNodeByKey(this.focusCellKey);
+    const focusCellNode = $getNodeByKey(this.focus.key);
     invariant(focusCellNode, 'getNodes: expected to find FocusNode');
     const focusCellNodeIndex = focusCellNode.getIndexWithinParent();
     const focusCellRowIndex = focusCellNode
@@ -547,8 +530,7 @@ export class RangeSelection implements BaseSelection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = anchor.isBefore(focus);
-    const anchorOffset = anchor.getCharacterOffset();
-    const focusOffset = focus.getCharacterOffset();
+    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
     let textContent = '';
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
@@ -944,10 +926,10 @@ export class RangeSelection implements BaseSelection {
     }
     const anchor = this.anchor;
     const focus = this.focus;
-    const firstNodeText = firstNode.getTextContent();
-    const firstNodeTextLength = firstNodeText.length;
     const focusOffset = focus.offset;
     let firstNextFormat = 0;
+    let firstNodeTextLength = firstNode.getTextContent().length;
+
     for (let i = 0; i < selectedNodes.length; i++) {
       const selectedNode = selectedNodes[i];
       if ($isTextNode(selectedNode)) {
@@ -973,6 +955,7 @@ export class RangeSelection implements BaseSelection {
         anchorOffset = 0;
         startOffset = 0;
         firstNode = nextSibling;
+        firstNodeTextLength = nextSibling.getTextContent().length;
         firstNextFormat = firstNode.getFormatFlags(formatType, null);
       }
     }
@@ -1455,6 +1438,10 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  getCharacterOffsets(): [number, number] {
+    return getCharacterOffsets(this);
+  }
+
   extract(): Array<LexicalNode> {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
@@ -1463,8 +1450,7 @@ export class RangeSelection implements BaseSelection {
     const focus = this.focus;
     let firstNode = selectedNodes[0];
     let lastNode = selectedNodes[lastIndex];
-    const anchorOffset = anchor.getCharacterOffset();
-    const focusOffset = focus.getCharacterOffset();
+    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
 
     if (selectedNodesLength === 0) {
       return [];
@@ -1659,6 +1645,32 @@ export class RangeSelection implements BaseSelection {
 
 export function $isNodeSelection(x: ?mixed): boolean %checks {
   return x instanceof NodeSelection;
+}
+
+function getCharacterOffset(point: PointType): number {
+  const offset = point.offset;
+  if (point.type === 'text') {
+    return offset;
+  }
+  // $FlowFixMe: cast
+  const parent: ElementNode = point.getNode();
+  return offset === parent.getChildrenSize() ? parent.getTextContent().length : 0;
+}
+
+function getCharacterOffsets(
+  selection: RangeSelection | GridSelection,
+): [number, number] {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  if (
+    anchor.type === 'element' &&
+    focus.type === 'element' &&
+    anchor.key === focus.key &&
+    anchor.offset === focus.offset
+  ) {
+    return [0, 0];
+  }
+  return [getCharacterOffset(anchor), getCharacterOffset(focus)];
 }
 
 function $swapPoints(selection: RangeSelection): void {
@@ -1894,39 +1906,57 @@ function internalResolveSelectionPoints(
     return null;
   }
 
+  // Handle normalization of selection when it is at the boundaries.
   if (
     resolvedAnchorPoint.type === 'text' &&
     resolvedFocusPoint.type === 'text'
   ) {
     const resolvedAnchorNode = resolvedAnchorPoint.getNode();
-    const resolvedFocusNode = resolvedFocusPoint.getNode();
-    // Handle normalization of selection when it is at the boundaries.
-    const textContentSize = resolvedAnchorNode.getTextContent().length;
-    const resolvedAnchorOffset = resolvedAnchorPoint.offset;
-    const resolvedFocusOffset = resolvedFocusPoint.offset;
-    if (
-      resolvedAnchorNode === resolvedFocusNode &&
-      resolvedAnchorOffset === resolvedFocusOffset
-    ) {
-      if (anchorOffset === 0) {
-        const prevSibling = resolvedAnchorNode.getPreviousSibling();
-        if ($isTextNode(prevSibling) && !prevSibling.isInert()) {
-          const offset = prevSibling.getTextContent().length;
-          const key = prevSibling.__key;
-          resolvedAnchorPoint.key = key;
-          resolvedFocusPoint.key = key;
-          resolvedAnchorPoint.offset = offset;
-          resolvedFocusPoint.offset = offset;
-        }
+    const isCollapsed = resolvedAnchorPoint.is(resolvedFocusPoint);
+
+    // Attempt to normalize the offset to the previous sibling if we're at the
+    // start of a text node and the sibling is a text node or inline element.
+    if (anchorOffset === 0) {
+      const prevSibling = resolvedAnchorNode.getPreviousSibling();
+
+      if ($isTextNode(prevSibling) && !prevSibling.isInert()) {
+        const offset = prevSibling.getTextContent().length;
+        resolvedAnchorPoint.key = prevSibling.__key;
+        resolvedAnchorPoint.offset = offset;
+      } else if (
+        $isElementNode(prevSibling) &&
+        prevSibling.isInline() &&
+        resolvedFocusPoint.isBefore(resolvedAnchorPoint)
+      ) {
+        resolvedAnchorPoint.key = prevSibling.__key;
+        resolvedAnchorPoint.offset = prevSibling.getChildrenSize();
+        // $FlowFixMe: intentional
+        resolvedAnchorPoint.type = 'element';
       }
-    } else {
-      if (resolvedAnchorOffset === textContentSize) {
-        const nextSibling = resolvedAnchorNode.getNextSibling();
-        if ($isTextNode(nextSibling) && !nextSibling.isInert()) {
-          resolvedAnchorPoint.key = nextSibling.__key;
+    } else if (anchorOffset === resolvedAnchorNode.getTextContent().length) {
+      // Normalize the next sibling if we're on the boundary of an inline
+      // element.
+      const nextSibling = resolvedAnchorNode.getNextSibling();
+      const parent = resolvedAnchorNode.getParent();
+
+      if (
+        nextSibling === null &&
+        $isElementNode(parent) &&
+        parent.isInline() &&
+        (isCollapsed || resolvedAnchorPoint.isBefore(resolvedFocusPoint))
+      ) {
+        const parentSibling = parent.getNextSibling();
+        if ($isTextNode(parentSibling)) {
+          resolvedAnchorPoint.key = parentSibling.__key;
           resolvedAnchorPoint.offset = 0;
         }
       }
+    }
+
+    if (isCollapsed) {
+      resolvedFocusPoint.key = resolvedAnchorPoint.key;
+      resolvedFocusPoint.offset = resolvedAnchorPoint.offset;
+      resolvedFocusPoint.type = resolvedAnchorPoint.type;
     }
 
     if (
@@ -1987,7 +2017,9 @@ export function $createEmptyObjectSelection(): NodeSelection {
 }
 
 export function $createEmptyGridSelection(): GridSelection {
-  return new GridSelection('root', 'root', 'root');
+  const anchor = $createPoint('root', 0, 'element');
+  const focus = $createPoint('root', 0, 'element');
+  return new GridSelection('root', anchor, focus);
 }
 
 function getActiveEventType(): string | void {
@@ -2113,8 +2145,16 @@ export function internalCreateSelectionFromParse(
     } else if (parsedSelection.type === 'grid') {
       return new GridSelection(
         parsedSelection.gridKey,
-        parsedSelection.anchorCellKey,
-        parsedSelection.focusCellKey,
+        $createPoint(
+          parsedSelection.anchor.key,
+          parsedSelection.anchor.offset,
+          parsedSelection.anchor.type,
+        ),
+        $createPoint(
+          parsedSelection.focus.key,
+          parsedSelection.focus.offset,
+          parsedSelection.focus.type,
+        ),
       );
     }
   }

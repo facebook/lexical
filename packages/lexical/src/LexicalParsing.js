@@ -70,8 +70,16 @@ export type ParsedNodeSelection = {
 };
 
 export type ParsedGridSelection = {
-  anchorCellKey: NodeKey,
-  focusCellKey: NodeKey,
+  anchor: {
+    key: string,
+    offset: number,
+    type: 'text' | 'element',
+  },
+  focus: {
+    key: string,
+    offset: number,
+    type: 'text' | 'element',
+  },
   gridKey: NodeKey,
   type: 'grid',
 };
@@ -208,8 +216,8 @@ export function internalCreateNodeFromParse(
       }
     } else if (originalSelection.type === 'grid') {
       const gridKey = originalSelection.gridKey;
-      const anchorCellKey = originalSelection.anchorCellKey;
-      const focusCellKey = originalSelection.focusCellKey;
+      const anchorCellKey = originalSelection.anchor.key;
+      const focusCellKey = originalSelection.focus.key;
       if (
         remappedSelection == null &&
         (gridKey === parsedKey ||
@@ -226,10 +234,10 @@ export function internalCreateNodeFromParse(
           remappedSelection.gridKey = key;
         }
         if (anchorCellKey === parsedKey) {
-          remappedSelection.anchorCellKey = key;
+          remappedSelection.anchor.key = key;
         }
         if (focusCellKey === parsedKey) {
-          remappedSelection.focusCellKey = key;
+          remappedSelection.focus.key = key;
         }
       }
     }

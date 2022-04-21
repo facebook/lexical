@@ -116,8 +116,16 @@ export class EditorState {
           }
         : $isGridSelection(selection)
         ? {
-            anchorCellKey: selection.anchorCellKey,
-            focusCellKey: selection.focusCellKey,
+            anchor: {
+              key: selection.anchor.key,
+              offset: selection.anchor.offset,
+              type: selection.anchor.type,
+            },
+            focus: {
+              key: selection.focus.key,
+              offset: selection.focus.offset,
+              type: selection.focus.type,
+            },
             gridKey: selection.gridKey,
             type: 'grid',
           }

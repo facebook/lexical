@@ -138,17 +138,24 @@ function onSelectionChange(
 ): void {
   if (isSelectionChangeFromReconcile) {
     isSelectionChangeFromReconcile = false;
-    const {anchorNode, focusNode} = domSelection;
+    const {anchorNode, anchorOffset, focusNode, focusOffset} = domSelection;
     // If native DOM selection is on a DOM element, then
     // we should continue as usual, as Lexical's selection
     // may have normalized to a better child. If the DOM
     // element is a text node, we can safely apply this
     // optimization and skip the selection change entirely.
+    // We also need to check if the offset is at the boundary,
+    // because in this case, we might need to normalize to a
+    // sibling instead.
     if (
       anchorNode !== null &&
       focusNode !== null &&
+      anchorOffset !== 0 &&
+      focusOffset !== 0 &&
       anchorNode.nodeType === DOM_TEXT_TYPE &&
-      focusNode.nodeType === DOM_TEXT_TYPE
+      focusNode.nodeType === DOM_TEXT_TYPE &&
+      anchorOffset !== anchorNode.nodeValue.length &&
+      focusOffset !== focusNode.nodeValue.length
     ) {
       return;
     }

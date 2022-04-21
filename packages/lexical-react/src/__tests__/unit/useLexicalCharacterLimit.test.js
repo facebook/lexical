@@ -162,7 +162,7 @@ describe('LexicalNodeHelpers tests', () => {
             expect(selection.anchor.key).toBe(text2Key);
             expect(selection.anchor.offset).toBe(0);
             expect(selection.focus.key).toBe(text4Key);
-            expect(selection.anchor.offset).toBe(0);
+            expect(selection.focus.offset).toBe(0);
           });
         });
       });

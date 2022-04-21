@@ -167,8 +167,7 @@ function $cloneContentsImpl(
   if ($isRangeSelection(selection)) {
     const anchor = selection.anchor;
     const focus = selection.focus;
-    const anchorOffset = anchor.getCharacterOffset();
-    const focusOffset = focus.getCharacterOffset();
+    const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
     const nodes = selection.getNodes();
     if (nodes.length === 0) {
       return {nodeMap: [], range: []};

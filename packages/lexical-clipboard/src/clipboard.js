@@ -67,8 +67,7 @@ export function $convertSelectedLexicalNodeToHTMLElement(
     const isFocus = node.is(focus);
 
     if ($isTextNode(node) && (isAnchor || isFocus)) {
-      const anchorOffset = selection.anchor.getCharacterOffset();
-      const focusOffset = selection.focus.getCharacterOffset();
+      const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
       const isBackward = selection.isBackward();
 
       const isSame = anchor.is(focus);

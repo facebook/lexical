@@ -828,7 +828,9 @@ declare export function $getNearestNodeFromDOMNode(
 ): LexicalNode | null;
 declare export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null;
 declare export function $getRoot(): RootNode;
-declare export function $isLeafNode(node: ?LexicalNode): boolean;
+export function $isLeafNode(node: ?LexicalNode): boolean %checks {
+  return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
+}
 declare export function $setCompositionKey(
   compositionKey: null | NodeKey,
 ): void;

@@ -18,4 +18,6 @@ export declare class HashtagNode extends TextNode {
   isTextEntity(): true;
 }
 export function $createHashtagNode(text?: string): TextNode;
-export function $isHashtagNode(node: LexicalNode | null | undefined): boolean;
+export function $isHashtagNode(
+  node: LexicalNode | null | undefined,
+): node is HashtagNode;

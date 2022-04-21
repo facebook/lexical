@@ -28,7 +28,7 @@ export declare class QuoteNode extends ElementNode {
   collapseAtStart(): true;
 }
 export function $createQuoteNode(): QuoteNode;
-export function $isQuoteNode(node: ?LexicalNode): boolean;
+export function $isQuoteNode(node: ?LexicalNode): node is QuoteNode;
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 export declare class HeadingNode extends ElementNode {
   __tag: HeadingTagType;
@@ -43,7 +43,7 @@ export declare class HeadingNode extends ElementNode {
   collapseAtStart(): true;
 }
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode;
-export function $isHeadingNode(node: ?LexicalNode): boolean;
+export function $isHeadingNode(node: ?LexicalNode): node is HeadingNode;
 export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,

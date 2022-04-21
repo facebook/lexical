@@ -18,4 +18,4 @@ export declare class OverflowNode extends ElementNode {
   excludeFromCopy(): boolean;
 }
 export function $createOverflowNode(): OverflowNode;
-export function $isOverflowNode(node: LexicalNode | null): boolean;
+export function $isOverflowNode(node: LexicalNode | null): node is OverflowNode;

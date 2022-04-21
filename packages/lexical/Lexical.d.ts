@@ -435,7 +435,9 @@ export declare class GridSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
 }
-export function $isGridSelection(x: unknown | null | undefined): boolean;
+export function $isGridSelection(
+  x: unknown | null | undefined,
+): x is GridSelection;
 export declare class NodeSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
@@ -452,7 +454,9 @@ export declare class NodeSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
 }
-export function $isNodeSelection(x: unknown | null | undefined): boolean;
+export function $isNodeSelection(
+  x: unknown | null | undefined,
+): x is NodeSelection;
 export declare class RangeSelection {
   anchor: PointType;
   focus: PointType;
@@ -534,7 +538,9 @@ declare class _Point {
 export function $createRangeSelection(): RangeSelection;
 export function $createNodeSelection(): NodeSelection;
 export function $createGridSelection(): GridSelection;
-export function $isRangeSelection(x: unknown | null | undefined): boolean;
+export function $isRangeSelection(
+  x: unknown | null | undefined,
+): x is RangeSelection;
 export function $getSelection():
   | null
   | RangeSelection
@@ -612,7 +618,9 @@ export declare class TextNode extends LexicalNode {
   mergeWithSibling(target: TextNode): TextNode;
 }
 export function $createTextNode(text?: string): TextNode;
-export function $isTextNode(node: LexicalNode | null | undefined): boolean;
+export function $isTextNode(
+  node: LexicalNode | null | undefined,
+): node is TextNode;
 
 /**
  * LexicalLineBreakNode
@@ -626,7 +634,9 @@ export declare class LineBreakNode extends LexicalNode {
   updateDOM(): false;
 }
 export function $createLineBreakNode(): LineBreakNode;
-export function $isLineBreakNode(node: LexicalNode | null | undefined): boolean;
+export function $isLineBreakNode(
+  node: LexicalNode | null | undefined,
+): node is LineBreakNode;
 
 /**
  * LexicalRootNode
@@ -646,7 +656,9 @@ export declare class RootNode extends ElementNode {
   append(...nodesToAppend: Array<LexicalNode>): ElementNode;
   canBeEmpty(): false;
 }
-export function $isRootNode(node: LexicalNode | null | undefined): boolean;
+export function $isRootNode(
+  node: LexicalNode | null | undefined,
+): node is RootNode;
 
 /**
  * LexicalElementNode
@@ -702,7 +714,9 @@ export declare class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): ElementNode;
 }
-export function $isElementNode(node: LexicalNode | null | undefined): boolean;
+export function $isElementNode(
+  node: LexicalNode | null | undefined,
+): node is ElementNode;
 
 /**
  * LexicalDecoratorNode
@@ -713,7 +727,9 @@ export declare class DecoratorNode<X> extends LexicalNode {
   isIsolated(): boolean;
   isTopLevel(): boolean;
 }
-export function $isDecoratorNode(node: LexicalNode | null | undefined): boolean;
+export function $isDecoratorNode(
+  node: LexicalNode | null | undefined,
+): node is DecoratorNode<unknown>;
 
 /**
  * LexicalHorizontalRuleNode
@@ -743,16 +759,24 @@ export declare class ParagraphNode extends ElementNode {
   collapseAtStart(): boolean;
 }
 export function $createParagraphNode(): ParagraphNode;
-export function $isParagraphNode(node: LexicalNode | null | undefined): boolean;
+export function $isParagraphNode(
+  node: LexicalNode | null | undefined,
+): node is ParagraphNode;
 export declare class GridNode extends ElementNode {}
-export function $isGridNode(node: LexicalNode | null | undefined): boolean;
+export function $isGridNode(
+  node: LexicalNode | null | undefined,
+): node is GridNode;
 export declare class GridRowNode extends ElementNode {}
-export function $isGridRowNode(node: LexicalNode | null | undefined): boolean;
+export function $isGridRowNode(
+  node: LexicalNode | null | undefined,
+): node is GridRowNode;
 export declare class GridCellNode extends ElementNode {
   __colSpan: number;
   constructor(colSpan: number, key?: NodeKey);
 }
-export function $isGridCellNode(node: LexicalNode | null | undefined): boolean;
+export function $isGridCellNode(
+  node: LexicalNode | null | undefined,
+): node is GridCellNode;
 
 /**
  * LexicalUtils

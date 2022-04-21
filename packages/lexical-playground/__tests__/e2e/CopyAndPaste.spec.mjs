@@ -247,6 +247,7 @@ test.describe('CopyAndPaste', () => {
   test(`Copy and paste heading`, async ({isPlainText, page, browserName}) => {
     test.skip(isPlainText);
 
+    await focusEditor(page);
     await page.keyboard.type('# Heading');
     await page.keyboard.press('Enter');
     await page.keyboard.type('Some text');

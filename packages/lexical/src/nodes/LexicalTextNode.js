@@ -29,6 +29,8 @@ import {
   IS_ITALIC,
   IS_SEGMENTED,
   IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
   IS_TOKEN,
   IS_UNDERLINE,
   IS_UNMERGEABLE,
@@ -67,6 +69,12 @@ export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
     return 'code';
+  }
+  if (format & IS_SUBSCRIPT) {
+    return 'sub';
+  }
+  if (format & IS_SUPERSCRIPT) {
+    return 'sup';
   }
   return null;
 }

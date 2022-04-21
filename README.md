@@ -304,8 +304,6 @@ editor.registerUpdateListener(({editorState}) => {
    - `npm run test-e2e:chromium` to run only chromium e2e tests
      - The server needs to be running for the e2e tests
 
-Note: for collaboration, ensure you start the websocket server separately with `npm run collab`.
-
 ### Optional but recommended, use VSCode for development
 
 1.  Download and install VSCode

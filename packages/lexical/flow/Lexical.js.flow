@@ -758,19 +758,6 @@ declare export function $isDecoratorNode(
 ): boolean %checks(node instanceof DecoratorNode);
 
 /**
- * LexicalHorizontalRuleNode
- */
-declare export class HorizontalRuleNode extends LexicalNode {
-  static getType(): string;
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode;
-  constructor(key?: NodeKey): void;
-  createDOM(): HTMLElement;
-  updateDOM(): false;
-}
-declare export function $createHorizontalRuleNode(): HorizontalRuleNode;
-declare export function $isHorizontalRuleNode(node: ?LexicalNode): boolean;
-
-/**
  * LexicalParagraphNode
  */
 declare export class ParagraphNode extends ElementNode {

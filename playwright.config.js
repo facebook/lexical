@@ -6,7 +6,6 @@ const IS_CI = CI === 'true';
 
 const config = {
   forbidOnly: IS_CI,
-  globalTimeout: 150000,
   projects: [
     {
       name: 'chromium',
@@ -24,12 +23,15 @@ const config = {
       use: {...devices['Desktop Safari']},
     },
   ],
-  retries: IS_CI ? 5 : 1,
-  timeout: 30000,
+  retries: IS_CI ? 4 : 1,
+  timeout: 150000,
   use: {
+    
+    
+    navigationTimeout: 30000,
     // this causes issues in the CI on on current version.
-    //trace: 'retain-on-failure',
-    video: 'on-first-retry',
+//trace: 'retain-on-failure',
+video: 'on-first-retry',
   },
 };
 module.exports = config;

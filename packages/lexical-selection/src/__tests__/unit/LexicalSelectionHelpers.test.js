@@ -174,8 +174,11 @@ describe('LexicalSelectionHelpers tests', () => {
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          nodeMap: [['a', {...$getNodeByKey('a'), __text: ''}]],
-          range: ['a'],
+          nodeMap: [
+            ['a', {...$getNodeByKey('a'), __text: ''}],
+            [element.getKey(), {...element, __children: ['a']}],
+          ],
+          range: [element.getKey()],
         });
       });
     });

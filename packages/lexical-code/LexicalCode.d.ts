@@ -34,7 +34,9 @@ declare class CodeNode extends ElementNode {
   getLanguage(): string | void;
 }
 declare function $createCodeNode(): CodeNode;
-declare function $isCodeNode(node: null | undefined | LexicalNode): boolean;
+declare function $isCodeNode(
+  node: null | undefined | LexicalNode,
+): node is CodeNode;
 
 declare function getFirstCodeHighlightNodeOfLine(
   anchor: LexicalNode,
@@ -69,6 +71,8 @@ declare function $createCodeHighlightNode(
   text: string,
   highlightType?: string,
 ): CodeHighlightNode;
-declare function $isCodeHighlightNode(node: ?LexicalNode): boolean;
+declare function $isCodeHighlightNode(
+  node: ?LexicalNode,
+): node is CodeHighlightNode;
 
 declare function registerCodeHighlighting(editor: LexicalEditor): () => void;

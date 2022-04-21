@@ -66,7 +66,9 @@ export declare class TableCellNode extends ElementNode {
   canBeEmpty(): false;
 }
 export declare function $createTableCellNode(): TableCellNode;
-export declare function $isTableCellNode(node?: LexicalNode): boolean;
+export declare function $isTableCellNode(
+  node?: LexicalNode,
+): node is TableCellNode;
 
 /**
  * LexicalTableNode
@@ -91,7 +93,7 @@ export declare class TableNode extends ElementNode {
   canSelectBefore(): true;
 }
 declare function $createTableNode(): TableNode;
-declare function $isTableNode(node?: LexicalNode): boolean;
+declare function $isTableNode(node?: LexicalNode): node is TableNode;
 
 /**
  * LexicalTableRowNode
@@ -112,7 +114,7 @@ declare class TableRowNode extends ElementNode {
   collapseAtStart(): true;
 }
 declare function $createTableRowNode(): TableRowNode;
-declare function $isTableRowNode(node?: LexicalNode): boolean;
+declare function $isTableRowNode(node?: LexicalNode): node is TableRowNode;
 
 /**
  * LexicalTableSelectionHelpers

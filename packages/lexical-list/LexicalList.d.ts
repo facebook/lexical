@@ -20,8 +20,8 @@ export function $createListItemNode(): ListItemNode;
 export function $createListNode(tag: ListNodeTagType, start?: number): ListNode;
 export function $getListDepth(listNode: ListNode): number;
 export function $handleListInsertParagraph(): boolean;
-export function $isListItemNode(node?: LexicalNode): boolean;
-export function $isListNode(node?: LexicalNode): boolean;
+export function $isListItemNode(node?: LexicalNode): node is ListItemNode;
+export function $isListNode(node?: LexicalNode): node is ListNode;
 export function indentList(): boolean;
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void;
 export declare class ListItemNode extends ElementNode {

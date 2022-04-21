@@ -8,7 +8,7 @@
  */
 
 import type {ElementFormatType} from './nodes/LexicalElementNode';
-import type {TextFormatType, TextModeType} from './nodes/LexicalTextNode';
+import type {TextFormatType, TextMode} from './nodes/LexicalTextNode';
 
 // DOM
 export const DOM_ELEMENT_TYPE = 1;
@@ -73,7 +73,7 @@ export const ELEMENT_TYPE_TO_FORMAT: {[ElementFormatType]: number} = {
   right: IS_ALIGN_RIGHT,
 };
 
-export const TEXT_MODE_TO_TYPE: {[TextModeType]: 0 | 1 | 2 | 3} = {
+export const TEXT_MODE_TO_TYPE: {[TextMode]: 0 | 1 | 2 | 3} = {
   inert: IS_INERT,
   normal: IS_NORMAL,
   segmented: IS_SEGMENTED,

@@ -588,7 +588,10 @@ export type TextFormatType =
   | 'code'
   | 'subscript'
   | 'superscript';
-type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
+type TextMode = 'normal' | 'token' | 'segmented' | 'inert';
+export type TextMark = {end: null | number, id: string, start: null | number};
+
+export type TextMarks = Array<TextMark>;
 
 declare export class TextNode extends LexicalNode {
   __text: string;
@@ -596,6 +599,7 @@ declare export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
+  __marks: null | TextMarks;
   static getType(): string;
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
@@ -625,7 +629,7 @@ declare export class TextNode extends LexicalNode {
   toggleFormat(type: TextFormatType): TextNode;
   toggleDirectionless(): this;
   toggleUnmergeable(): this;
-  setMode(type: TextModeType): this;
+  setMode(type: TextMode): this;
   setTextContent(text: string): TextNode;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   spliceText(

@@ -64,7 +64,11 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 
-export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
+export type TextMode = 'normal' | 'token' | 'segmented' | 'inert';
+
+export type TextMark = {end: null | number, id: string, start: null | number};
+
+export type TextMarks = Array<TextMark>;
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -237,6 +241,7 @@ export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
+  __marks: null | TextMarks;
 
   static getType(): string {
     return 'text';
@@ -253,11 +258,26 @@ export class TextNode extends LexicalNode {
     this.__style = '';
     this.__mode = 0;
     this.__detail = 0;
+    this.__marks = null;
   }
 
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;
+  }
+
+  getMark(id: string): null | TextMark {
+    const self = this.getLatest();
+    const marks = self.__marks;
+    if (marks !== null) {
+      for (let i = 0; i < marks.length; i++) {
+        const mark = marks[i];
+        if (mark.id === id) {
+          return mark;
+        }
+      }
+    }
+    return null;
   }
 
   getStyle(): string {
@@ -478,7 +498,48 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
-  setMode(type: TextModeType): this {
+  setMark(id: string, start: null | number, end: null | number): void {
+    errorOnReadOnly();
+    const self = this.getWritable();
+    let marks = self.__marks;
+    let found = false;
+    if (marks === null) {
+      self.__marks = marks = [];
+    }
+    const nextMark = {end, id, start};
+    for (let i = 0; i < marks.length; i++) {
+      const prevMark = marks[i];
+      if (prevMark.id === id) {
+        found = true;
+        marks.splice(i, 1, nextMark);
+        break;
+      }
+    }
+    if (!found) {
+      marks.push(nextMark)
+    }
+  }
+
+  deleteMark(id: string): void {
+    errorOnReadOnly();
+    const self = this.getWritable();
+    const marks = self.__marks;
+    if (marks === null) {
+      return;
+    }
+    for (let i = 0; i < marks.length; i++) {
+      const prevMark = marks[i];
+      if (prevMark.id === id) {
+        marks.splice(i, 1);
+        break;
+      }
+    }
+    if (marks.length === 0) {
+      self.__marks = null;
+    }
+  }
+
+  setMode(type: TextMode): this {
     errorOnReadOnly();
     const mode = TEXT_MODE_TO_TYPE[type];
     const self = this.getWritable();

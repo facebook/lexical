@@ -159,6 +159,7 @@ export function internalCreateNodeFromParse(
     node.__style = parsedNode.__style;
     node.__mode = parsedNode.__mode;
     node.__detail = parsedNode.__detail;
+    node.__marks = parsedNode.__marks;
   }
   // The selection might refer to an old node whose key has changed. Produce a
   // new selection record with the old keys mapped to the new ones.

@@ -660,7 +660,7 @@ function BlockFormatDropDown({
       buttonClassName="toolbar-item block-controls"
       buttonIconClassName={'icon block-type ' + blockType}
       buttonLabel={blockTypeToBlockName[blockType]}
-      buttonAriaLabel="Formatting Options">
+      buttonAriaLabel="Formatting options for text style">
       <button className="item" onClick={formatParagraph}>
         <span className="icon paragraph" />
         <span className="text">Normal</span>
@@ -981,7 +981,9 @@ export default function ToolbarPlugin(): React$Node {
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
             title={IS_APPLE ? 'Bold (⌘B)' : 'Bold (Ctrl+B)'}
-            aria-label="Format Bold">
+            aria-label={`Format text as bold. Shortcut: ${
+              IS_APPLE ? '⌘B' : 'Ctrl+B'
+            }`}>
             <i className="format bold" />
           </button>
           <button
@@ -990,7 +992,9 @@ export default function ToolbarPlugin(): React$Node {
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
             title={IS_APPLE ? 'Italic (⌘I)' : 'Italic (Ctrl+I)'}
-            aria-label="Format Italics">
+            aria-label={`Format text as italics. Shortcut: ${
+              IS_APPLE ? '⌘I' : 'Ctrl+I'
+            }`}>
             <i className="format italic" />
           </button>
           <button
@@ -999,7 +1003,9 @@ export default function ToolbarPlugin(): React$Node {
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
             title={IS_APPLE ? 'Underline (⌘U)' : 'Underline (Ctrl+U)'}
-            aria-label="Format Underline">
+            aria-label={`Format text to underlined. Shortcut: ${
+              IS_APPLE ? '⌘U' : 'Ctrl+U'
+            }`}>
             <i className="format underline" />
           </button>
           <button
@@ -1013,7 +1019,7 @@ export default function ToolbarPlugin(): React$Node {
               'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
             }
             title="Strikethrough"
-            aria-label="Format Strikethrough">
+            aria-label="Format text with a strikethrough">
             <i className="format strikethrough" />
           </button>
           <button
@@ -1021,15 +1027,15 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
-            title="Code"
-            aria-label="Insert Code">
+            title="Insert code block"
+            aria-label="Insert code block">
             <i className="format code" />
           </button>
           <button
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-            title="Insert Link"
-            aria-label="Insert Link">
+            aria-label="Insert link"
+            type="Insert link">
             <i className="format link" />
           </button>
           {isLink &&
@@ -1041,6 +1047,7 @@ export default function ToolbarPlugin(): React$Node {
           <DropDown
             buttonClassName="toolbar-item spaced"
             buttonLabel="Insert"
+            buttonAriaLabel="Insert specialized editor node"
             buttonIconClassName="icon plus">
             <button
               onClick={() => {
@@ -1166,7 +1173,8 @@ export default function ToolbarPlugin(): React$Node {
       <DropDown
         buttonLabel="Align"
         buttonIconClassName="icon left-align"
-        buttonClassName="toolbar-item spaced">
+        buttonClassName="toolbar-item spaced"
+        buttonAriaLabel="Formatting options for text alignment">
         <button
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');

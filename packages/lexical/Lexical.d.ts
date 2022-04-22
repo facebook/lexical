@@ -213,7 +213,14 @@ export type EditorThemeClasses = {
     h5?: EditorThemeClassName;
   };
   // Handle other generic values
-  [key: string]: EditorThemeClassName | Record<string, EditorThemeClassName | Array<EditorThemeClassName> | Record<string, EditorThemeClassName>>;
+  [key: string]:
+    | EditorThemeClassName
+    | Record<
+        string,
+        | EditorThemeClassName
+        | Array<EditorThemeClassName>
+        | Record<string, EditorThemeClassName>
+      >;
 };
 export type EditorConfig = {
   namespace: string;

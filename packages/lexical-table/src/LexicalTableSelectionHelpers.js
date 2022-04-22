@@ -625,10 +625,19 @@ export function applyTableHandlers(
             return false;
           }
 
+          const paragraphNode = $findMatchingParent(
+            selection.anchor.getNode(),
+            (n) => $isParagraphNode(n),
+          );
+
+          if (!$isParagraphNode(paragraphNode)) {
+            return false;
+          }
+
           if (
             selection.isCollapsed() &&
             selection.anchor.offset === 0 &&
-            selection.anchor.getNode().getPreviousSiblings().length === 0
+            paragraphNode.getPreviousSiblings().length === 0
           ) {
             return true;
           }

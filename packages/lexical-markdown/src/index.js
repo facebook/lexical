@@ -57,3 +57,5 @@ export function $convertFromMarkdownString<T>(
     convertMarkdownForElementNodes(editor, createHorizontalRuleNode);
   }
 }
+
+export {$convertToMarkdownString} from './convertToMarkdown';

@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {ListNode} from '@lexical/list';
 import type {TextNodeWithOffset} from '@lexical/text';
 import type {
   DecoratorNode,
@@ -18,10 +19,20 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {$createCodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {TOGGLE_LINK_COMMAND} from '@lexical/link';
-import {$createListItemNode, $createListNode, $isListNode} from '@lexical/list';
-import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
+import {
+  $createListItemNode,
+  $createListNode,
+  $isListItemNode,
+  $isListNode,
+} from '@lexical/list';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+  $isQuoteNode,
+} from '@lexical/rich-text';
 import {
   $findNodeWithOffsetFromJoinedText,
   $joinTextNodesInElementNode,
@@ -121,6 +132,13 @@ export type ScanningContext = {
 // Capture groups are defined by the regEx pattern. Certain groups must be removed,
 // For example "*hello*", will require that the "*" be removed and the "hello" become bolded.
 export type MarkdownCriteria = $ReadOnly<{
+  export?: (
+    node: LexicalNode,
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null,
+  exportFormat?: TextFormatType,
+  exportTag?: string,
+  exportTagClose?: string,
   markdownFormatKind: ?MarkdownFormatKind,
   regEx: RegExp,
   regExForAutoFormatting: RegExp,
@@ -187,6 +205,7 @@ const paragraphStartBase: MarkdownCriteria = {
 };
 const markdownHeader1: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: createHeadingExport(1),
   markdownFormatKind: 'paragraphH1',
   regEx: /^(?:# )/,
   regExForAutoFormatting: /^(?:# )/,
@@ -194,6 +213,7 @@ const markdownHeader1: MarkdownCriteria = {
 
 const markdownHeader2: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: createHeadingExport(2),
   markdownFormatKind: 'paragraphH2',
   regEx: /^(?:## )/,
   regExForAutoFormatting: /^(?:## )/,
@@ -201,6 +221,7 @@ const markdownHeader2: MarkdownCriteria = {
 
 const markdownHeader3: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: createHeadingExport(3),
   markdownFormatKind: 'paragraphH3',
   regEx: /^(?:### )/,
   regExForAutoFormatting: /^(?:### )/,
@@ -208,6 +229,7 @@ const markdownHeader3: MarkdownCriteria = {
 
 const markdownHeader4: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: createHeadingExport(4),
   markdownFormatKind: 'paragraphH4',
   regEx: /^(?:#### )/,
   regExForAutoFormatting: /^(?:#### )/,
@@ -215,12 +237,14 @@ const markdownHeader4: MarkdownCriteria = {
 
 const markdownHeader5: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: createHeadingExport(5),
   markdownFormatKind: 'paragraphH5',
   regEx: /^(?:##### )/,
   regExForAutoFormatting: /^(?:##### )/,
 };
 const markdownBlockQuote: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: blockQuoteExport,
   markdownFormatKind: 'paragraphBlockQuote',
   regEx: /^(?:> )/,
   regExForAutoFormatting: /^(?:> )/,
@@ -228,6 +252,7 @@ const markdownBlockQuote: MarkdownCriteria = {
 
 const markdownUnorderedListDash: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: listExport,
   markdownFormatKind: 'paragraphUnorderedList',
   regEx: /^(\s{0,10})(?:- )/,
   regExForAutoFormatting: /^(\s{0,10})(?:- )/,
@@ -235,6 +260,7 @@ const markdownUnorderedListDash: MarkdownCriteria = {
 
 const markdownUnorderedListAsterisk: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: listExport,
   markdownFormatKind: 'paragraphUnorderedList',
   regEx: /^(\s{0,10})(?:\* )/,
   regExForAutoFormatting: /^(\s{0,10})(?:\* )/,
@@ -242,6 +268,7 @@ const markdownUnorderedListAsterisk: MarkdownCriteria = {
 
 const markdownCodeBlock: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: codeBlockExport,
   markdownFormatKind: 'paragraphCodeBlock',
   regEx: /^(```)$/,
   regExForAutoFormatting: /^(```)([a-z]*)( )/,
@@ -249,6 +276,7 @@ const markdownCodeBlock: MarkdownCriteria = {
 
 const markdownOrderedList: MarkdownCriteria = {
   ...paragraphStartBase,
+  export: listExport,
   markdownFormatKind: 'paragraphOrderedList',
   regEx: /^(\s{0,10})(\d+)\.\s/,
   regExForAutoFormatting: /^(\s{0,10})(\d+)\.\s/,
@@ -270,13 +298,17 @@ const markdownHorizontalRuleUsingDashes: MarkdownCriteria = {
 
 const markdownInlineCode: MarkdownCriteria = {
   ...autoFormatBase,
+  exportFormat: 'code',
+  exportTag: '`',
   markdownFormatKind: 'code',
-  regEx: /(`)([^`]*)(`)/,
+  regEx: /(`)(\s*)([^`]*)(\s*)(`)()/,
   regExForAutoFormatting: /(`)(\s*\b)([^`]*)(\b\s*)(`)(\s)$/,
 };
 
 const markdownBold: MarkdownCriteria = {
   ...autoFormatBase,
+  exportFormat: 'bold',
+  exportTag: '**',
   markdownFormatKind: 'bold',
   regEx: /(\*\*)(\s*)([^\*\*]*)(\s*)(\*\*)()/,
   regExForAutoFormatting: /(\*\*)(\s*\b)([^\*\*]*)(\b\s*)(\*\*)(\s)$/,
@@ -284,12 +316,16 @@ const markdownBold: MarkdownCriteria = {
 
 const markdownItalic: MarkdownCriteria = {
   ...autoFormatBase,
+  exportFormat: 'italic',
+  exportTag: '*',
   markdownFormatKind: 'italic',
   regEx: /(\*)(\s*)([^\*]*)(\s*)(\*)()/,
   regExForAutoFormatting: /(\*)(\s*\b)([^\*]*)(\b\s*)(\*)(\s)$/,
 };
 const markdownBold2: MarkdownCriteria = {
   ...autoFormatBase,
+  exportFormat: 'bold',
+  exportTag: '_',
   markdownFormatKind: 'bold',
   regEx: /(__)(\s*)([^__]*)(\s*)(__)()/,
   regExForAutoFormatting: /(__)(\s*)([^__]*)(\s*)(__)(\s)$/,
@@ -297,6 +333,8 @@ const markdownBold2: MarkdownCriteria = {
 
 const markdownItalic2: MarkdownCriteria = {
   ...autoFormatBase,
+  exportFormat: 'italic',
+  exportTag: '_',
   markdownFormatKind: 'italic',
   regEx: /(_)()([^_]*)()(_)()/,
   regExForAutoFormatting: /(_)()([^_]*)()(_)(\s)$/, // Maintain 7 groups.
@@ -306,6 +344,9 @@ const markdownItalic2: MarkdownCriteria = {
 // the HTML tags for underline.
 const fakeMarkdownUnderline: MarkdownCriteria = {
   ...autoFormatBase,
+  exportFormat: 'underline',
+  exportTag: '<u>',
+  exportTagClose: '</u>',
   markdownFormatKind: 'underline',
   regEx: /(\<u\>)(\s*)([^\<]*)(\s*)(\<\/u\>)()/,
   regExForAutoFormatting: /(\<u\>)(\s*\b)([^\<]*)(\b\s*)(\<\/u\>)(\s)$/,
@@ -313,6 +354,8 @@ const fakeMarkdownUnderline: MarkdownCriteria = {
 
 const markdownStrikethrough: MarkdownCriteria = {
   ...autoFormatBase,
+  exportFormat: 'strikethrough',
+  exportTag: '~~',
   markdownFormatKind: 'strikethrough',
   regEx: /(~~)(\s*)([^~~]*)(\s*)(~~)()/,
   regExForAutoFormatting: /(~~)(\s*\b)([^~~]*)(\b\s*)(~~)(\s)$/,
@@ -1265,4 +1308,70 @@ function selectAfterFinalCaptureGroup(
   if (newSelection != null) {
     $setSelection(newSelection);
   }
+}
+
+type BlockExport = (
+  node: LexicalNode,
+  exportChildren: (node: ElementNode) => string,
+) => string | null;
+
+function createHeadingExport(level): BlockExport {
+  return (node, exportChildren) => {
+    return $isHeadingNode(node) && node.getTag() === 'h' + level
+      ? '#'.repeat(level) + ' ' + exportChildren(node)
+      : null;
+  };
+}
+
+function listExport(node, exportChildren) {
+  return $isListNode(node) ? processNestedLists(node, exportChildren, 0) : null;
+}
+
+// TODO: should be param
+const LIST_INDENT_SIZE = 4;
+function processNestedLists(
+  listNode: ListNode,
+  exportChildren: (node: ElementNode) => string,
+  depth: number,
+) {
+  const output = [];
+  const children = listNode.getChildren();
+  let index = 0;
+  for (const listItemNode of children) {
+    if ($isListItemNode(listItemNode)) {
+      if (listItemNode.getChildrenSize() === 1) {
+        const firstChild = listItemNode.getFirstChild();
+        if ($isListNode(firstChild)) {
+          output.push(
+            processNestedLists(firstChild, exportChildren, depth + 1),
+          );
+          continue;
+        }
+      }
+      const indent = ' '.repeat(depth * LIST_INDENT_SIZE);
+      const prefix =
+        listNode.getTag() === 'ul' ? '- ' : `${listNode.getStart() + index}. `;
+      output.push(indent + prefix + exportChildren(listItemNode));
+      index++;
+    }
+  }
+  return output.join('\n');
+}
+
+function blockQuoteExport(node, exportChildren) {
+  return $isQuoteNode(node) ? '> ' + exportChildren(node) : null;
+}
+
+function codeBlockExport(node, exportChildren) {
+  if (!$isCodeNode(node)) {
+    return null;
+  }
+  const textContent = node.getTextContent();
+  return (
+    '```' +
+    (node.getLanguage() || '') +
+    (textContent ? '\n' + textContent : '') +
+    '\n' +
+    '```'
+  );
 }

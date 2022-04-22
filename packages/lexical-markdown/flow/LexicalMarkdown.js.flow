@@ -17,3 +17,4 @@ declare export function $convertFromMarkdownString(
   markdownString: string,
   editor: LexicalEditor,
 ): void;
+declare export function $convertToMarkdownString(): string;

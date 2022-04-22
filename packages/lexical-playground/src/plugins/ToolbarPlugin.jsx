@@ -77,6 +77,7 @@ import FileInput from '../ui/FileInput.jsx';
 import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
 import TextInput from '../ui/TextInput';
+import {toolbarShortcut} from '../utils/toolbar-shortcut';
 import {INSERT_EQUATION_COMMAND} from './EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
@@ -902,6 +903,7 @@ export default function ToolbarPlugin(): React$Node {
         onClick={() => {
           activeEditor.dispatchCommand(UNDO_COMMAND);
         }}
+        title={toolbarShortcut.undo}
         className="toolbar-item spaced"
         aria-label="Undo">
         <i className="format undo" />
@@ -911,6 +913,7 @@ export default function ToolbarPlugin(): React$Node {
         onClick={() => {
           activeEditor.dispatchCommand(REDO_COMMAND);
         }}
+        title={toolbarShortcut.redo}
         className="toolbar-item"
         aria-label="Redo">
         <i className="format redo" />
@@ -977,6 +980,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
+            title={toolbarShortcut.bold}
             aria-label="Format Bold">
             <i className="format bold" />
           </button>
@@ -985,6 +989,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
+            title={toolbarShortcut.italic}
             aria-label="Format Italics">
             <i className="format italic" />
           </button>
@@ -993,6 +998,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
+            title={toolbarShortcut.underline}
             aria-label="Format Underline">
             <i className="format underline" />
           </button>
@@ -1006,6 +1012,7 @@ export default function ToolbarPlugin(): React$Node {
             className={
               'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
             }
+            title="Strikethrough"
             aria-label="Format Strikethrough">
             <i className="format strikethrough" />
           </button>
@@ -1014,12 +1021,14 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
+            title="Code"
             aria-label="Insert Code">
             <i className="format code" />
           </button>
           <button
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
+            title="Insert Link"
             aria-label="Insert Link">
             <i className="format link" />
           </button>

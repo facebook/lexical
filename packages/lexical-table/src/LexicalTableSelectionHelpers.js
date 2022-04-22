@@ -628,7 +628,7 @@ export function applyTableHandlers(
           const paragraphNode = $findMatchingParent(
             selection.anchor.getNode(),
             (n) => $isParagraphNode(n),
-          )
+          );
 
           if (!$isParagraphNode(paragraphNode)) {
             return false;

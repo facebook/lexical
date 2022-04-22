@@ -407,15 +407,14 @@ export type GridSelectionShape = {
 };
 export declare class GridSelection {
   gridKey: NodeKey;
-  anchorCellKey: NodeKey;
   anchor: PointType;
-  focusCellKey: NodeKey;
   focus: PointType;
   dirty: boolean;
-  constructor(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey);
+  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType);
   is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
   set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
   clone(): GridSelection;
+  getCharacterOffsets(): [number, number];
   extract(): Array<LexicalNode>;
   isCollapsed(): boolean;
   isBackward(): boolean;
@@ -476,6 +475,7 @@ export declare class RangeSelection {
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean;
   insertParagraph(): void;
   insertLineBreak(selectStart?: boolean): void;
+  getCharacterOffsets(): [number, number];
   extract(): Array<LexicalNode>;
   modify(
     alter: 'move' | 'extend',
@@ -507,7 +507,6 @@ type ElementPointType = {
   isBefore: (arg0: PointType) => boolean;
   getNode: () => ElementNode;
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void;
-  getCharacterOffset: () => number;
   isAtNodeEnd: () => boolean;
 };
 export type Point = PointType;
@@ -520,7 +519,6 @@ declare class _Point {
   constructor(key: NodeKey, offset: number, type: 'text' | 'element');
   is(point: PointType): boolean;
   isBefore(b: PointType): boolean;
-  getCharacterOffset(): number;
   getNode(): LexicalNode;
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void;
 }

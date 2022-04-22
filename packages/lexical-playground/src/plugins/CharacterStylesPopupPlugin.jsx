@@ -238,7 +238,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
     });
   }, [editor]);
 
-  if (!isText || !isLink) {
+  if (!isText || isLink) {
     return null;
   }
 

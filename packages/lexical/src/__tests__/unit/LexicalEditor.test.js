@@ -1214,11 +1214,11 @@ describe('LexicalEditor tests', () => {
 
       it('Remaps the selection keys of a stringified editor state', async () => {
         expect(parsedSelection.gridKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.anchorCellKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.focusCellKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
         expect(parsedSelection.gridKey).toEqual(parsedText.__key);
-        expect(parsedSelection.anchorCellKey).toEqual(parsedText.__key);
-        expect(parsedSelection.focusCellKey).toEqual(parsedText.__key);
+        expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
+        expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
   });

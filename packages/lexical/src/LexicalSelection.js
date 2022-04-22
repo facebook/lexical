@@ -671,6 +671,8 @@ export class RangeSelection implements BaseSelection {
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
     const firstNodeParent = firstNode.getParentOrThrow();
+    const lastIndex = selectedNodesLength - 1;
+    let lastNode = selectedNodes[lastIndex];
 
     if (
       this.isCollapsed() &&
@@ -730,6 +732,25 @@ export class RangeSelection implements BaseSelection {
       const textNode = $createTextNode(firstNode.getTextContent());
       firstNode.replace(textNode);
       firstNode = textNode;
+    } else if (!this.isCollapsed() && text !== '') {
+      // When the firstNode or lastNode parents are elements that
+      // do not allow text to be inserted before or after, we first
+      // clear the content. Then we normalize selection, then insert
+      // the new content.
+      const lastNodeParent = lastNode.getParent();
+
+      if (
+        !firstNodeParent.canInsertTextBefore() ||
+        !firstNodeParent.canInsertTextAfter() ||
+        ($isElementNode(lastNodeParent) &&
+          (!lastNodeParent.canInsertTextBefore() ||
+            !lastNodeParent.canInsertTextAfter()))
+      ) {
+        this.insertText('');
+        normalizeSelectionPointsForBoundaries(this.anchor, this.focus, null);
+        this.insertText(text);
+        return;
+      }
     }
 
     if (selectedNodesLength === 1) {
@@ -773,8 +794,6 @@ export class RangeSelection implements BaseSelection {
         this.anchor.offset -= text.length;
       }
     } else {
-      const lastIndex = selectedNodesLength - 1;
-      let lastNode = selectedNodes[lastIndex];
       const markedNodeKeysForKeep = new Set([
         ...firstNode.getParentKeys(),
         ...lastNode.getParentKeys(),
@@ -806,7 +825,15 @@ export class RangeSelection implements BaseSelection {
           lastNode = lastNode.spliceText(0, endOffset, '');
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
-          lastNode.remove();
+          const lastNodeParent = lastNode.getParentOrThrow();
+          if (
+            !lastNodeParent.canBeEmpty() &&
+            lastNodeParent.getChildrenSize() === 1
+          ) {
+            lastNodeParent.remove();
+          } else {
+            lastNode.remove();
+          }
         }
       } else {
         markedNodeKeysForKeep.add(lastNode.__key);
@@ -1654,7 +1681,9 @@ function getCharacterOffset(point: PointType): number {
   }
   // $FlowFixMe: cast
   const parent: ElementNode = point.getNode();
-  return offset === parent.getChildrenSize() ? parent.getTextContent().length : 0;
+  return offset === parent.getChildrenSize()
+    ? parent.getTextContent().length
+    : 0;
 }
 
 function getCharacterOffsets(
@@ -1874,6 +1903,107 @@ function internalResolveSelectionPoint(
   return $createPoint(resolvedNode.__key, resolvedOffset, 'text');
 }
 
+function resolveSelectionPointOnBoundary(
+  point: TextPointType,
+  isBackward: boolean,
+  isCollapsed: boolean,
+): void {
+  const offset = point.offset;
+  const node = point.getNode();
+
+  if (offset === 0) {
+    const prevSibling = node.getPreviousSibling();
+    const parent = node.getParent();
+
+    if (!isBackward) {
+      if (
+        $isElementNode(prevSibling) &&
+        !isCollapsed &&
+        prevSibling.isInline()
+      ) {
+        point.key = prevSibling.__key;
+        point.offset = prevSibling.getChildrenSize();
+        // $FlowFixMe: intentional
+        point.type = 'element';
+      } else if ($isTextNode(prevSibling) && !prevSibling.isInert()) {
+        point.key = prevSibling.__key;
+        point.offset = prevSibling.getTextContent().length;
+      }
+    } else if (
+      isCollapsed &&
+      prevSibling === null &&
+      $isElementNode(parent) &&
+      parent.isInline()
+    ) {
+      const parentSibling = parent.getPreviousSibling();
+      if ($isTextNode(parentSibling)) {
+        point.key = parentSibling.__key;
+        point.offset = parentSibling.getTextContent().length;
+      }
+    }
+  } else if (offset === node.getTextContent().length) {
+    const nextSibling = node.getNextSibling();
+    const parent = node.getParent();
+
+    if (isBackward && $isElementNode(nextSibling) && nextSibling.isInline()) {
+      point.key = nextSibling.__key;
+      point.offset = 0;
+      // $FlowFixMe: intentional
+      point.type = 'element';
+    } else if (
+      isCollapsed &&
+      nextSibling === null &&
+      $isElementNode(parent) &&
+      parent.isInline()
+    ) {
+      const parentSibling = parent.getNextSibling();
+      if ($isTextNode(parentSibling)) {
+        point.key = parentSibling.__key;
+        point.offset = 0;
+      }
+    }
+  }
+}
+
+function normalizeSelectionPointsForBoundaries(
+  anchor: PointType,
+  focus: PointType,
+  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+): void {
+  if (anchor.type === 'text' && focus.type === 'text') {
+    const isBackward = anchor.isBefore(focus);
+    const isCollapsed = anchor.is(focus);
+
+    // Attempt to normalize the offset to the previous sibling if we're at the
+    // start of a text node and the sibling is a text node or inline element.
+    resolveSelectionPointOnBoundary(anchor, isBackward, isCollapsed);
+    resolveSelectionPointOnBoundary(focus, !isBackward, isCollapsed);
+
+    if (isCollapsed) {
+      focus.key = anchor.key;
+      focus.offset = anchor.offset;
+      focus.type = anchor.type;
+    }
+    const editor = getActiveEditor();
+
+    if (
+      editor.isComposing() &&
+      editor._compositionKey !== anchor.key &&
+      $isRangeSelection(lastSelection)
+    ) {
+      const lastAnchor = lastSelection.anchor;
+      const lastFocus = lastSelection.focus;
+      $setPointValues(
+        anchor,
+        lastAnchor.key,
+        lastAnchor.offset,
+        lastAnchor.type,
+      );
+      $setPointValues(focus, lastFocus.key, lastFocus.offset, lastFocus.type);
+    }
+  }
+}
+
 function internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
@@ -1907,79 +2037,11 @@ function internalResolveSelectionPoints(
   }
 
   // Handle normalization of selection when it is at the boundaries.
-  if (
-    resolvedAnchorPoint.type === 'text' &&
-    resolvedFocusPoint.type === 'text'
-  ) {
-    const resolvedAnchorNode = resolvedAnchorPoint.getNode();
-    const isCollapsed = resolvedAnchorPoint.is(resolvedFocusPoint);
-
-    // Attempt to normalize the offset to the previous sibling if we're at the
-    // start of a text node and the sibling is a text node or inline element.
-    if (anchorOffset === 0) {
-      const prevSibling = resolvedAnchorNode.getPreviousSibling();
-
-      if ($isTextNode(prevSibling) && !prevSibling.isInert()) {
-        const offset = prevSibling.getTextContent().length;
-        resolvedAnchorPoint.key = prevSibling.__key;
-        resolvedAnchorPoint.offset = offset;
-      } else if (
-        $isElementNode(prevSibling) &&
-        prevSibling.isInline() &&
-        resolvedFocusPoint.isBefore(resolvedAnchorPoint)
-      ) {
-        resolvedAnchorPoint.key = prevSibling.__key;
-        resolvedAnchorPoint.offset = prevSibling.getChildrenSize();
-        // $FlowFixMe: intentional
-        resolvedAnchorPoint.type = 'element';
-      }
-    } else if (anchorOffset === resolvedAnchorNode.getTextContent().length) {
-      // Normalize the next sibling if we're on the boundary of an inline
-      // element.
-      const nextSibling = resolvedAnchorNode.getNextSibling();
-      const parent = resolvedAnchorNode.getParent();
-
-      if (
-        nextSibling === null &&
-        $isElementNode(parent) &&
-        parent.isInline() &&
-        (isCollapsed || resolvedAnchorPoint.isBefore(resolvedFocusPoint))
-      ) {
-        const parentSibling = parent.getNextSibling();
-        if ($isTextNode(parentSibling)) {
-          resolvedAnchorPoint.key = parentSibling.__key;
-          resolvedAnchorPoint.offset = 0;
-        }
-      }
-    }
-
-    if (isCollapsed) {
-      resolvedFocusPoint.key = resolvedAnchorPoint.key;
-      resolvedFocusPoint.offset = resolvedAnchorPoint.offset;
-      resolvedFocusPoint.type = resolvedAnchorPoint.type;
-    }
-
-    if (
-      editor.isComposing() &&
-      editor._compositionKey !== resolvedAnchorPoint.key &&
-      $isRangeSelection(lastSelection)
-    ) {
-      const lastAnchor = lastSelection.anchor;
-      const lastFocus = lastSelection.focus;
-      $setPointValues(
-        resolvedAnchorPoint,
-        lastAnchor.key,
-        lastAnchor.offset,
-        lastAnchor.type,
-      );
-      $setPointValues(
-        resolvedFocusPoint,
-        lastFocus.key,
-        lastFocus.offset,
-        lastFocus.type,
-      );
-    }
-  }
+  normalizeSelectionPointsForBoundaries(
+    resolvedAnchorPoint,
+    resolvedFocusPoint,
+    lastSelection,
+  );
 
   return [resolvedAnchorPoint, resolvedFocusPoint];
 }

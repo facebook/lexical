@@ -321,10 +321,10 @@ test.describe('Keywords', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 8,
-      anchorPath: [0, 0, 0],
-      focusOffset: 8,
-      focusPath: [0, 0, 0],
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 0,
+      focusPath: [0, 1, 0],
     });
 
     await page.keyboard.press('Space');

@@ -375,6 +375,107 @@ test.describe('Links', () => {
     );
   });
 
+  test(`Can create a link then replace it with plain text`, async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc ');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+          </a>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.type('a');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link then replace it with plain text #2`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc ');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await selectCharacters(page, 'left', 1);
+    await page.keyboard.type('a');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link then partly replace it with plain text`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc ');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await selectCharacters(page, 'right', 1);
+    await page.keyboard.type('a');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">a</span>
+          </a>
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
   test(`Can convert multi-formatted text into a link and then modify text after`, async ({
     page,
   }) => {
@@ -686,8 +787,8 @@ test.describe('Links', () => {
       });
     } else {
       await assertSelection(page, {
-        anchorOffset: 6,
-        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        anchorPath: [0, 1],
         focusOffset: 5,
         focusPath: [0, 1, 0, 0],
       });
@@ -805,8 +906,8 @@ test.describe('Links', () => {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
-        focusOffset: 6,
-        focusPath: [0, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 1],
       });
     }
 

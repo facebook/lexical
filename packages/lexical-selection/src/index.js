@@ -45,10 +45,12 @@ function $cloneWithProperties<T: LexicalNode>(node: T): T {
     clone.__indent = latest.__indent;
     clone.__dir = latest.__dir;
   } else if ($isTextNode(latest) && $isTextNode(clone)) {
+    const marks = latest.__marks;
     clone.__format = latest.__format;
     clone.__style = latest.__style;
     clone.__mode = latest.__mode;
     clone.__detail = latest.__detail;
+    clone.__marks = marks === null ? null : Array.from(marks);
   }
   // $FlowFixMe
   return clone;

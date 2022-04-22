@@ -552,15 +552,22 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
+export type TextMark = {end: null | number; id: string; start: null | number};
+
+export type TextMarks = Array<TextMark>;
 export declare class TextNode extends LexicalNode {
   __text: string;
   __format: number;
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
+  __marks: null | TextMarks;
   static getType(): string;
   static clone(node: any): TextNode;
   constructor(text: string, key?: NodeKey);
+  getMark(id: string): null | TextMark;
+  setMark(id: string, start: null | number, end: null | number): void;
+  deleteMark(id: string): void;
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;

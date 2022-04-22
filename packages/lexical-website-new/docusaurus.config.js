@@ -59,27 +59,10 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig & import('@docusaurus/theme-search-algolia').ThemeConfig} */
     ({
       algolia: {
-        // Public API key: it is safe to commit it
         apiKey: '00b99bc61a623e1abd819b1d655da918',
-
-        // The application ID provided by Algolia
         appId: 'YRGKJK6OMH',
-
-        // Optional: see doc section below
         contextualSearch: true,
-
-        // Optional: Specify domains where the navigation should occur through window.location instead on history.push. Useful when our Algolia config crawls multiple documentation sites and we want to navigate with window.location.href to them.
-        // externalUrlRegex: 'external\\.com|domain\\.com',
-
         indexName: 'lexical',
-
-        // Optional: path for search page that enabled by default (`false` to disable it)
-        // searchPagePath: 'search',
-
-        // Optional: Algolia search parameters
-        // searchParameters: {},
-
-        //... other Algolia params
       },
       footer: {
         copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,

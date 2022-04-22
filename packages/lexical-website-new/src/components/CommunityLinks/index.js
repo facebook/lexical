@@ -21,8 +21,7 @@ const links = [
       <Translate
         id="pages.community.links.github.description"
         description="Description of Github community">
-        Some copy about stack overflow Some copy about stack overflowSome copy
-        about stack overflow
+        Want to add a new feature or get a bug fixed? Create a pull request or raise an issue.
       </Translate>
     ),
     image: (
@@ -45,8 +44,7 @@ const links = [
       <Translate
         id="pages.community.links.stackoverflow.description"
         description="Description of StackOverflow community">
-        Some copy about stack overflow Some copy about stack overflowSome copy
-        about stack overflow
+        Have trouble using Lexical? Just shoot a question.
       </Translate>
     ),
     image: (
@@ -69,8 +67,7 @@ const links = [
       <Translate
         id="pages.community.links.discord.description"
         description="Description of Discord community">
-        Some copy about stack overflow Some copy about stack overflowSome copy
-        about stack overflow
+        Let us discuss upcoming features and plan together.
       </Translate>
     ),
     image: (

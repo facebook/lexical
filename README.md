@@ -304,7 +304,7 @@ editor.registerUpdateListener(({editorState}) => {
    - `npm run test-e2e:chromium` to run only chromium e2e tests
      - The server needs to be running for the e2e tests
 
-`npm run start` will start both the web server and collab server. If you don't need collab, use `npm run dev` to start just the web server.
+`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
 
 ### Optional but recommended, use VSCode for development
 

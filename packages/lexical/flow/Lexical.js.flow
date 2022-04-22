@@ -588,7 +588,7 @@ export type TextFormatType =
   | 'code'
   | 'subscript'
   | 'superscript';
-type TextMode = 'normal' | 'token' | 'segmented' | 'inert';
+type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 export type TextMark = {end: null | number, id: string, start: null | number};
 
 export type TextMarks = Array<TextMark>;
@@ -632,7 +632,7 @@ declare export class TextNode extends LexicalNode {
   toggleFormat(type: TextFormatType): TextNode;
   toggleDirectionless(): this;
   toggleUnmergeable(): this;
-  setMode(type: TextMode): this;
+  setMode(type: TextModeType): this;
   setTextContent(text: string): TextNode;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   spliceText(

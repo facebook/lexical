@@ -65,7 +65,7 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 
-export type TextMode = 'normal' | 'token' | 'segmented' | 'inert';
+export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 
 export type TextMark = {end: null | number, id: string, start: null | number};
 
@@ -580,7 +580,7 @@ export class TextNode extends LexicalNode {
     }
   }
 
-  setMode(type: TextMode): this {
+  setMode(type: TextModeType): this {
     errorOnReadOnly();
     const mode = TEXT_MODE_TO_TYPE[type];
     const self = this.getWritable();

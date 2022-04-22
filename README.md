@@ -17,29 +17,6 @@
 
 **⚠️ Lexical is currently in early development and APIs and packages are likely to change quite often.**
 
-
-## Table of Contents
-- [Getting started with React](#getting-started-with-react)
-- [Lexical is a framework](#lexical-is-a-framework)
-  * [Editor instances](#editor-instances)
-  * [Editor States](#editor-states)
-  * [Editor Updates](#editor-updates)
-  * [DOM Reconciler](#dom-reconciler)
-  * [Listeners, Node Transforms and Commands](#listeners-node-transforms-and-commands)
-- [Working with Lexical](#working-with-lexical)
-  * [Creating an editor and using it](#creating-an-editor-and-using-it)
-  * [Working with Editor States](#working-with-editor-states)
-  * [Updating an editor](#updating-an-editor)
-  * [Creating custom Lexical nodes](#creating-custom-lexical-nodes)
-- [Contributing to Lexical](#contributing-to-lexical)
-  * [Optional but recommended, use VSCode for development](#optional-but-recommended-use-vscode-for-development)
-- [Documentation](#documentation)
-- [Browser Support](#browser-support)
-- [Contributing](#contributing)
-- [Support](#support)
-- [Running tests](#running-tests)
-- [License](#license)
-
 Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 
 For documentation and more information about Lexical, be sure to [visit the Lexical website](https://lexical.dev).
@@ -49,6 +26,19 @@ Here are some examples of what you can do with Lexical:
 - [Lexical Playground](https://playground.lexical.dev)
 - [Plain text sandbox](https://codesandbox.io/s/lexical-plain-text-example-g932e)
 - [Rich text sandbox](https://codesandbox.io/s/lexical-rich-text-example-5tncvy)
+
+
+---
+
+- [Getting started with React](#getting-started-with-react)
+
+- [Lexical is a framework](#lexical-is-a-framework)
+  
+- [Working with Lexical](#working-with-lexical)
+
+- [Contributing to Lexical](#contributing-to-lexical)
+
+---
 
 ## Getting started with React
 

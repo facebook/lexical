@@ -190,8 +190,8 @@ export default function ActionsPlugin({
             connected ? 'Disconnect' : 'Connect'
           } Collaborative Editing`}
           aria-label={`${
-            connected ? 'Disconnect' : 'Connect'
-          } from a collaborative editing server`}>
+            connected ? 'Disconnect from' : 'Connect to'
+          } a collaborative editing server`}>
           <i className={connected ? 'disconnect' : 'connect'} />
         </button>
       )}

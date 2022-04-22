@@ -147,7 +147,7 @@ export class OffsetView {
       const sibling = startNode.getNextSibling();
       if (
         start !== end &&
-        startOffset === startNode.getTextContentSize() &&
+        startOffset === startNode.getTextContent().length &&
         $isTextNode(sibling)
       ) {
         startOffset = 0;

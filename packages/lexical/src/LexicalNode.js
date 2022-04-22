@@ -519,11 +519,6 @@ export class LexicalNode {
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
 
-  // TODO remove this and move to TextNode
-  isComposing(): boolean {
-    return this.__key === $getCompositionKey();
-  }
-
   getLatest(): this {
     const latest = $getNodeByKey(this.__key);
     if (latest === null) {
@@ -572,13 +567,6 @@ export class LexicalNode {
   // TODO remove this completely
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     return '';
-  }
-  // TODO remove this completely
-  getTextContentSize(
-    includeInert?: boolean,
-    includeDirectionless?: false,
-  ): number {
-    return this.getTextContent(includeInert, includeDirectionless).length;
   }
 
   // View

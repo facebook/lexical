@@ -90,7 +90,7 @@ describe('LexicalNodeHelpers tests', () => {
           const editor: LexicalEditor = testEnv.editor;
           const [overflowLeftKey, overflowRightKey] =
             await initializeEditorWithLeftRightOverflowNodes();
-          let text2Key: NodeKey;
+          let text1Key: NodeKey;
           await editor.update(() => {
             const overflowLeft = $getNodeByKey(overflowLeftKey);
             const overflowRight = $getNodeByKey(overflowRightKey);
@@ -98,7 +98,7 @@ describe('LexicalNodeHelpers tests', () => {
             const text2 = $createTextNode('2');
             const text3 = $createTextNode('3');
             const text4 = $createTextNode('4');
-            text2Key = text2.getKey();
+            text1Key = text1.getKey();
             overflowLeft.append(text1, text2);
             text2.toggleFormat('bold'); // Prevent merging with text1
             overflowRight.append(text3, text4);
@@ -116,10 +116,10 @@ describe('LexicalNodeHelpers tests', () => {
             if (selection === null) {
               throw new Error('Lost selection');
             }
-            expect(selection.anchor.key).toBe(text2Key);
-            expect(selection.anchor.offset).toBe(0);
-            expect(selection.focus.key).toBe(text2Key);
-            expect(selection.anchor.offset).toBe(0);
+            expect(selection.anchor.key).toBe(text1Key);
+            expect(selection.anchor.offset).toBe(1);
+            expect(selection.focus.key).toBe(text1Key);
+            expect(selection.anchor.offset).toBe(1);
           });
         });
 

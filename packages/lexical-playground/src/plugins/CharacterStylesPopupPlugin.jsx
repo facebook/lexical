@@ -162,15 +162,13 @@ function FloatingCharacterStylesEditor({
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
         }}
         className={'popup-item spaced ' + (isCode ? 'active' : '')}
-        aria-label="Insert code block"
-        type="Insert code block">
+        aria-label="Insert code block">
         <i className="format code" />
       </button>
       <button
         onClick={insertLink}
         className={'popup-item spaced ' + (isLink ? 'active' : '')}
-        aria-label="Insert link"
-        type="Insert link">
+        aria-label="Insert link">
         <i className="format link" />
       </button>
     </div>

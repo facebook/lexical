@@ -129,7 +129,7 @@ export default function ActionsPlugin({
           title="Speect To Text"
           aria-label={`${
             isSpeechToText ? 'Enable' : 'Disable'
-          } speect to text assistive technology`}>
+          } speect to text`}>
           <i className="mic" />
         </button>
       )}
@@ -169,14 +169,14 @@ export default function ActionsPlugin({
         onClick={() => {
           editor.setReadOnly(!editor.isReadOnly());
         }}
-        title="Read-only mode"
+        title="Read-Only Mode"
         aria-label={`${isReadOnly ? 'Unlock' : 'Lock'} read-only mode`}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
       <button
         className="action-button"
         onClick={handleMarkdownToggle}
-        title="Convert from markdown"
+        title="Convert From Markdown"
         aria-label="Convert from markdown">
         <i className="markdown" />
       </button>
@@ -188,7 +188,7 @@ export default function ActionsPlugin({
           }}
           title={`${
             connected ? 'Disconnect' : 'Connect'
-          } collaborative editing`}
+          } Collaborative Editing`}
           aria-label={`${
             connected ? 'Disconnect' : 'Connect'
           } from a collaborative editing server`}>

@@ -27,6 +27,19 @@ Here are some examples of what you can do with Lexical:
 - [Plain text sandbox](https://codesandbox.io/s/lexical-plain-text-example-g932e)
 - [Rich text sandbox](https://codesandbox.io/s/lexical-rich-text-example-5tncvy)
 
+
+---
+
+- [Getting started with React](#getting-started-with-react)
+
+- [Lexical is a framework](#lexical-is-a-framework)
+  
+- [Working with Lexical](#working-with-lexical)
+
+- [Contributing to Lexical](#contributing-to-lexical)
+
+---
+
 ## Getting started with React
 
 > Note: Lexical is not only limited to React. Lexical can support any underlying DOM based library once bindings for that library have been created.

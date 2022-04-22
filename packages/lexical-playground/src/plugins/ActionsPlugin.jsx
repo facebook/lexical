@@ -126,8 +126,10 @@ export default function ActionsPlugin({
             'action-button action-button-mic ' +
             (isSpeechToText ? 'active' : '')
           }
-          title="Mic"
-          aria-label="Mic">
+          title="Speect To Text"
+          aria-label={`${
+            isSpeechToText ? 'Enable' : 'Disable'
+          } speect to text assistive technology`}>
           <i className="mic" />
         </button>
       )}
@@ -135,7 +137,7 @@ export default function ActionsPlugin({
         className="action-button import"
         onClick={() => importFile(editor)}
         title="Import"
-        aria-label="Import">
+        aria-label="Import editor state from JSON">
         <i className="import" />
       </button>
       <button
@@ -147,7 +149,7 @@ export default function ActionsPlugin({
           })
         }
         title="Export"
-        aria-label="Export">
+        aria-label="Export editor state to JSON">
         <i className="export" />
       </button>
       <button
@@ -159,7 +161,7 @@ export default function ActionsPlugin({
           ));
         }}
         title="Clear"
-        aria-label="Clear">
+        aria-label="Clear editor contents">
         <i className="clear" />
       </button>
       <button
@@ -167,15 +169,15 @@ export default function ActionsPlugin({
         onClick={() => {
           editor.setReadOnly(!editor.isReadOnly());
         }}
-        title={isReadOnly ? 'Unlock' : 'Lock'}
-        aria-label={isReadOnly ? 'Unlock' : 'Lock'}>
+        title="Read-only mode"
+        aria-label={`${isReadOnly ? 'Unlock' : 'Lock'} read-only mode`}>
         <i className={isReadOnly ? 'unlock' : 'lock'} />
       </button>
       <button
         className="action-button"
         onClick={handleMarkdownToggle}
-        title="Markdown"
-        aria-label="Markdown">
+        title="Convert from markdown"
+        aria-label="Convert from markdown">
         <i className="markdown" />
       </button>
       {isCollab && (
@@ -184,8 +186,12 @@ export default function ActionsPlugin({
           onClick={() => {
             editor.dispatchCommand(TOGGLE_CONNECT_COMMAND, !connected);
           }}
-          title={connected ? 'Disconnect' : 'Connect'}
-          aria-label={connected ? 'Disconnect' : 'Connect'}>
+          title={`${
+            connected ? 'Disconnect' : 'Connect'
+          } collaborative editing`}
+          aria-label={`${
+            connected ? 'Disconnect' : 'Connect'
+          } from a collaborative editing server`}>
           <i className={connected ? 'disconnect' : 'connect'} />
         </button>
       )}

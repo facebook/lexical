@@ -66,6 +66,7 @@ import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
+import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../hooks/useModal';
 import catTypingGif from '../images/cat-typing.gif';
@@ -77,7 +78,6 @@ import FileInput from '../ui/FileInput.jsx';
 import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
 import TextInput from '../ui/TextInput';
-import {toolbarShortcut} from '../utils/toolbar-shortcut';
 import {INSERT_EQUATION_COMMAND} from './EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
@@ -903,7 +903,7 @@ export default function ToolbarPlugin(): React$Node {
         onClick={() => {
           activeEditor.dispatchCommand(UNDO_COMMAND);
         }}
-        title={toolbarShortcut.undo}
+        title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
         className="toolbar-item spaced"
         aria-label="Undo">
         <i className="format undo" />
@@ -913,7 +913,7 @@ export default function ToolbarPlugin(): React$Node {
         onClick={() => {
           activeEditor.dispatchCommand(REDO_COMMAND);
         }}
-        title={toolbarShortcut.redo}
+        title={IS_APPLE ? 'Redo (⌘Y)' : 'Undo (Ctrl+Y)'}
         className="toolbar-item"
         aria-label="Redo">
         <i className="format redo" />
@@ -980,7 +980,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-            title={toolbarShortcut.bold}
+            title={IS_APPLE ? 'Bold (⌘B)' : 'Bold (Ctrl+B)'}
             aria-label="Format Bold">
             <i className="format bold" />
           </button>
@@ -989,7 +989,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-            title={toolbarShortcut.italic}
+            title={IS_APPLE ? 'Italic (⌘I)' : 'Italic (Ctrl+I)'}
             aria-label="Format Italics">
             <i className="format italic" />
           </button>
@@ -998,7 +998,7 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-            title={toolbarShortcut.underline}
+            title={IS_APPLE ? 'Underline (⌘U)' : 'Underline (Ctrl+U)'}
             aria-label="Format Underline">
             <i className="format underline" />
           </button>

@@ -432,7 +432,7 @@ export function getTextNodeOffset(
   node: TextNode,
   moveSelectionToEnd: boolean,
 ): number {
-  return moveSelectionToEnd ? node.getTextContentSize() : 0;
+  return moveSelectionToEnd ? node.getTextContent().length : 0;
 }
 
 function getNodeKeyFromDOM(
@@ -606,7 +606,7 @@ function $shouldInsertTextAfterOrBeforeTextNode(
     offset === 0 &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   const shouldInsertTextAfter =
-    node.getTextContentSize() === offset &&
+    node.getTextContent().length === offset &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
@@ -966,7 +966,7 @@ export function $getDecoratorNode(
     const focusNode = focus.getNode();
     if (
       (isBackward && focusOffset === 0) ||
-      (!isBackward && focusOffset === focusNode.getTextContentSize())
+      (!isBackward && focusOffset === focusNode.getTextContent().length)
     ) {
       const possibleNode = isBackward
         ? focusNode.getPreviousSibling()

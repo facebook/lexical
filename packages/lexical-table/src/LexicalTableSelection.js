@@ -318,7 +318,10 @@ export class TableSelection {
       const anchor = formatSelection.anchor;
       const focus = formatSelection.focus;
       selection.getNodes().forEach((cellNode) => {
-        if ($isTableCellNode(cellNode) && cellNode.getTextContentSize() !== 0) {
+        if (
+          $isTableCellNode(cellNode) &&
+          cellNode.getTextContent().length !== 0
+        ) {
           anchor.set(cellNode.getKey(), 0, 'element');
           focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
           formatSelection.formatText(type);

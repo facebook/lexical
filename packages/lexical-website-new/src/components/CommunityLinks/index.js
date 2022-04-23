@@ -44,7 +44,7 @@ const links = [
       <Translate
         id="pages.community.links.stackoverflow.description"
         description="Description of StackOverflow community">
-        Have trouble using Lexical? Just shoot a question.
+        Having trouble using Lexical? Just shoot us a question.
       </Translate>
     ),
     image: (
@@ -67,7 +67,7 @@ const links = [
       <Translate
         id="pages.community.links.discord.description"
         description="Description of Discord community">
-        Let us discuss upcoming features and plan together.
+        Let's discuss upcoming features and plans together.
       </Translate>
     ),
     image: (

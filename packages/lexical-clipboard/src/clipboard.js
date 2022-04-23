@@ -68,31 +68,22 @@ export function $convertSelectedLexicalNodeToHTMLElement(
 
     if ($isTextNode(node) && (isAnchor || isFocus)) {
       const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
-      const isBackward = selection.isBackward();
+      const isBefore = anchor.isBefore(focus);
 
       const isSame = anchor.is(focus);
-      const isFirst = node.is(isBackward ? focus : anchor);
+      const isFirst = node.is(isBefore ? focus : anchor);
 
       const nodeText = node.getTextContent();
       const nodeTextLength = nodeText.length;
+      const startOffset = isBefore ? anchorOffset : focusOffset;
+      const endOffset = isBefore ? focusOffset : anchorOffset;
 
       if (isSame) {
-        const startOffset =
-          anchorOffset > focusOffset ? focusOffset : anchorOffset;
-        const endOffset =
-          anchorOffset > focusOffset ? anchorOffset : focusOffset;
+
         const splitNodes = node.splitText(startOffset, endOffset);
         nodeToConvert = startOffset === 0 ? splitNodes[0] : splitNodes[1];
       } else {
-        let endOffset;
-
-        if (isFirst) {
-          endOffset = isBackward ? focusOffset : anchorOffset;
-        } else {
-          endOffset = isBackward ? anchorOffset : focusOffset;
-        }
-
-        if (!isBackward && endOffset === 0) {
+        if (!isBefore && endOffset === 0) {
           return null;
         } else if (endOffset !== nodeTextLength) {
           nodeToConvert =
@@ -135,13 +126,24 @@ export function $convertSelectedLexicalContentToHtml(
   for (let i = 0; i < state.range.length; i++) {
     const nodeKey = state.range[i];
     const node = $getNodeByKey(nodeKey);
-    if (node && node.isSelected()) {
+    if (node) {
       const element = $convertSelectedLexicalNodeToHTMLElement(
         editor,
         selection,
         node,
       );
-      if (element) container.append(element);
+      if (element) {
+        if (node.isSelected()) {
+          container.append(element);
+        } else {
+          let childNode = element.firstChild;
+          while (childNode != null) {
+            const nextSibling = childNode.nextSibling;
+            container.append(childNode);
+            childNode = nextSibling;
+          }
+        }
+      }
     }
   }
   return container.innerHTML;

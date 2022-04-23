@@ -26,7 +26,7 @@ import {
   DecoratorNode,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef} from 'react';
+import {useEffect, useRef} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -146,7 +146,7 @@ function StickyComponent({
     }
   }, []);
 
-  const handlePointerMove = useCallback((event: PointerEvent) => {
+  const handlePointerMove = (event: PointerEvent) => {
     const stickyContainer = stickyContainerRef.current;
     const positioning = positioningRef.current;
     const rootElementRect = positioning.rootElementRect;
@@ -159,45 +159,42 @@ function StickyComponent({
       positioning.y = event.pageY - positioning.offsetY - rootElementRect.top;
       positionSticky(stickyContainer, positioning);
     }
-  }, []);
+  };
 
-  const handlePointerUp = useCallback(
-    (event: PointerEvent) => {
-      const stickyContainer = stickyContainerRef.current;
-      const positioning = positioningRef.current;
-      if (stickyContainer !== null) {
-        positioning.isDragging = false;
-        stickyContainer.classList.remove('dragging');
-        editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if ($isStickyNode(node)) {
-            node.setPosition(positioning.x, positioning.y);
-          }
-        });
-      }
-      document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
-    },
-    [editor, handlePointerMove, nodeKey],
-  );
+  const handlePointerUp = (event: PointerEvent) => {
+    const stickyContainer = stickyContainerRef.current;
+    const positioning = positioningRef.current;
+    if (stickyContainer !== null) {
+      positioning.isDragging = false;
+      stickyContainer.classList.remove('dragging');
+      editor.update(() => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isStickyNode(node)) {
+          node.setPosition(positioning.x, positioning.y);
+        }
+      });
+    }
+    document.removeEventListener('pointermove', handlePointerMove);
+    document.removeEventListener('pointerup', handlePointerUp);
+  };
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = () => {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isStickyNode(node)) {
         node.remove();
       }
     });
-  }, [editor, nodeKey]);
+  };
 
-  const handleColorChange = useCallback(() => {
+  const handleColorChange = () => {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isStickyNode(node)) {
         node.toggleColor();
       }
     });
-  }, [editor, nodeKey]);
+  };
 
   const {historyState} = useSharedHistoryContext();
 

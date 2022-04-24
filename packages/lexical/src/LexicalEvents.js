@@ -130,6 +130,7 @@ if (CAN_USE_BEFORE_INPUT) {
 let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
+let isInsertLineBreak = false;
 
 function onSelectionChange(
   domSelection: Selection,
@@ -375,7 +376,14 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       case 'insertParagraph': {
         // Used for Android
         $setCompositionKey(null);
-        dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
+        // Some browsers do not provide the type "insertLineBreak".
+        // So instead, we need to infer it from the keyboard event.
+        if (isInsertLineBreak) {
+          isInsertLineBreak = false;
+          dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND);
+        } else {
+          dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
+        }
         break;
       }
       case 'insertFromPaste':
@@ -557,11 +565,13 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
   } else if (isLineBreak(keyCode, shiftKey)) {
+    isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
   } else if (isParagraph(keyCode, shiftKey)) {
+    isInsertLineBreak = false;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
     if (isBackspace(keyCode)) {

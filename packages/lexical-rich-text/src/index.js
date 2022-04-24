@@ -611,8 +611,8 @@ export function registerRichText(
           // intercept that we're actually inserting a paragraph,
           // and autocomplete, autocapitialize etc work as intended.
           // This can also cause a strange performance issue in
-          // Safari, where there is a noticeable pause due to preventing
-          // the key down of enter.
+          // Safari, where there is a noticeable pause due to
+          // preventing the key down of enter.
           if ((IS_IOS || IS_SAFARI) && CAN_USE_BEFORE_INPUT) {
             return false;
           }

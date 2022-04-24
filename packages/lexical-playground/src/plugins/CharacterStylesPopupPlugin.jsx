@@ -134,7 +134,7 @@ function FloatingCharacterStylesEditor({
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
         }}
         className={'popup-item spaced ' + (isBold ? 'active' : '')}
-        aria-label="Format Bold">
+        aria-label="Format text as bold">
         <i className="format bold" />
       </button>
       <button
@@ -142,7 +142,7 @@ function FloatingCharacterStylesEditor({
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
         }}
         className={'popup-item spaced ' + (isItalic ? 'active' : '')}
-        aria-label="Format Italics">
+        aria-label="Format text as italics">
         <i className="format italic" />
       </button>
       <button
@@ -150,7 +150,7 @@ function FloatingCharacterStylesEditor({
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
         }}
         className={'popup-item spaced ' + (isUnderline ? 'active' : '')}
-        aria-label="Format Underline">
+        aria-label="Format text to underlined">
         <i className="format underline" />
       </button>
       <button
@@ -158,7 +158,7 @@ function FloatingCharacterStylesEditor({
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
         }}
         className={'popup-item spaced ' + (isStrikethrough ? 'active' : '')}
-        aria-label="Format Strikethrough">
+        aria-label="Format text with a strikethrough">
         <i className="format strikethrough" />
       </button>
       <button
@@ -184,13 +184,13 @@ function FloatingCharacterStylesEditor({
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
         }}
         className={'popup-item spaced ' + (isCode ? 'active' : '')}
-        aria-label="Insert Code">
+        aria-label="Insert code block">
         <i className="format code" />
       </button>
       <button
         onClick={insertLink}
         className={'popup-item spaced ' + (isLink ? 'active' : '')}
-        aria-label="Insert Link">
+        aria-label="Insert link">
         <i className="format link" />
       </button>
     </div>

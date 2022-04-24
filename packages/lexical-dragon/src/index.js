@@ -74,8 +74,7 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
                   // set final selection
                   setSelStart = selStart;
                   setSelEnd = selStart + selLength;
-                  const anchorNodeTextLength =
-                    anchorNode.getTextContent().length;
+                  const anchorNodeTextLength = anchorNode.getTextContentSize();
                   // If the offset is more than the end, make it the end
                   setSelStart =
                     setSelStart > anchorNodeTextLength

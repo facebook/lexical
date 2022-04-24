@@ -1008,38 +1008,6 @@ export default function ToolbarPlugin(): React$Node {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand(
-                FORMAT_TEXT_COMMAND,
-                'strikethrough',
-              );
-            }}
-            className={
-              'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
-            }
-            title="Strikethrough"
-            aria-label="Format Strikethrough">
-            <i className="format strikethrough" />
-          </button>
-          <button
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
-            }}
-            className={'toolbar-item spaced ' + (isSubscript ? 'active' : '')}
-            title="Subscript"
-            aria-label="Format Subscript">
-            <i className="format subscript" />
-          </button>
-          <button
-            onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
-            }}
-            className={'toolbar-item spaced ' + (isSuperscript ? 'active' : '')}
-            title="Superscript"
-            aria-label="Format Superscript">
-            <i className="format superscript" />
-          </button>
-          <button
-            onClick={() => {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
@@ -1059,6 +1027,47 @@ export default function ToolbarPlugin(): React$Node {
               <FloatingLinkEditor editor={activeEditor} />,
               document.body,
             )}
+          <DropDown
+            buttonClassName="toolbar-item spaced"
+            buttonLabel="More"
+            buttonIconClassName="icon dropdown-more">
+            <button
+              onClick={() => {
+                activeEditor.dispatchCommand(
+                  FORMAT_TEXT_COMMAND,
+                  'strikethrough',
+                );
+              }}
+              className={'item ' + (isStrikethrough ? 'active' : '')}
+              title="Strikethrough"
+              aria-label="Format Strikethrough">
+              <i className="icon strikethrough" />
+              <span className="text">Strikethrough</span>
+            </button>
+            <button
+              onClick={() => {
+                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+              }}
+              className={'item ' + (isSubscript ? 'active' : '')}
+              title="Subscript"
+              aria-label="Format Subscript">
+              <i className="icon subscript" />
+              <span className="text">Subscript</span>
+            </button>
+            <button
+              onClick={() => {
+                activeEditor.dispatchCommand(
+                  FORMAT_TEXT_COMMAND,
+                  'superscript',
+                );
+              }}
+              className={'item ' + (isSuperscript ? 'active' : '')}
+              title="Superscript"
+              aria-label="Format Superscript">
+              <i className="icon superscript" />
+              <span className="text">Superscript</span>
+            </button>
+          </DropDown>
           <Divider />
           <DropDown
             buttonClassName="toolbar-item spaced"

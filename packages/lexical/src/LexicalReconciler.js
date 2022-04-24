@@ -828,12 +828,17 @@ function reconcileSelection(
   const nextFocusOffset = focus.offset;
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
+  let skipNativeSelectionDiff = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
+  } else {
+    skipNativeSelectionDiff = true;
   }
   if (focus.type === 'text') {
     nextFocusNode = getDOMTextNode(focusDOM);
+  } else {
+    skipNativeSelectionDiff = true;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
@@ -842,8 +847,11 @@ function reconcileSelection(
   }
 
   // Diff against the native DOM selection to ensure we don't do
-  // an unnecessary selection update.
+  // an unnecessary selection update. We also skip this check if
+  // we're moving selection to within an element, as this can
+  // sometimes be problematic around scrolling.
   if (
+    !skipNativeSelectionDiff &&
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
     anchorDOMNode === nextAnchorNode &&

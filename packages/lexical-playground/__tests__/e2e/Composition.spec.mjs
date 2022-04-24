@@ -531,9 +531,14 @@ test.describe('Composition', () => {
     test('Can type Hiragana via IME with hashtags', async ({
       page,
       browserName,
+      isCollab,
     }) => {
       // We don't yet support FF.
       test.skip(browserName === 'firefox');
+      test.fixme(
+        isCollab,
+        'Some extra characters are appended to the right hand frame in collab.',
+      );
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);

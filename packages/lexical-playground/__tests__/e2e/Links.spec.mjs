@@ -1126,7 +1126,7 @@ test.describe('Links', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type(' world');
 
-    await moveLeft(page, 6);
+    await moveLeft(page, 6, 100);
 
     await page.keyboard.press('Enter');
 

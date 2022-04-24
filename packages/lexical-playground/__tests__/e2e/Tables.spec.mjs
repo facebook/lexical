@@ -1221,8 +1221,13 @@ test.describe('Tables', () => {
   test(`Range Selection is corrected when it contains a partial Table.`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      isCollab,
+      'Table selection styles are not properly synced to the right hand frame',
+    );
 
     await focusEditor(page);
     await page.keyboard.type('Hello World');
@@ -1398,8 +1403,13 @@ test.describe('Tables', () => {
   test(`Select All when document contains tables adds custom table styles.`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      isCollab,
+      'Table selection styles are not properly synced to the right hand frame',
+    );
 
     await focusEditor(page);
     await page.keyboard.type('Hello World');

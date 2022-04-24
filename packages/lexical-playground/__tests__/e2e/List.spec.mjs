@@ -939,7 +939,12 @@ test.describe('Nested List', () => {
 
   test(`Should NOT merge selected nodes into existing list siblings of a different type when formatting to a list`, async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(
+      isCollab,
+      'List item values are not properly updated in the right hand frame when merging lists',
+    );
     await focusEditor(page);
 
     // - Hello

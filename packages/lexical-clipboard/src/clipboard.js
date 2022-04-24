@@ -276,16 +276,14 @@ function $basicInsertStrategy(
   } else {
     nodesToInsert = nodes;
   }
-
   if ($isRangeSelection(selection)) {
     selection.insertNodes(nodesToInsert);
   } else if ($isGridSelection(selection)) {
+    // If there's an active grid selection and a non grid is pasted, add to the anchor.
     const anchorCell = selection.anchor.getNode();
-
     if (!$isGridCellNode(anchorCell)) {
       invariant(false, 'Expected Grid Cell in Grid Selection');
     }
-
     anchorCell.append(...nodesToInsert);
   }
 }
@@ -301,8 +299,8 @@ function $mergeGridNodesStrategy(
   }
   const newGrid = nodes[0];
   const newGridRows = newGrid.getChildren();
-  const newColumnCount = newGrid.getFirstChildOrThrow().getChildrenSize() - 1;
-  const newRowCount = newGrid.getChildrenSize() - 1;
+  const newColumnCount = newGrid.getFirstChildOrThrow().getChildrenSize();
+  const newRowCount = newGrid.getChildrenSize();
   const gridCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
     $isGridCellNode(n),
   );
@@ -321,11 +319,14 @@ function $mergeGridNodesStrategy(
     );
   }
   const startY = gridRowNode.getIndexWithinParent();
-  const stopY = Math.min(gridNode.getChildrenSize() - 1, startY + newRowCount);
+  const stopY = Math.min(
+    gridNode.getChildrenSize() - 1,
+    startY + newRowCount - 1,
+  );
   const startX = gridCellNode.getIndexWithinParent();
   const stopX = Math.min(
     gridRowNode.getChildrenSize() - 1,
-    startX + newColumnCount,
+    startX + newColumnCount - 1,
   );
   const fromX = Math.min(startX, stopX);
   const fromY = Math.min(startY, stopY);
@@ -363,14 +364,19 @@ function $mergeGridNodesStrategy(
       }
       const originalChildren = currentGridCellNode.getChildren();
       newGridCellNode.getChildren().forEach((child) => {
-        currentGridCellNode.append(child);
+        if ($isTextNode(child)) {
+          const paragraphNode = $createParagraphNode();
+          paragraphNode.append(child);
+          currentGridCellNode.append(child);
+        } else {
+          currentGridCellNode.append(child);
+        }
       });
       originalChildren.forEach((n) => n.remove());
       newColumnIdx++;
     }
     newRowIdx++;
   }
-
   if (newAnchorCellKey && newFocusCellKey) {
     const newGridSelection = $createGridSelection();
     newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);

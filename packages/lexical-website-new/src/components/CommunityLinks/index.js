@@ -21,7 +21,8 @@ const links = [
       <Translate
         id="pages.community.links.github.description"
         description="Description of Github community">
-        Want to add a new feature or get a bug fixed? Create a pull request or raise an issue.
+        Want to add a new feature or get a bug fixed? Create a pull request or
+        raise an issue.
       </Translate>
     ),
     image: (

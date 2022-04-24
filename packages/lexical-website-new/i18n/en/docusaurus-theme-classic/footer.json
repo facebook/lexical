@@ -21,7 +21,7 @@
   },
   "link.item.label.Stack Overflow": {
     "message": "Stack Overflow",
-    "description": "The label of footer link with label=Stack Overflow linking to https://stackoverflow.com/questions/tagged/lexical"
+    "description": "The label of footer link with label=Stack Overflow linking to https://stackoverflow.com/questions/tagged/lexicaljs"
   },
   "link.item.label.Twitter": {
     "message": "Twitter",

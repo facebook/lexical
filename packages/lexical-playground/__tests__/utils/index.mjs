@@ -544,17 +544,26 @@ export function html(partials, ...params) {
 }
 
 export async function selectFromFormatDropdown(page, selector) {
-  await click(page, '.toolbar-item[aria-label="Formatting Options"]');
+  await click(
+    page,
+    '.toolbar-item[aria-label="Formatting options for text style"]',
+  );
   await click(page, '.dropdown ' + selector);
 }
 
 export async function selectFromInsertDropdown(page, selector) {
-  await click(page, '.toolbar-item[aria-label="Insert"]');
+  await click(
+    page,
+    '.toolbar-item[aria-label="Insert specialized editor node"]',
+  );
   await click(page, '.dropdown ' + selector);
 }
 
 export async function selectFromAlignDropdown(page, selector) {
-  await click(page, '.toolbar-item[aria-label="Align"]');
+  await click(
+    page,
+    '.toolbar-item[aria-label="Formatting options for text alignment"]',
+  );
   await click(page, '.dropdown ' + selector);
 }
 

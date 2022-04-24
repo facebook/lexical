@@ -801,6 +801,17 @@ export function applyTableHandlers(
       SELECTION_CHANGE_COMMAND,
       (payload) => {
         const selection = $getSelection();
+        // const prevSelection = $getPreviousSelection();
+
+        // if (
+        //   selection !== prevSelection &&
+        //   ($isGridSelection(selection) || $isGridSelection(prevSelection))
+        // ) {
+        //   $updateDOMForSelection(
+        //     tableSelection.grid,
+        //     $isGridSelection(selection) ? selection : null,
+        //   );
+        // }
 
         if (
           selection &&

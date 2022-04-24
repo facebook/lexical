@@ -7,6 +7,19 @@
  *
  */
 
+.ExcalidrawModal__overlay {
+  display: flex;
+  align-items: center;
+  position: fixed;
+  flex-direction: column;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  flex-grow: 0px;
+  flex-shrink: 1px;
+  z-index: 100;
+}
 .ExcalidrawModal__actions {
   text-align: end;
   position: absolute;
@@ -30,8 +43,8 @@
 .ExcalidrawModal__row > div {
   border-radius: 5px;
 }
-.ExcalidrawModal__modal {
-  position: fixed;
+.ExcalidrawModal__modelwrapper {
+  position: relative;
   z-index: 10;
   top: 50px;
   width: 100%;

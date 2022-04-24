@@ -135,16 +135,18 @@ function ExcalidrawComponent({
 
   const elements = useMemo(() => JSON.parse(data), [data]);
 
+  const onHide = useCallback(() => {
+    editor.setReadOnly(false);
+    setModalOpen(false);
+  }, [editor]);
+
   return (
     <>
       <ExcalidrawModal
         initialElements={elements}
         isShown={isModalOpen}
         onDelete={deleteNode}
-        onHide={() => {
-          editor.setReadOnly(false);
-          setModalOpen(false);
-        }}
+        onHide={onHide}
         onSave={(newData) => {
           editor.setReadOnly(false);
           setData(newData);

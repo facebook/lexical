@@ -133,6 +133,10 @@ export function $convertSelectedLexicalContentToHtml(
         node,
       );
       if (element) {
+        // It might be the case that the node is an element node
+        // and we're not directly selecting it, but we are selecting
+        // some of its children. So we'll need to extract that out
+        // separately.
         if (node.isSelected()) {
           container.append(element);
         } else {

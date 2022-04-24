@@ -22,7 +22,7 @@
     "build-www": "npm run build -- --www && npm run build -- --www --prod && npm run prepare-www",
     "build-flow": "./scripts/build-flow.sh",
     "clean": "node scripts/clean.js",
-    "extract-codes": "npm run build -- --codes",
+    "extract-codes": "node scripts/build.js --codes",
     "flow": "node ./scripts/tasks/flow.js",
     "collab": "cross-env HOST=localhost PORT=1234 npx y-websocket-server",
     "test-unit": "jest --selectProjects unit --testPathPattern",

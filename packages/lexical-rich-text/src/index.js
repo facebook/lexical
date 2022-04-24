@@ -68,7 +68,7 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {IS_IOS} from 'shared/environment';
+import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
@@ -610,7 +610,10 @@ export function registerRichText(
           // the default behavior. This ensures that the iOS can
           // intercept that we're actually inserting a paragraph,
           // and autocomplete, autocapitialize etc work as intended.
-          if (IS_IOS) {
+          // This can also cause a strange performance issue in
+          // Safari, where there is a noticeable pause due to
+          // preventing the key down of enter.
+          if ((IS_IOS || IS_SAFARI) && CAN_USE_BEFORE_INPUT) {
             return false;
           }
           event.preventDefault();

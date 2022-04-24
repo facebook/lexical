@@ -32,6 +32,7 @@ test.describe('Images', () => {
   test(`Can create a decorator and move selection around it`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
     await focusEditor(page);

@@ -225,6 +225,18 @@ export class TableSelection {
     });
   }
 
+  updateTableGridSelection(selection: GridSelection | null) {
+    this.gridSelection = selection;
+
+    if (this.gridSelection) {
+      this.isHighlightingCells = true;
+      this.disableHighlightStyle();
+      $updateDOMForSelection(this.grid, this.gridSelection);
+    } else {
+      this.clearHighlight();
+    }
+  }
+
   adjustFocusCellForSelection(cell: Cell, ignoreStart?: boolean = false) {
     this.editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);

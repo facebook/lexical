@@ -35,6 +35,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -374,6 +375,7 @@ function $mergeGridNodesStrategy(
     const newGridSelection = $createGridSelection();
     newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);
     $setSelection(newGridSelection);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
 }
 

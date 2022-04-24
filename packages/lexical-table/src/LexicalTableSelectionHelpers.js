@@ -21,6 +21,7 @@ import {$findMatchingParent} from '@lexical/utils';
 import {
   $createRangeSelection,
   $getNearestNodeFromDOMNode,
+  $getPreviousSelection,
   $getSelection,
   $isElementNode,
   $isGridSelection,
@@ -801,17 +802,21 @@ export function applyTableHandlers(
       SELECTION_CHANGE_COMMAND,
       (payload) => {
         const selection = $getSelection();
-        // const prevSelection = $getPreviousSelection();
+        const prevSelection = $getPreviousSelection();
 
-        // if (
-        //   selection !== prevSelection &&
-        //   ($isGridSelection(selection) || $isGridSelection(prevSelection))
-        // ) {
-        //   $updateDOMForSelection(
-        //     tableSelection.grid,
-        //     $isGridSelection(selection) ? selection : null,
-        //   );
-        // }
+        if (
+          selection !== prevSelection &&
+          ($isGridSelection(selection) || $isGridSelection(prevSelection)) &&
+          tableSelection.gridSelection !== selection
+        ) {
+          tableSelection.updateTableGridSelection(
+            $isGridSelection(selection) && tableNode.isSelected()
+              ? selection
+              : null,
+          );
+
+          return false;
+        }
 
         if (
           selection &&
@@ -825,6 +830,7 @@ export function applyTableHandlers(
           const containsPartialTable =
             (isAnchorInside && !isFocusInside) ||
             (isFocusInside && !isAnchorInside);
+
           if (containsPartialTable) {
             const isBackward = selection.isBackward();
             const modifiedSelection = $createRangeSelection();

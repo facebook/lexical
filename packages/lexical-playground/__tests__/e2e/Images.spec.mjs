@@ -101,33 +101,31 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await click(page, '.editor-image img');
-    // The focus on the decorator doesn't seem to work in the right frame?
-    if (!isCollab) {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph">
-            <span
-              class="editor-image"
-              contenteditable="false"
-              data-lexical-decorator="true">
-              <img
-                src="${IMAGE_URL}"
-                alt="Yellow flower in tilt shift lens"
-                style="height: inherit; max-width: 500px; width: inherit;"
-                class="focused" />
-              <button class="image-caption-button">Add Caption</button>
-              <div class="image-resizer-ne"></div>
-              <div class="image-resizer-se"></div>
-              <div class="image-resizer-sw"></div>
-              <div class="image-resizer-nw"></div>
-            </span>
-            <br />
-          </p>
-        `,
-        true,
-      );
-    }
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img
+              src="${IMAGE_URL}"
+              alt="Yellow flower in tilt shift lens"
+              style="height: inherit; max-width: 500px; width: inherit;"
+              class="focused" />
+            <button class="image-caption-button">Add Caption</button>
+            <div class="image-resizer-ne"></div>
+            <div class="image-resizer-se"></div>
+            <div class="image-resizer-sw"></div>
+            <div class="image-resizer-nw"></div>
+          </span>
+          <br />
+        </p>
+      `,
+      true,
+    );
 
     await page.keyboard.press('Backspace');
 

@@ -61,20 +61,18 @@ export function $convertSelectedLexicalNodeToHTMLElement(
   let nodeToConvert = node;
 
   if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-    const anchor = selection.anchor.getNode();
-    const focus = selection.focus.getNode();
-    const isAnchor = node.is(anchor);
-    const isFocus = node.is(focus);
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    const isAnchor = node.is(anchorNode);
+    const isFocus = node.is(focusNode);
 
     if ($isTextNode(node) && (isAnchor || isFocus)) {
       const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
       const isBackward = selection.isBackward();
 
-      const isSame = anchor.is(focus);
-      const isFirst = node.is(isBackward ? focus : anchor);
-
-      const nodeText = node.getTextContent();
-      const nodeTextLength = nodeText.length;
+      const isSame = anchorNode.is(focusNode);
+      const isFirst = node.is(isBackward ? focusNode : anchorNode);
+      const isLast = node.is(isBackward ? anchorNode : focusNode);
 
       if (isSame) {
         const startOffset =
@@ -83,21 +81,14 @@ export function $convertSelectedLexicalNodeToHTMLElement(
           anchorOffset > focusOffset ? anchorOffset : focusOffset;
         const splitNodes = node.splitText(startOffset, endOffset);
         nodeToConvert = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-      } else {
-        let endOffset;
-
-        if (isFirst) {
-          endOffset = isBackward ? focusOffset : anchorOffset;
-        } else {
-          endOffset = isBackward ? anchorOffset : focusOffset;
-        }
-
-        if (!isBackward && endOffset === 0) {
-          return null;
-        } else if (endOffset !== nodeTextLength) {
-          nodeToConvert =
-            node.splitText(endOffset)[isFirst && endOffset !== 0 ? 1 : 0];
-        }
+      } else if (isFirst) {
+        const offset = isBackward ? focusOffset : anchorOffset;
+        const splitNodes = node.splitText(offset);
+        nodeToConvert = offset === 0 ? splitNodes[0] : splitNodes[1];
+      } else if (isLast) {
+        const offset = isBackward ? anchorOffset : focusOffset;
+        const splitNodes = node.splitText(offset);
+        nodeToConvert = splitNodes[0];
       }
     }
   }
@@ -135,13 +126,24 @@ export function $convertSelectedLexicalContentToHtml(
   for (let i = 0; i < state.range.length; i++) {
     const nodeKey = state.range[i];
     const node = $getNodeByKey(nodeKey);
-    if (node && node.isSelected()) {
+    if (node) {
       const element = $convertSelectedLexicalNodeToHTMLElement(
         editor,
         selection,
         node,
       );
-      if (element) container.append(element);
+      if (element) {
+        if (node.isSelected()) {
+          container.append(element);
+        } else {
+          let childNode = element.firstChild;
+          while (childNode != null) {
+            const nextSibling = childNode.nextSibling;
+            container.append(childNode);
+            childNode = nextSibling;
+          }
+        }
+      }
     }
   }
   return container.innerHTML;

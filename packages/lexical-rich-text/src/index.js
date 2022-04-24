@@ -445,7 +445,9 @@ export function registerRichText(
         const nodes = selection.getNodes();
         if (nodes.length === 0) {
           if ($isRangeSelection(selection) && selection.isCollapsed()) {
-            const element = $getNearestBlockElementAncestorOrThrow(selection.anchor.getNode());
+            const element = $getNearestBlockElementAncestorOrThrow(
+              selection.anchor.getNode(),
+            );
             element.setFormat(format);
           }
         } else {

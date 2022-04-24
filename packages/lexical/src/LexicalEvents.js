@@ -569,6 +569,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
+    isInsertLineBreak = true;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
   } else if (isParagraph(keyCode, shiftKey)) {
     isInsertLineBreak = false;

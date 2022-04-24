@@ -828,7 +828,8 @@ function reconcileSelection(
   const nextFocusOffset = focus.offset;
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
-  const skipNativeSelectionDiff = false;
+  // TODO get skipNativeSelectionDiff working with collab
+  // const skipNativeSelectionDiff = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);

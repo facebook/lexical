@@ -443,9 +443,16 @@ export function registerRichText(
           return false;
         }
         const nodes = selection.getNodes();
-        for (const node of nodes) {
-          const element = $getNearestBlockElementAncestorOrThrow(node);
-          element.setFormat(format);
+        if (nodes.length === 0) {
+          if ($isRangeSelection(selection) && selection.isCollapsed()) {
+            const element = $getNearestBlockElementAncestorOrThrow(selection.anchor.getNode());
+            element.setFormat(format);
+          }
+        } else {
+          for (const node of nodes) {
+            const element = $getNearestBlockElementAncestorOrThrow(node);
+            element.setFormat(format);
+          }
         }
         return true;
       },

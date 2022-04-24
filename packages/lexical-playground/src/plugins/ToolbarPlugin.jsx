@@ -744,6 +744,8 @@ export default function ToolbarPlugin(): React$Node {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
+  const [isSubscript, setIsSubscript] = useState(false);
+  const [isSuperscript, setIsSuperscript] = useState(false);
   const [isCode, setIsCode] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
@@ -767,6 +769,8 @@ export default function ToolbarPlugin(): React$Node {
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
       setIsStrikethrough(selection.hasFormat('strikethrough'));
+      setIsSubscript(selection.hasFormat('subscript'));
+      setIsSuperscript(selection.hasFormat('superscript'));
       setIsCode(selection.hasFormat('code'));
       setIsRTL($isParentElementRTL(selection));
 
@@ -1015,6 +1019,24 @@ export default function ToolbarPlugin(): React$Node {
             title="Strikethrough"
             aria-label="Format Strikethrough">
             <i className="format strikethrough" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+            }}
+            className={'toolbar-item spaced ' + (isSubscript ? 'active' : '')}
+            title="Subscript"
+            aria-label="Format Subscript">
+            <i className="format subscript" />
+          </button>
+          <button
+            onClick={() => {
+              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
+            }}
+            className={'toolbar-item spaced ' + (isSuperscript ? 'active' : '')}
+            title="Superscript"
+            aria-label="Format Superscript">
+            <i className="format superscript" />
           </button>
           <button
             onClick={() => {

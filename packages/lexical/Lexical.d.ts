@@ -177,6 +177,8 @@ type TextNodeThemeClasses = {
   underlineStrikethrough?: EditorThemeClassName;
   italic?: EditorThemeClassName;
   code?: EditorThemeClassName;
+  subscript?: EditorThemeClassName;
+  superscript?: EditorThemeClassName;
 };
 export type EditorThemeClasses = {
   ltr?: EditorThemeClassName;

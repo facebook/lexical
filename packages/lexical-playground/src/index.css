@@ -331,6 +331,14 @@ i.strikethrough {
   background-image: url(images/icons/type-strikethrough.svg);
 }
 
+i.subscript {
+  background-image: url(images/icons/type-subscript.svg);
+}
+
+i.superscript {
+  background-image: url(images/icons/type-superscript.svg);
+}
+
 i.link {
   background-image: url(images/icons/link.svg);
 }

@@ -377,7 +377,7 @@ test.describe('Keywords', () => {
     await toggleBold(page);
     await page.keyboard.type('Everyone ');
 
-    await new Promise(() => {})
+    await new Promise(() => {});
 
     await assertHTML(
       page,

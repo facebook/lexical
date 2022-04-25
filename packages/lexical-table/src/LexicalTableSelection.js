@@ -226,13 +226,20 @@ export class TableSelection {
   }
 
   updateTableGridSelection(selection: GridSelection | null) {
-    this.gridSelection = selection;
-
-    if (this.gridSelection) {
+    if (selection != null) {
+      this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
+      const domSelection = getDOMSelection();
+      const anchorElement = this.editor.getElementByKey(selection.anchor.key);
+      const focusElement = this.editor.getElementByKey(selection.anchor.key);
+      if (anchorElement && focusElement) {
+        domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
+      }
       $updateDOMForSelection(this.grid, this.gridSelection);
     } else {
+      this.gridSelection = selection;
+
       this.clearHighlight();
     }
   }

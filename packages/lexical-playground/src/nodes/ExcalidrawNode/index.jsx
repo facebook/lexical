@@ -26,6 +26,7 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
+import ImageResizer from '../../ui/ImageResizer';
 import ExcalidrawImage from './ExcalidrawImage';
 import ExcalidrawModal from './ExcalidrawModal';
 
@@ -40,9 +41,11 @@ function ExcalidrawComponent({
   const [isModalOpen, setModalOpen] = useState<boolean>(
     data === '[]' && !editor.isReadOnly(),
   );
+  const imageContainerRef = useRef<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLElement | null>(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
 
   const onDelete = useCallback(
     (payload) => {
@@ -77,6 +80,11 @@ function ExcalidrawComponent({
           const buttonElem = buttonRef.current;
           // $FlowFixMe: this will work
           const eventTarget: Element = event.target;
+
+          if (isResizing) {
+            return true;
+          }
+
           if (buttonElem !== null && buttonElem.contains(eventTarget)) {
             if (!event.shiftKey) {
               clearSelection();
@@ -103,7 +111,7 @@ function ExcalidrawComponent({
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
 
   const deleteNode = useCallback(() => {
     return editor.update(() => {
@@ -133,8 +141,30 @@ function ExcalidrawComponent({
     [editor, nodeKey],
   );
 
-  const elements = useMemo(() => JSON.parse(data), [data]);
+  const onResizeStart = useCallback(() => {
+    const rootElement = editor.getRootElement();
+    if (rootElement !== null) {
+      rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
+    }
+    setIsResizing(true);
+  }, [editor]);
 
+  const onResizeEnd = useCallback(
+    (nextWidth, nextHeight) => {
+      const rootElement = editor.getRootElement();
+      if (rootElement !== null) {
+        rootElement.style.setProperty('cursor', 'default');
+      }
+
+      // Delay hiding the resize bars for click case
+      setTimeout(() => {
+        setIsResizing(false);
+      }, 200);
+    },
+    [editor],
+  );
+
+  const elements = useMemo(() => JSON.parse(data), [data]);
   return (
     <>
       <ExcalidrawModal
@@ -154,7 +184,21 @@ function ExcalidrawComponent({
       <button
         ref={buttonRef}
         className={`excalidraw-button ${isSelected ? 'selected' : ''}`}>
-        <ExcalidrawImage className="image" elements={elements} />
+        <ExcalidrawImage
+          imageContainerRef={imageContainerRef}
+          className="image"
+          elements={elements}
+        />
+        {(isSelected || isResizing) && (
+          <ImageResizer
+            showCaption={true}
+            setShowCaption={() => {}}
+            imageRef={imageContainerRef}
+            editor={editor}
+            onResizeStart={onResizeStart}
+            onResizeEnd={onResizeEnd}
+          />
+        )}
       </button>
     </>
   );

@@ -8,7 +8,7 @@
  */
 
 import type {ListNode} from './';
-import type {ElementNode, LexicalEditor} from 'lexical';
+import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
@@ -38,6 +38,19 @@ import {
   isNestedListNode,
 } from './utils';
 
+function $isSelectingEmptyListItem(
+  anchorNode: LexicalNode,
+  nodes: Array<LexicalNode>,
+): boolean %checks {
+  return (
+    $isListItemNode(anchorNode) &&
+    (nodes.length === 0 ||
+      (nodes.length === 1 &&
+        anchorNode.is(nodes[0]) &&
+        anchorNode.getChildrenSize() === 0))
+  );
+}
+
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -46,8 +59,7 @@ export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
-      // This is a special case for when there's nothing selected
-      if (nodes.length === 0) {
+      if ($isSelectingEmptyListItem(anchorNode, nodes)) {
         const list = $createListNode(listType);
         if ($isRootNode(anchorNodeParent)) {
           anchorNode.replace(list);
@@ -136,7 +148,7 @@ export function removeList(editor: LexicalEditor): void {
       const listNodes = new Set();
       const nodes = selection.getNodes();
       const anchorNode = selection.anchor.getNode();
-      if (nodes.length === 0 && $isListItemNode(anchorNode)) {
+      if ($isSelectingEmptyListItem(anchorNode, nodes)) {
         listNodes.add($getTopListNode(anchorNode));
       } else {
         for (let i = 0; i < nodes.length; i++) {

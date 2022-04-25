@@ -1421,8 +1421,14 @@ test.describe('CopyAndPaste', () => {
   test('HTML Copy + paste (Table - Google Docs)', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
+
+    test.fixme(
+      isCollab,
+      'Table selection styles are not properly synced to the right hand frame',
+    );
 
     await focusEditor(page);
 

@@ -541,7 +541,7 @@ export function $updateTextNodeFromDOMContent(
           const editor = getActiveEditor();
           setTimeout(() => {
             editor.update(() => {
-              if (!node.isAttached()) {
+              if (node.isAttached()) {
                 node.remove();
               }
             });

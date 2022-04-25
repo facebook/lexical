@@ -220,7 +220,6 @@ export function $insertDataTransferForRichText(
       }
     } catch (e) {
       // Malformed, missing nodes..
-      throw e;
     }
   }
 
@@ -253,7 +252,7 @@ function $basicInsertStrategy(
   isFromLexical: boolean,
 ) {
   let nodesToInsert;
-  if (isFromLexical) {
+  if (!isFromLexical) {
     // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
     const topLevelBlocks = [];
     let currentBlock = null;

@@ -1523,3 +1523,7 @@ button.action-button:disabled {
     animation: octocat-wave 560ms ease-in-out;
   }
 }
+
+.spacer {
+  letter-spacing: -2px;
+}

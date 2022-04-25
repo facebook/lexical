@@ -16,6 +16,7 @@ import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
+  $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -220,7 +221,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         $getRoot().getChildrenSize() === 1 &&
         anchor.getNode().getTopLevelElementOrThrow().isEmpty()
       ) {
-        const lastSelection = editor.getEditorState()._selection;
+        const lastSelection = $getPreviousSelection();
         if (lastSelection !== null && selection.is(lastSelection)) {
           getDOMSelection().removeAllRanges();
           selection.dirty = true;
@@ -310,11 +311,15 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
 
-    if (!$isRangeSelection(selection)) {
-      return;
-    }
-
     if (inputType === 'deleteContentBackward') {
+      if (selection === null) {
+        // Use previous selection
+        const prevSelection = $getPreviousSelection();
+        if (!$isRangeSelection(prevSelection)) {
+          return;
+        }
+        $setSelection(prevSelection.clone());
+      }
       // Used for Android
       $setCompositionKey(null);
       event.preventDefault();
@@ -328,6 +333,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       }, ANDROID_COMPOSITION_LATENCY);
       return;
     }
+
+    if (!$isRangeSelection(selection)) {
+      return;
+    }
+
     const data = event.data;
 
     if (
@@ -509,7 +519,9 @@ function onCompositionStart(
         // If it has been 30ms since the last keydown, then we should
         // apply the empty space heuristic.
         event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
-        anchor.type === 'element' ||
+        // FF has issues around composing multibyte characters, so we also
+        // need to invoke the empty space heuristic below.
+        (IS_FIREFOX && anchor.type === 'element') ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {

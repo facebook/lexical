@@ -1557,6 +1557,14 @@ export class RangeSelection implements BaseSelection {
           anchor.set(elementKey, offset, 'element');
         }
         return;
+      } else {
+        const siblingKey = sibling.__key;
+        const offset = isBackward ? sibling.getTextContent().length : 0;
+        focus.set(siblingKey, offset, 'text');
+        if (collapse) {
+          anchor.set(siblingKey, offset, 'text');
+        }
+        return;
       }
     }
 

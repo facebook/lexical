@@ -456,11 +456,7 @@ function InsertPollDialog({
 
   return (
     <>
-      <TextInput
-        label="Poll Question"
-        onChange={setQuestion}
-        value={question}
-      />
+      <TextInput label="Question" onChange={setQuestion} value={question} />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm

@@ -320,6 +320,8 @@ const FORMAT_PREDICATES = [
   (node) => node.hasFormat('code') && 'Code',
   (node) => node.hasFormat('italic') && 'Italic',
   (node) => node.hasFormat('strikethrough') && 'Strikethrough',
+  (node) => node.hasFormat('subscript') && 'Subscript',
+  (node) => node.hasFormat('superscript') && 'Superscript',
   (node) => node.hasFormat('underline') && 'Underline',
 ];
 

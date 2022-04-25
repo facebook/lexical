@@ -457,7 +457,7 @@ function InsertPollDialog({
   return (
     <>
       <TextInput
-        label="Poll Question"
+        label="Question"
         onChange={setQuestion}
         value={question}
       />

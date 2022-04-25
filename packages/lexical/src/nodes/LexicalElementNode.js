@@ -6,9 +6,13 @@
  *
  * @flow strict
  */
-
 import type {NodeKey} from '../LexicalNode';
-import type {PointType, RangeSelection} from '../LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  PointType,
+  RangeSelection,
+} from '../LexicalSelection';
 
 import invariant from 'shared/invariant';
 
@@ -446,6 +450,12 @@ export class ElementNode extends LexicalNode {
     return false;
   }
   canMergeWith(node: ElementNode): boolean {
+    return false;
+  }
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
     return false;
   }
 }

@@ -21,6 +21,9 @@ export function $cloneContents(
   nodeMap: Array<[NodeKey, LexicalNode]>;
   range: Array<NodeKey>;
 };
+export function $cloneWithProperties<LexicalNode>(
+  node: LexicalNode,
+): LexicalNode;
 export function getStyleObjectFromCSS(css: string): {
   [key: string]: string;
 } | null;

@@ -725,6 +725,10 @@ declare export class ElementNode extends LexicalNode {
   canExtractContents(): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canInsertAfter(node: LexicalNode): boolean;
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+  ): boolean;
   canBeEmpty(): boolean;
   canInsertTextBefore(): boolean;
   canInsertTextAfter(): boolean;

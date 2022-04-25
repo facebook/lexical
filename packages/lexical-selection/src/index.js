@@ -35,7 +35,7 @@ import invariant from 'shared/invariant';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
-function $cloneWithProperties<T: LexicalNode>(node: T): T {
+export function $cloneWithProperties<T: LexicalNode>(node: T): T {
   const latest = node.getLatest();
   const constructor = latest.constructor;
   const clone = constructor.clone(latest);

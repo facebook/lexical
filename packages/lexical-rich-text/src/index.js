@@ -21,9 +21,9 @@ import type {
 } from 'lexical';
 
 import {
+  $getHtmlContent,
   $getLexicalContent,
   $insertDataTransferForRichText,
-  getHtmlContent,
 } from '@lexical/clipboard';
 import {
   $moveCharacter,
@@ -218,6 +218,10 @@ export class HeadingNode extends ElementNode {
     this.replace(paragraph);
     return true;
   }
+
+  extractWithChild(): boolean {
+    return true;
+  }
 }
 
 function convertHeadingElement(domNode: Node): DOMConversionOutput {
@@ -308,7 +312,7 @@ function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
     const selection = $getSelection();
     if (selection !== null) {
       if (clipboardData != null) {
-        const htmlString = getHtmlContent(editor);
+        const htmlString = $getHtmlContent(editor);
         const lexicalString = $getLexicalContent(editor);
         if (htmlString !== null) {
           clipboardData.setData('text/html', htmlString);

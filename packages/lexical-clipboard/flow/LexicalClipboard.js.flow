@@ -19,7 +19,7 @@ declare export function $insertDataTransferForRichText(
   editor: LexicalEditor,
 ): void;
 
-declare export function getHtmlContent(editor: LexicalEditor): string;
+declare export function $getHtmlContent(editor: LexicalEditor): string;
 declare export function $getLexicalContent(editor: LexicalEditor): string;
 
 /*

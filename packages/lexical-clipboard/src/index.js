@@ -8,15 +8,15 @@
  */
 
 import {
+  $getHtmlContent,
   $getLexicalContent,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
-  getHtmlContent,
 } from './clipboard';
 
 export {
+  $getHtmlContent,
   $getLexicalContent,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
-  getHtmlContent,
 };

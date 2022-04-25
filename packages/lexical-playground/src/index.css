@@ -1195,8 +1195,7 @@ button.action-button:disabled {
 }
 
 .toolbar select.code-language {
-  text-transform: capitalize;
-  width: 130px;
+  width: 150px;
 }
 
 .toolbar .toolbar-item .text {

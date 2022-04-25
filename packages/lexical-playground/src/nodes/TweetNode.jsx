@@ -98,7 +98,7 @@ export class TweetNode extends DecoratorBlockNode<React$Node> {
     return new TweetNode(node.__id, node.__format, node.__key);
   }
 
-  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
+  constructor(id: string, format?: ?ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }

@@ -81,6 +81,7 @@ function $getParentAvoidingExcludedElements(
 function $copyLeafNodeBranchToRoot(
   leaf: LexicalNode,
   startingOffset: number,
+  endingOffset: void | number,
   isLeftSide: boolean,
   range: Array<NodeKey>,
   nodeMap: Map<NodeKey, LexicalNode>,
@@ -103,7 +104,7 @@ function $copyLeafNodeBranchToRoot(
       if ($isTextNode(clone) && !clone.isSegmented() && !clone.isToken()) {
         clone.__text = clone.__text.slice(
           isLeftSide ? offset : 0,
-          isLeftSide ? undefined : offset,
+          isLeftSide ? endingOffset : offset,
         );
       } else if ($isElementNode(clone)) {
         clone.__children = clone.__children.slice(
@@ -204,11 +205,13 @@ function $cloneContentsImpl(
     const isBefore = anchor.isBefore(focus);
     const nodeMap = new Map();
     const range = [];
+    const isSame = firstNode.is(lastNode);
 
     // Do first node to root
     $copyLeafNodeBranchToRoot(
       firstNode,
       isBefore ? anchorOffset : focusOffset,
+      isSame ? (isBefore ? focusOffset : anchorOffset) : undefined,
       true,
       range,
       nodeMap,
@@ -230,14 +233,18 @@ function $cloneContentsImpl(
         }
       }
     }
-    // Do last node to root
-    $copyLeafNodeBranchToRoot(
-      lastNode,
-      isBefore ? focusOffset : anchorOffset,
-      false,
-      range,
-      nodeMap,
-    );
+    if (!isSame) {
+      // Do last node to root
+      $copyLeafNodeBranchToRoot(
+        lastNode,
+        isBefore ? focusOffset : anchorOffset,
+        undefined,
+        false,
+        range,
+        nodeMap,
+      );
+    }
+
     return {nodeMap: Array.from(nodeMap.entries()), range};
   } else if ($isGridSelection(selection)) {
     const nodeMap = selection.getNodes().map((node) => {

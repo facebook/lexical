@@ -1933,7 +1933,7 @@ function resolveSelectionPointOnBoundary(
         point.offset = prevSibling.getTextContent().length;
       }
     } else if (
-      isCollapsed &&
+      (isCollapsed || !isBackward) &&
       prevSibling === null &&
       $isElementNode(parent) &&
       parent.isInline()
@@ -1954,7 +1954,7 @@ function resolveSelectionPointOnBoundary(
       // $FlowFixMe: intentional
       point.type = 'element';
     } else if (
-      isCollapsed &&
+      (isCollapsed || isBackward) &&
       nextSibling === null &&
       $isElementNode(parent) &&
       parent.isInline()

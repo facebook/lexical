@@ -153,7 +153,7 @@ function selectPointOnNode(point: PointType, node: LexicalNode): void {
   let type = 'element';
   if ($isTextNode(node)) {
     type = 'text';
-    const textContentLength = node.getTextContent().length;
+    const textContentLength = node.getTextContentSize();
     if (offset > textContentLength) {
       offset = textContentLength;
     }
@@ -818,7 +818,7 @@ export class RangeSelection implements BaseSelection {
         if (
           $isTextNode(lastNode) &&
           !$isTokenOrInert(lastNode) &&
-          endOffset !== lastNode.getTextContent().length
+          endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
             const textNode = $createTextNode(lastNode.getTextContent());
@@ -977,7 +977,7 @@ export class RangeSelection implements BaseSelection {
 
     // This is the case where the user only selected the very end of the
     // first node so we don't want to include it in the formatting change.
-    if (startOffset === firstNode.getTextContent().length) {
+    if (startOffset === firstNode.getTextContentSize()) {
       const nextSibling = firstNode.getNextSibling();
 
       if ($isTextNode(nextSibling)) {
@@ -1359,8 +1359,8 @@ export class RangeSelection implements BaseSelection {
       currentElement = anchorNode.getParentOrThrow();
       const isInline = currentElement.isInline();
       const textContentLength = isInline
-        ? currentElement.getTextContent().length
-        : anchorNode.getTextContent().length;
+        ? currentElement.getTextContentSize()
+        : anchorNode.getTextContentSize();
       if (anchorOffset === 0) {
         nodesToMove.push(anchorNode);
       } else {
@@ -1371,10 +1371,7 @@ export class RangeSelection implements BaseSelection {
           siblingsToMove = currentElement.getNextSiblings();
         }
         if (anchorOffset !== textContentLength) {
-          if (
-            !isInline ||
-            anchorOffset !== anchorNode.getTextContent().length
-          ) {
+          if (!isInline || anchorOffset !== anchorNode.getTextContentSize()) {
             const [, splitNode] = anchorNode.splitText(anchorOffset);
             nodesToMove.push(splitNode);
           }
@@ -1500,7 +1497,7 @@ export class RangeSelection implements BaseSelection {
 
     if ($isTextNode(firstNode)) {
       const startOffset = isBefore ? anchorOffset : focusOffset;
-      if (startOffset === firstNode.getTextContent().length) {
+      if (startOffset === firstNode.getTextContentSize()) {
         selectedNodes.shift();
       } else if (startOffset !== 0) {
         [, firstNode] = firstNode.splitText(startOffset);
@@ -1612,7 +1609,7 @@ export class RangeSelection implements BaseSelection {
           // $FlowFixMe: always an element node
           anchor.offset === (anchorNode: ElementNode).getChildrenSize()) ||
           (anchor.type === 'text' &&
-            anchor.offset === anchorNode.getTextContent().length))
+            anchor.offset === anchorNode.getTextContentSize()))
       ) {
         const nextSibling =
           anchorNode.getNextSibling() ||
@@ -1630,7 +1627,7 @@ export class RangeSelection implements BaseSelection {
 
         if (focusNode !== null && focusNode.isSegmented()) {
           const offset = focus.offset;
-          const textContentSize = focusNode.getTextContent().length;
+          const textContentSize = focusNode.getTextContentSize();
           if (
             focusNode.is(anchorNode) ||
             (isBackward && offset !== textContentSize) ||
@@ -1641,7 +1638,7 @@ export class RangeSelection implements BaseSelection {
           }
         } else if (anchorNode !== null && anchorNode.isSegmented()) {
           const offset = anchor.offset;
-          const textContentSize = anchorNode.getTextContent().length;
+          const textContentSize = anchorNode.getTextContentSize();
           if (
             anchorNode.is(focusNode) ||
             (isBackward && offset !== 0) ||
@@ -2305,7 +2302,7 @@ function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
     if ($isTextNode(child)) {
       let newOffset = 0;
       if (anchorOffsetAtEnd) {
-        newOffset = child.getTextContent().length;
+        newOffset = child.getTextContentSize();
       }
       anchor.set(child.__key, newOffset, 'text');
       focus.set(child.__key, newOffset, 'text');
@@ -2321,7 +2318,7 @@ function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
     if ($isTextNode(child)) {
       let newOffset = 0;
       if (anchorOffsetAtEnd) {
-        newOffset = child.getTextContent().length;
+        newOffset = child.getTextContentSize();
       }
       anchor.set(child.__key, newOffset, 'text');
     }
@@ -2335,7 +2332,7 @@ function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
     if ($isTextNode(child)) {
       let newOffset = 0;
       if (focusOffsetAtEnd) {
-        newOffset = child.getTextContent().length;
+        newOffset = child.getTextContentSize();
       }
       focus.set(child.__key, newOffset, 'text');
     }
@@ -2380,7 +2377,7 @@ export function moveSelectionPointToSibling(
   if (prevSibling !== null) {
     siblingKey = prevSibling.__key;
     if ($isTextNode(prevSibling)) {
-      offset = prevSibling.getTextContent().length;
+      offset = prevSibling.getTextContentSize();
       type = 'text';
     } else if ($isElementNode(prevSibling)) {
       offset = prevSibling.getChildrenSize();

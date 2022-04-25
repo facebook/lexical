@@ -346,11 +346,16 @@ declare export class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
+  isComposing(): boolean;
   // $FlowFixMe
   getLatest<T: LexicalNode>(this: T): T;
   // $FlowFixMe
   getWritable<T: LexicalNode>(this: T): T;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
+  getTextContentSize(
+    includeInert?: boolean,
+    includeDirectionless?: false,
+  ): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
     // $FlowFixMe
@@ -597,7 +602,6 @@ declare export class TextNode extends LexicalNode {
   setMark(id: string, start: null | number, end: null | number): void;
   deleteMark(id: string): void;
   getStyle(): string;
-  isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
   isInert(): boolean;

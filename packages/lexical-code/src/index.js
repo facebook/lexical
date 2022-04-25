@@ -571,7 +571,7 @@ function updateAndRetainSelection(
       anchorOffset +
       anchorNode.getPreviousSiblings().reduce((offset, _node) => {
         return (
-          offset + ($isLineBreakNode(_node) ? 0 : _node.getTextContent().length)
+          offset + ($isLineBreakNode(_node) ? 0 : _node.getTextContentSize())
         );
       }, 0);
   }
@@ -592,7 +592,7 @@ function updateAndRetainSelection(
   // and looking for a position of original text offset
   node.getChildren().some((_node) => {
     if ($isTextNode(_node)) {
-      const textContentSize = _node.getTextContent().length;
+      const textContentSize = _node.getTextContentSize();
       if (textContentSize >= textOffset) {
         _node.select(textOffset, textOffset);
         return true;
@@ -769,7 +769,7 @@ function handleShiftLines(
         }
       } else if (
         !arrowIsUp &&
-        anchorOffset === anchorNode.getTextContent().length &&
+        anchorOffset === anchorNode.getTextContentSize() &&
         anchorNode.getNextSibling() === null
       ) {
         const codeNodeSibling = codeNode.getNextSibling();

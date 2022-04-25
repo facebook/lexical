@@ -537,7 +537,7 @@ export function applyTableHandlers(
 
             if (
               selection.anchor.offset ===
-                selection.anchor.getNode().getTextContent().length ||
+                selection.anchor.getNode().getTextContentSize() ||
               event.shiftKey
             ) {
               event.preventDefault();

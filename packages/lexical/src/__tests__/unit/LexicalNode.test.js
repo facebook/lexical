@@ -571,13 +571,13 @@ describe('LexicalNode tests', () => {
         expect(() => textNode.getTextContent()).toThrow();
       });
 
-      test('LexicalNode.getTextContent(): length', async () => {
+      test('LexicalNode.getTextContentSize()', async () => {
         const {editor} = testEnv;
         await editor.getEditorState().read(() => {
-          expect(textNode.getTextContent().length).toBe('foo'.length);
+          expect(textNode.getTextContentSize()).toBe('foo'.length);
           // TODO: more tests with inert and directionless children
         });
-        expect(() => textNode.getTextContent().length).toThrow();
+        expect(() => textNode.getTextContentSize()).toThrow();
       });
 
       test('LexicalNode.createDOM()', async () => {

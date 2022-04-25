@@ -306,7 +306,7 @@ export function $patchStyleText(
 
   // This is the case where the user only selected the very end of the
   // first node so we don't want to include it in the formatting change.
-  if (startOffset === firstNode.getTextContent().length) {
+  if (startOffset === firstNode.getTextContentSize()) {
     const nextSibling = firstNode.getNextSibling();
 
     if ($isTextNode(nextSibling)) {
@@ -481,7 +481,7 @@ export function $selectAll(selection: RangeSelection): void {
   }
   if ($isTextNode(lastNode)) {
     lastType = 'text';
-    lastOffset = lastNode.getTextContent().length;
+    lastOffset = lastNode.getTextContentSize();
   } else if (!$isElementNode(lastNode) && lastNode !== null) {
     lastNode = lastNode.getParentOrThrow();
     lastOffset = lastNode.getChildrenSize();
@@ -663,7 +663,7 @@ function isPointAttached(point: Point): boolean {
 
 export function $isAtNodeEnd(point: Point): boolean {
   if (point.type === 'text') {
-    return point.offset === point.getNode().getTextContent().length;
+    return point.offset === point.getNode().getTextContentSize();
   }
   return point.offset === point.getNode().getChildrenSize();
 }

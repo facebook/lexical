@@ -125,7 +125,7 @@ function useTypeahead(editor: LexicalEditor): void {
         if ($isRangeSelection(selection)) {
           const anchorNode = selection?.anchor.getNode();
           const anchorOffset = selection?.anchor.offset;
-          const anchorLength = anchorNode?.getTextContent().length;
+          const anchorLength = anchorNode?.getTextContentSize();
           isCaretPositionAtEnd =
             anchorLength != null && anchorOffset === anchorLength;
         }

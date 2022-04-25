@@ -1481,7 +1481,6 @@ export class RangeSelection implements BaseSelection {
     let firstNode = selectedNodes[0];
     let lastNode = selectedNodes[lastIndex];
     const [anchorOffset, focusOffset] = getCharacterOffsets(this);
-    debugger;
 
     if (selectedNodesLength === 0) {
       return [];

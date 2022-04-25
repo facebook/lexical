@@ -144,7 +144,7 @@ test.describe('Nested List', () => {
     );
   });
 
-  test.only(`Can create a list and partially copy some content out of it`, async ({
+  test(`Can create a list and partially copy some content out of it`, async ({
     page,
   }) => {
     await focusEditor(page);

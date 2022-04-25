@@ -232,7 +232,7 @@ export class TableSelection {
       this.disableHighlightStyle();
       const domSelection = getDOMSelection();
       const anchorElement = this.editor.getElementByKey(selection.anchor.key);
-      const focusElement = this.editor.getElementByKey(selection.anchor.key);
+      const focusElement = this.editor.getElementByKey(selection.focus.key);
       if (anchorElement && focusElement) {
         domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
       }

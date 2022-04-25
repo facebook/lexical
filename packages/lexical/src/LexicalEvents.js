@@ -54,7 +54,7 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
+import {DOM_ELEMENT_TYPE, DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -133,6 +133,31 @@ let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
 let isInsertLineBreak = false;
 
+function isEmptyElementOrTextNotAtBoundary(
+  domNode: null | Node,
+  offset: number,
+): boolean {
+  if (domNode === null) {
+    return false;
+  }
+  const firstChild = domNode.firstChild;
+  const nodeType = domNode.nodeType;
+  if (
+    nodeType === DOM_ELEMENT_TYPE &&
+    firstChild != null &&
+    firstChild === domNode.lastChild &&
+    firstChild.nodeName === 'BR'
+  ) {
+    // Empty element
+    return true;
+  }
+  return (
+    nodeType === DOM_TEXT_TYPE &&
+    offset !== 0 &&
+    offset !== domNode.nodeValue.length
+  );
+}
+
 function onSelectionChange(
   domSelection: Selection,
   editor: LexicalEditor,
@@ -150,14 +175,8 @@ function onSelectionChange(
     // because in this case, we might need to normalize to a
     // sibling instead.
     if (
-      anchorNode !== null &&
-      focusNode !== null &&
-      anchorOffset !== 0 &&
-      focusOffset !== 0 &&
-      anchorNode.nodeType === DOM_TEXT_TYPE &&
-      focusNode.nodeType === DOM_TEXT_TYPE &&
-      anchorOffset !== anchorNode.nodeValue.length &&
-      focusOffset !== focusNode.nodeValue.length
+      isEmptyElementOrTextNotAtBoundary(anchorNode, anchorOffset) &&
+      isEmptyElementOrTextNotAtBoundary(focusNode, focusOffset)
     ) {
       return;
     }

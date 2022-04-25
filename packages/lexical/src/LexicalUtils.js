@@ -289,17 +289,19 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
   const previousCompositionKey = editor._compositionKey;
-  editor._compositionKey = compositionKey;
-  if (previousCompositionKey !== null) {
-    const node = $getNodeByKey(previousCompositionKey);
-    if (node !== null) {
-      node.getWritable();
+  if (compositionKey !== previousCompositionKey) {
+    editor._compositionKey = compositionKey;
+    if (previousCompositionKey !== null) {
+      const node = $getNodeByKey(previousCompositionKey);
+      if (node !== null) {
+        node.getWritable();
+      }
     }
-  }
-  if (compositionKey !== null) {
-    const node = $getNodeByKey(compositionKey);
-    if (node !== null) {
-      node.getWritable();
+    if (compositionKey !== null) {
+      const node = $getNodeByKey(compositionKey);
+      if (node !== null) {
+        node.getWritable();
+      }
     }
   }
 }

@@ -9,6 +9,7 @@
 import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  click,
   focusEditor,
   html,
   initialize,
@@ -59,8 +60,8 @@ test.describe('Element format', () => {
 
   test('Can center align an empty paragraph', async ({page, isPlainText}) => {
     await focusEditor(page);
-    await page.click('.alignment');
-    await page.click('.center-align');
+    await click('.alignment');
+    await click('.center-align');
 
     await assertHTML(
       page,

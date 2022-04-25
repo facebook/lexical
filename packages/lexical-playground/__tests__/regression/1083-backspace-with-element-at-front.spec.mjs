@@ -17,16 +17,16 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_PLAIN_TEXT,
   test,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #1083', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Backspace with ElementNode at the front of the paragraph`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
 
     await page.keyboard.type('Hello');

@@ -19,16 +19,17 @@ import {
   html,
   initialize,
   insertUploadImage,
+  IS_PLAIN_TEXT,
   sleep,
   test,
 } from '../utils/index.mjs';
 
 test.use({acceptDownloads: true});
 test.describe('File', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test(`Can import/export`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test(`Can import/export`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello World');
     await selectCharacters(page, 'left', 'World'.length);

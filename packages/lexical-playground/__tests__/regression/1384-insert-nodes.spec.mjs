@@ -12,18 +12,16 @@ import {
   copyToClipboard,
   focusEditor,
   initialize,
+  IS_COLLAB,
+  IS_PLAIN_TEXT,
   pasteFromClipboard,
   test,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #1384', () => {
+  test.skip(IS_PLAIN_TEXT || IS_COLLAB);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Properly pastes in code blocks`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText || isCollab);
+  test(`Properly pastes in code blocks`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('``` alert(1);');
     await page.keyboard.press('Enter');

@@ -12,16 +12,16 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_RICH_TEXT,
   test,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #1113', () => {
+  test.skip(IS_RICH_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Selects new line when inserting a new line at the end of a link`, async ({
-    isRichText,
     page,
   }) => {
-    test.skip(isRichText);
     await focusEditor(page);
 
     await page.keyboard.type('https://www.example.com');

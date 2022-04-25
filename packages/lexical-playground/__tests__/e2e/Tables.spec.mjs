@@ -18,6 +18,7 @@ import {
   initialize,
   insertTable,
   IS_COLLAB,
+  IS_PLAIN_TEXT,
   pasteFromClipboard,
   repeat,
   test,
@@ -75,12 +76,9 @@ async function selectCellsFromTableCords(page, firstCords, secondCords) {
 }
 
 test.describe('Tables', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Can a table be inserted from the toolbar`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test(`Can a table be inserted from the toolbar`, async ({page}) => {
     await focusEditor(page);
 
     await insertTable(page);
@@ -182,9 +180,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can type inside of table cell`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test(`Can type inside of table cell`, async ({page}) => {
     await focusEditor(page);
     await insertTable(page);
 
@@ -289,9 +285,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can navigate table with keyboard`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test(`Can navigate table with keyboard`, async ({page}) => {
     await focusEditor(page);
     await insertTable(page);
 
@@ -406,12 +400,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can select cells using Table selection`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can select cells using Table selection`, async ({page}) => {
     await focusEditor(page);
     await insertTable(page);
 
@@ -646,10 +635,7 @@ test.describe('Tables', () => {
 
   test(`Can select cells using Table selection via keyboard`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await insertTable(page);
 
@@ -787,9 +773,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can style text using Table selection`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test(`Can style text using Table selection`, async ({page}) => {
     await focusEditor(page);
     await insertTable(page);
 
@@ -917,12 +901,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can copy + paste (internal) using Table selection`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can copy + paste (internal) using Table selection`, async ({page}) => {
     await focusEditor(page);
     await insertTable(page);
 
@@ -1105,9 +1084,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can clear text using Table selection`, async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test(`Can clear text using Table selection`, async ({page}) => {
     await focusEditor(page);
     await insertTable(page);
 
@@ -1220,10 +1197,7 @@ test.describe('Tables', () => {
 
   test(`Range Selection is corrected when it contains a partial Table.`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('Hello World');
     await insertTable(page);
@@ -1397,10 +1371,7 @@ test.describe('Tables', () => {
 
   test(`Select All when document contains tables adds custom table styles.`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('Hello World');
     await insertTable(page);

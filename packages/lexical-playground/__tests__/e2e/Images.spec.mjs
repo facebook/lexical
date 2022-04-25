@@ -18,6 +18,7 @@ import {
   insertSampleImage,
   insertUploadImage,
   insertUrlImage,
+  IS_PLAIN_TEXT,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -28,13 +29,12 @@ const IMAGE_URL =
     : '/assets/yellow-flower.bf6d0400.jpg';
 
 test.describe('Images', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can create a decorator and move selection around it`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
 
     await insertSampleImage(page);
@@ -186,12 +186,7 @@ test.describe('Images', () => {
     });
   });
 
-  test('Can add images and delete them correctly', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test('Can add images and delete them correctly', async ({page}) => {
     await focusEditor(page);
 
     await insertSampleImage(page);
@@ -344,9 +339,7 @@ test.describe('Images', () => {
     });
   });
 
-  test('Can add images by arbitrary URL', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
+  test('Can add images by arbitrary URL', async ({page}) => {
     await focusEditor(page);
 
     await insertUrlImage(

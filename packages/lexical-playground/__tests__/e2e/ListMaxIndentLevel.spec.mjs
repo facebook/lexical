@@ -12,6 +12,7 @@ import {
   click,
   focusEditor,
   initialize,
+  IS_PLAIN_TEXT,
   selectFromAlignDropdown,
   test,
 } from '../utils/index.mjs';
@@ -30,12 +31,11 @@ async function clickIndentButton(page, times = 1) {
 const MAX_INDENT_LEVEL = 6;
 
 test.describe('Nested List', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can only indent until the max depth when list is empty`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await toggleBulletList(page);
 
@@ -57,9 +57,7 @@ test.describe('Nested List', () => {
 
   test(`Can only indent until the max depth when list has content`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await toggleBulletList(page);
     await page.keyboard.type('World');
@@ -82,10 +80,7 @@ test.describe('Nested List', () => {
 
   test(`Can only indent until the max depth a list with nested lists`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await toggleBulletList(page);
     await page.keyboard.type('Hello');

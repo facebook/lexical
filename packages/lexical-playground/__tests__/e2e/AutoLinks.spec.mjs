@@ -19,15 +19,16 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_PLAIN_TEXT,
   pasteFromClipboard,
   test,
 } from '../utils/index.mjs';
 
 test.describe('Auto Links', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Can convert url-like text into links', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Can convert url-like text into links', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type(
       'Hello http://example.com and https://example.com/path?with=query#and-hash and www.example.com',
@@ -58,9 +59,7 @@ test.describe('Auto Links', () => {
 
   test('Can destruct links if add non-spacing text in front or right after it', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
     const htmlWithLink = html`
       <p dir="ltr">
         <a href="http://example.com" dir="ltr">
@@ -117,11 +116,7 @@ test.describe('Auto Links', () => {
     await assertHTML(page, htmlWithLink, {ignoreClasses: true});
   });
 
-  test('Can create link when pasting text with urls', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
+  test('Can create link when pasting text with urls', async ({page}) => {
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain':
@@ -151,8 +146,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Does not create redundant auto-link', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Does not create redundant auto-link', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('hm');
 
@@ -186,8 +180,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Handles multiple autolinks in a row', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Handles multiple autolinks in a row', async ({page}) => {
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain':

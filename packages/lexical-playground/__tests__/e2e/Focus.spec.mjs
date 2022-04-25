@@ -6,12 +6,18 @@
  *
  */
 
-import {expect, focusEditor, initialize, test} from '../utils/index.mjs';
+import {
+  expect,
+  focusEditor,
+  initialize,
+  IS_RICH_TEXT,
+  test,
+} from '../utils/index.mjs';
 
 test.describe('Focus', () => {
+  test.skip(IS_RICH_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`can tab out of the editor`, async ({page, isRichText}) => {
-    test.skip(isRichText);
+  test(`can tab out of the editor`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.press('Tab');
     const isEditorFocused = await page.evaluate(() => {

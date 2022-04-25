@@ -12,15 +12,14 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_PLAIN_TEXT,
   selectFromAlignDropdown,
   test,
 } from '../utils/index.mjs';
 
 test.describe('Element format', () => {
-  test.beforeEach(({isCollab, isPlainText, page}) => {
-    test.skip(isPlainText);
-    initialize({isCollab, page});
-  });
+  test.skip(IS_PLAIN_TEXT);
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('can indent/align paragraph when caret is within link', async ({
     page,

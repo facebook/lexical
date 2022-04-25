@@ -21,8 +21,8 @@ export const IS_WINDOWS = process.platform === 'win32';
 export const IS_LINUX = !IS_MAC && !IS_WINDOWS;
 export const IS_COLLAB =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
-const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
-const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
+export const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
+export const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 
 export async function initialize({

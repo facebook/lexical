@@ -21,6 +21,7 @@ import {
   click,
   focusEditor,
   initialize,
+  IS_PLAIN_TEXT,
   pasteFromClipboard,
   selectFromFormatDropdown,
   selectOption,
@@ -45,6 +46,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
 }
 
 test.describe('Markdown', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
@@ -229,10 +231,8 @@ test.describe('Markdown', () => {
     if (triggersAndExpectations[i].isBlockTest === false) {
       test(`Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`, async ({
         page,
-        isPlainText,
         isCollab,
       }) => {
-        test.skip(isPlainText);
         const text = 'x' + markdownText + 'y';
 
         await focusEditor(page);
@@ -260,11 +260,8 @@ test.describe('Markdown', () => {
 
       test(`Should create stylized (e.g. BIUS) text from already stylized text using a markdown shortcut e.g. ${markdownText}`, async ({
         page,
-        isPlainText,
         isCollab,
       }) => {
-        test.skip(isPlainText);
-
         const text = 'x' + markdownText + 'y';
 
         await focusEditor(page);
@@ -318,11 +315,8 @@ test.describe('Markdown', () => {
     if (triggersAndExpectations[i].isBlockTest === true) {
       test(`Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`, async ({
         page,
-        isPlainText,
         isCollab,
       }) => {
-        test.skip(isPlainText);
-
         await focusEditor(page);
 
         await page.keyboard.type(markdownText);
@@ -343,10 +337,8 @@ test.describe('Markdown', () => {
     if (triggersAndExpectations[i].markdownImport.length > 0) {
       test(`Should test importing markdown (${markdownText}) trigger.`, async ({
         page,
-        isPlainText,
         isCollab,
       }) => {
-        test.skip(isPlainText);
         await focusEditor(page);
 
         await page.keyboard.type(
@@ -368,10 +360,8 @@ test.describe('Markdown', () => {
 
   test(`Should test markdown conversion from plain text to Lexical.`, async ({
     page,
-    isPlainText,
     isCollab,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     const text = [
       '# Heading',

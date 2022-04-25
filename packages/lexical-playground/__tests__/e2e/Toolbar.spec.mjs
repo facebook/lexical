@@ -17,6 +17,7 @@ import {
   html,
   initialize,
   insertSampleImage,
+  IS_PLAIN_TEXT,
   selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
@@ -28,12 +29,12 @@ const IMAGE_URL =
     : '/assets/yellow-flower.bf6d0400.jpg';
 
 test.describe('Toolbar', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, showNestedEditorTreeView: false}),
   );
 
-  test('Insert image caption + table', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Insert image caption + table', async ({page}) => {
     await focusEditor(page);
 
     // Add caption
@@ -196,8 +197,7 @@ test.describe('Toolbar', () => {
     );
   });
 
-  test('Center align image', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+  test('Center align image', async ({page}) => {
     await focusEditor(page);
 
     await insertSampleImage(page);

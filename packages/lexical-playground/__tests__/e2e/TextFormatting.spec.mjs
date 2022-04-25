@@ -22,19 +22,16 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_PLAIN_TEXT,
   selectOption,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('TextFormatting', () => {
+  test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Can create bold text using the shortcut`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can create bold text using the shortcut`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello');
     await toggleBold(page);
@@ -87,12 +84,7 @@ test.describe('TextFormatting', () => {
     });
   });
 
-  test(`Can create italic text using the shortcut`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can create italic text using the shortcut`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello');
     await toggleItalic(page);
@@ -145,12 +137,7 @@ test.describe('TextFormatting', () => {
     });
   });
 
-  test(`Can select text and boldify it with the shortcut`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can select text and boldify it with the shortcut`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
     await moveLeft(page);
@@ -207,10 +194,7 @@ test.describe('TextFormatting', () => {
 
   test('Should not format the text in the subsequent paragraph after a triple click selection event.', async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('hello world');
     await page.keyboard.press('Enter');
@@ -251,12 +235,7 @@ test.describe('TextFormatting', () => {
     );
   });
 
-  test(`Can select text and italicify it with the shortcut`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can select text and italicify it with the shortcut`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
     await moveLeft(page);
@@ -311,12 +290,7 @@ test.describe('TextFormatting', () => {
     });
   });
 
-  test(`Can select text and underline+strikethrough`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can select text and underline+strikethrough`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
     await moveLeft(page);
@@ -423,12 +397,7 @@ test.describe('TextFormatting', () => {
     });
   });
 
-  test(`Can select text and change the font-size`, async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-
+  test(`Can select text and change the font-size`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
     await moveLeft(page);
@@ -467,10 +436,7 @@ test.describe('TextFormatting', () => {
 
   test(`Can select text and change the font-size and font-family`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
 
@@ -564,11 +530,8 @@ test.describe('TextFormatting', () => {
 
   test(`Can select multiple text parts and format them with shortcuts`, async ({
     page,
-    isPlainText,
     browserName,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('Hello world!');
     await moveLeft(page);
@@ -770,10 +733,7 @@ test.describe('TextFormatting', () => {
 
   test(`Can insert range of formatted text and select part and replace with character`, async ({
     page,
-    isPlainText,
   }) => {
-    test.skip(isPlainText);
-
     await focusEditor(page);
     await page.keyboard.type('123');
 

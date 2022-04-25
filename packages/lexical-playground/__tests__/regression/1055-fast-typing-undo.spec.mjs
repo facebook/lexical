@@ -12,16 +12,16 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_COLLAB,
   test,
 } from '../utils/index.mjs';
 
 test.describe('Regression test #1055', () => {
+  test.skip(IS_COLLAB);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Adds new editor state into undo stack right after undo was done`, async ({
-    isCollab,
     page,
   }) => {
-    test.skip(isCollab);
     await focusEditor(page);
     await page.keyboard.type('hello');
     await undo(page);

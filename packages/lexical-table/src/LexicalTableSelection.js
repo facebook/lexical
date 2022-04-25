@@ -230,16 +230,14 @@ export class TableSelection {
       this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
-      const domSelection = getDOMSelection();
       const anchorElement = this.editor.getElementByKey(selection.anchor.key);
       const focusElement = this.editor.getElementByKey(selection.focus.key);
       if (anchorElement && focusElement) {
+        const domSelection = getDOMSelection();
         domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
       }
       $updateDOMForSelection(this.grid, this.gridSelection);
     } else {
-      this.gridSelection = selection;
-
       this.clearHighlight();
     }
   }

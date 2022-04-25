@@ -32,6 +32,10 @@ type Props = {
    */
   height?: number | null,
   /**
+   * The ref object to be used to render the image
+   */
+  imageContainerRef: {current: null | HTMLElement},
+  /**
    * The type of image to be rendered
    */
   imageType?: ImageType,
@@ -70,6 +74,7 @@ const removeStyleFromSvg_HACK = (svg) => {
  */
 export default function ExcalidrawImage({
   elements,
+  imageContainerRef,
   className = '',
   height = null,
   width = null,
@@ -85,6 +90,10 @@ export default function ExcalidrawImage({
         elements,
       });
       removeStyleFromSvg_HACK(svg);
+
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+
       setSvg(svg);
     };
     setContent();
@@ -92,6 +101,7 @@ export default function ExcalidrawImage({
 
   return (
     <div
+      ref={imageContainerRef}
       className={rootClassName}
       dangerouslySetInnerHTML={{__html: Svg?.outerHTML}}
     />

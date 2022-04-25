@@ -12,12 +12,7 @@ import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import './ToolbarPlugin.css';
 
-import {
-  $createCodeNode,
-  $isCodeNode,
-  getCodeLanguages,
-  getDefaultCodeLanguage,
-} from '@lexical/code';
+import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
   $isListNode,
@@ -63,7 +58,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
@@ -107,6 +102,31 @@ const blockTypeToBlockName = {
   paragraph: 'Normal',
   quote: 'Quote',
   ul: 'Bulleted List',
+};
+
+const CODE_LANGUAGE_OPTIONS = [
+  ['', '- Select language -'],
+  ['c', 'C'],
+  ['clike', 'C-like'],
+  ['css', 'CSS'],
+  ['html', 'HTML'],
+  ['js', 'JavaScript'],
+  ['markdown', 'Markdown'],
+  ['objc', 'Objective-C'],
+  ['plain', 'Plain Text'],
+  ['py', 'Python'],
+  ['rust', 'Rust'],
+  ['sql', 'SQL'],
+  ['swift', 'Swift'],
+  ['xml', 'XML'],
+];
+
+const CODE_LANGUAGE_MAP = {
+  javascript: 'js',
+  md: 'markdown',
+  plaintext: 'plain',
+  python: 'py',
+  text: 'plain',
 };
 
 function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
@@ -456,11 +476,7 @@ function InsertPollDialog({
 
   return (
     <>
-      <TextInput
-        label="Poll Question"
-        onChange={setQuestion}
-        value={question}
-      />
+      <TextInput label="Question" onChange={setQuestion} value={question} />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm
@@ -660,7 +676,7 @@ function BlockFormatDropDown({
       buttonClassName="toolbar-item block-controls"
       buttonIconClassName={'icon block-type ' + blockType}
       buttonLabel={blockTypeToBlockName[blockType]}
-      buttonAriaLabel="Formatting Options">
+      buttonAriaLabel="Formatting options for text style">
       <button className="item" onClick={formatParagraph}>
         <span className="icon paragraph" />
         <span className="text">Normal</span>
@@ -717,15 +733,14 @@ function Select({
 }: {
   className: string,
   onChange: (event: {target: {value: string}}) => void,
-  options: Array<string>,
+  options: Array<[string, string]>,
   value: string,
 }): React$Node {
   return (
     <select className={className} onChange={onChange} value={value}>
-      <option hidden={true} value="" />
-      {options.map((option) => (
+      {options.map(([option, text]) => (
         <option key={option} value={option}>
-          {option}
+          {text}
         </option>
       ))}
     </select>
@@ -791,7 +806,10 @@ export default function ToolbarPlugin(): React$Node {
             : element.getType();
           setBlockType(type);
           if ($isCodeNode(element)) {
-            setCodeLanguage(element.getLanguage() || getDefaultCodeLanguage());
+            const language = element.getLanguage();
+            setCodeLanguage(
+              language ? CODE_LANGUAGE_MAP[language] || language : '',
+            );
             return;
           }
         }
@@ -878,7 +896,6 @@ export default function ToolbarPlugin(): React$Node {
     }
   }, [editor, isLink]);
 
-  const codeLanguges = useMemo(() => getCodeLanguages(), []);
   const onCodeLanguageSelect = useCallback(
     (e) => {
       activeEditor.update(() => {
@@ -930,7 +947,7 @@ export default function ToolbarPlugin(): React$Node {
           <Select
             className="toolbar-item code-language"
             onChange={onCodeLanguageSelect}
-            options={codeLanguges}
+            options={CODE_LANGUAGE_OPTIONS}
             value={codeLanguage}
           />
           <i className="chevron-down inside" />
@@ -942,12 +959,12 @@ export default function ToolbarPlugin(): React$Node {
               className="toolbar-item font-family"
               onChange={onFontFamilySelect}
               options={[
-                'Arial',
-                'Courier New',
-                'Georgia',
-                'Times New Roman',
-                'Trebuchet MS',
-                'Verdana',
+                ['Arial', 'Arial'],
+                ['Courier New', 'Courier New'],
+                ['Georgia', 'Georgia'],
+                ['Times New Roman', 'Times New Roman'],
+                ['Trebuchet MS', 'Trebuchet MS'],
+                ['Verdana', 'Verdana'],
               ]}
               value={fontFamily}
             />
@@ -958,17 +975,17 @@ export default function ToolbarPlugin(): React$Node {
               className="toolbar-item font-size"
               onChange={onFontSizeSelect}
               options={[
-                '10px',
-                '11px',
-                '12px',
-                '13px',
-                '14px',
-                '15px',
-                '16px',
-                '17px',
-                '18px',
-                '19px',
-                '20px',
+                ['10px', '10px'],
+                ['11px', '11px'],
+                ['12px', '12px'],
+                ['13px', '13px'],
+                ['14px', '14px'],
+                ['15px', '15px'],
+                ['16px', '16px'],
+                ['17px', '17px'],
+                ['18px', '18px'],
+                ['19px', '19px'],
+                ['20px', '20px'],
               ]}
               value={fontSize}
             />
@@ -981,7 +998,9 @@ export default function ToolbarPlugin(): React$Node {
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
             title={IS_APPLE ? 'Bold (⌘B)' : 'Bold (Ctrl+B)'}
-            aria-label="Format Bold">
+            aria-label={`Format text as bold. Shortcut: ${
+              IS_APPLE ? '⌘B' : 'Ctrl+B'
+            }`}>
             <i className="format bold" />
           </button>
           <button
@@ -990,7 +1009,9 @@ export default function ToolbarPlugin(): React$Node {
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
             title={IS_APPLE ? 'Italic (⌘I)' : 'Italic (Ctrl+I)'}
-            aria-label="Format Italics">
+            aria-label={`Format text as italics. Shortcut: ${
+              IS_APPLE ? '⌘I' : 'Ctrl+I'
+            }`}>
             <i className="format italic" />
           </button>
           <button
@@ -999,7 +1020,9 @@ export default function ToolbarPlugin(): React$Node {
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
             title={IS_APPLE ? 'Underline (⌘U)' : 'Underline (Ctrl+U)'}
-            aria-label="Format Underline">
+            aria-label={`Format text to underlined. Shortcut: ${
+              IS_APPLE ? '⌘U' : 'Ctrl+U'
+            }`}>
             <i className="format underline" />
           </button>
           <button
@@ -1013,7 +1036,7 @@ export default function ToolbarPlugin(): React$Node {
               'toolbar-item spaced ' + (isStrikethrough ? 'active' : '')
             }
             title="Strikethrough"
-            aria-label="Format Strikethrough">
+            aria-label="Format text with a strikethrough">
             <i className="format strikethrough" />
           </button>
           <button
@@ -1021,15 +1044,15 @@ export default function ToolbarPlugin(): React$Node {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
-            title="Code"
-            aria-label="Insert Code">
+            title="Insert code block"
+            aria-label="Insert code block">
             <i className="format code" />
           </button>
           <button
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-            title="Insert Link"
-            aria-label="Insert Link">
+            aria-label="Insert link"
+            type="Insert link">
             <i className="format link" />
           </button>
           {isLink &&
@@ -1041,6 +1064,7 @@ export default function ToolbarPlugin(): React$Node {
           <DropDown
             buttonClassName="toolbar-item spaced"
             buttonLabel="Insert"
+            buttonAriaLabel="Insert specialized editor node"
             buttonIconClassName="icon plus">
             <button
               onClick={() => {
@@ -1166,7 +1190,8 @@ export default function ToolbarPlugin(): React$Node {
       <DropDown
         buttonLabel="Align"
         buttonIconClassName="icon left-align"
-        buttonClassName="toolbar-item spaced">
+        buttonClassName="toolbar-item spaced alignment"
+        buttonAriaLabel="Formatting options for text alignment">
         <button
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');

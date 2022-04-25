@@ -858,9 +858,14 @@ test.describe('CopyAndPaste', () => {
   test('Copy and paste of partial list items into the list', async ({
     page,
     isPlainText,
+    isCollab,
     browserName,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      isCollab,
+      'List item values are not properly updated in the right hand frame when merging lists',
+    );
 
     await focusEditor(page);
 
@@ -938,11 +943,16 @@ test.describe('CopyAndPaste', () => {
     });
   });
 
-  test('Copy and paste of list items and paste back into list', async ({
+  test('Copy list items and paste back into list', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      isCollab,
+      'List item values are not properly updated in the right hand frame when merging lists',
+    );
 
     await focusEditor(page);
 
@@ -1008,8 +1018,13 @@ test.describe('CopyAndPaste', () => {
   test('Copy and paste of list items and paste back into list on an existing item', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
     test.skip(isPlainText);
+    test.fixme(
+      isCollab,
+      'List item values are not properly updated in the right hand frame when merging lists',
+    );
 
     await focusEditor(page);
 

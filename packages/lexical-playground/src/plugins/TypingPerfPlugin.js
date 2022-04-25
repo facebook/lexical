@@ -35,24 +35,30 @@ export default function TypingPerfPlugin(): React$Node {
   useEffect(() => {
     let start = 0;
     let timerId = null;
+    let keyPressTimerId = null;
     let log = [];
     let invalidatingEvent = false;
 
-    const measureEvent = function measureEvent() {
+    const measureEventEnd = function logKeyPress() {
+      if (keyPressTimerId != null) {
+        if (invalidatingEvent) {
+          invalidatingEvent = false;
+        } else {
+          log.push(performance.now() - start);
+        }
+        clearTimeout(keyPressTimerId);
+        keyPressTimerId = null;
+      }
+    };
+    const measureEventStart = function measureEvent() {
       if (timerId != null) {
         clearTimeout(timerId);
         timerId = null;
       }
-      start = performance.now();
       // We use a setTimeout(0) instead of requestAnimationFrame, due to
       // inconsistencies between the sequencing of rAF in different browsers.
-      window.setTimeout(() => {
-        if (invalidatingEvent) {
-          invalidatingEvent = false;
-          return;
-        }
-        log.push(performance.now() - start);
-      }, 0);
+      keyPressTimerId = window.setTimeout(measureEventEnd, 0);
+      // Schedule a timer to report the results.
       timerId = setTimeout(() => {
         const total = log.reduce((a, b) => a + b, 0);
         const reportedText =
@@ -60,18 +66,21 @@ export default function TypingPerfPlugin(): React$Node {
         report(reportedText);
         log = [];
       }, 2000);
+      // Make the time after we do the previous logic, so we don't measure the overhead
+      // for it all.
+      start = performance.now();
     };
     const beforeInputHandler = function beforeInputHandler(event) {
       if (!validInputTypes.has(event.inputType) || invalidatingEvent) {
         invalidatingEvent = false;
         return;
       }
-      measureEvent();
+      measureEventStart();
     };
     const keyDownHandler = function keyDownHandler(event) {
       const keyCode = event.keyCode;
       if (keyCode === 8 || keyCode === 13) {
-        measureEvent();
+        measureEventStart();
       }
     };
     const pasteHandler = function pasteHandler() {
@@ -82,12 +91,14 @@ export default function TypingPerfPlugin(): React$Node {
     };
 
     window.addEventListener('keydown', keyDownHandler, true);
+    window.addEventListener('selectionchange', measureEventEnd, true);
     window.addEventListener('beforeinput', beforeInputHandler, true);
     window.addEventListener('paste', pasteHandler, true);
     window.addEventListener('cut', cutHandler, true);
 
     return () => {
       window.removeEventListener('keydown', keyDownHandler, true);
+      window.removeEventListener('selectionchange', measureEventEnd, true);
       window.removeEventListener('beforeinput', beforeInputHandler, true);
       window.removeEventListener('paste', pasteHandler, true);
       window.removeEventListener('cut', cutHandler, true);

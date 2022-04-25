@@ -16,6 +16,7 @@ import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
+  $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -130,6 +131,7 @@ if (CAN_USE_BEFORE_INPUT) {
 let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
+let isInsertLineBreak = false;
 
 function onSelectionChange(
   domSelection: Selection,
@@ -170,17 +172,32 @@ function onSelectionChange(
 
     const selection = $getSelection();
     // Update the selection format
-    if ($isRangeSelection(selection) && selection.isCollapsed()) {
-      // Badly interpreted range selection when collapsed - #1482
-      if (domSelection.type === 'Range') {
-        selection.dirty = true;
-      }
+    if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
-      if (anchor.type === 'text') {
-        const anchorNode = anchor.getNode();
-        selection.format = anchorNode.getFormat();
-      } else if (anchor.type === 'element') {
-        selection.format = 0;
+      const anchorNode = anchor.getNode();
+
+      if (selection.isCollapsed()) {
+        // Badly interpreted range selection when collapsed - #1482
+        if (domSelection.type === 'Range') {
+          selection.dirty = true;
+        }
+        if (anchor.type === 'text') {
+          selection.format = anchorNode.getFormat();
+        } else if (anchor.type === 'element') {
+          selection.format = 0;
+        }
+      } else {
+        const focus = selection.focus;
+        const focusNode = focus.getNode();
+        let combinedFormat = 0;
+
+        if (anchor.type === 'text') {
+          combinedFormat |= anchorNode.getFormat();
+        }
+        if (focus.type === 'text' && !anchorNode.is(focusNode)) {
+          combinedFormat |= focusNode.getFormat();
+        }
+        selection.format = combinedFormat;
       }
     }
     dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
@@ -204,7 +221,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         $getRoot().getChildrenSize() === 1 &&
         anchor.getNode().getTopLevelElementOrThrow().isEmpty()
       ) {
-        const lastSelection = editor.getEditorState()._selection;
+        const lastSelection = $getPreviousSelection();
         if (lastSelection !== null && selection.is(lastSelection)) {
           getDOMSelection().removeAllRanges();
           selection.dirty = true;
@@ -294,11 +311,15 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
 
-    if (!$isRangeSelection(selection)) {
-      return;
-    }
-
     if (inputType === 'deleteContentBackward') {
+      if (selection === null) {
+        // Use previous selection
+        const prevSelection = $getPreviousSelection();
+        if (!$isRangeSelection(prevSelection)) {
+          return;
+        }
+        $setSelection(prevSelection.clone());
+      }
       // Used for Android
       $setCompositionKey(null);
       event.preventDefault();
@@ -312,6 +333,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       }, ANDROID_COMPOSITION_LATENCY);
       return;
     }
+
+    if (!$isRangeSelection(selection)) {
+      return;
+    }
+
     const data = event.data;
 
     if (
@@ -375,7 +401,14 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       case 'insertParagraph': {
         // Used for Android
         $setCompositionKey(null);
-        dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
+        // Some browsers do not provide the type "insertLineBreak".
+        // So instead, we need to infer it from the keyboard event.
+        if (isInsertLineBreak) {
+          isInsertLineBreak = false;
+          dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND);
+        } else {
+          dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
+        }
         break;
       }
       case 'insertFromPaste':
@@ -486,7 +519,9 @@ function onCompositionStart(
         // If it has been 30ms since the last keydown, then we should
         // apply the empty space heuristic.
         event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
-        anchor.type === 'element' ||
+        // FF has issues around composing multibyte characters, so we also
+        // need to invoke the empty space heuristic below.
+        (IS_FIREFOX && anchor.type === 'element') ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {
@@ -557,11 +592,14 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
   } else if (isLineBreak(keyCode, shiftKey)) {
+    isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
+    isInsertLineBreak = true;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
   } else if (isParagraph(keyCode, shiftKey)) {
+    isInsertLineBreak = false;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
     if (isBackspace(keyCode)) {

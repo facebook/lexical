@@ -347,12 +347,11 @@ export function registerRichText(
     ),
     editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
-      (payload) => {
+      (isBackward: boolean) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isBackward: boolean = payload;
         selection.deleteCharacter(isBackward);
         return true;
       },

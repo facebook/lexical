@@ -39,6 +39,18 @@ export default function KatexRenderer({
   }, [equation, inline]);
 
   return (
-    <span role="button" tabIndex={-1} onClick={onClick} ref={katexElementRef} />
+    // We use spacers either side to ensure Android doesn't try and compose from the
+    // inner text from Katex. There didn't seem to be any other way of making this work,
+    // without having a physical space.
+    <>
+      <span className="spancer"> </span>
+      <span
+        role="button"
+        tabIndex={-1}
+        onClick={onClick}
+        ref={katexElementRef}
+      />
+      <span className="spancer"> </span>
+    </>
   );
 }

@@ -12,12 +12,7 @@ import type {LexicalEditor, RangeSelection} from 'lexical';
 
 import './ToolbarPlugin.css';
 
-import {
-  $createCodeNode,
-  $isCodeNode,
-  getCodeLanguages,
-  getDefaultCodeLanguage,
-} from '@lexical/code';
+import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
   $isListNode,
@@ -63,7 +58,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
@@ -107,6 +102,31 @@ const blockTypeToBlockName = {
   paragraph: 'Normal',
   quote: 'Quote',
   ul: 'Bulleted List',
+};
+
+const CODE_LANGUAGE_OPTIONS = [
+  ['', '- Select language -'],
+  ['c', 'C'],
+  ['clike', 'C-like'],
+  ['css', 'CSS'],
+  ['html', 'HTML'],
+  ['js', 'JavaScript'],
+  ['markdown', 'Markdown'],
+  ['objc', 'Objective-C'],
+  ['plain', 'Plain Text'],
+  ['py', 'Python'],
+  ['rust', 'Rust'],
+  ['sql', 'SQL'],
+  ['swift', 'Swift'],
+  ['xml', 'XML'],
+];
+
+const CODE_LANGUAGE_MAP = {
+  javascript: 'js',
+  md: 'markdown',
+  plaintext: 'plain',
+  python: 'py',
+  text: 'plain',
 };
 
 function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
@@ -713,15 +733,14 @@ function Select({
 }: {
   className: string,
   onChange: (event: {target: {value: string}}) => void,
-  options: Array<string>,
+  options: Array<[string, string]>,
   value: string,
 }): React$Node {
   return (
     <select className={className} onChange={onChange} value={value}>
-      <option hidden={true} value="" />
-      {options.map((option) => (
+      {options.map(([option, text]) => (
         <option key={option} value={option}>
-          {option}
+          {text}
         </option>
       ))}
     </select>
@@ -787,7 +806,10 @@ export default function ToolbarPlugin(): React$Node {
             : element.getType();
           setBlockType(type);
           if ($isCodeNode(element)) {
-            setCodeLanguage(element.getLanguage() || getDefaultCodeLanguage());
+            const language = element.getLanguage();
+            setCodeLanguage(
+              language ? CODE_LANGUAGE_MAP[language] || language : '',
+            );
             return;
           }
         }
@@ -874,7 +896,6 @@ export default function ToolbarPlugin(): React$Node {
     }
   }, [editor, isLink]);
 
-  const codeLanguges = useMemo(() => getCodeLanguages(), []);
   const onCodeLanguageSelect = useCallback(
     (e) => {
       activeEditor.update(() => {
@@ -926,7 +947,7 @@ export default function ToolbarPlugin(): React$Node {
           <Select
             className="toolbar-item code-language"
             onChange={onCodeLanguageSelect}
-            options={codeLanguges}
+            options={CODE_LANGUAGE_OPTIONS}
             value={codeLanguage}
           />
           <i className="chevron-down inside" />
@@ -938,12 +959,12 @@ export default function ToolbarPlugin(): React$Node {
               className="toolbar-item font-family"
               onChange={onFontFamilySelect}
               options={[
-                'Arial',
-                'Courier New',
-                'Georgia',
-                'Times New Roman',
-                'Trebuchet MS',
-                'Verdana',
+                ['Arial', 'Arial'],
+                ['Courier New', 'Courier New'],
+                ['Georgia', 'Georgia'],
+                ['Times New Roman', 'Times New Roman'],
+                ['Trebuchet MS', 'Trebuchet MS'],
+                ['Verdana', 'Verdana'],
               ]}
               value={fontFamily}
             />
@@ -954,17 +975,17 @@ export default function ToolbarPlugin(): React$Node {
               className="toolbar-item font-size"
               onChange={onFontSizeSelect}
               options={[
-                '10px',
-                '11px',
-                '12px',
-                '13px',
-                '14px',
-                '15px',
-                '16px',
-                '17px',
-                '18px',
-                '19px',
-                '20px',
+                ['10px', '10px'],
+                ['11px', '11px'],
+                ['12px', '12px'],
+                ['13px', '13px'],
+                ['14px', '14px'],
+                ['15px', '15px'],
+                ['16px', '16px'],
+                ['17px', '17px'],
+                ['18px', '18px'],
+                ['19px', '19px'],
+                ['20px', '20px'],
               ]}
               value={fontSize}
             />

@@ -59,6 +59,12 @@ import {
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
+const mapToPrismLanguage = (language: ?string): string | void => {
+  return language != null && Prism.languages.hasOwnProperty(language)
+    ? language
+    : undefined;
+};
+
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
 export const getCodeLanguages = (): Array<string> =>
@@ -170,7 +176,7 @@ export class CodeNode extends ElementNode {
 
   constructor(language?: string, key?: NodeKey): void {
     super(key);
-    this.__language = language;
+    this.__language = mapToPrismLanguage(language);
   }
 
   // View
@@ -321,7 +327,7 @@ export class CodeNode extends ElementNode {
 
   setLanguage(language: string): void {
     const writable = this.getWritable();
-    writable.__language = language;
+    writable.__language = mapToPrismLanguage(language);
   }
 
   getLanguage(): string | void {

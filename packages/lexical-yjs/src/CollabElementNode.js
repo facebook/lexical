@@ -140,10 +140,10 @@ export class CollabElementNode {
             children.splice(nodeIndex, 1);
             deletionSize -= 1;
           } else if (node instanceof CollabTextNode) {
-            const delCount = Math.min(deletionSize, length);
             const prevCollabNode =
               nodeIndex !== 0 ? children[nodeIndex - 1] : null;
             const nodeSize = node.getSize();
+            let delCount = Math.min(deletionSize, length);
 
             if (
               offset === 0 &&
@@ -161,6 +161,14 @@ export class CollabElementNode {
               // The entire thing needs removing
               children.splice(nodeIndex, 1);
             } else {
+              const diff = node._text.length - (delCount + offset);
+              // If the value is more than the string length, then deduct it
+              // from the delCount. TBH this is likely something we need to
+              // fix in getPositionFromElementAndOffset, but I'm unsure at
+              // this point.
+              if (diff !== 0) {
+                delCount += diff;
+              }
               node._text = spliceString(node._text, offset, delCount, '');
             }
             deletionSize -= delCount;

@@ -60,8 +60,8 @@ test.describe('Element format', () => {
 
   test('Can center align an empty paragraph', async ({page, isPlainText}) => {
     await focusEditor(page);
-    await click('.alignment');
-    await click('.center-align');
+    await click(page, '.alignment');
+    await click(page, '.center-align');
 
     await assertHTML(
       page,

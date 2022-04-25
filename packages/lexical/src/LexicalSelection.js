@@ -501,7 +501,10 @@ export class RangeSelection implements BaseSelection {
       lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
     if (firstNode.is(lastNode)) {
-      if ($isElementNode(firstNode)) {
+      if (
+        $isElementNode(firstNode) &&
+        (firstNode.getChildrenSize() > 0 || firstNode.excludeFromCopy())
+      ) {
         return [];
       }
       return [firstNode];
@@ -1930,7 +1933,7 @@ function resolveSelectionPointOnBoundary(
         point.offset = prevSibling.getTextContent().length;
       }
     } else if (
-      isCollapsed &&
+      (isCollapsed || !isBackward) &&
       prevSibling === null &&
       $isElementNode(parent) &&
       parent.isInline()
@@ -1951,7 +1954,7 @@ function resolveSelectionPointOnBoundary(
       // $FlowFixMe: intentional
       point.type = 'element';
     } else if (
-      isCollapsed &&
+      (isCollapsed || isBackward) &&
       nextSibling === null &&
       $isElementNode(parent) &&
       parent.isInline()

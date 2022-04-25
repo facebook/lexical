@@ -1173,7 +1173,7 @@ export default function ToolbarPlugin(): React$Node {
       <DropDown
         buttonLabel="Align"
         buttonIconClassName="icon left-align"
-        buttonClassName="toolbar-item spaced"
+        buttonClassName="toolbar-item spaced alignment"
         buttonAriaLabel="Formatting options for text alignment">
         <button
           onClick={() => {

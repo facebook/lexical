@@ -225,7 +225,9 @@ function $cloneContentsImpl(
         if ($isRootNode(node.getParent())) {
           range.push(node.getKey());
         }
-        nodeMap.set(key, clone);
+        if (key !== 'root') {
+          nodeMap.set(key, clone);
+        }
       }
     }
     // Do last node to root
@@ -504,8 +506,13 @@ export function $wrapLeafNodesInElements(
 ): void {
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
-  if (nodesLength === 0) {
-    const anchor = selection.anchor;
+  const anchor = selection.anchor;
+  if (
+    nodesLength === 0 ||
+    (nodesLength === 1 &&
+      anchor.type === 'element' &&
+      anchor.getNode().getChildrenSize() === 0)
+  ) {
     const target =
       anchor.type === 'text'
         ? anchor.getNode().getParentOrThrow()

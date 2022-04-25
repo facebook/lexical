@@ -670,6 +670,7 @@ export declare class ElementNode extends LexicalNode {
   constructor(key?: NodeKey);
   getFormat(): number;
   getIndent(): number;
+  forEachChild(cb: (node: LexicalNode, index: number) => void): void;
   getChildren(): Array<LexicalNode>;
   getChildrenKeys(): Array<NodeKey>;
   getChildrenSize(): number;

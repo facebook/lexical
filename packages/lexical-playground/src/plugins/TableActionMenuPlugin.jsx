@@ -272,7 +272,7 @@ function TableActionMenu({
           throw new Error('Expected table row');
         }
 
-        tableRow.getChildren().forEach((tableCell) => {
+        tableRow.forEachChild((tableCell) => {
           if (!$isTableCellNode(tableCell)) {
             throw new Error('Expected table cell');
           }

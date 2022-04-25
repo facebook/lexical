@@ -202,7 +202,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
           nextSibling.remove();
           removed.add(nextSibling.getKey());
         }
-        innerList.getChildren().forEach((child) => child.markDirty());
+        innerList.forEachChild((child) => child.markDirty());
       }
     } else if (isNestedListNode(nextSibling)) {
       // if the ListItemNode is next to a nested ListNode, merge them
@@ -212,13 +212,13 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
         if (firstChild !== null) {
           firstChild.insertBefore(listItemNode);
         }
-        innerList.getChildren().forEach((child) => child.markDirty());
+        innerList.forEachChild((child) => child.markDirty());
       }
     } else if (isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
       if ($isListNode(innerList)) {
         innerList.append(listItemNode);
-        innerList.getChildren().forEach((child) => child.markDirty());
+        innerList.forEachChild((child) => child.markDirty());
       }
     } else {
       // otherwise, we need to create a new nested ListNode
@@ -237,7 +237,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
       }
     }
     if ($isListNode(parent)) {
-      parent.getChildren().forEach((child) => child.markDirty());
+      parent.forEachChild((child) => child.markDirty());
     }
   });
 }
@@ -294,8 +294,8 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
         // replace the grandparent list item (now between the siblings) with the outdented list item.
         grandparentListItem.replace(listItemNode);
       }
-      parentList.getChildren().forEach((child) => child.markDirty());
-      greatGrandparentList.getChildren().forEach((child) => child.markDirty());
+      parentList.forEachChild((child) => child.markDirty());
+      greatGrandparentList.forEachChild((child) => child.markDirty());
     }
   });
 }

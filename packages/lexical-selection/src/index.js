@@ -589,7 +589,7 @@ export function $wrapLeafNodesInElements(
 
         // Move node and its siblings to the new
         // element.
-        parent.getChildren().forEach((child) => {
+        parent.forEachChild((child) => {
           targetElement.append(child);
           movedLeafNodes.add(child.getKey());
         });

@@ -359,7 +359,7 @@ export class TableSelection {
           paragraphNode.append(textNode);
           cellNode.append(paragraphNode);
 
-          cellNode.getChildren().forEach((child) => {
+          cellNode.forEachChild((child) => {
             if (child !== paragraphNode) {
               child.remove();
             }

@@ -9,7 +9,7 @@
 
 import './EquationEditor.css';
 
-import React, {useCallback} from 'react';
+import React from 'react';
 
 type BaseEquationEditorProps = {
   equation: string,
@@ -24,12 +24,9 @@ export default function EquationEditor({
   inline,
   inputRef,
 }: BaseEquationEditorProps): React$Node {
-  const onChange = useCallback(
-    (event) => {
-      setEquation(event.target.value);
-    },
-    [setEquation],
-  );
+  const onChange = (event) => {
+    setEquation(event.target.value);
+  };
 
   const props = {
     equation,

@@ -127,8 +127,6 @@ test.describe('TextEntry', () => {
       focusOffset: 0,
       focusPath: [1, 0, 0],
     });
-
-    await page.keyboard.press('Enter');
   });
 
   test(`Can type 'Hello Lexical' in the editor and replace it with foo`, async ({

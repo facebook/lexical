@@ -15,6 +15,7 @@ import {
   keyDownCtrlOrMeta,
   keyUpCtrlOrAlt,
   keyUpCtrlOrMeta,
+  sleep,
 } from '../utils/index.mjs';
 
 export async function moveToLineBeginning(page) {
@@ -152,14 +153,20 @@ export async function redo(page) {
   }
 }
 
-export async function moveLeft(page, numCharacters = 1) {
+export async function moveLeft(page, numCharacters = 1, delayMs) {
   for (let i = 0; i < numCharacters; i++) {
+    if (delayMs !== undefined) {
+      await sleep(delayMs);
+    }
     await page.keyboard.press('ArrowLeft');
   }
 }
 
-export async function moveRight(page, numCharacters = 1) {
+export async function moveRight(page, numCharacters = 1, delayMs) {
   for (let i = 0; i < numCharacters; i++) {
+    if (delayMs !== undefined) {
+      await sleep(delayMs);
+    }
     await page.keyboard.press('ArrowRight');
   }
 }

@@ -128,7 +128,7 @@ export class CodeHighlightNode extends TextNode {
 
   // Prevent formatting (bold, underline, etc)
   setFormat(format: number): this {
-    return this.getWritable();
+    return this;
   }
 }
 

@@ -519,6 +519,9 @@ function onCompositionStart(
         // If it has been 30ms since the last keydown, then we should
         // apply the empty space heuristic.
         event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
+        // FF has issues around composing multibyte characters, so we also
+        // need to invoke the empty space heuristic below.
+        (IS_FIREFOX && anchor.type === 'element') ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {

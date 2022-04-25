@@ -221,7 +221,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         $getRoot().getChildrenSize() === 1 &&
         anchor.getNode().getTopLevelElementOrThrow().isEmpty()
       ) {
-        const lastSelection = editor.getEditorState()._selection;
+        const lastSelection = $getPreviousSelection();
         if (lastSelection !== null && selection.is(lastSelection)) {
           getDOMSelection().removeAllRanges();
           selection.dirty = true;

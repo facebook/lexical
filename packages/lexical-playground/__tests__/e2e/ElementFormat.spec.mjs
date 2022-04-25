@@ -22,7 +22,7 @@ test.describe('Element format', () => {
     initialize({isCollab, page});
   });
 
-  test('can indent/align paragraph when caret is within link', async ({
+  test('Can indent/align paragraph when caret is within link', async ({
     page,
     isPlainText,
   }) => {
@@ -54,6 +54,21 @@ test.describe('Element format', () => {
         ignoreClasses: false,
         ignoreInlineStyles: false,
       },
+    );
+  });
+
+  test('Can center align an empty paragraph', async ({page, isPlainText}) => {
+    await focusEditor(page);
+    await page.click('.alignment');
+    await page.click('.center-align');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center">
+          <br />
+        </p>
+      `,
     );
   });
 });

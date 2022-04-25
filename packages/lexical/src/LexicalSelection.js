@@ -501,7 +501,10 @@ export class RangeSelection implements BaseSelection {
       lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
     if (firstNode.is(lastNode)) {
-      if ($isElementNode(firstNode)) {
+      if (
+        $isElementNode(firstNode) &&
+        (firstNode.getChildrenSize() > 0 || firstNode.excludeFromCopy())
+      ) {
         return [];
       }
       return [firstNode];

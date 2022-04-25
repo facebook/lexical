@@ -171,17 +171,32 @@ function onSelectionChange(
 
     const selection = $getSelection();
     // Update the selection format
-    if ($isRangeSelection(selection) && selection.isCollapsed()) {
-      // Badly interpreted range selection when collapsed - #1482
-      if (domSelection.type === 'Range') {
-        selection.dirty = true;
-      }
+    if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
-      if (anchor.type === 'text') {
-        const anchorNode = anchor.getNode();
-        selection.format = anchorNode.getFormat();
-      } else if (anchor.type === 'element') {
-        selection.format = 0;
+      const anchorNode = anchor.getNode();
+
+      if (selection.isCollapsed()) {
+        // Badly interpreted range selection when collapsed - #1482
+        if (domSelection.type === 'Range') {
+          selection.dirty = true;
+        }
+        if (anchor.type === 'text') {
+          selection.format = anchorNode.getFormat();
+        } else if (anchor.type === 'element') {
+          selection.format = 0;
+        }
+      } else {
+        const focus = selection.focus;
+        const focusNode = focus.getNode();
+        let combinedFormat = 0;
+
+        if (anchor.type === 'text') {
+          combinedFormat |= anchorNode.getFormat();
+        }
+        if (focus.type === 'text' && !anchorNode.is(focusNode)) {
+          combinedFormat |= focusNode.getFormat();
+        }
+        selection.format = combinedFormat;
       }
     }
     dispatchCommand(editor, SELECTION_CHANGE_COMMAND);

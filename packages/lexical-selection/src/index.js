@@ -225,7 +225,9 @@ function $cloneContentsImpl(
         if ($isRootNode(node.getParent())) {
           range.push(node.getKey());
         }
-        nodeMap.set(key, clone);
+        if (key !== 'root') {
+          nodeMap.set(key, clone);
+        }
       }
     }
     // Do last node to root

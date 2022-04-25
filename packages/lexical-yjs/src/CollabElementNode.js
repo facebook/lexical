@@ -140,10 +140,10 @@ export class CollabElementNode {
             children.splice(nodeIndex, 1);
             deletionSize -= 1;
           } else if (node instanceof CollabTextNode) {
+            const delCount = Math.min(deletionSize, length);
             const prevCollabNode =
               nodeIndex !== 0 ? children[nodeIndex - 1] : null;
             const nodeSize = node.getSize();
-            const delCount = Math.min(deletionSize, length);
 
             if (
               offset === 0 &&

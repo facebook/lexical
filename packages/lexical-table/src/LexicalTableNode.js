@@ -183,6 +183,10 @@ export class TableNode extends GridNode {
   canSelectBefore(): true {
     return true;
   }
+
+  canIndent(): false {
+    return false;
+  }
 }
 
 export function $getElementGridForTableNode(

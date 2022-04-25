@@ -175,6 +175,10 @@ export class TableCellNode extends GridCellNode {
   canBeEmpty(): false {
     return false;
   }
+
+  canIndent(): false {
+    return false;
+  }
 }
 
 export function convertTableCellNodeElement(

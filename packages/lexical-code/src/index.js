@@ -307,8 +307,16 @@ export class CodeNode extends ElementNode {
     return null;
   }
 
-  canInsertTab(): true {
+  canInsertTab(): boolean {
+    const selection = $getSelection();
+    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+      return false;
+    }
     return true;
+  }
+
+  canIndent(): false {
+    return false;
   }
 
   collapseAtStart(): true {

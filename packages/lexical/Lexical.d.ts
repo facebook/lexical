@@ -696,6 +696,7 @@ export declare class ElementNode extends LexicalNode {
   setIndent(indentLevel: number): ElementNode;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   canInsertTab(): boolean;
+  canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(): boolean;
   canExtractContents(): boolean;

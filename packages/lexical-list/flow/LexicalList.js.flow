@@ -30,7 +30,7 @@ declare export function $isListItemNode(
 declare export function $isListNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof ListNode);
-declare export function indentList(): boolean;
+declare export function indentList(): void;
 declare export function insertList(
   editor: LexicalEditor,
   listType: 'ul' | 'ol',
@@ -56,7 +56,7 @@ declare export class ListNode extends ElementNode {
   getTag(): ListNodeTagType;
   getStart(): number;
 }
-declare export function outdentList(): boolean;
+declare export function outdentList(): void;
 declare export function removeList(editor: LexicalEditor): boolean;
 
 declare export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;

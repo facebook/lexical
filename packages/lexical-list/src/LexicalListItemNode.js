@@ -227,6 +227,10 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
+  canIndent(): false {
+    return false;
+  }
+
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
     const siblings = this.getNextSiblings();
     if ($isListItemNode(nodeToInsert)) {

@@ -72,6 +72,10 @@ export class TableRowNode extends GridRowNode {
   canBeEmpty(): false {
     return false;
   }
+
+  canIndent(): false {
+    return false;
+  }
 }
 
 export function convertTableRowElement(domNode: Node): DOMConversionOutput {

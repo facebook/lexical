@@ -206,9 +206,12 @@ export function removeList(editor: LexicalEditor): void {
   });
 }
 
-export function updateChildrenListItemValue(list: ListNode): void {
+export function updateChildrenListItemValue(
+  list: ListNode,
+  children?: Array<LexicalNode>,
+): void {
   // $FlowFixMe: children are always list item nodes
-  list.getChildren().forEach((child: ListItemNode) => {
+  (children || list.getChildren()).forEach((child: ListItemNode) => {
     const prevValue = child.getValue();
     const nextValue = $getListItemValue(child);
     if (prevValue !== nextValue) {

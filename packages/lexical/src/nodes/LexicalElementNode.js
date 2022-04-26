@@ -53,11 +53,9 @@ export class ElementNode extends LexicalNode {
     return self.__indent;
   }
   forEachChild(cb: (node: LexicalNode, index: number) => void): void {
-    for (
-      let i = 0, children;
-      i < (children = this.getLatest().__children).length;
-      i++
-    ) {
+    const self = this.getLatest();
+    const children = self.__children;
+    for (let i = 0; i < children.length; i++) {
       const childNode = $getNodeByKey<LexicalNode>(children[i]);
       if (childNode !== null) {
         cb(childNode, i);

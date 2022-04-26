@@ -933,7 +933,7 @@ test.describe('Links', () => {
     });
   });
 
-  test(`Can convert part of a text node into a link and change block type`, async ({
+  test.only(`Can convert part of a text node into a link and change block type`, async ({
     page,
     browserName,
   }) => {

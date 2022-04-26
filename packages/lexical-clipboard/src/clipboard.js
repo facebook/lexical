@@ -371,7 +371,7 @@ function $mergeGridNodesStrategy(
           currentGridCellNode.append(child);
         }
       });
-      originalChildren.forEach((n) => n.remove());
+      originalChildren.forEachChild((n) => n.remove());
       newColumnIdx++;
     }
     newRowIdx++;

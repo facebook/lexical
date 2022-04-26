@@ -55,7 +55,7 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
-import {DOM_ELEMENT_TYPE, DOM_TEXT_TYPE} from './LexicalConstants';
+import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -140,19 +140,13 @@ let collapsedSelectionFormat: [number, number, NodeKey, number] = [
   0,
 ];
 
-function isElementOrTextNotAtBoundary(
+function shouldSkipSelectionChange(
   domNode: null | Node,
   offset: number,
 ): boolean {
-  if (domNode === null) {
-    return false;
-  }
-  const nodeType = domNode.nodeType;
-  if (nodeType === DOM_ELEMENT_TYPE) {
-    return false;
-  }
   return (
-    nodeType === DOM_TEXT_TYPE &&
+    domNode !== null &&
+    domNode.nodeType === DOM_TEXT_TYPE &&
     offset !== 0 &&
     offset !== domNode.nodeValue.length
   );
@@ -175,8 +169,8 @@ function onSelectionChange(
     // because in this case, we might need to normalize to a
     // sibling instead.
     if (
-      isElementOrTextNotAtBoundary(anchorNode, anchorOffset) &&
-      isElementOrTextNotAtBoundary(focusNode, focusOffset)
+      shouldSkipSelectionChange(anchorNode, anchorOffset) &&
+      shouldSkipSelectionChange(focusNode, focusOffset)
     ) {
       return;
     }

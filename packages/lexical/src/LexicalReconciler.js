@@ -43,7 +43,10 @@ import {
   IS_ALIGN_RIGHT,
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
-import {markSelectionChangeFromReconcile} from './LexicalEvents';
+import {
+  markCollapsedSelectionFormat,
+  markSelectionChangeFromReconcile,
+} from './LexicalEvents';
 import {
   cloneDecorators,
   getDOMTextNode,
@@ -844,6 +847,16 @@ function reconcileSelection(
   // we should avoid setting selection to something incorrect.
   if (nextAnchorNode === null || nextFocusNode === null) {
     return;
+  }
+  const nextFormat = nextSelection.format;
+
+  if (prevSelection === null || prevSelection.format !== nextFormat) {
+    markCollapsedSelectionFormat(
+      nextFormat,
+      nextAnchorOffset,
+      anchorKey,
+      performance.now(),
+    );
   }
 
   // Diff against the native DOM selection to ensure we don't do

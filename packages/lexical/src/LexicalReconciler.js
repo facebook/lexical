@@ -829,12 +829,16 @@ function reconcileSelection(
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
   const nextAnchorOffset = anchor.offset;
   const nextFocusOffset = focus.offset;
+  const nextFormat = nextSelection.format;
+  const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
   let skipNativeSelectionDiff = false;
+  let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
+    anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
   } else {
     skipNativeSelectionDiff = true;
   }
@@ -848,9 +852,13 @@ function reconcileSelection(
   if (nextAnchorNode === null || nextFocusNode === null) {
     return;
   }
-  const nextFormat = nextSelection.format;
 
-  if (prevSelection === null || prevSelection.format !== nextFormat) {
+  if (
+    isCollapsed &&
+    (prevSelection === null ||
+      anchorFormatChanged ||
+      prevSelection.format !== nextFormat)
+  ) {
     markCollapsedSelectionFormat(
       nextFormat,
       nextAnchorOffset,
@@ -870,7 +878,7 @@ function reconcileSelection(
     anchorDOMNode === nextAnchorNode &&
     focusDOMNode === nextFocusNode &&
     // Badly interpreted range selection when collapsed - #1482
-    !(domSelection.type === 'Range' && nextSelection.isCollapsed())
+    !(domSelection.type === 'Range' && isCollapsed)
   ) {
     // If the root element does not have focus, ensure it has focus
     if (

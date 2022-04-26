@@ -113,6 +113,13 @@ function prepopulatedRichText() {
         $createTextNode(`.`),
       ),
       $createListItemNode().append(
+        $createTextNode(`Playground code can be found `),
+        $createLinkNode(
+          'https://github.com/facebook/lexical/tree/main/packages/lexical-playground',
+        ).append($createTextNode('here')),
+        $createTextNode(`.`),
+      ),
+      $createListItemNode().append(
         $createTextNode(`Join our `),
         $createLinkNode('https://discord.com/invite/KmG4wQnnD9').append(
           $createTextNode('Discord Server'),

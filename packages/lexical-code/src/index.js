@@ -59,6 +59,12 @@ import {
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
+const mapToPrismLanguage = (language: ?string): string | void => {
+  return language != null && Prism.languages.hasOwnProperty(language)
+    ? language
+    : undefined;
+};
+
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
 export const getCodeLanguages = (): Array<string> =>
@@ -128,7 +134,7 @@ export class CodeHighlightNode extends TextNode {
 
   // Prevent formatting (bold, underline, etc)
   setFormat(format: number): this {
-    return this.getWritable();
+    return this;
   }
 }
 
@@ -170,7 +176,7 @@ export class CodeNode extends ElementNode {
 
   constructor(language?: string, key?: NodeKey): void {
     super(key);
-    this.__language = language;
+    this.__language = mapToPrismLanguage(language);
   }
 
   // View
@@ -307,8 +313,16 @@ export class CodeNode extends ElementNode {
     return null;
   }
 
-  canInsertTab(): true {
+  canInsertTab(): boolean {
+    const selection = $getSelection();
+    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+      return false;
+    }
     return true;
+  }
+
+  canIndent(): false {
+    return false;
   }
 
   collapseAtStart(): true {
@@ -321,7 +335,7 @@ export class CodeNode extends ElementNode {
 
   setLanguage(language: string): void {
     const writable = this.getWritable();
-    writable.__language = language;
+    writable.__language = mapToPrismLanguage(language);
   }
 
   getLanguage(): string | void {
@@ -571,7 +585,7 @@ function updateAndRetainSelection(
       anchorOffset +
       anchorNode.getPreviousSiblings().reduce((offset, _node) => {
         return (
-          offset + ($isLineBreakNode(_node) ? 0 : _node.getTextContent().length)
+          offset + ($isLineBreakNode(_node) ? 0 : _node.getTextContentSize())
         );
       }, 0);
   }
@@ -592,7 +606,7 @@ function updateAndRetainSelection(
   // and looking for a position of original text offset
   node.getChildren().some((_node) => {
     if ($isTextNode(_node)) {
-      const textContentSize = _node.getTextContent().length;
+      const textContentSize = _node.getTextContentSize();
       if (textContentSize >= textOffset) {
         _node.select(textOffset, textOffset);
         return true;
@@ -769,7 +783,7 @@ function handleShiftLines(
         }
       } else if (
         !arrowIsUp &&
-        anchorOffset === anchorNode.getTextContent().length &&
+        anchorOffset === anchorNode.getTextContentSize() &&
         anchorNode.getNextSibling() === null
       ) {
         const codeNodeSibling = codeNode.getNextSibling();

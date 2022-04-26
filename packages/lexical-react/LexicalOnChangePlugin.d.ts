@@ -8,5 +8,7 @@
 
 import type {EditorState, LexicalEditor} from 'lexical';
 export default function OnChangePlugin(arg0: {
+  ignoreInitialChange?: boolean;
+  ignoreSelectionChange?: boolean;
   onChange: (editorState: EditorState, editor: LexicalEditor) => void;
 }): null;

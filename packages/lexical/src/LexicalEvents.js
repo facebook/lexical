@@ -16,6 +16,7 @@ import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
+  $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -53,7 +54,7 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
+import {DOM_ELEMENT_TYPE, DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -132,6 +133,31 @@ let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
 let isInsertLineBreak = false;
 
+function isEmptyElementOrTextNotAtBoundary(
+  domNode: null | Node,
+  offset: number,
+): boolean {
+  if (domNode === null) {
+    return false;
+  }
+  const firstChild = domNode.firstChild;
+  const nodeType = domNode.nodeType;
+  if (
+    nodeType === DOM_ELEMENT_TYPE &&
+    firstChild != null &&
+    firstChild === domNode.lastChild &&
+    firstChild.nodeName === 'BR'
+  ) {
+    // Empty element
+    return true;
+  }
+  return (
+    nodeType === DOM_TEXT_TYPE &&
+    offset !== 0 &&
+    offset !== domNode.nodeValue.length
+  );
+}
+
 function onSelectionChange(
   domSelection: Selection,
   editor: LexicalEditor,
@@ -149,14 +175,8 @@ function onSelectionChange(
     // because in this case, we might need to normalize to a
     // sibling instead.
     if (
-      anchorNode !== null &&
-      focusNode !== null &&
-      anchorOffset !== 0 &&
-      focusOffset !== 0 &&
-      anchorNode.nodeType === DOM_TEXT_TYPE &&
-      focusNode.nodeType === DOM_TEXT_TYPE &&
-      anchorOffset !== anchorNode.nodeValue.length &&
-      focusOffset !== focusNode.nodeValue.length
+      isEmptyElementOrTextNotAtBoundary(anchorNode, anchorOffset) &&
+      isEmptyElementOrTextNotAtBoundary(focusNode, focusOffset)
     ) {
       return;
     }
@@ -171,17 +191,32 @@ function onSelectionChange(
 
     const selection = $getSelection();
     // Update the selection format
-    if ($isRangeSelection(selection) && selection.isCollapsed()) {
-      // Badly interpreted range selection when collapsed - #1482
-      if (domSelection.type === 'Range') {
-        selection.dirty = true;
-      }
+    if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
-      if (anchor.type === 'text') {
-        const anchorNode = anchor.getNode();
-        selection.format = anchorNode.getFormat();
-      } else if (anchor.type === 'element') {
-        selection.format = 0;
+      const anchorNode = anchor.getNode();
+
+      if (selection.isCollapsed()) {
+        // Badly interpreted range selection when collapsed - #1482
+        if (domSelection.type === 'Range') {
+          selection.dirty = true;
+        }
+        if (anchor.type === 'text') {
+          selection.format = anchorNode.getFormat();
+        } else if (anchor.type === 'element') {
+          selection.format = 0;
+        }
+      } else {
+        const focus = selection.focus;
+        const focusNode = focus.getNode();
+        let combinedFormat = 0;
+
+        if (anchor.type === 'text') {
+          combinedFormat |= anchorNode.getFormat();
+        }
+        if (focus.type === 'text' && !anchorNode.is(focusNode)) {
+          combinedFormat |= focusNode.getFormat();
+        }
+        selection.format = combinedFormat;
       }
     }
     dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
@@ -205,7 +240,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         $getRoot().getChildrenSize() === 1 &&
         anchor.getNode().getTopLevelElementOrThrow().isEmpty()
       ) {
-        const lastSelection = editor.getEditorState()._selection;
+        const lastSelection = $getPreviousSelection();
         if (lastSelection !== null && selection.is(lastSelection)) {
           getDOMSelection().removeAllRanges();
           selection.dirty = true;
@@ -295,11 +330,15 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
 
-    if (!$isRangeSelection(selection)) {
-      return;
-    }
-
     if (inputType === 'deleteContentBackward') {
+      if (selection === null) {
+        // Use previous selection
+        const prevSelection = $getPreviousSelection();
+        if (!$isRangeSelection(prevSelection)) {
+          return;
+        }
+        $setSelection(prevSelection.clone());
+      }
       // Used for Android
       $setCompositionKey(null);
       event.preventDefault();
@@ -313,6 +352,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       }, ANDROID_COMPOSITION_LATENCY);
       return;
     }
+
+    if (!$isRangeSelection(selection)) {
+      return;
+    }
+
     const data = event.data;
 
     if (
@@ -494,7 +538,9 @@ function onCompositionStart(
         // If it has been 30ms since the last keydown, then we should
         // apply the empty space heuristic.
         event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
-        anchor.type === 'element' ||
+        // FF has issues around composing multibyte characters, so we also
+        // need to invoke the empty space heuristic below.
+        (IS_FIREFOX && anchor.type === 'element') ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {

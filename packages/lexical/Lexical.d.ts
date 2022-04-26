@@ -343,11 +343,16 @@ export declare class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
+  isComposing(): boolean;
   // $FlowFixMe
   getLatest<T extends LexicalNode>(): T;
   // $FlowFixMe
   getWritable<T extends LexicalNode>(): T;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
+  getTextContentSize(
+    includeInert?: boolean,
+    includeDirectionless?: false,
+  ): number;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(prevNode: any, dom: HTMLElement, config: EditorConfig): boolean;
@@ -570,7 +575,6 @@ export declare class TextNode extends LexicalNode {
   deleteMark(id: string): void;
   getFormat(): number;
   getStyle(): string;
-  isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
   isInert(): boolean;
@@ -692,6 +696,7 @@ export declare class ElementNode extends LexicalNode {
   setIndent(indentLevel: number): ElementNode;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   canInsertTab(): boolean;
+  canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(): boolean;
   canExtractContents(): boolean;

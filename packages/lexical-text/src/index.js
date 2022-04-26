@@ -38,7 +38,7 @@ export function $findTextIntersectionFromCharacters(
         continue;
       }
     } else if ($isTextNode(node)) {
-      const characters = node.getTextContent().length;
+      const characters = node.getTextContentSize();
 
       if (currentCharacters + characters > targetCharacters) {
         return {node, offset: targetCharacters - currentCharacters};

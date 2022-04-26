@@ -41,6 +41,7 @@ import {
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   COPY_COMMAND,
@@ -328,6 +329,33 @@ function onCutForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
   });
 }
 
+function handleIndentAndOutdent(
+  insertTab: (node: LexicalNode) => void,
+  indentOrOutdent: (block: ElementNode) => void,
+): void {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return;
+  }
+  const alreadyHandled = new Set();
+  const nodes = selection.getNodes();
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const key = node.getKey();
+    if (alreadyHandled.has(key)) {
+      continue;
+    }
+    alreadyHandled.add(key);
+    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    if (parentBlock.canInsertTab()) {
+      insertTab(node);
+    } else if (parentBlock.canIndent()) {
+      indentOrOutdent(parentBlock);
+    }
+  }
+}
+
 export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
@@ -347,12 +375,11 @@ export function registerRichText(
     ),
     editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
-      (payload) => {
+      (isBackward: boolean) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isBackward: boolean = payload;
         selection.deleteCharacter(isBackward);
         return true;
       },
@@ -479,22 +506,17 @@ export function registerRichText(
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        // Handle code blocks
-        const anchor = selection.anchor;
-        const parentBlock = $getNearestBlockElementAncestorOrThrow(
-          anchor.getNode(),
+        handleIndentAndOutdent(
+          () => {
+            editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
+          },
+          (block) => {
+            const indent = block.getIndent();
+            if (indent !== 10) {
+              block.setIndent(indent + 1);
+            }
+          },
         );
-        if (parentBlock.canInsertTab()) {
-          editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
-        } else {
-          if (parentBlock.getIndent() !== 10) {
-            parentBlock.setIndent(parentBlock.getIndent() + 1);
-          }
-        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -502,27 +524,23 @@ export function registerRichText(
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        // Handle code blocks
-        const anchor = selection.anchor;
-        const anchorNode = anchor.getNode();
-        const parentBlock = $getNearestBlockElementAncestorOrThrow(
-          anchor.getNode(),
+        handleIndentAndOutdent(
+          (node) => {
+            if ($isTextNode(node)) {
+              const textContent = node.getTextContent();
+              const character = textContent[textContent.length - 1];
+              if (character === '\t') {
+                editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+              }
+            }
+          },
+          (block) => {
+            const indent = block.getIndent();
+            if (indent !== 0) {
+              block.setIndent(indent - 1);
+            }
+          },
         );
-        if (parentBlock.canInsertTab()) {
-          const textContent = anchorNode.getTextContent();
-          const character = textContent[anchor.offset - 1];
-          if (character === '\t') {
-            editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
-          }
-        } else {
-          if (parentBlock.getIndent() !== 0) {
-            parentBlock.setIndent(parentBlock.getIndent() - 1);
-          }
-        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

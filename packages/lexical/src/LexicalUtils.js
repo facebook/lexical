@@ -289,17 +289,19 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
   const previousCompositionKey = editor._compositionKey;
-  editor._compositionKey = compositionKey;
-  if (previousCompositionKey !== null) {
-    const node = $getNodeByKey(previousCompositionKey);
-    if (node !== null) {
-      node.getWritable();
+  if (compositionKey !== previousCompositionKey) {
+    editor._compositionKey = compositionKey;
+    if (previousCompositionKey !== null) {
+      const node = $getNodeByKey(previousCompositionKey);
+      if (node !== null) {
+        node.getWritable();
+      }
     }
-  }
-  if (compositionKey !== null) {
-    const node = $getNodeByKey(compositionKey);
-    if (node !== null) {
-      node.getWritable();
+    if (compositionKey !== null) {
+      const node = $getNodeByKey(compositionKey);
+      if (node !== null) {
+        node.getWritable();
+      }
     }
   }
 }
@@ -432,7 +434,7 @@ export function getTextNodeOffset(
   node: TextNode,
   moveSelectionToEnd: boolean,
 ): number {
-  return moveSelectionToEnd ? node.getTextContent().length : 0;
+  return moveSelectionToEnd ? node.getTextContentSize() : 0;
 }
 
 function getNodeKeyFromDOM(
@@ -541,7 +543,9 @@ export function $updateTextNodeFromDOMContent(
           const editor = getActiveEditor();
           setTimeout(() => {
             editor.update(() => {
-              node.remove();
+              if (node.isAttached()) {
+                node.remove();
+              }
             });
           }, 20);
         } else {
@@ -606,7 +610,7 @@ function $shouldInsertTextAfterOrBeforeTextNode(
     offset === 0 &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   const shouldInsertTextAfter =
-    node.getTextContent().length === offset &&
+    node.getTextContentSize() === offset &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
@@ -966,7 +970,7 @@ export function $getDecoratorNode(
     const focusNode = focus.getNode();
     if (
       (isBackward && focusOffset === 0) ||
-      (!isBackward && focusOffset === focusNode.getTextContent().length)
+      (!isBackward && focusOffset === focusNode.getTextContentSize())
     ) {
       const possibleNode = isBackward
         ? focusNode.getPreviousSibling()

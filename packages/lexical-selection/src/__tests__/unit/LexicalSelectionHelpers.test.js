@@ -496,8 +496,8 @@ describe('LexicalSelectionHelpers tests', () => {
       };
 
       // getNodes
-      setupTestCase((selection, state) => {
-        expect(selection.getNodes()).toEqual([]);
+      setupTestCase((selection, element) => {
+        expect(selection.getNodes()).toEqual([element]);
       });
 
       // getTextContent
@@ -573,14 +573,14 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // Extract selection
       setupTestCase((selection, element) => {
-        expect(selection.extract()).toEqual([]);
+        expect(selection.extract()).toEqual([element]);
       });
 
       // cloneContents
       setupTestCase((selection, element) => {
         expect($cloneContents(selection)).toEqual({
-          nodeMap: [],
-          range: [],
+          nodeMap: [[element.getKey(), element]],
+          range: [element.getKey()],
         });
       });
     });

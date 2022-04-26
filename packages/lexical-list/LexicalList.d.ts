@@ -22,7 +22,7 @@ export function $getListDepth(listNode: ListNode): number;
 export function $handleListInsertParagraph(): boolean;
 export function $isListItemNode(node?: LexicalNode): node is ListItemNode;
 export function $isListNode(node?: LexicalNode): node is ListNode;
-export function indentList(): boolean;
+export function indentList(): void;
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void;
 export declare class ListItemNode extends ElementNode {
   append(...nodes: LexicalNode[]): ListItemNode;
@@ -42,7 +42,7 @@ export declare class ListNode extends ElementNode {
   append(...nodesToAppend: LexicalNode[]): ListNode;
   getTag(): ListNodeTagType;
 }
-export function outdentList(): boolean;
+export function outdentList(): void;
 export function removeList(editor: LexicalEditor): boolean;
 
 export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;

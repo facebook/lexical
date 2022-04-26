@@ -1197,7 +1197,13 @@ test.describe('Tables', () => {
 
   test(`Range Selection is corrected when it contains a partial Table.`, async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(
+      isCollab,
+      'Table selection styles are not properly synced to the right hand frame',
+    );
+
     await focusEditor(page);
     await page.keyboard.type('Hello World');
     await insertTable(page);
@@ -1371,7 +1377,13 @@ test.describe('Tables', () => {
 
   test(`Select All when document contains tables adds custom table styles.`, async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(
+      isCollab,
+      'Table selection styles are not properly synced to the right hand frame',
+    );
+
     await focusEditor(page);
     await page.keyboard.type('Hello World');
     await insertTable(page);

@@ -9,6 +9,7 @@
 import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  click,
   focusEditor,
   html,
   initialize,
@@ -21,7 +22,7 @@ test.describe('Element format', () => {
   test.skip(IS_PLAIN_TEXT);
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('can indent/align paragraph when caret is within link', async ({
+  test('Can indent/align paragraph when caret is within link', async ({
     page,
     isPlainText,
   }) => {
@@ -37,7 +38,7 @@ test.describe('Element format', () => {
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          style="padding-inline-start: 80px; text-align: center;"
+          style="padding-inline-start: 40px; text-align: center;"
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a
@@ -53,6 +54,21 @@ test.describe('Element format', () => {
         ignoreClasses: false,
         ignoreInlineStyles: false,
       },
+    );
+  });
+
+  test('Can center align an empty paragraph', async ({page, isPlainText}) => {
+    await focusEditor(page);
+    await click(page, '.alignment');
+    await click(page, '.center-align');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center">
+          <br />
+        </p>
+      `,
     );
   });
 });

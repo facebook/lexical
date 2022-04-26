@@ -117,39 +117,35 @@ export async function assertHTML(
   } = {},
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await assertHTMLOnPageOrFrame(
+    await retryAsync(
       page,
-      leftFrame,
-      expectedHtml,
-      ignoreClasses,
-      ignoreInlineStyles,
+      async () => {
+        const leftFrame = await page.frame('left');
+        return assertHTMLOnPageOrFrame(
+          page,
+          leftFrame,
+          expectedHtml,
+          ignoreClasses,
+          ignoreInlineStyles,
+        );
+      },
+      5,
     );
     if (!ignoreSecondFrame) {
-      let attempts = 0;
-      while (attempts < 4) {
-        const rightFrame = await page.frame('right');
-        let failed = false;
-        try {
-          await assertHTMLOnPageOrFrame(
+      await retryAsync(
+        page,
+        async () => {
+          const rightFrame = await page.frame('right');
+          return assertHTMLOnPageOrFrame(
             page,
             rightFrame,
             expectedHtml,
             ignoreClasses,
             ignoreInlineStyles,
           );
-        } catch (e) {
-          if (attempts === 5) {
-            throw e;
-          }
-          failed = true;
-        }
-        if (!failed) {
-          break;
-        }
-        attempts++;
-        await sleep(500);
-      }
+        },
+        5,
+      );
     }
   } else {
     await assertHTMLOnPageOrFrame(
@@ -159,6 +155,25 @@ export async function assertHTML(
       ignoreClasses,
       ignoreInlineStyles,
     );
+  }
+}
+
+async function retryAsync(page, fn, attempts) {
+  while (attempts > 0) {
+    let failed = false;
+    try {
+      await fn();
+    } catch (e) {
+      if (attempts === 1) {
+        throw e;
+      }
+      failed = true;
+    }
+    if (!failed) {
+      break;
+    }
+    attempts--;
+    await sleep(500);
   }
 }
 

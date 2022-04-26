@@ -152,7 +152,7 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.replace(textNode);
         });
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><span data-lexical-text="true">bar</span><ul><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><span data-lexical-text="true">bar</span><ul><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li><li value="2" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 

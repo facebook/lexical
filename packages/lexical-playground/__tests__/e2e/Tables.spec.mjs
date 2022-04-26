@@ -12,7 +12,6 @@ import {
   click,
   clickSelectors,
   copyToClipboard,
-  dragMouse,
   focusEditor,
   html,
   initialize,
@@ -20,6 +19,7 @@ import {
   IS_COLLAB,
   pasteFromClipboard,
   repeat,
+  selectCellsFromTableCords,
   test,
 } from '../utils/index.mjs';
 
@@ -42,36 +42,6 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('f');
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('c');
-}
-
-async function selectCellsFromTableCords(page, firstCords, secondCords) {
-  let p = page;
-
-  if (IS_COLLAB) {
-    await focusEditor(page);
-    p = await page.frame('left');
-  }
-
-  const firstRowFirstColumnCellBoundingBox = await p.locator(
-    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > th:nth-child(${
-      firstCords.x + 1
-    })`,
-  );
-
-  const secondRowSecondCellBoundingBox = await p.locator(
-    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > td:nth-child(${
-      secondCords.x + 1
-    })`,
-  );
-
-  // Focus on inside the iFrame or the boundingBox() below returns null.
-  await firstRowFirstColumnCellBoundingBox.click();
-
-  await dragMouse(
-    page,
-    await firstRowFirstColumnCellBoundingBox.boundingBox(),
-    await secondRowSecondCellBoundingBox.boundingBox(),
-  );
 }
 
 test.describe('Tables', () => {

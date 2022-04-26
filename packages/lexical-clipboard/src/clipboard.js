@@ -362,7 +362,7 @@ function $mergeGridNodesStrategy(
         newFocusCellKey = currentGridCellNode.getKey();
       }
       const originalChildren = currentGridCellNode.getChildren();
-      newGridCellNode.getChildren().forEach((child) => {
+      newGridCellNode.forEachChild((child) => {
         if ($isTextNode(child)) {
           const paragraphNode = $createParagraphNode();
           paragraphNode.append(child);

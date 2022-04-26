@@ -13,7 +13,6 @@ import * as React from 'react';
 import {createPortal} from 'react-dom';
 
 type DropDownContextType = {
-  highlightedItem: React$ElementRef<React$ElementType>,
   registerItem: (ref: React$ElementRef<React$ElementType>) => void,
 };
 
@@ -36,19 +35,13 @@ export function DropDownItem({
     throw new Error('DropDownItem must be used within a DropDown');
   }
 
-  const {registerItem, highlightedItem} = dropDownContext;
+  const {registerItem} = dropDownContext;
 
   useEffect(() => {
     if (ref) {
       registerItem(ref);
     }
   }, [ref, registerItem]);
-
-  useEffect(() => {
-    if (highlightedItem === ref) {
-      ref.current?.focus();
-    }
-  }, [highlightedItem]);
 
   return (
     <button className={className} onClick={onClick} ref={ref}>
@@ -69,7 +62,8 @@ function DropDownItems({
   const [items, setItems] = useState<
     React$ElementRef<React$ElementType>[] | null,
   >(null);
-  const [highlightedItem, setHighlightedItem] = useState(null);
+  const [highlightedItem, setHighlightedItem] =
+    useState<React$ElementRef<React$ElementType> | null>(null);
 
   const registerItem = useCallback(
     (itemRef: React$ElementRef<React$ElementType>) => {
@@ -90,17 +84,25 @@ function DropDownItems({
     if (key === 'Escape') {
       onClose();
     } else if (key === 'ArrowUp') {
-      setHighlightedItem((prev) => {
-        const index = items.indexOf(prev) - 1;
-        return items[index === -1 ? items.length - 1 : index];
-      });
+      setHighlightedItem(
+        (
+          prev: React$ElementRef<React$ElementType>,
+        ): React$ElementRef<React$ElementType> => {
+          const index = items.indexOf(prev) - 1;
+          return items[index === -1 ? items.length - 1 : index];
+        },
+      );
     } else if (key === 'ArrowDown' || key === 'Tab') {
-      setHighlightedItem((prev) => items[items.indexOf(prev) + 1]);
+      setHighlightedItem(
+        (
+          prev: React$ElementRef<React$ElementType>,
+        ): React$ElementRef<React$ElementType> =>
+          items[items.indexOf(prev) + 1],
+      );
     }
   };
 
   const contextValue = {
-    highlightedItem,
     registerItem,
   };
 
@@ -108,6 +110,9 @@ function DropDownItems({
     if (items && !highlightedItem) {
       setHighlightedItem(items[0]);
     }
+
+    // $FlowFixMe: I am not sure why this is wrong
+    highlightedItem?.current?.focus();
   }, [items, highlightedItem]);
 
   return (

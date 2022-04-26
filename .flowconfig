@@ -3,6 +3,7 @@
 .*/build/.*
 .*/__tests__/.*
 .*/dist/.*
+.*/npm/.*
 .*/.tempUserDataDir/.*
 .*/node_modules/.*
 

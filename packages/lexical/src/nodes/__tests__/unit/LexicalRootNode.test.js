@@ -180,9 +180,7 @@ describe('LexicalRootNode tests', () => {
         const secondParagraphText = secondParagraph.getFirstChild();
         secondParagraphText.setTextContent('second line!');
       });
-      expectRootTextContentToBe(
-        'first line\n\nsecond line!\n\nthird line', // BAD
-      );
+      expectRootTextContentToBe('first line\n\nsecond line!\n\nthird line');
     });
 
     test('RootNode __cachedText (empty paragraph)', async () => {

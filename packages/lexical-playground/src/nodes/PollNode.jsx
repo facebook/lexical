@@ -162,11 +162,11 @@ function PollComponent({
     [editor, nodeKey],
   );
 
-  const addOption = useCallback(() => {
+  const addOption = () => {
     withPollNode((node) => {
       node.addOption(createPollOption());
     });
-  }, [withPollNode]);
+  };
 
   return (
     <div className="PollNode__container">

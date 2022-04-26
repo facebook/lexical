@@ -113,56 +113,50 @@ function ExcalidrawComponent({
     );
   }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
 
-  const deleteNode = useCallback(() => {
+  const deleteNode = () => {
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
         node.remove();
       }
     });
-  }, [editor, nodeKey]);
+  };
 
-  const setData = useCallback(
-    (newData: $ReadOnlyArray<ExcalidrawElementFragment>) => {
-      if (editor.isReadOnly()) {
-        return;
-      }
-      return editor.update(() => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isExcalidrawNode(node)) {
-          if (newData.length > 0) {
-            node.setData(JSON.stringify(newData));
-          } else {
-            node.remove();
-          }
+  const setData = (newData: $ReadOnlyArray<ExcalidrawElementFragment>) => {
+    if (editor.isReadOnly()) {
+      return;
+    }
+    return editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isExcalidrawNode(node)) {
+        if (newData.length > 0) {
+          node.setData(JSON.stringify(newData));
+        } else {
+          node.remove();
         }
-      });
-    },
-    [editor, nodeKey],
-  );
+      }
+    });
+  };
 
-  const onResizeStart = useCallback(() => {
+  const onResizeStart = () => {
     const rootElement = editor.getRootElement();
     if (rootElement !== null) {
       rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
     }
     setIsResizing(true);
-  }, [editor]);
+  };
 
-  const onResizeEnd = useCallback(
-    (nextWidth, nextHeight) => {
-      const rootElement = editor.getRootElement();
-      if (rootElement !== null) {
-        rootElement.style.setProperty('cursor', 'default');
-      }
+  const onResizeEnd = (nextWidth, nextHeight) => {
+    const rootElement = editor.getRootElement();
+    if (rootElement !== null) {
+      rootElement.style.setProperty('cursor', 'default');
+    }
 
-      // Delay hiding the resize bars for click case
-      setTimeout(() => {
-        setIsResizing(false);
-      }, 200);
-    },
-    [editor],
-  );
+    // Delay hiding the resize bars for click case
+    setTimeout(() => {
+      setIsResizing(false);
+    }, 200);
+  };
 
   const elements = useMemo(() => JSON.parse(data), [data]);
   return (

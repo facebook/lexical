@@ -42,6 +42,7 @@ export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
 export var DROP_COMMAND: LexicalCommand<DragEvent>;
 export var FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType>;
 export var DRAGSTART_COMMAND: LexicalCommand<DragEvent>;
+export var DRAGEND_COMMAND: LexicalCommand<DragEvent>;
 export var COPY_COMMAND: LexicalCommand<ClipboardEvent>;
 export var CUT_COMMAND: LexicalCommand<ClipboardEvent>;
 export var CLEAR_EDITOR_COMMAND: LexicalCommand<void>;

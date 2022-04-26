@@ -30,6 +30,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DRAGEND_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   FOCUS_COMMAND,
@@ -723,6 +724,8 @@ export function addRootElementEvents(
                   return dispatchCommand(editor, PASTE_COMMAND, event);
                 case 'dragstart':
                   return dispatchCommand(editor, DRAGSTART_COMMAND, event);
+                case 'dragend':
+                  return dispatchCommand(editor, DRAGEND_COMMAND, event);
                 case 'focus':
                   return dispatchCommand(editor, FOCUS_COMMAND, event);
                 case 'blur':

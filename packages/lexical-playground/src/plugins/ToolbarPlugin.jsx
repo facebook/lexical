@@ -68,7 +68,7 @@ import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
-import DropDown from '../ui/DropDown';
+import DropDown, {DropDownItem} from '../ui/DropDown';
 import FileInput from '../ui/FileInput.jsx';
 import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
@@ -677,46 +677,46 @@ function BlockFormatDropDown({
       buttonIconClassName={'icon block-type ' + blockType}
       buttonLabel={blockTypeToBlockName[blockType]}
       buttonAriaLabel="Formatting options for text style">
-      <button className="item" onClick={formatParagraph}>
+      <DropDownItem className="item" onClick={formatParagraph}>
         <span className="icon paragraph" />
         <span className="text">Normal</span>
         {blockType === 'paragraph' && <span className="active" />}
-      </button>
-      <button className="item" onClick={() => formatHeading('h1')}>
+      </DropDownItem>
+      <DropDownItem className="item" onClick={() => formatHeading('h1')}>
         <span className="icon h1" />
         <span className="text">Heading 1</span>
         {blockType === 'h1' && <span className="active" />}
-      </button>
-      <button className="item" onClick={() => formatHeading('h2')}>
+      </DropDownItem>
+      <DropDownItem className="item" onClick={() => formatHeading('h2')}>
         <span className="icon h2" />
         <span className="text">Heading 2</span>
         {blockType === 'h2' && <span className="active" />}
-      </button>
-      <button className="item" onClick={() => formatHeading('h3')}>
+      </DropDownItem>
+      <DropDownItem className="item" onClick={() => formatHeading('h3')}>
         <span className="icon h3" />
         <span className="text">Heading 3</span>
         {blockType === 'h3' && <span className="active" />}
-      </button>
-      <button className="item" onClick={formatBulletList}>
+      </DropDownItem>
+      <DropDownItem className="item" onClick={formatBulletList}>
         <span className="icon bullet-list" />
         <span className="text">Bullet List</span>
         {blockType === 'ul' && <span className="active" />}
-      </button>
-      <button className="item" onClick={formatNumberedList}>
+      </DropDownItem>
+      <DropDownItem className="item" onClick={formatNumberedList}>
         <span className="icon numbered-list" />
         <span className="text">Numbered List</span>
         {blockType === 'ol' && <span className="active" />}
-      </button>
-      <button className="item" onClick={formatQuote}>
+      </DropDownItem>
+      <DropDownItem className="item" onClick={formatQuote}>
         <span className="icon quote" />
         <span className="text">Quote</span>
         {blockType === 'quote' && <span className="active" />}
-      </button>
-      <button className="item" onClick={formatCode}>
+      </DropDownItem>
+      <DropDownItem className="item" onClick={formatCode}>
         <span className="icon code" />
         <span className="text">Code Block</span>
         {blockType === 'code' && <span className="active" />}
-      </button>
+      </DropDownItem>
     </DropDown>
   );
 }
@@ -1066,15 +1066,15 @@ export default function ToolbarPlugin(): React$Node {
             buttonLabel="Insert"
             buttonAriaLabel="Insert specialized editor node"
             buttonIconClassName="icon plus">
-            <button
+            <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND);
               }}
               className="item">
               <i className="icon horizontal-rule" />
               <span className="text">Horizontal Rule</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 showModal('Insert Image', (onClose) => (
                   <InsertImageDialog
@@ -1086,8 +1086,8 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon image" />
               <span className="text">Image</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() =>
                 insertGifOnClick({
                   altText: 'Cat typing on a laptop',
@@ -1097,16 +1097,16 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon gif" />
               <span className="text">GIF</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND);
               }}
               className="item">
               <i className="icon diagram-2" />
               <span className="text">Excalidraw</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 showModal('Insert Table', (onClose) => (
                   <InsertTableDialog
@@ -1118,8 +1118,8 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon table" />
               <span className="text">Table</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 showModal('Insert Poll', (onClose) => (
                   <InsertPollDialog
@@ -1131,8 +1131,8 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon poll" />
               <span className="text">Poll</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 showModal('Insert Tweet', (onClose) => (
                   <InsertTweetDialog
@@ -1144,8 +1144,8 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon tweet" />
               <span className="text">Tweet</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 showModal('Insert YouTube Video', (onClose) => (
                   <InsertYouTubeDialog
@@ -1157,8 +1157,8 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon youtube" />
               <span className="text">YouTube Video</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 showModal('Insert Equation', (onClose) => (
                   <InsertEquationDialog
@@ -1170,8 +1170,8 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon equation" />
               <span className="text">Equation</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 editor.update(() => {
                   const root = $getRoot();
@@ -1182,7 +1182,7 @@ export default function ToolbarPlugin(): React$Node {
               className="item">
               <i className="icon sticky" />
               <span className="text">Sticky Note</span>
-            </button>
+            </DropDownItem>
           </DropDown>
         </>
       )}
@@ -1192,55 +1192,55 @@ export default function ToolbarPlugin(): React$Node {
         buttonIconClassName="icon left-align"
         buttonClassName="toolbar-item spaced alignment"
         buttonAriaLabel="Formatting options for text alignment">
-        <button
+        <DropDownItem
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
           }}
           className="item">
           <i className="icon left-align" />
           <span className="text">Left Align</span>
-        </button>
-        <button
+        </DropDownItem>
+        <DropDownItem
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
           }}
           className="item">
           <i className="icon center-align" />
           <span className="text">Center Align</span>
-        </button>
-        <button
+        </DropDownItem>
+        <DropDownItem
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
           }}
           className="item">
           <i className="icon right-align" />
           <span className="text">Right Align</span>
-        </button>
-        <button
+        </DropDownItem>
+        <DropDownItem
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
           }}
           className="item">
           <i className="icon justify-align" />
           <span className="text">Justify Align</span>
-        </button>
+        </DropDownItem>
         <Divider />
-        <button
+        <DropDownItem
           onClick={() => {
             activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
           }}
           className="item">
           <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
           <span className="text">Outdent</span>
-        </button>
-        <button
+        </DropDownItem>
+        <DropDownItem
           onClick={() => {
             activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND);
           }}
           className="item">
           <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
           <span className="text">Indent</span>
-        </button>
+        </DropDownItem>
       </DropDown>
 
       {modal}

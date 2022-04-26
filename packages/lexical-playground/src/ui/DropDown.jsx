@@ -7,10 +7,117 @@
  * @flow strict
  */
 
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
-// $FlowFixMe
+// $FlowFixMe[cannot-resolve-module]
 import {createPortal} from 'react-dom';
+
+type DropDownContextType = {
+  highlightedItem: React$ElementRef<React$ElementType>,
+  registerItem: (ref: React$ElementRef<React$ElementType>) => void,
+};
+
+const DropDownContext = React.createContext<DropDownContextType | null>(null);
+
+export function DropDownItem({
+  children,
+  className,
+  onClick,
+}: {
+  children: React$Node,
+  className: string,
+  onClick: (event: MouseEvent) => void,
+}): React$Node {
+  const ref = useRef<HTMLElement | null>(null);
+
+  const dropDownContext = React.useContext(DropDownContext);
+
+  if (dropDownContext === null) {
+    throw new Error('DropDownItem must be used within a DropDown');
+  }
+
+  const {registerItem, highlightedItem} = dropDownContext;
+
+  useEffect(() => {
+    if (ref) {
+      registerItem(ref);
+    }
+  }, [ref, registerItem]);
+
+  useEffect(() => {
+    if (highlightedItem === ref) {
+      ref.current?.focus();
+    }
+  }, [highlightedItem]);
+
+  return (
+    <button className={className} onClick={onClick} ref={ref}>
+      {children}
+    </button>
+  );
+}
+
+function DropDownItems({
+  children,
+  dropDownRef,
+  onClose,
+}: {
+  children: React$Node,
+  dropDownRef: {current: HTMLElement | null},
+  onClose: () => void,
+}): React$Node {
+  const [items, setItems] = useState<
+    React$ElementRef<React$ElementType>[] | null,
+  >(null);
+  const [highlightedItem, setHighlightedItem] = useState(null);
+
+  const registerItem = useCallback(
+    (itemRef: React$ElementRef<React$ElementType>) => {
+      setItems((prev) => (prev ? [...prev, itemRef] : [itemRef]));
+    },
+    [setItems],
+  );
+
+  const handleKeyDown = (event) => {
+    if (!items) return;
+
+    const key = event.key;
+
+    if (['Escape', 'ArrowUp', 'ArrowDown', 'Tab'].includes(key)) {
+      event.preventDefault();
+    }
+
+    if (key === 'Escape') {
+      onClose();
+    } else if (key === 'ArrowUp') {
+      setHighlightedItem((prev) => {
+        const index = items.indexOf(prev) - 1;
+        return items[index === -1 ? items.length - 1 : index];
+      });
+    } else if (key === 'ArrowDown' || key === 'Tab') {
+      setHighlightedItem((prev) => items[items.indexOf(prev) + 1]);
+    }
+  };
+
+  const contextValue = {
+    highlightedItem,
+    registerItem,
+  };
+
+  useEffect(() => {
+    if (items && !highlightedItem) {
+      setHighlightedItem(items[0]);
+    }
+  }, [items, highlightedItem]);
+
+  return (
+    <DropDownContext.Provider value={contextValue}>
+      <div className="dropdown" ref={dropDownRef} onKeyDown={handleKeyDown}>
+        {children}
+      </div>
+    </DropDownContext.Provider>
+  );
+}
 
 export default function DropDown({
   buttonLabel,
@@ -28,6 +135,11 @@ export default function DropDown({
   const dropDownRef = useRef<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLElement | null>(null);
   const [showDropDown, setShowDropDown] = useState(false);
+
+  const handleClose = () => {
+    setShowDropDown(false);
+    buttonRef?.current?.focus();
+  };
 
   useEffect(() => {
     const button = buttonRef.current;
@@ -78,9 +190,9 @@ export default function DropDown({
 
       {showDropDown &&
         createPortal(
-          <div className="dropdown" ref={dropDownRef}>
+          <DropDownItems dropDownRef={dropDownRef} onClose={handleClose}>
             {children}
-          </div>,
+          </DropDownItems>,
           document.body,
         )}
     </>

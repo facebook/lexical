@@ -163,6 +163,7 @@ function createListOrMerge(node: ElementNode, listType: 'ul' | 'ol'): ListNode {
     list.append(listItem);
     node.replace(list);
     listItem.append(node);
+    updateChildrenListItemValue(list);
     return list;
   }
 }

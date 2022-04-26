@@ -175,6 +175,17 @@ export class ListItemNode extends ElementNode {
     return node;
   }
 
+  remove(preserveEmptyParent?: boolean): void {
+    const nextSibling = this.getNextSibling();
+    super.remove(preserveEmptyParent);
+    if (nextSibling !== null) {
+      const parent = nextSibling.getParent();
+      if ($isListNode(parent)) {
+        updateChildrenListItemValue(parent);
+      }
+    }
+  }
+
   insertNewAfter(): ListItemNode | ParagraphNode {
     const newElement = $createListItemNode();
     this.insertAfter(newElement);
@@ -257,10 +268,12 @@ export class ListItemNode extends ElementNode {
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    const siblings = this.getNextSiblings();
     if ($isListItemNode(nodeToInsert)) {
-      // mark subsequent list items dirty so we update their value attribute.
-      siblings.forEach((sibling) => sibling.markDirty());
+      const parent = this.getParentOrThrow();
+      if ($isListNode(parent)) {
+        // mark subsequent list items dirty so we update their value attribute.
+        updateChildrenListItemValue(parent);
+      }
     }
     return super.insertBefore(nodeToInsert);
   }

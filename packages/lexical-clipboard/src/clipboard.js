@@ -362,7 +362,7 @@ function $mergeGridNodesStrategy(
         newFocusCellKey = currentGridCellNode.getKey();
       }
       const originalChildren = currentGridCellNode.getChildren();
-      newGridCellNode.forEachChild((child) => {
+      newGridCellNode.getChildren().forEach((child) => {
         if ($isTextNode(child)) {
           const paragraphNode = $createParagraphNode();
           paragraphNode.append(child);
@@ -371,7 +371,7 @@ function $mergeGridNodesStrategy(
           currentGridCellNode.append(child);
         }
       });
-      originalChildren.forEachChild((n) => n.remove());
+      originalChildren.forEach((n) => n.remove());
       newColumnIdx++;
     }
     newRowIdx++;

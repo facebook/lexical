@@ -1409,13 +1409,14 @@ test.describe('Tables', () => {
 
     await focusEditor(page);
     await page.keyboard.type('Hello World');
+
     await insertTable(page);
 
     await selectAll(page);
 
     // Selection of cells is not synced in collab, but we still want to
     // ensure this doesn't break collab too.
-    if (isCollab) {
+    if (!isCollab) {
       await assertHTML(
         page,
         html`

@@ -220,9 +220,13 @@ test.describe('Toolbar', () => {
               src="${IMAGE_URL}"
               style="height: inherit; max-width: 500px; width: inherit" />
             <button class="image-caption-button">Add Caption</button>
+            <div class="image-resizer-n"></div>
             <div class="image-resizer-ne"></div>
+            <div class="image-resizer-e"></div>
             <div class="image-resizer-se"></div>
+            <div class="image-resizer-s"></div>
             <div class="image-resizer-sw"></div>
+            <div class="image-resizer-w"></div>
             <div class="image-resizer-nw"></div>
           </span>
           <br />
@@ -247,9 +251,13 @@ test.describe('Toolbar', () => {
               src="${IMAGE_URL}"
               style="height: inherit; max-width: 500px; width: inherit" />
             <button class="image-caption-button">Add Caption</button>
+            <div class="image-resizer-n"></div>
             <div class="image-resizer-ne"></div>
+            <div class="image-resizer-e"></div>
             <div class="image-resizer-se"></div>
+            <div class="image-resizer-s"></div>
             <div class="image-resizer-sw"></div>
+            <div class="image-resizer-w"></div>
             <div class="image-resizer-nw"></div>
           </span>
           <br />

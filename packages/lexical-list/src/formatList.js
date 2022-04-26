@@ -51,6 +51,31 @@ function $isSelectingEmptyListItem(
   );
 }
 
+function $getListItemValue(listItem: ListItemNode): number {
+  const list = listItem.getParent();
+
+  let value = 1;
+  if (list != null) {
+    if (!$isListNode(list)) {
+      invariant(
+        false,
+        '$getListItemValue: list node is not parent of list item node',
+      );
+    } else {
+      value = list.getStart();
+    }
+  }
+
+  const siblings = listItem.getPreviousSiblings();
+  for (let i = 0; i < siblings.length; i++) {
+    const sibling = siblings[i];
+    if ($isListItemNode(sibling) && !$isListNode(sibling.getFirstChild())) {
+      value++;
+    }
+  }
+  return value;
+}
+
 export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -92,6 +117,7 @@ export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
                   const newListNode = $createListNode(listType);
                   newListNode.append(...parent.getChildren());
                   parent.replace(newListNode);
+                  updateChildrenListItemValue(newListNode);
                   handled.add(parentKey);
                 }
                 break;
@@ -179,6 +205,17 @@ export function removeList(editor: LexicalEditor): void {
   });
 }
 
+export function updateChildrenListItemValue(list: ListNode): void {
+  // $FlowFixMe: children are always list item nodes
+  list.getChildren().forEach((child: ListItemNode) => {
+    const prevValue = child.getValue();
+    const nextValue = $getListItemValue(child);
+    if (prevValue !== nextValue) {
+      child.setValue(nextValue);
+    }
+  });
+}
+
 export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
   const removed = new Set();
@@ -202,7 +239,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
           nextSibling.remove();
           removed.add(nextSibling.getKey());
         }
-        innerList.getChildren().forEach((child) => child.markDirty());
+        updateChildrenListItemValue(innerList);
       }
     } else if (isNestedListNode(nextSibling)) {
       // if the ListItemNode is next to a nested ListNode, merge them
@@ -212,13 +249,13 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
         if (firstChild !== null) {
           firstChild.insertBefore(listItemNode);
         }
-        innerList.getChildren().forEach((child) => child.markDirty());
+        updateChildrenListItemValue(innerList);
       }
     } else if (isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
       if ($isListNode(innerList)) {
         innerList.append(listItemNode);
-        innerList.getChildren().forEach((child) => child.markDirty());
+        updateChildrenListItemValue(innerList);
       }
     } else {
       // otherwise, we need to create a new nested ListNode
@@ -237,7 +274,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
       }
     }
     if ($isListNode(parent)) {
-      parent.getChildren().forEach((child) => child.markDirty());
+      updateChildrenListItemValue(parent);
     }
   });
 }
@@ -294,8 +331,8 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
         // replace the grandparent list item (now between the siblings) with the outdented list item.
         grandparentListItem.replace(listItemNode);
       }
-      parentList.getChildren().forEach((child) => child.markDirty());
-      greatGrandparentList.getChildren().forEach((child) => child.markDirty());
+      updateChildrenListItemValue(parentList);
+      updateChildrenListItemValue(greatGrandparentList);
     }
   });
 }

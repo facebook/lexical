@@ -67,13 +67,8 @@ test.describe('BlockWithAlignableContents', () => {
   test('Can align contents within full width blocks', async ({
     page,
     isPlainText,
-    isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      isCollab,
-      'Alignment is not working correctly for video embeds in collab.',
-    );
     await focusEditor(page);
     await page.keyboard.type('Hello world');
     await insertYouTubeEmbed(page, TEST_URL);

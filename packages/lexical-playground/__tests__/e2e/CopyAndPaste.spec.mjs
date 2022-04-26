@@ -862,10 +862,6 @@ test.describe('CopyAndPaste', () => {
     browserName,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      isCollab,
-      'List item values are not properly updated in the right hand frame when merging lists',
-    );
 
     await focusEditor(page);
 
@@ -949,10 +945,6 @@ test.describe('CopyAndPaste', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      isCollab,
-      'List item values are not properly updated in the right hand frame when merging lists',
-    );
 
     await focusEditor(page);
 
@@ -1021,10 +1013,6 @@ test.describe('CopyAndPaste', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      isCollab,
-      'List item values are not properly updated in the right hand frame when merging lists',
-    );
 
     await focusEditor(page);
 

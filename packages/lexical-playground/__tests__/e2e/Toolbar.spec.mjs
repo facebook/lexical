@@ -197,11 +197,8 @@ test.describe('Toolbar', () => {
   });
 
   test('Center align image', async ({page, isPlainText, isCollab}) => {
-    test.skip(isPlainText);
-    test.fixme(
-      isCollab,
-      'The focused image state is not shared across frames, so the right hand assertion fails expecting the resizers',
-    );
+    // Image selection can't be synced in collab
+    test.skip(isPlainText || isCollab);
     await focusEditor(page);
 
     await insertSampleImage(page);

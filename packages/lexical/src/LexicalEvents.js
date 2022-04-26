@@ -8,6 +8,7 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
+import type {NodeKey} from './LexicalNode';
 import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
@@ -54,11 +55,7 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
-import {
-  DOM_ELEMENT_TYPE,
-  DOM_TEXT_TYPE,
-  DOUBLE_LINE_BREAK,
-} from './LexicalConstants';
+import {DOM_TEXT_TYPE, DOUBLE_LINE_BREAK} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -136,27 +133,20 @@ let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
 let isInsertLineBreak = false;
+let collapsedSelectionFormat: [number, number, NodeKey, number] = [
+  0,
+  0,
+  'root',
+  0,
+];
 
-function isEmptyElementOrTextNotAtBoundary(
+function shouldSkipSelectionChange(
   domNode: null | Node,
   offset: number,
 ): boolean {
-  if (domNode === null) {
-    return false;
-  }
-  const firstChild = domNode.firstChild;
-  const nodeType = domNode.nodeType;
-  if (
-    nodeType === DOM_ELEMENT_TYPE &&
-    firstChild != null &&
-    firstChild === domNode.lastChild &&
-    firstChild.nodeName === 'BR'
-  ) {
-    // Empty element
-    return true;
-  }
   return (
-    nodeType === DOM_TEXT_TYPE &&
+    domNode !== null &&
+    domNode.nodeType === DOM_TEXT_TYPE &&
     offset !== 0 &&
     offset !== domNode.nodeValue.length
   );
@@ -179,8 +169,8 @@ function onSelectionChange(
     // because in this case, we might need to normalize to a
     // sibling instead.
     if (
-      isEmptyElementOrTextNotAtBoundary(anchorNode, anchorOffset) &&
-      isEmptyElementOrTextNotAtBoundary(focusNode, focusOffset)
+      shouldSkipSelectionChange(anchorNode, anchorOffset) &&
+      shouldSkipSelectionChange(focusNode, focusOffset)
     ) {
       return;
     }
@@ -204,10 +194,25 @@ function onSelectionChange(
         if (domSelection.type === 'Range') {
           selection.dirty = true;
         }
-        if (anchor.type === 'text') {
-          selection.format = anchorNode.getFormat();
-        } else if (anchor.type === 'element') {
-          selection.format = 0;
+        // If we have marked a collapsed selection format, and we're
+        // within the given time range – then attempt to use that format
+        // instead of getting the format from the anchor node.
+        const currentTimeStamp = window.event.timeStamp;
+        const [lastFormat, lastOffset, lastKey, timeStamp] =
+          collapsedSelectionFormat;
+
+        if (
+          currentTimeStamp < timeStamp + 200 &&
+          anchor.offset === lastOffset &&
+          anchor.key === lastKey
+        ) {
+          selection.format = lastFormat;
+        } else {
+          if (anchor.type === 'text') {
+            selection.format = anchorNode.getFormat();
+          } else if (anchor.type === 'element') {
+            selection.format = 0;
+          }
         }
       } else {
         const focus = selection.focus;
@@ -816,4 +821,13 @@ function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
 
 export function markSelectionChangeFromReconcile(): void {
   isSelectionChangeFromReconcile = true;
+}
+
+export function markCollapsedSelectionFormat(
+  format: number,
+  offset: number,
+  key: NodeKey,
+  timeStamp: number,
+): void {
+  collapsedSelectionFormat = [format, offset, key, timeStamp];
 }

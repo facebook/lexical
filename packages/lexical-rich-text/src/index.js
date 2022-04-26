@@ -330,7 +330,6 @@ function onCutForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
 }
 
 function handleIndentAndOutdent(
-  editor: LexicalEditor,
   insertTab: (node: LexicalNode) => void,
   indentOrOutdent: (block: ElementNode) => void,
 ): void {
@@ -508,13 +507,13 @@ export function registerRichText(
       INDENT_CONTENT_COMMAND,
       (payload) => {
         handleIndentAndOutdent(
-          editor,
           () => {
             editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
           },
           (block) => {
-            if (block.getIndent() !== 10) {
-              block.setIndent(block.getIndent() + 1);
+            const indent = block.getIndent();
+            if (indent !== 10) {
+              block.setIndent(indent + 1);
             }
           },
         );
@@ -526,7 +525,6 @@ export function registerRichText(
       OUTDENT_CONTENT_COMMAND,
       (payload) => {
         handleIndentAndOutdent(
-          editor,
           (node) => {
             if ($isTextNode(node)) {
               const textContent = node.getTextContent();
@@ -537,8 +535,9 @@ export function registerRichText(
             }
           },
           (block) => {
-            if (block.getIndent() !== 0) {
-              block.setIndent(block.getIndent() - 1);
+            const indent = block.getIndent();
+            if (indent !== 0) {
+              block.setIndent(indent - 1);
             }
           },
         );

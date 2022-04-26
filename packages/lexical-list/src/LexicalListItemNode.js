@@ -228,6 +228,7 @@ export class ListItemNode extends ElementNode {
   }
 
   canIndent(): false {
+    // Indent/outdent is handled specifically in the RichText logic.
     return false;
   }
 

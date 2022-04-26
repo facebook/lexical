@@ -1229,7 +1229,14 @@ test.describe('Tables', () => {
     await page.keyboard.type('Hello World');
     await insertTable(page);
 
-    await page.focus('div.ContentEditable__root > p:first-of-type');
+    let p = page;
+
+    if (IS_COLLAB) {
+      await focusEditor(page);
+      p = await page.frame('left');
+    }
+
+    await p.focus('div.ContentEditable__root > p:first-of-type');
 
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.down('Shift');

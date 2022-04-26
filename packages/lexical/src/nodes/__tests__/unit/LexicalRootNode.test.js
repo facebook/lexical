@@ -29,13 +29,6 @@ describe('LexicalRootNode tests', () => {
   initializeUnitTest((testEnv) => {
     let rootNode;
 
-    function rootTextContentCache(): string {
-      const {editor} = testEnv;
-      return editor.getEditorState().read(() => {
-        return $getRoot().__cachedText;
-      });
-    }
-
     function expectRootTextContentToBe(text: string): void {
       const {editor} = testEnv;
       editor.getEditorState().read(() => {
@@ -152,37 +145,35 @@ describe('LexicalRootNode tests', () => {
       await editor.update(() => {
         $getRoot().append($createParagraphNode());
       });
-      expect(rootTextContentCache()).toBe('');
+      expectRootTextContentToBe('');
 
       await editor.update(() => {
         const firstParagraph = $getRoot().getFirstChild();
         firstParagraph.append($createTextNode('first line'));
       });
-      expect(rootTextContentCache()).toBe('first line');
+      expectRootTextContentToBe('first line');
 
       await editor.update(() => {
         $getRoot().append($createParagraphNode());
       });
-      expect(rootTextContentCache()).toBe('first line\n\n');
+      expectRootTextContentToBe('first line\n\n');
 
       await editor.update(() => {
         const secondParagraph = $getRoot().getLastChild();
         secondParagraph.append($createTextNode('second line'));
       });
-      expect(rootTextContentCache()).toBe('first line\n\nsecond line');
+      expectRootTextContentToBe('first line\n\nsecond line');
 
       await editor.update(() => {
         $getRoot().append($createParagraphNode());
       });
-      expect(rootTextContentCache()).toBe('first line\n\nsecond line\n\n'); // BAD
+      expectRootTextContentToBe('first line\n\nsecond line\n\n');
 
       await editor.update(() => {
         const thirdParagraph = $getRoot().getLastChild();
         thirdParagraph.append($createTextNode('third line'));
       });
-      expect(rootTextContentCache()).toBe(
-        'first line\n\nsecond line\n\nthird line',
-      );
+      expectRootTextContentToBe('first line\n\nsecond line\n\nthird line');
 
       await editor.update(() => {
         const secondParagraph = $getRoot().getChildAtIndex(1);

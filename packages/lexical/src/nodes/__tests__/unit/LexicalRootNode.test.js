@@ -15,6 +15,8 @@ import {
 
 import {
   $createTestDecoratorNode,
+  $createTestElementNode,
+  $createTestInlineElementNode,
   initializeUnitTest,
 } from '../../../__tests__/utils';
 import {$createRootNode} from '../../LexicalRootNode';
@@ -26,6 +28,26 @@ global.IS_REACT_ACT_ENVIRONMENT = true;
 describe('LexicalRootNode tests', () => {
   initializeUnitTest((testEnv) => {
     let rootNode;
+
+    function rootTextContentCache(): string {
+      const {editor} = testEnv;
+      return editor.getEditorState().read(() => {
+        return $getRoot().__cachedText;
+      });
+    }
+
+    function expectRootTextContentToBe(text: string): void {
+      const {editor} = testEnv;
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        expect(root.__cachedText).toBe(text);
+        // Copy root to remove __cachedText because it's frozen
+        const rootCopy = Object.assign({}, root);
+        rootCopy.__cachedText = null;
+        Object.setPrototypeOf(rootCopy, Object.getPrototypeOf(root));
+        expect(rootCopy.getTextContent()).toBe(text);
+      });
+    }
 
     beforeEach(async () => {
       const {editor} = testEnv;
@@ -122,6 +144,82 @@ describe('LexicalRootNode tests', () => {
         expect(selection.anchor.getNode()).toBe(root);
         expect(selection.focus.getNode()).toBe(root);
       });
+    });
+
+    test('RootNode __cachedText', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        $getRoot().append($createParagraphNode());
+      });
+      expect(rootTextContentCache()).toBe('');
+
+      await editor.update(() => {
+        const firstParagraph = $getRoot().getFirstChild();
+        firstParagraph.append($createTextNode('first line'));
+      });
+      expect(rootTextContentCache()).toBe('first line');
+
+      await editor.update(() => {
+        $getRoot().append($createParagraphNode());
+      });
+      expect(rootTextContentCache()).toBe('first line(newline)'); // BAD
+
+      await editor.update(() => {
+        const secondParagraph = $getRoot().getLastChild();
+        secondParagraph.append($createTextNode('second line'));
+      });
+      expect(rootTextContentCache()).toBe('first line(newline3)second line');
+
+      await editor.update(() => {
+        $getRoot().append($createParagraphNode());
+      });
+      expect(rootTextContentCache()).toBe(
+        'first line(newline3)second line(newline)',
+      ); // BAD
+
+      await editor.update(() => {
+        const thirdParagraph = $getRoot().getLastChild();
+        thirdParagraph.append($createTextNode('third line'));
+      });
+      expect(rootTextContentCache()).toBe(
+        'first line(newline3)second line(newline3)third line',
+      );
+
+      await editor.update(() => {
+        const secondParagraph = $getRoot().getChildAtIndex(1);
+        const secondParagraphText = secondParagraph.getFirstChild();
+        secondParagraphText.setTextContent('second line!');
+      });
+      expectRootTextContentToBe(
+        'first line(newline3)second line!(newline)third line', // BAD
+      );
+    });
+
+    test('RootNode __cachedText (empty paragraph)', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        $getRoot().append($createParagraphNode(), $createParagraphNode());
+      });
+      expectRootTextContentToBe('(newline2)');
+    });
+
+    test.only('RootNode __cachedText (inlines)', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        $getRoot().append(paragraph);
+        paragraph.append(
+          $createTextNode('a'),
+          $createTestElementNode(),
+          $createTextNode('b'),
+          $createTestInlineElementNode(),
+          $createTextNode('c'),
+        );
+      });
+      expectRootTextContentToBe('a(newline2)bc');
     });
   });
 });

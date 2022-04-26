@@ -19,7 +19,7 @@ export default function LexicalAutoFocusPlugin(): null {
 
   useEffect(() => {
     return editor.registerTextContentListener((text) => {
-      console.info(text);
+      console.info('text:' + text);
     });
   }, [editor]);
 

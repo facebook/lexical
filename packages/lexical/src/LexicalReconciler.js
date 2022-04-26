@@ -436,7 +436,9 @@ function reconcileChildren(
       dom,
     );
   }
-  subTreeTextContent += '(newline3)';
+  if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
+    subTreeTextContent += '(newline3)';
+  }
   // $FlowFixMe: internal field
   dom.__lexicalTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
@@ -525,6 +527,7 @@ function reconcileNode(
       }
     }
     if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
+      console.info(nextNode, nextNode.getParentOrThrow().getLastChild());
       subTreeTextContent += '(newline)';
       editorTextContent += '(newline)';
     }
@@ -537,13 +540,9 @@ function reconcileNode(
       }
       subTreeTextContent += text;
       editorTextContent += text;
-    } else {
+    } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
-      if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
-        subTreeDirectionedTextContent += text;
-      }
-      subTreeTextContent += text;
-      editorTextContent += text;
+      subTreeDirectionedTextContent += text;
     }
     subTreeTextContent += text;
     editorTextContent += text;

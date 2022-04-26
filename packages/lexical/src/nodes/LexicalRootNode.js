@@ -53,7 +53,7 @@ export class RootNode extends ElementNode {
         return cachedText;
       }
     }
-    return 'do a dfs';
+    return super.getTextContent(includeInert, includeDirectionless);
   }
 
   remove(): void {

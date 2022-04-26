@@ -54,7 +54,11 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
-import {DOM_ELEMENT_TYPE, DOM_TEXT_TYPE} from './LexicalConstants';
+import {
+  DOM_ELEMENT_TYPE,
+  DOM_TEXT_TYPE,
+  DOUBLE_LINE_BREAK,
+} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -375,7 +379,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       if (data === '\n') {
         event.preventDefault();
         dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND);
-      } else if (data === '\n\n') {
+      } else if (data === DOUBLE_LINE_BREAK) {
         event.preventDefault();
         dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
       } else if (data == null && event.dataTransfer) {

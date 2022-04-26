@@ -36,6 +36,7 @@ import {
 } from '.';
 import {
   DOM_TEXT_TYPE,
+  DOUBLE_LINE_BREAK,
   FULL_RECONCILE,
   IS_ALIGN_CENTER,
   IS_ALIGN_JUSTIFY,
@@ -176,8 +177,8 @@ function createNode(
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
     if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
-      subTreeTextContent += '(newline2)';
-      editorTextContent += '(newline2)';
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
     }
   } else {
     const text = node.getTextContent();
@@ -437,7 +438,7 @@ function reconcileChildren(
     );
   }
   if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
-    subTreeTextContent += '(newline3)';
+    subTreeTextContent += DOUBLE_LINE_BREAK;
   }
   // $FlowFixMe: internal field
   dom.__lexicalTextContent = subTreeTextContent;
@@ -527,9 +528,8 @@ function reconcileNode(
       }
     }
     if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
-      console.info(nextNode, nextNode.getParentOrThrow().getLastChild());
-      subTreeTextContent += '(newline)';
-      editorTextContent += '(newline)';
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
     }
   } else {
     const text = nextNode.getTextContent();

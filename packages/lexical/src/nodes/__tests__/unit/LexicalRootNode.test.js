@@ -163,27 +163,25 @@ describe('LexicalRootNode tests', () => {
       await editor.update(() => {
         $getRoot().append($createParagraphNode());
       });
-      expect(rootTextContentCache()).toBe('first line(newline)'); // BAD
+      expect(rootTextContentCache()).toBe('first line\n\n');
 
       await editor.update(() => {
         const secondParagraph = $getRoot().getLastChild();
         secondParagraph.append($createTextNode('second line'));
       });
-      expect(rootTextContentCache()).toBe('first line(newline3)second line');
+      expect(rootTextContentCache()).toBe('first line\n\nsecond line');
 
       await editor.update(() => {
         $getRoot().append($createParagraphNode());
       });
-      expect(rootTextContentCache()).toBe(
-        'first line(newline3)second line(newline)',
-      ); // BAD
+      expect(rootTextContentCache()).toBe('first line\n\nsecond line\n\n'); // BAD
 
       await editor.update(() => {
         const thirdParagraph = $getRoot().getLastChild();
         thirdParagraph.append($createTextNode('third line'));
       });
       expect(rootTextContentCache()).toBe(
-        'first line(newline3)second line(newline3)third line',
+        'first line\n\nsecond line\n\nthird line',
       );
 
       await editor.update(() => {
@@ -192,7 +190,7 @@ describe('LexicalRootNode tests', () => {
         secondParagraphText.setTextContent('second line!');
       });
       expectRootTextContentToBe(
-        'first line(newline3)second line!(newline)third line', // BAD
+        'first line\n\nsecond line!\n\nthird line', // BAD
       );
     });
 
@@ -202,10 +200,10 @@ describe('LexicalRootNode tests', () => {
       await editor.update(() => {
         $getRoot().append($createParagraphNode(), $createParagraphNode());
       });
-      expectRootTextContentToBe('(newline2)');
+      expectRootTextContentToBe('\n\n');
     });
 
-    test.only('RootNode __cachedText (inlines)', async () => {
+    test('RootNode __cachedText (inlines)', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
@@ -219,7 +217,7 @@ describe('LexicalRootNode tests', () => {
           $createTextNode('c'),
         );
       });
-      expectRootTextContentToBe('a(newline2)bc');
+      expectRootTextContentToBe('a\n\nbc');
     });
   });
 });

@@ -13,7 +13,7 @@ import type {PointType, RangeSelection} from '../LexicalSelection';
 import invariant from 'shared/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';
-import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
+import {DOUBLE_LINE_BREAK, ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
@@ -194,7 +194,7 @@ export class ElementNode extends LexicalNode {
         i !== childrenLength - 1 &&
         !child.isInline()
       ) {
-        textContent += '\n\n';
+        textContent += DOUBLE_LINE_BREAK;
       }
     }
     return textContent;

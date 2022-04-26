@@ -199,7 +199,6 @@ export function $insertDataTransferForRichText(
 
   const textHtmlMimeType = 'text/html';
   const htmlString = dataTransfer.getData(textHtmlMimeType);
-  console.info(htmlString);
 
   if (htmlString) {
     const parser = new DOMParser();

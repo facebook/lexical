@@ -838,16 +838,16 @@ select.font-family {
   background-color: rgba(60, 132, 244, 0.5);
 }
 
-.editor-shell .editor-image .image-resizer-sw {
+.editor-shell .editor-image .image-resizer-n {
   display: block;
   width: 7px;
   height: 7px;
   position: absolute;
-  bottom: -2px;
-  left: -6px;
+  top: -6px;
+  left: 48%;
   background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
-  cursor: sw-resize;
+  cursor: n-resize;
 }
 
 .editor-shell .editor-image .image-resizer-ne {
@@ -862,16 +862,16 @@ select.font-family {
   cursor: ne-resize;
 }
 
-.editor-shell .editor-image .image-resizer-nw {
+.editor-shell .editor-image .image-resizer-e {
   display: block;
   width: 7px;
   height: 7px;
   position: absolute;
-  top: -6px;
-  left: -6px;
+  bottom: 48%;
+  right: -6px;
   background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
-  cursor: nw-resize;
+  cursor: e-resize;
 }
 
 .editor-shell .editor-image .image-resizer-se {
@@ -884,6 +884,54 @@ select.font-family {
   background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
   cursor: nwse-resize;
+}
+
+.editor-shell .editor-image .image-resizer-s {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  bottom: -2px;
+  left: 48%;
+  background-color: rgb(60, 132, 244);
+  border: 1px solid #fff;
+  cursor: s-resize;
+}
+
+.editor-shell .editor-image .image-resizer-sw {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  bottom: -2px;
+  left: -6px;
+  background-color: rgb(60, 132, 244);
+  border: 1px solid #fff;
+  cursor: sw-resize;
+}
+
+.editor-shell .editor-image .image-resizer-w {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  bottom: 48%;
+  left: -6px;
+  background-color: rgb(60, 132, 244);
+  border: 1px solid #fff;
+  cursor: w-resize;
+}
+
+.editor-shell .editor-image .image-resizer-nw {
+  display: block;
+  width: 7px;
+  height: 7px;
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  background-color: rgb(60, 132, 244);
+  border: 1px solid #fff;
+  cursor: nw-resize;
 }
 
 .emoji {

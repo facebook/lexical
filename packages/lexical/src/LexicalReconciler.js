@@ -45,6 +45,7 @@ import {
 import {EditorState} from './LexicalEditorState';
 import {markSelectionChangeFromReconcile} from './LexicalEvents';
 import {
+  $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getDOMTextNode,
   getTextDirection,
@@ -174,6 +175,10 @@ function createNode(
       setElementFormat(dom, format);
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
+    if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
+      subTreeTextContent += '(newline2)';
+      editorTextContent += '(newline2)';
+    }
   } else {
     const text = node.getTextContent();
     if ($isDecoratorNode(node)) {
@@ -374,12 +379,13 @@ function reconcileChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  reconcileChildren(prevChildren, nextChildren, dom);
+  reconcileChildren(element, prevChildren, nextChildren, dom);
   reconcileBlockDirection(element, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
 }
 
 function reconcileChildren(
+  element: ElementNode,
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
@@ -403,6 +409,7 @@ function reconcileChildren(
     if (nextChildrenLength !== 0) {
       createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
     }
+    // return;
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
       // $FlowFixMe: internal field
@@ -425,9 +432,11 @@ function reconcileChildren(
       nextChildren,
       prevChildrenLength,
       nextChildrenLength,
+      element,
       dom,
     );
   }
+  subTreeTextContent += '(newline3)';
   // $FlowFixMe: internal field
   dom.__lexicalTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
@@ -515,6 +524,10 @@ function reconcileNode(
         reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
     }
+    if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
+      subTreeTextContent += '(newline)';
+      editorTextContent += '(newline)';
+    }
   } else {
     const text = nextNode.getTextContent();
     if ($isDecoratorNode(nextNode)) {
@@ -522,9 +535,15 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-    } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
+      subTreeTextContent += text;
+      editorTextContent += text;
+    } else {
       // Handle text content, for LTR, LTR cases.
-      subTreeDirectionedTextContent += text;
+      if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
+        subTreeDirectionedTextContent += text;
+      }
+      subTreeTextContent += text;
+      editorTextContent += text;
     }
     subTreeTextContent += text;
     editorTextContent += text;
@@ -573,6 +592,7 @@ function reconcileNodeChildren(
   nextChildren: Array<NodeKey>,
   prevChildrenLength: number,
   nextChildrenLength: number,
+  element: ElementNode,
   dom: HTMLElement,
 ): void {
   const prevEndIndex = prevChildrenLength - 1;

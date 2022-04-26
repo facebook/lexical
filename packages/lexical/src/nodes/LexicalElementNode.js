@@ -79,6 +79,10 @@ export class ElementNode extends LexicalNode {
     const dirtyElements = editor._dirtyElements;
     return dirtyElements !== null && dirtyElements.has(this.__key);
   }
+  isLastChild(): boolean {
+    const parent = this.getParentOrThrow();
+    return parent.getLastChild() === this;
+  }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
     const self = this.getLatest();
@@ -177,23 +181,23 @@ export class ElementNode extends LexicalNode {
     }
     return $getNodeByKey(key);
   }
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
-    let textContent = '';
-    const children = this.getChildren();
-    const childrenLength = children.length;
-    for (let i = 0; i < childrenLength; i++) {
-      const child = children[i];
-      textContent += child.getTextContent(includeInert, includeDirectionless);
-      if (
-        $isElementNode(child) &&
-        i !== childrenLength - 1 &&
-        !child.isInline()
-      ) {
-        textContent += '\n\n';
-      }
-    }
-    return textContent;
-  }
+  // getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
+  //   let textContent = '';
+  //   const children = this.getChildren();
+  //   const childrenLength = children.length;
+  //   for (let i = 0; i < childrenLength; i++) {
+  //     const child = children[i];
+  //     textContent += child.getTextContent(includeInert, includeDirectionless);
+  //     if (
+  //       $isElementNode(child) &&
+  //       i !== childrenLength - 1 &&
+  //       !child.isInline()
+  //     ) {
+  //       textContent += '\n\n';
+  //     }
+  //   }
+  //   return textContent;
+  // }
   getDirection(): 'ltr' | 'rtl' | null {
     const self = this.getLatest();
     return self.__dir;

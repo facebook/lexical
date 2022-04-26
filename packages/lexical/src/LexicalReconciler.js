@@ -43,7 +43,10 @@ import {
   IS_ALIGN_RIGHT,
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
-import {markSelectionChangeFromReconcile} from './LexicalEvents';
+import {
+  markCollapsedSelectionFormat,
+  markSelectionChangeFromReconcile,
+} from './LexicalEvents';
 import {
   cloneDecorators,
   getDOMTextNode,
@@ -826,12 +829,16 @@ function reconcileSelection(
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
   const nextAnchorOffset = anchor.offset;
   const nextFocusOffset = focus.offset;
+  const nextFormat = nextSelection.format;
+  const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
   let skipNativeSelectionDiff = false;
+  let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
+    anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
   } else {
     skipNativeSelectionDiff = true;
   }
@@ -846,6 +853,20 @@ function reconcileSelection(
     return;
   }
 
+  if (
+    isCollapsed &&
+    (prevSelection === null ||
+      anchorFormatChanged ||
+      prevSelection.format !== nextFormat)
+  ) {
+    markCollapsedSelectionFormat(
+      nextFormat,
+      nextAnchorOffset,
+      anchorKey,
+      performance.now(),
+    );
+  }
+
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update. We also skip this check if
   // we're moving selection to within an element, as this can
@@ -857,7 +878,7 @@ function reconcileSelection(
     anchorDOMNode === nextAnchorNode &&
     focusDOMNode === nextFocusNode &&
     // Badly interpreted range selection when collapsed - #1482
-    !(domSelection.type === 'Range' && nextSelection.isCollapsed())
+    !(domSelection.type === 'Range' && isCollapsed)
   ) {
     // If the root element does not have focus, ensure it has focus
     if (

@@ -413,7 +413,6 @@ function reconcileChildren(
     if (nextChildrenLength !== 0) {
       createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
     }
-    // return;
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
       // $FlowFixMe: internal field

@@ -118,7 +118,7 @@ function setTextAlign(domStyle: CSSStyleDeclaration, value: string): void {
 function setElementIndent(dom: HTMLElement, indent: number): void {
   dom.style.setProperty(
     'padding-inline-start',
-    indent === 0 ? '' : indent * 40 + 'px',
+    indent === 0 ? '' : indent * 20 + 'px',
   );
 }
 

@@ -54,7 +54,6 @@ export declare class TableCellNode extends ElementNode {
   insertNewAfter(
     selection: RangeSelection,
   ): null | ParagraphNode | TableCellNode;
-  canInsertTab(): true;
   collapseAtStart(): true;
   getTag(): string;
   setHeaderState(headerState: TableCellHeaderState): TableCellHeaderState;
@@ -83,7 +82,6 @@ export declare class TableNode extends ElementNode {
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
-  canInsertTab(): true;
   collapseAtStart(): true;
   getCordsFromCellNode(tableCellNode: TableCellNode): {x: number; y: number};
   getCellFromCords(x: number, y: number, grid: Grid): ?Cell;
@@ -112,7 +110,6 @@ declare class TableRowNode extends ElementNode {
   ): null | ParagraphNode | TableRowNode;
   setHeight(height: number): ?number;
   getHeight(): ?number;
-  canInsertTab(): true;
   collapseAtStart(): true;
 }
 declare function $createTableRowNode(): TableRowNode;

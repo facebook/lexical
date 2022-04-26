@@ -94,6 +94,10 @@ export class ListNode extends ElementNode {
     return false;
   }
 
+  canIndent(): false {
+    return false;
+  }
+
   append(...nodesToAppend: LexicalNode[]): ListNode {
     for (let i = 0; i < nodesToAppend.length; i++) {
       const currentNode = nodesToAppend[i];

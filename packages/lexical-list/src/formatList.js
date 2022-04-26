@@ -300,10 +300,10 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
   });
 }
 
-function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): boolean {
+function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): void {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
-    return false;
+    return;
   }
   const selectedNodes = selection.getNodes();
   let listItemNodes = [];
@@ -326,17 +326,15 @@ function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): boolean {
     } else {
       $handleOutdent(listItemNodes);
     }
-    return true;
   }
-  return false;
 }
 
-export function indentList(): boolean {
-  return maybeIndentOrOutdent('indent');
+export function indentList(): void {
+  maybeIndentOrOutdent('indent');
 }
 
-export function outdentList(): boolean {
-  return maybeIndentOrOutdent('outdent');
+export function outdentList(): void {
+  maybeIndentOrOutdent('outdent');
 }
 
 export function $handleListInsertParagraph(): boolean {

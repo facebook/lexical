@@ -92,14 +92,6 @@ describe('LexicalCodeNode tests', () => {
       });
     });
 
-    test('CodeNode.canInsertTab()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const codeNode = $createCodeNode();
-        expect(codeNode.canInsertTab()).toBe(true);
-      });
-    });
-
     test('$createCodeNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

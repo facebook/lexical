@@ -142,27 +142,15 @@ function ExcalidrawComponent({
   );
 
   const onResizeStart = useCallback(() => {
-    const rootElement = editor.getRootElement();
-    if (rootElement !== null) {
-      rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
-    }
     setIsResizing(true);
-  }, [editor]);
+  }, []);
 
-  const onResizeEnd = useCallback(
-    (nextWidth, nextHeight) => {
-      const rootElement = editor.getRootElement();
-      if (rootElement !== null) {
-        rootElement.style.setProperty('cursor', 'default');
-      }
-
-      // Delay hiding the resize bars for click case
-      setTimeout(() => {
-        setIsResizing(false);
-      }, 200);
-    },
-    [editor],
-  );
+  const onResizeEnd = useCallback((nextWidth, nextHeight) => {
+    // Delay hiding the resize bars for click case
+    setTimeout(() => {
+      setIsResizing(false);
+    }, 200);
+  }, []);
 
   const elements = useMemo(() => JSON.parse(data), [data]);
   return (

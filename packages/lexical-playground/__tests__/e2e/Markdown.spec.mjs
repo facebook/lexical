@@ -10,7 +10,6 @@ import {
   moveLeft,
   moveRight,
   redo,
-  selectAll,
   selectCharacters,
   toggleUnderline,
   undo,
@@ -21,9 +20,6 @@ import {
   click,
   focusEditor,
   initialize,
-  pasteFromClipboard,
-  selectFromFormatDropdown,
-  selectOption,
   test,
 } from '../utils/index.mjs';
 
@@ -47,33 +43,6 @@ async function checkHTMLExpectationsIncludingUndoRedo(
 test.describe('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
-    {
-      expectation:
-        '<p class="PlaygroundEditorTheme__paragraph"><a href="http://www.test.com" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">hello world</span></a><span data-lexical-text="true"> </span></p>',
-      importExpectation:
-        '<p class="PlaygroundEditorTheme__paragraph"><a class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr" href="http://www.test.com"><span data-lexical-text="true">hello world</span></a></p>',
-      isBlockTest: true,
-      markdownImport: '[hello world](http://www.test.com)',
-      markdownText: '[hello world](http://www.test.com) ', // Link
-      undoHTML: `<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">[hello world](http://www.test.com) </span></p>`,
-    },
-    {
-      expectation:
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span data-lexical-text="true"> y</span></p>',
-      importExpectation:
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong></p>',
-      isBlockTest: false,
-      markdownImport: '__hello__',
-      markdownText: '__hello__',
-      stylizedExpectation:
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline">x</span><strong class="PlaygroundEditorTheme__textBold" data-lexical-text="true">hello</strong><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true"> y</span></p>',
-      // bold.
-      stylizedUndoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true" class="PlaygroundEditorTheme__textUnderline">x_</span><span data-lexical-text="true">_hello_</span><span class="PlaygroundEditorTheme__textUnderline" data-lexical-text="true">_ y</span></p>',
-
-      undoHTML:
-        '<p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">x__hello__ y</span></p>',
-    },
     {
       expectation: '<h1 class="PlaygroundEditorTheme__h1"><br></h1>',
       importExpectation: '',
@@ -365,72 +334,4 @@ test.describe('Markdown', () => {
       });
     }
   }
-
-  test(`Should test markdown conversion from plain text to Lexical.`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
-    const text = [
-      '# Heading',
-      '- unordered list',
-      '    - nested',
-      '1. ordered list',
-      '    1. nested',
-    ].join('\n');
-    await pasteFromClipboard(page, {
-      'text/plain': text,
-    });
-    await selectAll(page);
-    await selectFromFormatDropdown(page, '.code');
-    await selectOption(page, '.code-language', {value: 'markdown'});
-    await click(page, 'i.markdown');
-    const html = `
-    <h1 class=\"PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr\" dir=\"ltr\">
-      <span data-lexical-text=\"true\">Heading</span>
-    </h1>
-    <ul class=\"PlaygroundEditorTheme__ul\">
-      <li
-        class=\"PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr\"
-        dir=\"ltr\"
-        value=\"1\">
-        <span data-lexical-text=\"true\">unordered list</span>
-      </li>
-      <li
-        class=\"PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem\"
-        value=\"2\">
-        <ul class=\"PlaygroundEditorTheme__ul\">
-          <li
-            class=\"PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr\"
-            dir=\"ltr\"
-            value=\"1\">
-            <span data-lexical-text=\"true\">nested</span>
-          </li>
-        </ul>
-      </li>
-    </ul>
-    <ol class=\"PlaygroundEditorTheme__ol1\">
-      <li
-        class=\"PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr\"
-        dir=\"ltr\"
-        value=\"1\">
-        <span data-lexical-text=\"true\">ordered list</span>
-      </li>
-      <li
-        class=\"PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem\"
-        value=\"2\">
-        <ol class=\"PlaygroundEditorTheme__ol2\">
-          <li
-            class=\"PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr\"
-            dir=\"ltr\"
-            value=\"1\">
-            <span data-lexical-text=\"true\">nested</span>
-          </li>
-        </ol>
-      </li>
-    </ol>`;
-    await assertHTML(page, html);
-  });
 });

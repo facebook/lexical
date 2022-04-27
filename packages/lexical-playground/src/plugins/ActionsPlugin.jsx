@@ -11,13 +11,9 @@ import type {LexicalEditor} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {exportFile, importFile} from '@lexical/file';
-import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
-} from '@lexical/markdown';
+import {v2} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$createHorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
@@ -32,10 +28,16 @@ import {useCallback, useEffect, useState} from 'react';
 
 import useModal from '../hooks/useModal';
 import Button from '../ui/Button';
+import {TRANSFORMERS} from './MarkdownTransformers';
 import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
 } from './SpeechToTextPlugin';
+
+const {createMarkdownExport, createMarkdownImport} = v2;
+
+const importMarkdown = createMarkdownImport(...TRANSFORMERS);
+const exportMarkdown = createMarkdownExport(...TRANSFORMERS);
 
 export default function ActionsPlugin({
   isRichText,
@@ -92,18 +94,10 @@ export default function ActionsPlugin({
     editor.update(() => {
       const root = $getRoot();
       const firstChild = root.getFirstChild();
-      if (
-        root.getChildrenSize() === 1 &&
-        $isCodeNode(firstChild) &&
-        firstChild.getLanguage() === 'markdown'
-      ) {
-        $convertFromMarkdownString(
-          firstChild.getTextContent(),
-          editor,
-          $createHorizontalRuleNode,
-        );
+      if ($isCodeNode(firstChild) && firstChild.getLanguage() === 'markdown') {
+        importMarkdown(firstChild.getTextContent());
       } else {
-        const markdown = $convertToMarkdownString();
+        const markdown = exportMarkdown();
         root
           .clear()
           .append(

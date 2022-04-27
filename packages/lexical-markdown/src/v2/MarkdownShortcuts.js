@@ -356,7 +356,7 @@ export function registerMarkdownShortcuts(
       if (
         !$isTextNode(anchorNode) ||
         !dirtyLeaves.has(anchorKey) ||
-        anchorOffset !== prevSelection.anchor.offset + 1
+        (anchorOffset !== 1 && anchorOffset !== prevSelection.anchor.offset + 1)
       ) {
         return;
       }

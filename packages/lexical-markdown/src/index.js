@@ -19,6 +19,7 @@ import {
   convertMarkdownForElementNodes,
   convertStringToLexical,
 } from './convertFromPlainTextUtils.js';
+import * as v2 from './v2';
 
 export function registerMarkdownShortcuts<T>(
   editor: LexicalEditor,
@@ -59,3 +60,9 @@ export function $convertFromMarkdownString<T>(
 }
 
 export {$convertToMarkdownString} from './convertToMarkdown';
+export {v2};
+export type {
+  BlockTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+} from './v2/MarkdownTransformers';

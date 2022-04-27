@@ -18,7 +18,6 @@ import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import ListPlugin from '@lexical/react/LexicalListPlugin';
-import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
@@ -43,6 +42,7 @@ import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
+import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
@@ -198,7 +198,7 @@ export default function Editor(): React$Node {
                 isCollab ? null : emptyEditor ? undefined : prepopulatedRichText
               }
             />
-            <LexicalMarkdownShortcutPlugin />
+            <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />

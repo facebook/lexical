@@ -69,6 +69,8 @@ function ExcalidrawComponent({
   useEffect(() => {
     if (isModalOpen) {
       editor.setReadOnly(true);
+    } else {
+      editor.setReadOnly(false);
     }
   }, [isModalOpen, editor]);
 
@@ -114,6 +116,7 @@ function ExcalidrawComponent({
   }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
 
   const deleteNode = useCallback(() => {
+    setModalOpen(false);
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
@@ -164,11 +167,6 @@ function ExcalidrawComponent({
     [editor],
   );
 
-  const onHide = useCallback(() => {
-    editor.setReadOnly(false);
-    setModalOpen(false);
-  }, [editor]);
-
   const elements = useMemo(() => JSON.parse(data), [data]);
   return (
     <>
@@ -176,12 +174,16 @@ function ExcalidrawComponent({
         initialElements={elements}
         isShown={isModalOpen}
         onDelete={deleteNode}
-        onHide={onHide}
+        onHide={() => {
+          editor.setReadOnly(false);
+          setModalOpen(false);
+        }}
         onSave={(newData) => {
           editor.setReadOnly(false);
           setData(newData);
           setModalOpen(false);
         }}
+        closeOnClickOutside={true}
       />
       <button
         ref={buttonRef}

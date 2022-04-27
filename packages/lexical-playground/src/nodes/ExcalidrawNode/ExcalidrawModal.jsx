@@ -83,7 +83,7 @@ export default function ExcalidrawModal({
         !excaliDrawModelRef.current.contains(target) &&
         closeOnClickOutside
       ) {
-        onHide();
+        onDelete();
       }
     };
     if (excaliDrawModelRef.current !== null) {
@@ -99,7 +99,7 @@ export default function ExcalidrawModal({
         modalOverlayElement?.removeEventListener('click', clickOutsideHandler);
       }
     };
-  }, [closeOnClickOutside, onHide]);
+  }, [closeOnClickOutside, onDelete]);
 
   const save = () => {
     if (elements.filter((el) => !el.isDeleted).length > 0) {

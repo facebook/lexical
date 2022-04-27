@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 // $FlowFixMe[cannot-resolve-module]
 import {createPortal} from 'react-dom';
@@ -102,9 +102,12 @@ function DropDownItems({
     }
   };
 
-  const contextValue = {
-    registerItem,
-  };
+  const contextValue = useMemo(
+    () => ({
+      registerItem,
+    }),
+    [registerItem],
+  );
 
   useEffect(() => {
     if (items && !highlightedItem) {

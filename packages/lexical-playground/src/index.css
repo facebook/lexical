@@ -838,99 +838,60 @@ select.font-family {
   background-color: rgba(60, 132, 244, 0.5);
 }
 
-.editor-shell .editor-image .image-resizer-n {
+.editor-shell .editor-image .image-resizer {
   display: block;
   width: 7px;
   height: 7px;
   position: absolute;
-  top: -6px;
-  left: 48%;
   background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
+}
+
+.editor-shell .editor-image .image-resizer.image-resizer-n {
+  top: -6px;
+  left: 48%;
   cursor: n-resize;
 }
 
-.editor-shell .editor-image .image-resizer-ne {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-ne {
   top: -6px;
   right: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: ne-resize;
 }
 
-.editor-shell .editor-image .image-resizer-e {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-e {
   bottom: 48%;
   right: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: e-resize;
 }
 
-.editor-shell .editor-image .image-resizer-se {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-se {
   bottom: -2px;
   right: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: nwse-resize;
 }
 
-.editor-shell .editor-image .image-resizer-s {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-s {
   bottom: -2px;
   left: 48%;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: s-resize;
 }
 
-.editor-shell .editor-image .image-resizer-sw {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-sw {
   bottom: -2px;
   left: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: sw-resize;
 }
 
-.editor-shell .editor-image .image-resizer-w {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-w {
   bottom: 48%;
   left: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: w-resize;
 }
 
-.editor-shell .editor-image .image-resizer-nw {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-nw {
   top: -6px;
   left: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: nw-resize;
 }
 

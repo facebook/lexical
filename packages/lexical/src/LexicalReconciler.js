@@ -833,19 +833,14 @@ function reconcileSelection(
   const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
-  let skipNativeSelectionDiff = false;
   let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
     anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
-  } else {
-    skipNativeSelectionDiff = true;
   }
   if (focus.type === 'text') {
     nextFocusNode = getDOMTextNode(focusDOM);
-  } else {
-    skipNativeSelectionDiff = true;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
@@ -872,7 +867,6 @@ function reconcileSelection(
   // we're moving selection to within an element, as this can
   // sometimes be problematic around scrolling.
   if (
-    !skipNativeSelectionDiff &&
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
     anchorDOMNode === nextAnchorNode &&

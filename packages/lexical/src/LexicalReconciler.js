@@ -23,6 +23,7 @@ import type {
 } from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -851,19 +852,14 @@ function reconcileSelection(
   const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
-  let skipNativeSelectionDiff = false;
   let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
     anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
-  } else {
-    skipNativeSelectionDiff = true;
   }
   if (focus.type === 'text') {
     nextFocusNode = getDOMTextNode(focusDOM);
-  } else {
-    skipNativeSelectionDiff = true;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
@@ -890,7 +886,6 @@ function reconcileSelection(
   // we're moving selection to within an element, as this can
   // sometimes be problematic around scrolling.
   if (
-    !skipNativeSelectionDiff &&
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
     anchorDOMNode === nextAnchorNode &&
@@ -905,7 +900,12 @@ function reconcileSelection(
     ) {
       rootElement.focus({preventScroll: true});
     }
-    return;
+    // In Safari/iOS if we have selection on an element, then we also
+    // need to additionally set the DOM selection, otherwise a selectionchange
+    // event will not fire.
+    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
+      return;
+    }
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

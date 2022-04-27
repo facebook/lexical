@@ -36,6 +36,7 @@ import {
 } from '.';
 import {
   DOM_TEXT_TYPE,
+  DOUBLE_LINE_BREAK,
   FULL_RECONCILE,
   IS_ALIGN_CENTER,
   IS_ALIGN_JUSTIFY,
@@ -48,6 +49,7 @@ import {
   markSelectionChangeFromReconcile,
 } from './LexicalEvents';
 import {
+  $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getDOMTextNode,
   getTextDirection,
@@ -177,6 +179,10 @@ function createNode(
       setElementFormat(dom, format);
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
+    if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
+    }
   } else {
     const text = node.getTextContent();
     if ($isDecoratorNode(node)) {
@@ -377,12 +383,13 @@ function reconcileChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  reconcileChildren(prevChildren, nextChildren, dom);
+  reconcileChildren(element, prevChildren, nextChildren, dom);
   reconcileBlockDirection(element, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
 }
 
 function reconcileChildren(
+  element: ElementNode,
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
@@ -428,8 +435,12 @@ function reconcileChildren(
       nextChildren,
       prevChildrenLength,
       nextChildrenLength,
+      element,
       dom,
     );
+  }
+  if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
+    subTreeTextContent += DOUBLE_LINE_BREAK;
   }
   // $FlowFixMe: internal field
   dom.__lexicalTextContent = subTreeTextContent;
@@ -518,6 +529,10 @@ function reconcileNode(
         reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
     }
+    if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
+    }
   } else {
     const text = nextNode.getTextContent();
     if ($isDecoratorNode(nextNode)) {
@@ -525,6 +540,8 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
+      subTreeTextContent += text;
+      editorTextContent += text;
     } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
       subTreeDirectionedTextContent += text;
@@ -576,6 +593,7 @@ function reconcileNodeChildren(
   nextChildren: Array<NodeKey>,
   prevChildrenLength: number,
   nextChildrenLength: number,
+  element: ElementNode,
   dom: HTMLElement,
 ): void {
   const prevEndIndex = prevChildrenLength - 1;

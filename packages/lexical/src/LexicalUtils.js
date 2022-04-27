@@ -40,6 +40,7 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   ElementNode,
 } from '.';
@@ -1003,4 +1004,10 @@ export function dispatchCommand<P>(
   payload?: P,
 ): boolean {
   return triggerCommandListeners(editor, type, payload);
+}
+
+export function $textContentRequiresDoubleLinebreakAtEnd(
+  node: ElementNode,
+): boolean {
+  return !$isRootNode(node) && !node.isLastChild() && !node.isInline();
 }

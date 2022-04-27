@@ -29,72 +29,6 @@ type TestEnv = {
   outerHTML: string,
 };
 
-export function TestComposer({config = {}, children}) {
-  const customNodes = config.nodes || [];
-  return (
-    <LexicalComposer
-      initialConfig={{
-        onError: (e) => {
-          throw e;
-        },
-        ...config,
-        nodes: [
-          HeadingNode,
-          ListNode,
-          ListItemNode,
-          QuoteNode,
-          CodeNode,
-          TableNode,
-          TableCellNode,
-          TableRowNode,
-          HashtagNode,
-          CodeHighlightNode,
-          AutoLinkNode,
-          LinkNode,
-          OverflowNode,
-          TestElementNode,
-          TestSegmentedNode,
-          TestExcludeFromCopyElementNode,
-          TestDecoratorNode,
-          ...customNodes,
-        ],
-      }}>
-      {children}
-    </LexicalComposer>
-  );
-}
-
-export function createTestEditor(config = {}): LexicalEditor {
-  const customNodes = config.nodes || [];
-  const editor = createEditor({
-    onError: (e) => {
-      throw e;
-    },
-    ...config,
-    nodes: [
-      HeadingNode,
-      ListNode,
-      ListItemNode,
-      QuoteNode,
-      CodeNode,
-      TableNode,
-      TableCellNode,
-      TableRowNode,
-      HashtagNode,
-      CodeHighlightNode,
-      AutoLinkNode,
-      LinkNode,
-      OverflowNode,
-      TestElementNode,
-      TestSegmentedNode,
-      TestExcludeFromCopyElementNode,
-      TestDecoratorNode,
-      ...customNodes,
-    ],
-  });
-  return editor;
-}
-
 export function initializeUnitTest(
   runTests: (testEnv: TestEnv) => void,
   editorConfig,
@@ -164,6 +98,28 @@ export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
+export class TestInlineElementNode extends ElementNode {
+  static getType(): string {
+    return 'test_inline_block';
+  }
+  static clone(node: ElementNode) {
+    return TestInlineElementNode(node.__key);
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+  isInline() {
+    return true;
+  }
+}
+
+export function $createTestInlineElementNode(): TestInlineElementNode {
+  return new TestInlineElementNode();
+}
+
 export class TestSegmentedNode extends TextNode {
   static getType(): string {
     return 'test_segmented';
@@ -223,4 +179,53 @@ function Decorator({text}): React.MixedElement {
 
 export function $createTestDecoratorNode(): TestDecoratorNode {
   return new TestDecoratorNode();
+}
+
+const DEFAULT_NODES = [
+  HeadingNode,
+  ListNode,
+  ListItemNode,
+  QuoteNode,
+  CodeNode,
+  TableNode,
+  TableCellNode,
+  TableRowNode,
+  HashtagNode,
+  CodeHighlightNode,
+  AutoLinkNode,
+  LinkNode,
+  OverflowNode,
+  TestElementNode,
+  TestSegmentedNode,
+  TestExcludeFromCopyElementNode,
+  TestDecoratorNode,
+  TestInlineElementNode,
+];
+
+export function TestComposer({config = {}, children}) {
+  const customNodes = config.nodes || [];
+  return (
+    <LexicalComposer
+      initialConfig={{
+        onError: (e) => {
+          throw e;
+        },
+        ...config,
+        nodes: DEFAULT_NODES.concat(customNodes),
+      }}>
+      {children}
+    </LexicalComposer>
+  );
+}
+
+export function createTestEditor(config = {}): LexicalEditor {
+  const customNodes = config.nodes || [];
+  const editor = createEditor({
+    onError: (e) => {
+      throw e;
+    },
+    ...config,
+    nodes: DEFAULT_NODES.concat(customNodes),
+  });
+  return editor;
 }

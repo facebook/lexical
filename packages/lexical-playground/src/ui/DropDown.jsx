@@ -64,6 +64,7 @@ function DropDownItems({
   >(null);
   const [highlightedItem, setHighlightedItem] =
     useState<React$ElementRef<React$ElementType> | null>(null);
+  const shiftPressedRef = useRef(false);
 
   const registerItem = useCallback(
     (itemRef: React$ElementRef<React$ElementType>) => {
@@ -83,7 +84,12 @@ function DropDownItems({
 
     if (key === 'Escape') {
       onClose();
-    } else if (key === 'ArrowUp') {
+    } else if (key === 'Shift') {
+      shiftPressedRef.current = true;
+    } else if (
+      key === 'ArrowUp' ||
+      (key === 'Tab' && shiftPressedRef.current)
+    ) {
       setHighlightedItem(
         (
           prev: React$ElementRef<React$ElementType>,
@@ -92,13 +98,23 @@ function DropDownItems({
           return items[index === -1 ? items.length - 1 : index];
         },
       );
-    } else if (key === 'ArrowDown' || key === 'Tab') {
+    } else if (
+      key === 'ArrowDown' ||
+      (key === 'Tab' && !shiftPressedRef.current)
+    ) {
       setHighlightedItem(
         (
           prev: React$ElementRef<React$ElementType>,
         ): React$ElementRef<React$ElementType> =>
           items[items.indexOf(prev) + 1],
       );
+    }
+  };
+
+  const handleKeyUp = (event) => {
+    const key = event.key;
+    if (key === 'Shift') {
+      shiftPressedRef.current = false;
     }
   };
 
@@ -120,7 +136,11 @@ function DropDownItems({
 
   return (
     <DropDownContext.Provider value={contextValue}>
-      <div className="dropdown" ref={dropDownRef} onKeyDown={handleKeyDown}>
+      <div
+        className="dropdown"
+        ref={dropDownRef}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}>
         {children}
       </div>
     </DropDownContext.Provider>

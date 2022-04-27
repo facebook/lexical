@@ -93,11 +93,21 @@ export default function ImageResizer({
         'important',
       );
     }
+    if (document.body !== null) {
+      document.body.style.setProperty(
+        'cursor',
+        `${cursorDir}-resize`,
+        'important',
+      );
+    }
   };
 
   const setEndCursor = () => {
     if (editorRootElement !== null) {
       editorRootElement.style.setProperty('cursor', 'default');
+    }
+    if (document.body !== null) {
+      document.body.style.setProperty('cursor', 'default');
     }
   };
 

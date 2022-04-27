@@ -8,6 +8,9 @@
 
 import {
   moveLeft,
+  moveRight,
+  moveToEditorBeginning,
+  moveToEditorEnd,
   moveToParagraphEnd,
   redo,
   selectAll,
@@ -18,9 +21,11 @@ import {
   assertHTML,
   clearEditor,
   click,
+  copyToClipboard,
   focusEditor,
   html,
   initialize,
+  pasteFromClipboard,
   selectFromAlignDropdown,
   selectFromFormatDropdown,
   test,
@@ -81,6 +86,7 @@ test.describe('Nested List', () => {
       `,
     );
   });
+
   test(`Can create a list and indent/outdent it`, async ({page}) => {
     await focusEditor(page);
     await toggleBulletList(page);
@@ -135,6 +141,60 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="1"><span data-lexical-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="2"><span data-lexical-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="3"><span data-lexical-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="4"><span data-lexical-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="5"><span data-lexical-text="true">side</span></li></ul>',
+    );
+  });
+
+  test(`Can create a list and partially copy some content out of it`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam venenatis risus ac cursus efficitur. Cras efficitur magna odio, lacinia posuere mauris placerat in. Etiam eu congue nisl. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nulla vulputate justo id eros convallis, vel pellentesque orci hendrerit. Pellentesque accumsan molestie eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor, et bibendum quam feugiat eget. Praesent vestibulum libero sed enim ornare, in consequat dui posuere. Maecenas ornare vestibulum felis, non elementum urna imperdiet sit amet.',
+    );
+    await toggleBulletList(page);
+    await moveToEditorBeginning(page);
+    await moveRight(page, 6);
+    await selectCharacters(page, 'right', 11);
+
+    const clipboard = await copyToClipboard(page);
+
+    await moveToEditorEnd(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam
+              venenatis risus ac cursus efficitur. Cras efficitur magna odio,
+              lacinia posuere mauris placerat in. Etiam eu congue nisl.
+              Vestibulum ante ipsum primis in faucibus orci luctus et ultrices
+              posuere cubilia curae; Nulla vulputate justo id eros convallis,
+              vel pellentesque orci hendrerit. Pellentesque accumsan molestie
+              eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor,
+              et bibendum quam feugiat eget. Praesent vestibulum libero sed enim
+              ornare, in consequat dui posuere. Maecenas ornare vestibulum
+              felis, non elementum urna imperdiet sit amet.
+            </span>
+          </li>
+        </ul>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">ipsum dolor</span>
+          </li>
+        </ul>
+      `,
     );
   });
 
@@ -939,6 +999,7 @@ test.describe('Nested List', () => {
 
   test(`Should NOT merge selected nodes into existing list siblings of a different type when formatting to a list`, async ({
     page,
+    isCollab,
   }) => {
     await focusEditor(page);
 

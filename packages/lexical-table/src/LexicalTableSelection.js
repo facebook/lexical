@@ -225,6 +225,23 @@ export class TableSelection {
     });
   }
 
+  updateTableGridSelection(selection: GridSelection | null) {
+    if (selection != null) {
+      this.gridSelection = selection;
+      this.isHighlightingCells = true;
+      this.disableHighlightStyle();
+      const anchorElement = this.editor.getElementByKey(selection.anchor.key);
+      const focusElement = this.editor.getElementByKey(selection.focus.key);
+      if (anchorElement && focusElement) {
+        const domSelection = getDOMSelection();
+        domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
+      }
+      $updateDOMForSelection(this.grid, this.gridSelection);
+    } else {
+      this.clearHighlight();
+    }
+  }
+
   adjustFocusCellForSelection(cell: Cell, ignoreStart?: boolean = false) {
     this.editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
@@ -318,10 +335,7 @@ export class TableSelection {
       const anchor = formatSelection.anchor;
       const focus = formatSelection.focus;
       selection.getNodes().forEach((cellNode) => {
-        if (
-          $isTableCellNode(cellNode) &&
-          cellNode.getTextContent().length !== 0
-        ) {
+        if ($isTableCellNode(cellNode) && cellNode.getTextContentSize() !== 0) {
           anchor.set(cellNode.getKey(), 0, 'element');
           focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
           formatSelection.formatText(type);

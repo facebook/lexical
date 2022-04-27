@@ -143,7 +143,12 @@ function $normalizeAllDirtyTextNodes(
   const nodeMap = editorState._nodeMap;
   for (const nodeKey of dirtyLeaves) {
     const node = nodeMap.get(nodeKey);
-    if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
+    if (
+      $isTextNode(node) &&
+      node.isAttached() &&
+      node.isSimpleText() &&
+      !node.isUnmergeable()
+    ) {
       $normalizeTextNode(node);
     }
   }
@@ -182,7 +187,12 @@ function $applyAllTransforms(
       editor._dirtyLeaves = new Set();
       for (const nodeKey of untransformedDirtyLeaves) {
         const node = nodeMap.get(nodeKey);
-        if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
+        if (
+          $isTextNode(node) &&
+          node.isAttached() &&
+          node.isSimpleText() &&
+          !node.isUnmergeable()
+        ) {
           $normalizeTextNode(node);
         }
         if (
@@ -513,9 +523,12 @@ function triggerDeferredUpdateCallbacks(editor: LexicalEditor): void {
   }
 }
 
-function processNestedUpdates(editor: LexicalEditor): boolean {
+function processNestedUpdates(
+  editor: LexicalEditor,
+  initialSkipTransforms?: boolean,
+): boolean {
   const queuedUpdates = editor._updates;
-  let skipTransforms = false;
+  let skipTransforms = initialSkipTransforms || false;
   // Updates might grow as we process them, we so we'll need
   // to handle each update as we go until the updates array is
   // empty.
@@ -587,7 +600,7 @@ function beginUpdate(
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();
-    skipTransforms = processNestedUpdates(editor);
+    skipTransforms = processNestedUpdates(editor, skipTransforms);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       if (skipTransforms) {

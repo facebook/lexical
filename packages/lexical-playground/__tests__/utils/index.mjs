@@ -117,39 +117,35 @@ export async function assertHTML(
   } = {},
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await assertHTMLOnPageOrFrame(
+    await retryAsync(
       page,
-      leftFrame,
-      expectedHtml,
-      ignoreClasses,
-      ignoreInlineStyles,
+      async () => {
+        const leftFrame = await page.frame('left');
+        return assertHTMLOnPageOrFrame(
+          page,
+          leftFrame,
+          expectedHtml,
+          ignoreClasses,
+          ignoreInlineStyles,
+        );
+      },
+      5,
     );
     if (!ignoreSecondFrame) {
-      let attempts = 0;
-      while (attempts < 4) {
-        const rightFrame = await page.frame('right');
-        let failed = false;
-        try {
-          await assertHTMLOnPageOrFrame(
+      await retryAsync(
+        page,
+        async () => {
+          const rightFrame = await page.frame('right');
+          return assertHTMLOnPageOrFrame(
             page,
             rightFrame,
             expectedHtml,
             ignoreClasses,
             ignoreInlineStyles,
           );
-        } catch (e) {
-          if (attempts === 5) {
-            throw e;
-          }
-          failed = true;
-        }
-        if (!failed) {
-          break;
-        }
-        attempts++;
-        await sleep(500);
-      }
+        },
+        5,
+      );
     }
   } else {
     await assertHTMLOnPageOrFrame(
@@ -159,6 +155,25 @@ export async function assertHTML(
       ignoreClasses,
       ignoreInlineStyles,
     );
+  }
+}
+
+async function retryAsync(page, fn, attempts) {
+  while (attempts > 0) {
+    let failed = false;
+    try {
+      await fn();
+    } catch (e) {
+      if (attempts === 1) {
+        throw e;
+      }
+      failed = true;
+    }
+    if (!failed) {
+      break;
+    }
+    attempts--;
+    await sleep(500);
   }
 }
 
@@ -544,17 +559,26 @@ export function html(partials, ...params) {
 }
 
 export async function selectFromFormatDropdown(page, selector) {
-  await click(page, '.toolbar-item[aria-label="Formatting Options"]');
+  await click(
+    page,
+    '.toolbar-item[aria-label="Formatting options for text style"]',
+  );
   await click(page, '.dropdown ' + selector);
 }
 
 export async function selectFromInsertDropdown(page, selector) {
-  await click(page, '.toolbar-item[aria-label="Insert"]');
+  await click(
+    page,
+    '.toolbar-item[aria-label="Insert specialized editor node"]',
+  );
   await click(page, '.dropdown ' + selector);
 }
 
 export async function selectFromAlignDropdown(page, selector) {
-  await click(page, '.toolbar-item[aria-label="Align"]');
+  await click(
+    page,
+    '.toolbar-item[aria-label="Formatting options for text alignment"]',
+  );
   await click(page, '.dropdown ' + selector);
 }
 
@@ -563,6 +587,36 @@ export async function insertTable(page) {
   await click(
     page,
     'div[data-test-id="table-model-confirm-insert"] > .Button__root',
+  );
+}
+
+export async function selectCellsFromTableCords(page, firstCords, secondCords) {
+  let p = page;
+
+  if (IS_COLLAB) {
+    await focusEditor(page);
+    p = await page.frame('left');
+  }
+
+  const firstRowFirstColumnCellBoundingBox = await p.locator(
+    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > th:nth-child(${
+      firstCords.x + 1
+    })`,
+  );
+
+  const secondRowSecondCellBoundingBox = await p.locator(
+    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > td:nth-child(${
+      secondCords.x + 1
+    })`,
+  );
+
+  // Focus on inside the iFrame or the boundingBox() below returns null.
+  await firstRowFirstColumnCellBoundingBox.click();
+
+  await dragMouse(
+    page,
+    await firstRowFirstColumnCellBoundingBox.boundingBox(),
+    await secondRowSecondCellBoundingBox.boundingBox(),
   );
 }
 

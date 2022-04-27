@@ -531,6 +531,7 @@ test.describe('Composition', () => {
     test('Can type Hiragana via IME with hashtags', async ({
       page,
       browserName,
+      isCollab,
     }) => {
       // We don't yet support FF.
       test.skip(browserName === 'firefox');

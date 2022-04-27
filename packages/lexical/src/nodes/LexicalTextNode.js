@@ -323,10 +323,6 @@ export class TextNode extends LexicalNode {
     return self.__style;
   }
 
-  isComposing(): boolean {
-    return this.__key === $getCompositionKey();
-  }
-
   isToken(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_TOKEN;

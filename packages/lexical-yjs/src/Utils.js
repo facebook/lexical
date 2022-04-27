@@ -344,7 +344,7 @@ export function getPositionFromElementAndOffset(
       if (textOffset < 0) {
         textOffset = 0;
       }
-      const diffLength = size - textOffset;
+      const diffLength = index - offset;
       return {
         length: diffLength,
         node: child,
@@ -377,9 +377,8 @@ export function doesSelectionNeedRecovering(
       !focusNode.isAttached() ||
       // If we've split a node, then the offset might not be right
       ($isTextNode(anchorNode) &&
-        anchor.offset > anchorNode.getTextContent().length) ||
-      ($isTextNode(focusNode) &&
-        focus.offset > focusNode.getTextContent().length)
+        anchor.offset > anchorNode.getTextContentSize()) ||
+      ($isTextNode(focusNode) && focus.offset > focusNode.getTextContentSize())
     ) {
       recoveryNeeded = true;
     }

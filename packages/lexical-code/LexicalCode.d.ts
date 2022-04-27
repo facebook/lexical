@@ -28,7 +28,7 @@ declare class CodeNode extends ElementNode {
   insertNewAfter(
     selection: RangeSelection,
   ): null | ParagraphNode | CodeHighlightNode;
-  canInsertTab(): true;
+  canInsertTab(): boolean;
   collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;

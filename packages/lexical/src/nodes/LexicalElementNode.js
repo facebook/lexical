@@ -410,6 +410,9 @@ export class ElementNode extends LexicalNode {
   canInsertTab(): boolean {
     return false;
   }
+  canIndent(): boolean {
+    return true;
+  }
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
   }

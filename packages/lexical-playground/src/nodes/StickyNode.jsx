@@ -225,7 +225,7 @@ function StickyComponent({
             event.preventDefault();
           }
         }}>
-        <button onClick={handleDelete} className="delete">
+        <button onClick={handleDelete} className="delete" aria-label="Delete sticky note" type="Delete">
           X
         </button>
         <button onClick={handleColorChange} className="color">

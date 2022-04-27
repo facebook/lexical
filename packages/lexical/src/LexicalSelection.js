@@ -44,6 +44,7 @@ import {
   $getDecoratorNode,
   $getNodeByKey,
   $isTokenOrInert,
+  $isTokenOrInertOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
   getNodeFromDOM,
@@ -688,8 +689,7 @@ export class RangeSelection implements BaseSelection {
       let nextSibling = firstNode.getNextSibling();
       if (
         !$isTextNode(nextSibling) ||
-        $isTokenOrInert(nextSibling) ||
-        nextSibling.isSegmented()
+        $isTokenOrInertOrSegmented(nextSibling)
       ) {
         nextSibling = $createTextNode();
         if (!firstNodeParent.canInsertTextAfter()) {
@@ -715,8 +715,7 @@ export class RangeSelection implements BaseSelection {
       let prevSibling = firstNode.getPreviousSibling();
       if (
         !$isTextNode(prevSibling) ||
-        $isTokenOrInert(prevSibling) ||
-        prevSibling.isSegmented()
+        $isTokenOrInertOrSegmented(prevSibling)
       ) {
         prevSibling = $createTextNode();
         if (!firstNodeParent.canInsertTextBefore()) {

@@ -6,7 +6,6 @@
  *
  * @flow strict
  */
-
 import type {
   DOMChildConversion,
   DOMConversion,
@@ -21,16 +20,24 @@ import type {
 } from 'lexical';
 
 import {$cloneContents} from '@lexical/selection';
+import {$findMatchingParent} from '@lexical/utils';
 import {
+  $createGridSelection,
   $createNodeFromParse,
   $createParagraphNode,
   $getNodeByKey,
   $getSelection,
   $isElementNode,
+  $isGridCellNode,
+  $isGridNode,
+  $isGridRowNode,
   $isGridSelection,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 const IGNORE_TAGS = new Set(['STYLE']);
 
@@ -182,6 +189,15 @@ export function $insertDataTransferForRichText(
     'application/x-lexical-editor',
   );
 
+  const isSelectionInsideOfGrid =
+    $isGridSelection(selection) ||
+    ($findMatchingParent(selection.anchor.getNode(), (n) =>
+      $isGridCellNode(n),
+    ) !== null &&
+      $findMatchingParent(selection.focus.getNode(), (n) =>
+        $isGridCellNode(n),
+      ) !== null);
+
   if (lexicalNodesString) {
     const namespace = editor._config.namespace;
     try {
@@ -189,7 +205,17 @@ export function $insertDataTransferForRichText(
       if (lexicalClipboardData.namespace === namespace) {
         const nodeRange = lexicalClipboardData.state;
         const nodes = $generateNodes(nodeRange);
-        selection.insertNodes(nodes);
+
+        if (
+          isSelectionInsideOfGrid &&
+          nodes.length === 1 &&
+          $isGridNode(nodes[0])
+        ) {
+          $mergeGridNodesStrategy(nodes, selection, false, editor);
+          return;
+        }
+
+        $basicInsertStrategy(nodes, selection, true);
         return;
       }
     } catch (e) {
@@ -204,6 +230,29 @@ export function $insertDataTransferForRichText(
     const parser = new DOMParser();
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
     const nodes = $generateNodesFromDOM(dom, editor);
+
+    if (
+      isSelectionInsideOfGrid &&
+      nodes.length === 1 &&
+      $isGridNode(nodes[0])
+    ) {
+      $mergeGridNodesStrategy(nodes, selection, false, editor);
+      return;
+    }
+
+    $basicInsertStrategy(nodes, selection, false);
+    return;
+  }
+  $insertDataTransferForPlainText(dataTransfer, selection);
+}
+
+function $basicInsertStrategy(
+  nodes: LexicalNode[],
+  selection: RangeSelection | GridSelection,
+  isFromLexical: boolean,
+) {
+  let nodesToInsert;
+  if (!isFromLexical) {
     // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
     const topLevelBlocks = [];
     let currentBlock = null;
@@ -222,10 +271,117 @@ export function $insertDataTransferForRichText(
         currentBlock = null;
       }
     }
-    selection.insertNodes(topLevelBlocks);
-    return;
+    nodesToInsert = topLevelBlocks;
+  } else {
+    nodesToInsert = nodes;
   }
-  $insertDataTransferForPlainText(dataTransfer, selection);
+  if ($isRangeSelection(selection)) {
+    selection.insertNodes(nodesToInsert);
+  } else if ($isGridSelection(selection)) {
+    // If there's an active grid selection and a non grid is pasted, add to the anchor.
+    const anchorCell = selection.anchor.getNode();
+    if (!$isGridCellNode(anchorCell)) {
+      invariant(false, 'Expected Grid Cell in Grid Selection');
+    }
+    anchorCell.append(...nodesToInsert);
+  }
+}
+
+function $mergeGridNodesStrategy(
+  nodes: LexicalNode[],
+  selection: RangeSelection | GridSelection,
+  isFromLexical: boolean,
+  editor: LexicalEditor,
+) {
+  if (nodes.length !== 1 || !$isGridNode(nodes[0])) {
+    invariant(false, '$mergeGridNodesStrategy: Expected Grid insertion.');
+  }
+  const newGrid = nodes[0];
+  const newGridRows = newGrid.getChildren();
+  const newColumnCount = newGrid.getFirstChildOrThrow().getChildrenSize();
+  const newRowCount = newGrid.getChildrenSize();
+  const gridCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
+    $isGridCellNode(n),
+  );
+  const gridRowNode =
+    gridCellNode && $findMatchingParent(gridCellNode, (n) => $isGridRowNode(n));
+  const gridNode =
+    gridRowNode && $findMatchingParent(gridRowNode, (n) => $isGridNode(n));
+  if (
+    !$isGridCellNode(gridCellNode) ||
+    !$isGridRowNode(gridRowNode) ||
+    !$isGridNode(gridNode)
+  ) {
+    invariant(
+      false,
+      '$mergeGridNodesStrategy: Expected selection to be inside of a Grid.',
+    );
+  }
+  const startY = gridRowNode.getIndexWithinParent();
+  const stopY = Math.min(
+    gridNode.getChildrenSize() - 1,
+    startY + newRowCount - 1,
+  );
+  const startX = gridCellNode.getIndexWithinParent();
+  const stopX = Math.min(
+    gridRowNode.getChildrenSize() - 1,
+    startX + newColumnCount - 1,
+  );
+  const fromX = Math.min(startX, stopX);
+  const fromY = Math.min(startY, stopY);
+  const toX = Math.max(startX, stopX);
+  const toY = Math.max(startY, stopY);
+  const gridRowNodes = gridNode.getChildren();
+  let newRowIdx = 0;
+  let newAnchorCellKey;
+  let newFocusCellKey;
+  for (let r = fromY; r <= toY; r++) {
+    const currentGridRowNode = gridRowNodes[r];
+    if (!$isGridRowNode(currentGridRowNode)) {
+      invariant(false, 'getNodes: expected to find GridRowNode');
+    }
+    const newGridRowNode = newGridRows[newRowIdx];
+    if (!$isGridRowNode(newGridRowNode)) {
+      invariant(false, 'getNodes: expected to find GridRowNode');
+    }
+    const gridCellNodes = currentGridRowNode.getChildren();
+    const newGridCellNodes = newGridRowNode.getChildren();
+    let newColumnIdx = 0;
+    for (let c = fromX; c <= toX; c++) {
+      const currentGridCellNode = gridCellNodes[c];
+      if (!$isGridCellNode(currentGridCellNode)) {
+        invariant(false, 'getNodes: expected to find GridCellNode');
+      }
+      const newGridCellNode = newGridCellNodes[newColumnIdx];
+      if (!$isGridCellNode(newGridCellNode)) {
+        invariant(false, 'getNodes: expected to find GridCellNode');
+      }
+      if (r === fromY && c === fromX) {
+        newAnchorCellKey = currentGridCellNode.getKey();
+      } else if (r === toY && c === toX) {
+        newFocusCellKey = currentGridCellNode.getKey();
+      }
+      const originalChildren = currentGridCellNode.getChildren();
+      newGridCellNode.getChildren().forEach((child) => {
+        if ($isTextNode(child)) {
+          const paragraphNode = $createParagraphNode();
+          paragraphNode.append(child);
+          currentGridCellNode.append(child);
+        } else {
+          currentGridCellNode.append(child);
+        }
+      });
+      originalChildren.forEach((n) => n.remove());
+      newColumnIdx++;
+    }
+    newRowIdx++;
+  }
+  if (newAnchorCellKey && newFocusCellKey) {
+    const newGridSelection = $createGridSelection();
+    newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);
+    $setSelection(newGridSelection);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+  }
 }
 
 function $generateNodes(nodeRange: {

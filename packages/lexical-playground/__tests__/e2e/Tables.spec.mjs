@@ -12,7 +12,6 @@ import {
   click,
   clickSelectors,
   copyToClipboard,
-  dragMouse,
   focusEditor,
   html,
   initialize,
@@ -20,6 +19,7 @@ import {
   IS_COLLAB,
   pasteFromClipboard,
   repeat,
+  selectCellsFromTableCords,
   test,
 } from '../utils/index.mjs';
 
@@ -42,36 +42,6 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('f');
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('c');
-}
-
-async function selectCellsFromTableCords(page, firstCords, secondCords) {
-  let p = page;
-
-  if (IS_COLLAB) {
-    await focusEditor(page);
-    p = await page.frame('left');
-  }
-
-  const firstRowFirstColumnCellBoundingBox = await p.locator(
-    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > th:nth-child(${
-      firstCords.x + 1
-    })`,
-  );
-
-  const secondRowSecondCellBoundingBox = await p.locator(
-    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > td:nth-child(${
-      secondCords.x + 1
-    })`,
-  );
-
-  // Focus on inside the iFrame or the boundingBox() below returns null.
-  await firstRowFirstColumnCellBoundingBox.click();
-
-  await dragMouse(
-    page,
-    await firstRowFirstColumnCellBoundingBox.boundingBox(),
-    await secondRowSecondCellBoundingBox.boundingBox(),
-  );
 }
 
 test.describe('Tables', () => {
@@ -1224,10 +1194,6 @@ test.describe('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      isCollab,
-      'Table selection styles are not properly synced to the right hand frame',
-    );
 
     await focusEditor(page);
     await page.keyboard.type('Hello World');
@@ -1249,155 +1215,159 @@ test.describe('Tables', () => {
       await page.keyboard.press('ArrowRight');
     });
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello World</span>
-        </p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-        </table>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-      {ignoreClasses: true},
-    );
+    // Selection of cells is not synced in collab, but we still want to
+    // ensure this doesn't break collab too.
+    if (!isCollab) {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello World</span>
+          </p>
+          <table class="PlaygroundEditorTheme__table disable-selection">
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+          </table>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
+        {ignoreClasses: true},
+      );
+    }
   });
 
   test(`Select All when document contains tables adds custom table styles.`, async ({
@@ -1406,165 +1376,166 @@ test.describe('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(
-      isCollab,
-      'Table selection styles are not properly synced to the right hand frame',
-    );
 
     await focusEditor(page);
     await page.keyboard.type('Hello World');
+
     await insertTable(page);
 
     await selectAll(page);
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello World</span>
-        </p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent;">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-        </table>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-      {ignoreClasses: true},
-    );
+    // Selection of cells is not synced in collab, but we still want to
+    // ensure this doesn't break collab too.
+    if (!isCollab) {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello World</span>
+          </p>
+          <table class="PlaygroundEditorTheme__table disable-selection">
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+            <tr>
+              <th
+                class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </th>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+              <td
+                class="PlaygroundEditorTheme__tableCell"
+                style="background-color: rgb(172, 206, 247); caret-color: transparent;">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </td>
+            </tr>
+          </table>
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
+        {ignoreClasses: true},
+      );
+    }
   });
 });

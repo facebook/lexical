@@ -590,6 +590,36 @@ export async function insertTable(page) {
   );
 }
 
+export async function selectCellsFromTableCords(page, firstCords, secondCords) {
+  let p = page;
+
+  if (IS_COLLAB) {
+    await focusEditor(page);
+    p = await page.frame('left');
+  }
+
+  const firstRowFirstColumnCellBoundingBox = await p.locator(
+    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > th:nth-child(${
+      firstCords.x + 1
+    })`,
+  );
+
+  const secondRowSecondCellBoundingBox = await p.locator(
+    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > td:nth-child(${
+      secondCords.x + 1
+    })`,
+  );
+
+  // Focus on inside the iFrame or the boundingBox() below returns null.
+  await firstRowFirstColumnCellBoundingBox.click();
+
+  await dragMouse(
+    page,
+    await firstRowFirstColumnCellBoundingBox.boundingBox(),
+    await secondRowSecondCellBoundingBox.boundingBox(),
+  );
+}
+
 export async function enableCompositionKeyEvents(page) {
   const targetPage = IS_COLLAB ? await page.frame('left') : page;
   await targetPage.evaluate(() => {

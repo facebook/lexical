@@ -292,7 +292,10 @@ function onPasteForRichText(
   editor.update(() => {
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
-    if (clipboardData != null && $isRangeSelection(selection)) {
+    if (
+      (clipboardData != null && $isRangeSelection(selection)) ||
+      $isGridSelection(selection)
+    ) {
       $insertDataTransferForRichText(clipboardData, selection, editor);
     }
   });
@@ -415,17 +418,23 @@ export function registerRichText(
       INSERT_TEXT_COMMAND,
       (payload) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
+
         const eventOrText: InputEvent | string = payload;
         if (typeof eventOrText === 'string') {
-          selection.insertText(eventOrText);
+          if ($isRangeSelection(selection)) {
+            selection.insertText(eventOrText);
+          } else if ($isGridSelection(selection)) {
+            // TODO: Insert into the first cell & clear selection.
+          }
         } else {
+          if (!$isRangeSelection(selection) && !$isGridSelection(selection)) {
+            return false;
+          }
+
           const dataTransfer = eventOrText.dataTransfer;
           if (dataTransfer != null) {
             $insertDataTransferForRichText(dataTransfer, selection, editor);
-          } else {
+          } else if ($isRangeSelection(selection)) {
             const data = eventOrText.data;
             if (data) {
               selection.insertText(data);

@@ -87,8 +87,7 @@ export default function ExcalidrawModal({
       }
     };
     if (excaliDrawModelRef.current !== null) {
-      modalOverlayElement =
-        excaliDrawModelRef.current?.parentElement?.parentElement;
+      modalOverlayElement = excaliDrawModelRef.current?.parentElement;
       if (modalOverlayElement !== null) {
         modalOverlayElement?.addEventListener('click', clickOutsideHandler);
       }
@@ -169,28 +168,26 @@ export default function ExcalidrawModal({
 
   return createPortal(
     <div className="ExcalidrawModal__overlay" role="dialog">
-      <div className="ExcalidrawModal__modelwrapper">
-        <div
-          className="ExcalidrawModal__modal"
-          ref={excaliDrawModelRef}
-          tabIndex={-1}>
-          <div className="ExcalidrawModal__row">
-            {discardModalOpen && <ShowDiscardDialog />}
-            <_Excalidraw
-              onChange={onChange}
-              initialData={{
-                appState: {isLoading: false},
-                elements: initialElements,
-              }}
-            />
-            <div className="ExcalidrawModal__actions">
-              <button className="action-button" onClick={discard}>
-                Discard
-              </button>
-              <button className="action-button" onClick={save}>
-                Save
-              </button>
-            </div>
+      <div
+        className="ExcalidrawModal__modal"
+        ref={excaliDrawModelRef}
+        tabIndex={-1}>
+        <div className="ExcalidrawModal__row">
+          {discardModalOpen && <ShowDiscardDialog />}
+          <_Excalidraw
+            onChange={onChange}
+            initialData={{
+              appState: {isLoading: false},
+              elements: initialElements,
+            }}
+          />
+          <div className="ExcalidrawModal__actions">
+            <button className="action-button" onClick={discard}>
+              Discard
+            </button>
+            <button className="action-button" onClick={save}>
+              Save
+            </button>
           </div>
         </div>
       </div>

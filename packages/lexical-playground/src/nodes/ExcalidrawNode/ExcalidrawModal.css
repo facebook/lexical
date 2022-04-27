@@ -19,6 +19,7 @@
   flex-grow: 0px;
   flex-shrink: 1px;
   z-index: 100;
+  background-color: rgba(40, 40, 40, 0.6);
 }
 .ExcalidrawModal__actions {
   text-align: end;
@@ -43,15 +44,16 @@
 .ExcalidrawModal__row > div {
   border-radius: 5px;
 }
-.ExcalidrawModal__modelwrapper {
+.ExcalidrawModal__modal {
   position: relative;
   z-index: 10;
   top: 50px;
-  width: 100%;
+  width: auto;
   left: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+  border-radius: 8px;
   background-color: #eee;
 }
 .ExcalidrawModal__discardModal {

@@ -23,6 +23,7 @@ import type {
 } from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -881,7 +882,12 @@ function reconcileSelection(
     ) {
       rootElement.focus({preventScroll: true});
     }
-    return;
+    // In Safari/iOS if we have selection on an element, then we also
+    // need to additionally set the DOM selection, otherwise a selectionchange
+    // event will not fire.
+    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
+      return;
+    }
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

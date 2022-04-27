@@ -225,10 +225,18 @@ function StickyComponent({
             event.preventDefault();
           }
         }}>
-        <button onClick={handleDelete} className="delete" aria-label="Delete sticky note" type="Delete">
+        <button
+          onClick={handleDelete}
+          className="delete"
+          aria-label="Delete sticky note"
+          type="Delete">
           X
         </button>
-        <button onClick={handleColorChange} className="color" aria-label="Change sticky note color" type="Color">
+        <button
+          onClick={handleColorChange}
+          className="color"
+          aria-label="Change sticky note color"
+          type="Color">
           <i className="bucket" />
         </button>
         <LexicalNestedComposer

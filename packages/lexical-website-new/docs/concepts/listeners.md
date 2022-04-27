@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Listeners
 
-Listeners are a mechanism that lets the Editor instance inform the user when a certain operation has occured. All listeners follow a reactive pattern where you can do an operation upon something happening in the future. All listeners also return a fuction that easily allows for the
+Listeners are a mechanism that lets the Editor instance inform the user when a certain operation has occured. All listeners follow a reactive pattern where you can do an operation upon something happening in the future. All listeners also return a function that easily allows for the
 listener to be unregistered. Below are the different listeners that Lexical supports today:
 
 ## `registerUpdateListener`

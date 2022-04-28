@@ -15,7 +15,7 @@ import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNodeByKey, DecoratorNode} from 'lexical';
 import * as React from 'react';
-import {useCallback, useMemo, useRef} from 'react';
+import {useMemo, useRef} from 'react';
 
 import Button from '../ui/Button';
 import joinClasses from '../utils/join-classes';
@@ -150,17 +150,14 @@ function PollComponent({
   const [editor] = useLexicalComposerContext();
   const totalVotes = useMemo(() => getTotalVotes(options), [options]);
 
-  const withPollNode = useCallback(
-    (cb: (node: PollNode) => void): void => {
-      editor.update(() => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isPollNode(node)) {
-          cb(node);
-        }
-      });
-    },
-    [editor, nodeKey],
-  );
+  const withPollNode = (cb: (node: PollNode) => void): void => {
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isPollNode(node)) {
+        cb(node);
+      }
+    });
+  };
 
   const addOption = () => {
     withPollNode((node) => {

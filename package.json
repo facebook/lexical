@@ -21,7 +21,7 @@
     "build-release": "npm run build-prod -- --release",
     "build-www": "npm run clean && npm run build -- --www && npm run build -- --www --prod && npm run prepare-www",
     "build-flow": "./scripts/build-flow.sh",
-    "clean": "node scripts/clean.js",
+    "clean": "node scripts/build.js --clean",
     "extract-codes": "node scripts/build.js --codes",
     "flow": "node ./scripts/tasks/flow.js",
     "collab": "cross-env HOST=localhost PORT=1234 npx y-websocket-server",

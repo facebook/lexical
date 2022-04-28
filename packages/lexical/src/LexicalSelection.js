@@ -1797,7 +1797,7 @@ function $removeSegment(
       break;
     }
   }
-  const nextTextContent = split.join('');
+  const nextTextContent = split.join('').trim();
 
   if (nextTextContent === '') {
     textNode.remove();

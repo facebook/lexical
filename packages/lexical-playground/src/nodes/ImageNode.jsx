@@ -203,11 +203,6 @@ function ImageComponent({
   };
 
   const onResizeEnd = (nextWidth, nextHeight) => {
-    const rootElement = editor.getRootElement();
-    if (rootElement !== null) {
-      rootElement.style.setProperty('cursor', 'default');
-    }
-
     // Delay hiding the resize bars for click case
     setTimeout(() => {
       setIsResizing(false);
@@ -222,10 +217,6 @@ function ImageComponent({
   };
 
   const onResizeStart = () => {
-    const rootElement = editor.getRootElement();
-    if (rootElement !== null) {
-      rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
-    }
     setIsResizing(true);
   };
 
@@ -289,6 +280,7 @@ function ImageComponent({
               setShowCaption={setShowCaption}
               editor={editor}
               imageRef={ref}
+              maxWidth={maxWidth}
               onResizeStart={onResizeStart}
               onResizeEnd={onResizeEnd}
             />

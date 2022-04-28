@@ -93,6 +93,7 @@ export default function ExcalidrawImage({
 
       svg.setAttribute('width', '100%');
       svg.setAttribute('height', '100%');
+      svg.setAttribute('display', 'block');
 
       setSvg(svg);
     };

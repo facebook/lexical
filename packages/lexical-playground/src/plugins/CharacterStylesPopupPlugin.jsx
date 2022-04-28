@@ -109,6 +109,9 @@ function FloatingCharacterStylesEditor({
   }, [editor]);
 
   useEffect(() => {
+    editor.getEditorState().read(() => {
+      updateCharacterStylesEditor();
+    });
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {

@@ -69,6 +69,8 @@ function ExcalidrawComponent({
   useEffect(() => {
     if (isModalOpen) {
       editor.setReadOnly(true);
+    } else {
+      editor.setReadOnly(false);
     }
   }, [isModalOpen, editor]);
 
@@ -114,6 +116,7 @@ function ExcalidrawComponent({
   }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
 
   const deleteNode = useCallback(() => {
+    setModalOpen(false);
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
@@ -142,27 +145,15 @@ function ExcalidrawComponent({
   );
 
   const onResizeStart = useCallback(() => {
-    const rootElement = editor.getRootElement();
-    if (rootElement !== null) {
-      rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
-    }
     setIsResizing(true);
-  }, [editor]);
+  }, []);
 
-  const onResizeEnd = useCallback(
-    (nextWidth, nextHeight) => {
-      const rootElement = editor.getRootElement();
-      if (rootElement !== null) {
-        rootElement.style.setProperty('cursor', 'default');
-      }
-
-      // Delay hiding the resize bars for click case
-      setTimeout(() => {
-        setIsResizing(false);
-      }, 200);
-    },
-    [editor],
-  );
+  const onResizeEnd = useCallback((nextWidth, nextHeight) => {
+    // Delay hiding the resize bars for click case
+    setTimeout(() => {
+      setIsResizing(false);
+    }, 200);
+  }, []);
 
   const elements = useMemo(() => JSON.parse(data), [data]);
   return (
@@ -180,6 +171,7 @@ function ExcalidrawComponent({
           setData(newData);
           setModalOpen(false);
         }}
+        closeOnClickOutside={true}
       />
       <button
         ref={buttonRef}

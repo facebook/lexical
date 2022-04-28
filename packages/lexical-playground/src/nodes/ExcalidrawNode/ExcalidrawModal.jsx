@@ -25,6 +25,7 @@ export type ExcalidrawElementFragment = {
 };
 
 type Props = {
+  closeOnClickOutside?: boolean,
   /**
    * The initial set of elements to draw into the scene
    */
@@ -53,6 +54,7 @@ type Props = {
  * which can be used to export an editable image
  */
 export default function ExcalidrawModal({
+  closeOnClickOutside = false,
   onSave,
   initialElements,
   isShown = false,
@@ -60,9 +62,43 @@ export default function ExcalidrawModal({
   onDelete,
 }: Props): React.Portal | null {
   const excalidrawRef = useRef(null);
+  const excaliDrawModelRef = useRef(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<$ReadOnlyArray<ExcalidrawElementFragment>>(initialElements);
+
+  useEffect(() => {
+    if (excaliDrawModelRef.current !== null) {
+      excaliDrawModelRef.current.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    let modalOverlayElement = null;
+    const clickOutsideHandler = (event: MouseEvent) => {
+      // $FlowFixMe: event.target is always a Node on the DOM
+      const target: HTMLElement = event.target;
+      if (
+        excaliDrawModelRef.current !== null &&
+        !excaliDrawModelRef.current.contains(target) &&
+        closeOnClickOutside
+      ) {
+        onDelete();
+      }
+    };
+    if (excaliDrawModelRef.current !== null) {
+      modalOverlayElement = excaliDrawModelRef.current?.parentElement;
+      if (modalOverlayElement !== null) {
+        modalOverlayElement?.addEventListener('click', clickOutsideHandler);
+      }
+    }
+
+    return () => {
+      if (modalOverlayElement !== null) {
+        modalOverlayElement?.removeEventListener('click', clickOutsideHandler);
+      }
+    };
+  }, [closeOnClickOutside, onDelete]);
 
   const save = () => {
     if (elements.filter((el) => !el.isDeleted).length > 0) {
@@ -90,7 +126,8 @@ export default function ExcalidrawModal({
         title="Discard"
         onClose={() => {
           setDiscardModalOpen(false);
-        }}>
+        }}
+        closeOnClickOutside={true}>
         Are you sure you want to discard the changes?
         <div className="ExcalidrawModal__discardModal">
           <Button
@@ -130,23 +167,28 @@ export default function ExcalidrawModal({
     Excalidraw.$$typeof != null ? Excalidraw : Excalidraw.default;
 
   return createPortal(
-    <div className="ExcalidrawModal__modal">
-      <div className="ExcalidrawModal__row">
-        {discardModalOpen && <ShowDiscardDialog />}
-        <_Excalidraw
-          onChange={onChange}
-          initialData={{
-            appState: {isLoading: false},
-            elements: initialElements,
-          }}
-        />
-        <div className="ExcalidrawModal__actions">
-          <button className="action-button" onClick={discard}>
-            Discard
-          </button>
-          <button className="action-button" onClick={save}>
-            Save
-          </button>
+    <div className="ExcalidrawModal__overlay" role="dialog">
+      <div
+        className="ExcalidrawModal__modal"
+        ref={excaliDrawModelRef}
+        tabIndex={-1}>
+        <div className="ExcalidrawModal__row">
+          {discardModalOpen && <ShowDiscardDialog />}
+          <_Excalidraw
+            onChange={onChange}
+            initialData={{
+              appState: {isLoading: false},
+              elements: initialElements,
+            }}
+          />
+          <div className="ExcalidrawModal__actions">
+            <button className="action-button" onClick={discard}>
+              Discard
+            </button>
+            <button className="action-button" onClick={save}>
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>,

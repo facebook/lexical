@@ -17,6 +17,7 @@ export default function useModal(): [
   (string, (() => void) => React$Node) => void,
 ] {
   const [modalContent, setModalContent] = useState<null | {
+    closeOnClickOutside: boolean,
     content: React$Node,
     title: string,
   }>(null);
@@ -29,17 +30,28 @@ export default function useModal(): [
     if (modalContent === null) {
       return null;
     }
-    const {title, content} = modalContent;
+    const {title, content, closeOnClickOutside} = modalContent;
     return (
-      <Modal onClose={onClose} title={title}>
+      <Modal
+        onClose={onClose}
+        title={title}
+        closeOnClickOutside={closeOnClickOutside}>
         {content}
       </Modal>
     );
   }, [modalContent, onClose]);
 
   const showModal = useCallback(
-    (title, getContent: (() => void) => React$Node) => {
-      setModalContent({content: getContent(onClose), title});
+    (
+      title,
+      getContent: (() => void) => React$Node,
+      closeOnClickOutside?: boolean = false,
+    ) => {
+      setModalContent({
+        closeOnClickOutside,
+        content: getContent(onClose),
+        title,
+      });
     },
     [onClose],
   );

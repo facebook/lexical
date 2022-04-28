@@ -1061,7 +1061,9 @@ export default function ToolbarPlugin(): React$Node {
                   'strikethrough',
                 );
               }}
-              className={'item ' + (isStrikethrough ? 'active' : '')}
+              className={
+                'item ' + (isStrikethrough ? 'active dropdown-item-active' : '')
+              }
               title="Strikethrough"
               aria-label="Format text with a strikethrough">
               <i className="icon strikethrough" />
@@ -1071,7 +1073,9 @@ export default function ToolbarPlugin(): React$Node {
               onClick={() => {
                 activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
               }}
-              className={'item ' + (isSubscript ? 'active' : '')}
+              className={
+                'item ' + (isSubscript ? 'active dropdown-item-active' : '')
+              }
               title="Subscript"
               aria-label="Format text with a subscript">
               <i className="icon subscript" />
@@ -1084,7 +1088,9 @@ export default function ToolbarPlugin(): React$Node {
                   'superscript',
                 );
               }}
-              className={'item ' + (isSuperscript ? 'active' : '')}
+              className={
+                'item ' + (isSuperscript ? 'active dropdown-item-active' : '')
+              }
               title="Superscript"
               aria-label="Format text with a superscript">
               <i className="icon superscript" />

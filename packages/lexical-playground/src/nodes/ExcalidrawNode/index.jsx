@@ -115,7 +115,7 @@ function ExcalidrawComponent({
     );
   }, [clearSelection, editor, isSelected, isResizing, onDelete, setSelected]);
 
-  const deleteNode = () => {
+  const deleteNode = useCallback(() => {
     setModalOpen(false);
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
@@ -123,7 +123,7 @@ function ExcalidrawComponent({
         node.remove();
       }
     });
-  };
+  }, [editor, nodeKey]);
 
   const setData = (newData: $ReadOnlyArray<ExcalidrawElementFragment>) => {
     if (editor.isReadOnly()) {

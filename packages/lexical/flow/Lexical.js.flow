@@ -584,9 +584,6 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
-export type TextMark = {end: null | number, id: string, start: null | number};
-
-export type TextMarks = Array<TextMark>;
 
 declare export class TextNode extends LexicalNode {
   __text: string;
@@ -594,13 +591,10 @@ declare export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  __marks: null | TextMarks;
   static getType(): string;
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
   getFormat(): number;
-  getMark(id: string): null | TextMark;
-  setMark(id: string, start: null | number, end: null | number): void;
   deleteMark(id: string): void;
   getStyle(): string;
   isToken(): boolean;

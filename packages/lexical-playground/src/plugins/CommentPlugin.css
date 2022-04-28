@@ -294,6 +294,7 @@ i.send {
   padding: 15px 0 15px 15px;
   margin: 0;
   font-size: 14px;
+  position: relative;
 }
 
 .CommentPlugin_CommentsPanel_List_Comment:hover {
@@ -381,4 +382,38 @@ i.send {
 .CommentPlugin_CommentsPanel_List_Reference_Editor {
   position: relative;
   padding-top: 1px;
+}
+
+.CommentPlugin_CommentsPanel_List_DeleteButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background-color: transparent;
+  opacity: 0;
+}
+
+.CommentPlugin_CommentsPanel_List_Comment:hover
+  .CommentPlugin_CommentsPanel_List_DeleteButton {
+  opacity: 0.5;
+}
+
+.CommentPlugin_CommentsPanel_List_DeleteButton:hover {
+  background-color: transparent;
+  opacity: 1;
+  filter: invert(45%) sepia(98%) saturate(2299%) hue-rotate(201deg)
+    brightness(100%) contrast(92%);
+}
+
+.CommentPlugin_CommentsPanel_List_DeleteButton i.delete {
+  background-size: contain;
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  height: 15px;
+  width: 15px;
+  vertical-align: -10px;
+  background-image: url(../images/icons/trash3.svg);
+  transition: opacity 0.2s linear;
 }

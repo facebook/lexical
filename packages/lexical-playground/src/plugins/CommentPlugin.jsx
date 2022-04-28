@@ -34,6 +34,7 @@ import * as React from 'react';
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
+import useModal from '../hooks/useModal';
 import CommentEditorTheme from '../themes/CommentEditorTheme';
 import Button from '../ui/Button';
 import ContentEditable from '../ui/ContentEditable.jsx';
@@ -387,15 +388,53 @@ function CommentsPanelFooter({
   );
 }
 
+function ShowDeleteCommentDialog({
+  comment,
+  deleteComment,
+  onClose,
+  reference,
+}: {
+  comment: Comment,
+  deleteComment: (Comment, reference?: Reference) => void,
+  onClose: () => void,
+  reference?: Reference,
+}): React$Node {
+  return (
+    <>
+      Are you sure you want to delete this comment?
+      <div className="Modal__content">
+        <Button
+          onClick={() => {
+            deleteComment(comment, reference);
+            onClose();
+          }}>
+          Delete
+        </Button>{' '}
+        <Button
+          onClick={() => {
+            onClose();
+          }}>
+          Cancel
+        </Button>
+      </div>
+    </>
+  );
+}
+
 function CommentsPanelListComment({
   comment,
+  deleteComment,
+  reference,
   rtf,
 }: {
   comment: Comment,
+  deleteComment: (Comment, reference?: Reference) => void,
+  reference?: Reference,
   rtf: RtfObject,
 }): React$Node {
   const seconds = Math.round((comment.timeStamp - performance.now()) / 1000);
   const minutes = Math.round(seconds / 60);
+  const [modal, showModal] = useModal();
 
   return (
     <li className="CommentPlugin_CommentsPanel_List_Comment">
@@ -408,16 +447,33 @@ function CommentsPanelListComment({
         </span>
       </div>
       <p>{comment.content}</p>
+      <Button
+        onClick={() => {
+          showModal('Delete Comment', (onClose) => (
+            <ShowDeleteCommentDialog
+              comment={comment}
+              deleteComment={deleteComment}
+              reference={reference}
+              onClose={onClose}
+            />
+          ));
+        }}
+        className="CommentPlugin_CommentsPanel_List_DeleteButton">
+        <i className="delete" />
+      </Button>
+      {modal}
     </li>
   );
 }
 
 function CommentsPanelList({
   comments,
+  deleteComment,
   listRef,
   submitAddComment,
 }: {
   comments: Comments,
+  deleteComment: (Comment, reference?: Reference) => void,
   listRef: {current: null | HTMLElement},
   submitAddComment: (
     Comment | Reference,
@@ -464,6 +520,8 @@ function CommentsPanelList({
                   <CommentsPanelListComment
                     key={comment.id}
                     comment={comment}
+                    deleteComment={deleteComment}
+                    reference={commentOrReference}
                     rtf={rtf}
                   />
                 ))}
@@ -482,6 +540,7 @@ function CommentsPanelList({
           <CommentsPanelListComment
             key={commentOrReference.id}
             comment={commentOrReference}
+            deleteComment={deleteComment}
             rtf={rtf}
           />
         );
@@ -491,10 +550,12 @@ function CommentsPanelList({
 }
 
 function CommentsPanel({
+  deleteComment,
   comments,
   submitAddComment,
 }: {
   comments: Comments,
+  deleteComment: (Comment, reference?: Reference) => void,
   submitAddComment: (
     Comment | Reference,
     boolean,
@@ -531,6 +592,7 @@ function CommentsPanel({
       ) : (
         <CommentsPanelList
           comments={comments}
+          deleteComment={deleteComment}
           listRef={listRef}
           submitAddComment={submitAddComment}
         />
@@ -602,6 +664,36 @@ export default function CommentPlugin({
     });
     setShowCommentInput(false);
   }, [editor]);
+
+  const deleteComment = useCallback(
+    (comment: Comment, reference?: Reference) => {
+      setComments((_comments) => {
+        const nextComments = Array.from(_comments);
+
+        if (reference !== undefined) {
+          for (let i = 0; i < nextComments.length; i++) {
+            const nextComment = nextComments[i];
+            if (
+              nextComment.type === 'reference' &&
+              nextComment.id === reference.id
+            ) {
+              const newReference = cloneReference(nextComment);
+              nextComments.splice(i, 1, newReference);
+              const referenceComments = newReference.comments;
+              const index = referenceComments.indexOf(comment);
+              referenceComments.splice(index, 1);
+              break;
+            }
+          }
+        } else {
+          const index = nextComments.indexOf(comment);
+          nextComments.splice(index, 1);
+        }
+        return nextComments;
+      });
+    },
+    [],
+  );
 
   const submitAddComment = useCallback(
     (
@@ -713,6 +805,7 @@ export default function CommentPlugin({
           <CommentsPanel
             comments={comments}
             submitAddComment={submitAddComment}
+            deleteComment={deleteComment}
           />,
           document.body,
         )}

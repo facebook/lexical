@@ -41,6 +41,7 @@ import {
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   COPY_COMMAND,
@@ -68,7 +69,7 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {IS_IOS} from 'shared/environment';
+import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
@@ -291,7 +292,10 @@ function onPasteForRichText(
   editor.update(() => {
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
-    if (clipboardData != null && $isRangeSelection(selection)) {
+    if (
+      (clipboardData != null && $isRangeSelection(selection)) ||
+      $isGridSelection(selection)
+    ) {
       $insertDataTransferForRichText(clipboardData, selection, editor);
     }
   });
@@ -328,6 +332,33 @@ function onCutForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
   });
 }
 
+function handleIndentAndOutdent(
+  insertTab: (node: LexicalNode) => void,
+  indentOrOutdent: (block: ElementNode) => void,
+): void {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return;
+  }
+  const alreadyHandled = new Set();
+  const nodes = selection.getNodes();
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const key = node.getKey();
+    if (alreadyHandled.has(key)) {
+      continue;
+    }
+    alreadyHandled.add(key);
+    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    if (parentBlock.canInsertTab()) {
+      insertTab(node);
+    } else if (parentBlock.canIndent()) {
+      indentOrOutdent(parentBlock);
+    }
+  }
+}
+
 export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
@@ -347,12 +378,11 @@ export function registerRichText(
     ),
     editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
-      (payload) => {
+      (isBackward: boolean) => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isBackward: boolean = payload;
         selection.deleteCharacter(isBackward);
         return true;
       },
@@ -388,17 +418,23 @@ export function registerRichText(
       INSERT_TEXT_COMMAND,
       (payload) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
+
         const eventOrText: InputEvent | string = payload;
         if (typeof eventOrText === 'string') {
-          selection.insertText(eventOrText);
+          if ($isRangeSelection(selection)) {
+            selection.insertText(eventOrText);
+          } else if ($isGridSelection(selection)) {
+            // TODO: Insert into the first cell & clear selection.
+          }
         } else {
+          if (!$isRangeSelection(selection) && !$isGridSelection(selection)) {
+            return false;
+          }
+
           const dataTransfer = eventOrText.dataTransfer;
           if (dataTransfer != null) {
             $insertDataTransferForRichText(dataTransfer, selection, editor);
-          } else {
+          } else if ($isRangeSelection(selection)) {
             const data = eventOrText.data;
             if (data) {
               selection.insertText(data);
@@ -479,22 +515,17 @@ export function registerRichText(
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        // Handle code blocks
-        const anchor = selection.anchor;
-        const parentBlock = $getNearestBlockElementAncestorOrThrow(
-          anchor.getNode(),
+        handleIndentAndOutdent(
+          () => {
+            editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
+          },
+          (block) => {
+            const indent = block.getIndent();
+            if (indent !== 10) {
+              block.setIndent(indent + 1);
+            }
+          },
         );
-        if (parentBlock.canInsertTab()) {
-          editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
-        } else {
-          if (parentBlock.getIndent() !== 10) {
-            parentBlock.setIndent(parentBlock.getIndent() + 1);
-          }
-        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -502,27 +533,23 @@ export function registerRichText(
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       (payload) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        // Handle code blocks
-        const anchor = selection.anchor;
-        const anchorNode = anchor.getNode();
-        const parentBlock = $getNearestBlockElementAncestorOrThrow(
-          anchor.getNode(),
+        handleIndentAndOutdent(
+          (node) => {
+            if ($isTextNode(node)) {
+              const textContent = node.getTextContent();
+              const character = textContent[textContent.length - 1];
+              if (character === '\t') {
+                editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
+              }
+            }
+          },
+          (block) => {
+            const indent = block.getIndent();
+            if (indent !== 0) {
+              block.setIndent(indent - 1);
+            }
+          },
         );
-        if (parentBlock.canInsertTab()) {
-          const textContent = anchorNode.getTextContent();
-          const character = textContent[anchor.offset - 1];
-          if (character === '\t') {
-            editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
-          }
-        } else {
-          if (parentBlock.getIndent() !== 0) {
-            parentBlock.setIndent(parentBlock.getIndent() - 1);
-          }
-        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -610,7 +637,10 @@ export function registerRichText(
           // the default behavior. This ensures that the iOS can
           // intercept that we're actually inserting a paragraph,
           // and autocomplete, autocapitialize etc work as intended.
-          if (IS_IOS) {
+          // This can also cause a strange performance issue in
+          // Safari, where there is a noticeable pause due to
+          // preventing the key down of enter.
+          if ((IS_IOS || IS_SAFARI) && CAN_USE_BEFORE_INPUT) {
             return false;
           }
           event.preventDefault();

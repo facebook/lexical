@@ -131,7 +131,7 @@ function $wrapOverflowedNodes(offset: number): void {
     const {node} = dfsNodes[i];
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
-      const nextLength = accumulatedLength + node.getTextContent().length;
+      const nextLength = accumulatedLength + node.getTextContentSize();
       if (nextLength <= offset) {
         const parent = node.getParent();
         const previousSibling = node.getPreviousSibling();
@@ -155,7 +155,7 @@ function $wrapOverflowedNodes(offset: number): void {
       } else if (previousLength < offset) {
         const descendant = node.getFirstDescendant();
         const descendantLength =
-          descendant !== null ? descendant.getTextContent().length : 0;
+          descendant !== null ? descendant.getTextContentSize() : 0;
         const previousPlusDescendantLength = previousLength + descendantLength;
         // For simple text we can redimension the overflow into a smaller and more accurate
         // container
@@ -169,7 +169,7 @@ function $wrapOverflowedNodes(offset: number): void {
       }
     } else if ($isLeafNode(node)) {
       const previousAccumulatedLength = accumulatedLength;
-      accumulatedLength += node.getTextContent().length;
+      accumulatedLength += node.getTextContentSize();
       if (accumulatedLength > offset && !$isOverflowNode(node.getParent())) {
         const previousSelection = $getSelection();
         let overflowNode;

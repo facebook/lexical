@@ -1207,8 +1207,7 @@ button.action-button:disabled {
 }
 
 .toolbar select.code-language {
-  text-transform: capitalize;
-  width: 130px;
+  width: 150px;
 }
 
 .toolbar .toolbar-item .text {
@@ -1258,18 +1257,25 @@ button.action-button:disabled {
   margin: 0 4px;
 }
 
+.sticky-note-container {
+  position: absolute;
+  z-index: 20;
+  width: 120px;
+  display: inline-block;
+}
+
 .sticky-note {
   line-height: 1;
   text-align: left;
   width: 120px;
   margin: 25px;
   padding: 20px 10px;
-  position: absolute;
+  position: relative;
   border: 1px solid #e8e8e8;
   font-family: 'Reenie Beanie';
   font-size: 24px;
   border-bottom-right-radius: 60px 5px;
-  display: inline-block;
+  display: block;
   cursor: move;
 }
 
@@ -1308,7 +1314,7 @@ button.action-button:disabled {
   );
 }
 
-.sticky-note.dragging {
+.sticky-note-container.dragging {
   transition: none !important;
 }
 
@@ -1508,4 +1514,34 @@ button.action-button:disabled {
 .embed-block.focused {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
+}
+
+.github-corner:hover .octo-arm {
+  animation: octocat-wave 560ms ease-in-out;
+}
+@keyframes octocat-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  60% {
+    transform: rotate(-25deg);
+  }
+  40%,
+  80% {
+    transform: rotate(10deg);
+  }
+}
+@media (max-width: 500px) {
+  .github-corner:hover .octo-arm {
+    animation: none;
+  }
+  .github-corner .octo-arm {
+    animation: octocat-wave 560ms ease-in-out;
+  }
+}
+
+.spacer {
+  letter-spacing: -2px;
 }

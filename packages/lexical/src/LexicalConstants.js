@@ -46,6 +46,7 @@ export const IS_ALIGN_JUSTIFY = 4;
 
 // Reconciliation
 export const ZERO_WIDTH_CHAR = '\u200b';
+export const DOUBLE_LINE_BREAK = '\n\n';
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =

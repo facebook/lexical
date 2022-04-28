@@ -175,6 +175,7 @@ export default function Editor(): React$Node {
         <HashtagsPlugin />
         <KeywordsPlugin />
         <SpeechToTextPlugin />
+        <AutoLinkPlugin />
         <AutoScrollPlugin scrollRef={scrollRef} />
         {!isCollab && <CommentPlugin />}
         {isRichText ? (
@@ -209,7 +210,6 @@ export default function Editor(): React$Node {
             <YouTubePlugin />
             <ClickableLinkPlugin />
             <HorizontalRulePlugin />
-            <AutoLinkPlugin />
             <CharacterStylesPopupPlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />

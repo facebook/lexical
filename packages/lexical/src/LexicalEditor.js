@@ -497,7 +497,7 @@ export class LexicalEditor {
     }
     return true;
   }
-  dispatchCommand<P>(type: LexicalCommand<P>, payload?: P): boolean {
+  dispatchCommand<P>(type: LexicalCommand<P>, payload: P): boolean {
     return dispatchCommand(this, type, payload);
   }
   getDecorators(): {[NodeKey]: mixed} {

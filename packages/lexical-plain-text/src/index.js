@@ -323,7 +323,7 @@ export function registerPlainText(
           }
           event.preventDefault();
         }
-        return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+        return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false);
       },
       COMMAND_PRIORITY_EDITOR,
     ),

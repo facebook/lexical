@@ -595,7 +595,6 @@ declare export class TextNode extends LexicalNode {
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
   getFormat(): number;
-  deleteMark(id: string): void;
   getStyle(): string;
   isToken(): boolean;
   isSegmented(): boolean;

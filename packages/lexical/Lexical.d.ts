@@ -771,7 +771,9 @@ export function $getNearestNodeFromDOMNode(
 ): LexicalNode | null;
 export function $getNodeByKey<N extends LexicalNode>(key: NodeKey): N | null;
 export function $getRoot(): RootNode;
-export function $isLeafNode(node: LexicalNode | null | undefined): boolean;
+export function $isLeafNode(
+  node: LexicalNode | null | undefined,
+): node is TextNode | LineBreakNode | DecoratorNode<unknown>;
 export function $setCompositionKey(compositionKey: null | NodeKey): void;
 export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,

@@ -105,6 +105,9 @@ function FloatingCharacterStylesEditor({
   }, [editor]);
 
   useEffect(() => {
+    editor.getEditorState().read(() => {
+      updateCharacterStylesEditor();
+    });
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
@@ -204,7 +207,6 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
     return editor.registerUpdateListener(({editorState}) => {
       editorState.read(() => {
         const selection = $getSelection();
-
         if (!$isRangeSelection(selection)) {
           return;
         }

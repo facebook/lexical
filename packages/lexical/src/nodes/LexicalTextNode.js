@@ -328,6 +328,10 @@ export class TextNode extends LexicalNode {
     return self.__mode === IS_TOKEN;
   }
 
+  isComposing(): boolean {
+    return this.__key === $getCompositionKey();
+  }
+
   isSegmented(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_SEGMENTED;

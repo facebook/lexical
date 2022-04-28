@@ -1001,7 +1001,7 @@ export function isFirefoxClipboardEvents(): boolean {
 export function dispatchCommand<P>(
   editor: LexicalEditor,
   type: LexicalCommand<P>,
-  payload?: P,
+  payload: P,
 ): boolean {
   return triggerCommandListeners(editor, type, payload);
 }

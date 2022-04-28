@@ -53,8 +53,6 @@ export function convertStringToLexical(
   for (let i = 0; i < splitLinesCount; i++) {
     if (splitLines[i].length > 0) {
       nodes.push($createParagraphNode().append($createTextNode(splitLines[i])));
-    } else {
-      nodes.push($createParagraphNode());
     }
   }
   if (nodes.length) {

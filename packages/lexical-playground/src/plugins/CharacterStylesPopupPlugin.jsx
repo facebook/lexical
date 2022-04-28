@@ -207,6 +207,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
     return editor.registerUpdateListener(({editorState}) => {
       editorState.read(() => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return;
         }

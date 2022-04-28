@@ -63,7 +63,7 @@ export declare function createCommand<T>(): LexicalCommand<T>;
  */
 type ErrorHandler = (error: Error) => void;
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
-export type NodeMutation = 'created' | 'destroyed';
+export type NodeMutation = 'created' | 'updated' | 'destroyed';
 type UpdateListener = (arg0: {
   tags: Set<string>;
   prevEditorState: EditorState;

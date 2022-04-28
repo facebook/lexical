@@ -558,6 +558,14 @@ export function html(partials, ...params) {
   return output;
 }
 
+export async function selectFromAdditionalStylesDropdown(page, selector) {
+  await click(
+    page,
+    '.toolbar-item[aria-label="Formatting options for additional text styles"]',
+  );
+  await click(page, '.dropdown ' + selector);
+}
+
 export async function selectFromFormatDropdown(page, selector) {
   await click(
     page,

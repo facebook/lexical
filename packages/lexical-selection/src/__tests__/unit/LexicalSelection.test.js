@@ -1732,5 +1732,36 @@ describe('LexicalSelection tests', () => {
         '<p dir="ltr"><span data-lexical-text="true">Hello </span><strong data-lexical-text="true">awesome </strong></p><p dir="ltr"><span data-lexical-text="true">beautiful</span><strong data-lexical-text="true"> world</strong></p>',
       );
     });
+
+    it('adjust offset for inline elements text formatting', async () => {
+      init();
+      await editor.update(() => {
+        const root = $getRoot();
+        const text1 = $createTextNode('--');
+        const text2 = $createTextNode('abc');
+        const text3 = $createTextNode('--');
+        root.append(
+          $createParagraphNode().append(
+            text1,
+            $createLinkNode('http://lexical.dev').append(text2),
+            text3,
+          ),
+        );
+
+        setAnchorPoint({
+          key: text1.getKey(),
+          offset: 2,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text3.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+        const selection = $getSelection();
+        selection.formatText('bold');
+        expect(text2.hasFormat('bold')).toBe(true);
+      });
+    });
   });
 });

@@ -31,26 +31,35 @@ import {
 import invariant from 'shared/invariant';
 
 import {$createListNode, $isListNode} from './';
-import {$handleIndent, $handleOutdent} from './formatList';
+import {
+  $handleIndent,
+  $handleOutdent,
+  updateChildrenListItemValue,
+} from './formatList';
 
 export class ListItemNode extends ElementNode {
+  __value: number;
+
   static getType(): string {
     return 'listitem';
   }
 
   static clone(node: ListItemNode): ListItemNode {
-    return new ListItemNode(node.__key);
+    return new ListItemNode(node.__value, node.__key);
   }
 
-  constructor(key?: NodeKey): void {
+  constructor(value?: number, key?: NodeKey): void {
     super(key);
+    this.__value = value === undefined ? 1 : value;
   }
-
-  // View
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
-    element.value = getListItemValue(this);
+    const parent = this.getParent();
+    if ($isListNode(parent)) {
+      updateChildrenListItemValue(parent);
+    }
+    element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
@@ -60,8 +69,12 @@ export class ListItemNode extends ElementNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean {
-    //$FlowFixMe - this is always HTMLListItemElement
-    dom.value = getListItemValue(this);
+    const parent = this.getParent();
+    if ($isListNode(parent)) {
+      updateChildrenListItemValue(parent);
+    }
+    // $FlowFixMe - this is always HTMLListItemElement
+    dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
     return false;
   }
@@ -74,8 +87,6 @@ export class ListItemNode extends ElementNode {
       }),
     };
   }
-
-  // Mutation
 
   append(...nodes: LexicalNode[]): ListItemNode {
     for (let i = 0; i < nodes.length; i++) {
@@ -124,19 +135,22 @@ export class ListItemNode extends ElementNode {
   }
 
   insertAfter(node: LexicalNode): LexicalNode {
-    const siblings = this.getNextSiblings();
-    if ($isListItemNode(node)) {
-      // mark subsequent list items dirty so we update their value attribute.
-      siblings.forEach((sibling) => sibling.markDirty());
-      return super.insertAfter(node);
-    }
-
     const listNode = this.getParentOrThrow();
     if (!$isListNode(listNode)) {
       invariant(
         false,
         'insertAfter: list node is not parent of list item node',
       );
+    }
+
+    const siblings = this.getNextSiblings();
+    if ($isListItemNode(node)) {
+      const after = super.insertAfter(node);
+      const afterListNode = node.getParentOrThrow();
+      if ($isListNode(afterListNode)) {
+        updateChildrenListItemValue(afterListNode);
+      }
+      return after;
     }
 
     // Attempt to merge if the list is of the same type.
@@ -159,6 +173,17 @@ export class ListItemNode extends ElementNode {
       node.insertAfter(newListNode);
     }
     return node;
+  }
+
+  remove(preserveEmptyParent?: boolean): void {
+    const nextSibling = this.getNextSibling();
+    super.remove(preserveEmptyParent);
+    if (nextSibling !== null) {
+      const parent = nextSibling.getParent();
+      if ($isListNode(parent)) {
+        updateChildrenListItemValue(parent);
+      }
+    }
   }
 
   insertNewAfter(): ListItemNode | ParagraphNode {
@@ -202,6 +227,16 @@ export class ListItemNode extends ElementNode {
     return true;
   }
 
+  getValue(): number {
+    const self = this.getLatest();
+    return self.__value;
+  }
+
+  setValue(value: number): void {
+    const self = this.getWritable();
+    self.__value = value;
+  }
+
   getIndent(): number {
     // ListItemNode should always have a ListNode for a parent.
     let listNodeParent = this.getParentOrThrow().getParentOrThrow();
@@ -227,11 +262,18 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
+  canIndent(): false {
+    // Indent/outdent is handled specifically in the RichText logic.
+    return false;
+  }
+
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    const siblings = this.getNextSiblings();
     if ($isListItemNode(nodeToInsert)) {
-      // mark subsequent list items dirty so we update their value attribute.
-      siblings.forEach((sibling) => sibling.markDirty());
+      const parent = this.getParentOrThrow();
+      if ($isListNode(parent)) {
+        // mark subsequent list items dirty so we update their value attribute.
+        updateChildrenListItemValue(parent);
+      }
     }
     return super.insertBefore(nodeToInsert);
   }
@@ -247,31 +289,6 @@ export class ListItemNode extends ElementNode {
   canMergeWith(node: LexicalNode): boolean {
     return $isParagraphNode(node) || $isListItemNode(node);
   }
-}
-
-function getListItemValue(listItem: ListItemNode): number {
-  const list = listItem.getParent();
-
-  let value = 1;
-  if (list != null) {
-    if (!$isListNode(list)) {
-      invariant(
-        false,
-        'getListItemValue: list node is not parent of list item node',
-      );
-    } else {
-      value = list.getStart();
-    }
-  }
-
-  const siblings = listItem.getPreviousSiblings();
-  for (let i = 0; i < siblings.length; i++) {
-    const sibling = siblings[i];
-    if ($isListItemNode(sibling) && !$isListNode(sibling.getFirstChild())) {
-      value++;
-    }
-  }
-  return value;
 }
 
 function $setListItemThemeClassNames(

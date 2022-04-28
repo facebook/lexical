@@ -41,6 +41,7 @@ declare export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
 declare export var DROP_COMMAND: LexicalCommand<DragEvent>;
 declare export var FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType>;
 declare export var DRAGSTART_COMMAND: LexicalCommand<DragEvent>;
+declare export var DRAGEND_COMMAND: LexicalCommand<DragEvent>;
 declare export var COPY_COMMAND: LexicalCommand<ClipboardEvent>;
 declare export var CUT_COMMAND: LexicalCommand<ClipboardEvent>;
 declare export var CLEAR_EDITOR_COMMAND: LexicalCommand<void>;
@@ -724,6 +725,7 @@ declare export class ElementNode extends LexicalNode {
   setIndent(indentLevel: number): this;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   canInsertTab(): boolean;
+  canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(): boolean;
   canExtractContents(): boolean;

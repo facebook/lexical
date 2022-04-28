@@ -1001,10 +1001,6 @@ test.describe('Nested List', () => {
     page,
     isCollab,
   }) => {
-    test.fixme(
-      isCollab,
-      'List item values are not properly updated in the right hand frame when merging lists',
-    );
     await focusEditor(page);
 
     // - Hello

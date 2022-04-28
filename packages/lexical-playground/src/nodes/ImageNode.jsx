@@ -193,44 +193,32 @@ function ImageComponent({
     setSelected,
   ]);
 
-  const setShowCaption = useCallback(() => {
+  const setShowCaption = () => {
     editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isImageNode(node)) {
         node.setShowCaption(true);
       }
     });
-  }, [editor, nodeKey]);
+  };
 
-  const onResizeEnd = useCallback(
-    (nextWidth, nextHeight) => {
-      const rootElement = editor.getRootElement();
-      if (rootElement !== null) {
-        rootElement.style.setProperty('cursor', 'default');
+  const onResizeEnd = (nextWidth, nextHeight) => {
+    // Delay hiding the resize bars for click case
+    setTimeout(() => {
+      setIsResizing(false);
+    }, 200);
+
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isImageNode(node)) {
+        node.setWidthAndHeight(nextWidth, nextHeight);
       }
+    });
+  };
 
-      // Delay hiding the resize bars for click case
-      setTimeout(() => {
-        setIsResizing(false);
-      }, 200);
-
-      editor.update(() => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isImageNode(node)) {
-          node.setWidthAndHeight(nextWidth, nextHeight);
-        }
-      });
-    },
-    [editor, nodeKey],
-  );
-
-  const onResizeStart = useCallback(() => {
-    const rootElement = editor.getRootElement();
-    if (rootElement !== null) {
-      rootElement.style.setProperty('cursor', 'nwse-resize', 'important');
-    }
+  const onResizeStart = () => {
     setIsResizing(true);
-  }, [editor]);
+  };
 
   const {historyState} = useSharedHistoryContext();
   const {
@@ -292,6 +280,7 @@ function ImageComponent({
               setShowCaption={setShowCaption}
               editor={editor}
               imageRef={ref}
+              maxWidth={maxWidth}
               onResizeStart={onResizeStart}
               onResizeEnd={onResizeEnd}
             />

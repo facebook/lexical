@@ -1,7 +1,7 @@
 {
   "name": "lexical-monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -13,13 +13,13 @@
   },
   "engineStrict": true,
   "scripts": {
-    "start": "NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
+    "start": "cross-env NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
     "start:website": "npm run start --prefix packages/lexical-website-new -- --port 3001",
     "dev": "npm run dev --prefix packages/lexical-playground",
-    "build": "npm run clean && node scripts/build.js",
-    "build-prod": "npm run build -- --prod",
+    "build": "node scripts/build.js",
+    "build-prod": "npm run clean && npm run build -- --prod",
     "build-release": "npm run build-prod -- --release",
-    "build-www": "npm run build -- --www && npm run build -- --www --prod && npm run prepare-www",
+    "build-www": "npm run clean && npm run build -- --www && npm run build -- --www --prod && npm run prepare-www",
     "build-flow": "./scripts/build-flow.sh",
     "clean": "node scripts/clean.js",
     "extract-codes": "node scripts/build.js --codes",

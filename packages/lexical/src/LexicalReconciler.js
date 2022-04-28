@@ -23,6 +23,7 @@ import type {
 } from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -36,6 +37,7 @@ import {
 } from '.';
 import {
   DOM_TEXT_TYPE,
+  DOUBLE_LINE_BREAK,
   FULL_RECONCILE,
   IS_ALIGN_CENTER,
   IS_ALIGN_JUSTIFY,
@@ -43,8 +45,12 @@ import {
   IS_ALIGN_RIGHT,
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
-import {markSelectionChangeFromReconcile} from './LexicalEvents';
 import {
+  markCollapsedSelectionFormat,
+  markSelectionChangeFromReconcile,
+} from './LexicalEvents';
+import {
+  $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getDOMTextNode,
   getTextDirection,
@@ -118,7 +124,7 @@ function setTextAlign(domStyle: CSSStyleDeclaration, value: string): void {
 function setElementIndent(dom: HTMLElement, indent: number): void {
   dom.style.setProperty(
     'padding-inline-start',
-    indent === 0 ? '' : indent * 40 + 'px',
+    indent === 0 ? '' : indent * 20 + 'px',
   );
 }
 
@@ -174,6 +180,10 @@ function createNode(
       setElementFormat(dom, format);
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
+    if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
+    }
   } else {
     const text = node.getTextContent();
     if ($isDecoratorNode(node)) {
@@ -374,12 +384,13 @@ function reconcileChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  reconcileChildren(prevChildren, nextChildren, dom);
+  reconcileChildren(element, prevChildren, nextChildren, dom);
   reconcileBlockDirection(element, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
 }
 
 function reconcileChildren(
+  element: ElementNode,
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
@@ -425,8 +436,12 @@ function reconcileChildren(
       nextChildren,
       prevChildrenLength,
       nextChildrenLength,
+      element,
       dom,
     );
+  }
+  if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
+    subTreeTextContent += DOUBLE_LINE_BREAK;
   }
   // $FlowFixMe: internal field
   dom.__lexicalTextContent = subTreeTextContent;
@@ -515,6 +530,10 @@ function reconcileNode(
         reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
     }
+    if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
+    }
   } else {
     const text = nextNode.getTextContent();
     if ($isDecoratorNode(nextNode)) {
@@ -522,6 +541,8 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
+      subTreeTextContent += text;
+      editorTextContent += text;
     } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
       subTreeDirectionedTextContent += text;
@@ -573,6 +594,7 @@ function reconcileNodeChildren(
   nextChildren: Array<NodeKey>,
   prevChildrenLength: number,
   nextChildrenLength: number,
+  element: ElementNode,
   dom: HTMLElement,
 ): void {
   const prevEndIndex = prevChildrenLength - 1;
@@ -826,22 +848,18 @@ function reconcileSelection(
   const focusDOM = getElementByKeyOrThrow(editor, focusKey);
   const nextAnchorOffset = anchor.offset;
   const nextFocusOffset = focus.offset;
+  const nextFormat = nextSelection.format;
+  const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
-  // TODO get skipNativeSelectionDiff working with collab
-  // const skipNativeSelectionDiff = false;
+  let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
-  } else {
-    // TODO get skipNativeSelectionDiff working with collab
-    // skipNativeSelectionDiff = true;
+    anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
   }
   if (focus.type === 'text') {
     nextFocusNode = getDOMTextNode(focusDOM);
-  } else {
-    // TODO get skipNativeSelectionDiff working with collab
-    // skipNativeSelectionDiff = true;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
@@ -849,19 +867,31 @@ function reconcileSelection(
     return;
   }
 
+  if (
+    isCollapsed &&
+    (prevSelection === null ||
+      anchorFormatChanged ||
+      prevSelection.format !== nextFormat)
+  ) {
+    markCollapsedSelectionFormat(
+      nextFormat,
+      nextAnchorOffset,
+      anchorKey,
+      performance.now(),
+    );
+  }
+
   // Diff against the native DOM selection to ensure we don't do
   // an unnecessary selection update. We also skip this check if
   // we're moving selection to within an element, as this can
   // sometimes be problematic around scrolling.
   if (
-    // TODO get skipNativeSelectionDiff working with collab
-    // !skipNativeSelectionDiff &&
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
     anchorDOMNode === nextAnchorNode &&
     focusDOMNode === nextFocusNode &&
     // Badly interpreted range selection when collapsed - #1482
-    !(domSelection.type === 'Range' && nextSelection.isCollapsed())
+    !(domSelection.type === 'Range' && isCollapsed)
   ) {
     // If the root element does not have focus, ensure it has focus
     if (
@@ -870,7 +900,12 @@ function reconcileSelection(
     ) {
       rootElement.focus({preventScroll: true});
     }
-    return;
+    // In Safari/iOS if we have selection on an element, then we also
+    // need to additionally set the DOM selection, otherwise a selectionchange
+    // event will not fire.
+    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
+      return;
+    }
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

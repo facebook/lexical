@@ -36,7 +36,7 @@ function setPopupPosition(editor, rect) {
     editor.style.opacity = '1';
     editor.style.top = `${rect.top - 8 + window.pageYOffset}px`;
     editor.style.left = `${
-      rect.left + 230 + window.pageXOffset - editor.offsetWidth + rect.width / 2
+      rect.left + 230 + window.pageXOffset - editor.offsetWidth + rect.width
     }px`;
   }
 }
@@ -105,6 +105,9 @@ function FloatingCharacterStylesEditor({
   }, [editor]);
 
   useEffect(() => {
+    editor.getEditorState().read(() => {
+      updateCharacterStylesEditor();
+    });
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {

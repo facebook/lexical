@@ -24,6 +24,8 @@ import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isGridSelection,
+  COMMAND_PRIORITY_HIGH,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -55,16 +57,20 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): React$Node {
     useState<MouseDraggingDirection | null>(null);
 
   useEffect(() => {
-    return editor.registerUpdateListener(({editorState}) => {
-      editorState.read(() => {
+    return editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      (payload) => {
         const selection = $getSelection();
         const isGridSelection = $isGridSelection(selection);
 
         if (isSelectingGrid !== isGridSelection) {
           updateIsSelectingGrid(isGridSelection);
         }
-      });
-    });
+
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH,
+    );
   });
 
   const resetState = useCallback(() => {

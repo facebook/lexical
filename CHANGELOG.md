@@ -1,4 +1,20 @@
+## 0.2.5 (April 28, 2022)
+
+- Add TextMarks to TextNode (#1912)
+- Fix various collab bugs with lists (#1984)
+- Fix cached getTextContent() to reflect new lines (#1993)
+- Fix equation node handling on Android (#1968) 
+- Fix formatting on embeds (#1963)
+- Improve multi element indentation - added ElementNode.canIndent (#1982)
+- Fix bugs around pressing the enter key in Safari (#1943)
+- Fix delete empty lines on tables (#1905)
+- Fix copy-paste format loss (#1913)
+- Fix memory leak with EditorContext (#1767) 
+- Fix various selection issues on node boundaries (#1917)
+- Fix some .js.flow and d.ts types
+
 ## 0.2.4 (April 21, 2022)
+
 - Add subscript/superscript elements to TextNode (#1903)
 - Do not reconcile selection during readOnly (#1900)
 - Add embed block to playground (#1895)

@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {EditorState, LexicalEditor, NodeKey} from 'lexical';
+import type {
+  EditorState,
+  LexicalEditor,
+  NodeKey,
+  RangeSelection,
+} from 'lexical';
 
 import './CommentPlugin.css';
 
@@ -640,6 +645,36 @@ function cloneReference(reference: Reference): Reference {
   };
 }
 
+function $wrapSelectionInCommentNode(
+  selection: RangeSelection,
+  isBackward: boolean,
+  id: string,
+): void {
+  const nodes = selection.getNodes();
+  const anchorOffset = selection.anchor.offset;
+  const focusOffset = selection.focus.offset;
+  const nodesLength = nodes.length;
+  let startOffset = isBackward ? focusOffset : anchorOffset;
+  let endOffset = isBackward ? anchorOffset : focusOffset;
+  // let lastNodeParent = null;
+  // let existinngLinkNode = null;
+
+  // We only want wrap adjacent text nodes, line break nodes
+  // and inline element nodes. For decorator nodes and block
+  // element nodes, we stop out their boundary and start again
+  // after, if there are more nodes.
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    const isFirstNode = i === 0;
+    const isLastNode = i === nodesLength - 1;
+
+    if ($isTextNode(node)) {
+      startOffset = isFirstNode ? startOffset : 0;
+      endOffset = isLastNode ? endOffset : node.getTextContentSize();
+    }
+  }
+}
+
 export default function CommentPlugin({
   initialComments,
 }: {
@@ -698,7 +733,7 @@ export default function CommentPlugin({
   const submitAddComment = useCallback(
     (
       commentOrReference: Comment | Reference,
-      hideCommentInput: boolean,
+      isInlineComment: boolean,
       reference?: Reference,
     ) => {
       setComments((_comments) => {
@@ -718,15 +753,20 @@ export default function CommentPlugin({
         }
         return nextComments;
       });
-      if (hideCommentInput) {
+      if (isInlineComment) {
         editor.update(() => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const focus = selection.focus;
             const anchor = selection.anchor;
+            const isBackward = selection.isBackward();
+            const id = commentOrReference.id;
+
+            // Wrap content in a CommentNode
+            $wrapSelectionInCommentNode(selection, isBackward, id);
 
             // Make selection collapsed at the end
-            if (selection.isBackward()) {
+            if (isBackward) {
               focus.set(anchor.key, anchor.offset, anchor.type);
             } else {
               anchor.set(focus.key, focus.offset, focus.type);

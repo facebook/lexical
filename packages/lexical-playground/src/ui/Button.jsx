@@ -37,7 +37,7 @@ export default function Button({
         'Button__root',
         disabled && 'Button__disabled',
         small && 'Button__small',
-        className
+        className,
       )}
       onClick={onClick}
       title={title}

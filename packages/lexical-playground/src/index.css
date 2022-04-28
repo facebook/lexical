@@ -129,7 +129,6 @@ pre::-webkit-scrollbar-thumb {
   background-color: #444;
 }
 
-
 .editor-dev-button::after {
   content: '';
   position: absolute;

@@ -72,7 +72,7 @@ export default function PlaygroundApp(): React$Node {
             left: '0',
             position: 'absolute',
             top: '0',
-            transform: 'scale(-1,1)'
+            transform: 'scale(-1,1)',
           }}
           aria-hidden="true">
           <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z" />

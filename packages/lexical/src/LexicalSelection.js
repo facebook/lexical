@@ -800,12 +800,25 @@ export class RangeSelection implements BaseSelection {
         ...firstNode.getParentKeys(),
         ...lastNode.getParentKeys(),
       ]);
+      // We have to get the parent elements before the next section,
+      // as in that section we might mutate the lastNode.
       const firstElement = $isElementNode(firstNode)
         ? firstNode
         : firstNode.getParentOrThrow();
-      const lastElement = $isElementNode(lastNode)
+      let lastElement = $isElementNode(lastNode)
         ? lastNode
         : lastNode.getParentOrThrow();
+      let lastElementWasInline = false;
+
+      // If the last element is inline, we should instead look at getting
+      // the nodes of its parent, rather than itself. This behavior will
+      // then better match how text node insertions work.
+      // TODO: should we keep on traversing parents if we're inside another
+      // nested inline element?
+      if (!firstElement.is(lastElement) && lastElement.isInline()) {
+        lastElementWasInline = true;
+        lastElement = lastElement.getParentOrThrow();
+      }
 
       // Handle mutations to the last node.
       if (
@@ -848,55 +861,66 @@ export class RangeSelection implements BaseSelection {
       const selectedNodesSet = new Set(selectedNodes);
       const firstAndLastElementsAreEqual = firstElement.is(lastElement);
 
-      // If the last element is an "inline" element, don't move it's text nodes to the first node.
-      // Instead, preserve the "inline" element's children and append to the first element.
-      if (!lastElement.canBeEmpty() && firstElement !== lastElement) {
-        firstElement.append(lastElement);
-      } else {
-        for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
-          const lastNodeChild = lastNodeChildren[i];
+      // We choose a target to insert all nodes after. In the case of having
+      // and inline starting parent element with a starting node that has no
+      // siblings, we should insert after the starting parent element, otherwise
+      // we will incorrectly merge into the starting parent element.
+      // TODO: should we keep on traversing parents if we're inside another
+      // nested inline element?
+      const insertionTarget =
+        firstElement.isInline() && firstNode.getNextSibling() === null
+          ? firstElement
+          : firstNode;
 
-          if (
-            lastNodeChild.is(firstNode) ||
-            ($isElementNode(lastNodeChild) &&
-              lastNodeChild.isParentOf(firstNode))
-          ) {
-            break;
-          }
+      for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
+        const lastNodeChild = lastNodeChildren[i];
 
-          if (lastNodeChild.isAttached()) {
-            if (
-              !selectedNodesSet.has(lastNodeChild) ||
-              lastNodeChild.is(lastNode)
-            ) {
-              if (!firstAndLastElementsAreEqual) {
-                firstNode.insertAfter(lastNodeChild);
-              }
-            } else {
-              lastNodeChild.remove();
-            }
-          }
+        if (
+          lastNodeChild.is(firstNode) ||
+          ($isElementNode(lastNodeChild) && lastNodeChild.isParentOf(firstNode))
+        ) {
+          break;
         }
 
-        if (!firstAndLastElementsAreEqual) {
-          // Check if we have already moved out all the nodes of the
-          // last parent, and if so, traverse the parent tree and mark
-          // them all as being able to deleted too.
-          let parent = lastElement;
-          let lastRemovedParent = null;
-
-          while (parent !== null) {
-            const children = parent.getChildren();
-            const childrenLength = children.length;
-            if (
-              childrenLength === 0 ||
-              children[childrenLength - 1].is(lastRemovedParent)
-            ) {
-              markedNodeKeysForKeep.delete(parent.__key);
-              lastRemovedParent = parent;
+        if (lastNodeChild.isAttached()) {
+          if (
+            !selectedNodesSet.has(lastNodeChild) ||
+            lastNodeChild.is(lastNode) ||
+            // If the last node parent element was an inline element, then we're
+            // using the last node's grand parent. This means that the above
+            // heuristics for checking if the lastNodeChild.is(lastNode) can never
+            // happen. Instead, we should check the lastNode's parent, which will
+            // correctly correlate to the right node.
+            (lastElementWasInline &&
+              lastNodeChild.is(lastNode.getParentOrThrow()))
+          ) {
+            if (!firstAndLastElementsAreEqual) {
+              insertionTarget.insertAfter(lastNodeChild);
             }
-            parent = parent.getParent();
+          } else {
+            lastNodeChild.remove();
           }
+        }
+      }
+
+      if (!firstAndLastElementsAreEqual) {
+        // Check if we have already moved out all the nodes of the
+        // last parent, and if so, traverse the parent tree and mark
+        // them all as being able to deleted too.
+        let parent = lastElement;
+        let lastRemovedParent = null;
+
+        while (parent !== null) {
+          const children = parent.getChildren();
+          const childrenLength = children.length;
+          if (
+            childrenLength === 0 ||
+            children[childrenLength - 1].is(lastRemovedParent)
+          ) {
+            markedNodeKeysForKeep.delete(parent.__key);
+            lastRemovedParent = parent;
+          }
+          parent = parent.getParent();
         }
       }
 

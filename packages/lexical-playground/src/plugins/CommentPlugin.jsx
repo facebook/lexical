@@ -85,7 +85,7 @@ function AddCommentBox({
 }): React$Node {
   const boxRef = useRef(null);
 
-  useLayoutEffect(() => {
+  const updatePosition = useCallback(() => {
     const boxElem = boxRef.current;
     const rootElement = editor.getRootElement();
     const anchorElement = editor.getElementByKey(anchorKey);
@@ -97,6 +97,18 @@ function AddCommentBox({
       boxElem.style.top = `${top - 30}px`;
     }
   }, [anchorKey, editor]);
+
+  useEffect(() => {
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [editor, updatePosition]);
+
+  useLayoutEffect(() => {
+    updatePosition();
+  }, [anchorKey, editor, updatePosition]);
 
   return (
     <div className="CommentPlugin_AddCommentBox" ref={boxRef}>
@@ -526,19 +538,25 @@ function CommentsPanelList({
               (activeIDs === null || activeIDs.indexOf(id) === -1)
             ) {
               const activeElement = document.activeElement;
+              // Move selection to the start of the mark, so that we
+              // update the UI with the selected thread.
               editor.update(
                 () => {
                   const markNodeKey = Array.from(markNodeKeys)[0];
                   const markNode = $getNodeByKey(markNodeKey);
                   if ($isMarkNode(markNode)) {
-                    markNode.select(0, 0);
+                    markNode.selectStart();
                   }
                 },
                 {
                   onUpdate() {
-                    if (activeElement !== null) {
-                      activeElement.focus();
-                    }
+                    // Defer setting selection, as we need React to
+                    // first render.
+                    setTimeout(() => {
+                      if (activeElement !== null) {
+                        activeElement.focus();
+                      }
+                    });
                   },
                 },
               );
@@ -610,16 +628,19 @@ function CommentsPanel({
   useLayoutEffect(() => {
     const footerElem = footerRef.current;
     if (footerElem !== null) {
-      const resizeObserver = new ResizeObserver(() => {
+      const updateSize = () => {
         const listElem = listRef.current;
         if (listElem !== null) {
           const rect = footerElem.getBoundingClientRect();
           listElem.style.height = window.innerHeight - rect.height - 133 + 'px';
         }
-      });
-
+      };
+      const resizeObserver = new ResizeObserver(updateSize);
       resizeObserver.observe(footerElem);
+      window.addEventListener('resize', updateSize);
+
       return () => {
+        window.removeEventListener('resize', updateSize);
         resizeObserver.disconnect();
       };
     }
@@ -758,11 +779,19 @@ function $wrapSelectionInMarkNode(
   }
 }
 
-function $getCommentIDs(node: TextNode): null | Array<string> {
+function $getCommentIDs(node: TextNode, offset: number): null | Array<string> {
   let currentNode = node;
   while (currentNode !== null) {
     if ($isMarkNode(currentNode)) {
       return currentNode.getIDs();
+    } else if (
+      $isTextNode(currentNode) &&
+      offset === currentNode.getTextContentSize()
+    ) {
+      const nextSibling = currentNode.getNextSibling();
+      if ($isMarkNode(nextSibling)) {
+        return nextSibling.getIDs();
+      }
     }
     currentNode = currentNode.getParent();
   }
@@ -973,7 +1002,10 @@ export default function CommentPlugin({
             const anchorNode = selection.anchor.getNode();
 
             if ($isTextNode(anchorNode)) {
-              const commentIDs = $getCommentIDs(anchorNode);
+              const commentIDs = $getCommentIDs(
+                anchorNode,
+                selection.anchor.offset,
+              );
               if (commentIDs !== null) {
                 setActiveIDs(commentIDs);
                 hasActiveIds = true;

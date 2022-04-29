@@ -862,7 +862,7 @@ export class RangeSelection implements BaseSelection {
       const lastNodeChildren = lastElement.getChildren();
       const selectedNodesSet = new Set(selectedNodes);
       const firstAndLastElementsAreEqual = firstElement.is(lastElement);
-      
+
       // We choose a target to insert all nodes after. In the case of having
       // and inline starting parent element with a starting node that has no
       // siblings, we should insert after the starting parent element, otherwise

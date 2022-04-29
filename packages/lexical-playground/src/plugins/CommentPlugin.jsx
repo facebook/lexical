@@ -482,16 +482,15 @@ function CommentsPanelList({
   listRef,
   submitAddComment,
   markNodeMap,
-  setActiveIDs,
 }: {
   activeIDs: Array<string>,
   comments: Comments,
   deleteComment: (Comment, thread?: Thread) => void,
   listRef: {current: null | HTMLElement},
   markNodeMap: Map<string, Set<NodeKey>>,
-  setActiveIDs: (((Array<string>) => Array<string>) | Array<string>) => void,
   submitAddComment: (Comment | Thread, boolean, thread?: Thread) => void,
 }): React$Node {
+  const [editor] = useLexicalComposerContext();
   const [counter, setCounter] = useState(0);
   const rtf: RtfObject = useMemo(
     () =>
@@ -520,12 +519,29 @@ function CommentsPanelList({
       {comments.map((commentOrThread) => {
         const id = commentOrThread.id;
         if (commentOrThread.type === 'thread') {
-          const handleClickThread = () => {
+          const handleClickThread = (event) => {
+            const markNodeKeys = markNodeMap.get(id);
             if (
-              markNodeMap.has(id) &&
+              markNodeKeys !== undefined &&
               (activeIDs === null || activeIDs.indexOf(id) === -1)
             ) {
-              setActiveIDs((_activeIDs) => [..._activeIDs, id]);
+              const activeElement = document.activeElement;
+              editor.update(
+                () => {
+                  const markNodeKey = Array.from(markNodeKeys)[0];
+                  const markNode = $getNodeByKey(markNodeKey);
+                  if ($isMarkNode(markNode)) {
+                    markNode.select(0, 0);
+                  }
+                },
+                {
+                  onUpdate() {
+                    if (activeElement !== null) {
+                      activeElement.focus();
+                    }
+                  },
+                },
+              );
             }
           };
 
@@ -580,13 +596,11 @@ function CommentsPanel({
   comments,
   submitAddComment,
   markNodeMap,
-  setActiveIDs,
 }: {
   activeIDs: Array<string>,
   comments: Comments,
   deleteComment: (Comment, thread?: Thread) => void,
   markNodeMap: Map<string, Set<NodeKey>>,
-  setActiveIDs: (((Array<string>) => Array<string>) | Array<string>) => void,
   submitAddComment: (Comment | Thread, boolean, thread?: Thread) => void,
 }): React$Node {
   const footerRef = useRef(null);
@@ -624,7 +638,6 @@ function CommentsPanel({
           listRef={listRef}
           submitAddComment={submitAddComment}
           markNodeMap={markNodeMap}
-          setActiveIDs={setActiveIDs}
         />
       )}
       <CommentsPanelFooter
@@ -1028,7 +1041,6 @@ export default function CommentPlugin({
             deleteComment={deleteComment}
             activeIDs={activeIDs}
             markNodeMap={markNodeMap}
-            setActiveIDs={setActiveIDs}
           />,
           document.body,
         )}

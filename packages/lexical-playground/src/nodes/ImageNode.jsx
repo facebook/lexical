@@ -366,6 +366,14 @@ export class ImageNode extends DecoratorNode<React$Node> {
     return false;
   }
 
+  getSrc(): string {
+    return this.__src;
+  }
+
+  getAltText(): string {
+    return this.__altText;
+  }
+
   decorate(): React$Node {
     return (
       <ImageComponent

@@ -193,56 +193,83 @@ export const ORDERED_LIST: BlockTransformer = {
   type: 'block-match',
 };
 
-export const BLOCK_TRANSFORMERS: Array<BlockTransformer> = [
-  HEADING,
-  QUOTE,
-  CODE,
-  UNORDERED_LIST,
-  ORDERED_LIST,
-];
+export const INLINE_CODE: TextFormatTransformer = {
+  format: ['code'],
+  tag: '`',
+  type: 'format',
+};
+
+export const BOLD_ITALIC_STAR: TextFormatTransformer = {
+  format: ['bold', 'italic'],
+  tag: '***',
+  type: 'format',
+};
+
+export const BOLD_ITALIC_UNDERSCORE: TextFormatTransformer = {
+  format: ['bold', 'italic'],
+  tag: '___',
+  type: 'format',
+};
+
+export const BOLD_STAR: TextFormatTransformer = {
+  format: ['bold'],
+  tag: '**',
+  type: 'format',
+};
+
+export const BOLD_UNDERSCORE: TextFormatTransformer = {
+  format: ['bold'],
+  tag: '__',
+  type: 'format',
+};
+
+export const STRIKETHROUGH: TextFormatTransformer = {
+  format: ['strikethrough'],
+  tag: '~~',
+  type: 'format',
+};
+
+export const ITALIC_STAR: TextFormatTransformer = {
+  format: ['italic'],
+  tag: '*',
+  type: 'format',
+};
+
+export const ITALIC_UNDERSCORE: TextFormatTransformer = {
+  format: ['italic'],
+  tag: '_',
+  type: 'format',
+};
 
 // Order of text transformers matters:
 //
 // - code should go first as it prevents any transformations inside
 // - then longer tags match (e.g. ** or __ should go before * or _)
-export const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
-  {format: ['code'], tag: '`', type: 'format'},
-  {format: ['bold', 'italic'], tag: '***', type: 'format'},
-  {format: ['bold', 'italic'], tag: '___', type: 'format'},
-  {format: ['bold'], tag: '**', type: 'format'},
-  {format: ['bold'], tag: '__', type: 'format'},
-  {format: ['strikethrough'], tag: '~~', type: 'format'},
-  {format: ['italic'], tag: '*', type: 'format'},
-  {format: ['italic'], tag: '_', type: 'format'},
-];
-
-export const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [
-  {
-    export: (node, exportChildren, exportFormat) => {
-      if (!$isLinkNode(node)) {
-        return null;
-      }
-      const linkContent = `[${node.getTextContent()}](${node.getURL()})`;
-      const firstChild = node.getFirstChild();
-      // Add text styles only if link has single text node inside. If it's more
-      // then one we ignore it as markdown does not support nested styles for links
-      if (node.getChildrenSize() === 1 && $isTextNode(firstChild)) {
-        return exportFormat(firstChild, linkContent);
-      } else {
-        return linkContent;
-      }
-    },
-    importRegExp: /(?:\[([^[]+)\])(?:\(([^(]+)\))/,
-    regExp: /(?:\[([^[]+)\])(?:\(([^(]+)\))$/,
-    replace: (textNode, match) => {
-      const [, linkText, linkUrl] = match;
-      const linkNode = $createLinkNode(linkUrl);
-      const linkTextNode = $createTextNode(linkText);
-      linkTextNode.setFormat(textNode.getFormat());
-      linkNode.append(linkTextNode);
-      textNode.replace(linkNode);
-    },
-    trigger: ')',
-    type: 'text-match',
+export const LINK: TextMatchTransformer = {
+  export: (node, exportChildren, exportFormat) => {
+    if (!$isLinkNode(node)) {
+      return null;
+    }
+    const linkContent = `[${node.getTextContent()}](${node.getURL()})`;
+    const firstChild = node.getFirstChild();
+    // Add text styles only if link has single text node inside. If it's more
+    // then one we ignore it as markdown does not support nested styles for links
+    if (node.getChildrenSize() === 1 && $isTextNode(firstChild)) {
+      return exportFormat(firstChild, linkContent);
+    } else {
+      return linkContent;
+    }
   },
-];
+  importRegExp: /(?:\[([^[]+)\])(?:\(([^(]+)\))/,
+  regExp: /(?:\[([^[]+)\])(?:\(([^(]+)\))$/,
+  replace: (textNode, match) => {
+    const [, linkText, linkUrl] = match;
+    const linkNode = $createLinkNode(linkUrl);
+    const linkTextNode = $createTextNode(linkText);
+    linkTextNode.setFormat(textNode.getFormat());
+    linkNode.append(linkTextNode);
+    textNode.replace(linkNode);
+  },
+  trigger: ')',
+  type: 'text-match',
+};

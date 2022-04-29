@@ -18,12 +18,12 @@ import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
 export function createMarkdownExport(
   blockTransformers: Array<BlockTransformer>,
-  textFormatTransformers_: Array<TextFormatTransformer>,
+  _textFormatTransformers: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
 ): () => string {
   // Export only uses text formats that are responsible for single format
   // e.g. it will filter out *** (bold, italic) and instead use separate ** and *
-  const textFormatTransformers = textFormatTransformers_.filter(
+  const textFormatTransformers = _textFormatTransformers.filter(
     (transformer) => transformer.format.length === 1,
   );
   return () => {

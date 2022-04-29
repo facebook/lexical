@@ -550,13 +550,10 @@ function CommentsPanelList({
                 },
                 {
                   onUpdate() {
-                    // Defer setting selection, as we need React to
-                    // first render.
-                    setTimeout(() => {
-                      if (activeElement !== null) {
-                        activeElement.focus();
-                      }
-                    });
+                    // Restore selection to the previous element
+                    if (activeElement !== null) {
+                      activeElement.focus();
+                    }
                   },
                 },
               );

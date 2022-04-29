@@ -80,13 +80,13 @@ export class ElementNode extends LexicalNode {
     return self.__indent;
   }
 
-  forEachChild<T extends LexicalNode>(callback: (child: T) => void): void {
+  forEachChild<T extends LexicalNode>(callback: (child: T, key: NodeKey) => void): void {
     const self = this.getLatest();
     let next = self.__first;
     while (next !== null) {
       const childNode = $getNodeByKey<T>(next);
       if (childNode !== null) {
-        callback(childNode);
+        callback(childNode, next);
         next = childNode.__next;
       }
     }

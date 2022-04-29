@@ -9,6 +9,7 @@
 
 import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
 
+import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
 
 export class CommentNode extends ElementNode {
@@ -29,7 +30,7 @@ export class CommentNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('mark');
-    element.className = 'comment';
+    addClassNamesToElement(element, config.theme.comment);
     return element;
   }
 
@@ -38,14 +39,18 @@ export class CommentNode extends ElementNode {
   }
 
   hasID(id: string): boolean {
-    const self = this.getLatest();
-    const ids = self.__ids;
+    const ids = this.getIDs();
     for (let i = 0; i < ids.length; i++) {
       if (id === ids[i]) {
         return true;
       }
     }
     return false;
+  }
+
+  getIDs(): Array<string> {
+    const self = this.getLatest();
+    return self.__ids;
   }
 
   addID(id: string): void {

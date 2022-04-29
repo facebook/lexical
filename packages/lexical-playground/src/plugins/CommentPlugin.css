@@ -164,7 +164,7 @@ i.comments {
 }
 
 .CommentPlugin_ShowCommentsButton.active {
-  background-color: rgba(66, 135, 245, 0.3);
+  background-color: rgba(66, 135, 245, 0.2);
 }
 
 .CommentPlugin_CommentsPanel {
@@ -301,6 +301,11 @@ i.send {
   background-color: #fafafa;
 }
 
+.CommentPlugin_CommentsPanel_List_Reference.active
+  .CommentPlugin_CommentsPanel_List_Comment:hover {
+  background-color: inherit;
+}
+
 .CommentPlugin_CommentsPanel_List_Comment p {
   margin: 0;
   color: #444;
@@ -327,6 +332,7 @@ i.send {
   border-top: 1px solid #eee;
   border-bottom: 1px solid #eee;
   position: relative;
+  transition: all 0.4s linear;
 }
 
 .CommentPlugin_CommentsPanel_List_Reference:first-child,
@@ -339,6 +345,10 @@ i.send {
   background-color: #fafafa;
 }
 
+.CommentPlugin_CommentsPanel_List_Reference.active {
+  background-color: rgba(66, 135, 245, 0.1);
+}
+
 .CommentPlugin_CommentsPanel_List_Reference_Quote {
   padding-top: 10px;
   margin: 0px 10px 0 10px;
@@ -348,7 +358,7 @@ i.send {
 
 .CommentPlugin_CommentsPanel_List_Reference_Quote span {
   color: #222;
-  background-color: rgba(255, 121, 45, 0.3);
+  background-color: rgba(255, 212, 0, 0.4);
   padding: 1px;
   line-height: 1.4;
   display: inline;

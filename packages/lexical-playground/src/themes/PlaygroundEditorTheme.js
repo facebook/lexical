@@ -46,6 +46,7 @@ const theme: EditorThemeClasses = {
     url: 'PlaygroundEditorTheme__tokenOperator',
     variable: 'PlaygroundEditorTheme__tokenVariable',
   },
+  comment: 'PlaygroundEditorTheme__comment',
   hashtag: 'PlaygroundEditorTheme__hashtag',
   heading: {
     h1: 'PlaygroundEditorTheme__h1',

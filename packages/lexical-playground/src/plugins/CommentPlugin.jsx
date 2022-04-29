@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   NodeKey,
   RangeSelection,
+  TextNode,
 } from 'lexical';
 
 import './CommentPlugin.css';
@@ -28,6 +29,7 @@ import {$isRootTextContentEmpty, $rootTextContentCurry} from '@lexical/text';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   CLEAR_EDITOR_COMMAND,
@@ -40,6 +42,7 @@ import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import useModal from '../hooks/useModal';
+import {$createCommentNode, $isCommentNode} from '../nodes/CommentNode';
 import CommentEditorTheme from '../themes/CommentEditorTheme';
 import Button from '../ui/Button';
 import ContentEditable from '../ui/ContentEditable.jsx';
@@ -253,7 +256,7 @@ function CommentInputBox({
               elements[i] = elem;
               container.appendChild(elem);
             }
-            const color = '255, 121, 45';
+            const color = '255, 212, 0';
             const style = `position:absolute;top:${selectionRect.top}px;left:${selectionRect.left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
             elem.style.cssText = style;
           }
@@ -472,11 +475,13 @@ function CommentsPanelListComment({
 }
 
 function CommentsPanelList({
+  activeIDs,
   comments,
   deleteComment,
   listRef,
   submitAddComment,
 }: {
+  activeIDs: null | Array<string>,
   comments: Comments,
   deleteComment: (Comment, reference?: Reference) => void,
   listRef: {current: null | HTMLElement},
@@ -512,11 +517,16 @@ function CommentsPanelList({
   return (
     <ul className="CommentPlugin_CommentsPanel_List" ref={listRef}>
       {comments.map((commentOrReference) => {
+        const id = commentOrReference.id;
         if (commentOrReference.type === 'reference') {
           return (
             <li
-              key={commentOrReference.id}
-              className="CommentPlugin_CommentsPanel_List_Reference">
+              key={id}
+              className={`CommentPlugin_CommentsPanel_List_Reference ${
+                activeIDs === null || activeIDs.indexOf(id) === -1
+                  ? ''
+                  : 'active'
+              }`}>
               <blockquote className="CommentPlugin_CommentsPanel_List_Reference_Quote">
                 > <span>{commentOrReference.quote}</span>
               </blockquote>
@@ -543,7 +553,7 @@ function CommentsPanelList({
         }
         return (
           <CommentsPanelListComment
-            key={commentOrReference.id}
+            key={id}
             comment={commentOrReference}
             deleteComment={deleteComment}
             rtf={rtf}
@@ -555,10 +565,12 @@ function CommentsPanelList({
 }
 
 function CommentsPanel({
+  activeIDs,
   deleteComment,
   comments,
   submitAddComment,
 }: {
+  activeIDs: null | Array<string>,
   comments: Comments,
   deleteComment: (Comment, reference?: Reference) => void,
   submitAddComment: (
@@ -596,6 +608,7 @@ function CommentsPanel({
         <div className="CommentPlugin_CommentsPanel_Empty">No Comments</div>
       ) : (
         <CommentsPanelList
+          activeIDs={activeIDs}
           comments={comments}
           deleteComment={deleteComment}
           listRef={listRef}
@@ -654,10 +667,10 @@ function $wrapSelectionInCommentNode(
   const anchorOffset = selection.anchor.offset;
   const focusOffset = selection.focus.offset;
   const nodesLength = nodes.length;
-  let startOffset = isBackward ? focusOffset : anchorOffset;
-  let endOffset = isBackward ? anchorOffset : focusOffset;
-  // let lastNodeParent = null;
-  // let existinngLinkNode = null;
+  const startOffset = isBackward ? focusOffset : anchorOffset;
+  const endOffset = isBackward ? anchorOffset : focusOffset;
+  let currentNodeParent;
+  let currentLinkNode;
 
   // We only want wrap adjacent text nodes, line break nodes
   // and inline element nodes. For decorator nodes and block
@@ -665,14 +678,54 @@ function $wrapSelectionInCommentNode(
   // after, if there are more nodes.
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
+
+    if ($isElementNode(currentLinkNode) && currentLinkNode.isParentOf(node)) {
+      continue;
+    }
     const isFirstNode = i === 0;
     const isLastNode = i === nodesLength - 1;
+    let targetNode;
 
     if ($isTextNode(node)) {
-      startOffset = isFirstNode ? startOffset : 0;
-      endOffset = isLastNode ? endOffset : node.getTextContentSize();
+      const startTextOffset = isFirstNode ? startOffset : 0;
+      const endTextOffset = isLastNode ? endOffset : node.getTextContentSize();
+      const splitNodes = node.splitText(startTextOffset, endTextOffset);
+      targetNode =
+        splitNodes.length === 1
+          ? splitNodes[0]
+          : !isFirstNode && isLastNode
+          ? splitNodes[0]
+          : splitNodes[1];
+    } else if ($isElementNode(node) && node.isInline()) {
+      targetNode = node;
+    }
+    if (targetNode !== undefined) {
+      const parentNode = targetNode.getParent();
+      if (parentNode == null || !parentNode.is(currentNodeParent)) {
+        currentLinkNode = undefined;
+      }
+      currentNodeParent = parentNode;
+      if (currentLinkNode === undefined) {
+        currentLinkNode = $createCommentNode([id]);
+        targetNode.insertBefore(currentLinkNode);
+      }
+      currentLinkNode.append(targetNode);
+    } else {
+      currentNodeParent = undefined;
+      currentLinkNode = undefined;
     }
   }
+}
+
+function $getCommentIDs(node: TextNode): null | Array<string> {
+  let currentNode = node;
+  while (currentNode !== null) {
+    if ($isCommentNode(currentNode)) {
+      return currentNode.getIDs();
+    }
+    currentNode = currentNode.getParent();
+  }
+  return null;
 }
 
 export default function CommentPlugin({
@@ -686,6 +739,7 @@ export default function CommentPlugin({
   //   return new Map();
   // }, []);
   const [activeAnchorKey, setActiveAnchorKey] = useState(null);
+  const [activeIDs, setActiveIDs] = useState<null | Array<string>>(null);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
@@ -784,14 +838,25 @@ export default function CommentPlugin({
       editor.registerUpdateListener(({editorState, tags}) => {
         editorState.read(() => {
           const selection = $getSelection();
+          let hasActiveIds = false;
 
-          if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+          if ($isRangeSelection(selection)) {
             const anchorNode = selection.anchor.getNode();
 
             if ($isTextNode(anchorNode)) {
-              setActiveAnchorKey(anchorNode.getKey());
-              return;
+              const commentIDs = $getCommentIDs(anchorNode);
+              if (commentIDs !== null) {
+                setActiveIDs(commentIDs);
+                hasActiveIds = true;
+              }
+              if (!selection.isCollapsed()) {
+                setActiveAnchorKey(anchorNode.getKey());
+                return;
+              }
             }
+          }
+          if (!hasActiveIds) {
+            setActiveIDs(null);
           }
           setActiveAnchorKey(null);
         });
@@ -846,6 +911,7 @@ export default function CommentPlugin({
             comments={comments}
             submitAddComment={submitAddComment}
             deleteComment={deleteComment}
+            activeIDs={activeIDs}
           />,
           document.body,
         )}

@@ -125,35 +125,32 @@ function ExcalidrawComponent({
     });
   }, [editor, nodeKey]);
 
-  const setData = useCallback(
-    (newData: $ReadOnlyArray<ExcalidrawElementFragment>) => {
-      if (editor.isReadOnly()) {
-        return;
-      }
-      return editor.update(() => {
-        const node = $getNodeByKey(nodeKey);
-        if ($isExcalidrawNode(node)) {
-          if (newData.length > 0) {
-            node.setData(JSON.stringify(newData));
-          } else {
-            node.remove();
-          }
+  const setData = (newData: $ReadOnlyArray<ExcalidrawElementFragment>) => {
+    if (editor.isReadOnly()) {
+      return;
+    }
+    return editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isExcalidrawNode(node)) {
+        if (newData.length > 0) {
+          node.setData(JSON.stringify(newData));
+        } else {
+          node.remove();
         }
-      });
-    },
-    [editor, nodeKey],
-  );
+      }
+    });
+  };
 
-  const onResizeStart = useCallback(() => {
+  const onResizeStart = () => {
     setIsResizing(true);
-  }, []);
+  };
 
-  const onResizeEnd = useCallback((nextWidth, nextHeight) => {
+  const onResizeEnd = (nextWidth, nextHeight) => {
     // Delay hiding the resize bars for click case
     setTimeout(() => {
       setIsResizing(false);
     }, 200);
-  }, []);
+  };
 
   const elements = useMemo(() => JSON.parse(data), [data]);
   return (

@@ -808,8 +808,6 @@ export class RangeSelection implements BaseSelection {
       let lastElement = $isElementNode(lastNode)
         ? lastNode
         : lastNode.getParentOrThrow();
-      const shouldInsertAfterFirstElement =
-        firstElement.isInline() && firstNode.getNextSibling() === null;
       let lastElementWasInline = false;
 
       // If the last element is inline, we should instead look at getting
@@ -869,9 +867,10 @@ export class RangeSelection implements BaseSelection {
       // we will incorrectly merge into the starting parent element.
       // TODO: should we keep on traversing parents if we're inside another
       // nested inline element?
-      const insertionTarget = shouldInsertAfterFirstElement
-        ? firstElement
-        : firstNode;
+      const insertionTarget =
+        firstElement.isInline() && firstNode.getNextSibling() === null
+          ? firstElement
+          : firstNode;
 
       for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
         const lastNodeChild = lastNodeChildren[i];
@@ -887,6 +886,11 @@ export class RangeSelection implements BaseSelection {
           if (
             !selectedNodesSet.has(lastNodeChild) ||
             lastNodeChild.is(lastNode) ||
+            // If the last node parent element was an inline element, then we're
+            // using the last node's grand parent. This means that the above
+            // heuristics for checking if the lastNodeChild.is(lastNode) can never
+            // happen. Instead, we should check the lastNode's parent, which will
+            // correctly correlate to the right node.
             (lastElementWasInline &&
               lastNodeChild.is(lastNode.getParentOrThrow()))
           ) {

@@ -1052,7 +1052,7 @@ export default function ToolbarPlugin(): React$Node {
             )}
           <DropDown
             buttonClassName="toolbar-item spaced"
-            buttonLabel="More"
+            buttonLabel=""
             buttonAriaLabel="Formatting options for additional text styles"
             buttonIconClassName="icon dropdown-more">
             <button

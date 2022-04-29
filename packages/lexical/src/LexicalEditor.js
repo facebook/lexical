@@ -81,6 +81,7 @@ export type EditorThemeClasses = {
     ulDepth: Array<EditorThemeClassName>,
   },
   ltr?: EditorThemeClassName,
+  mark?: EditorThemeClassName,
   paragraph?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   root?: EditorThemeClassName,

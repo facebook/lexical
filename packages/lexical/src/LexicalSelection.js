@@ -1961,7 +1961,8 @@ function resolveSelectionPointOnBoundary(
       (isCollapsed || isBackward) &&
       nextSibling === null &&
       $isElementNode(parent) &&
-      parent.isInline()
+      parent.isInline() &&
+      !parent.canInsertTextAfter()
     ) {
       const parentSibling = parent.getNextSibling();
       if ($isTextNode(parentSibling)) {

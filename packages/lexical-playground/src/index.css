@@ -129,10 +129,6 @@ pre::-webkit-scrollbar-thumb {
   background-color: #444;
 }
 
-.editor-dev-button + .editor-dev-button {
-  margin-left: 8px;
-}
-
 .editor-dev-button::after {
   content: '';
   position: absolute;
@@ -195,13 +191,13 @@ pre::-webkit-scrollbar-thumb {
 
 #options-button {
   position: fixed;
-  right: 20px;
+  left: 20px;
   bottom: 20px;
 }
 
 #test-recorder-button {
   position: fixed;
-  right: 70px;
+  left: 70px;
   bottom: 20px;
 }
 
@@ -264,7 +260,7 @@ pre::-webkit-scrollbar-thumb {
 
 .link-editor {
   position: absolute;
-  z-index: 100;
+  z-index: 10;
   top: -10000px;
   left: -10000px;
   margin-top: -6px;
@@ -585,7 +581,7 @@ select.font-family {
 }
 
 .dropdown {
-  z-index: 5;
+  z-index: 10;
   display: block;
   position: absolute;
   box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
@@ -700,7 +696,7 @@ select.font-family {
 .switches {
   z-index: 6;
   position: fixed;
-  right: 10px;
+  left: 10px;
   bottom: 70px;
   animation: slide-in 0.4s ease;
 }
@@ -708,7 +704,7 @@ select.font-family {
 @keyframes slide-in {
   0% {
     opacity: 0;
-    transform: translateX(200px);
+    transform: translateX(-200px);
   }
   100% {
     opacity: 1;
@@ -1140,6 +1136,7 @@ button.action-button:disabled {
   border-top-right-radius: 10px;
   vertical-align: middle;
   overflow: auto;
+  height: 36px;
 }
 
 .toolbar button.toolbar-item {
@@ -1256,7 +1253,7 @@ button.action-button:disabled {
 
 .sticky-note-container {
   position: absolute;
-  z-index: 20;
+  z-index: 9;
   width: 120px;
   display: inline-block;
 }
@@ -1371,7 +1368,7 @@ button.action-button:disabled {
   padding: 4px;
   vertical-align: middle;
   position: absolute;
-  z-index: 100;
+  z-index: 10;
   top: -10000px;
   left: -10000px;
   margin-top: -6px;

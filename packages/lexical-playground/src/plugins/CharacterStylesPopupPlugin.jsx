@@ -113,6 +113,19 @@ function FloatingCharacterStylesEditor({
   }, [editor]);
 
   useEffect(() => {
+    const onResize = () => {
+      editor.getEditorState().read(() => {
+        updateCharacterStylesEditor();
+      });
+    };
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [editor, updateCharacterStylesEditor]);
+
+  useEffect(() => {
     editor.getEditorState().read(() => {
       updateCharacterStylesEditor();
     });

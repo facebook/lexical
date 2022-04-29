@@ -164,7 +164,7 @@ i.comments {
 }
 
 .CommentPlugin_ShowCommentsButton.active {
-  background-color: rgba(66, 135, 245, 0.2);
+  background-color: #ccc;
 }
 
 .CommentPlugin_CommentsPanel {
@@ -346,7 +346,7 @@ i.send {
 }
 
 .CommentPlugin_CommentsPanel_List_Reference.active {
-  background-color: rgba(66, 135, 245, 0.1);
+  background-color: rgba(255, 212, 0, 0.1);
 }
 
 .CommentPlugin_CommentsPanel_List_Reference_Quote {

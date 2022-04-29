@@ -28,6 +28,7 @@ import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$isRootTextContentEmpty, $rootTextContentCurry} from '@lexical/text';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $getNodeByKey,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
@@ -42,7 +43,11 @@ import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 import useModal from '../hooks/useModal';
-import {$createCommentNode, $isCommentNode} from '../nodes/CommentNode';
+import {
+  $createCommentNode,
+  $isCommentNode,
+  CommentNode,
+} from '../nodes/CommentNode';
 import CommentEditorTheme from '../themes/CommentEditorTheme';
 import Button from '../ui/Button';
 import ContentEditable from '../ui/ContentEditable.jsx';
@@ -735,9 +740,9 @@ export default function CommentPlugin({
 }): React$Node {
   const [editor] = useLexicalComposerContext();
   const [comments, setComments] = useState<Comments>(initialComments || []);
-  // const referenceMap = useMemo<Map<string, Set<NodeKey>>>(() => {
-  //   return new Map();
-  // }, []);
+  const referenceMap = useMemo<Map<string, Set<NodeKey>>>(() => {
+    return new Map();
+  }, []);
   const [activeAnchorKey, setActiveAnchorKey] = useState(null);
   const [activeIDs, setActiveIDs] = useState<null | Array<string>>(null);
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -835,6 +840,31 @@ export default function CommentPlugin({
 
   useEffect(() => {
     return mergeRegister(
+      editor.registerMutationListener(CommentNode, (mutations) => {
+        for (const [key, mutation] of mutations) {
+          const node: null | CommentNode = $getNodeByKey(key);
+          if ($isCommentNode(node)) {
+            const ids = node.getIDs();
+            for (let i = 0; i < ids.length; i++) {
+              const id = ids[i];
+              let refSet = referenceMap.get(id);
+
+              if (mutation === 'destroyed') {
+                if (refSet !== undefined) {
+                  refSet.delete(id);
+                }
+              } else {
+                if (refSet === undefined) {
+                  refSet = new Set();
+                  referenceMap.set(id, refSet);
+                }
+                node.addID(id);
+                refSet.add(key);
+              }
+            }
+          }
+        }
+      }),
       editor.registerUpdateListener(({editorState, tags}) => {
         editorState.read(() => {
           const selection = $getSelection();
@@ -865,7 +895,7 @@ export default function CommentPlugin({
         }
       }),
     );
-  }, [editor]);
+  }, [editor, referenceMap]);
 
   const onAddComment = () => {
     const domSelection = window.getSelection();

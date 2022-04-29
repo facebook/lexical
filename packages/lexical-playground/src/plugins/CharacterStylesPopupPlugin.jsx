@@ -252,14 +252,14 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
 
       const node = getSelectedNode(selection);
 
-        // Update text format
-        setIsBold(selection.hasFormat('bold'));
-        setIsItalic(selection.hasFormat('italic'));
-        setIsUnderline(selection.hasFormat('underline'));
-        setIsStrikethrough(selection.hasFormat('strikethrough'));
-        setIsSubscript(selection.hasFormat('subscript'));
-        setIsSuperscript(selection.hasFormat('superscript'));
-        setIsCode(selection.hasFormat('code'));
+      // Update text format
+      setIsBold(selection.hasFormat('bold'));
+      setIsItalic(selection.hasFormat('italic'));
+      setIsUnderline(selection.hasFormat('underline'));
+      setIsStrikethrough(selection.hasFormat('strikethrough'));
+      setIsSubscript(selection.hasFormat('subscript'));
+      setIsSuperscript(selection.hasFormat('superscript'));
+      setIsCode(selection.hasFormat('code'));
 
       // Update links
       const parent = node.getParent();

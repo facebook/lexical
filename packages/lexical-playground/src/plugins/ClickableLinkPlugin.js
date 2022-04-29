@@ -81,10 +81,14 @@ export default function ClickableLinkPlugin({
         return;
       }
 
-      window.open(
-        href,
-        newTab || event.metaKey || event.ctrlKey ? '_blank' : '_self',
-      );
+      try {
+        window.open(
+          href,
+          newTab || event.metaKey || event.ctrlKey ? '_blank' : '_self',
+        );
+      } catch {
+        // It didn't work, which is better than throwing an exception!
+      }
     }
 
     return editor.registerRootListener(

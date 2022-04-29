@@ -150,7 +150,7 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(command: LexicalCommand<P>, payload?: P): boolean;
+  dispatchCommand<P>(command: LexicalCommand<P>, payload: P): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getKey(): string;
   getDecorators<X>(): {
@@ -210,6 +210,7 @@ export type EditorThemeClasses = {
   tableRow?: EditorThemeClassName,
   tableCell?: EditorThemeClassName,
   tableCellHeader?: EditorThemeClassName,
+  mark?: EditorThemeClassName,
   link?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   code?: EditorThemeClassName,
@@ -349,7 +350,6 @@ declare export class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  isComposing(): boolean;
   // $FlowFixMe
   getLatest<T: LexicalNode>(this: T): T;
   // $FlowFixMe
@@ -586,9 +586,6 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
-export type TextMark = {end: null | number, id: string, start: null | number};
-
-export type TextMarks = Array<TextMark>;
 
 declare export class TextNode extends LexicalNode {
   __text: string;
@@ -596,15 +593,12 @@ declare export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  __marks: null | TextMarks;
   static getType(): string;
   static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
   getFormat(): number;
-  getMark(id: string): null | TextMark;
-  setMark(id: string, start: null | number, end: null | number): void;
-  deleteMark(id: string): void;
   getStyle(): string;
+  isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
   isInert(): boolean;

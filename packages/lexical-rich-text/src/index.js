@@ -645,7 +645,7 @@ export function registerRichText(
           }
           event.preventDefault();
           if (event.shiftKey) {
-            return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND);
+            return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false);
           }
         }
         return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);

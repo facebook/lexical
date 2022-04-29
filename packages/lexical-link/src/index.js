@@ -90,7 +90,7 @@ export class LinkNode extends ElementNode {
     return false;
   }
 
-  canInsertTextAfter(): boolean {
+  canInsertTextAfter(): false {
     return false;
   }
 

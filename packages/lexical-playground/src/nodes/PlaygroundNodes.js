@@ -23,6 +23,7 @@ import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
 import {ImageNode} from './ImageNode';
 import {KeywordNode} from './KeywordNode';
+import {MarkNode} from './MarkNode';
 import {MentionNode} from './MentionNode';
 import {PollNode} from './PollNode';
 import {StickyNode} from './StickyNode';
@@ -56,6 +57,7 @@ const PlaygroundNodes: Array<Class<LexicalNode>> = [
   HorizontalRuleNode,
   TweetNode,
   YouTubeNode,
+  MarkNode,
 ];
 
 export default PlaygroundNodes;

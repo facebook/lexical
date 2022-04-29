@@ -1774,7 +1774,7 @@ function $removeSegment(
 ): void {
   const textNode = node;
   const textContent = textNode.getTextContent();
-  const split = textContent.split(/\s/g);
+  const split = textContent.split(/(?=\s)/g);
   const splitLength = split.length;
   let segmentOffset = 0;
   let restoreOffset = 0;
@@ -1797,7 +1797,7 @@ function $removeSegment(
       break;
     }
   }
-  const nextTextContent = split.join(' ');
+  const nextTextContent = split.join('').trim();
 
   if (nextTextContent === '') {
     textNode.remove();
@@ -1961,7 +1961,8 @@ function resolveSelectionPointOnBoundary(
       (isCollapsed || isBackward) &&
       nextSibling === null &&
       $isElementNode(parent) &&
-      parent.isInline()
+      parent.isInline() &&
+      !parent.canInsertTextAfter()
     ) {
       const parentSibling = parent.getNextSibling();
       if ($isTextNode(parentSibling)) {

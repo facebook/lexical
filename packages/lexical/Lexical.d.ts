@@ -63,7 +63,7 @@ export declare function createCommand<T>(): LexicalCommand<T>;
  */
 type ErrorHandler = (error: Error) => void;
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
-export type NodeMutation = 'created' | 'destroyed';
+export type NodeMutation = 'created' | 'updated' | 'destroyed';
 type UpdateListener = (arg0: {
   tags: Set<string>;
   prevEditorState: EditorState;
@@ -203,6 +203,7 @@ export type EditorThemeClasses = {
   tableRow?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
+  mark?: EditorThemeClassName;
   link?: EditorThemeClassName;
   quote?: EditorThemeClassName;
   code?: EditorThemeClassName;
@@ -346,7 +347,6 @@ export declare class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  isComposing(): boolean;
   // $FlowFixMe
   getLatest<T extends LexicalNode>(): T;
   // $FlowFixMe
@@ -560,24 +560,19 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
-export type TextMark = {end: null | number; id: string; start: null | number};
 
-export type TextMarks = Array<TextMark>;
 export declare class TextNode extends LexicalNode {
   __text: string;
   __format: number;
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  __marks: null | TextMarks;
   static getType(): string;
   static clone(node: any): TextNode;
   constructor(text: string, key?: NodeKey);
-  getMark(id: string): null | TextMark;
-  setMark(id: string, start: null | number, end: null | number): void;
-  deleteMark(id: string): void;
   getFormat(): number;
   getStyle(): string;
+  isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
   isInert(): boolean;

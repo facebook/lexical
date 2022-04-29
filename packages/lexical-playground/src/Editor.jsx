@@ -18,7 +18,6 @@ import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
 import ListPlugin from '@lexical/react/LexicalListPlugin';
-import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
 import TablesPlugin from '@lexical/react/LexicalTablePlugin';
@@ -36,6 +35,7 @@ import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
 import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
+import CommentPlugin from './plugins/CommentPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
@@ -43,6 +43,7 @@ import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
+import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
@@ -171,15 +172,12 @@ export default function Editor(): React$Node {
         <LexicalClearEditorPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
-        <ExcalidrawPlugin />
         <HashtagsPlugin />
         <KeywordsPlugin />
-        <HorizontalRulePlugin />
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
-        <CharacterStylesPopupPlugin />
-        <EquationsPlugin />
         <AutoScrollPlugin scrollRef={scrollRef} />
+        {!isCollab && <CommentPlugin />}
         {isRichText ? (
           <>
             {isCollab ? (
@@ -198,7 +196,7 @@ export default function Editor(): React$Node {
                 isCollab ? null : emptyEditor ? undefined : prepopulatedRichText
               }
             />
-            <LexicalMarkdownShortcutPlugin />
+            <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />
@@ -211,6 +209,10 @@ export default function Editor(): React$Node {
             <TwitterPlugin />
             <YouTubePlugin />
             <ClickableLinkPlugin />
+            <HorizontalRulePlugin />
+            <CharacterStylesPopupPlugin />
+            <EquationsPlugin />
+            <ExcalidrawPlugin />
           </>
         ) : (
           <>

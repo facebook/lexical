@@ -27,6 +27,7 @@ export default function Settings(): React$Node {
       isAutocomplete,
       showTreeView,
       showNestedEditorTreeView,
+      disableBeforeInput,
     },
   } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
@@ -109,6 +110,14 @@ export default function Settings(): React$Node {
             onClick={() => setOption('isAutocomplete', !isAutocomplete)}
             checked={isAutocomplete}
             text="Autocomplete"
+          />
+          <Switch
+            onClick={() => {
+              setOption('disableBeforeInput', !disableBeforeInput);
+              setTimeout(() => window.location.reload(), 500);
+            }}
+            checked={disableBeforeInput}
+            text="Legacy Events"
           />
         </div>
       ) : null}

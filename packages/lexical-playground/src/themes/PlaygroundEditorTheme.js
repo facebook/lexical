@@ -71,6 +71,7 @@ const theme: EditorThemeClasses = {
     ul: 'PlaygroundEditorTheme__ul',
   },
   ltr: 'PlaygroundEditorTheme__ltr',
+  mark: 'PlaygroundEditorTheme__mark',
   paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',

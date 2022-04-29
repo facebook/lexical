@@ -103,6 +103,10 @@ export class TweetNode extends DecoratorBlockNode<React$Node> {
     this.__id = id;
   }
 
+  getId(): string {
+    return this.__id;
+  }
+
   decorate(): React$Node {
     return (
       <TweetComponent

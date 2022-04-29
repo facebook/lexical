@@ -137,6 +137,10 @@ export class EquationNode extends DecoratorNode<React$Node> {
     return this.__inline !== prevNode.__inline;
   }
 
+  getEquation(): string {
+    return this.__equation;
+  }
+
   setEquation(equation: string): void {
     const writable = this.getWritable();
     writable.__equation = equation;

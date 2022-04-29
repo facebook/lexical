@@ -20,7 +20,6 @@ import type {
 } from '../LexicalSelection';
 
 import invariant from 'shared/invariant';
-import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {
   IS_BOLD,
@@ -236,50 +235,12 @@ function createTextInnerDOM(
   }
 }
 
-function updateTextMarks(
-  textNode: TextNode,
-  marks: TextMarks,
-  offset: number,
-  delCount: number,
-  size: number,
-): void {
-  for (let i = 0; i < marks.length; i++) {
-    const {id, start, end} = marks[i];
-    let newStart = start;
-    let newEnd = end;
-
-    if (newStart !== null && newStart >= offset) {
-      if (offset + delCount >= newStart) {
-        newStart = offset + delCount;
-      }
-      newStart += size - delCount;
-    }
-    if (newEnd !== null && newEnd >= offset) {
-      if (offset + delCount >= newEnd) {
-        newEnd = offset;
-      }
-      newEnd += size - delCount;
-    }
-    if (newStart !== start || newEnd !== end) {
-      if (
-        (newStart === null && newEnd === null) ||
-        (newStart !== null && newEnd !== null && newStart >= newEnd)
-      ) {
-        textNode.deleteMark(id);
-      } else {
-        textNode.setMark(id, newStart, newEnd);
-      }
-    }
-  }
-}
-
 export class TextNode extends LexicalNode {
   __text: string;
   __format: number;
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  __marks: null | TextMarks;
 
   static getType(): string {
     return 'text';
@@ -296,26 +257,11 @@ export class TextNode extends LexicalNode {
     this.__style = '';
     this.__mode = 0;
     this.__detail = 0;
-    this.__marks = null;
   }
 
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;
-  }
-
-  getMark(id: string): null | TextMark {
-    const self = this.getLatest();
-    const marks = self.__marks;
-    if (marks !== null) {
-      for (let i = 0; i < marks.length; i++) {
-        const mark = marks[i];
-        if (mark.id === id) {
-          return mark;
-        }
-      }
-    }
-    return null;
   }
 
   getStyle(): string {
@@ -326,6 +272,10 @@ export class TextNode extends LexicalNode {
   isToken(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_TOKEN;
+  }
+
+  isComposing(): boolean {
+    return this.__key === $getCompositionKey();
   }
 
   isSegmented(): boolean {
@@ -536,50 +486,6 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
-  setMark(id: string, start: null | number, end: null | number): void {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    let marks = self.__marks;
-    let found = false;
-    if (marks === null) {
-      self.__marks = marks = [];
-    }
-    const nextMark = {end, id, start};
-    if (__DEV__) {
-      Object.freeze(nextMark);
-    }
-    for (let i = 0; i < marks.length; i++) {
-      const prevMark = marks[i];
-      if (prevMark.id === id) {
-        found = true;
-        marks.splice(i, 1, nextMark);
-        break;
-      }
-    }
-    if (!found) {
-      marks.push(nextMark);
-    }
-  }
-
-  deleteMark(id: string): void {
-    errorOnReadOnly();
-    const self = this.getWritable();
-    const marks = self.__marks;
-    if (marks === null) {
-      return;
-    }
-    for (let i = 0; i < marks.length; i++) {
-      const prevMark = marks[i];
-      if (prevMark.id === id) {
-        marks.splice(i, 1);
-        break;
-      }
-    }
-    if (marks.length === 0) {
-      self.__marks = null;
-    }
-  }
-
   setMode(type: TextModeType): this {
     errorOnReadOnly();
     const mode = TEXT_MODE_TO_TYPE[type];
@@ -591,25 +497,7 @@ export class TextNode extends LexicalNode {
   setTextContent(text: string): this {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
-    const marks = writableSelf.__marks;
-    if (marks !== null) {
-      const selection = $getSelection();
-      let cursorOffset = text.length;
-      if ($isRangeSelection(selection) && selection.isCollapsed()) {
-        const anchor = selection.anchor;
-        if (anchor.key === this.__key) {
-          cursorOffset = anchor.offset;
-        }
-      }
-      const diff = simpleDiffWithCursor(
-        writableSelf.__text,
-        text,
-        cursorOffset,
-      );
-      this.spliceText(diff.index, diff.remove, diff.insert);
-    } else {
-      writableSelf.__text = text;
-    }
+    writableSelf.__text = text;
     return writableSelf;
   }
 
@@ -685,10 +573,6 @@ export class TextNode extends LexicalNode {
     const updatedText =
       text.slice(0, index) + newText + text.slice(index + delCount);
 
-    const marks = writableSelf.__marks;
-    if (marks !== null) {
-      updateTextMarks(writableSelf, marks, offset, delCount, handledTextLength);
-    }
     writableSelf.__text = updatedText;
     return writableSelf;
   }
@@ -734,7 +618,6 @@ export class TextNode extends LexicalNode {
     const format = self.getFormat();
     const style = self.getStyle();
     const detail = self.__detail;
-    const marks = self.__marks;
     let hasReplacedSelf = false;
 
     if (self.isSegmented()) {
@@ -744,7 +627,6 @@ export class TextNode extends LexicalNode {
       writableNode.__format = format;
       writableNode.__style = style;
       writableNode.__detail = detail;
-      writableNode.__marks = marks;
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
@@ -800,45 +682,6 @@ export class TextNode extends LexicalNode {
       textSize = nextTextSize;
       sibling.__parent = parentKey;
       splitNodes.push(sibling);
-    }
-
-    if (marks !== null) {
-      for (let i = 0; i < marks.length; i++) {
-        const {id, start, end} = marks[i];
-        let foundStart = false;
-        let foundEnd = false;
-        let partSize = 0;
-        for (let s = 0; s < partsLength; s++) {
-          const textNode = splitNodes[s];
-          const nextPartSize = partSize + parts[s].length;
-          const nextStart =
-            !foundStart &&
-            start !== null &&
-            nextPartSize > start - (start === 0 ? 1 : 0)
-              ? start - partSize
-              : null;
-          const nextEnd =
-            !foundEnd && end !== null && nextPartSize >= end
-              ? end - partSize
-              : null;
-
-          if (nextStart !== null || nextEnd !== null) {
-            if (nextStart !== null) {
-              foundStart = true;
-            }
-            if (nextEnd !== null) {
-              foundEnd = true;
-            }
-            textNode.setMark(id, nextStart, nextEnd);
-            if (foundStart && foundEnd) {
-              break;
-            }
-          } else {
-            textNode.deleteMark(id);
-          }
-          partSize = nextPartSize;
-        }
-      }
     }
 
     // Insert the nodes into the parent's children
@@ -909,21 +752,9 @@ export class TextNode extends LexicalNode {
       }
     }
     const targetText = target.__text;
-    const targetTextLength = targetText.length;
     const newText = isBefore ? targetText + text : text + targetText;
     this.setTextContent(newText);
     const writableSelf = this.getWritable();
-    const marks = target.getLatest().__marks;
-    if (marks !== null) {
-      updateTextMarks(
-        writableSelf,
-        marks,
-        isBefore ? targetTextLength : 0,
-        0,
-        textLength,
-      );
-    }
-
     target.remove();
     return writableSelf;
   }

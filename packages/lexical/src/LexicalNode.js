@@ -519,11 +519,6 @@ export class LexicalNode {
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
 
-  // TODO remove this and move to TextNode
-  isComposing(): boolean {
-    return this.__key === $getCompositionKey();
-  }
-
   getLatest(): this {
     const latest = $getNodeByKey(this.__key);
     if (latest === null) {
@@ -556,12 +551,10 @@ export class LexicalNode {
       mutableNode.__format = latestNode.__format;
       mutableNode.__dir = latestNode.__dir;
     } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      const marks = latestNode.__marks;
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
       mutableNode.__mode = latestNode.__mode;
       mutableNode.__detail = latestNode.__detail;
-      mutableNode.__marks = marks === null ? marks : Array.from(marks);
     }
     cloneNotNeeded.add(key);
     mutableNode.__key = key;
@@ -571,11 +564,11 @@ export class LexicalNode {
     // $FlowFixMe this is LexicalNode
     return mutableNode;
   }
-  // TODO remove this completely
+
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     return '';
   }
-  // TODO remove this completely
+
   getTextContentSize(
     includeInert?: boolean,
     includeDirectionless?: false,

@@ -201,7 +201,7 @@ export type EditorThemeClasses = {
   tableRow?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
-  comment?: EditorThemeClassName;
+  mark?: EditorThemeClassName;
   link?: EditorThemeClassName;
   quote?: EditorThemeClassName;
   code?: EditorThemeClassName;

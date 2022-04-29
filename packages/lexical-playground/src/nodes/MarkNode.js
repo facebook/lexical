@@ -12,15 +12,15 @@ import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
 
-export class CommentNode extends ElementNode {
+export class MarkNode extends ElementNode {
   __ids: Array<string>;
 
   static getType(): string {
-    return 'comment';
+    return 'mark';
   }
 
-  static clone(node: CommentNode): CommentNode {
-    return new CommentNode(node.__ids, node.__key);
+  static clone(node: MarkNode): MarkNode {
+    return new MarkNode(node.__ids, node.__key);
   }
 
   constructor(ids: Array<string>, key?: NodeKey): void {
@@ -30,7 +30,7 @@ export class CommentNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('mark');
-    addClassNamesToElement(element, config.theme.comment);
+    addClassNamesToElement(element, config.theme.mark);
     return element;
   }
 
@@ -56,6 +56,7 @@ export class CommentNode extends ElementNode {
   addID(id: string): void {
     const self = this.getWritable();
     const ids = Array.from(self.__ids);
+    self.__ids = ids;
     for (let i = 0; i < ids.length; i++) {
       // If we already have it, don't add again
       if (id === ids[i]) {
@@ -68,6 +69,7 @@ export class CommentNode extends ElementNode {
   deleteID(id: string): void {
     const self = this.getWritable();
     const ids = Array.from(self.__ids);
+    self.__ids = ids;
     for (let i = 0; i < ids.length; i++) {
       if (id === ids[i]) {
         ids.splice(i, 1);
@@ -79,11 +81,19 @@ export class CommentNode extends ElementNode {
   insertNewAfter(selection: RangeSelection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if ($isElementNode(element)) {
-      const linkNode = $createCommentNode(this.__ids);
+      const linkNode = $createMarkNode(this.__ids);
       element.append(linkNode);
       return linkNode;
     }
     return null;
+  }
+
+  canInsertTextBefore(): false {
+    return false;
+  }
+
+  canInsertTextAfter(): false {
+    return false;
   }
 
   canBeEmpty(): false {
@@ -94,15 +104,16 @@ export class CommentNode extends ElementNode {
     return true;
   }
 
-  excludeFromCopy(): true {
-    return true;
-  }
+  // TODO: It seems excludeFromCopy doesn't work as expected anymore.
+  // excludeFromCopy(): true {
+  //   return true;
+  // }
 }
 
-export function $createCommentNode(ids: Array<string>): CommentNode {
-  return new CommentNode(ids);
+export function $createMarkNode(ids: Array<string>): MarkNode {
+  return new MarkNode(ids);
 }
 
-export function $isCommentNode(node: ?LexicalNode): boolean %checks {
-  return node instanceof CommentNode;
+export function $isMarkNode(node: ?LexicalNode): boolean %checks {
+  return node instanceof MarkNode;
 }

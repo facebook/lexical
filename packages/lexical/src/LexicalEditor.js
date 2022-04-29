@@ -59,7 +59,6 @@ export type EditorSetOptions = {|
 export type EditorThemeClasses = {
   code?: EditorThemeClassName,
   codeHighlight?: {[string]: EditorThemeClassName},
-  comment?: EditorThemeClassName,
   hashtag?: EditorThemeClassName,
   heading?: {
     h1?: EditorThemeClassName,
@@ -82,6 +81,7 @@ export type EditorThemeClasses = {
     ulDepth: Array<EditorThemeClassName>,
   },
   ltr?: EditorThemeClassName,
+  mark?: EditorThemeClassName,
   paragraph?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   root?: EditorThemeClassName,

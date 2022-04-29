@@ -46,7 +46,6 @@ const theme: EditorThemeClasses = {
     url: 'PlaygroundEditorTheme__tokenOperator',
     variable: 'PlaygroundEditorTheme__tokenVariable',
   },
-  comment: 'PlaygroundEditorTheme__comment',
   hashtag: 'PlaygroundEditorTheme__hashtag',
   heading: {
     h1: 'PlaygroundEditorTheme__h1',
@@ -72,6 +71,7 @@ const theme: EditorThemeClasses = {
     ul: 'PlaygroundEditorTheme__ul',
   },
   ltr: 'PlaygroundEditorTheme__ltr',
+  mark: 'PlaygroundEditorTheme__mark',
   paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',

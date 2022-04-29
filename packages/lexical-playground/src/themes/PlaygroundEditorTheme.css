@@ -214,8 +214,12 @@
   color: #dd4a68;
 }
 
-.PlaygroundEditorTheme__comment {
+.PlaygroundEditorTheme__mark {
   background: rgba(255, 212, 0, 0.14);
   border-bottom: 1px solid rgb(255, 212, 0);
   padding-bottom: 2px;
+}
+
+.PlaygroundEditorTheme__mark.selected {
+  background: rgba(255, 212, 0, 0.5);
 }

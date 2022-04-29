@@ -295,13 +295,10 @@ i.send {
   margin: 0;
   font-size: 14px;
   position: relative;
+  transition: all 0.2s linear;
 }
 
-.CommentPlugin_CommentsPanel_List_Comment:hover {
-  background-color: #fafafa;
-}
-
-.CommentPlugin_CommentsPanel_List_Reference.active
+.CommentPlugin_CommentsPanel_List_Thread.active
   .CommentPlugin_CommentsPanel_List_Comment:hover {
   background-color: inherit;
 }
@@ -326,37 +323,44 @@ i.send {
   color: #999;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference {
+.CommentPlugin_CommentsPanel_List_Thread {
   padding: 0 0 0 0;
   margin: 0;
   border-top: 1px solid #eee;
   border-bottom: 1px solid #eee;
   position: relative;
-  transition: all 0.4s linear;
+  transition: all 0.2s linear;
+  border-left: 0 solid #eee;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference:first-child,
-.CommentPlugin_CommentsPanel_List_Reference
-  + .CommentPlugin_CommentsPanel_List_Reference {
+.CommentPlugin_CommentsPanel_List_Thread:first-child,
+.CommentPlugin_CommentsPanel_List_Thread
+  + .CommentPlugin_CommentsPanel_List_Thread {
   border-top: none;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference:hover {
+.CommentPlugin_CommentsPanel_List_Thread.interactive {
+  cursor: pointer;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread.interactive:hover {
   background-color: #fafafa;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference.active {
-  background-color: rgba(255, 212, 0, 0.1);
+.CommentPlugin_CommentsPanel_List_Thread.active {
+  background-color: #fafafa;
+  border-left: 15px solid #eee;
+  cursor: inherit;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference_Quote {
+.CommentPlugin_CommentsPanel_List_Thread_Quote {
   padding-top: 10px;
   margin: 0px 10px 0 10px;
   color: #ccc;
   display: block;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference_Quote span {
+.CommentPlugin_CommentsPanel_List_Thread_Quote span {
   color: #222;
   background-color: rgba(255, 212, 0, 0.4);
   padding: 1px;
@@ -365,31 +369,31 @@ i.send {
   font-weight: bold;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference_Comments {
+.CommentPlugin_CommentsPanel_List_Thread_Comments {
   padding-left: 10px;
   list-style-type: none;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference_Comments
+.CommentPlugin_CommentsPanel_List_Thread_Comments
   .CommentPlugin_CommentsPanel_List_Comment:first-child {
   border: none;
   margin-left: 0;
   padding-left: 5px;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference_Comments
+.CommentPlugin_CommentsPanel_List_Thread_Comments
   .CommentPlugin_CommentsPanel_List_Comment:first-child.CommentPlugin_CommentsPanel_List_Comment:last-child {
   padding-bottom: 5px;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference_Comments
+.CommentPlugin_CommentsPanel_List_Thread_Comments
   .CommentPlugin_CommentsPanel_List_Comment {
   padding-left: 10px;
   border-left: 5px solid #eee;
   margin-left: 5px;
 }
 
-.CommentPlugin_CommentsPanel_List_Reference_Editor {
+.CommentPlugin_CommentsPanel_List_Thread_Editor {
   position: relative;
   padding-top: 1px;
 }

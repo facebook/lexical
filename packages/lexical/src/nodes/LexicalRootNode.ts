@@ -121,7 +121,11 @@ export class RootNode extends ElementNode {
   // TODO: Deprecated
   toJSON(): ParsedElementNode {
     return {
-      __children: this.__children,
+      __next: null,
+      __prev: null,
+      __first: this.__first,
+      __last: this.__last,
+      __size: this.__size,
       __dir: this.__dir,
       __format: this.__format,
       __indent: this.__indent,

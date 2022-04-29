@@ -50,17 +50,21 @@ export type SerializedElementNode = Spread<
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 
 export class ElementNode extends LexicalNode {
-  __children: Array<NodeKey>;
   __format: number;
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
+  __first: null | NodeKey;
+  __last: null | NodeKey;
+  __size: number;
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__children = [];
     this.__format = 0;
     this.__indent = 0;
     this.__dir = null;
+    this.__first = null;
+    this.__last = null;
+    this.__size = 0;
   }
 
   getFormat(): number {
@@ -75,24 +79,37 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__indent;
   }
-  getChildren<T extends LexicalNode>(): Array<T> {
+
+  forEachChild<T extends LexicalNode>(callback: (child: T) => void): void {
     const self = this.getLatest();
-    const children = self.__children;
-    const childrenNodes = [];
-    for (let i = 0; i < children.length; i++) {
-      const childNode = $getNodeByKey(children[i]);
+    let next = self.__first;
+    while (next !== null) {
+      const childNode = $getNodeByKey<T>(next);
       if (childNode !== null) {
-        childrenNodes.push(childNode);
+        callback(childNode);
+        next = childNode.__next;
       }
     }
+  }
+
+  getChildren<T extends LexicalNode>(): Array<T> {
+    const childrenNodes = [];
+    this.forEachChild<T>((child) => {
+      childrenNodes.push(child)
+    });
     return childrenNodes;
   }
+
   getChildrenKeys(): Array<NodeKey> {
-    return this.getLatest().__children;
+    const childKeys = [];
+    this.forEachChild((child) => {
+      childKeys.push(child.__key)
+    });
+    return childKeys;
   }
   getChildrenSize(): number {
     const self = this.getLatest();
-    return self.__children.length;
+    return self.__size;
   }
   isEmpty(): boolean {
     return this.getChildrenSize() === 0;
@@ -109,17 +126,14 @@ export class ElementNode extends LexicalNode {
   }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
-    const self = this.getLatest();
-    const children = self.__children;
-    for (let i = 0; i < children.length; i++) {
-      const childNode = $getNodeByKey<LexicalNode>(children[i]);
-      if ($isTextNode(childNode) && (includeInert || !childNode.isInert())) {
-        textNodes.push(childNode);
-      } else if ($isElementNode(childNode)) {
-        const subChildrenNodes = childNode.getAllTextNodes(includeInert);
+    this.forEachChild((child) => {
+      if ($isTextNode(child) && (includeInert || !child.isInert())) {
+        textNodes.push(child);
+      } else if ($isElementNode(child)) {
+        const subChildrenNodes = child.getAllTextNodes(includeInert);
         textNodes.push(...subChildrenNodes);
       }
-    }
+    })
     return textNodes;
   }
   getFirstDescendant<T extends LexicalNode>(): null | T {
@@ -172,12 +186,11 @@ export class ElementNode extends LexicalNode {
   }
   getFirstChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest();
-    const children = self.__children;
-    const childrenLength = children.length;
-    if (childrenLength === 0) {
-      return null;
+    const firstChildKey = self.__first
+    if (firstChildKey !== null) {
+      return $getNodeByKey<T>(firstChildKey);
     }
-    return $getNodeByKey<T>(children[0]);
+    return null;
   }
   getFirstChildOrThrow<T extends LexicalNode>(): T {
     const firstChild = this.getFirstChild<T>();
@@ -188,21 +201,32 @@ export class ElementNode extends LexicalNode {
   }
   getLastChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest();
-    const children = self.__children;
-    const childrenLength = children.length;
-    if (childrenLength === 0) {
-      return null;
+    const lastChildKey = self.__last
+    if (lastChildKey !== null) {
+      return $getNodeByKey<T>(lastChildKey);
     }
-    return $getNodeByKey<T>(children[childrenLength - 1]);
+    return null;
   }
   getChildAtIndex<T extends LexicalNode>(index: number): null | T {
     const self = this.getLatest();
-    const children = self.__children;
-    const key = children[index];
-    if (key === undefined) {
+    let next = self.__first;
+    if (next === null) {
       return null;
     }
-    return $getNodeByKey(key);
+    if (index === 0) {
+      return $getNodeByKey<T>(next);
+    }
+    let count = 0;
+    while (next !== null) {
+      const childNode = $getNodeByKey<T>(next);
+      if (childNode !== null) {
+        if (count === index + 1) {
+          return childNode;
+        }
+        next = childNode.__next;
+      }
+    }
+    return null;
   }
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     let textContent = '';
@@ -320,7 +344,6 @@ export class ElementNode extends LexicalNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
-    const writableSelfChildren = writableSelf.__children;
     const nodesToInsertLength = nodesToInsert.length;
     const nodesToInsertKeys = [];
 
@@ -348,20 +371,54 @@ export class ElementNode extends LexicalNode {
       internalMarkNodeAsDirty(nodeAfterRange);
     }
 
-    // Remove defined range of children
-    let nodesToRemoveKeys;
+    // link nodes to insert
+    nodesToInsertKeys.forEach((key, index) => {
+      const node = $getNodeByKey<LexicalNode>(key);
+      if (node !== null) {
+        if (index !== 0) {
+          node.setPrev(nodesToInsertKeys[index - 1]);
+        }
+        if (index !== nodesToInsertKeys.length -1) {
+          node.setNext(nodesToInsertKeys[index + 1]);
+        }
+      }
+    });
 
-    // Using faster push when only appending nodes
-    if (start === writableSelfChildren.length) {
-      writableSelfChildren.push(...nodesToInsertKeys);
-      nodesToRemoveKeys = [];
-    } else {
-      nodesToRemoveKeys = writableSelfChildren.splice(
-        start,
-        deleteCount,
-        ...nodesToInsertKeys,
-      );
+    let nodesToRemoveKeys = [];
+    const firstNodeKeyToInsert = nodesToInsertKeys[0];
+    const lastNodeKeyToInsert = nodesToInsertKeys[nodesToInsertLength - 1];
+    const startNode = start === 0 ? null : this.getChildAtIndex(start - 1);
+    const endNode = start >= writableSelf.getChildrenSize() ? null : this.getChildAtIndex(start + deleteCount);
+    let next = this.getChildAtIndex(start);
+    let deletedCount = 0;
+    while (next !== null && deletedCount < deleteCount) {
+      nodesToRemoveKeys.push(next.getKey());
+      deletedCount++;
+      next = next.getNextSibling();
     }
+    const firstNodeToInsert = $getNodeByKey<LexicalNode>(firstNodeKeyToInsert);
+    const lastNodeToInsert = $getNodeByKey<LexicalNode>(lastNodeKeyToInsert);
+    if (firstNodeToInsert !== null && lastNodeToInsert !== null) {
+      if (startNode === null) {
+        writableSelf.__first = firstNodeKeyToInsert;
+      } else {
+        startNode.setNext(firstNodeToInsert.getKey());
+        firstNodeToInsert.setPrev(startNode.getKey());
+      }
+      if (endNode === null) {
+        writableSelf.__last = lastNodeKeyToInsert;
+      } else {
+        lastNodeToInsert.setNext(endNode.getKey());
+        endNode.setPrev(lastNodeToInsert.getKey());
+      }
+    }
+
+    let size = 0;
+    writableSelf.forEachChild((child) => {
+      size++;
+    });
+    writableSelf.__size = size;
+
 
     // In case of deletion we need to adjust selection, unlink removed nodes
     // and clean up node itself if it becomes empty. None of these needed
@@ -419,7 +476,7 @@ export class ElementNode extends LexicalNode {
 
         // Cleanup if node can't be empty
         if (
-          writableSelfChildren.length === 0 &&
+          writableSelf.__size === 0 &&
           !this.canBeEmpty() &&
           !$isRootNode(this)
         ) {

@@ -24,15 +24,20 @@ export type NodeParserState = {
   remappedSelection?: ParsedSelection;
 };
 export type ParsedNode = {
-  __key: NodeKey;
-  __parent: null | NodeKey;
-  __type: string;
+  __key: NodeKey,
+  __parent: null | NodeKey,
+  __type: string,
+  __next: null | NodeKey,
+  __prev: null | NodeKey,
 };
+
 export type ParsedElementNode = ParsedNode & {
-  __children: Array<NodeKey>;
-  __dir: 'ltr' | 'rtl' | null;
-  __format: number;
-  __indent: number;
+  __first: null | NodeKey,
+  __last: null | NodeKey,
+  __size: null | number,
+  __dir: 'ltr' | 'rtl' | null,
+  __format: number,
+  __indent: number,
 };
 export type ParsedTextNode = ParsedNode & {
   __format: number;
@@ -143,12 +148,11 @@ export function internalCreateNodeFromParse(
   // We will need to recursively handle the children in the case
   // of a ElementNode.
   if ($isElementNode(node)) {
-    const children = parsedNode.__children;
-
-    for (let i = 0; i < children.length; i++) {
-      const childKey = children[i];
-      const parsedChild = parsedNodeMap.get(childKey);
-
+    const firstChild = parsedNode.__first;
+    let next = firstChild;
+    let childCount = 0;
+    while (next !== null) {
+      const parsedChild = parsedNodeMap.get(next);
       if (parsedChild !== undefined) {
         const child = internalCreateNodeFromParse(
           parsedChild,
@@ -157,12 +161,16 @@ export function internalCreateNodeFromParse(
           key,
           state,
         );
-        const newChildKey = child.__key;
-
-        node.__children.push(newChildKey);
+        if (firstChild === next) {
+          node.__first = child.__key;
+        } else if (next === null) {
+          node.__last = child.__key;
+        }
+        childCount++;
+        next = child.__next;
       }
     }
-
+    node.__size = childCount;
     node.__indent = parsedNode.__indent;
     node.__format = parsedNode.__format;
     node.__dir = parsedNode.__dir;

@@ -347,7 +347,6 @@ declare export class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  isComposing(): boolean;
   // $FlowFixMe
   getLatest<T: LexicalNode>(this: T): T;
   // $FlowFixMe
@@ -596,6 +595,7 @@ declare export class TextNode extends LexicalNode {
   constructor(text: string, key?: NodeKey): void;
   getFormat(): number;
   getStyle(): string;
+  isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
   isInert(): boolean;

@@ -375,6 +375,92 @@ test.describe('Links', () => {
     );
   });
 
+  test(`Can create a link with some text after, insert paragraph, then backspace, it should merge correctly`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc def ');
+    await moveLeft(page, 5);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+
+    await moveLeft(page, 1);
+    await moveRight(page, 2);
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">ab</span>
+          </a>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">c</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">ab</span>
+          </a>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">c</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+  });
+
   test(`Can create a link then replace it with plain text`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type(' abc ');

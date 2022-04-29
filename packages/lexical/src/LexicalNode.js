@@ -82,13 +82,12 @@ export function removeNode(
   }
 
   const writableParent = parent.getWritable();
-  const parentChildren = writableParent.__children;
-  const index = parentChildren.indexOf(key);
+  const index = nodeToRemove.getIndexWithinParent();
   if (index === -1) {
     invariant(false, 'Node is not a child of its parent');
   }
   internalMarkSiblingsAsDirty(nodeToRemove);
-  parentChildren.splice(index, 1);
+  parent.splice(index, 1, []);
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
 
@@ -151,6 +150,8 @@ export class LexicalNode {
   __type: string;
   __key: NodeKey;
   __parent: null | NodeKey;
+  __next: null | NodeKey;
+  __prev: null | NodeKey;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -175,6 +176,8 @@ export class LexicalNode {
   constructor(key?: NodeKey): void {
     this.__type = this.constructor.getType();
     this.__parent = null;
+    this.__next = null;
+    this.__prev = null;
     $setNodeKey(this, key);
 
     // Ensure custom nodes implement required methods.
@@ -250,8 +253,17 @@ export class LexicalNode {
     if (parent === null) {
       return -1;
     }
-    const children = parent.__children;
-    return children.indexOf(this.__key);
+    const firstChild = parent.getFirstChild();
+    let next = firstChild;
+    let index = 0;
+    while (next !== null) {
+      if (this.__key === next.getKey()) {
+        return index;
+      }
+      next = next.getNextSibling();
+      index++;
+    }
+    return -1;
   }
 
   getParent(): ElementNode | null {
@@ -315,54 +327,43 @@ export class LexicalNode {
   }
 
   getPreviousSibling(): LexicalNode | null {
-    const parent = this.getParent();
-    if (parent === null) {
+    const latest = this.getLatest();
+    const prev = latest.__prev;
+    if (prev === null) {
       return null;
     }
-    const children = parent.__children;
-    const index = children.indexOf(this.__key);
-    if (index <= 0) {
-      return null;
-    }
-    return $getNodeByKey<LexicalNode>(children[index - 1]);
+    return $getNodeByKey<LexicalNode>(prev);
   }
 
   getPreviousSiblings(): Array<LexicalNode> {
-    const parent = this.getParent();
-    if (parent === null) {
-      return [];
+    const latest = this.getLatest();
+    let prevSiblings = [];
+    let prev = this.getPreviousSibling();
+    while (prev !== null) {
+      prevSiblings.push(prev);
+      prev = prev.getPreviousSibling();
     }
-    const children = parent.__children;
-    const index = children.indexOf(this.__key);
-    return children
-      .slice(0, index)
-      .map((childKey) => $getNodeByKeyOrThrow<LexicalNode>(childKey));
+    return prevSiblings;
   }
 
   getNextSibling(): LexicalNode | null {
-    const parent = this.getParent();
-    if (parent === null) {
+    const latest = this.getLatest();
+    const next = latest.__next;
+    if (next === null) {
       return null;
     }
-    const children = parent.__children;
-    const childrenLength = children.length;
-    const index = children.indexOf(this.__key);
-    if (index >= childrenLength - 1) {
-      return null;
-    }
-    return $getNodeByKey<LexicalNode>(children[index + 1]);
+    return $getNodeByKey<LexicalNode>(next);
   }
 
   getNextSiblings(): Array<LexicalNode> {
-    const parent = this.getParent();
-    if (parent === null) {
-      return [];
+    const latest = this.getLatest();
+    let nextSiblings = [];
+    let next = this.getNextSibling();
+    while (next !== null) {
+      nextSiblings.push(next);
+      next = next.getNextSibling();
     }
-    const children = parent.__children;
-    const index = children.indexOf(this.__key);
-    return children
-      .slice(index + 1)
-      .map((childKey) => $getNodeByKeyOrThrow<LexicalNode>(childKey));
+    return nextSiblings;
   }
 
   getCommonAncestor(node: LexicalNode): ElementNode | null {
@@ -410,7 +411,7 @@ export class LexicalNode {
     while (true) {
       const parent = node.getParentOrThrow();
       if (parent === commonAncestor) {
-        indexA = parent.__children.indexOf(node.__key);
+        indexA = node.getIndexWithinParent();
         break;
       }
       node = parent;
@@ -419,7 +420,7 @@ export class LexicalNode {
     while (true) {
       const parent = node.getParentOrThrow();
       if (parent === commonAncestor) {
-        indexB = parent.__children.indexOf(node.__key);
+        indexB = node.getIndexWithinParent();
         break;
       }
       node = parent;
@@ -541,6 +542,8 @@ export class LexicalNode {
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
+    const prev = latestNode.__prev;
+    const next = latestNode.__next;
     const cloneNotNeeded = editor._cloneNotNeeded;
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
@@ -550,11 +553,15 @@ export class LexicalNode {
     const constructor = latestNode.constructor;
     const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
+    mutableNode.__next = next;
+    mutableNode.__prev = prev;
     if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__indent = latestNode.__indent;
       mutableNode.__format = latestNode.__format;
       mutableNode.__dir = latestNode.__dir;
+      mutableNode.__first = latestNode.__first;
+      mutableNode.__last = latestNode.__last;
+      mutableNode.__size = latestNode.__size;
     } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
@@ -613,6 +620,16 @@ export class LexicalNode {
 
   // Setters and mutators
 
+  setPrev(key: NodeKey | null): void {
+    const writableSelf = this.getWritable();
+    writableSelf.__prev = key;
+  }
+
+  setNext(key: NodeKey | null): void {
+    const writableSelf = this.getWritable();
+    writableSelf.__next = key;
+  }
+
   remove(preserveEmptyParent?: boolean): void {
     errorOnReadOnly();
     removeNode(this, true, preserveEmptyParent);
@@ -625,13 +642,12 @@ export class LexicalNode {
     removeFromParent(writableReplaceWith);
     const newParent = this.getParentOrThrow();
     const writableParent = newParent.getWritable();
-    const children = writableParent.__children;
-    const index = children.indexOf(this.__key);
+    const index = this.getIndexWithinParent();
     const newKey = writableReplaceWith.__key;
     if (index === -1) {
       invariant(false, 'Node is not a child of its parent');
     }
-    children.splice(index, 0, newKey);
+    newParent.splice(index, 0, [replaceWith]);
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
     internalMarkSiblingsAsDirty(writableReplaceWith);
@@ -677,15 +693,15 @@ export class LexicalNode {
           focus.offset === oldIndex + 1;
       }
     }
-    const writableParent = this.getParentOrThrow().getWritable();
+    const parent = this.getParentOrThrow();
+    const writableParent = parent.getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
-    const children = writableParent.__children;
-    const index = children.indexOf(writableSelf.__key);
+    const index = this.getIndexWithinParent();
     if (index === -1) {
       invariant(false, 'Node is not a child of its parent');
     }
-    children.splice(index + 1, 0, insertKey);
+    parent.splice(index + 1, 0, [nodeToInsert]);
     internalMarkSiblingsAsDirty(writableNodeToInsert);
     if ($isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
@@ -709,15 +725,15 @@ export class LexicalNode {
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     removeFromParent(writableNodeToInsert);
-    const writableParent = this.getParentOrThrow().getWritable();
+    const parent = this.getParentOrThrow();
+    const writableParent = parent.getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
-    const children = writableParent.__children;
-    const index = children.indexOf(writableSelf.__key);
+    const index = nodeToInsert.getIndexWithinParent();
     if (index === -1) {
       invariant(false, 'Node is not a child of its parent');
     }
-    children.splice(index, 0, insertKey);
+    parent.splice(index, 0, [nodeToInsert]);
     internalMarkSiblingsAsDirty(writableNodeToInsert);
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {

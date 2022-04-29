@@ -242,13 +242,22 @@ export function removeFromParent(writableNode: LexicalNode): void {
   const oldParent = writableNode.getParent();
   if (oldParent !== null) {
     const writableParent = oldParent.getWritable();
-    const children = writableParent.__children;
-    const index = children.indexOf(writableNode.__key);
-    if (index === -1) {
-      invariant(false, 'Node is not a child of its parent');
-    }
     internalMarkSiblingsAsDirty(writableNode);
-    children.splice(index, 1);
+    const prevSibling = writableNode.getPreviousSibling();
+    const nextSibling = writableNode.getNextSibling();
+    if (prevSibling !== null) {
+      if (nextSibling !== null) {
+        prevSibling.setNext(nextSibling.getKey());
+        nextSibling.setPrev(prevSibling.getKey());
+      } else {
+        writableParent.__last = prevSibling.getKey();
+      }
+    } else {
+      if (nextSibling !== null) {
+        writableParent.__first = nextSibling.getKey();
+      }
+    }
+    writableParent.__size = writableParent.getChildrenSize() - 1;
   }
 }
 

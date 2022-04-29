@@ -683,14 +683,13 @@ export class TextNode extends LexicalNode {
     // Insert the nodes into the parent's children
     internalMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
-    const writableParentChildren = writableParent.__children;
-    const insertionIndex = writableParentChildren.indexOf(key);
+    const insertionIndex = self.getIndexWithinParent();
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
     if (hasReplacedSelf) {
-      writableParentChildren.splice(insertionIndex, 0, ...splitNodesKeys);
+      parent.splice(insertionIndex, 0, splitNodes);
       this.remove();
     } else {
-      writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+      parent.splice(insertionIndex, 1, splitNodes);
     }
 
     if ($isRangeSelection(selection)) {

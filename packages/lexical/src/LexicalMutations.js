@@ -198,7 +198,7 @@ export function $flushMutations(
       if (badDOMTargets.size > 0) {
         for (const [targetDOM, targetNode] of badDOMTargets) {
           if ($isElementNode(targetNode)) {
-            const childKeys = targetNode.__children;
+            const childKeys = targetNode.getChildrenKeys();
             let currentDOM = targetDOM.firstChild;
 
             for (let s = 0; s < childKeys.length; s++) {

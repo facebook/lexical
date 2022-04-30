@@ -807,6 +807,7 @@ export default function CommentPlugin({
   }, []);
   const [activeAnchorKey, setActiveAnchorKey] = useState(null);
   const [activeIDs, setActiveIDs] = useState<Array<string>>([]);
+  const [activeMarkKeys, setActiveMarkKeys] = useState<Array<string>>([]);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
@@ -922,17 +923,12 @@ export default function CommentPlugin({
 
   useEffect(() => {
     const changedElems = [];
-    for (let i = 0; i < activeIDs.length; i++) {
-      const id = activeIDs[i];
-      const keys = markNodeMap.get(id);
-      if (keys !== undefined) {
-        for (const key of keys) {
-          const elem = editor.getElementByKey(key);
-          if (elem !== null) {
-            elem.classList.add('selected');
-            changedElems.push(elem);
-          }
-        }
+    for (let i = 0; i < activeMarkKeys.length; i++) {
+      const key = activeMarkKeys[i];
+      const elem = editor.getElementByKey(key);
+      if (elem !== null) {
+        elem.classList.add('selected');
+        changedElems.push(elem);
       }
     }
     return () => {
@@ -941,7 +937,7 @@ export default function CommentPlugin({
         changedElem.classList.remove('selected');
       }
     };
-  }, [activeIDs, editor, markNodeMap]);
+  }, [activeMarkKeys, editor]);
 
   useEffect(() => {
     const markNodeKeysToIDs: Map<NodeKey, Array<string>> = new Map();
@@ -951,13 +947,14 @@ export default function CommentPlugin({
         for (const [key, mutation] of mutations) {
           const node: null | MarkNode = $getNodeByKey(key);
           let ids = [];
+          let keyAdded = false;
 
           if (mutation === 'destroyed') {
             ids = markNodeKeysToIDs.get(key) || [];
+            setActiveMarkKeys((keys) => keys.filter((_key) => key !== _key));
           } else if ($isMarkNode(node)) {
             ids = node.getIDs();
           }
-          let hasChanged = false;
 
           for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
@@ -967,26 +964,26 @@ export default function CommentPlugin({
             if (mutation === 'destroyed') {
               if (markNodeKeys !== undefined) {
                 markNodeKeys.delete(key);
-                hasChanged = true;
                 if (markNodeKeys.size === 0) {
                   markNodeMap.delete(id);
                 }
               }
             } else {
+              if (mutation === 'created') {
+                keyAdded = true;
+              }
               if (markNodeKeys === undefined) {
                 markNodeKeys = new Set();
                 markNodeMap.set(id, markNodeKeys);
               }
               if (!markNodeKeys.has(key)) {
-                hasChanged = true;
                 markNodeKeys.add(key);
               }
             }
           }
-          // This will try an update so the CommentList can update
-          // accordingly.
-          if (hasChanged) {
-            setActiveIDs((activeIds) => [...activeIds]);
+
+          if (keyAdded) {
+            setActiveMarkKeys((keys) => [...keys, key]);
           }
         }
       }),
@@ -1013,7 +1010,9 @@ export default function CommentPlugin({
             }
           }
           if (!hasActiveIds) {
-            setActiveIDs([]);
+            setActiveIDs((_activeIds) =>
+              _activeIds.length === 0 ? _activeIds : [],
+            );
           }
           setActiveAnchorKey(null);
         });

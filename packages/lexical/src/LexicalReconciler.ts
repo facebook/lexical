@@ -42,6 +42,7 @@ import {
   getTextDirection,
   setMutatedNode,
 } from './LexicalUtils';
+import { $getNodeByKey } from "../flow/Lexical";
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
@@ -75,8 +76,15 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
 
   if ($isElementNode(node)) {
-    const children = node.__children;
-    destroyChildren(children, 0, children.length - 1, null);
+    const first = node.__first;
+    if (first !== null) {
+      let firstNode = $getNodeByKey(first);
+      if (firstNode !== null) {
+        let nextSiblings = firstNode.getNextSiblings();
+        nextSiblings.forEach((sibling) => { destroyNode(sibling.__key, null) })
+      }
+      destroyNode(first, null);
+    }
   }
 
   if (node !== undefined) {
@@ -558,10 +566,28 @@ function reconcileNode(
     if (nextFormat !== prevNode.__format) {
       setElementFormat(dom, nextFormat);
     }
-
-    const prevChildren = prevNode.__children;
-    const nextChildren = nextNode.__children;
-    const childrenAreDifferent = prevChildren !== nextChildren;
+    let childrenAreDifferent = false;
+    const prevChildren = [];
+    const nextChildren = [];
+    let prevNextSibling = prevNode.__first !== null ? $getNodeByKey(prevNode.__first) : null;
+    let nextNextSibling = nextNode.__first !== null ? $getNodeByKey(nextNode.__first) : null;
+    while (prevNextSibling !== null || nextNextSibling !== null) {
+      if (prevNextSibling !== null) {
+        if (nextNextSibling !== null) {
+          if (prevNextSibling.__key !== nextNextSibling.__key) {
+            childrenAreDifferent = true;
+          }
+        } else {
+          childrenAreDifferent = true;
+        }
+        prevChildren.push(prevNextSibling.__key);
+        prevNextSibling = prevNextSibling.getNextSibling();
+      } else if (nextNextSibling !== null) {
+        childrenAreDifferent = true;
+        nextChildren.push(nextNextSibling.__key);
+        nextNextSibling = nextNextSibling.getNextSibling();
+      }
+    }
 
     if (childrenAreDifferent || isDirty) {
       reconcileChildrenWithDirection(prevChildren, nextChildren, nextNode, dom);

@@ -286,6 +286,7 @@ export function createEditor(editorConfig?: {
 }
 
 export class LexicalEditor {
+  _headless: boolean;
   _parentEditor: null | LexicalEditor;
   _rootElement: null | HTMLElement;
   _editorState: EditorState;
@@ -368,6 +369,7 @@ export class LexicalEditor {
     this._onError = onError;
     this._htmlConversions = htmlConversions;
     this._readOnly = false;
+    this._headless = false;
   }
   isComposing(): boolean {
     return this._compositionKey != null;

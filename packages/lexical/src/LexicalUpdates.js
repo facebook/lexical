@@ -324,7 +324,8 @@ function handleDEVOnlyPendingUpdateGuarantees(
 export function commitPendingUpdates(editor: LexicalEditor): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
-  if (rootElement === null || pendingEditorState === null) {
+  const headless = editor._headless;
+  if ((rootElement === null && !headless) || pendingEditorState === null) {
     return;
   }
   const currentEditorState = editor._editorState;
@@ -345,22 +346,24 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._updating = true;
 
   try {
-    const mutatedNodes = updateEditorState(
-      rootElement,
-      currentEditorState,
-      pendingEditorState,
-      currentSelection,
-      pendingSelection,
-      needsUpdate,
-      editor,
-    );
-    if (mutatedNodes !== null) {
-      triggerMutationListeners(
-        editor,
+    if (!headless && rootElement !== null) {
+      const mutatedNodes = updateEditorState(
+        rootElement,
         currentEditorState,
         pendingEditorState,
-        mutatedNodes,
+        currentSelection,
+        pendingSelection,
+        needsUpdate,
+        editor,
       );
+      if (mutatedNodes !== null) {
+        triggerMutationListeners(
+          editor,
+          currentEditorState,
+          pendingEditorState,
+          mutatedNodes,
+        );
+      }
     }
   } catch (error) {
     // Report errors
@@ -595,7 +598,7 @@ function beginUpdate(
   activeEditor = editor;
 
   try {
-    if (editorStateWasCloned) {
+    if (editorStateWasCloned && !editor._headless) {
       pendingEditorState._selection = internalCreateSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;

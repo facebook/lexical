@@ -81,6 +81,7 @@ module.name_mapper='^@lexical/dragon/LexicalDragon' -> '<PROJECT_ROOT>/packages/
 module.name_mapper='^@lexical/history/LexicalHistory' -> '<PROJECT_ROOT>/packages/lexical-history/flow/LexicalHistory.js.flow'
 module.name_mapper='^@lexical/link/LexicalLink' -> '<PROJECT_ROOT>/packages/lexical-link/flow/LexicalLink.js.flow'
 module.name_mapper='^@lexical/markdown/LexicalMarkdown' -> '<PROJECT_ROOT>/packages/lexical-markdown/flow/LexicalMarkdown.js.flow'
+module.name_mapper='^@lexical/headless/LexicalHeadless' -> '<PROJECT_ROOT>/packages/lexical-markdown/flow/LexicalHeadless.js.flow'
 module.name_mapper='^@lexical/offset/LexicalOffset' -> '<PROJECT_ROOT>/packages/lexical-offset/flow/LexicalOffset.js.flow'
 module.name_mapper='^@lexical/overflow/LexicalOverflow' -> '<PROJECT_ROOT>/packages/lexical-overflow/flow/LexicalOverflow.js.flow'
 module.name_mapper='^@lexical/plain-text/LexicalPlainText' -> '<PROJECT_ROOT>/packages/lexical-plain-text/flow/LexicalPlainText.js.flow'

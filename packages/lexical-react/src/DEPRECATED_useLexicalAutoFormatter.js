@@ -9,8 +9,11 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import useMarkdownShortcuts from './shared/useMarkdownShortcuts';
+import {registerMarkdownShortcuts, TRANSFORMERS} from '@lexical/markdown';
+import {useEffect} from 'react';
 
 export default function useLexicalAutoFormatter(editor: LexicalEditor): void {
-  useMarkdownShortcuts(editor);
+  useEffect(() => {
+    return registerMarkdownShortcuts(editor, TRANSFORMERS);
+  }, [editor]);
 }

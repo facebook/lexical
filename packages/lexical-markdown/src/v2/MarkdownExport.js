@@ -8,22 +8,24 @@
  */
 
 import type {
-  BlockTransformer,
+  ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
+  Transformer,
 } from './MarkdownTransformers';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
+import {transformersByType} from './utils';
+
 export function createMarkdownExport(
-  blockTransformers: Array<BlockTransformer>,
-  _textFormatTransformers: Array<TextFormatTransformer>,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  transformers: Array<Transformer>,
 ): () => string {
+  const byType = transformersByType(transformers);
   // Export only uses text formats that are responsible for single format
   // e.g. it will filter out *** (bold, italic) and instead use separate ** and *
-  const textFormatTransformers = _textFormatTransformers.filter(
+  const textFormatTransformers = byType.textFormat.filter(
     (transformer) => transformer.format.length === 1,
   );
   return () => {
@@ -33,9 +35,9 @@ export function createMarkdownExport(
     for (const child of children) {
       const result = exportTopLevelElements(
         child,
-        blockTransformers,
+        byType.element,
         textFormatTransformers,
-        textMatchTransformers,
+        byType.textMatch,
       );
       if (result != null) {
         output.push(result);
@@ -48,11 +50,11 @@ export function createMarkdownExport(
 
 function exportTopLevelElements(
   node: LexicalNode,
-  blockTransformers: Array<BlockTransformer>,
+  elementTransformers: Array<ElementTransformer>,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
 ): string | null {
-  for (const transformer of blockTransformers) {
+  for (const transformer of elementTransformers) {
     const result = transformer.export(node, (_node) =>
       exportChildren(_node, textTransformersIndex, textMatchTransformers),
     );

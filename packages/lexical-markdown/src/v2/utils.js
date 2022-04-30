@@ -7,6 +7,13 @@
  * @flow strict
  */
 
+import type {
+  ElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from './MarkdownTransformers';
+
 export function indexBy<T>(
   list: Array<T>,
   callback: (T) => string,
@@ -21,4 +28,22 @@ export function indexBy<T>(
     }
   }
   return index;
+}
+
+export function transformersByType(
+  transformers: Array<Transformer>,
+): $ReadOnly<{
+  element: Array<ElementTransformer>,
+  textFormat: Array<TextFormatTransformer>,
+  textMatch: Array<TextMatchTransformer>,
+}> {
+  const byType = indexBy(transformers, (t) => t.type);
+  return {
+    // $FlowFixMe
+    element: byType.element,
+    // $FlowFixMe
+    textFormat: byType['text-format'],
+    // $FlowFixMe
+    textMatch: byType['text-match'],
+  };
 }

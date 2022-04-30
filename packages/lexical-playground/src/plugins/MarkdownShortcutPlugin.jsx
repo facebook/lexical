@@ -7,20 +7,13 @@
  * @flow strict
  */
 
-import {v2} from '@lexical/markdown';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect} from 'react';
+import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcutPlugin';
+import * as React from 'react';
 
-import {TRANSFORMERS} from './MarkdownTransformers';
-
-const {registerMarkdownShortcuts} = v2;
+import {PLAYGROUND_TRANSFORMERS} from './MarkdownTransformers';
 
 export default function MarkdownPlugin(): React$Node {
-  const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    return registerMarkdownShortcuts(editor, ...TRANSFORMERS);
-  }, [editor]);
-
-  return null;
+  return (
+    <LexicalMarkdownShortcutPlugin transformers={PLAYGROUND_TRANSFORMERS} />
+  );
 }

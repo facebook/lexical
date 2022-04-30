@@ -8,15 +8,18 @@
  */
 
 import type {
-  BlockTransformer,
+  ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
+  Transformer,
 } from './MarkdownTransformers';
 import type {CodeNode} from '@lexical/code';
 import type {RootNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+
+import {transformersByType} from './utils';
 
 const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
 
@@ -27,12 +30,11 @@ type TextFormatTransformersIndex = $ReadOnly<{
 }>;
 
 export function createMarkdownImport(
-  blockTransformers: Array<BlockTransformer>,
-  textFormatTransformers: Array<TextFormatTransformer>,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  transformers: Array<Transformer>,
 ): (markdownString: string) => void {
+  const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
-    textFormatTransformers,
+    byType.textFormat,
   );
   return (markdownString: string) => {
     const lines = markdownString.split('\n');
@@ -56,9 +58,9 @@ export function createMarkdownImport(
       importBlocks(
         lineText,
         root,
-        blockTransformers,
+        byType.element,
         textFormatTransformersIndex,
-        textMatchTransformers,
+        byType.textMatch,
       );
     }
 
@@ -69,7 +71,7 @@ export function createMarkdownImport(
 function importBlocks(
   lineText: string,
   rootNode: RootNode,
-  blockTransformers: Array<BlockTransformer>,
+  elementTransformers: Array<ElementTransformer>,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
@@ -78,7 +80,7 @@ function importBlocks(
   elementNode.append(textNode);
   rootNode.append(elementNode);
 
-  for (const {regExp, replace} of blockTransformers) {
+  for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
     if (match) {
       textNode.setTextContent(lineText.slice(match[0].length));

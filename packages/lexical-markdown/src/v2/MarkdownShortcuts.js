@@ -8,9 +8,10 @@
  */
 
 import type {
-  BlockTransformer,
+  ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
+  Transformer,
 } from './MarkdownTransformers';
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
@@ -25,13 +26,13 @@ import {
   $setSelection,
 } from 'lexical';
 
-import {indexBy} from './utils';
+import {indexBy, transformersByType} from './utils';
 
-function runBlockTransformers(
+function runElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
-  blockTransformers: $ReadOnlyArray<BlockTransformer>,
+  elementTransformers: $ReadOnlyArray<ElementTransformer>,
 ): boolean {
   const grandParentNode = parentNode.getParent();
   if (
@@ -52,7 +53,7 @@ function runBlockTransformers(
     return false;
   }
 
-  for (const {regExp, replace} of blockTransformers) {
+  for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
     if (match && match[0].length === anchorOffset) {
       const nextSiblings = anchorNode.getNextSiblings();
@@ -285,17 +286,16 @@ function isEqualSubString(
 
 export function registerMarkdownShortcuts(
   editor: LexicalEditor,
-  blockTransformers: Array<BlockTransformer>,
-  textFormatTransformers: Array<TextFormatTransformer>,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  transformers: Array<Transformer>,
 ): () => void {
+  const byType = transformersByType(transformers);
   const textFormatTransformersIndex = indexBy(
-    textFormatTransformers,
+    byType.textFormat,
     ({tag}) => tag[tag.length - 1],
   );
 
   const textMatchTransformersIndex = indexBy(
-    textMatchTransformers,
+    byType.textMatch,
     ({trigger}) => trigger,
   );
 
@@ -305,11 +305,11 @@ export function registerMarkdownShortcuts(
     anchorOffset: number,
   ) => {
     if (
-      runBlockTransformers(
+      runElementTransformers(
         parentNode,
         anchorNode,
         anchorOffset,
-        blockTransformers,
+        byType.element,
       )
     ) {
       return;

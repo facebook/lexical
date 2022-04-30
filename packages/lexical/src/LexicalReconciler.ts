@@ -41,8 +41,8 @@ import {
   getElementByKeyOrThrow,
   getTextDirection,
   setMutatedNode,
+  $getNodeByKey
 } from './LexicalUtils';
-import { $getNodeByKey } from "../flow/Lexical";
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';

@@ -247,22 +247,24 @@ export function removeFromParent(writableNode: LexicalNode): void {
   const oldParent = writableNode.getParent();
   if (oldParent !== null) {
     const writableParent = oldParent.getWritable();
-    internalMarkSiblingsAsDirty(writableNode);
     const prevSibling = writableNode.getPreviousSibling();
     const nextSibling = writableNode.getNextSibling();
     if (prevSibling !== null) {
       if (nextSibling !== null) {
-        prevSibling.setNext(nextSibling.getKey());
-        nextSibling.setPrev(prevSibling.getKey());
+        prevSibling.setNext(nextSibling.__key);
+        nextSibling.setPrev(prevSibling.__key);
       } else {
-        writableParent.__last = prevSibling.getKey();
+        writableParent.__last = prevSibling.__key;
       }
     } else {
       if (nextSibling !== null) {
-        writableParent.__first = nextSibling.getKey();
+        writableParent.__first = nextSibling.__key;
       }
     }
-    writableParent.__size = writableParent.getChildrenSize() - 1;
+    writableParent.__size--;
+    writableNode.__parent = null;
+    writableNode.__prev = null;
+    writableNode.__next = null;
   }
 }
 

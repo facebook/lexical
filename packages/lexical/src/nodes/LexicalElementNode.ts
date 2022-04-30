@@ -18,12 +18,8 @@ import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';
-import {
-  DOUBLE_LINE_BREAK,
-  ELEMENT_FORMAT_TO_TYPE,
-  ELEMENT_TYPE_TO_FORMAT,
-} from '../LexicalConstants';
-import {LexicalNode} from '../LexicalNode';
+import {DOUBLE_LINE_BREAK, ELEMENT_TYPE_TO_FORMAT, ELEMENT_FORMAT_TO_TYPE} from '../LexicalConstants';
+import {$getNodeByKeyOrThrow, LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
   $isRangeSelection,
@@ -103,10 +99,11 @@ export class ElementNode extends LexicalNode {
   getChildrenKeys(): Array<NodeKey> {
     const childKeys = [];
     this.forEachChild((child) => {
-      childKeys.push(child.__key)
+      childKeys.push(child.__key);
     });
     return childKeys;
   }
+
   getChildrenSize(): number {
     const self = this.getLatest();
     return self.__size;
@@ -133,7 +130,7 @@ export class ElementNode extends LexicalNode {
         const subChildrenNodes = child.getAllTextNodes(includeInert);
         textNodes.push(...subChildrenNodes);
       }
-    })
+    });
     return textNodes;
   }
   getFirstDescendant<T extends LexicalNode>(): null | T {
@@ -186,7 +183,7 @@ export class ElementNode extends LexicalNode {
   }
   getFirstChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest();
-    const firstChildKey = self.__first
+    const firstChildKey = self.__first;
     if (firstChildKey !== null) {
       return $getNodeByKey<T>(firstChildKey);
     }
@@ -201,7 +198,7 @@ export class ElementNode extends LexicalNode {
   }
   getLastChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest();
-    const lastChildKey = self.__last
+    const lastChildKey = self.__last;
     if (lastChildKey !== null) {
       return $getNodeByKey<T>(lastChildKey);
     }
@@ -216,7 +213,7 @@ export class ElementNode extends LexicalNode {
     if (index === 0) {
       return $getNodeByKey<T>(next);
     }
-    let count = 0;
+    const count = 0;
     while (next !== null) {
       const childNode = $getNodeByKey<T>(next);
       if (childNode !== null) {
@@ -316,7 +313,46 @@ export class ElementNode extends LexicalNode {
   }
   append(...nodesToAppend: LexicalNode[]): this {
     errorOnReadOnly();
-    return this.splice(this.getChildrenSize(), 0, nodesToAppend);
+    const nodesToAppendLength = nodesToAppend.length;
+    if (nodesToAppendLength === 0) {
+      return this;
+    }
+    const self = this.getWritable();
+    const writableSelfKey = self.__key;
+    for (let i = 0; i < nodesToAppendLength; i++) {
+      const node = nodesToAppend[i];
+      const writableNodeToInsert = node.getWritable();
+      if (node.__key === writableSelfKey) {
+        invariant(false, 'append: attemtping to append self');
+      }
+      removeFromParent(writableNodeToInsert);
+      // Set child parent to self
+      writableNodeToInsert.__parent = writableSelfKey;
+      if (i === 0) {
+        node.setPrev(null);
+      } else {
+        node.setPrev(nodesToAppend[i - 1].__key);
+      }
+      if (i === nodesToAppendLength - 1) {
+        node.setNext(null);
+      } else {
+        node.setNext(nodesToAppend[i + 1].__key);
+      }
+    }
+    const firstNodeToAppend = nodesToAppend[0];
+    const lastNodeToAppend = nodesToAppend[nodesToAppendLength - 1];
+    if (self.__last === null) {
+      self.__first = firstNodeToAppend.__key;
+      self.__last = lastNodeToAppend.__key;
+      self.__size = nodesToAppendLength;
+    } else {
+      const lastNode = $getNodeByKeyOrThrow(self.__last);
+      lastNode.setNext(firstNodeToAppend.__key);
+      firstNodeToAppend.setPrev(self.__last);
+      self.__last = lastNodeToAppend.__key;
+      self.__size += nodesToAppendLength;
+    }
+    return this;
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
@@ -378,21 +414,24 @@ export class ElementNode extends LexicalNode {
         if (index !== 0) {
           node.setPrev(nodesToInsertKeys[index - 1]);
         }
-        if (index !== nodesToInsertKeys.length -1) {
+        if (index !== nodesToInsertKeys.length - 1) {
           node.setNext(nodesToInsertKeys[index + 1]);
         }
       }
     });
 
-    let nodesToRemoveKeys = [];
+    const nodesToRemoveKeys = [];
     const firstNodeKeyToInsert = nodesToInsertKeys[0];
     const lastNodeKeyToInsert = nodesToInsertKeys[nodesToInsertLength - 1];
     const startNode = start === 0 ? null : this.getChildAtIndex(start - 1);
-    const endNode = start >= writableSelf.getChildrenSize() ? null : this.getChildAtIndex(start + deleteCount);
+    const endNode =
+      start >= writableSelf.getChildrenSize()
+        ? null
+        : this.getChildAtIndex(start + deleteCount);
     let next = this.getChildAtIndex(start);
     let deletedCount = 0;
     while (next !== null && deletedCount < deleteCount) {
-      nodesToRemoveKeys.push(next.getKey());
+      nodesToRemoveKeys.push(next.__key);
       deletedCount++;
       next = next.getNextSibling();
     }
@@ -402,14 +441,14 @@ export class ElementNode extends LexicalNode {
       if (startNode === null) {
         writableSelf.__first = firstNodeKeyToInsert;
       } else {
-        startNode.setNext(firstNodeToInsert.getKey());
-        firstNodeToInsert.setPrev(startNode.getKey());
+        startNode.setNext(firstNodeToInsert.__key);
+        firstNodeToInsert.setPrev(startNode.__key);
       }
       if (endNode === null) {
         writableSelf.__last = lastNodeKeyToInsert;
       } else {
-        lastNodeToInsert.setNext(endNode.getKey());
-        endNode.setPrev(lastNodeToInsert.getKey());
+        lastNodeToInsert.setNext(endNode.__key);
+        endNode.setPrev(lastNodeToInsert.__key);
       }
     }
 
@@ -418,7 +457,6 @@ export class ElementNode extends LexicalNode {
       size++;
     });
     writableSelf.__size = size;
-
 
     // In case of deletion we need to adjust selection, unlink removed nodes
     // and clean up node itself if it becomes empty. None of these needed

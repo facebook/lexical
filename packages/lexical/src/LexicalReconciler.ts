@@ -36,12 +36,16 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
+  markCollapsedSelectionFormat,
+  markSelectionChangeFromReconcile,
+} from './LexicalEvents';
+import {
+  $getNodeByKey,
   $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getElementByKeyOrThrow,
   getTextDirection,
   setMutatedNode,
-  $getNodeByKey
 } from './LexicalUtils';
 
 let subTreeTextContent = '';
@@ -78,10 +82,12 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   if ($isElementNode(node)) {
     const first = node.__first;
     if (first !== null) {
-      let firstNode = $getNodeByKey(first);
+      const firstNode = $getNodeByKey(first);
       if (firstNode !== null) {
-        let nextSiblings = firstNode.getNextSiblings();
-        nextSiblings.forEach((sibling) => { destroyNode(sibling.__key, null) })
+        const nextSiblings = firstNode.getNextSiblings();
+        nextSiblings.forEach((sibling) => {
+          destroyNode(sibling.__key, null);
+        });
       }
       destroyNode(first, null);
     }
@@ -171,8 +177,7 @@ function createNode(
     if (indent !== 0) {
       setElementIndent(dom, indent);
     }
-
-    const children = node.__children;
+    const children = node.getChildrenKeys();
     const childrenLength = children.length;
 
     if (childrenLength !== 0) {
@@ -569,8 +574,10 @@ function reconcileNode(
     let childrenAreDifferent = false;
     const prevChildren = [];
     const nextChildren = [];
-    let prevNextSibling = prevNode.__first !== null ? $getNodeByKey(prevNode.__first) : null;
-    let nextNextSibling = nextNode.__first !== null ? $getNodeByKey(nextNode.__first) : null;
+    let prevNextSibling =
+      prevNode.__first !== null ? $getNodeByKey(prevNode.__first) : null;
+    let nextNextSibling =
+      nextNode.__first !== null ? $getNodeByKey(nextNode.__first) : null;
     while (prevNextSibling !== null || nextNextSibling !== null) {
       if (prevNextSibling !== null) {
         if (nextNextSibling !== null) {

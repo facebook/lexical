@@ -259,6 +259,9 @@ export function removeFromParent(writableNode: LexicalNode): void {
     } else {
       if (nextSibling !== null) {
         writableParent.__first = nextSibling.__key;
+      } else {
+        writableParent.__first = null;
+        writableParent.__last = null;
       }
     }
     writableParent.__size--;

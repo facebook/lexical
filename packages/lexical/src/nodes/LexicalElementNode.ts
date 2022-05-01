@@ -84,6 +84,8 @@ export class ElementNode extends LexicalNode {
       if (childNode !== null) {
         callback(childNode, next);
         next = childNode.__next;
+      } else {
+        next = null;
       }
     }
   }

@@ -575,24 +575,39 @@ function reconcileNode(
     const prevChildren = [];
     const nextChildren = [];
     let prevNextSibling =
-      prevNode.__first !== null ? $getNodeByKey(prevNode.__first) : null;
+      prevNode.__first !== null
+        ? activePrevNodeMap.get(prevNode.__first)
+        : null;
     let nextNextSibling =
-      nextNode.__first !== null ? $getNodeByKey(nextNode.__first) : null;
-    while (prevNextSibling !== null || nextNextSibling !== null) {
-      if (prevNextSibling !== null) {
-        if (nextNextSibling !== null) {
+      nextNode.__first !== null
+        ? activeNextNodeMap.get(nextNode.__first)
+        : null;
+    while (prevNextSibling != null || nextNextSibling != null) {
+      if (prevNextSibling != null) {
+        if (nextNextSibling != null) {
           if (prevNextSibling.__key !== nextNextSibling.__key) {
             childrenAreDifferent = true;
           }
+          nextChildren.push(nextNextSibling.__key);
+          nextNextSibling =
+            nextNextSibling.__next != null
+              ? activeNextNodeMap.get(nextNextSibling.__next)
+              : null;
         } else {
           childrenAreDifferent = true;
         }
         prevChildren.push(prevNextSibling.__key);
-        prevNextSibling = prevNextSibling.getNextSibling();
-      } else if (nextNextSibling !== null) {
+        prevNextSibling =
+          prevNextSibling.__next != null
+            ? activePrevNodeMap.get(prevNextSibling.__next)
+            : null;
+      } else if (nextNextSibling != null) {
         childrenAreDifferent = true;
         nextChildren.push(nextNextSibling.__key);
-        nextNextSibling = nextNextSibling.getNextSibling();
+        nextNextSibling =
+          nextNextSibling.__next != null
+            ? activeNextNodeMap.get(nextNextSibling.__next)
+            : null;
       }
     }
 

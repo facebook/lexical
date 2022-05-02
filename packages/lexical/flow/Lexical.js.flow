@@ -336,6 +336,8 @@ declare export class LexicalNode {
   __type: string;
   __key: NodeKey;
   __parent: null | NodeKey;
+  __next: null | NodeKey;
+  __prev: null | NodeKey;
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
   static importDOM(): DOMConversionMap | null;
@@ -710,10 +712,12 @@ declare export function $isRootNode(
  */
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 declare export class ElementNode extends LexicalNode {
-  __children: Array<NodeKey>;
   __format: number;
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
+  __first: null | NodeKey;
+  __last: null | NodeKey;
+  __size: number;
   constructor(key?: NodeKey): void;
   getFormat(): number;
   getFormatType(): ElementFormatType;

@@ -254,10 +254,12 @@ export function removeFromParent(writableNode: LexicalNode): void {
         prevSibling.setNext(nextSibling.__key);
         nextSibling.setPrev(prevSibling.__key);
       } else {
+        prevSibling.setNext(null);
         writableParent.__last = prevSibling.__key;
       }
     } else {
       if (nextSibling !== null) {
+        nextSibling.setPrev(null);
         writableParent.__first = nextSibling.__key;
       } else {
         writableParent.__first = null;

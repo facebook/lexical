@@ -20,6 +20,7 @@ import {
   pasteFromClipboard,
   repeat,
   selectCellsFromTableCords,
+  selectFromAdditionalStylesDropdown,
   test,
 } from '../utils/index.mjs';
 
@@ -766,12 +767,9 @@ test.describe('Tables', () => {
     await fillTablePartiallyWithText(page);
     await selectCellsFromTableCords(page, {x: 0, y: 0}, {x: 1, y: 1});
 
-    await clickSelectors(page, [
-      '.bold',
-      '.italic',
-      '.underline',
-      '.strikethrough',
-    ]);
+    await clickSelectors(page, ['.bold', '.italic', '.underline']);
+
+    await selectFromAdditionalStylesDropdown(page, '.strikethrough');
 
     // Check that the character styles are applied.
     await assertHTML(

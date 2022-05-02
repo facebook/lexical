@@ -58,6 +58,8 @@ function FloatingCharacterStylesEditor({
   isUnderline,
   isCode,
   isStrikethrough,
+  isSubscript,
+  isSuperscript,
 }: {
   editor: LexicalEditor,
   isBold: boolean,
@@ -65,6 +67,8 @@ function FloatingCharacterStylesEditor({
   isItalic: boolean,
   isLink: boolean,
   isStrikethrough: boolean,
+  isSubscript: boolean,
+  isSuperscript: boolean,
   isUnderline: boolean,
 }): React$Node {
   const popupCharStylesEditorRef = useRef<HTMLElement | null>(null);
@@ -186,6 +190,24 @@ function FloatingCharacterStylesEditor({
       </button>
       <button
         onClick={() => {
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+        }}
+        className={'popup-item spaced ' + (isSubscript ? 'active' : '')}
+        title="Subscript"
+        aria-label="Format Subscript">
+        <i className="format subscript" />
+      </button>
+      <button
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
+        }}
+        className={'popup-item spaced ' + (isSuperscript ? 'active' : '')}
+        title="Superscript"
+        aria-label="Format Superscript">
+        <i className="format superscript" />
+      </button>
+      <button
+        onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
         }}
         className={'popup-item spaced ' + (isCode ? 'active' : '')}
@@ -225,6 +247,8 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
+  const [isSubscript, setIsSubscript] = useState(false);
+  const [isSuperscript, setIsSuperscript] = useState(false);
   const [isCode, setIsCode] = useState(false);
 
   const updatePopup = useCallback(() => {
@@ -249,6 +273,8 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
       setIsStrikethrough(selection.hasFormat('strikethrough'));
+      setIsSubscript(selection.hasFormat('subscript'));
+      setIsSuperscript(selection.hasFormat('superscript'));
       setIsCode(selection.hasFormat('code'));
 
       // Update links
@@ -294,6 +320,8 @@ function useCharacterStylesPopup(editor: LexicalEditor): React$Node {
       isBold={isBold}
       isItalic={isItalic}
       isStrikethrough={isStrikethrough}
+      isSubscript={isSubscript}
+      isSuperscript={isSuperscript}
       isUnderline={isUnderline}
       isCode={isCode}
     />,

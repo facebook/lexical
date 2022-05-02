@@ -327,6 +327,14 @@ i.strikethrough {
   background-image: url(images/icons/type-strikethrough.svg);
 }
 
+i.subscript {
+  background-image: url(images/icons/type-subscript.svg);
+}
+
+i.superscript {
+  background-image: url(images/icons/type-superscript.svg);
+}
+
 i.link {
   background-image: url(images/icons/link.svg);
 }
@@ -337,6 +345,10 @@ i.horizontal-rule {
 
 .icon.plus {
   background-image: url(images/icons/plus.svg);
+}
+
+.icon.dropdown-more {
+  background-image: url(images/icons/dropdown-more.svg);
 }
 
 i.image {
@@ -1538,4 +1550,12 @@ button.action-button:disabled {
 
 .spacer {
   letter-spacing: -2px;
+}
+
+button.item.dropdown-item-active {
+  background-color: rgba(223, 232, 250, 0.3);
+}
+
+button.item.dropdown-item-active i {
+  opacity: 1;
 }

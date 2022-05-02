@@ -853,6 +853,10 @@ export function isModifier(
   return ctrlKey || shiftKey || altKey || metaKey;
 }
 
+export function isSpace(keyCode: number): boolean {
+  return keyCode === 32;
+}
+
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
   if (IS_APPLE) {
     return metaKey;

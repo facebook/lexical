@@ -6,6 +6,8 @@
  *
  */
 
+import {expect} from '@playwright/test';
+
 import {
   moveLeft,
   moveRight,
@@ -26,6 +28,7 @@ import {
   html,
   initialize,
   pasteFromClipboard,
+  repeat,
   selectFromAlignDropdown,
   selectFromFormatDropdown,
   test,
@@ -1229,7 +1232,9 @@ test.describe('Nested List', () => {
     );
   });
 
-  test('Can create check list', async ({page}) => {
+  test('Can create check list, toggle it to bullet-list and back', async ({
+    page,
+  }) => {
     await focusEditor(page);
     await toggleCheckList(page);
     await page.keyboard.type('a');
@@ -1247,6 +1252,8 @@ test.describe('Nested List', () => {
         <ul class="PlaygroundEditorTheme__ul">
           <li
             aria-checked="true"
+            role="checkbox"
+            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr PlaygroundEditorTheme__listItemChecked"
             dir="ltr"
             value="1">
@@ -1254,18 +1261,21 @@ test.describe('Nested List', () => {
           </li>
           <li
             aria-checked="false"
+            role="checkbox"
+            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
             value="2">
             <span data-lexical-text="true">b</span>
           </li>
           <li
-            aria-checked="false"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
             value="3">
             <ul class="PlaygroundEditorTheme__ul">
               <li
                 aria-checked="false"
+                role="checkbox"
+                tabindex="-1"
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
                 dir="ltr"
                 value="1">
@@ -1300,6 +1310,8 @@ test.describe('Nested List', () => {
             <ul class="PlaygroundEditorTheme__ul">
               <li
                 aria-checked="false"
+                role="checkbox"
+                tabindex="-1"
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
                 dir="ltr"
                 value="1">
@@ -1317,6 +1329,8 @@ test.describe('Nested List', () => {
         <ul class="PlaygroundEditorTheme__ul">
           <li
             aria-checked="false"
+            role="checkbox"
+            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
             value="1">
@@ -1324,18 +1338,21 @@ test.describe('Nested List', () => {
           </li>
           <li
             aria-checked="false"
+            role="checkbox"
+            tabindex="-1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
             dir="ltr"
             value="2">
             <span data-lexical-text="true">b</span>
           </li>
           <li
-            aria-checked="false"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
             value="3">
             <ul class="PlaygroundEditorTheme__ul">
               <li
                 aria-checked="false"
+                role="checkbox"
+                tabindex="-1"
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
                 dir="ltr"
                 value="1">
@@ -1346,5 +1363,66 @@ test.describe('Nested List', () => {
         </ul>
       `,
     );
+  });
+
+  test('can navigate and check/uncheck with keyboard', async ({
+    page,
+    isCollab,
+  }) => {
+    await focusEditor(page);
+    await toggleCheckList(page);
+    //
+    // [ ] a
+    // [ ] b
+    //     [ ] c
+    //         [ ] d
+    //         [ ] e
+    // [ ] f
+    await page.keyboard.type('a');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('c');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('d');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('e');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('f');
+
+    const assertCheckCount = async (checkCount, uncheckCount) => {
+      const pageOrFrame = await (isCollab ? page.frame('left') : page);
+      await expect(
+        pageOrFrame.locator('li[role="checkbox"][aria-checked="true"]'),
+      ).toHaveCount(checkCount);
+      await expect(
+        pageOrFrame.locator('li[role="checkbox"][aria-checked="false"]'),
+      ).toHaveCount(uncheckCount);
+    };
+
+    await assertCheckCount(0, 6);
+
+    // Go back to select checkbox
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Space');
+
+    await repeat(5, async () => {
+      await page.keyboard.press('ArrowUp', {delay: 50});
+      await page.keyboard.press('Space');
+    });
+
+    await assertCheckCount(6, 0);
+
+    await repeat(3, async () => {
+      await page.keyboard.press('ArrowDown', {delay: 50});
+      await page.keyboard.press('Space');
+    });
+
+    await assertCheckCount(3, 3);
   });
 });

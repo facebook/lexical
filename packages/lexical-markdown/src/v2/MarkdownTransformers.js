@@ -81,7 +81,7 @@ const replaceWithBlock = (
 // TODO: should be an option
 const LIST_INDENT_SIZE = 4;
 
-const listReplace = (listType: ListType): BlockTransformer['replace'] => {
+const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
     const previousNode = parentNode.getPreviousSibling();
     const listItem = $createListItemNode(
@@ -196,13 +196,13 @@ export const UNORDERED_LIST: ElementTransformer = {
   type: 'element',
 };
 
-export const CHECK_LIST: BlockTransformer = {
+export const CHECK_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/,
+  regExp: /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i,
   replace: listReplace('check'),
-  type: 'block-match',
+  type: 'element',
 };
 
 export const ORDERED_LIST: ElementTransformer = {

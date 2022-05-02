@@ -15,6 +15,7 @@ import type {
 import type {ElementNode, LexicalNode} from 'lexical';
 
 import {
+  CHECK_LIST,
   ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
@@ -227,6 +228,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   IMAGE,
   EQUATION,
   TWEET,
+  CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,

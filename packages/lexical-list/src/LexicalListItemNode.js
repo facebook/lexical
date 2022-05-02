@@ -394,14 +394,24 @@ function updateListItemChecked(
 ): void {
   const isCheckList = listNode.getListType() === 'check';
   if (isCheckList) {
-    if (
-      !prevListItemNode ||
-      listItemNode.__checked !== prevListItemNode.__checked
-    ) {
-      dom.setAttribute(
-        'aria-checked',
-        listItemNode.getChecked() ? 'true' : 'false',
-      );
+    // Only add attributes for leaf list items
+    if ($isListNode(listItemNode.getFirstChild())) {
+      dom.removeAttribute('role');
+      dom.removeAttribute('tabIndex');
+      dom.removeAttribute('aria-checked');
+    } else {
+      dom.setAttribute('role', 'checkbox');
+      dom.setAttribute('tabIndex', '-1');
+
+      if (
+        !prevListItemNode ||
+        listItemNode.__checked !== prevListItemNode.__checked
+      ) {
+        dom.setAttribute(
+          'aria-checked',
+          listItemNode.getChecked() ? 'true' : 'false',
+        );
+      }
     }
   } else {
     // Clean up checked state

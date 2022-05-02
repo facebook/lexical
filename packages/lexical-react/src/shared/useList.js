@@ -11,9 +11,7 @@ import type {LexicalEditor} from 'lexical';
 
 import {
   $handleListInsertParagraph,
-  $isListItemNode,
   indentList,
-  INSERT_CHECK_LIST_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
   insertList,
@@ -23,7 +21,6 @@ import {
 } from '@lexical/list';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $getNearestNodeFromDOMNode,
   COMMAND_PRIORITY_LOW,
   INDENT_CONTENT_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
@@ -67,14 +64,6 @@ export default function useList(editor: LexicalEditor): void {
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
-        INSERT_CHECK_LIST_COMMAND,
-        () => {
-          insertList(editor, 'check');
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
         REMOVE_LIST_COMMAND,
         () => {
           removeList(editor);
@@ -93,57 +82,6 @@ export default function useList(editor: LexicalEditor): void {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      listenPointerDown(),
     );
   }, [editor]);
-}
-
-let listenersCount = 0;
-
-function listenPointerDown() {
-  if (listenersCount++ === 0) {
-    // $FlowFixMe[speculation-ambiguous]
-    document.addEventListener('pointerdown', handlePointerDown);
-  }
-
-  return () => {
-    if (--listenersCount === 0) {
-      // $FlowFixMe[speculation-ambiguous]
-      document.removeEventListener('pointerdown', handlePointerDown);
-    }
-  };
-}
-
-function findEditor(target) {
-  let node = target;
-  while (node) {
-    if (node.__lexicalEditor) {
-      return (node.__lexicalEditor: LexicalEditor);
-    }
-    node = node.parentNode;
-  }
-  return null;
-}
-
-function handlePointerDown(event) {
-  const target = event.target;
-  const parentNode = target.parentNode;
-  if (!parentNode || parentNode.__lexicalListType !== 'check') {
-    return;
-  }
-
-  const pageX = event.pageX;
-  const rect = target.getBoundingClientRect();
-  if (pageX > rect.left && pageX < rect.left + 20) {
-    const editor = findEditor(target);
-    if (editor != null) {
-      editor.update(() => {
-        const node = $getNearestNodeFromDOMNode(target);
-        if ($isListItemNode(node)) {
-          node.toggleChecked();
-        }
-      });
-      event.preventDefault();
-    }
-  }
 }

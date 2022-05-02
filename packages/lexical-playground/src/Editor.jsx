@@ -12,6 +12,7 @@ import {$createListItemNode, $createListNode} from '@lexical/list';
 import AutoFocusPlugin from '@lexical/react/LexicalAutoFocusPlugin';
 import AutoScrollPlugin from '@lexical/react/LexicalAutoScrollPlugin';
 import CharacterLimitPlugin from '@lexical/react/LexicalCharacterLimitPlugin';
+import CheckListPlugin from '@lexical/react/LexicalCheckListPlugin';
 import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
@@ -199,6 +200,7 @@ export default function Editor(): React$Node {
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
+            <CheckListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />
             <TablesPlugin />
             <TableCellActionMenuPlugin />

@@ -116,6 +116,7 @@ const moduleResolution = [
   'LexicalTablePlugin',
   'LexicalLinkPlugin',
   'LexicalListPlugin',
+  'LexicalCheckListPlugin',
   'LexicalAutoFocusPlugin',
   'LexicalAutoLinkPlugin',
   'LexicalOnChangePlugin',

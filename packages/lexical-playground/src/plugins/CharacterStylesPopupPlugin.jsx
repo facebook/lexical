@@ -35,7 +35,10 @@ function setPopupPosition(
   let top = rect.top - 8 + window.pageYOffset;
   let left =
     rect.left + 230 + window.pageXOffset - editor.offsetWidth + rect.width;
-  if (rect.width >= rootElementRect.width - 20) {
+  if (
+    rect.width >= rootElementRect.width - 20 ||
+    left > rootElementRect.width - 150
+  ) {
     left = rect.left;
     top = rect.top - 50 + window.pageYOffset;
   }
@@ -115,6 +118,19 @@ function FloatingCharacterStylesEditor({
       }
     }
   }, [editor]);
+
+  useEffect(() => {
+    const onResize = () => {
+      editor.getEditorState().read(() => {
+        updateCharacterStylesEditor();
+      });
+    };
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [editor, updateCharacterStylesEditor]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {

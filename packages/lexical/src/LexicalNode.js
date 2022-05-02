@@ -220,8 +220,8 @@ export class LexicalNode {
     if (selection == null) {
       return false;
     }
-    const selectedNodeKeys = new Set(selection.getNodes().map((n) => n.__key));
-    const isSelected = selectedNodeKeys.has(this.__key);
+
+    const isSelected = selection.getNodes().some((n) => n.__key === this.__key);
 
     if ($isTextNode(this)) {
       return isSelected;

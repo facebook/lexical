@@ -85,7 +85,7 @@ function AddCommentBox({
 }): React$Node {
   const boxRef = useRef(null);
 
-  useLayoutEffect(() => {
+  const updatePosition = useCallback(() => {
     const boxElem = boxRef.current;
     const rootElement = editor.getRootElement();
     const anchorElement = editor.getElementByKey(anchorKey);
@@ -97,6 +97,18 @@ function AddCommentBox({
       boxElem.style.top = `${top - 30}px`;
     }
   }, [anchorKey, editor]);
+
+  useEffect(() => {
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [editor, updatePosition]);
+
+  useLayoutEffect(() => {
+    updatePosition();
+  }, [anchorKey, editor, updatePosition]);
 
   return (
     <div className="CommentPlugin_AddCommentBox" ref={boxRef}>
@@ -526,16 +538,19 @@ function CommentsPanelList({
               (activeIDs === null || activeIDs.indexOf(id) === -1)
             ) {
               const activeElement = document.activeElement;
+              // Move selection to the start of the mark, so that we
+              // update the UI with the selected thread.
               editor.update(
                 () => {
                   const markNodeKey = Array.from(markNodeKeys)[0];
                   const markNode = $getNodeByKey(markNodeKey);
                   if ($isMarkNode(markNode)) {
-                    markNode.select(0, 0);
+                    markNode.selectStart();
                   }
                 },
                 {
                   onUpdate() {
+                    // Restore selection to the previous element
                     if (activeElement !== null) {
                       activeElement.focus();
                     }
@@ -610,16 +625,19 @@ function CommentsPanel({
   useLayoutEffect(() => {
     const footerElem = footerRef.current;
     if (footerElem !== null) {
-      const resizeObserver = new ResizeObserver(() => {
+      const updateSize = () => {
         const listElem = listRef.current;
         if (listElem !== null) {
           const rect = footerElem.getBoundingClientRect();
           listElem.style.height = window.innerHeight - rect.height - 133 + 'px';
         }
-      });
-
+      };
+      const resizeObserver = new ResizeObserver(updateSize);
       resizeObserver.observe(footerElem);
+      window.addEventListener('resize', updateSize);
+
       return () => {
+        window.removeEventListener('resize', updateSize);
         resizeObserver.disconnect();
       };
     }
@@ -758,11 +776,19 @@ function $wrapSelectionInMarkNode(
   }
 }
 
-function $getCommentIDs(node: TextNode): null | Array<string> {
+function $getCommentIDs(node: TextNode, offset: number): null | Array<string> {
   let currentNode = node;
   while (currentNode !== null) {
     if ($isMarkNode(currentNode)) {
       return currentNode.getIDs();
+    } else if (
+      $isTextNode(currentNode) &&
+      offset === currentNode.getTextContentSize()
+    ) {
+      const nextSibling = currentNode.getNextSibling();
+      if ($isMarkNode(nextSibling)) {
+        return nextSibling.getIDs();
+      }
     }
     currentNode = currentNode.getParent();
   }
@@ -781,6 +807,7 @@ export default function CommentPlugin({
   }, []);
   const [activeAnchorKey, setActiveAnchorKey] = useState(null);
   const [activeIDs, setActiveIDs] = useState<Array<string>>([]);
+  const [activeMarkKeys, setActiveMarkKeys] = useState<Array<string>>([]);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
@@ -896,17 +923,12 @@ export default function CommentPlugin({
 
   useEffect(() => {
     const changedElems = [];
-    for (let i = 0; i < activeIDs.length; i++) {
-      const id = activeIDs[i];
-      const keys = markNodeMap.get(id);
-      if (keys !== undefined) {
-        for (const key of keys) {
-          const elem = editor.getElementByKey(key);
-          if (elem !== null) {
-            elem.classList.add('selected');
-            changedElems.push(elem);
-          }
-        }
+    for (let i = 0; i < activeMarkKeys.length; i++) {
+      const key = activeMarkKeys[i];
+      const elem = editor.getElementByKey(key);
+      if (elem !== null) {
+        elem.classList.add('selected');
+        changedElems.push(elem);
       }
     }
     return () => {
@@ -915,7 +937,7 @@ export default function CommentPlugin({
         changedElem.classList.remove('selected');
       }
     };
-  }, [activeIDs, editor, markNodeMap]);
+  }, [activeMarkKeys, editor]);
 
   useEffect(() => {
     const markNodeKeysToIDs: Map<NodeKey, Array<string>> = new Map();
@@ -925,13 +947,14 @@ export default function CommentPlugin({
         for (const [key, mutation] of mutations) {
           const node: null | MarkNode = $getNodeByKey(key);
           let ids = [];
+          let keyAdded = false;
 
           if (mutation === 'destroyed') {
             ids = markNodeKeysToIDs.get(key) || [];
+            setActiveMarkKeys((keys) => keys.filter((_key) => key !== _key));
           } else if ($isMarkNode(node)) {
             ids = node.getIDs();
           }
-          let hasChanged = false;
 
           for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
@@ -941,26 +964,26 @@ export default function CommentPlugin({
             if (mutation === 'destroyed') {
               if (markNodeKeys !== undefined) {
                 markNodeKeys.delete(key);
-                hasChanged = true;
                 if (markNodeKeys.size === 0) {
                   markNodeMap.delete(id);
                 }
               }
             } else {
+              if (mutation === 'created') {
+                keyAdded = true;
+              }
               if (markNodeKeys === undefined) {
                 markNodeKeys = new Set();
                 markNodeMap.set(id, markNodeKeys);
               }
               if (!markNodeKeys.has(key)) {
-                hasChanged = true;
                 markNodeKeys.add(key);
               }
             }
           }
-          // This will try an update so the CommentList can update
-          // accordingly.
-          if (hasChanged) {
-            setActiveIDs((activeIds) => [...activeIds]);
+
+          if (keyAdded) {
+            setActiveMarkKeys((keys) => [...keys, key]);
           }
         }
       }),
@@ -973,7 +996,10 @@ export default function CommentPlugin({
             const anchorNode = selection.anchor.getNode();
 
             if ($isTextNode(anchorNode)) {
-              const commentIDs = $getCommentIDs(anchorNode);
+              const commentIDs = $getCommentIDs(
+                anchorNode,
+                selection.anchor.offset,
+              );
               if (commentIDs !== null) {
                 setActiveIDs(commentIDs);
                 hasActiveIds = true;
@@ -984,7 +1010,9 @@ export default function CommentPlugin({
             }
           }
           if (!hasActiveIds) {
-            setActiveIDs([]);
+            setActiveIDs((_activeIds) =>
+              _activeIds.length === 0 ? _activeIds : [],
+            );
           }
           setActiveAnchorKey(null);
         });

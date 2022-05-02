@@ -42,6 +42,11 @@ async function toggleNumberedList(page) {
   await click(page, '.dropdown .icon.numbered-list');
 }
 
+async function toggleCheckList(page) {
+  await click(page, '.block-controls');
+  await click(page, '.dropdown .icon.check-list');
+}
+
 async function clickIndentButton(page, times = 1) {
   for (let i = 0; i < times; i++) {
     await selectFromAlignDropdown(page, '.indent');
@@ -1221,6 +1226,125 @@ test.describe('Nested List', () => {
         </ul>
       `,
       {ignoreClasses: true},
+    );
+  });
+
+  test('Can create check list', async ({page}) => {
+    await focusEditor(page);
+    await toggleCheckList(page);
+    await page.keyboard.type('a');
+    await click(page, '.PlaygroundEditorTheme__listItemUnchecked', {
+      position: {x: 10, y: 10},
+    });
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('c');
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            aria-checked="true"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr PlaygroundEditorTheme__listItemChecked"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">a</span>
+          </li>
+          <li
+            aria-checked="false"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">b</span>
+          </li>
+          <li
+            aria-checked="false"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
+            value="3">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                aria-checked="false"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">c</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+    await moveToEditorBeginning(page);
+    await toggleBulletList(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">a</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">b</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
+            value="3">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                aria-checked="false"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">c</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+    await toggleCheckList(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            aria-checked="false"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">a</span>
+          </li>
+          <li
+            aria-checked="false"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">b</span>
+          </li>
+          <li
+            aria-checked="false"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
+            value="3">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                aria-checked="false"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+                dir="ltr"
+                value="1">
+                <span data-lexical-text="true">c</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
     );
   });
 });

@@ -8,6 +8,7 @@
  */
 
 import type {ListNode} from './';
+import type {ListType} from './LexicalListNode';
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$getNearestNodeOfType} from '@lexical/utils';
@@ -76,7 +77,7 @@ function $getListItemValue(listItem: ListItemNode): number {
   return value;
 }
 
-export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
+export function insertList(editor: LexicalEditor, listType: ListType): void {
   editor.update(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
@@ -138,23 +139,29 @@ export function insertList(editor: LexicalEditor, listType: 'ul' | 'ol'): void {
   });
 }
 
-function createListOrMerge(node: ElementNode, listType: 'ul' | 'ol'): ListNode {
+function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   if ($isListNode(node)) {
     return node;
   }
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
-  if ($isListNode(previousSibling) && listType === previousSibling.getTag()) {
+  if (
+    $isListNode(previousSibling) &&
+    listType === previousSibling.getListType()
+  ) {
     listItem.append(node);
     previousSibling.append(listItem);
     // if the same type of list is on both sides, merge them.
-    if ($isListNode(nextSibling) && listType === nextSibling.getTag()) {
+    if ($isListNode(nextSibling) && listType === nextSibling.getListType()) {
       previousSibling.append(...nextSibling.getChildren());
       nextSibling.remove();
     }
     return previousSibling;
-  } else if ($isListNode(nextSibling) && listType === nextSibling.getTag()) {
+  } else if (
+    $isListNode(nextSibling) &&
+    listType === nextSibling.getListType()
+  ) {
     listItem.append(node);
     nextSibling.getFirstChildOrThrow().insertBefore(listItem);
     return nextSibling;
@@ -265,7 +272,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
       // otherwise, we need to create a new nested ListNode
       if ($isListNode(parent)) {
         const newListItem = $createListItemNode();
-        const newList = $createListNode(parent.getTag());
+        const newList = $createListNode(parent.getListType());
         newListItem.append(newList);
         newList.append(listItemNode);
         if (previousSibling) {
@@ -318,15 +325,15 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
         }
       } else {
         // otherwise, we need to split the siblings into two new nested lists
-        const tag = parentList.getTag();
+        const listType = parentList.getListType();
         const previousSiblingsListItem = $createListItemNode();
-        const previousSiblingsList = $createListNode(tag);
+        const previousSiblingsList = $createListNode(listType);
         previousSiblingsListItem.append(previousSiblingsList);
         listItemNode
           .getPreviousSiblings()
           .forEach((sibling) => previousSiblingsList.append(sibling));
         const nextSiblingsListItem = $createListItemNode();
-        const nextSiblingsList = $createListNode(tag);
+        const nextSiblingsList = $createListNode(listType);
         nextSiblingsListItem.append(nextSiblingsList);
         nextSiblingsList.append(...listItemNode.getNextSiblings());
         // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
@@ -411,7 +418,7 @@ export function $handleListInsertParagraph(): boolean {
 
   const nextSiblings = anchor.getNextSiblings();
   if (nextSiblings.length > 0) {
-    const newList = $createListNode(parent.getTag());
+    const newList = $createListNode(parent.getListType());
     if ($isParagraphNode(replacementNode)) {
       replacementNode.insertAfter(newList);
     } else {

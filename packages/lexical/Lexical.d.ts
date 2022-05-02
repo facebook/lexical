@@ -194,6 +194,8 @@ export type EditorThemeClasses = {
     ol?: EditorThemeClassName;
     olDepth?: Array<EditorThemeClassName>;
     listitem?: EditorThemeClassName;
+    listitemChecked?: EditorThemeClassName;
+    listitemUnchecked?: EditorThemeClassName;
     nested?: {
       list?: EditorThemeClassName;
       listitem?: EditorThemeClassName;

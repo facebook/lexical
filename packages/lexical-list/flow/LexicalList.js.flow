@@ -17,9 +17,12 @@ import type {
 import {ElementNode} from 'lexical';
 
 type ListNodeTagType = 'ul' | 'ol';
-declare export function $createListItemNode(): ListItemNode;
+export type ListType = 'number' | 'bullet' | 'check';
+declare export function $createListItemNode(
+  checked?: boolean | void,
+): ListItemNode;
 declare export function $createListNode(
-  tag: ListNodeTagType,
+  listType: ListType,
   start?: number,
 ): ListNode;
 declare export function $getListDepth(listNode: ListNode): number;
@@ -33,7 +36,7 @@ declare export function $isListNode(
 declare export function indentList(): void;
 declare export function insertList(
   editor: LexicalEditor,
-  listType: 'ul' | 'ol',
+  listType: ListType,
 ): void;
 declare export class ListItemNode extends ElementNode {
   append(...nodes: LexicalNode[]): ListItemNode;
@@ -47,6 +50,9 @@ declare export class ListItemNode extends ElementNode {
   canInsertAfter(node: LexicalNode): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canMergeWith(node: LexicalNode): boolean;
+  getChecked(): boolean | void;
+  setChecked(boolean): this;
+  toggleChecked(): void;
 }
 declare export class ListNode extends ElementNode {
   __tag: ListNodeTagType;
@@ -55,10 +61,12 @@ declare export class ListNode extends ElementNode {
   append(...nodesToAppend: LexicalNode[]): ListNode;
   getTag(): ListNodeTagType;
   getStart(): number;
+  getListType(): ListType;
 }
 declare export function outdentList(): void;
 declare export function removeList(editor: LexicalEditor): boolean;
 
 declare export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;
 declare export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;
+declare export var INSERT_CHECK_LIST_COMMAND: LexicalCommand<void>;
 declare export var REMOVE_LIST_COMMAND: LexicalCommand<void>;

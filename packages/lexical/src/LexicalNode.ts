@@ -675,22 +675,21 @@ export class LexicalNode {
     if (index === -1) {
       invariant(false, 'Node is not a child of its parent');
     }
-    removeNode(this, false);
-    const prevSibling = this.getPreviousSibling();
+    // We insert the replaceWith node after the toReplace node first,
+    // then we let removeNode handle getting rid of the toReplace node
+    // and stitching together the siblings.
     const nextSibling = this.getNextSibling();
-    if (prevSibling !== null) {
-      prevSibling.setNext(newKey);
-      replaceWith.setPrev(prevSibling.__key);
-    } else {
-      writableParent.__first = newKey;
-    }
+    this.setNext(newKey);
+    replaceWith.setPrev(toReplaceKey);
     if (nextSibling !== null) {
       nextSibling.setPrev(newKey);
       replaceWith.setNext(nextSibling.__key);
     } else {
       writableParent.__last = newKey;
     }
+    writableParent.__size++;
     writableReplaceWith.__parent = newParent.__key;
+    removeNode(this, false);
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;

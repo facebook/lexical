@@ -32,7 +32,7 @@ import {
 // with latest experimental React version.
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
-export function setAnchorPoint(point) {
+function setAnchorPoint(point) {
   let selection = $getSelection();
   if (selection === null) {
     const dummyTextNode = $createTextNode();
@@ -45,7 +45,7 @@ export function setAnchorPoint(point) {
   anchor.key = point.key;
 }
 
-export function setFocusPoint(point) {
+function setFocusPoint(point) {
   let selection = $getSelection();
   if (selection === null) {
     const dummyTextNode = $createTextNode();

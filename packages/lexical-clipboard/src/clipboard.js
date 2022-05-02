@@ -68,7 +68,7 @@ export function $appendSelectedNodesToHTML(
 ): boolean {
   let shouldInclude = currentNode.isSelected();
   const shouldExclude =
-    $isElementNode(currentNode) && currentNode.excludeFromCopy();
+    $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let clone = $cloneWithProperties<LexicalNode>(currentNode);
   clone = $isTextNode(clone) ? $splitClonedTextNode(selection, clone) : clone;
   const children = $isElementNode(clone) ? clone.getChildren() : [];
@@ -89,7 +89,7 @@ export function $appendSelectedNodesToHTML(
       !shouldInclude &&
       $isElementNode(currentNode) &&
       shouldIncludeChild &&
-      currentNode.extractWithChild(childNode, selection)
+      currentNode.extractWithChild(childNode, selection, 'html')
     ) {
       shouldInclude = true;
     }
@@ -125,20 +125,24 @@ export function $appendSelectedNodesToClone(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection,
   currentNode: LexicalNode,
-  nodeMap: Array<[NodeKey, LexicalNode]>,
+  nodeMap: Map<NodeKey, LexicalNode>,
   range: Array<NodeKey>,
   shouldIncludeInRange: boolean = true,
 ): Array<NodeKey> {
   let shouldInclude = currentNode.isSelected();
   const shouldExclude =
-    $isElementNode(currentNode) && currentNode.excludeFromCopy();
+    $isElementNode(currentNode) && currentNode.excludeFromCopy('clone');
   let clone = $cloneWithProperties<LexicalNode>(currentNode);
   clone = $isTextNode(clone) ? $splitClonedTextNode(selection, clone) : clone;
   const children = $isElementNode(clone) ? clone.getChildren() : [];
   const nodeKeys = [];
   let shouldIncludeChildrenInRange = shouldIncludeInRange;
-  if (shouldIncludeInRange && shouldInclude) {
-    shouldIncludeChildrenInRange = false;
+
+  if (shouldInclude && !shouldExclude) {
+    nodeMap.set(clone.getKey(), clone);
+    if (shouldIncludeInRange) {
+      shouldIncludeChildrenInRange = false;
+    }
   }
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
@@ -158,13 +162,52 @@ export function $appendSelectedNodesToClone(
       !shouldInclude &&
       $isElementNode(currentNode) &&
       nodeKeys.includes(childNode.getKey()) &&
-      currentNode.extractWithChild(childNode, selection)
+      currentNode.extractWithChild(childNode, selection, 'clone')
     ) {
       shouldInclude = true;
     }
   }
+  // The tree is later built using $generateNodes which works
+  // by going through the nodes specified in the "range" & their children
+  // while filtering out nodes not found in the "nodeMap".
+  // This gets complicated when we want to "exclude" a node but
+  // keep it's children i.e. a MarkNode and it's Text children.
+  // The solution is to check if there's a cloned parent already in our map and
+  // splice the current node's children into the nearest parent.
+  // If there is no parent in the map already, the children will be added to the
+  // top level range be default.
+  if ($isElementNode(clone) && shouldExclude && shouldInclude) {
+    let nearestClonedParent: LexicalNode;
+    let idxWithinClonedParent: number;
+    let prev = clone;
+    let curr = clone.getParent();
+    const root = $getRoot();
+    while (curr != null && !curr.is(root)) {
+      if (
+        nodeMap.has(curr.getKey()) ||
+        curr.extractWithChild(currentNode, selection, 'clone')
+      ) {
+        nearestClonedParent = $cloneWithProperties<LexicalNode>(curr);
+        idxWithinClonedParent = prev.getIndexWithinParent();
+        nodeMap.set(nearestClonedParent.getKey(), nearestClonedParent);
+        break;
+      }
+      prev = curr;
+      curr = curr.getParent();
+    }
+    // Add children to nearest cloned parent at the correct position.
+    if ($isElementNode(nearestClonedParent) && idxWithinClonedParent != null) {
+      nearestClonedParent.__children.splice(
+        idxWithinClonedParent,
+        1,
+        ...clone.__children,
+      );
+    }
+  }
   if (shouldInclude && !shouldExclude) {
-    nodeMap.push([clone.getKey(), clone]);
+    if (!nodeMap.has(clone.getKey())) {
+      nodeMap.set(clone.getKey(), clone);
+    }
     if (shouldIncludeInRange) {
       return [clone.getKey()];
     }
@@ -180,7 +223,7 @@ export function $cloneSelectedContent(
   range: Array<NodeKey>,
 } {
   const root = $getRoot();
-  const nodeMap = [];
+  const nodeMap = new Map();
   const range = [];
   const topLevelChildren = root.getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {
@@ -198,7 +241,7 @@ export function $cloneSelectedContent(
       range.push(childNodeKey);
     }
   }
-  return {nodeMap, range};
+  return {nodeMap: Array.from(nodeMap), range};
 }
 
 export function $getLexicalContent(editor: LexicalEditor): string | null {

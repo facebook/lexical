@@ -302,14 +302,10 @@ export class ListItemNode extends ElementNode {
     }
     const anchorNode = selection.anchor.getNode();
     const focusNode = selection.focus.getNode();
-    const isBackward = selection.isBackward();
-    const selectionLength = isBackward
-      ? selection.anchor.offset - selection.focus.offset
-      : selection.focus.offset - selection.anchor.offset;
     return (
       this.isParentOf(anchorNode) &&
       this.isParentOf(focusNode) &&
-      this.getTextContent().length === selectionLength
+      this.getTextContent().length === selection.getTextContent().length
     );
   }
 }

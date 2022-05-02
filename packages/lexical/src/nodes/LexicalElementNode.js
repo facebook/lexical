@@ -455,6 +455,7 @@ export class ElementNode extends LexicalNode {
   extractWithChild(
     child: LexicalNode,
     selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
   ): boolean {
     return false;
   }

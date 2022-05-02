@@ -306,11 +306,7 @@ function $cloneContentsImpl(
       range,
       nodeMap,
     );
-
-    return {
-      nodeMap: Array.from(nodeMap.entries()),
-      range,
-    };
+    return {nodeMap: Array.from(nodeMap.entries()), range};
   } else if ($isGridSelection(selection)) {
     const nodeMap = selection.getNodes().map<[NodeKey, LexicalNode]>((node) => {
       const nodeKey = node.getKey();
@@ -319,11 +315,7 @@ function $cloneContentsImpl(
 
       return [nodeKey, clone];
     });
-
-    return {
-      nodeMap,
-      range: [selection.gridKey],
-    };
+    return {nodeMap, range: [selection.gridKey]};
   }
 
   invariant(false, 'TODO');

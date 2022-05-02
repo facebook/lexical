@@ -25,9 +25,8 @@ export type NodeParserState = {
 };
 export type ParsedNode = {
   __key: NodeKey,
-  __parent: null | NodeKey,
-  __type: string,
   __next: null | NodeKey,
+  __parent: null | NodeKey,
   __prev: null | NodeKey,
 };
 
@@ -150,6 +149,7 @@ export function internalCreateNodeFromParse(
   if ($isElementNode(node)) {
     const firstChild = parsedNode.__first;
     let next = firstChild;
+    let prev = null;
     let childCount = 0;
     while (next !== null) {
       const parsedChild = parsedNodeMap.get(next);
@@ -161,6 +161,11 @@ export function internalCreateNodeFromParse(
           key,
           state,
         );
+        if (prev !== null) {
+          prev.__next = child.__key;
+          child.__prev = prev.__key;
+        }
+        prev = child;
         if (firstChild === next) {
           node.__first = child.__key;
         } else if (next === null) {
@@ -169,6 +174,7 @@ export function internalCreateNodeFromParse(
         childCount++;
         next = child.__next;
       }
+      next = null;
     }
     node.__size = childCount;
     node.__indent = parsedNode.__indent;

@@ -22,8 +22,8 @@ import {
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import {
-  $cloneSelectedLexicalContent,
-  $convertSelectedLexicalContentToHtml,
+  $cloneSelectedContent,
+  $convertSelectedContentToHtml,
   $generateNodes,
   $generateNodesFromDOM,
 } from '../../clipboard';
@@ -163,7 +163,7 @@ describe('Clipboard tests', () => {
         });
 
         const selection = $getSelection();
-        const state = $cloneSelectedLexicalContent(editor, selection);
+        const state = $cloneSelectedContent(editor, selection);
         const rangeSet = new Set(state.range);
         const nodeMap = new Map(state.nodeMap);
         const selectedNodes = selection.getNodes();
@@ -178,10 +178,7 @@ describe('Clipboard tests', () => {
         expect(rangeSet.has(table.getKey()));
         expect(nodeMap.size).toBe(selectedNodes.length);
 
-        const htmlString = $convertSelectedLexicalContentToHtml(
-          editor,
-          selection,
-        );
+        const htmlString = $convertSelectedContentToHtml(editor, selection);
 
         expect(htmlString).toBe(
           '<p><strong>h</strong><a href="https://"><span>ello worl</span></a><em>d</em></p><table><colgroup><col><col><col></colgroup><tbody><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><span>table cell text!</span></p></th><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th></tr><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td></tr><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td></tr></tbody></table><ul><li value="1"><span>1: Lorem ipsum dolor sit amet</span></li><li value="2"><span>2: Lorem ipsum dolor sit amet</span></li><li value="3"><span>3: Lorem ipsum dolor sit amet</span></li><li value="4"><span>4: Lorem ipsum dolor sit ame</span></li></ul>',
@@ -189,7 +186,7 @@ describe('Clipboard tests', () => {
       });
     });
 
-    test('$cloneSelectedLexicalContent: partial test selection including link', async () => {
+    test('$cloneSelectedContent: partial test selection including link', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const {paragraph} = fillEditorWithComplexData();
@@ -215,7 +212,7 @@ describe('Clipboard tests', () => {
         expect(selectedNodes.length).toBe(3);
         expect(linkNode).toBeInstanceOf(LinkNode);
 
-        const state = $cloneSelectedLexicalContent(editor, selection);
+        const state = $cloneSelectedContent(editor, selection);
         const rangeSet = new Set(state.range);
         const nodeMap = new Map(state.nodeMap);
 
@@ -229,10 +226,7 @@ describe('Clipboard tests', () => {
         // Check if text is split on the cloned node.
         expect(nodeMap.get(linkTextNode.getKey()).__text).toBe('ello wo');
 
-        const htmlString = $convertSelectedLexicalContentToHtml(
-          editor,
-          selection,
-        );
+        const htmlString = $convertSelectedContentToHtml(editor, selection);
 
         expect(htmlString).toBe(
           '<strong>h</strong><a href="https://"><span>ello wo</span></a>',
@@ -242,7 +236,7 @@ describe('Clipboard tests', () => {
       });
     });
 
-    test('$cloneSelectedLexicalContent: partial test selection within list item', async () => {
+    test('$cloneSelectedContent: partial test selection within list item', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const {list} = fillEditorWithComplexData();
@@ -267,7 +261,7 @@ describe('Clipboard tests', () => {
 
         expect(selectedNodes.length).toBe(1);
 
-        const state = $cloneSelectedLexicalContent(editor, selection);
+        const state = $cloneSelectedContent(editor, selection);
         const rangeSet = new Set(state.range);
         const nodeMap = new Map(state.nodeMap);
 
@@ -289,10 +283,7 @@ describe('Clipboard tests', () => {
           ': Lorem ipsum dolor sit',
         );
 
-        const htmlString = $convertSelectedLexicalContentToHtml(
-          editor,
-          selection,
-        );
+        const htmlString = $convertSelectedContentToHtml(editor, selection);
 
         expect(htmlString).toBe('<span>: Lorem ipsum dolor sit</span>');
 
@@ -300,7 +291,7 @@ describe('Clipboard tests', () => {
       });
     });
 
-    test('$cloneSelectedLexicalContent: two partial list items', async () => {
+    test('$cloneSelectedContent: two partial list items', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const {list} = fillEditorWithComplexData();
@@ -326,7 +317,7 @@ describe('Clipboard tests', () => {
 
         expect(selectedNodes.length).toBe(4);
 
-        const state = $cloneSelectedLexicalContent(editor, selection);
+        const state = $cloneSelectedContent(editor, selection);
         const rangeSet = new Set(state.range);
         const nodeMap = new Map(state.nodeMap);
 
@@ -350,10 +341,7 @@ describe('Clipboard tests', () => {
           '2: Lorem ipsum dolor sit',
         );
 
-        const htmlString = $convertSelectedLexicalContentToHtml(
-          editor,
-          selection,
-        );
+        const htmlString = $convertSelectedContentToHtml(editor, selection);
 
         expect(htmlString).toBe(
           '<ul><li value="1"><span>: Lorem ipsum dolor sit amet</span></li><li value="2"><span>2: Lorem ipsum dolor sit</span></li></ul>',
@@ -363,7 +351,7 @@ describe('Clipboard tests', () => {
       });
     });
 
-    test('$cloneSelectedLexicalContent: grid selection', async () => {
+    test('$cloneSelectedContent: grid selection', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const {table} = fillEditorWithComplexData();
@@ -388,7 +376,7 @@ describe('Clipboard tests', () => {
         // (Text, Paragraph, Cell) x4, Row x2, 1x Grid
         expect(selectedNodes.length).toBe(15);
 
-        const state = $cloneSelectedLexicalContent(editor, selection);
+        const state = $cloneSelectedContent(editor, selection);
         const rangeSet = new Set(state.range);
         const nodeMap = new Map(state.nodeMap);
 
@@ -402,10 +390,7 @@ describe('Clipboard tests', () => {
           expect(nodeMap.has(n.getKey())).toBe(true);
         });
 
-        const htmlString = $convertSelectedLexicalContentToHtml(
-          editor,
-          selection,
-        );
+        const htmlString = $convertSelectedContentToHtml(editor, selection);
 
         expect(htmlString).toBe(
           '<table><colgroup><col><col><col></colgroup><tbody><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><span>table cell text!</span></p></th><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th></tr><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td></tr></tbody></table>',

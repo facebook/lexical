@@ -57,7 +57,7 @@ export function $getHtmlContent(editor: LexicalEditor): string | null {
     return null;
   }
 
-  return $convertSelectedLexicalContentToHtml(editor, selection);
+  return $convertSelectedContentToHtml(editor, selection);
 }
 
 export function $appendSelectedNodesToHTML(
@@ -107,7 +107,7 @@ export function $appendSelectedNodesToHTML(
   return shouldInclude;
 }
 
-export function $convertSelectedLexicalContentToHtml(
+export function $convertSelectedContentToHtml(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection,
 ): string {

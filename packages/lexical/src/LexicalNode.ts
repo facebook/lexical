@@ -360,7 +360,7 @@ export class LexicalNode {
     let prevSiblings = [];
     let prev = this.getPreviousSibling();
     while (prev !== null) {
-      prevSiblings.push(prev);
+      prevSiblings.unshift(prev);
       prev = prev.getPreviousSibling();
     }
     return prevSiblings;

@@ -388,6 +388,8 @@ declare export class LexicalNode {
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
+  setNext(key: NodeKey | null): void;
+  setPrev(key: NodeKey | null): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 

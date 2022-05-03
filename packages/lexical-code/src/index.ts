@@ -712,8 +712,30 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(node.getChildren(), highlightNodes);
         const {from, to, nodesForReplacement} = diffRange;
-        if (from !== to || nodesForReplacement.length) {
-          node.splice(from, to - from, nodesForReplacement);
+        const nodesForReplacementLength = nodesForReplacement.length;
+        if (from != null && (!from.is(to) || nodesForReplacementLength)) {
+          const firstNode = nodesForReplacement[0];
+          const lastNode = nodesForReplacement[nodesForReplacementLength - 1];
+          // insert the first node at the target index
+          from.insertBefore(firstNode);
+          // insert all other nodes after it
+          let target = firstNode;
+          for (let i = 1; i < nodesForReplacementLength; i++) {
+            target = target.insertAfter(nodesForReplacement[i]);
+          }
+          // delete any nodes between from (inclusive) and to (exclusive)
+          let deleteTarget = from;
+          while (deleteTarget !== null && !deleteTarget.is(to)) {
+            const next = deleteTarget.getNextSibling();
+            deleteTarget.remove();
+            deleteTarget = next;
+          }
+          if (to != null) {
+            lastNode.setNext(to.__key);
+            to.setPrev(lastNode.__key);
+          } else {
+            node.getWritable().__last = lastNode.__key;
+          }
           return true;
         }
         return false;
@@ -858,8 +880,8 @@ function getDiffRange(
     }
   }
 
-  const from = leadingMatch;
-  const to = prevNodesLength - trailingMatch;
+  const from = prevNodes[leadingMatch] || null;
+  const to = prevNodes[prevNodesLength - trailingMatch] || null;
   const nodesForReplacement = nextNodes.slice(
     leadingMatch,
     nextNodesLength - trailingMatch,

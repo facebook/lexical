@@ -215,13 +215,14 @@ export class ElementNode extends LexicalNode {
     if (index === 0) {
       return $getNodeByKey<T>(next);
     }
-    const count = 0;
+    let count = 0;
     while (next !== null) {
       const childNode = $getNodeByKey<T>(next);
       if (childNode !== null) {
-        if (count === index + 1) {
+        if (count === index) {
           return childNode;
         }
+        count++;
         next = childNode.__next;
       } else {
         next = null;

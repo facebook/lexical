@@ -737,10 +737,16 @@ export class TextNode extends LexicalNode {
     // Insert the nodes into the parent's children
     const insertionIndex = self.getIndexWithinParent();
     if (hasReplacedSelf) {
-      parent.splice(insertionIndex, 0, splitNodes);
+      let target = this;
+      for (let i = 0; i < splitNodes.length; i++) {
+        target = target.insertAfter(splitNodes[i]);
+      }
       this.remove();
     } else {
-      parent.splice(insertionIndex, 1, splitNodes);
+      let target = this;
+      for (let i = 1; i < splitNodes.length; i++) {
+        target = target.insertAfter(splitNodes[i]);
+      }
     }
 
     if ($isRangeSelection(selection)) {

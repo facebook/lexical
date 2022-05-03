@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
+import type {
+  DOMExportOutput,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
@@ -126,6 +131,12 @@ export class EquationNode extends DecoratorNode<React$Node> {
     super(key);
     this.__equation = equation;
     this.__inline = inline ?? false;
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement(this.__inline ? 'span' : 'div');
+    element.innerText = this.__equation;
+    return {element};
   }
 
   createDOM(config: EditorConfig): HTMLElement {

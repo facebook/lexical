@@ -12,8 +12,10 @@ import type {
   DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
+  GridSelection,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
@@ -26,6 +28,7 @@ import {
   $createParagraphNode,
   $isElementNode,
   $isParagraphNode,
+  $isRangeSelection,
   ElementNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -288,6 +291,22 @@ export class ListItemNode extends ElementNode {
 
   canMergeWith(node: LexicalNode): boolean {
     return $isParagraphNode(node) || $isListItemNode(node);
+  }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      this.getTextContent().length === selection.getTextContent().length
+    );
   }
 }
 

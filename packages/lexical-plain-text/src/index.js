@@ -10,8 +10,8 @@
 import type {EditorState, LexicalEditor} from 'lexical';
 
 import {
+  $getHtmlContent,
   $insertDataTransferForPlainText,
-  getHtmlContent,
 } from '@lexical/clipboard';
 import {
   $moveCharacter,
@@ -67,7 +67,7 @@ function onCopyForPlainText(
     const selection = $getSelection();
     if (selection !== null) {
       if (clipboardData != null) {
-        const htmlString = getHtmlContent(editor);
+        const htmlString = $getHtmlContent(editor);
         if (htmlString !== null) {
           clipboardData.setData('text/html', htmlString);
         }

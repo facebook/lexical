@@ -6,7 +6,6 @@
  *
  * @flow strict
  */
-
 import type {
   EditorConfig,
   EditorThemeClasses,

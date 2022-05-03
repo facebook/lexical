@@ -7,7 +7,13 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+import type {
+  DOMExportOutput,
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import './ImageNode.css';
 
@@ -334,6 +340,13 @@ export class ImageNode extends DecoratorNode<React$Node> {
     this.__height = height || 'inherit';
     this.__showCaption = showCaption || false;
     this.__caption = caption || createEditor();
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('img');
+    element.setAttribute('src', this.__src);
+    element.setAttribute('alt', this.__altText);
+    return {element};
   }
 
   setWidthAndHeight(

@@ -35,7 +35,7 @@ import invariant from 'shared/invariant';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
-function $cloneWithProperties<T: LexicalNode>(node: T): T {
+export function $cloneWithProperties<T: LexicalNode>(node: T): T {
   const latest = node.getLatest();
   const constructor = latest.constructor;
   const clone = constructor.clone(latest);
@@ -71,7 +71,7 @@ function $getParentAvoidingExcludedElements(
   node: LexicalNode,
 ): ElementNode | null {
   let parent = node.getParent();
-  while (parent !== null && parent.excludeFromCopy()) {
+  while (parent !== null && parent.excludeFromCopy('clone')) {
     parent = parent.getParent();
   }
   return parent;
@@ -92,7 +92,7 @@ function $copyLeafNodeBranchToRoot(
     if (parent === null) {
       break;
     }
-    if (!$isElementNode(node) || !node.excludeFromCopy()) {
+    if (!$isElementNode(node) || !node.excludeFromCopy('clone')) {
       const key = node.getKey();
       let clone = nodeMap.get(key);
       const needsClone = clone === undefined;
@@ -221,7 +221,7 @@ function $cloneContentsImpl(
       const key = node.getKey();
       if (
         !nodeMap.has(key) &&
-        (!$isElementNode(node) || !node.excludeFromCopy())
+        (!$isElementNode(node) || !node.excludeFromCopy('clone'))
       ) {
         const clone = $cloneWithProperties<LexicalNode>(node);
         if ($isRootNode(node.getParent())) {

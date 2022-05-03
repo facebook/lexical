@@ -169,9 +169,9 @@ test.describe('Nested List', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul">
           <li
+            value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
+            dir="ltr">
             <span data-lexical-text="true">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam
               venenatis risus ac cursus efficitur. Cras efficitur magna odio,
@@ -186,14 +186,11 @@ test.describe('Nested List', () => {
             </span>
           </li>
         </ul>
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr"
-            value="1">
-            <span data-lexical-text="true">ipsum dolor</span>
-          </li>
-        </ul>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">ipsum dolor</span>
+        </p>
       `,
     );
   });

@@ -7,10 +7,17 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
+import type {
+  EditorConfig,
+  GridSelection,
+  LexicalNode,
+  NodeKey,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {$isElementNode, ElementNode} from 'lexical';
+import {$isElementNode, $isRangeSelection, ElementNode} from 'lexical';
 
 export class MarkNode extends ElementNode {
   __ids: Array<string>;
@@ -104,10 +111,30 @@ export class MarkNode extends ElementNode {
     return true;
   }
 
-  // TODO: It seems excludeFromCopy doesn't work as expected anymore.
-  // excludeFromCopy(): true {
-  //   return true;
-  // }
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
+  ): boolean {
+    if (!$isRangeSelection(selection) || destination === 'html') {
+      return false;
+    }
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    const isBackward = selection.isBackward();
+    const selectionLength = isBackward
+      ? selection.anchor.offset - selection.focus.offset
+      : selection.focus.offset - selection.anchor.offset;
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      this.getTextContent().length === selectionLength
+    );
+  }
+
+  excludeFromCopy(destination: 'clone' | 'html'): boolean {
+    return destination !== 'clone';
+  }
 }
 
 export function $createMarkNode(ids: Array<string>): MarkNode {

@@ -375,6 +375,57 @@ test.describe('Links', () => {
     );
   });
 
+  test(`Can create a link in a list and insert a paragraph at the start`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('- hello');
+    await selectCharacters(page, 'left', 5);
+
+    // link
+    await click(page, '.link');
+
+    await moveLeft(page, 1);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://">
+              <span data-lexical-text="true">hello</span>
+            </a>
+          </li>
+        </ul>
+      `,
+    );
+
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="2">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://">
+              <span data-lexical-text="true">hello</span>
+            </a>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
   test(`Can create a link with some text after, insert paragraph, then backspace, it should merge correctly`, async ({
     page,
   }) => {

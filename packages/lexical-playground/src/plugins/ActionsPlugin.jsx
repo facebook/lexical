@@ -11,7 +11,10 @@ import type {LexicalEditor} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {exportFile, importFile} from '@lexical/file';
-import {v2} from '@lexical/markdown';
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+} from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
@@ -28,16 +31,11 @@ import {useCallback, useEffect, useState} from 'react';
 
 import useModal from '../hooks/useModal';
 import Button from '../ui/Button';
-import {TRANSFORMERS} from './MarkdownTransformers';
+import {PLAYGROUND_TRANSFORMERS} from './MarkdownTransformers';
 import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
 } from './SpeechToTextPlugin';
-
-const {createMarkdownExport, createMarkdownImport} = v2;
-
-const importMarkdown = createMarkdownImport(...TRANSFORMERS);
-const exportMarkdown = createMarkdownExport(...TRANSFORMERS);
 
 export default function ActionsPlugin({
   isRichText,
@@ -95,9 +93,12 @@ export default function ActionsPlugin({
       const root = $getRoot();
       const firstChild = root.getFirstChild();
       if ($isCodeNode(firstChild) && firstChild.getLanguage() === 'markdown') {
-        importMarkdown(firstChild.getTextContent());
+        $convertFromMarkdownString(
+          firstChild.getTextContent(),
+          PLAYGROUND_TRANSFORMERS,
+        );
       } else {
-        const markdown = exportMarkdown();
+        const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
         root
           .clear()
           .append(

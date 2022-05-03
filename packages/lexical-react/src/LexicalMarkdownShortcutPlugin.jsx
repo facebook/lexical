@@ -7,13 +7,18 @@
  * @flow strict
  */
 
+import type {Transformer} from '@lexical/markdown';
+
+import {registerMarkdownShortcuts} from '@lexical/markdown';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useEffect} from 'react';
 
-import useMarkdownShortcuts from './shared/useMarkdownShortcuts';
-
-export default function LexicalMarkdownShortcutPlugin(): null {
+export default function LexicalMarkdownShortcutPlugin({
+  transformers,
+}: $ReadOnly<{transformers: Array<Transformer>}>): null {
   const [editor] = useLexicalComposerContext();
-  useMarkdownShortcuts(editor);
-
+  useEffect(() => {
+    return registerMarkdownShortcuts(editor, transformers);
+  }, [editor, transformers]);
   return null;
 }

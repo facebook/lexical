@@ -7,11 +7,18 @@
  * @flow strict
  */
 
-import type {TextFormatTransformer} from '../../../lexical-markdown/src/v2/MarkdownTransformers';
-import type {BlockTransformer, TextMatchTransformer} from '@lexical/markdown';
+import type {
+  ElementTransformer,
+  TextMatchTransformer,
+  Transformer,
+} from '@lexical/markdown';
 import type {ElementNode, LexicalNode} from 'lexical';
 
-import {v2} from '@lexical/markdown';
+import {
+  ELEMENT_TRANSFORMERS,
+  TEXT_FORMAT_TRANSFORMERS,
+  TEXT_MATCH_TRANSFORMERS,
+} from '@lexical/markdown';
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
@@ -37,7 +44,7 @@ import {$createEquationNode, $isEquationNode} from '../nodes/EquationNode.jsx';
 import {$createImageNode, $isImageNode} from '../nodes/ImageNode.jsx';
 import {$createTweetNode, $isTweetNode} from '../nodes/TweetNode.jsx';
 
-export const HR: BlockTransformer = {
+export const HR: ElementTransformer = {
   export: (node: LexicalNode) => {
     return $isHorizontalRuleNode(node) ? '***' : null;
   },
@@ -52,7 +59,7 @@ export const HR: BlockTransformer = {
     }
     line.selectNext();
   },
-  type: 'block-match',
+  type: 'element',
 };
 
 export const IMAGE: TextMatchTransformer = {
@@ -114,7 +121,7 @@ export const TWEET: TextMatchTransformer = {
 // Very primitive table setup
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
-export const TABLE: BlockTransformer = {
+export const TABLE: ElementTransformer = {
   export: (
     node: LexicalNode,
     exportChildren: (node: ElementNode) => string,
@@ -189,7 +196,7 @@ export const TABLE: BlockTransformer = {
     parentNode.replace(table);
     table.selectEnd();
   },
-  type: 'block-match',
+  type: 'element',
 };
 
 const createTableCell = (textContent: ?string): TableCellNode => {
@@ -214,15 +221,13 @@ const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
   return match[1].split('|').map((text) => createTableCell(text));
 };
 
-const {BLOCK_TRANSFORMERS, TEXT_FORMAT_TRANSFORMERS, TEXT_MATCH_TRANSFORMERS} =
-  v2;
-
-export const TRANSFORMERS: [
-  Array<BlockTransformer>,
-  Array<TextFormatTransformer>,
-  Array<TextMatchTransformer>,
-] = [
-  [TABLE, HR, ...BLOCK_TRANSFORMERS],
-  TEXT_FORMAT_TRANSFORMERS,
-  [IMAGE, EQUATION, TWEET, ...TEXT_MATCH_TRANSFORMERS],
+export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
+  TABLE,
+  HR,
+  IMAGE,
+  EQUATION,
+  TWEET,
+  ...ELEMENT_TRANSFORMERS,
+  ...TEXT_FORMAT_TRANSFORMERS,
+  ...TEXT_MATCH_TRANSFORMERS,
 ];

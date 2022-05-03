@@ -1,11 +1,93 @@
 # `@lexical/markdown`
 
-This package contains markdown helpers and functionality for Lexical.
+This package contains markdown helpers for Lexical: import, export and shortcuts.
 
-The package focuses on markdown conversion.
+## Import and export
+```js
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 
-The package has 3 main functions:
+editor.update(() => {
+  const markdown = $convertToMarkdownString(TRANSFORMERS);
+  ...
+});
 
-1. It imports a string and converts into Lexical and then converts markup within the imported nodes. See convertFromPlainTextUtils.js
-2. It exports Lexical to a plain text with markup. See convertToPlainTextUtils.js
-3. It autoformats newly typed text by converting the markdown + some trigger to the appropriate stylized text. See autoFormatUtils.js
+editor.update(() => {
+  $convertFromMarkdownString(markdown, TRANSFORMERS);
+});
+```
+
+It can also be used for initializing editor's state from markdown string. Here's an example with react `<RichTextPlugin>`
+```jsx
+<LexicalComposer>
+  <RichTextPlugin initialEditorState={() => {
+    $convertFromMarkdownString(markdown, TRANSFORMERS);
+  }} />
+</LexicalComposer>
+```
+
+## Shortcuts
+Can use `<LexicalMarkdownShortcutPlugin>` if using React
+```jsx
+import { TRANSFORMERS } from '@lexical/markdown';
+import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcutPlugin';
+
+<LexicalComposer>
+  <LexicalMarkdownShortcutPlugin transformers={TRANSFORMERS} />
+</LexicalComposer>
+```
+
+Or `registerMarkdownShortcuts` to register it manually:
+```js
+import {
+  registerMarkdownShortcuts,
+  TRANSFORMERS,
+} from '@lexical/markdown';
+
+const editor = createEditor(...);
+registerMarkdownShortcuts(editor, TRANSFORMERS);
+```
+
+## Transformers
+Markdown functionality relies on transformers configuration. It's an array of objects that define how certain text or nodes
+are processed during import, export or while typing. `@lexical/markdown` package provides set of built-in transformers:
+```js
+// Element transformers
+UNORDERED_LIST
+CODE
+HEADING
+ORDERED_LIST
+QUOTE
+
+// Text format transformers
+BOLD_ITALIC_STAR
+BOLD_ITALIC_UNDERSCORE
+BOLD_STAR
+BOLD_UNDERSCORE
+INLINE_CODE
+ITALIC_STAR
+ITALIC_UNDERSCORE
+STRIKETHROUGH
+
+// Text match transformers
+LINK
+```
+
+And bundles of commonly used transformers:
+- `TRANSFORMERS` - all built-in transformers
+- `ELEMENT_TRANSFORMERS` - all built-in element transformers
+- `TEXT_FORMAT_TRANSFORMERS` - all built-in text format trasnformers
+- `TEXT_MATCH_TRANSFORMERS` - all built-in text match trasnformers
+
+Transformers are explicitly passed to markdown API allowing application-specific subset of markdown or custom transformers.
+
+There're three types of transformers:
+
+- **Element transformer** handles top level elements (lists, headings, quotes, tables or code blocks)
+- **Text format transformer** applies text range formats defined in `TextFormatType` (bold, italic, underline, strikethrough, code, subscript and superscript)
+- **Text match transformer** relies on matching leaf text node content
+
+See `MarkdownTransformers.js` for transformer implementation examples

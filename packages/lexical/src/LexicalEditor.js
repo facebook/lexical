@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {EditorState} from './LexicalEditorState';
+import type {EditorState, ParsedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
@@ -572,8 +572,13 @@ export class LexicalEditor {
     }
     commitPendingUpdates(this);
   }
-  parseEditorState(stringifiedEditorState: string): EditorState {
-    const parsedEditorState = JSON.parse(stringifiedEditorState);
+  parseEditorState(
+    maybeStringifiedEditorState: string | ParsedEditorState,
+  ): EditorState {
+    const parsedEditorState =
+      typeof maybeStringifiedEditorState === 'string'
+        ? JSON.parse(maybeStringifiedEditorState)
+        : maybeStringifiedEditorState;
     return parseEditorState(parsedEditorState, this);
   }
   update(updateFn: () => void, options?: EditorUpdateOptions): void {

@@ -146,7 +146,7 @@ export declare class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(type: string, payload: P): boolean;
+  dispatchCommand<P>(type: string, payload?: P): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): Record<NodeKey, X>;
   getRootElement(): null | HTMLElement;

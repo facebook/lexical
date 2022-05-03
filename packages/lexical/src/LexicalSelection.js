@@ -1421,7 +1421,14 @@ export class RangeSelection implements BaseSelection {
       nodesToMoveLength > 0 &&
       currentElement.isInline()
     ) {
-      currentElement.getParentOrThrow().insertBefore($createParagraphNode());
+      const parent = currentElement.getParentOrThrow();
+      const newElement = parent.insertNewAfter(this);
+      if ($isElementNode(newElement)) {
+        const children = parent.getChildren();
+        for (let i = 0; i < children.length; i++) {
+          newElement.append(children[i]);
+        }
+      }
       return;
     }
     const newElement = currentElement.insertNewAfter(this);

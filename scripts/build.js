@@ -50,6 +50,7 @@ const wwwMappings = {
   '@lexical/dragon': 'LexicalDragon',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
+  '@lexical/headless': 'LexicalHeadless',
   '@lexical/history': 'LexicalHistory',
   '@lexical/link': 'LexicalLink',
   '@lexical/list': 'LexicalList',
@@ -489,6 +490,17 @@ const packages = [
     name: 'Lexical Markdown',
     outputPath: './packages/lexical-markdown/dist/',
     sourcePath: './packages/lexical-markdown/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalHeadless',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Headless',
+    outputPath: './packages/lexical-headless/dist/',
+    sourcePath: './packages/lexical-headless/src/',
   },
   {
     modules: lexicalShared.map((module) => ({

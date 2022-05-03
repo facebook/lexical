@@ -1082,13 +1082,6 @@ describe('LexicalEditor tests', () => {
         expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
-
-      it('Accepts already parsed editor state', async () => {
-        expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
-        expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
-        expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
-        expect(parsedSelection.focus.key).toEqual(parsedText.__key);
-      });
     });
 
     describe('node selection', () => {

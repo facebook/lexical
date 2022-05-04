@@ -178,11 +178,11 @@ function setListThemeClassNames(
     }
   }
 
-  if (classesToAdd.length > 0) {
-    addClassNamesToElement(dom, ...classesToAdd);
-  }
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
+  }
+  if (classesToAdd.length > 0) {
+    addClassNamesToElement(dom, ...classesToAdd);
   }
 }
 

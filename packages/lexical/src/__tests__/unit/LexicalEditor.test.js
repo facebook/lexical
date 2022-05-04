@@ -986,6 +986,26 @@ describe('LexicalEditor tests', () => {
     let textKey;
     let parsedEditorState;
 
+    it('parses parsed JSON', async () => {
+      await update(() => {
+        const paragraph = $createParagraphNode();
+        originalText = $createTextNode('Hello world');
+        originalText.select(6, 11);
+        paragraph.append(originalText);
+        $getRoot().append(paragraph);
+      });
+      const stringifiedEditorState = JSON.stringify(
+        editor.getEditorState().toJSON(),
+      );
+      const parsedEditorStateFromObject = editor.parseEditorState(
+        JSON.parse(stringifiedEditorState),
+      );
+      parsedEditorStateFromObject.read(() => {
+        const root = $getRoot();
+        expect(root.getTextContent()).toMatch(/Hello world/);
+      });
+    });
+
     describe('range selection', () => {
       beforeEach(async () => {
         init();

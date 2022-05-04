@@ -12,7 +12,7 @@ import type {
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from './MarkdownTransformers';
+} from '../../flow/LexicalMarkdown';
 
 export function indexBy<T>(
   list: Array<T>,

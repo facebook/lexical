@@ -7,9 +7,14 @@
  * @flow strict
  */
 
+import type {
+  ElementTransformer,
+  TextFormatTransformer,
+  TextMatchTransformer,
+} from '../../flow/LexicalMarkdown';
 import type {ListNode, ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
+import type {ElementNode, LexicalNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
@@ -26,45 +31,6 @@ import {
   $isQuoteNode,
 } from '@lexical/rich-text';
 import {$createTextNode, $isTextNode} from 'lexical';
-
-export type Transformer =
-  | ElementTransformer
-  | TextFormatTransformer
-  | TextMatchTransformer;
-
-export type ElementTransformer = {
-  export: (
-    node: LexicalNode,
-    traverseChildren: (node: ElementNode) => string,
-  ) => string | null,
-  regExp: RegExp,
-  replace: (
-    parentNode: ElementNode,
-    children: Array<LexicalNode>,
-    match: Array<string>,
-    isImport: boolean,
-  ) => void,
-  type: 'element',
-};
-
-export type TextFormatTransformer = $ReadOnly<{
-  format: $ReadOnlyArray<TextFormatType>,
-  tag: string,
-  type: 'text-format',
-}>;
-
-export type TextMatchTransformer = $ReadOnly<{
-  export: (
-    node: LexicalNode,
-    exportChildren: (node: ElementNode) => string,
-    exportFormat: (node: TextNode, textContent: string) => string,
-  ) => string | null,
-  importRegExp: RegExp,
-  regExp: RegExp,
-  replace: (node: TextNode, match: RegExp$matchResult) => void,
-  trigger: string,
-  type: 'text-match',
-}>;
 
 const replaceWithBlock = (
   createNode: (match: Array<string>) => ElementNode,

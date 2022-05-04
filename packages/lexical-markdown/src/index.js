@@ -12,7 +12,7 @@ import type {
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from './v2/MarkdownTransformers';
+} from '../flow/LexicalMarkdown';
 
 import {createMarkdownExport} from './v2/MarkdownExport';
 import {createMarkdownImport} from './v2/MarkdownImport';

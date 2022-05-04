@@ -747,6 +747,9 @@ function $wrapSelectionInMarkNode(
       const textContentSize = node.getTextContentSize();
       const startTextOffset = isFirstNode ? startOffset : 0;
       const endTextOffset = isLastNode ? endOffset : textContentSize;
+      if (startTextOffset === 0 && endTextOffset === 0) {
+        continue;
+      }
       const splitNodes = node.splitText(startTextOffset, endTextOffset);
       targetNode =
         splitNodes.length > 1 &&

@@ -16,6 +16,7 @@ import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
   $isListNode,
+  INSERT_CHECK_LIST_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
   ListNode,
@@ -87,21 +88,23 @@ const supportedBlockTypes = new Set([
   'h1',
   'h2',
   'h3',
-  'ul',
-  'ol',
+  'bullet',
+  'number',
+  'check',
 ]);
 
 const blockTypeToBlockName = {
+  bullet: 'Bulleted List',
+  check: 'Check List',
   code: 'Code Block',
   h1: 'Heading 1',
   h2: 'Heading 2',
   h3: 'Heading 3',
   h4: 'Heading 4',
   h5: 'Heading 5',
-  ol: 'Numbered List',
+  number: 'Numbered List',
   paragraph: 'Normal',
   quote: 'Quote',
-  ul: 'Bulleted List',
 };
 
 const CODE_LANGUAGE_OPTIONS = [
@@ -624,15 +627,23 @@ function BlockFormatDropDown({
   };
 
   const formatBulletList = () => {
-    if (blockType !== 'ul') {
+    if (blockType !== 'bullet') {
       editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
     } else {
       editor.dispatchCommand(REMOVE_LIST_COMMAND);
     }
   };
 
+  const formatCheckList = () => {
+    if (blockType !== 'check') {
+      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND);
+    } else {
+      editor.dispatchCommand(REMOVE_LIST_COMMAND);
+    }
+  };
+
   const formatNumberedList = () => {
-    if (blockType !== 'ol') {
+    if (blockType !== 'number') {
       editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND);
     } else {
       editor.dispatchCommand(REMOVE_LIST_COMMAND);
@@ -700,12 +711,17 @@ function BlockFormatDropDown({
       <button className="item" onClick={formatBulletList}>
         <span className="icon bullet-list" />
         <span className="text">Bullet List</span>
-        {blockType === 'ul' && <span className="active" />}
+        {blockType === 'bullet' && <span className="active" />}
       </button>
       <button className="item" onClick={formatNumberedList}>
         <span className="icon numbered-list" />
         <span className="text">Numbered List</span>
-        {blockType === 'ol' && <span className="active" />}
+        {blockType === 'number' && <span className="active" />}
+      </button>
+      <button className="item" onClick={formatCheckList}>
+        <span className="icon check-list" />
+        <span className="text">Check List</span>
+        {blockType === 'check' && <span className="active" />}
       </button>
       <button className="item" onClick={formatQuote}>
         <span className="icon quote" />
@@ -802,7 +818,9 @@ export default function ToolbarPlugin(): React$Node {
         setSelectedElementKey(elementKey);
         if ($isListNode(element)) {
           const parentList = $getNearestNodeOfType(anchorNode, ListNode);
-          const type = parentList ? parentList.getTag() : element.getTag();
+          const type = parentList
+            ? parentList.getListType()
+            : element.getListType();
           setBlockType(type);
         } else {
           const type = $isHeadingNode(element)

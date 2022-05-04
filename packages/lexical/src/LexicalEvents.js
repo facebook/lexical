@@ -48,6 +48,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
   PASTE_COMMAND,
   REDO_COMMAND,
@@ -91,6 +92,7 @@ import {
   isOpenLineBreak,
   isParagraph,
   isRedo,
+  isSpace,
   isTab,
   isUnderline,
   isUndo,
@@ -623,6 +625,8 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isLineBreak(keyCode, shiftKey)) {
     isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
+  } else if (isSpace(keyCode)) {
+    dispatchCommand(editor, KEY_SPACE_COMMAND, event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
     isInsertLineBreak = true;

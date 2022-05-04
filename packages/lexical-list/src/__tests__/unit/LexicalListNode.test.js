@@ -65,10 +65,12 @@ describe('LexicalListNode tests', () => {
     test('ListNode.getTag()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const ulListNode = $createListNode('ul', 1);
+        const ulListNode = $createListNode('bullet', 1);
         expect(ulListNode.getTag()).toBe('ul');
-        const olListNode = $createListNode('ol', 1);
+        const olListNode = $createListNode('number', 1);
         expect(olListNode.getTag()).toBe('ol');
+        const checkListNode = $createListNode('check', 1);
+        expect(checkListNode.getTag()).toBe('ul');
       });
     });
 
@@ -160,7 +162,7 @@ describe('LexicalListNode tests', () => {
         expect(domElement.outerHTML).toBe(
           '<ul class="my-ul-list-class my-ul-list-class-1"></ul>',
         );
-        const newListNode = new ListNode();
+        const newListNode = $createListNode('ol', 1);
         const result = newListNode.updateDOM(
           listNode,
           domElement,
@@ -242,6 +244,16 @@ describe('LexicalListNode tests', () => {
       await editor.update(() => {
         const listNode = $createListNode();
         expect($isListNode(listNode)).toBe(true);
+      });
+    });
+
+    test('$createListNode() with tag name', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const numberList = $createListNode('ol', 1);
+        const bulletList = $createListNode('ul', 1);
+        expect(numberList.__listType).toBe('number');
+        expect(bulletList.__listType).toBe('bullet');
       });
     });
   });

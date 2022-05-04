@@ -88,6 +88,7 @@ export function isNestedListNode(node: ?LexicalNode): boolean %checks {
   return $isListItemNode(node) && $isListNode(node.getFirstChild());
 }
 
+// TODO: rewrite with $findMatchingParent or *nodeOfType
 export function findNearestListItemNode(
   node: LexicalNode,
 ): ListItemNode | null {

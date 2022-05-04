@@ -688,12 +688,17 @@ select.font-family {
 }
 
 .icon.bullet-list,
-.icon.ul {
+.icon.bullet {
   background-image: url(images/icons/list-ul.svg);
 }
 
+.icon.check-list,
+.icon.check {
+  background-image: url(images/icons/square-check.svg);
+}
+
 .icon.numbered-list,
-.icon.ol {
+.icon.number {
   background-image: url(images/icons/list-ol.svg);
 }
 

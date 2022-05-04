@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {ListNode} from '@lexical/list';
+import type {ListNode, ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
@@ -81,17 +81,19 @@ const replaceWithBlock = (
 // TODO: should be an option
 const LIST_INDENT_SIZE = 4;
 
-const listReplace = (listTag: 'ul' | 'ol'): ElementTransformer['replace'] => {
+const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
     const previousNode = parentNode.getPreviousSibling();
-    const listItem = $createListItemNode();
-    if ($isListNode(previousNode) && previousNode.getTag() === listTag) {
+    const listItem = $createListItemNode(
+      listType === 'check' ? match[3] === 'x' : undefined,
+    );
+    if ($isListNode(previousNode) && previousNode.getListType() === listType) {
       previousNode.append(listItem);
       parentNode.remove();
     } else {
       const list = $createListNode(
-        listTag,
-        listTag === 'ol' ? Number(match[2]) : undefined,
+        listType,
+        listType === 'number' ? Number(match[2]) : undefined,
       );
       list.append(listItem);
       parentNode.replace(list);
@@ -123,8 +125,13 @@ const listExport = (
         }
       }
       const indent = ' '.repeat(depth * LIST_INDENT_SIZE);
+      const listType = listNode.getListType();
       const prefix =
-        listNode.getTag() === 'ul' ? '- ' : `${listNode.getStart() + index}. `;
+        listType === 'number'
+          ? `${listNode.getStart() + index}. `
+          : listType === 'check'
+          ? `- [${listItemNode.getChecked() ? 'x' : ' '}] `
+          : '- ';
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }
@@ -185,7 +192,16 @@ export const UNORDERED_LIST: ElementTransformer = {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
   regExp: /^(\s*)[-*+]\s/,
-  replace: listReplace('ul'),
+  replace: listReplace('bullet'),
+  type: 'element',
+};
+
+export const CHECK_LIST: ElementTransformer = {
+  export: (node, exportChildren) => {
+    return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
+  },
+  regExp: /^(\s*)(?:-\s)?\s?(\[(\s|x)?\])\s/i,
+  replace: listReplace('check'),
   type: 'element',
 };
 
@@ -194,7 +210,7 @@ export const ORDERED_LIST: ElementTransformer = {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
   regExp: /^(\s*)(\d{1,})\.\s/,
-  replace: listReplace('ol'),
+  replace: listReplace('number'),
   type: 'element',
 };
 

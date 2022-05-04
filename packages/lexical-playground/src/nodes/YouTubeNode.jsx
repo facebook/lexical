@@ -64,6 +64,10 @@ export class YouTubeNode extends DecoratorBlockNode<React$Node> {
       />
     );
   }
+
+  isTopLevel(): true {
+    return true;
+  }
 }
 
 export function $createYouTubeNode(videoID: string): YouTubeNode {

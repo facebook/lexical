@@ -708,10 +708,10 @@ function $unwrapMarkNode(node: MarkNode): void {
     const child = children[i];
     if (target === null) {
       node.insertBefore(child);
-      target = child;
     } else {
       target.insertAfter(child);
     }
+    target = child;
   }
   node.remove();
 }

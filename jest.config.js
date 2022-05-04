@@ -30,6 +30,7 @@ module.exports = {
         '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.js',
         '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
+        '^@lexical/mark$': '<rootDir>/packages/lexical-mark/src/index.js',
         '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.js',
         '^@lexical/overflow$':
           '<rootDir>/packages/lexical-overflow/src/index.js',

@@ -32,7 +32,7 @@ declare export class LinkNode extends ElementNode {
   setURL(url: string): void;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
   canInsertTextBefore(): false;
-  canInsertTextAfter(): boolean;
+  canInsertTextAfter(): false;
   canBeEmpty(): false;
   isInline(): true;
 }

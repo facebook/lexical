@@ -54,6 +54,7 @@ const wwwMappings = {
   '@lexical/history': 'LexicalHistory',
   '@lexical/link': 'LexicalLink',
   '@lexical/list': 'LexicalList',
+  '@lexical/mark': 'LexicalMark',
   '@lexical/markdown': 'LexicalMarkdown',
   '@lexical/offset': 'LexicalOffset',
   '@lexical/overflow': 'LexicalOverflow',
@@ -117,6 +118,7 @@ const externals = [
   '@lexical/yjs',
   '@lexical/plain-text',
   '@lexical/rich-text',
+  '@lexical/mark',
   '@lexical/dragon',
   '@lexical/overflow',
   '@lexical/link',
@@ -501,6 +503,17 @@ const packages = [
     name: 'Lexical Headless',
     outputPath: './packages/lexical-headless/dist/',
     sourcePath: './packages/lexical-headless/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalMark',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Mark',
+    outputPath: './packages/lexical-mark/dist/',
+    sourcePath: './packages/lexical-mark/src/',
   },
   {
     modules: lexicalShared.map((module) => ({

@@ -17,7 +17,8 @@ for package in  'lexical' \
                 'lexical-overflow' \
                 'lexical-link' \
                 'lexical-text' \
-                'lexical-markdown'
+                'lexical-markdown' \
+                'lexical-mark'
 do
   gen-flow-files "./packages/${package}/src" --out-dir "./packages/${package}/dist"
 done

@@ -1913,6 +1913,15 @@ function internalResolveSelectionPoint(
           resolvedOffset++;
         }
       } else {
+        // Ensure if we're selecting the content of a decorator that we
+        // return null for this point, as it's not in the controlled scope
+        // of Lexical.
+        if (
+          (resolvedNode === null || $isDecoratorNode(resolvedNode)) &&
+          $isDecoratorNode(getNodeFromDOM(dom))
+        ) {
+          return null;
+        }
         const index = resolvedElement.getIndexWithinParent();
         // When selecting decorators, there can be some selection issues when using resolvedOffset,
         // and instead we should be checking if we're using the offset

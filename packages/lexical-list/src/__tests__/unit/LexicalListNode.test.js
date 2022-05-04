@@ -247,13 +247,31 @@ describe('LexicalListNode tests', () => {
       });
     });
 
-    test('$createListNode() with tag name', async () => {
+    test('$createListNode() with tag name (backward compatibility)', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const numberList = $createListNode('ol', 1);
         const bulletList = $createListNode('ul', 1);
         expect(numberList.__listType).toBe('number');
         expect(bulletList.__listType).toBe('bullet');
+      });
+    });
+
+    test('ListNode.clone() without list type (backward compatibility)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const olNode = ListNode.clone({
+          __key: '1',
+          __start: 1,
+          __tag: 'ol',
+        });
+        const ulNode = ListNode.clone({
+          __key: '1',
+          __start: 1,
+          __tag: 'ul',
+        });
+        expect(olNode.__listType).toBe('number');
+        expect(ulNode.__listType).toBe('bullet');
       });
     });
   });

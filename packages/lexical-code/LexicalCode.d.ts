@@ -33,7 +33,7 @@ declare class CodeNode extends ElementNode {
   setLanguage(language: string): void;
   getLanguage(): string | void;
 }
-declare function $createCodeNode(): CodeNode;
+declare function $createCodeNode(language?: string): CodeNode;
 declare function $isCodeNode(
   node: null | undefined | LexicalNode,
 ): node is CodeNode;

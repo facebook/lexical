@@ -12,7 +12,7 @@ import type {
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from './MarkdownTransformers';
+} from '../../flow/LexicalMarkdown';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';

@@ -39,7 +39,8 @@ export class ListNode extends ElementNode {
   }
 
   static clone(node: ListNode): ListNode {
-    return new ListNode(node.__listType, node.__start, node.__key);
+    const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
+    return new ListNode(listType, node.__start, node.__key);
   }
 
   constructor(listType: ListType, start: number, key?: NodeKey): void {

@@ -7,14 +7,52 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
 import type {
-  Transformer,
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-} from '../src';
+  LexicalEditor,
+  LexicalNode,
+  ElementNode,
+  TextFormatType,
+  TextNode,
+} from 'lexical';
 
+export type Transformer =
+  | ElementTransformer
+  | TextFormatTransformer
+  | TextMatchTransformer;
+
+export type ElementTransformer = {
+  export: (
+    node: LexicalNode,
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null,
+  regExp: RegExp,
+  replace: (
+    parentNode: ElementNode,
+    children: Array<LexicalNode>,
+    match: Array<string>,
+    isImport: boolean,
+  ) => void,
+  type: 'element',
+};
+
+export type TextFormatTransformer = $ReadOnly<{
+  format: $ReadOnlyArray<TextFormatType>,
+  tag: string,
+  type: 'text-format',
+}>;
+
+export type TextMatchTransformer = $ReadOnly<{
+  export: (
+    node: LexicalNode,
+    exportChildren: (node: ElementNode) => string,
+    exportFormat: (node: TextNode, textContent: string) => string,
+  ) => string | null,
+  importRegExp: RegExp,
+  regExp: RegExp,
+  replace: (node: TextNode, match: RegExp$matchResult) => void,
+  trigger: string,
+  type: 'text-match',
+}>;
 // TODO:
 // transformers should be required argument, breaking change
 declare export function registerMarkdownShortcuts(

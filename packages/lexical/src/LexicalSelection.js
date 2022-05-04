@@ -1001,7 +1001,11 @@ export class RangeSelection implements BaseSelection {
     // This is the case where the user only selected the very end of the
     // first node so we don't want to include it in the formatting change.
     if (startOffset === firstNode.getTextContentSize()) {
-      const nextSibling = firstNode.getNextSibling();
+      let nextSibling = firstNode.getNextSibling();
+
+      if ($isElementNode(nextSibling) && nextSibling.isInline()) {
+        nextSibling = nextSibling.getFirstChild();
+      }
 
       if ($isTextNode(nextSibling)) {
         // we basically make the second node the firstNode, changing offsets accordingly

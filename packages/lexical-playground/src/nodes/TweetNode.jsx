@@ -117,6 +117,10 @@ export class TweetNode extends DecoratorBlockNode<React$Node> {
       />
     );
   }
+
+  isTopLevel(): true {
+    return true;
+  }
 }
 
 export function $createTweetNode(tweetID: string): TweetNode {

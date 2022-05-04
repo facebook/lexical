@@ -67,8 +67,8 @@ export default function PlaygroundApp(): React$Node {
           viewBox="0 0 250 250"
           style={{
             border: '0',
-            color: '#fff',
-            fill: '#151513',
+            color: '#eee',
+            fill: '#222',
             left: '0',
             position: 'absolute',
             top: '0',

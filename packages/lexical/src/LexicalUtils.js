@@ -404,10 +404,15 @@ export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
   const editorState = getActiveEditorState();
-  if (__DEV__ && selection !== null && Object.isFrozen(selection)) {
-    console.warn(
-      '$setSelection called on frozen selection object. Ensure selection is cloned before passing in.',
-    );
+  if (selection !== null) {
+    if (Object.isFrozen(selection)) {
+      invariant(
+        false,
+        '$setSelection called on frozen selection object. Ensure selection is cloned before passing in.',
+      );
+    }
+    selection.dirty = true;
+    selection._nodesCache = null;
   }
   editorState._selection = selection;
 }

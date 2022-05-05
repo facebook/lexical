@@ -133,6 +133,7 @@ class Point {
         selection !== null &&
         (selection.anchor === this || selection.focus === this)
       ) {
+        selection._nodesCache = null;
         selection.dirty = true;
       }
     }
@@ -228,10 +229,12 @@ interface BaseSelection {
 export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
+  _nodesCache: null | Array<LexicalNode>;
 
   constructor(objects: Set<NodeKey>) {
     this.dirty = false;
     this._nodes = objects;
+    this._nodesCache = null;
   }
 
   is(
@@ -318,12 +321,14 @@ export class GridSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
+  _nodesCache: null | Array<LexicalNode>;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void {
     this.gridKey = gridKey;
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
+    this._nodesCache = null;
   }
 
   is(
@@ -460,12 +465,14 @@ export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
+  _nodesCache: null | Array<LexicalNode>;
 
   constructor(anchor: PointType, focus: PointType, format: number): void {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
     this.format = format;
+    this._nodesCache = null;
   }
 
   is(
@@ -490,6 +497,10 @@ export class RangeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
+    const nodesCache = this._nodesCache;
+    if (nodesCache !== null) {
+      return nodesCache;
+    }
     const anchor = this.anchor;
     const focus = this.focus;
     let firstNode = anchor.getNode();
@@ -510,7 +521,11 @@ export class RangeSelection implements BaseSelection {
       }
       return [firstNode];
     }
-    return firstNode.getNodesBetween(lastNode);
+    const nodes = firstNode.getNodesBetween(lastNode);
+    if (!isCurrentlyReadOnlyMode()) {
+      this._nodesCache = nodes;
+    }
+    return nodes;
   }
 
   setTextNodeRange(

@@ -631,6 +631,9 @@ export class LexicalNode {
     removeNode(this, false);
     internalMarkSiblingsAsDirty(writableReplaceWith);
     const selection = $getSelection();
+    if (selection !== null) {
+      selection._nodesCache = null;
+    }
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const focus = selection.focus;

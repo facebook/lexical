@@ -648,9 +648,7 @@ export function $wrapLeafNodesInElements(
     isPointAttached(prevSelection.anchor) &&
     isPointAttached(prevSelection.focus)
   ) {
-    const clonedSelection = prevSelection.clone();
-    clonedSelection.dirty = true;
-    $setSelection(clonedSelection);
+    $setSelection(prevSelection.clone());
   } else {
     selection.dirty = true;
   }

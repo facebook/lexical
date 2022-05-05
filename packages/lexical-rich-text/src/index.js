@@ -550,6 +550,7 @@ export function registerRichText(
           (block) => {
             const indent = block.getIndent();
             if (indent !== 0) {
+              debugger;
               block.setIndent(indent - 1);
             }
           },

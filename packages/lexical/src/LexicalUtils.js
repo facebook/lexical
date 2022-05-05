@@ -412,7 +412,7 @@ export function $setSelection(
       );
     }
     selection.dirty = true;
-    selection._nodesCache = null;
+    selection._cachedNodes = null;
   }
   editorState._selection = selection;
 }

@@ -537,6 +537,10 @@ export class LexicalNode {
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
+    const selection = $getSelection();
+    if (selection !== null) {
+      selection._cachedNodes = null;
+    }
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
       internalMarkNodeAsDirty(latestNode);
@@ -631,9 +635,6 @@ export class LexicalNode {
     removeNode(this, false);
     internalMarkSiblingsAsDirty(writableReplaceWith);
     const selection = $getSelection();
-    if (selection !== null) {
-      selection._nodesCache = null;
-    }
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const focus = selection.focus;

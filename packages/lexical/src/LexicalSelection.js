@@ -133,7 +133,7 @@ class Point {
         selection !== null &&
         (selection.anchor === this || selection.focus === this)
       ) {
-        selection._nodesCache = null;
+        selection._cachedNodes = null;
         selection.dirty = true;
       }
     }
@@ -229,12 +229,12 @@ interface BaseSelection {
 export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
-  _nodesCache: null | Array<LexicalNode>;
+  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(objects: Set<NodeKey>) {
     this.dirty = false;
     this._nodes = objects;
-    this._nodesCache = null;
+    this._cachedNodes = null;
   }
 
   is(
@@ -251,19 +251,19 @@ export class NodeSelection implements BaseSelection {
   add(key: NodeKey): void {
     this.dirty = true;
     this._nodes.add(key);
-    this._nodesCache = null;
+    this._cachedNodes = null;
   }
 
   delete(key: NodeKey): void {
     this.dirty = true;
     this._nodes.delete(key);
-    this._nodesCache = null;
+    this._cachedNodes = null;
   }
 
   clear(): void {
     this.dirty = true;
     this._nodes.clear();
-    this._nodesCache = null;
+    this._cachedNodes = null;
   }
 
   has(key: NodeKey): boolean {
@@ -287,9 +287,9 @@ export class NodeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const nodesCache = this._nodesCache;
-    if (nodesCache !== null) {
-      return nodesCache;
+    const cachedNodes = this._cachedNodes;
+    if (cachedNodes !== null) {
+      return cachedNodes;
     }
     const objects = this._nodes;
     const nodes = [];
@@ -300,7 +300,7 @@ export class NodeSelection implements BaseSelection {
       }
     }
     if (!isCurrentlyReadOnlyMode()) {
-      this._nodesCache = nodes;
+      this._cachedNodes = nodes;
     }
     return nodes;
   }
@@ -331,14 +331,14 @@ export class GridSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
-  _nodesCache: null | Array<LexicalNode>;
+  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void {
     this.gridKey = gridKey;
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
-    this._nodesCache = null;
+    this._cachedNodes = null;
   }
 
   is(
@@ -355,7 +355,7 @@ export class GridSelection implements BaseSelection {
     this.gridKey = gridKey;
     this.anchor.key = anchorCellKey;
     this.focus.key = focusCellKey;
-    this._nodesCache = null;
+    this._cachedNodes = null;
   }
 
   clone(): GridSelection {
@@ -416,9 +416,9 @@ export class GridSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const nodesCache = this._nodesCache;
-    if (nodesCache !== null) {
-      return nodesCache;
+    const cachedNodes = this._cachedNodes;
+    if (cachedNodes !== null) {
+      return cachedNodes;
     }
     const nodesSet = new Set();
     const {fromX, fromY, toX, toY} = this.getShape();
@@ -458,7 +458,7 @@ export class GridSelection implements BaseSelection {
     }
     const nodes = Array.from(nodesSet);
     if (!isCurrentlyReadOnlyMode()) {
-      this._nodesCache = nodes;
+      this._cachedNodes = nodes;
     }
     return nodes;
   }
@@ -482,14 +482,14 @@ export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
-  _nodesCache: null | Array<LexicalNode>;
+  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(anchor: PointType, focus: PointType, format: number): void {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
     this.format = format;
-    this._nodesCache = null;
+    this._cachedNodes = null;
   }
 
   is(
@@ -514,9 +514,9 @@ export class RangeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const nodesCache = this._nodesCache;
-    if (nodesCache !== null) {
-      return nodesCache;
+    const cachedNodes = this._cachedNodes;
+    if (cachedNodes !== null) {
+      return cachedNodes;
     }
     const anchor = this.anchor;
     const focus = this.focus;
@@ -540,7 +540,7 @@ export class RangeSelection implements BaseSelection {
     }
     const nodes = firstNode.getNodesBetween(lastNode);
     if (!isCurrentlyReadOnlyMode()) {
-      this._nodesCache = nodes;
+      this._cachedNodes = nodes;
     }
     return nodes;
   }

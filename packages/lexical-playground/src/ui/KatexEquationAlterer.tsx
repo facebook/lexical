@@ -62,7 +62,11 @@ export default function KatexEquationAlterer({
       </div>
       <div className="KatexEquationAlterer_defaultRow">Visualization </div>
       <div className="KatexEquationAlterer_centerRow">
-        <KatexRenderer equation={equation} inline={false} onClick={() => {}} />
+        <KatexRenderer
+          equation={equation}
+          inline={false}
+          onClick={() => null}
+        />
       </div>
       <div className="KatexEquationAlterer_dialogActions">
         <Button onClick={onClick}>Confirm</Button>

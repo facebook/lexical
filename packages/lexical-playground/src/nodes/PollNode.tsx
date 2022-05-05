@@ -19,7 +19,7 @@ import {useMemo, useRef} from 'react';
 import Button from '../ui/Button';
 import joinClasses from '../utils/join-classes';
 
-type Options = ReadOnlyArray<Option>;
+type Options = ReadonlyArray<Option>;
 
 type Option = Readonly<{
   text: string;
@@ -34,7 +34,7 @@ function createUID(): string {
     .substr(0, 5);
 }
 
-function createPollOption(text?: string = ''): Option {
+function createPollOption(text = ''): Option {
   return {
     text,
     uid: createUID(),

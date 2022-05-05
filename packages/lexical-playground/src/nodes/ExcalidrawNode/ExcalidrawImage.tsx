@@ -25,7 +25,7 @@ type Props = {
   /**
    * The Excalidraw elements to be rendered as an image
    */
-  elements: ReadOnlyArray<{}>;
+  elements: ReadonlyArray<{}>;
   /**
    * The height of the image to be rendered
    */

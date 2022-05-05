@@ -168,8 +168,8 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
 }
 
 export function $createEquationNode(
-  equation: string = '',
-  inline: boolean = false,
+  equation = '',
+  inline = false,
 ): EquationNode {
   const equationNode = new EquationNode(equation, inline);
   return equationNode;

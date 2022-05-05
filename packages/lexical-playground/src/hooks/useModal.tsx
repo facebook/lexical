@@ -44,7 +44,7 @@ export default function useModal(): [
     (
       title,
       getContent: (onClose: () => void) => JSX.Element,
-      closeOnClickOutside?: boolean = false,
+      closeOnClickOutside = false,
     ) => {
       setModalContent({
         closeOnClickOutside,

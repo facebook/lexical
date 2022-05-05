@@ -216,7 +216,7 @@ function useTypeaheadSuggestion(
     promise: () => Promise<string | null>;
   },
 ) {
-  const cancelRequest = useRef<() => void>(() => {});
+  const cancelRequest = useRef<() => void>(() => null);
   const requestTime = useRef<number>(0);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   useEffect(() => {

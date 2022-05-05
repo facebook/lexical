@@ -23,6 +23,7 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import * as React from 'react';
 // $FlowFixMe
 import {createPortal} from 'react-dom';
 

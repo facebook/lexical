@@ -28,7 +28,7 @@ type Props = {
   /**
    * The initial set of elements to draw into the scene
    */
-  initialElements: ReadOnlyArray<ExcalidrawElementFragment>;
+  initialElements: ReadonlyArray<ExcalidrawElementFragment>;
   /**
    * Controls the visibility of the modal
    */
@@ -44,7 +44,7 @@ type Props = {
   /**
    * Callback when the save button is clicked
    */
-  onSave: (elements: ReadOnlyArray<ExcalidrawElementFragment>) => mixed;
+  onSave: (elements: ReadonlyArray<ExcalidrawElementFragment>) => mixed;
 };
 
 /**
@@ -64,7 +64,7 @@ export default function ExcalidrawModal({
   const excaliDrawModelRef = useRef(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
-    useState<ReadOnlyArray<ExcalidrawElementFragment>>(initialElements);
+    useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);
 
   useEffect(() => {
     if (excaliDrawModelRef.current !== null) {

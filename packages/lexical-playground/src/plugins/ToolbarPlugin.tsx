@@ -526,7 +526,7 @@ function InsertTweetDialog({
 
 // Taken from https://stackoverflow.com/a/9102270
 const YOUTUBE_ID_PARSER =
-  /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
 
 const parseYouTubeVideoID = (url: string) => {
   const urlMatches = url.match(YOUTUBE_ID_PARSER);

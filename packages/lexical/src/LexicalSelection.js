@@ -54,6 +54,7 @@ import {
 } from './LexicalUtils';
 
 export type TextPointType = {
+  _selection: RangeSelection | GridSelection,
   getNode: () => TextNode,
   is: (PointType) => boolean,
   isAtNodeEnd: () => boolean,
@@ -65,6 +66,7 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
+  _selection: RangeSelection | GridSelection,
   getNode: () => ElementNode,
   is: (PointType) => boolean,
   isAtNodeEnd: () => boolean,
@@ -81,14 +83,18 @@ class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
+  _selection: RangeSelection | GridSelection;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element'): void {
+    // $FlowFixMe: is temporarily null
+    this._selection = null;
     this.key = key;
     this.offset = offset;
     this.type = type;
   }
   is(point: PointType): boolean {
     return (
+      this._selection === point._selection &&
       this.key === point.key &&
       this.offset === point.offset &&
       this.type === point.type
@@ -120,7 +126,7 @@ class Point {
     return node;
   }
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
-    const selection = $getSelection();
+    const selection = this._selection;
     const oldKey = this.key;
     this.key = key;
     this.offset = offset;
@@ -339,6 +345,8 @@ export class GridSelection implements BaseSelection {
     this.focus = focus;
     this.dirty = false;
     this._cachedNodes = null;
+    anchor._selection = this;
+    focus._selection = this;
   }
 
   is(
@@ -490,6 +498,8 @@ export class RangeSelection implements BaseSelection {
     this.dirty = false;
     this.format = format;
     this._cachedNodes = null;
+    anchor._selection = this;
+    focus._selection = this;
   }
 
   is(
@@ -649,11 +659,12 @@ export class RangeSelection implements BaseSelection {
   clone(): RangeSelection {
     const anchor = this.anchor;
     const focus = this.focus;
-    return new RangeSelection(
+    const selection = new RangeSelection(
       $createPoint(anchor.key, anchor.offset, anchor.type),
       $createPoint(focus.key, focus.offset, focus.type),
       this.format,
     );
+    return selection;
   }
 
   toggleFormat(format: TextFormatType): void {

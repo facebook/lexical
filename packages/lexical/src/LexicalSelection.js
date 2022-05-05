@@ -529,16 +529,20 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(lastNode)) {
       lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
+    let nodes;
+
     if (firstNode.is(lastNode)) {
       if (
         $isElementNode(firstNode) &&
         (firstNode.getChildrenSize() > 0 || firstNode.excludeFromCopy())
       ) {
-        return [];
+        nodes = [];
+      } else {
+        nodes = [firstNode];
       }
-      return [firstNode];
+    } else {
+      nodes = firstNode.getNodesBetween(lastNode);
     }
-    const nodes = firstNode.getNodesBetween(lastNode);
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
     }

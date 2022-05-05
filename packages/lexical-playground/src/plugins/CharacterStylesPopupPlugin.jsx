@@ -34,7 +34,7 @@ function setPopupPosition(
 ): void {
   let top = rect.top - 8 + window.pageYOffset;
   let left =
-    rect.left + 230 + window.pageXOffset - editor.offsetWidth + rect.width;
+    rect.left + 310 + window.pageXOffset - editor.offsetWidth + rect.width;
   if (
     rect.width >= rootElementRect.width - 20 ||
     left > rootElementRect.width - 150

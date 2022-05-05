@@ -1028,21 +1028,29 @@ describe('LexicalEditor tests', () => {
         const paragraph = root.getFirstChild();
         expect(root).toEqual({
           __cachedText: '',
-          __children: [paragraph.getKey()],
           __dir: null,
+          __first: paragraph.getKey(),
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: paragraph.getKey(),
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 1,
           __type: 'root',
         });
         expect(paragraph).toEqual({
-          __children: [],
           __dir: null,
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: paragraph.getKey(),
+          __last: null,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
       });
@@ -1127,21 +1135,29 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __children: [paragraphKey],
           __dir: 'ltr',
+          __first: paragraphKey,
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: paragraphKey,
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 1,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __children: [textKey],
           __dir: 'ltr',
+          __first: textKey,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
+          __last: textKey,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 1,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1149,7 +1165,9 @@ describe('LexicalEditor tests', () => {
           __format: 0,
           __key: textKey,
           __mode: 0,
+          __next: null,
           __parent: paragraphKey,
+          __prev: null,
           __style: '',
           __text: 'Hello world',
           __type: 'text',
@@ -1208,21 +1226,29 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __children: [paragraphKey],
           __dir: 'ltr',
+          __first: paragraphKey,
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: paragraphKey,
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 1,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __children: [textKey],
           __dir: 'ltr',
+          __first: textKey,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
+          __last: textKey,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 1,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1230,7 +1256,9 @@ describe('LexicalEditor tests', () => {
           __format: 0,
           __key: textKey,
           __mode: 0,
+          __next: null,
           __parent: paragraphKey,
+          __prev: null,
           __style: '',
           __text: 'Hello world',
           __type: 'text',
@@ -1292,21 +1320,29 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __children: [paragraphKey],
           __dir: 'ltr',
+          __first: paragraphKey,
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: paragraphKey,
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 1,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __children: [textKey],
           __dir: 'ltr',
+          __first: textKey,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
+          __last: textKey,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 1,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1314,7 +1350,9 @@ describe('LexicalEditor tests', () => {
           __format: 0,
           __key: textKey,
           __mode: 0,
+          __next: null,
           __parent: paragraphKey,
+          __prev: null,
           __style: '',
           __text: 'Hello world',
           __type: 'text',
@@ -1428,15 +1466,21 @@ describe('LexicalEditor tests', () => {
           const writableParagraph = $getRoot()
             .getFirstChild<ParagraphNode>()
             .getWritable();
-          writableParagraph.__children = [];
-
           for (let i = 0; i < previous.length; i++) {
             const previousText = previous[i];
             const textNode = new TextNode(previousText).toggleUnmergeable();
+            if (i === 0) {
+              writableParagraph.__first = textNode.__key;
+            } else {
+              textNode.__prev = previous[i - 1];
+            }
+            if (i === previous.length - 1) {
+              writableParagraph.__last = textNode.__key;
+            } else {
+              textNode.__next = previous[i + 1];
+            }
             textNode.__parent = writableParagraph.__key;
-
-            writableParagraph.__children.push(textNode.__key);
-
+            writableParagraph.__size = previous.length;
             textToKey.set(previousText, textNode.__key);
           }
         });
@@ -1449,10 +1493,7 @@ describe('LexicalEditor tests', () => {
         const nextSet = new Set(next);
 
         await update(() => {
-          const writableParagraph = $getRoot()
-            .getFirstChild<ParagraphNode>()
-            .getWritable();
-
+          const paragraph = $getRoot().getFirstChild<ParagraphNode>();
           // Remove previous that are not in next
           for (let i = 0; i < previous.length; i++) {
             const previousText = previous[i];
@@ -1473,25 +1514,14 @@ describe('LexicalEditor tests', () => {
             if (nextKey === undefined) {
               // New node; append to the end
               textNode = new TextNode(nextText).toggleUnmergeable();
-              textNode.__parent = writableParagraph.__key;
-
               expect($getNodeByKey(nextKey)).toBe(null);
 
               textToKey.set(nextText, textNode.__key);
-
-              writableParagraph.__children.push(textNode.__key);
+              paragraph.append(textNode);
             } else {
               // Node exists in previous; reorder it
               textNode = $getNodeByKey(nextKey);
-
-              expect(textNode.__text).toBe(nextText);
-
-              writableParagraph.__children.splice(
-                writableParagraph.__children.indexOf(nextKey),
-                1,
-              );
-
-              writableParagraph.__children.push(textNode.__key);
+              paragraph.append(textNode);
             }
           }
         });

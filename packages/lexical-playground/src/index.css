@@ -910,6 +910,7 @@ select.font-family {
 
 .emoji {
   color: transparent;
+  caret-color: rgb(5, 5, 5);
   background-size: 16px 16px;
   background-position: center;
   background-repeat: no-repeat;

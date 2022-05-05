@@ -7,16 +7,18 @@
  * @flow strict
  */
 
-import type {
-  EditorState,
-  LexicalEditor,
-  NodeKey,
-  RangeSelection,
-  TextNode,
-} from 'lexical';
+import type {Comment, Comments, Thread} from '../commenting';
+import type {EditorState, LexicalEditor, NodeKey} from 'lexical';
 
 import './CommentPlugin.css';
 
+import {
+  $getMarkIDs,
+  $isMarkNode,
+  $unwrapMarkNode,
+  $wrapSelectionInMarkNode,
+  MarkNode,
+} from '@lexical/mark';
 import AutoFocusPlugin from '@lexical/react/LexicalAutoFocusPlugin';
 import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
 import LexicalComposer from '@lexical/react/LexicalComposer';
@@ -30,7 +32,6 @@ import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
-  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   CLEAR_EDITOR_COMMAND,
@@ -42,34 +43,12 @@ import * as React from 'react';
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
+import {cloneThread, createComment, createThread} from '../commenting';
 import useModal from '../hooks/useModal';
-import {$createMarkNode, $isMarkNode, MarkNode} from '../nodes/MarkNode';
 import CommentEditorTheme from '../themes/CommentEditorTheme';
 import Button from '../ui/Button';
 import ContentEditable from '../ui/ContentEditable.jsx';
 import Placeholder from '../ui/Placeholder.jsx';
-
-export type CommentContextType = {
-  isActive: boolean,
-  setActive: (val: boolean) => void,
-};
-
-export type Comment = {
-  author: string,
-  content: string,
-  id: string,
-  timeStamp: number,
-  type: 'comment',
-};
-
-export type Thread = {
-  comments: Array<Comment>,
-  id: string,
-  quote: string,
-  type: 'thread',
-};
-
-export type Comments = Array<Thread | Comment>;
 
 // $FlowFixMe: needs type
 type RtfObject = Object;
@@ -666,138 +645,6 @@ function CommentsPanel({
   );
 }
 
-function createUID(): string {
-  return Math.random()
-    .toString(36)
-    .replace(/[^a-z]+/g, '')
-    .substr(0, 5);
-}
-
-function createComment(content: string): Comment {
-  return {
-    author: 'Playground User',
-    content,
-    id: createUID(),
-    timeStamp: performance.now(),
-    type: 'comment',
-  };
-}
-
-function createThread(quote: string, content: string): Thread {
-  return {
-    comments: [createComment(content)],
-    id: createUID(),
-    quote,
-    type: 'thread',
-  };
-}
-
-function cloneThread(thread: Thread): Thread {
-  return {
-    comments: Array.from(thread.comments),
-    id: thread.id,
-    quote: thread.quote,
-    type: 'thread',
-  };
-}
-
-function $unwrapMarkNode(node: MarkNode): void {
-  const children = node.getChildren();
-  let target = null;
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    if (target === null) {
-      node.insertBefore(child);
-    } else {
-      target.insertAfter(child);
-    }
-    target = child;
-  }
-  node.remove();
-}
-
-function $wrapSelectionInMarkNode(
-  selection: RangeSelection,
-  isBackward: boolean,
-  id: string,
-): void {
-  const nodes = selection.getNodes();
-  const anchorOffset = selection.anchor.offset;
-  const focusOffset = selection.focus.offset;
-  const nodesLength = nodes.length;
-  const startOffset = isBackward ? focusOffset : anchorOffset;
-  const endOffset = isBackward ? anchorOffset : focusOffset;
-  let currentNodeParent;
-  let currentMarkNode;
-
-  // We only want wrap adjacent text nodes, line break nodes
-  // and inline element nodes. For decorator nodes and block
-  // element nodes, we stop out their boundary and start again
-  // after, if there are more nodes.
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
-    if ($isElementNode(currentMarkNode) && currentMarkNode.isParentOf(node)) {
-      continue;
-    }
-    const isFirstNode = i === 0;
-    const isLastNode = i === nodesLength - 1;
-    let targetNode;
-
-    if ($isTextNode(node)) {
-      const textContentSize = node.getTextContentSize();
-      const startTextOffset = isFirstNode ? startOffset : 0;
-      const endTextOffset = isLastNode ? endOffset : textContentSize;
-      if (startTextOffset === 0 && endTextOffset === 0) {
-        continue;
-      }
-      const splitNodes = node.splitText(startTextOffset, endTextOffset);
-      targetNode =
-        splitNodes.length > 1 &&
-        (splitNodes.length === 3 ||
-          (isFirstNode && !isLastNode) ||
-          endTextOffset === textContentSize)
-          ? splitNodes[1]
-          : splitNodes[0];
-    } else if ($isElementNode(node) && node.isInline()) {
-      targetNode = node;
-    }
-    if (targetNode !== undefined) {
-      const parentNode = targetNode.getParent();
-      if (parentNode == null || !parentNode.is(currentNodeParent)) {
-        currentMarkNode = undefined;
-      }
-      currentNodeParent = parentNode;
-      if (currentMarkNode === undefined) {
-        currentMarkNode = $createMarkNode([id]);
-        targetNode.insertBefore(currentMarkNode);
-      }
-      currentMarkNode.append(targetNode);
-    } else {
-      currentNodeParent = undefined;
-      currentMarkNode = undefined;
-    }
-  }
-}
-
-function $getCommentIDs(node: TextNode, offset: number): null | Array<string> {
-  let currentNode = node;
-  while (currentNode !== null) {
-    if ($isMarkNode(currentNode)) {
-      return currentNode.getIDs();
-    } else if (
-      $isTextNode(currentNode) &&
-      offset === currentNode.getTextContentSize()
-    ) {
-      const nextSibling = currentNode.getNextSibling();
-      if ($isMarkNode(nextSibling)) {
-        return nextSibling.getIDs();
-      }
-    }
-    currentNode = currentNode.getParent();
-  }
-  return null;
-}
-
 export default function CommentPlugin({
   initialComments,
 }: {
@@ -999,7 +846,7 @@ export default function CommentPlugin({
             const anchorNode = selection.anchor.getNode();
 
             if ($isTextNode(anchorNode)) {
-              const commentIDs = $getCommentIDs(
+              const commentIDs = $getMarkIDs(
                 anchorNode,
                 selection.anchor.offset,
               );

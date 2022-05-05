@@ -86,6 +86,10 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-markdown/src/index.js'),
   },
   {
+    find: '@lexical/mark',
+    replacement: path.resolve('../lexical-mark/src/index.js'),
+  },
+  {
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
   },

@@ -10,6 +10,7 @@ module.exports = {
   extends: ['fbjs', 'plugin:react-hooks/recommended', 'prettier'],
 
   globals: {
+    JSX: true,
     __DEV__: true,
   },
 
@@ -55,10 +56,6 @@ module.exports = {
         sourceType: 'module',
       },
       plugins: ['react', '@typescript-eslint'],
-      rules: {
-        'no-shadow': 'off',
-        'no-undef': 'off',
-      },
     },
   ],
 

@@ -287,6 +287,10 @@ export class NodeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
+    const nodesCache = this._nodesCache;
+    if (nodesCache !== null) {
+      return nodesCache;
+    }
     const objects = this._nodes;
     const nodes = [];
     for (const object of objects) {
@@ -294,6 +298,9 @@ export class NodeSelection implements BaseSelection {
       if (node !== null) {
         nodes.push(node);
       }
+    }
+    if (!isCurrentlyReadOnlyMode()) {
+      this._nodesCache = nodes;
     }
     return nodes;
   }
@@ -409,20 +416,23 @@ export class GridSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const nodes = new Set();
-
+    const nodesCache = this._nodesCache;
+    if (nodesCache !== null) {
+      return nodesCache;
+    }
+    const nodesSet = new Set();
     const {fromX, fromY, toX, toY} = this.getShape();
 
     const gridNode = $getNodeByKey(this.gridKey);
     if (!$isGridNode(gridNode)) {
       invariant(false, 'getNodes: expected to find GridNode');
     }
-    nodes.add(gridNode);
+    nodesSet.add(gridNode);
 
     const gridRowNodes = gridNode.getChildren();
     for (let r = fromY; r <= toY; r++) {
       const gridRowNode = gridRowNodes[r];
-      nodes.add(gridRowNode);
+      nodesSet.add(gridRowNode);
 
       if (!$isGridRowNode(gridRowNode)) {
         invariant(false, 'getNodes: expected to find GridRowNode');
@@ -433,21 +443,24 @@ export class GridSelection implements BaseSelection {
         if (!$isGridCellNode(gridCellNode)) {
           invariant(false, 'getNodes: expected to find GridCellNode');
         }
-        nodes.add(gridCellNode);
+        nodesSet.add(gridCellNode);
 
         const children = gridCellNode.getChildren();
 
         while (children.length > 0) {
           const child = children.shift();
-          nodes.add(child);
+          nodesSet.add(child);
           if ($isElementNode(child)) {
             children.unshift(...child.getChildren());
           }
         }
       }
     }
-
-    return Array.from(nodes);
+    const nodes = Array.from(nodesSet);
+    if (!isCurrentlyReadOnlyMode()) {
+      this._nodesCache = nodes;
+    }
+    return nodes;
   }
 
   getTextContent(): string {

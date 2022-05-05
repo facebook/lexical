@@ -95,7 +95,7 @@ export function setLocalStateFocus(
   name: string,
   color: string,
   focusing: boolean,
-) {
+): void {
   const {awareness} = provider;
   let localState = awareness.getLocalState();
   if (localState === null) {

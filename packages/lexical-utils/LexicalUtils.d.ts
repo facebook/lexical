@@ -16,7 +16,7 @@ declare function addClassNamesToElement(
 ): void;
 declare function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<string>
+  ...classNames: Array<typeof undefined | boolean | null | string>
 ): void;
 declare function $dfs(
   startingNode?: LexicalNode,
@@ -40,3 +40,10 @@ declare function mergeRegister(...func: Array<Func>): () => void;
 declare function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
+
+declare function registerNestedElementResolver<N extends ElementNode>(
+  editor: LexicalEditor,
+  targetNode: Class<N>,
+  cloneNode: (from: N) => N,
+  handleOverlap: (from: N, to: N) => void,
+): () => void;

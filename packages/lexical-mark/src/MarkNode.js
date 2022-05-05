@@ -16,7 +16,10 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {$isElementNode, $isRangeSelection, ElementNode} from 'lexical';
 
 export class MarkNode extends ElementNode {
@@ -38,10 +41,32 @@ export class MarkNode extends ElementNode {
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('mark');
     addClassNamesToElement(element, config.theme.mark);
+    if (this.__ids.length > 1) {
+      addClassNamesToElement(element, config.theme.markOverlap);
+    }
     return element;
   }
 
-  updateDOM(): boolean {
+  updateDOM(
+    prevNode: MarkNode,
+    element: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    const prevIDs = prevNode.__ids;
+    const nextIDs = this.__ids;
+    const prevIDsCount = prevIDs.length;
+    const nextIDsCount = nextIDs.length;
+    const overlapTheme = config.theme.markOverlap;
+
+    if (prevIDsCount !== nextIDsCount) {
+      if (prevIDsCount === 1) {
+        if (nextIDsCount === 2) {
+          addClassNamesToElement(element, overlapTheme);
+        }
+      } else if (nextIDsCount === 1) {
+        removeClassNamesFromElement(element, overlapTheme);
+      }
+    }
     return false;
   }
 
@@ -119,12 +144,14 @@ export class MarkNode extends ElementNode {
     if (!$isRangeSelection(selection) || destination === 'html') {
       return false;
     }
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
     const isBackward = selection.isBackward();
     const selectionLength = isBackward
-      ? selection.anchor.offset - selection.focus.offset
-      : selection.focus.offset - selection.anchor.offset;
+      ? anchor.offset - focus.offset
+      : focus.offset - anchor.offset;
     return (
       this.isParentOf(anchorNode) &&
       this.isParentOf(focusNode) &&

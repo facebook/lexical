@@ -29,6 +29,8 @@ declare export function $isMarkNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof MarkNode);
 
+declare export function $createMarkNode(ids: Array<string>): MarkNode;
+
 declare export function $getMarkIDs(
   node: TextNode,
   offset: number,

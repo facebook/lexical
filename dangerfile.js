@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,11 +7,29 @@
 
 'use strict';
 
-const {markdown} = require('danger');
+// Hi, if this is your first time editing/reading a Dangerfile, here's a summary:
+// It's a JS runtime which helps you provide continuous feedback inside GitHub.
+//
+// You can see the docs here: http://danger.systems/js/
+//
+// If you want to test changes Danger, I'd recommend checking out an existing PR
+// and then running the `danger pr` command.
+//
+// You'll need a GitHub token, you can re-use this one:
+//
+//  0a7d5c3cad9a6dbec2d9 9a5222cf49062a4c1ef7
+//
+// (Just remove the space)
+//
+// So, for example:
+//
+// `DANGER_GITHUB_API_TOKEN=[ENV_ABOVE] yarn danger pr https://github.com/facebook/react/pull/11865
+
+const {markdown, danger, warn} = require('danger');
 const {promisify} = require('util');
-const {statSync} = require('fs');
 const glob = promisify(require('glob'));
 const gzipSize = require('gzip-size');
+const {readFileSync, statSync} = require('fs');
 
 const BASE_DIR = 'base-build';
 const HEAD_DIR = 'build';
@@ -44,10 +62,6 @@ const percentFormatter = new Intl.NumberFormat('en', {
   style: 'percent',
 });
 
-const header = `
-  | Name | +/- | Base | Current | +/- gzip | Base gzip | Current gzip |
-  | ---- | --- | ---- | ------- | -------- | --------- | ------------ |`;
-
 function change(decimal) {
   if (Number === Infinity) {
     return 'New file';
@@ -61,12 +75,52 @@ function change(decimal) {
   return percentFormatter.format(decimal);
 }
 
+const header = `
+  | Name | +/- | Base | Current | +/- gzip | Base gzip | Current gzip |
+  | ---- | --- | ---- | ------- | -------- | --------- | ------------ |`;
+
 function row(result) {
   // prettier-ignore
   return `| ${result.path} | **${change(result.change)}** | ${kbs(result.baseSize)} | ${kbs(result.headSize)} | ${change(result.changeGzip)} | ${kbs(result.baseSizeGzip)} | ${kbs(result.headSizeGzip)}`;
 }
 
 (async function () {
+  // Use git locally to grab the commit which represents the place
+  // where the branches differ
+
+  const upstreamRepo = danger.github.pr.base.repo.full_name;
+  if (upstreamRepo !== 'facebook/react') {
+    // Exit unless we're running in the main repo
+    return;
+  }
+
+  let headSha;
+  let baseSha;
+  try {
+    headSha = String(readFileSync(HEAD_DIR + '/COMMIT_SHA')).trim();
+    baseSha = String(readFileSync(BASE_DIR + '/COMMIT_SHA')).trim();
+  } catch {
+    warn(
+      "Failed to read build artifacts. It's possible a build configuration " +
+        'has changed upstream. Try pulling the latest changes from the ' +
+        'main branch.',
+    );
+    return;
+  }
+
+  // Disable sizeBot in a Devtools Pull Request. Because that doesn't affect production bundle size.
+  const commitFiles = [
+    ...danger.git.created_files,
+    ...danger.git.deleted_files,
+    ...danger.git.modified_files,
+  ];
+  if (
+    commitFiles.every((filename) =>
+      filename.includes('packages/react-devtools'),
+    )
+  )
+    return;
+
   const resultsMap = new Map();
 
   // Find all the head (current) artifacts paths.
@@ -172,6 +226,7 @@ function row(result) {
   }
 
   markdown(`
+Comparing: ${baseSha}...${headSha}
 ## Critical size changes
 Includes critical production bundles, as well as any change greater than ${
     CRITICAL_THRESHOLD * 100

@@ -43,8 +43,7 @@ jobs:
         run: npm ci
       - run: npm run ci-check
       - run: npm run build
-      - run: npm run prepare-size-compare
-      - run: yarn danger ci
+      - run: node ./scripts/tasks/danger
       - run: npm run build-www
 
   unit:

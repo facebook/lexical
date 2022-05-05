@@ -133,6 +133,8 @@ export default function ExcalidrawModal({
           <Button
             onClick={() => {
               setDiscardModalOpen(false);
+              // delete node
+              onDelete();
               onHide();
             }}>
             Discard

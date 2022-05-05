@@ -48,6 +48,7 @@ import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
+import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
@@ -215,6 +216,7 @@ export default function Editor(): React$Node {
             <CharacterStylesPopupPlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />
+            <TabFocusPlugin />
           </>
         ) : (
           <>

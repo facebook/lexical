@@ -96,7 +96,7 @@ export class CollabTextNode {
     return collabElementNode.getChildOffset(this);
   }
 
-  spliceText(index: number, delCount: number, newText: string) {
+  spliceText(index: number, delCount: number, newText: string): void {
     const collabElementNode = this._parent;
     const xmlText = collabElementNode._xmlText;
     const offset = this.getOffset() + 1 + index;

@@ -8,6 +8,10 @@
 
 // $FlowFixMe: node modules are ignored by flow
 import {exportToSvg} from '@excalidraw/excalidraw';
+import {
+  ExcalidrawElement,
+  NonDeleted,
+} from '@excalidraw/excalidraw/types/element/types';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
@@ -25,7 +29,7 @@ type Props = {
   /**
    * The Excalidraw elements to be rendered as an image
    */
-  elements: ReadonlyArray<{}>;
+  elements: NonDeleted<ExcalidrawElement>[];
   /**
    * The height of the image to be rendered
    */
@@ -79,7 +83,7 @@ export default function ExcalidrawImage({
   width = null,
   appState = null,
   rootClassName = null,
-}: Props): React.MixedElement {
+}: Props): JSX.Element {
   const [Svg, setSvg] = useState<Element | null>(null);
 
   useEffect(() => {
@@ -87,6 +91,7 @@ export default function ExcalidrawImage({
       const svg: Element = await exportToSvg({
         appState,
         elements,
+        files: null,
       });
       removeStyleFromSvg_HACK(svg);
 

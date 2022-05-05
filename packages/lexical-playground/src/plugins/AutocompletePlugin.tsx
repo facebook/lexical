@@ -211,6 +211,7 @@ function useTypeahead(editor: LexicalEditor): void {
 
 function useTypeaheadSuggestion(
   text: string,
+  // eslint-disable-next-line no-shadow
   query: (text: string) => {
     cancel: () => void;
     promise: () => Promise<string | null>;

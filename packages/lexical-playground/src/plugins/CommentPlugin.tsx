@@ -50,8 +50,7 @@ import Button from '../ui/Button';
 import ContentEditable from '../ui/ContentEditable.jsx';
 import Placeholder from '../ui/Placeholder.jsx';
 
-// $FlowFixMe: needs type
-type RtfObject = Object;
+type RtfObject = Record<string, unknown>;
 
 function AddCommentBox({
   anchorKey,
@@ -339,6 +338,7 @@ function CommentsComposer({
   submitAddComment: (
     commentOrThread: Comment,
     isInlineComment: boolean,
+    // eslint-disable-next-line no-shadow
     thread?: Thread,
   ) => void;
   thread?: Thread;
@@ -405,7 +405,12 @@ function ShowDeleteCommentDialog({
   thread,
 }: {
   comment: Comment;
-  deleteComment: (commentOrThread: Comment, thread?: Thread) => void;
+
+  deleteComment: (
+    commentOrThread: Comment,
+    // eslint-disable-next-line no-shadow
+    thread?: Thread,
+  ) => void;
   onClose: () => void;
   thread?: Thread;
 }): JSX.Element {
@@ -438,7 +443,11 @@ function CommentsPanelListComment({
   rtf,
 }: {
   comment: Comment;
-  deleteComment: (commentOrThread: Comment, thread?: Thread) => void;
+  deleteComment: (
+    commentOrThread: Comment,
+    // eslint-disable-next-line no-shadow
+    thread?: Thread,
+  ) => void;
   rtf: RtfObject;
   thread?: Thread;
 }): JSX.Element {

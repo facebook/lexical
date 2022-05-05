@@ -94,7 +94,6 @@ class Point {
   }
   is(point: PointType): boolean {
     return (
-      this._selection === point._selection &&
       this.key === point.key &&
       this.offset === point.offset &&
       this.type === point.type

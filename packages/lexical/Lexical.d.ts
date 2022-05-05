@@ -187,7 +187,6 @@ type TextNodeThemeClasses = {
 export type EditorThemeClasses = {
   ltr?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
-  root?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   paragraph?: EditorThemeClassName;
   image?: EditorThemeClassName;

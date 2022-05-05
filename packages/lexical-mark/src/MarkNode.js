@@ -144,12 +144,14 @@ export class MarkNode extends ElementNode {
     if (!$isRangeSelection(selection) || destination === 'html') {
       return false;
     }
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
     const isBackward = selection.isBackward();
     const selectionLength = isBackward
-      ? selection.anchor.offset - selection.focus.offset
-      : selection.focus.offset - selection.anchor.offset;
+      ? anchor.offset - focus.offset
+      : focus.offset - anchor.offset;
     return (
       this.isParentOf(anchorNode) &&
       this.isParentOf(focusNode) &&

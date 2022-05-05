@@ -16,7 +16,10 @@ import {replaceCodePlugin} from 'vite-plugin-replace';
 import babel from '@rollup/plugin-babel';
 
 const moduleResolution = [
-  {find: /lexical$/, replacement: path.resolve('../lexical/src/index.js')},
+  {
+    find: /lexical$/,
+    replacement: path.resolve('../lexical/src/index.js'),
+  },
   {
     find: '@lexical/clipboard',
     replacement: path.resolve('../lexical-clipboard/src/index.js'),
@@ -93,9 +96,11 @@ const moduleResolution = [
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
   },
-  {find: 'shared', replacement: path.resolve('../shared/src')},
+  {
+    find: 'shared',
+    replacement: path.resolve('../shared/src'),
+  },
 ];
-
 // Lexical React
 [
   'LexicalTreeView',
@@ -127,6 +132,7 @@ const moduleResolution = [
   'LexicalAutoScrollPlugin',
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/src/${module}.js`);
+
   if (fs.existsSync(resolvedPath)) {
     moduleResolution.push({
       find: `@lexical/react/${module}`,
@@ -139,7 +145,7 @@ const moduleResolution = [
       replacement: resolvedPath,
     });
   }
-});
+}); 
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -166,7 +172,9 @@ export default defineConfig({
         '@babel/plugin-transform-flow-strip-types',
         [
           require('../../scripts/error-codes/transform-error-messages'),
-          {noMinify: true},
+          {
+            noMinify: true,
+          },
         ],
       ],
       presets: ['@babel/preset-react'],

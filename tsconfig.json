@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "moduleResolution": "node",
+    "strict": true
+  },
+  "exclude": ["node_modules"],
+  "include": ["./packages/lexical-playground"]
+}

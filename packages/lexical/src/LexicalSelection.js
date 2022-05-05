@@ -2088,9 +2088,9 @@ function internalResolveSelectionPoints(
     // return null for this point, as it's not in the controlled scope
     // of Lexical.
     if (
+      anchorNode === focusNode &&
       $isDecoratorNode(anchorNode) &&
-      $isDecoratorNode(focusNode) &&
-      anchorNode.is(focusNode)
+      $isDecoratorNode(focusNode)
     ) {
       return null;
     }

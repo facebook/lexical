@@ -2087,7 +2087,11 @@ function internalResolveSelectionPoints(
     // Ensure if we're selecting the content of a decorator that we
     // return null for this point, as it's not in the controlled scope
     // of Lexical.
-    if ($isDecoratorNode(anchorNode) && $isDecoratorNode(focusNode)) {
+    if (
+      $isDecoratorNode(anchorNode) &&
+      $isDecoratorNode(focusNode) &&
+      anchorNode.is(focusNode)
+    ) {
       return null;
     }
   }

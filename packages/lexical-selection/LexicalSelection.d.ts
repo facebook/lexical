@@ -9,6 +9,7 @@
 import type {
   ElementNode,
   GridSelection,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   NodeSelection,
@@ -61,3 +62,16 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean;
+
+declare function createDOMRange(
+  editor: LexicalEditor,
+  anchorNode: LexicalNode,
+  anchorOffset: number,
+  focusNode: LexicalNode,
+  focusOffset: number,
+): Range | null;
+
+declare function createRectsFromDOMRange(
+  editor: LexicalEditor,
+  range: Range,
+): Array<ClientRect>;

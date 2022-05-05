@@ -251,16 +251,19 @@ export class NodeSelection implements BaseSelection {
   add(key: NodeKey): void {
     this.dirty = true;
     this._nodes.add(key);
+    this._nodesCache = null;
   }
 
   delete(key: NodeKey): void {
     this.dirty = true;
     this._nodes.delete(key);
+    this._nodesCache = null;
   }
 
   clear(): void {
     this.dirty = true;
     this._nodes.clear();
+    this._nodesCache = null;
   }
 
   has(key: NodeKey): boolean {
@@ -345,6 +348,7 @@ export class GridSelection implements BaseSelection {
     this.gridKey = gridKey;
     this.anchor.key = anchorCellKey;
     this.focus.key = focusCellKey;
+    this._nodesCache = null;
   }
 
   clone(): GridSelection {

@@ -815,6 +815,7 @@ export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
 export function $getNodeByKey<N extends LexicalNode>(key: NodeKey): N | null;
+export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 export function $getRoot(): RootNode;
 export function $isLeafNode(
   node: LexicalNode | null | undefined,

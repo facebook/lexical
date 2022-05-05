@@ -169,13 +169,14 @@ export function internalCreateNodeFromParse(
         if (firstChild === next) {
           node.__first = child.__key;
         }
-        if (child.__next === null) {
+        if (parsedChild.__next === null) {
           node.__last = child.__key;
         }
         childCount++;
-        next = child.__next;
+        next = parsedChild.__next;
+      } else {
+        next = null;
       }
-      next = null;
     }
     node.__size = childCount;
     node.__indent = parsedNode.__indent;

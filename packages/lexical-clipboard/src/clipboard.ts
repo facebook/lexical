@@ -26,6 +26,8 @@ import {
   $createGridSelection,
   $createNodeFromParse,
   $createParagraphNode,
+  $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
@@ -122,7 +124,7 @@ export function $appendSelectedNodesToClone(
   // The solution is to check if there's a cloned parent already in our map and
   // splice the current node's children into the nearest parent.
   // If there is no parent in the map already, the children will be added to the
-  // top level range be default.
+  // top level range by default.
   if ($isElementNode(clone) && shouldExclude && shouldInclude) {
     let nearestClonedParent: LexicalNode;
     let idxWithinClonedParent: number;
@@ -147,11 +149,25 @@ export function $appendSelectedNodesToClone(
 
     // Add children to nearest cloned parent at the correct position.
     if ($isElementNode(nearestClonedParent) && idxWithinClonedParent != null) {
-      nearestClonedParent.__children.splice(
-        idxWithinClonedParent,
-        1,
-        ...clone.__children,
-      );
+      const childrenToSplice = clone.getChildren();
+      const childrenToSpliceLength = childrenToSplice.length;
+      const firstNode = childrenToSplice[0];
+      const lastNode = childrenToSplice[childrenToSpliceLength - 1];
+      // insert the first node at the target index
+      prev.insertBefore(firstNode);
+      // insert all other nodes after it
+      let target = firstNode;
+      for (let i = 1; i < childrenToSpliceLength; i++) {
+        target = target.insertAfter(childrenToSplice[i]);
+      }
+      const endNode = prev.getNextSibling();
+      prev.remove();
+      if (endNode !== null) {
+        lastNode.setNext(endNode.__key);
+        endNode.setPrev(lastNode.__key);
+      } else {
+        nearestClonedParent.getWritable().__last = lastNode.__key;
+      }
     }
   }
 
@@ -167,6 +183,45 @@ export function $appendSelectedNodesToClone(
 
   return shouldIncludeChildrenInRange ? nodeKeys : [];
 }
+
+// When we serialize selected content, we can end up with a nodeMap that doesn't
+// contain the nodes in the __first and __last properties of the parents. This breaks
+// the parsing logic, as it's impossible to traverse the linked list without these references.
+// For a given node, this function goes through the nodeMap and checks to if each of the
+// children are present, adjusting the __first and __last references accordingly.
+function sanitizeClonedNodeLinks(
+  key: NodeKey,
+  nodeMap: Map<NodeKey, LexicalNode>,
+) {
+  const currentNode = $getNodeByKeyOrThrow(key);
+  const currentNodeMapEntry = nodeMap.get(key);
+  if (
+    currentNodeMapEntry !== undefined &&
+    $isElementNode(currentNodeMapEntry)
+  ) {
+    currentNodeMapEntry.__first = null;
+    currentNodeMapEntry.__last = null;
+    let next = $getNodeByKey(currentNode.__first);
+    while (next !== null) {
+      if (nodeMap.has(next.__key)) {
+        if (currentNodeMapEntry.__first === null) {
+          currentNodeMapEntry.__first = next.__key;
+        }
+        if (
+          !nodeMap.has(next.__next) &&
+          currentNodeMapEntry.__first !== null &&
+          currentNodeMapEntry.__last === null
+        ) {
+          currentNodeMapEntry.__last = next;
+          break;
+        }
+      }
+      sanitizeClonedNodeLinks(next.__key, nodeMap);
+      next = next.getNextSibling();
+    }
+  }
+}
+
 export function $cloneSelectedContent<
   TKey extends NodeKey,
   TNode extends LexicalNode,
@@ -198,11 +253,10 @@ export function $cloneSelectedContent<
       range.push(childNodeKey);
     }
   }
-
-  return {
-    nodeMap: Array.from(nodeMap),
-    range,
-  };
+  range.forEach((key) => {
+    sanitizeClonedNodeLinks(key, nodeMap);
+  });
+  return {nodeMap: Array.from(nodeMap), range};
 }
 
 export function $getLexicalContent(editor: LexicalEditor): string | null {

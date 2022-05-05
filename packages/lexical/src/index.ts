@@ -14,6 +14,7 @@ import {
   COMMAND_PRIORITY_NORMAL,
   createEditor,
 } from './LexicalEditor';
+import {$getNodeByKeyOrThrow} from './LexicalNode';
 import {$createNodeFromParse} from './LexicalParsing';
 import {
   $createEmptyGridSelection as $createGridSelection,
@@ -66,6 +67,7 @@ export {
   $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getPreviousSelection,
   $getRoot,
   $getSelection,

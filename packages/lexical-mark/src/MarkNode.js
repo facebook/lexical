@@ -16,7 +16,10 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
 import {$isElementNode, $isRangeSelection, ElementNode} from 'lexical';
 
 export class MarkNode extends ElementNode {
@@ -38,10 +41,32 @@ export class MarkNode extends ElementNode {
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('mark');
     addClassNamesToElement(element, config.theme.mark);
+    if (this.__ids.length > 1) {
+      addClassNamesToElement(element, config.theme.markOverlap);
+    }
     return element;
   }
 
-  updateDOM(): boolean {
+  updateDOM(
+    prevNode: MarkNode,
+    element: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
+    const prevIDs = prevNode.__ids;
+    const nextIDs = this.__ids;
+    const prevIDsCount = prevIDs.length;
+    const nextIDsCount = nextIDs.length;
+    const overlapTheme = config.theme.markOverlap;
+
+    if (prevIDsCount !== nextIDsCount) {
+      if (prevIDsCount === 1) {
+        if (nextIDsCount === 2) {
+          addClassNamesToElement(element, overlapTheme);
+        }
+      } else if (nextIDsCount === 1) {
+        removeClassNamesFromElement(element, overlapTheme);
+      }
+    }
     return false;
   }
 

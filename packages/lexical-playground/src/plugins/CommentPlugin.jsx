@@ -13,6 +13,7 @@ import type {EditorState, LexicalEditor, NodeKey} from 'lexical';
 import './CommentPlugin.css';
 
 import {
+  $createMarkNode,
   $getMarkIDs,
   $isMarkNode,
   $unwrapMarkNode,
@@ -28,7 +29,7 @@ import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
 import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$isRootTextContentEmpty, $rootTextContentCurry} from '@lexical/text';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister, registerNestedElementResolver} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -657,7 +658,6 @@ export default function CommentPlugin({
   }, []);
   const [activeAnchorKey, setActiveAnchorKey] = useState(null);
   const [activeIDs, setActiveIDs] = useState<Array<string>>([]);
-  const [activeMarkKeys, setActiveMarkKeys] = useState<Array<string>>([]);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
@@ -773,12 +773,17 @@ export default function CommentPlugin({
 
   useEffect(() => {
     const changedElems = [];
-    for (let i = 0; i < activeMarkKeys.length; i++) {
-      const key = activeMarkKeys[i];
-      const elem = editor.getElementByKey(key);
-      if (elem !== null) {
-        elem.classList.add('selected');
-        changedElems.push(elem);
+    for (let i = 0; i < activeIDs.length; i++) {
+      const id = activeIDs[i];
+      const keys = markNodeMap.get(id);
+      if (keys !== undefined) {
+        for (const key of keys) {
+          const elem = editor.getElementByKey(key);
+          if (elem !== null) {
+            elem.classList.add('selected');
+            changedElems.push(elem);
+          }
+        }
       }
     }
     return () => {
@@ -787,21 +792,33 @@ export default function CommentPlugin({
         changedElem.classList.remove('selected');
       }
     };
-  }, [activeMarkKeys, editor]);
+  }, [activeIDs, editor, markNodeMap]);
 
   useEffect(() => {
     const markNodeKeysToIDs: Map<NodeKey, Array<string>> = new Map();
 
     return mergeRegister(
+      registerNestedElementResolver<MarkNode>(
+        editor,
+        MarkNode,
+        (from: MarkNode) => {
+          return $createMarkNode(from.getIDs());
+        },
+        (from: MarkNode, to: MarkNode) => {
+          // Merge the IDs
+          const ids = from.getIDs();
+          ids.forEach((id) => {
+            to.addID(id);
+          });
+        },
+      ),
       editor.registerMutationListener(MarkNode, (mutations) => {
         for (const [key, mutation] of mutations) {
           const node: null | MarkNode = $getNodeByKey(key);
           let ids = [];
-          let keyAdded = false;
 
           if (mutation === 'destroyed') {
             ids = markNodeKeysToIDs.get(key) || [];
-            setActiveMarkKeys((keys) => keys.filter((_key) => key !== _key));
           } else if ($isMarkNode(node)) {
             ids = node.getIDs();
           }
@@ -819,9 +836,6 @@ export default function CommentPlugin({
                 }
               }
             } else {
-              if (mutation === 'created') {
-                keyAdded = true;
-              }
               if (markNodeKeys === undefined) {
                 markNodeKeys = new Set();
                 markNodeMap.set(id, markNodeKeys);
@@ -831,16 +845,13 @@ export default function CommentPlugin({
               }
             }
           }
-
-          if (keyAdded) {
-            setActiveMarkKeys((keys) => [...keys, key]);
-          }
         }
       }),
       editor.registerUpdateListener(({editorState, tags}) => {
         editorState.read(() => {
           const selection = $getSelection();
           let hasActiveIds = false;
+          let hasAnchorKey = false;
 
           if ($isRangeSelection(selection)) {
             const anchorNode = selection.anchor.getNode();
@@ -853,9 +864,10 @@ export default function CommentPlugin({
               if (commentIDs !== null) {
                 setActiveIDs(commentIDs);
                 hasActiveIds = true;
-              } else if (!selection.isCollapsed()) {
+              }
+              if (!selection.isCollapsed()) {
                 setActiveAnchorKey(anchorNode.getKey());
-                return;
+                hasAnchorKey = true;
               }
             }
           }
@@ -864,7 +876,9 @@ export default function CommentPlugin({
               _activeIds.length === 0 ? _activeIds : [],
             );
           }
-          setActiveAnchorKey(null);
+          if (!hasAnchorKey) {
+            setActiveAnchorKey(null);
+          }
         });
         if (!tags.has('collaboration')) {
           setShowCommentInput(false);

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {ElementNode, LexicalNode} from 'lexical';
+import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode} from 'lexical';
 import invariant from 'shared/invariant';
@@ -142,4 +142,68 @@ export function mergeRegister(...func: Array<Func>): () => void {
   return () => {
     func.forEach((f) => f());
   };
+}
+
+export function registerNestedElementResolver<N: ElementNode>(
+  editor: LexicalEditor,
+  targetNode: Class<N>,
+  cloneNode: (from: N) => N,
+  handleOverlap: (from: N, to: N) => void,
+): () => void {
+  const $isTargetNode = (node: ?LexicalNode): boolean %checks => {
+    return node instanceof targetNode;
+  };
+
+  const $findMatch = (node: N): {child: ElementNode, parent: N} | null => {
+    // First validate we don't have any children that are of the target,
+    // as we need to handle them first.
+    const children = node.getChildren();
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if ($isTargetNode(child)) {
+        return null;
+      }
+    }
+    let parentNode = node;
+    let childNode = node;
+    while (parentNode !== null) {
+      childNode = parentNode;
+      parentNode = parentNode.getParent();
+      if ($isTargetNode(parentNode)) {
+        return {child: childNode, parent: parentNode};
+      }
+    }
+    return null;
+  };
+
+  const elementNodeTransform = (node: N) => {
+    const match = $findMatch(node);
+    if (match !== null) {
+      const {child, parent} = match;
+
+      // Simple path, we can move child out and siblings into a new parent.
+      if (child.is(node)) {
+        handleOverlap(parent, node);
+        const nextSiblings = child.getNextSiblings();
+        const nextSiblingsLength = nextSiblings.length;
+        parent.insertAfter(child);
+        if (nextSiblingsLength !== 0) {
+          const newParent = cloneNode(parent);
+          child.insertAfter(newParent);
+          for (let i = 0; i < nextSiblingsLength; i++) {
+            newParent.append(nextSiblings[i]);
+          }
+        }
+        if (!parent.canBeEmpty() && parent.getChildrenSize() === 0) {
+          parent.remove();
+        }
+      } else {
+        // Complex path, we have a deep node that isn't a child of the
+        // target parent.
+        // TODO: implement this functionality
+      }
+    }
+  };
+
+  return editor.registerNodeTransform(targetNode, elementNodeTransform);
 }

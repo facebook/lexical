@@ -82,6 +82,7 @@ export type EditorThemeClasses = {
   },
   ltr?: EditorThemeClassName,
   mark?: EditorThemeClassName,
+  markOverlap?: EditorThemeClassName,
   paragraph?: EditorThemeClassName,
   quote?: EditorThemeClassName,
   root?: EditorThemeClassName,

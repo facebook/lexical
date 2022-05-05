@@ -209,6 +209,7 @@ export type EditorThemeClasses = {
   tableCell?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
   mark?: EditorThemeClassName;
+  markOverlap?: EditorThemeClassName;
   link?: EditorThemeClassName;
   quote?: EditorThemeClassName;
   code?: EditorThemeClassName;

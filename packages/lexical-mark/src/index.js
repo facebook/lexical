@@ -74,6 +74,9 @@ export function $wrapSelectionInMarkNode(
       targetNode = node;
     }
     if (targetNode !== undefined) {
+      if (targetNode && targetNode.is(currentNodeParent)) {
+        continue;
+      }
       const parentNode = targetNode.getParent();
       if (parentNode == null || !parentNode.is(currentNodeParent)) {
         currentMarkNode = undefined;

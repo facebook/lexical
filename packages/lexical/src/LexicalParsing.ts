@@ -169,9 +169,7 @@ export function internalCreateNodeFromParse(
         if (firstChild === next) {
           node.__first = child.__key;
         }
-        if (parsedChild.__next === null) {
-          node.__last = child.__key;
-        }
+        node.__last = child.__key;
         childCount++;
         next = parsedChild.__next;
       } else {

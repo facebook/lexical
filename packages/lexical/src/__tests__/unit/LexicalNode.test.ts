@@ -303,7 +303,11 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(barTextNode.getPreviousSibling()).toEqual(textNode);
+          // something's weird about the scoping here - we don't get the latest textNode,
+          // probably something to do with how it's reassigned in the beforeEach every time.
+          expect(barTextNode.getPreviousSibling()).toEqual(
+            textNode.getLatest(),
+          );
           expect(textNode.getPreviousSibling()).toEqual(null);
         });
         expect(() => textNode.getPreviousSibling()).toThrow();
@@ -328,10 +332,12 @@ describe('LexicalNode tests', () => {
 
         await editor.getEditorState().read(() => {
           expect(bazTextNode.getPreviousSiblings()).toEqual([
-            textNode,
+            textNode.getLatest(),
             barTextNode,
           ]);
-          expect(barTextNode.getPreviousSiblings()).toEqual([textNode]);
+          expect(barTextNode.getPreviousSiblings()).toEqual([
+            textNode.getLatest(),
+          ]);
           expect(textNode.getPreviousSiblings()).toEqual([]);
         });
         expect(() => textNode.getPreviousSiblings()).toThrow();

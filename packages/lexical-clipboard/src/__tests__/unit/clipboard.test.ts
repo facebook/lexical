@@ -362,7 +362,6 @@ describe('Clipboard tests', () => {
         );
         const rangeSet = new Set(state.range);
         const nodeMap = new Map(state.nodeMap);
-
         expect(nodeMap.size).toBe(5);
         expect(rangeSet.size).toBe(1);
 

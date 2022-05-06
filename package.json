@@ -100,7 +100,6 @@
     "concurrently": "^6.2.0",
     "confusing-browser-globals": "^1.0.10",
     "cross-env": "^7.0.3",
-    "danger": "^10.9.0",
     "eslint": "^7.31.0",
     "eslint-config-fbjs": "^3.1.1",
     "eslint-config-prettier": "^8.3.0",

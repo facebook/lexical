@@ -79,7 +79,6 @@
     "prepare-ci-collab": "npm run build --prefix packages/lexical-playground && concurrently \"npm run collab\" \"serve packages/lexical-playground/build -l 4000\"",
     "prepare-release": "npm run build-release && node ./scripts/npm/prepare-release.js",
     "prepare": "husky install",
-    "prepare-size-compare": "npm run build-prod && node ./scripts/npm/prepare-size-compare.js",
     "prepare-www": "node scripts/www/rewriteImports.js",
     "release": "npm run prepare-release && node ./scripts/npm/release.js",
     "update-version": "node ./scripts/updateVersion"
@@ -100,7 +99,6 @@
     "concurrently": "^6.2.0",
     "confusing-browser-globals": "^1.0.10",
     "cross-env": "^7.0.3",
-    "danger": "^10.7.0",
     "eslint": "^7.31.0",
     "eslint-config-fbjs": "^3.1.1",
     "eslint-config-prettier": "^8.3.0",

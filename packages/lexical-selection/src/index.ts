@@ -22,6 +22,7 @@ import {
   $createTextNode,
   $getDecoratorNode,
   $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getPreviousSelection,
   $isDecoratorNode,
   $isElementNode,
@@ -136,23 +137,24 @@ function $copyLeafNodeBranchToRoot(
         const start = isLeftSide ? offset : 0;
         const end = isLeftSide ? clone.__size : (offset || 0) + 1;
         let next = clone.__first;
-        let index = 0;
+        let count = 0;
         while (next !== null) {
           const current = nodeMap.get(next);
           if (current != null) {
-            if (index === start) {
+            if (count === start) {
               clone.__first = current.__key;
             }
-            if (index === end - 1) {
+            if (count === end - 1) {
               clone.__last = current.__key;
-              break;
             }
-            index++;
-            next = current.__next;
+            count++;
           }
-          next = null;
+          // get the key from the active editor, so we can
+          // traverse the linked list even if all nodes aren't
+          // in the nodeMap.
+          next = $getNodeByKeyOrThrow(next).__next;
         }
-        clone.__size = index + 1;
+        clone.__size = count;
       }
 
       if ($isRootNode(parent)) {

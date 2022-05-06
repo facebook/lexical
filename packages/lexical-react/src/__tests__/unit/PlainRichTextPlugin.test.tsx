@@ -127,7 +127,11 @@ describe('LexicalNodeHelpers tests', () => {
           [
             "root",
             {
-              "__children": ["2"],
+              "__first": "2",
+              "__last": "2",
+              "__size": 1,
+              "__prev": null,
+              "__next": null,
               "__dir": "ltr",
               "__format": 0,
               "__indent": 0,
@@ -142,7 +146,11 @@ describe('LexicalNodeHelpers tests', () => {
               "__type": "paragraph",
               "__parent": "root",
               "__key": "2",
-              "__children": ["3"],
+              "__first": "3",
+              "__last": "3",
+              "__size": 1,
+              "__prev": null,
+              "__next": null,
               "__format": 0,
               "__indent": 0,
               "__dir": "ltr"
@@ -158,7 +166,9 @@ describe('LexicalNodeHelpers tests', () => {
               "__format": 0,
               "__style": "",
               "__mode": 0,
-              "__detail": 0
+              "__detail": 0,
+              "__prev": null,
+              "__next": null
             }
           ]
         ],

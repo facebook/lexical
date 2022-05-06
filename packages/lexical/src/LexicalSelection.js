@@ -54,6 +54,7 @@ import {
 } from './LexicalUtils';
 
 export type TextPointType = {
+  _selection: RangeSelection | GridSelection,
   getNode: () => TextNode,
   is: (PointType) => boolean,
   isAtNodeEnd: () => boolean,
@@ -65,6 +66,7 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
+  _selection: RangeSelection | GridSelection,
   getNode: () => ElementNode,
   is: (PointType) => boolean,
   isAtNodeEnd: () => boolean,
@@ -81,8 +83,11 @@ class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
+  _selection: RangeSelection | GridSelection;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element'): void {
+    // $FlowFixMe: is temporarily null
+    this._selection = null;
     this.key = key;
     this.offset = offset;
     this.type = type;
@@ -120,7 +125,7 @@ class Point {
     return node;
   }
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
-    const selection = $getSelection();
+    const selection = this._selection;
     const oldKey = this.key;
     this.key = key;
     this.offset = offset;
@@ -133,6 +138,7 @@ class Point {
         selection !== null &&
         (selection.anchor === this || selection.focus === this)
       ) {
+        selection._cachedNodes = null;
         selection.dirty = true;
       }
     }
@@ -228,10 +234,12 @@ interface BaseSelection {
 export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
+  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(objects: Set<NodeKey>) {
     this.dirty = false;
     this._nodes = objects;
+    this._cachedNodes = null;
   }
 
   is(
@@ -248,16 +256,19 @@ export class NodeSelection implements BaseSelection {
   add(key: NodeKey): void {
     this.dirty = true;
     this._nodes.add(key);
+    this._cachedNodes = null;
   }
 
   delete(key: NodeKey): void {
     this.dirty = true;
     this._nodes.delete(key);
+    this._cachedNodes = null;
   }
 
   clear(): void {
     this.dirty = true;
     this._nodes.clear();
+    this._cachedNodes = null;
   }
 
   has(key: NodeKey): boolean {
@@ -281,6 +292,10 @@ export class NodeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
+    const cachedNodes = this._cachedNodes;
+    if (cachedNodes !== null) {
+      return cachedNodes;
+    }
     const objects = this._nodes;
     const nodes = [];
     for (const object of objects) {
@@ -288,6 +303,9 @@ export class NodeSelection implements BaseSelection {
       if (node !== null) {
         nodes.push(node);
       }
+    }
+    if (!isCurrentlyReadOnlyMode()) {
+      this._cachedNodes = nodes;
     }
     return nodes;
   }
@@ -318,12 +336,16 @@ export class GridSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
+  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void {
     this.gridKey = gridKey;
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
+    this._cachedNodes = null;
+    anchor._selection = this;
+    focus._selection = this;
   }
 
   is(
@@ -340,6 +362,7 @@ export class GridSelection implements BaseSelection {
     this.gridKey = gridKey;
     this.anchor.key = anchorCellKey;
     this.focus.key = focusCellKey;
+    this._cachedNodes = null;
   }
 
   clone(): GridSelection {
@@ -400,20 +423,23 @@ export class GridSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
-    const nodes = new Set();
-
+    const cachedNodes = this._cachedNodes;
+    if (cachedNodes !== null) {
+      return cachedNodes;
+    }
+    const nodesSet = new Set();
     const {fromX, fromY, toX, toY} = this.getShape();
 
     const gridNode = $getNodeByKey(this.gridKey);
     if (!$isGridNode(gridNode)) {
       invariant(false, 'getNodes: expected to find GridNode');
     }
-    nodes.add(gridNode);
+    nodesSet.add(gridNode);
 
     const gridRowNodes = gridNode.getChildren();
     for (let r = fromY; r <= toY; r++) {
       const gridRowNode = gridRowNodes[r];
-      nodes.add(gridRowNode);
+      nodesSet.add(gridRowNode);
 
       if (!$isGridRowNode(gridRowNode)) {
         invariant(false, 'getNodes: expected to find GridRowNode');
@@ -424,21 +450,24 @@ export class GridSelection implements BaseSelection {
         if (!$isGridCellNode(gridCellNode)) {
           invariant(false, 'getNodes: expected to find GridCellNode');
         }
-        nodes.add(gridCellNode);
+        nodesSet.add(gridCellNode);
 
         const children = gridCellNode.getChildren();
 
         while (children.length > 0) {
           const child = children.shift();
-          nodes.add(child);
+          nodesSet.add(child);
           if ($isElementNode(child)) {
             children.unshift(...child.getChildren());
           }
         }
       }
     }
-
-    return Array.from(nodes);
+    const nodes = Array.from(nodesSet);
+    if (!isCurrentlyReadOnlyMode()) {
+      this._cachedNodes = nodes;
+    }
+    return nodes;
   }
 
   getTextContent(): string {
@@ -460,12 +489,16 @@ export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
+  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(anchor: PointType, focus: PointType, format: number): void {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
     this.format = format;
+    this._cachedNodes = null;
+    anchor._selection = this;
+    focus._selection = this;
   }
 
   is(
@@ -490,6 +523,10 @@ export class RangeSelection implements BaseSelection {
   }
 
   getNodes(): Array<LexicalNode> {
+    const cachedNodes = this._cachedNodes;
+    if (cachedNodes !== null) {
+      return cachedNodes;
+    }
     const anchor = this.anchor;
     const focus = this.focus;
     let firstNode = anchor.getNode();
@@ -501,16 +538,24 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(lastNode)) {
       lastNode = lastNode.getDescendantByIndex(focus.offset);
     }
+    let nodes;
+
     if (firstNode.is(lastNode)) {
       if (
         $isElementNode(firstNode) &&
         (firstNode.getChildrenSize() > 0 || firstNode.excludeFromCopy())
       ) {
-        return [];
+        nodes = [];
+      } else {
+        nodes = [firstNode];
       }
-      return [firstNode];
+    } else {
+      nodes = firstNode.getNodesBetween(lastNode);
     }
-    return firstNode.getNodesBetween(lastNode);
+    if (!isCurrentlyReadOnlyMode()) {
+      this._cachedNodes = nodes;
+    }
+    return nodes;
   }
 
   setTextNodeRange(
@@ -613,11 +658,12 @@ export class RangeSelection implements BaseSelection {
   clone(): RangeSelection {
     const anchor = this.anchor;
     const focus = this.focus;
-    return new RangeSelection(
+    const selection = new RangeSelection(
       $createPoint(anchor.key, anchor.offset, anchor.type),
       $createPoint(focus.key, focus.offset, focus.type),
       this.format,
     );
+    return selection;
   }
 
   toggleFormat(format: TextFormatType): void {

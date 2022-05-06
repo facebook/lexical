@@ -537,6 +537,10 @@ export class LexicalNode {
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
+    const selection = $getSelection();
+    if (selection !== null) {
+      selection._cachedNodes = null;
+    }
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
       internalMarkNodeAsDirty(latestNode);

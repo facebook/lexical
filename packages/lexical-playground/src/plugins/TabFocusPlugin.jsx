@@ -53,9 +53,7 @@ export default function TabFocusPlugin(): null {
             lastTabKeyDownTimestamp + TAB_TO_FOCUS_INTERVAL >
             event.timeStamp
           ) {
-            const clonedSelection = selection.clone();
-            clonedSelection.dirty = true;
-            $setSelection(clonedSelection);
+            $setSelection(selection.clone());
           }
         }
         return false;

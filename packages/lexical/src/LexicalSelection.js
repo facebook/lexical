@@ -566,6 +566,7 @@ export class RangeSelection implements BaseSelection {
   ): void {
     $setPointValues(this.anchor, anchorNode.__key, anchorOffset, 'text');
     $setPointValues(this.focus, focusNode.__key, focusOffset, 'text');
+    this._cachedNodes = null;
     this.dirty = true;
   }
 
@@ -653,6 +654,7 @@ export class RangeSelection implements BaseSelection {
       focusPoint.offset,
       focusPoint.type,
     );
+    this._cachedNodes = null;
   }
 
   clone(): RangeSelection {
@@ -1659,6 +1661,7 @@ export class RangeSelection implements BaseSelection {
       // Apply the DOM selection to our Lexical selection.
       // $FlowFixMe[incompatible-call]
       this.applyDOMRange(range);
+      this.dirty = true;
       // Because a range works on start and end, we might need to flip
       // the anchor and focus points to match what the DOM has, not what
       // the range has specifically.
@@ -1794,6 +1797,7 @@ function $swapPoints(selection: RangeSelection): void {
 
   $setPointValues(anchor, focus.key, focus.offset, focus.type);
   $setPointValues(focus, anchorKey, anchorOffset, anchorType);
+  selection._cachedNodes = null;
 }
 
 function $moveNativeSelection(

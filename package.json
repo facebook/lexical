@@ -79,7 +79,6 @@
     "prepare-ci-collab": "npm run build --prefix packages/lexical-playground && concurrently \"npm run collab\" \"serve packages/lexical-playground/build -l 4000\"",
     "prepare-release": "npm run build-release && node ./scripts/npm/prepare-release.js",
     "prepare": "husky install",
-    "prepare-size-compare": "npm run build-prod && node ./scripts/npm/prepare-size-compare.js",
     "prepare-www": "node scripts/www/rewriteImports.js",
     "release": "npm run prepare-release && node ./scripts/npm/release.js",
     "update-version": "node ./scripts/updateVersion"

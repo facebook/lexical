@@ -79,5 +79,11 @@
   "79": "Expected grid selection",
   "80": "Expect paragraph containing only text nodes.",
   "81": "registerCommand: Command %s not found in command map",
-  "82": "Expect to have a text node with offset."
+  "82": "Expect to have a text node with offset.",
+  "83": "Expected node %s to have closest block element node.",
+  "84": "Expected Grid Cell in Grid Selection",
+  "85": "$mergeGridNodesStrategy: Expected Grid insertion.",
+  "86": "$mergeGridNodesStrategy: Expected selection to be inside of a Grid.",
+  "87": "$getListItemValue: list node is not parent of list item node",
+  "88": "$setSelection called on frozen selection object. Ensure selection is cloned before passing in."
 }

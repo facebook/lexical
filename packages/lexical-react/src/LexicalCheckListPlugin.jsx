@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {ListItemNode} from '@lexical/list';
 import type {LexicalEditor} from 'lexical';
 
 import {
@@ -14,7 +15,6 @@ import {
   $isListNode,
   INSERT_CHECK_LIST_COMMAND,
   insertList,
-  ListItemNode,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';

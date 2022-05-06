@@ -170,25 +170,27 @@ function ExcalidrawComponent({
         }}
         closeOnClickOutside={true}
       />
-      <button
-        ref={buttonRef}
-        className={`excalidraw-button ${isSelected ? 'selected' : ''}`}>
-        <ExcalidrawImage
-          imageContainerRef={imageContainerRef}
-          className="image"
-          elements={elements}
-        />
-        {(isSelected || isResizing) && (
-          <ImageResizer
-            showCaption={true}
-            setShowCaption={() => {}}
-            imageRef={imageContainerRef}
-            editor={editor}
-            onResizeStart={onResizeStart}
-            onResizeEnd={onResizeEnd}
+      {elements.length > 0 && (
+        <button
+          ref={buttonRef}
+          className={`excalidraw-button ${isSelected ? 'selected' : ''}`}>
+          <ExcalidrawImage
+            imageContainerRef={imageContainerRef}
+            className="image"
+            elements={elements}
           />
-        )}
-      </button>
+          {(isSelected || isResizing) && (
+            <ImageResizer
+              showCaption={true}
+              setShowCaption={() => {}}
+              imageRef={imageContainerRef}
+              editor={editor}
+              onResizeStart={onResizeStart}
+              onResizeEnd={onResizeEnd}
+            />
+          )}
+        </button>
+      )}
     </>
   );
 }

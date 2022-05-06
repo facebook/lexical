@@ -808,16 +808,18 @@ export class RangeSelection implements BaseSelection {
       let lastElement = $isElementNode(lastNode)
         ? lastNode
         : lastNode.getParentOrThrow();
-      let lastElementWasInline = false;
+      let lastElementChild = lastNode;
 
       // If the last element is inline, we should instead look at getting
       // the nodes of its parent, rather than itself. This behavior will
-      // then better match how text node insertions work.
-      // TODO: should we keep on traversing parents if we're inside another
-      // nested inline element?
+      // then better match how text node insertions work. We will need to
+      // also update the last element's child accordingly as we do this.
       if (!firstElement.is(lastElement) && lastElement.isInline()) {
-        lastElementWasInline = true;
-        lastElement = lastElement.getParentOrThrow();
+        // Keep traversing till we have a non-inline element parent.
+        do {
+          lastElementChild = lastElement;
+          lastElement = lastElement.getParentOrThrow();
+        } while (lastElement.isInline());
       }
 
       // Handle mutations to the last node.
@@ -885,14 +887,7 @@ export class RangeSelection implements BaseSelection {
         if (lastNodeChild.isAttached()) {
           if (
             !selectedNodesSet.has(lastNodeChild) ||
-            lastNodeChild.is(lastNode) ||
-            // If the last node parent element was an inline element, then we're
-            // using the last node's grand parent. This means that the above
-            // heuristics for checking if the lastNodeChild.is(lastNode) can never
-            // happen. Instead, we should check the lastNode's parent, which will
-            // correctly correlate to the right node.
-            (lastElementWasInline &&
-              lastNodeChild.is(lastNode.getParentOrThrow()))
+            lastNodeChild.is(lastElementChild)
           ) {
             if (!firstAndLastElementsAreEqual) {
               insertionTarget.insertAfter(lastNodeChild);

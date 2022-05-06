@@ -20,6 +20,7 @@ export declare class MarkNode extends ElementNode {
   isInline(): true;
 }
 export function $isMarkNode(node: LexicalNode | null | undefined): boolean;
+export function $createMarkNode(ids: Array<string>): MarkNode;
 export function $getMarkIDs(
   node: TextNode,
   offset: number,

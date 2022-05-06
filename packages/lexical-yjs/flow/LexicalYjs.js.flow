@@ -7,15 +7,7 @@
  * @flow strict
  */
 
-import type {
-  Doc,
-  RelativePosition,
-  TextOperation,
-  UndoManager,
-  XmlElement,
-  XmlText,
-  Map as YMap,
-} from 'yjs';
+import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
 import type {
   DecoratorNode,
   EditorState,
@@ -65,6 +57,12 @@ declare interface Provider {
 }
 
 export type ClientID = number;
+// $FlowFixMe: work around for internal
+export type XmlElement = Object;
+// $FlowFixMe: work around for internal
+export type YMap = Object;
+// $FlowFixMe: work around for internal
+export type TextOperation = Object;
 
 export type CursorSelection = {
   anchor: {

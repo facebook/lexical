@@ -6,6 +6,7 @@
  *
  * @flow strict
  */
+
 import type {EditorState, LexicalEditor} from 'lexical';
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 

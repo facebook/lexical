@@ -136,6 +136,7 @@ let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
 let isInsertLineBreak = false;
+let isFirefoxEndingComposition = false;
 let collapsedSelectionFormat: [number, number, NodeKey, number] = [
   0,
   0,
@@ -522,6 +523,13 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
+      // Given we're over-riding the default behavior, we will need
+      // to ensure to disable composition before dispatching the
+      // insertText command.
+      if (isFirefoxEndingComposition) {
+        isFirefoxEndingComposition = false;
+        $setCompositionKey(null);
+      }
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
       // For Android
       if (editor._compositionKey !== null) {
@@ -530,6 +538,11 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       }
     } else {
       $updateSelectedTextFromDOM(editor, null);
+      // onInput always fires after onCompositionEnd for FF
+      if (isFirefoxEndingComposition) {
+        isFirefoxEndingComposition = false;
+        $setCompositionKey(null);
+      }
     }
     // Also flush any other mutations that might have occurred
     // since the change.
@@ -572,7 +585,11 @@ function onCompositionEnd(
 ): void {
   updateEditor(editor, () => {
     const compositionKey = editor._compositionKey;
-    $setCompositionKey(null);
+    if (IS_FIREFOX) {
+      isFirefoxEndingComposition = true;
+    } else {
+      $setCompositionKey(null);
+    }
     const data = event.data;
     // Handle termination of composition.
     if (compositionKey !== null && data != null) {

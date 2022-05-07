@@ -359,7 +359,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
       // Fixes an Android bug where selection flickers when backspacing
       setTimeout(() => {
-        editor.update(() => {
+        updateEditor(editor, () => {
           $setCompositionKey(null);
         });
       }, ANDROID_COMPOSITION_LATENCY);

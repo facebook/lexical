@@ -95,13 +95,13 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - name: Download browsers
-        if: steps.cache.outputs.cache-hit != 'true'
         run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
@@ -140,13 +140,13 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - name: Download browsers
-        if: steps.cache.outputs.cache-hit != 'true'
         run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
@@ -217,6 +217,7 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
@@ -257,6 +258,7 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies

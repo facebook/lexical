@@ -12,7 +12,6 @@ const fs = require('fs-extra');
 const path = require('path');
 const argv = require('minimist')(process.argv.slice(2));
 const babel = require('@rollup/plugin-babel').default;
-const typescript = require('@rollup/plugin-typescript');
 const closure = require('./plugins/closure-plugin');
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
@@ -145,6 +144,13 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
+const COMMON_BABEL_SETTINGS = {
+  babelHelpers: 'bundled',
+  babelrc: false,
+  configFile: false,
+  exclude: '/**/node_modules/**',
+};
+
 async function build(name, inputFile, outputFile, isProd) {
   const isTypeScript = /\.tsx?$/.test(inputFile);
 
@@ -194,12 +200,27 @@ async function build(name, inputFile, outputFile, isProd) {
         extensions: ['.js', '.jsx', '.ts', 'tsx'],
       }),
       isTypeScript
-        ? typescript({tsconfig: path.resolve('./tsconfig.build.json')})
+        ? babel({
+            ...COMMON_BABEL_SETTINGS,
+            extensions: ['.js', '.jsx', '.ts', 'tsx'],
+            plugins: [
+              [
+                require('./error-codes/transform-error-messages'),
+                {noMinify: !isProd},
+              ],
+            ],
+            presets: [
+              [
+                '@babel/preset-typescript',
+                {
+                  tsconfig: path.resolve('./tsconfig.build.json'),
+                },
+              ],
+              '@babel/preset-react',
+            ],
+          })
         : babel({
-            babelHelpers: 'bundled',
-            babelrc: false,
-            configFile: false,
-            exclude: '/**/node_modules/**',
+            ...COMMON_BABEL_SETTINGS,
             plugins: [
               '@babel/plugin-transform-flow-strip-types',
               [

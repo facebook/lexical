@@ -12,6 +12,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const argv = require('minimist')(process.argv.slice(2));
 const babel = require('@rollup/plugin-babel').default;
+const typescript = require('@rollup/plugin-typescript');
 const closure = require('./plugins/closure-plugin');
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
@@ -145,6 +146,8 @@ Object.keys(wwwMappings).forEach((mapping) => {
 });
 
 async function build(name, inputFile, outputFile, isProd) {
+  const isTypeScript = /\.tsx?$/.test(inputFile);
+
   const inputOptions = {
     external(modulePath, src) {
       return externals.includes(modulePath);
@@ -188,22 +191,24 @@ async function build(name, inputFile, outputFile, isProd) {
         },
       },
       nodeResolve({
-        extensions: ['.js', '.jsx'],
+        extensions: ['.js', '.jsx', '.ts', 'tsx'],
       }),
-      babel({
-        babelHelpers: 'bundled',
-        babelrc: false,
-        configFile: false,
-        exclude: '/**/node_modules/**',
-        plugins: [
-          '@babel/plugin-transform-flow-strip-types',
-          [
-            require('./error-codes/transform-error-messages'),
-            {noMinify: !isProd},
-          ],
-        ],
-        presets: ['@babel/preset-react'],
-      }),
+      isTypeScript
+        ? typescript({tsconfig: path.resolve('./tsconfig.build.json')})
+        : babel({
+            babelHelpers: 'bundled',
+            babelrc: false,
+            configFile: false,
+            exclude: '/**/node_modules/**',
+            plugins: [
+              '@babel/plugin-transform-flow-strip-types',
+              [
+                require('./error-codes/transform-error-messages'),
+                {noMinify: !isProd},
+              ],
+            ],
+            presets: ['@babel/preset-react'],
+          }),
       {
         resolveId(importee, importer) {
           if (importee === 'formatProdErrorMessage') {
@@ -365,7 +370,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalHistory',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical History',
@@ -420,7 +425,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalCode',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Code',
@@ -431,7 +436,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalDragon',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Dragon',

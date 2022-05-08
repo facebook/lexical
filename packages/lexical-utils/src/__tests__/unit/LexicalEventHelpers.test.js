@@ -22,10 +22,11 @@ import {
   setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {TestComposer} from 'lexical/src/__tests__/utils';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
+
+import {TestComposer} from '../../../../lexical/src/__tests__/utils';
 
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.

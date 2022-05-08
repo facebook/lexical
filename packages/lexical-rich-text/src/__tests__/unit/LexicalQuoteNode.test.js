@@ -8,7 +8,8 @@
 
 import {$createQuoteNode} from '@lexical/rich-text';
 import {$getRoot, ParagraphNode} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+
+import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   theme: {

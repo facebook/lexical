@@ -38,7 +38,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/history',
-    replacement: path.resolve('../lexical-history/src/index.js'),
+    replacement: path.resolve('../lexical-history/src/index.ts'),
   },
   {
     find: '@lexical/list',
@@ -62,7 +62,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/code',
-    replacement: path.resolve('../lexical-code/src/index.js'),
+    replacement: path.resolve('../lexical-code/src/index.ts'),
   },
   {
     find: '@lexical/plain-text',
@@ -74,7 +74,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/dragon',
-    replacement: path.resolve('../lexical-dragon/src/index.js'),
+    replacement: path.resolve('../lexical-dragon/src/index.ts'),
   },
   {
     find: '@lexical/link',

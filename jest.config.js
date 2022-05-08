@@ -17,17 +17,21 @@ module.exports = {
       ...common,
       displayName: 'unit',
       globals: {
+        IS_REACT_ACT_ENVIRONMENT: true,
         __DEV__: true,
+        'ts-jest': {
+          tsconfig: 'tsconfig.test.json',
+        },
       },
       moduleNameMapper: {
         '^./dist/(.+)': './src/$1',
         '^@lexical/clipboard$':
           '<rootDir>/packages/lexical-clipboard/src/index.js',
-        '^@lexical/code$': '<rootDir>/packages/lexical-code/src/index.js',
-        '^@lexical/dragon$': '<rootDir>/packages/lexical-dragon/src/index.js',
+        '^@lexical/code$': '<rootDir>/packages/lexical-code/src/index.ts',
+        '^@lexical/dragon$': '<rootDir>/packages/lexical-dragon/src/index.ts',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
         '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.js',
-        '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.js',
+        '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.ts',
         '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
         '^@lexical/mark$': '<rootDir>/packages/lexical-mark/src/index.js',
@@ -85,7 +89,13 @@ module.exports = {
         formatProdErrorMessage:
           '<rootDir>/scripts/error-codes/formatProdErrorMessage.js',
       },
-      testMatch: ['**/__tests__/unit/**/*.test.js'],
+      preset: 'ts-jest',
+      testEnvironment: 'jsdom',
+      testMatch: ['**/__tests__/unit/**/*.test{.ts,.js}'],
+      transform: {
+        '^.+\\.jsx?$': 'babel-jest',
+        '^.+\\.tsx$': 'ts-jest',
+      },
     },
     {
       ...common,

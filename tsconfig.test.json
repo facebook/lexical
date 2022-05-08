@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "checkJs": false,
+    "noImplicitAny": true
+  },
+  "extends": "./tsconfig.json"
+}

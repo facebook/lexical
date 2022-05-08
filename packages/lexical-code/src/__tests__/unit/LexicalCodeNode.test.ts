@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -13,11 +14,8 @@ import {
   $getRoot,
   $getSelection,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-global.IS_REACT_ACT_ENVIRONMENT = true;
+import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   theme: {

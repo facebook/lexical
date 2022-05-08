@@ -297,8 +297,8 @@ function onPasteForRichText(
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
     if (
-      (clipboardData != null && $isRangeSelection(selection)) ||
-      $isGridSelection(selection)
+      clipboardData != null &&
+      ($isRangeSelection(selection) || $isGridSelection(selection))
     ) {
       $insertDataTransferForRichText(clipboardData, selection, editor);
     }

@@ -136,8 +136,7 @@ const keyPresses = new Set([
   'ArrowDown',
 ]);
 
-// $FlowFixMe TODO
-type Steps = Array<any>;
+type Steps = Array<unknown>;
 
 function useTestRecorder(editor: LexicalEditor): [JSX.Element, JSX.Element] {
   const [steps, setSteps] = useState<Steps>([]);

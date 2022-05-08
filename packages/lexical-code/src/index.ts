@@ -1,14 +1,28 @@
+// @ts-nocheck
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 // eslint-disable-next-line simple-import-sort/imports
-import Prism from 'prismjs/components/prism-core';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  EditorConfig,
+  EditorThemeClasses,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+  RangeSelection,
+} from 'lexical';
+
+import * as Prism from 'prismjs';
+
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-markup';
@@ -21,45 +35,35 @@ import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  LexicalCommand,
-} from 'lexical';
-
 import {
   addClassNamesToElement,
-  removeClassNamesFromElement,
   mergeRegister,
+  removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getNodeByKey,
   $getSelection,
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_LOW,
   ElementNode,
-  TextNode,
-  $getNodeByKey,
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   OUTDENT_CONTENT_COMMAND,
-  COMMAND_PRIORITY_LOW,
+  TextNode,
 } from 'lexical';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
-const mapToPrismLanguage = (language: ?string): string | void => {
+const mapToPrismLanguage = (
+  language: string | null | undefined,
+): string | null | undefined => {
+  // eslint-disable-next-line no-prototype-builtins
   return language != null && Prism.languages.hasOwnProperty(language)
     ? language
     : undefined;
@@ -77,9 +81,9 @@ export const getCodeLanguages = (): Array<string> =>
     .sort();
 
 export class CodeHighlightNode extends TextNode {
-  __highlightType: ?string;
+  __highlightType: string | null | undefined;
 
-  constructor(text: string, highlightType?: string, key?: NodeKey): void {
+  constructor(text: string, highlightType?: string, key?: NodeKey) {
     super(text, key);
     this.__highlightType = highlightType;
   }
@@ -140,8 +144,8 @@ export class CodeHighlightNode extends TextNode {
 
 function getHighlightThemeClass(
   theme: EditorThemeClasses,
-  highlightType: ?string,
-): ?string {
+  highlightType: string | null | undefined,
+): string | null | undefined {
   return (
     highlightType &&
     theme &&
@@ -157,14 +161,16 @@ export function $createCodeHighlightNode(
   return new CodeHighlightNode(text, highlightType);
 }
 
-export function $isCodeHighlightNode(node: ?LexicalNode): boolean %checks {
+export function $isCodeHighlightNode(
+  node: LexicalNode | CodeHighlightNode | null | undefined,
+): node is CodeHighlightNode {
   return node instanceof CodeHighlightNode;
 }
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 
 export class CodeNode extends ElementNode {
-  __language: string | void;
+  __language: string | null | undefined;
 
   static getType(): string {
     return 'code';
@@ -174,7 +180,7 @@ export class CodeNode extends ElementNode {
     return new CodeNode(node.__language, node.__key);
   }
 
-  constructor(language?: string, key?: NodeKey): void {
+  constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
     this.__language = mapToPrismLanguage(language);
   }
@@ -215,9 +221,9 @@ export class CodeNode extends ElementNode {
         priority: 0,
       }),
       table: (node: Node) => {
-        // $FlowFixMe[incompatible-type] domNode is a <table> since we matched it by nodeName
-        const table: HTMLTableElement = node;
-        if (isGitHubCodeTable(table)) {
+        const table = node;
+        // domNode is a <table> since we matched it by nodeName
+        if (isGitHubCodeTable(table as HTMLTableElement)) {
           return {
             conversion: convertTableElement,
             priority: 4,
@@ -226,10 +232,9 @@ export class CodeNode extends ElementNode {
         return null;
       },
       td: (node: Node) => {
-        // $FlowFixMe[incompatible-type] element is a <td> since we matched it by nodeName
-        const td: HTMLTableCellElement = node;
-        // $FlowFixMe[incompatible-type] we know this will be a table, or null.
-        const table: ?HTMLTableElement | null = td.closest('table');
+        // element is a <td> since we matched it by nodeName
+        const td = node as HTMLTableCellElement;
+        const table: HTMLTableElement | null = td.closest('table');
 
         if (isGitHubCodeCell(td)) {
           return {
@@ -249,10 +254,9 @@ export class CodeNode extends ElementNode {
         return null;
       },
       tr: (node: Node) => {
-        // $FlowFixMe[incompatible-type] element is a <tr> since we matched it by nodeName
-        const tr: HTMLTableElement = node;
-        // $FlowFixMe[incompatible-type] we know this will be a table, or null.
-        const table: ?HTMLTableElement | null = tr.closest('table');
+        // element is a <tr> since we matched it by nodeName
+        const tr = node as HTMLTableCellElement;
+        const table: HTMLTableElement | null = tr.closest('table');
         if (table && isGitHubCodeTable(table)) {
           return {
             conversion: convertCodeNoop,
@@ -334,12 +338,12 @@ export class CodeNode extends ElementNode {
   }
 
   setLanguage(language: string): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<CodeNode>();
     writable.__language = mapToPrismLanguage(language);
   }
 
-  getLanguage(): string | void {
-    return this.getLatest().__language;
+  getLanguage(): string | null | undefined {
+    return this.getLatest<CodeNode>().__language;
   }
 }
 
@@ -347,13 +351,15 @@ export function $createCodeNode(language?: string): CodeNode {
   return new CodeNode(language);
 }
 
-export function $isCodeNode(node: ?LexicalNode): boolean %checks {
+export function $isCodeNode(
+  node: LexicalNode | null | undefined,
+): node is CodeNode {
   return node instanceof CodeNode;
 }
 
 export function getFirstCodeHighlightNodeOfLine(
   anchor: LexicalNode,
-): ?CodeHighlightNode {
+): CodeHighlightNode | null | undefined {
   let currentNode = null;
   const previousSiblings = anchor.getPreviousSiblings();
   previousSiblings.push(anchor);
@@ -372,7 +378,7 @@ export function getFirstCodeHighlightNodeOfLine(
 
 export function getLastCodeHighlightNodeOfLine(
   anchor: LexicalNode,
-): ?CodeHighlightNode {
+): CodeHighlightNode | null | undefined {
   let currentNode = null;
   const nextSiblings = anchor.getNextSiblings();
   nextSiblings.unshift(anchor);
@@ -394,8 +400,8 @@ function convertPreElement(domNode: Node): DOMConversionOutput {
 }
 
 function convertDivElement(domNode: Node): DOMConversionOutput {
-  // $FlowFixMe[incompatible-type] domNode is a <div> since we matched it by nodeName
-  const div: HTMLDivElement = domNode;
+  // domNode is a <div> since we matched it by nodeName
+  const div = domNode as HTMLDivElement;
   return {
     after: (childLexicalNodes) => {
       const domParent = domNode.parentNode;
@@ -417,8 +423,8 @@ function convertCodeNoop(): DOMConversionOutput {
 }
 
 function convertTableCellElement(domNode: Node): DOMConversionOutput {
-  // $FlowFixMe[incompatible-type] domNode is a <td> since we matched it by nodeName
-  const cell: HTMLTableCellElement = domNode;
+  // domNode is a <td> since we matched it by nodeName
+  const cell = domNode as HTMLTableCellElement;
 
   return {
     after: (childLexicalNodes) => {
@@ -436,11 +442,13 @@ function isCodeElement(div: HTMLDivElement): boolean {
   return div.style.fontFamily.match('monospace') !== null;
 }
 
-function isGitHubCodeCell(cell: HTMLTableCellElement): boolean %checks {
+function isGitHubCodeCell(
+  cell: HTMLTableCellElement,
+): cell is HTMLTableCellElement {
   return cell.classList.contains('js-file-line');
 }
 
-function isGitHubCodeTable(table: HTMLTableElement): boolean %checks {
+function isGitHubCodeTable(table: HTMLTableElement): table is HTMLTableElement {
   return table.classList.contains('js-file-line-container');
 }
 
@@ -464,12 +472,12 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   }
   const children = node.getChildren();
   const childrenLength = children.length;
-  // $FlowFixMe: internal field
+  // @ts-ignore: internal field
   if (childrenLength === codeElement.__cachedChildrenLength) {
     // Avoid updating the attribute if the children length hasn't changed.
     return;
   }
-  // $FlowFixMe: internal field
+  // @ts-ignore:: internal field
   codeElement.__cachedChildrenLength = childrenLength;
   let gutter = '1';
   let count = 1;
@@ -530,8 +538,10 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
   );
 }
 
-function getHighlightNodes(tokens): Array<LexicalNode> {
-  const nodes = [];
+function getHighlightNodes(
+  tokens: (string | Prism.Token)[],
+): Array<LexicalNode> {
+  const nodes: LexicalNode[] = [];
 
   tokens.forEach((token) => {
     if (typeof token === 'string') {
@@ -549,9 +559,13 @@ function getHighlightNodes(tokens): Array<LexicalNode> {
       const {content} = token;
       if (typeof content === 'string') {
         nodes.push($createCodeHighlightNode(content, token.type));
-      } else if (content.length === 1 && typeof content[0] === 'string') {
+      } else if (
+        Array.isArray(content) &&
+        content.length === 1 &&
+        typeof content[0] === 'string'
+      ) {
         nodes.push($createCodeHighlightNode(content[0], token.type));
-      } else {
+      } else if (Array.isArray(content)) {
         nodes.push(...getHighlightNodes(content));
       }
     }
@@ -623,9 +637,9 @@ function getDiffRange(
   prevNodes: Array<LexicalNode>,
   nextNodes: Array<LexicalNode>,
 ): {
-  from: number,
-  nodesForReplacement: Array<LexicalNode>,
-  to: number,
+  from: number;
+  nodesForReplacement: Array<LexicalNode>;
+  to: number;
 } {
   let leadingMatch = 0;
   while (leadingMatch < prevNodes.length) {
@@ -868,7 +882,7 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
           if (type !== 'destroyed') {
             const node = $getNodeByKey(key);
             if (node !== null) {
-              updateCodeGutter(node, editor);
+              updateCodeGutter(node as CodeNode, editor);
             }
           }
         }
@@ -895,12 +909,14 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      (payload): boolean => handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
+      (payload: KeyboardEvent): boolean =>
+        handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      (payload): boolean => handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
+      (payload: KeyboardEvent): boolean =>
+        handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
   );

@@ -16,11 +16,11 @@ import {
   NodeKey,
   State,
 } from 'lexical';
+
 import {
   $createTestElementNode,
   initializeUnitTest,
-} from 'lexical/src/__tests__/utils';
-
+} from '../../../../lexical/src/__tests__/utils';
 import {$dfs} from '../..';
 
 // No idea why we suddenly need to do this, but it fixes the tests

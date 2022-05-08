@@ -486,7 +486,8 @@ export function createUID(): string {
 
 export function $updateSelectedTextFromDOM(
   editor: LexicalEditor,
-  compositionEndEvent: null | CompositionEvent,
+  isCompositionEnd: boolean,
+  data?: ?string,
 ): void {
   // Update the text content with the latest composition text
   const domSelection = getDOMSelection();
@@ -499,7 +500,6 @@ export function $updateSelectedTextFromDOM(
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if ($isTextNode(node)) {
       let textContent = anchorNode.nodeValue;
-      const data = compositionEndEvent !== null && compositionEndEvent.data;
 
       // Data is intentionally truthy, as we check for boolean, null and empty string.
       if (textContent === ZERO_WIDTH_CHAR && data) {
@@ -514,7 +514,7 @@ export function $updateSelectedTextFromDOM(
         textContent,
         anchorOffset,
         focusOffset,
-        compositionEndEvent !== null,
+        isCompositionEnd,
       );
     }
   }

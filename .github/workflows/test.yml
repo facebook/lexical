@@ -37,7 +37,7 @@ jobs:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -65,7 +65,7 @@ jobs:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -95,8 +95,9 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -139,8 +140,9 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -180,7 +182,7 @@ jobs:
       #     path: |
       #       node_modules
       #       C:\Users\runneradmin\AppData\Local\ms-playwright
-      #     key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+      #     key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
@@ -215,8 +217,9 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -255,8 +258,9 @@ jobs:
         with:
           path: |
             node_modules
+            packages/playwright-core/node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -292,7 +296,7 @@ jobs:
           path: |
             node_modules
             C:\Users\runneradmin\AppData\Local\ms-playwright
-          key: ${{ runner.os }}-v4-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         #   if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci

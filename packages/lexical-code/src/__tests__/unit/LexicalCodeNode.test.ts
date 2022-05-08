@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
@@ -13,6 +12,8 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isRangeSelection,
+  EditorConfig,
 } from 'lexical';
 
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
@@ -21,7 +22,7 @@ const editorConfig = Object.freeze({
   theme: {
     code: 'my-code-class',
   },
-});
+}) as EditorConfig;
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -42,7 +43,7 @@ describe('LexicalCodeNode tests', () => {
         expect(codeNode.createDOM(editorConfig).outerHTML).toBe(
           '<code class="my-code-class" spellcheck="false"></code>',
         );
-        expect(codeNode.createDOM({theme: {}}).outerHTML).toBe(
+        expect(codeNode.createDOM({theme: {}} as EditorConfig).outerHTML).toBe(
           '<code spellcheck="false"></code>',
         );
       });
@@ -53,7 +54,7 @@ describe('LexicalCodeNode tests', () => {
       await editor.update(() => {
         const newCodeNode = $createCodeNode();
         const codeNode = $createCodeNode();
-        const domElement = codeNode.createDOM({theme: {}});
+        const domElement = codeNode.createDOM({theme: {}} as EditorConfig);
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
         const result = newCodeNode.updateDOM(codeNode, domElement);
         expect(result).toBe(false);
@@ -86,7 +87,9 @@ describe('LexicalCodeNode tests', () => {
       await editor.update(() => {
         const codeNode = $createCodeNode();
         const selection = $getSelection();
-        codeNode.insertNewAfter(selection);
+        if ($isRangeSelection(selection)) {
+          codeNode.insertNewAfter(selection);
+        }
       });
     });
 
@@ -97,8 +100,6 @@ describe('LexicalCodeNode tests', () => {
         const createdCodeNode = $createCodeNode();
         expect(codeNode.__type).toEqual(createdCodeNode.__type);
         expect(codeNode.__parent).toEqual(createdCodeNode.__parent);
-        expect(codeNode.__src).toEqual(createdCodeNode.__src);
-        expect(codeNode.__altText).toEqual(createdCodeNode.__altText);
         expect(codeNode.__key).not.toEqual(createdCodeNode.__key);
       });
     });

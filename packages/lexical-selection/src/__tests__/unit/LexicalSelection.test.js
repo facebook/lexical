@@ -1743,7 +1743,7 @@ describe('LexicalSelection tests', () => {
         root.append(
           $createParagraphNode().append(
             text1,
-            $createLinkNode('http://lexical.dev').append(text2),
+            $createLinkNode('https://lexical.dev').append(text2),
             text3,
           ),
         );

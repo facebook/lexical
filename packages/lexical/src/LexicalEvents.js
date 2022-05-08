@@ -136,6 +136,7 @@ let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
 let isInsertLineBreak = false;
+let isFirefoxEndingComposition = false;
 let collapsedSelectionFormat: [number, number, NodeKey, number] = [
   0,
   0,
@@ -358,7 +359,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
       // Fixes an Android bug where selection flickers when backspacing
       setTimeout(() => {
-        editor.update(() => {
+        updateEditor(editor, () => {
           $setCompositionKey(null);
         });
       }, ANDROID_COMPOSITION_LATENCY);
@@ -522,14 +523,26 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
+      // Given we're over-riding the default behavior, we will need
+      // to ensure to disable composition before dispatching the
+      // insertText command for when changing the sequence for FF.
+      if (isFirefoxEndingComposition) {
+        onCompositionEndImpl(editor, data);
+        isFirefoxEndingComposition = false;
+      }
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
-      // For Android
+      // This ensures consistency on Android.
       if (editor._compositionKey !== null) {
         lastKeyDownTimeStamp = 0;
         $setCompositionKey(null);
       }
     } else {
-      $updateSelectedTextFromDOM(editor, null);
+      $updateSelectedTextFromDOM(editor, false);
+      // onInput always fires after onCompositionEnd for FF.
+      if (isFirefoxEndingComposition) {
+        onCompositionEndImpl(editor, data);
+        isFirefoxEndingComposition = false;
+      }
     }
     // Also flush any other mutations that might have occurred
     // since the change.
@@ -566,45 +579,60 @@ function onCompositionStart(
   });
 }
 
+function onCompositionEndImpl(editor: LexicalEditor, data: ?string): void {
+  const compositionKey = editor._compositionKey;
+  $setCompositionKey(null);
+  // Handle termination of composition.
+  if (compositionKey !== null && data != null) {
+    // Composition can sometimes move to an adjacent DOM node when backspacing.
+    // So check for the empty case.
+    if (data === '') {
+      const node = $getNodeByKey(compositionKey);
+      const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
+      if (textNode !== null && $isTextNode(node)) {
+        $updateTextNodeFromDOMContent(
+          node,
+          textNode.nodeValue,
+          null,
+          null,
+          true,
+        );
+      }
+      return;
+    }
+    // Composition can sometimes be that of a new line. In which case, we need to
+    // handle that accordingly.
+    if (data[data.length - 1] === '\n') {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        // If the last character is a line break, we also need to insert
+        // a line break.
+        const focus = selection.focus;
+        selection.anchor.set(focus.key, focus.offset, focus.type);
+        dispatchCommand(editor, KEY_ENTER_COMMAND, null);
+        return;
+      }
+    }
+  }
+  $updateSelectedTextFromDOM(editor, true, data);
+}
+
 function onCompositionEnd(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
-  updateEditor(editor, () => {
-    const compositionKey = editor._compositionKey;
-    $setCompositionKey(null);
-    const data = event.data;
-    // Handle termination of composition.
-    if (compositionKey !== null && data != null) {
-      // It can sometimes move to an adjacent DOM node when backspacing.
-      // So check for the empty case.
-      if (data === '') {
-        const node = $getNodeByKey(compositionKey);
-        const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
-        if (textNode !== null && $isTextNode(node)) {
-          $updateTextNodeFromDOMContent(
-            node,
-            textNode.nodeValue,
-            null,
-            null,
-            true,
-          );
-        }
-        return;
-      } else if (data[data.length - 1] === '\n') {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          // If the last character is a line break, we also need to insert
-          // a line break.
-          const focus = selection.focus;
-          selection.anchor.set(focus.key, focus.offset, focus.type);
-          dispatchCommand(editor, KEY_ENTER_COMMAND, null);
-          return;
-        }
-      }
-    }
-    $updateSelectedTextFromDOM(editor, event);
-  });
+  // Firefox fires onCompositionEnd before onInput, but Chrome/Webkit,
+  // fire onInput before onCompositionEnd. To ensure the sequence works
+  // like Chrome/Webkit we use the isFirefoxEndingComposition flag to
+  // defer handling of onCompositionEnd in Firefox till we have processed
+  // the logic in onInput.
+  if (IS_FIREFOX) {
+    isFirefoxEndingComposition = true;
+  } else {
+    updateEditor(editor, () => {
+      onCompositionEndImpl(editor, event.data);
+    });
+  }
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {

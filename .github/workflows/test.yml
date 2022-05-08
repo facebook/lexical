@@ -101,6 +101,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - name: Download browsers
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
@@ -145,6 +146,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
       - name: Download browsers
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npx playwright install
       - run: npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts

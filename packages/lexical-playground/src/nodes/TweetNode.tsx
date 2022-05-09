@@ -136,7 +136,7 @@ export function $createTweetNode(tweetID: string): TweetNode {
 }
 
 export function $isTweetNode(
-  node: TweetNode | LexicalNode | null | undefined | undefined,
+  node: TweetNode | LexicalNode | null | undefined,
 ): node is TweetNode {
   return node instanceof TweetNode;
 }

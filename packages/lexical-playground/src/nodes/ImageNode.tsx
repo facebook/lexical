@@ -91,7 +91,7 @@ function LazyImage({
   useSuspenseImage(src);
   return (
     <img
-      className={className ?? ''}
+      className={className}
       src={src}
       alt={altText}
       ref={imageRef}

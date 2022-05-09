@@ -22,13 +22,13 @@ const Context: React.Context<SettingsContextShape> = createContext({
   setOption: () => {
     return;
   },
-  settings: {},
+  settings: DEFAULT_SETTINGS,
 });
 
 export const SettingsContext = ({
   children,
 }: {
-  children: JSX.Element;
+  children: JSX.Element | JSX.Element[];
 }): JSX.Element => {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const setOption = useCallback((setting: SettingName, value: boolean) => {

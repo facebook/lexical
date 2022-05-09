@@ -49,6 +49,7 @@ export declare class TableCellNode extends ElementNode {
     width?: ?number,
     key?: NodeKey,
   );
+  __headerState: TableCellHeaderState;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
   insertNewAfter(
@@ -62,6 +63,7 @@ export declare class TableCellNode extends ElementNode {
   hasHeader(): boolean;
   setWidth(width: number): ?number;
   getWidth(): ?number;
+  toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   updateDOM(prevNode: TableCellNode): boolean;
   collapseAtStart(): true;
   canBeEmpty(): false;

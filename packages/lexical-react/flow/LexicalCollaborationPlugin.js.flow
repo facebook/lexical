@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {Provider} from '../../lexical-yjs/src';
 import type {Doc, RelativePosition} from 'yjs';
 
 export type UserState = {
@@ -24,22 +25,6 @@ export type ProviderAwareness = {
   on: (type: 'update', cb: () => void) => void,
   off: (type: 'update', cb: () => void) => void,
 };
-
-export interface Provider {
-  connect(): void | Promise<void>;
-  disconnect(): void;
-  awareness: ProviderAwareness;
-  on(type: 'sync', cb: (isSynced: boolean) => void): void;
-  on(type: 'status', cb: ({status: string}) => void): void;
-  // $FlowFixMe: temp
-  on(type: 'update', cb: (any) => void): void;
-  on(type: 'reload', cb: (doc: Doc) => void): void;
-  off(type: 'sync', cb: (isSynced: boolean) => void): void;
-  // $FlowFixMe: temp
-  off(type: 'update', cb: (any) => void): void;
-  off(type: 'status', cb: ({status: string}) => void): void;
-  off(type: 'reload', cb: (doc: Doc) => void): void;
-}
 
 type CollaborationContextType = {
   clientID: number,

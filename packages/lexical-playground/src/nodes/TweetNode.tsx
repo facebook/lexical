@@ -20,9 +20,9 @@ const getHasScriptCached = () =>
 
 type TweetComponentProps = Readonly<{
   format: ElementFormatType | null;
-  loadingComponent?: JSX.Element;
+  loadingComponent?: JSX.Element | string;
   nodeKey: NodeKey;
-  onError?: (error?: Error) => void;
+  onError?: (error: string) => void;
   onLoad?: () => void;
   tweetID: string;
 }>;
@@ -37,11 +37,12 @@ function TweetComponent({
 }: TweetComponentProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const previousTweetIDRef = useRef(null);
+  const previousTweetIDRef = useRef<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   const createTweet = useCallback(async () => {
     try {
+      // @ts-ignore
       await window.twttr.widgets.createTweet(tweetID, containerRef.current);
 
       setIsLoading(false);
@@ -49,9 +50,9 @@ function TweetComponent({
       if (onLoad) {
         onLoad();
       }
-    } catch (e) {
+    } catch (error) {
       if (onError) {
-        onError(e);
+        onError(String(error));
       }
     }
   }, [onError, onLoad, tweetID]);
@@ -66,12 +67,15 @@ function TweetComponent({
         script.async = true;
         document.body?.appendChild(script);
         script.onload = createTweet;
+        // @ts-ignore
         script.onerror = onError;
       } else {
         createTweet();
       }
 
-      previousTweetIDRef.current = tweetID;
+      if (previousTweetIDRef) {
+        previousTweetIDRef.current = tweetID;
+      }
     }
   }, [createTweet, onError, tweetID]);
 
@@ -97,7 +101,7 @@ export class TweetNode extends DecoratorBlockNode<JSX.Element> {
     return new TweetNode(node.__id, node.__format, node.__key);
   }
 
-  constructor(id: string, format: ElementFormatType | null, key?: NodeKey) {
+  constructor(id: string, format?: ElementFormatType | null, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }
@@ -126,6 +130,8 @@ export function $createTweetNode(tweetID: string): TweetNode {
   return new TweetNode(tweetID);
 }
 
-export function $isTweetNode(node: LexicalNode | null): node is TweetNode {
+export function $isTweetNode(
+  node: TweetNode | LexicalNode | null | undefined | undefined,
+): node is TweetNode {
   return node instanceof TweetNode;
 }

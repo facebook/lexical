@@ -6,6 +6,7 @@
  *
  */
 
+import {Provider} from '@lexical/yjs';
 import type {Doc, RelativePosition} from 'yjs';
 export type UserState = {
   anchorPos: null | RelativePosition;
@@ -21,21 +22,6 @@ export type ProviderAwareness = {
   on: (type: 'update', cb: () => void) => void;
   off: (type: 'update', cb: () => void) => void;
 };
-export interface Provider {
-  connect(): void | Promise<void>;
-  disconnect(): void;
-  awareness: ProviderAwareness;
-  on(type: 'sync', cb: (isSynced: boolean) => void): void;
-  on(type: 'status', cb: (arg0: {status: string}) => void): void;
-  // $FlowFixMe: temp
-  on(type: 'update', cb: (arg0: any) => void): void;
-  on(type: 'reload', cb: (doc: Doc) => boolean): void;
-  off(type: 'sync', cb: (isSynced: boolean) => void): void;
-  // $FlowFixMe: temp
-  off(type: 'update', cb: (arg0: any) => void): void;
-  off(type: 'status', cb: (arg0: {status: string}) => void): void;
-  off(type: 'reload', cb: (doc: Doc) => boolean): void;
-}
 type CollaborationContextType = {
   clientID: number;
   color: string;

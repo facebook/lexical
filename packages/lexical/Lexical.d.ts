@@ -149,6 +149,7 @@ export declare class LexicalEditor {
   ): () => void;
   dispatchCommand<P>(type: LexicalCommand<P>, payload: P): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
+  getKey(): string;
   getDecorators<X>(): Record<NodeKey, X>;
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;

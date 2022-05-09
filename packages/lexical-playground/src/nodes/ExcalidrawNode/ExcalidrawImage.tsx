@@ -12,6 +12,7 @@ import {
   ExcalidrawElement,
   NonDeleted,
 } from '@excalidraw/excalidraw/types/element/types';
+import {AppState} from '@excalidraw/excalidraw/types/types';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
@@ -21,7 +22,7 @@ type Props = {
   /**
    * Configures the export setting for SVG/Canvas
    */
-  appState?: mixed;
+  appState?: Partial<Omit<AppState, 'offsetTop' | 'offsetLeft'>> | null;
   /**
    * The css class applied to image to be rendered
    */
@@ -37,7 +38,7 @@ type Props = {
   /**
    * The ref object to be used to render the image
    */
-  imageContainerRef: {current: null | HTMLElement};
+  imageContainerRef: {current: null | HTMLDivElement};
   /**
    * The type of image to be rendered
    */
@@ -78,9 +79,6 @@ const removeStyleFromSvg_HACK = (svg) => {
 export default function ExcalidrawImage({
   elements,
   imageContainerRef,
-  className = '',
-  height = null,
-  width = null,
   appState = null,
   rootClassName = null,
 }: Props): JSX.Element {
@@ -88,6 +86,10 @@ export default function ExcalidrawImage({
 
   useEffect(() => {
     const setContent = async () => {
+      if (!appState) {
+        return;
+      }
+
       const svg: Element = await exportToSvg({
         appState,
         elements,
@@ -107,8 +109,8 @@ export default function ExcalidrawImage({
   return (
     <div
       ref={imageContainerRef}
-      className={rootClassName}
-      dangerouslySetInnerHTML={{__html: Svg?.outerHTML}}
+      className={rootClassName ?? ''}
+      dangerouslySetInnerHTML={{__html: Svg?.outerHTML ?? ''}}
     />
   );
 }

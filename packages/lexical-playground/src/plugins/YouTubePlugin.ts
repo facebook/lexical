@@ -30,7 +30,7 @@ export default function YouTubePlugin(): JSX.Element {
       throw new Error('YouTubePlugin: YouTubeNode not registered on editor');
     }
 
-    return editor.registerCommand(
+    return editor.registerCommand<string>(
       INSERT_YOUTUBE_COMMAND,
       (payload) => {
         const selection = $getSelection();

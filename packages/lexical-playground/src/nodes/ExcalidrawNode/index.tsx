@@ -35,13 +35,13 @@ function ExcalidrawComponent({
 }: {
   data: string;
   nodeKey: NodeKey;
-}): React.Node {
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isModalOpen, setModalOpen] = useState<boolean>(
     data === '[]' && !editor.isReadOnly(),
   );
-  const imageContainerRef = useRef<HTMLElement | null>(null);
-  const buttonRef = useRef<HTMLElement | null>(null);
+  const imageContainerRef = useRef<HTMLImageElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -79,14 +79,13 @@ function ExcalidrawComponent({
         CLICK_COMMAND,
         (event: MouseEvent) => {
           const buttonElem = buttonRef.current;
-          // $FlowFixMe: this will work
-          const eventTarget: Element = event.target;
+          const eventTarget = event.target;
 
           if (isResizing) {
             return true;
           }
 
-          if (buttonElem !== null && buttonElem.contains(eventTarget)) {
+          if (buttonElem !== null && buttonElem.contains(eventTarget as Node)) {
             if (!event.shiftKey) {
               clearSelection();
             }
@@ -226,7 +225,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   }
 
   setData(data: string): void {
-    const self = this.getWritable();
+    const self = this.getWritable<ExcalidrawNode>();
     self.__data = data;
   }
 

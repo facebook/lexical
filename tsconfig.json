@@ -199,5 +199,5 @@
       "shared/useLayoutEffect": ["packages/shared/src/useLayoutEffect.js"]
     }
   },
-  "exclude": ["./node_modules/**/*"]
+  "exclude": ["./node_modules/**/*", "**dist**"]
 }

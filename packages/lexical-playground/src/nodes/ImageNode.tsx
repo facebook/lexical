@@ -65,7 +65,7 @@ function useSuspenseImage(src: string) {
       img.src = src;
       img.onload = () => {
         imageCache.add(src);
-        resolve();
+        resolve(null);
       };
     });
   }
@@ -83,15 +83,15 @@ function LazyImage({
   altText: string;
   className: string | null;
   height: 'inherit' | number;
-  imageRef: {current: null | HTMLElement};
+  imageRef: {current: null | HTMLImageElement};
   maxWidth: number;
   src: string;
   width: 'inherit' | number;
-}): React.Node {
+}): JSX.Element {
   useSuspenseImage(src);
   return (
     <img
-      className={className}
+      className={className ?? ''}
       src={src}
       alt={altText}
       ref={imageRef}
@@ -124,7 +124,7 @@ function ImageComponent({
   showCaption: boolean;
   src: string;
   width: 'inherit' | number;
-}): React.Node {
+}): JSX.Element {
   const ref = useRef(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
@@ -135,7 +135,7 @@ function ImageComponent({
   const [selection, setSelection] = useState(null);
 
   const onDelete = useCallback(
-    (payload) => {
+    (payload: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
@@ -157,10 +157,10 @@ function ImageComponent({
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
-      editor.registerCommand(
+      editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
         (payload) => {
-          const event: MouseEvent = payload;
+          const event = payload;
 
           if (isResizing) {
             return true;
@@ -273,7 +273,7 @@ function ImageComponent({
                 }
                 initialEditorState={null}
               />
-              {showNestedEditorTreeView && <TreeViewPlugin />}
+              {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
             </LexicalNestedComposer>
           </div>
         )}
@@ -352,13 +352,13 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     width: 'inherit' | number,
     height: 'inherit' | number,
   ): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<ImageNode>();
     writable.__width = width;
     writable.__height = height;
   }
 
   setShowCaption(showCaption: boolean): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<ImageNode>();
     writable.__showCaption = showCaption;
   }
 
@@ -411,6 +411,8 @@ export function $createImageNode(
   return new ImageNode(src, altText, maxWidth);
 }
 
-export function $isImageNode(node: LexicalNode | null): node is ImageNode {
+export function $isImageNode(
+  node: LexicalNode | null | undefined,
+): node is ImageNode {
   return node instanceof ImageNode;
 }

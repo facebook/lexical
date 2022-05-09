@@ -59,7 +59,7 @@ function StickyComponent({
   y: number;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const stickyContainerRef = useRef<null | HTMLElement>(null);
+  const stickyContainerRef = useRef<null | HTMLDivElement>(null);
   const positioningRef = useRef<{
     isDragging: boolean;
     offsetX: number;
@@ -228,14 +228,14 @@ function StickyComponent({
           onClick={handleDelete}
           className="delete"
           aria-label="Delete sticky note"
-          type="Delete">
+          title="Delete">
           X
         </button>
         <button
           onClick={handleColorChange}
           className="color"
           aria-label="Change sticky note color"
-          type="Color">
+          title="Color">
           <i className="bucket" />
         </button>
         <LexicalNestedComposer
@@ -312,14 +312,14 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   }
 
   setPosition(x: number, y: number): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<StickyNode>();
     writable.__x = x;
     writable.__y = y;
     $setSelection(null);
   }
 
   toggleColor(): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<StickyNode>();
     writable.__color = writable.__color === 'pink' ? 'yellow' : 'pink';
   }
 
@@ -341,7 +341,9 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   }
 }
 
-export function $isStickyNode(node: LexicalNode | null): node is StickyNode {
+export function $isStickyNode(
+  node: LexicalNode | null | undefined,
+): node is StickyNode {
   return node instanceof StickyNode;
 }
 

@@ -22,7 +22,7 @@ export default function DropDown({
   buttonClassName: string;
   buttonIconClassName?: string;
   buttonLabel?: string;
-  children: React.Node;
+  children: JSX.Element;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLElement | null>(null);

@@ -16,14 +16,14 @@ type ContextShape = {
   historyState?: HistoryState;
 };
 
-const Context: React$Context<ContextShape> = createContext({
+const Context: React.Context<ContextShape> = createContext({
   historyState: {current: null, redoStack: [], undoStack: []},
 });
 
 export const SharedHistoryContext = ({
   children,
 }: {
-  children: JSX.Element;
+  children: JSX.Element | JSX.Element[];
 }): JSX.Element => {
   const historyContext = useMemo(
     () => ({historyState: createEmptyHistoryState()}),

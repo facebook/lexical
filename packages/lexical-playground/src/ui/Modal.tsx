@@ -19,12 +19,12 @@ function PortalImpl({
   title,
   closeOnClickOutside,
 }: {
-  children: JSX.Element;
+  children: JSX.Element | string | (JSX.Element | string)[];
   closeOnClickOutside: boolean;
   onClose: () => void;
   title: string;
 }) {
-  const modalRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>();
 
   useEffect(() => {
     if (modalRef.current !== null) {
@@ -40,11 +40,10 @@ function PortalImpl({
       }
     };
     const clickOutsideHandler = (event: MouseEvent) => {
-      // $FlowFixMe: event.target is always a Node on the DOM
-      const target: HTMLElement = event.target;
+      const target = event.target;
       if (
         modalRef.current !== null &&
-        !modalRef.current.contains(target) &&
+        !modalRef.current.contains(target as Node) &&
         closeOnClickOutside
       ) {
         onClose();
@@ -74,7 +73,7 @@ function PortalImpl({
         <button
           className="Modal__closeButton"
           aria-label="Close modal"
-          type="Close"
+          type="button"
           onClick={onClose}>
           X
         </button>
@@ -90,7 +89,7 @@ export default function Modal({
   title,
   closeOnClickOutside = false,
 }: {
-  children: JSX.Element;
+  children: JSX.Element | string | (JSX.Element | string)[];
   closeOnClickOutside?: boolean;
   onClose: () => void;
   title: string;

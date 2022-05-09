@@ -152,7 +152,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   setEquation(equation: string): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<EquationNode>();
     writable.__equation = equation;
   }
 
@@ -176,7 +176,7 @@ export function $createEquationNode(
 }
 
 export function $isEquationNode(
-  node: LexicalNode | null,
+  node: LexicalNode | null | undefined,
 ): node is EquationNode {
   return node instanceof EquationNode;
 }

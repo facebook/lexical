@@ -6,8 +6,6 @@
  *
  */
 
-import type {ElementNode, LexicalEditor, RangeSelection} from 'lexical';
-
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -18,7 +16,10 @@ import {
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
+  ElementNode,
   FORMAT_TEXT_COMMAND,
+  LexicalEditor,
+  RangeSelection,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from 'lexical';
@@ -71,7 +72,7 @@ function FloatingCharacterStylesEditor({
   isSuperscript: boolean;
   isUnderline: boolean;
 }): JSX.Element {
-  const popupCharStylesEditorRef = useRef<HTMLElement | null>(null);
+  const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
   const mouseDownRef = useRef(false);
 
   const insertLink = useCallback(() => {
@@ -95,6 +96,7 @@ function FloatingCharacterStylesEditor({
     const rootElement = editor.getRootElement();
     if (
       selection !== null &&
+      nativeSelection !== null &&
       !nativeSelection.isCollapsed &&
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
@@ -106,7 +108,7 @@ function FloatingCharacterStylesEditor({
       if (nativeSelection.anchorNode === rootElement) {
         let inner = rootElement;
         while (inner.firstElementChild != null) {
-          inner = inner.firstElementChild;
+          inner = inner.firstElementChild as HTMLElement;
         }
         rect = inner.getBoundingClientRect();
       } else {
@@ -240,7 +242,7 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   }
 }
 
-function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element {
+function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element | null {
   const [isText, setIsText] = useState(false);
   const [isLink, setIsLink] = useState(false);
   const [isBold, setIsBold] = useState(false);
@@ -258,11 +260,16 @@ function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element {
       const rootElement = editor.getRootElement();
 
       if (
-        !$isRangeSelection(selection) ||
-        rootElement === null ||
-        !rootElement.contains(nativeSelection.anchorNode)
+        nativeSelection !== null &&
+        (!$isRangeSelection(selection) ||
+          rootElement === null ||
+          !rootElement.contains(nativeSelection.anchorNode))
       ) {
         setIsText(false);
+        return;
+      }
+
+      if (!$isRangeSelection(selection)) {
         return;
       }
 
@@ -329,7 +336,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element {
   );
 }
 
-export default function CharacterStylesPopupPlugin(): JSX.Element {
+export default function CharacterStylesPopupPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   return useCharacterStylesPopup(editor);
 }

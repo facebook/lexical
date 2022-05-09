@@ -45,7 +45,7 @@ export class YouTubeNode extends DecoratorBlockNode<JSX.Element> {
     return new YouTubeNode(node.__id, node.__format, node.__key);
   }
 
-  constructor(id: string, format: ElementFormatType | null, key?: NodeKey) {
+  constructor(id: string, format?: ElementFormatType | null, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }
@@ -73,6 +73,8 @@ export function $createYouTubeNode(videoID: string): YouTubeNode {
   return new YouTubeNode(videoID);
 }
 
-export function $isYouTubeNode(node: LexicalNode | null): node is YouTubeNode {
+export function $isYouTubeNode(
+  node: YouTubeNode | LexicalNode | null | undefined,
+): node is YouTubeNode {
   return node instanceof YouTubeNode;
 }

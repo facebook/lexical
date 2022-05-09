@@ -38,7 +38,7 @@ export default function ImageResizer({
   onResizeStart: () => void;
   setShowCaption: (boolean) => void;
   showCaption: boolean;
-}): React.Node {
+}): JSX.Element {
   const buttonRef = useRef(null);
   const positioningRef = useRef<{
     currentHeight: 'inherit' | number;

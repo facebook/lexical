@@ -6,8 +6,6 @@
  *
  */
 
-import type {Provider} from '@lexical/yjs';
-
 import {WebsocketProvider} from 'y-websocket';
 import {Doc} from 'yjs';
 
@@ -21,7 +19,7 @@ const WEBSOCKET_ID = params.get('collabId') || '0';
 export function createWebsocketProvider(
   id: string,
   yjsDocMap: Map<string, Doc>,
-): Provider {
+): WebsocketProvider {
   let doc = yjsDocMap.get(id);
 
   if (doc === undefined) {

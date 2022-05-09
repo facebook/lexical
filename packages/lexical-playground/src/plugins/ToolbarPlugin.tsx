@@ -59,7 +59,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-// $FlowFixMe
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
 
@@ -106,7 +105,7 @@ const blockTypeToBlockName = {
   quote: 'Quote',
 };
 
-const CODE_LANGUAGE_OPTIONS = [
+const CODE_LANGUAGE_OPTIONS: [string, string][] = [
   ['', '- Select language -'],
   ['c', 'C'],
   ['clike', 'C-like'],
@@ -162,7 +161,7 @@ function positionEditorElement(editor, rect) {
 }
 
 function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
-  const editorRef = useRef<HTMLElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef(null);
   const mouseDownRef = useRef(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -202,7 +201,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
       if (nativeSelection.anchorNode === rootElement) {
         let inner = rootElement;
         while (inner.firstElementChild != null) {
-          inner = inner.firstElementChild;
+          inner = inner.firstElementChild as HTMLElement;
         }
         rect = inner.getBoundingClientRect();
       } else {
@@ -350,7 +349,7 @@ function InsertImageUploadedDialogBody({
 
   const isDisabled = src === '';
 
-  const loadImage = (files: File[]) => {
+  const loadImage = (files: FileList) => {
     const reader = new FileReader();
     reader.onload = function () {
       if (typeof reader.result === 'string') {
@@ -627,25 +626,25 @@ function BlockFormatDropDown({
 
   const formatBulletList = () => {
     if (blockType !== 'bullet') {
-      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
     } else {
-      editor.dispatchCommand(REMOVE_LIST_COMMAND);
+      editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
     }
   };
 
   const formatCheckList = () => {
     if (blockType !== 'check') {
-      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND);
+      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
     } else {
-      editor.dispatchCommand(REMOVE_LIST_COMMAND);
+      editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
     }
   };
 
   const formatNumberedList = () => {
     if (blockType !== 'number') {
-      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND);
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
     } else {
-      editor.dispatchCommand(REMOVE_LIST_COMMAND);
+      editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
     }
   };
 
@@ -748,7 +747,7 @@ function Select({
 }: {
   className: string;
   onChange: (event: {target: {value: string}}) => void;
-  options: Array<[string, string]>;
+  options: [string, string][];
   value: string;
 }): JSX.Element {
   return (
@@ -816,7 +815,10 @@ export default function ToolbarPlugin(): JSX.Element {
       if (elementDOM !== null) {
         setSelectedElementKey(elementKey);
         if ($isListNode(element)) {
-          const parentList = $getNearestNodeOfType(anchorNode, ListNode);
+          const parentList = $getNearestNodeOfType<ListNode>(
+            anchorNode,
+            ListNode,
+          );
           const type = parentList
             ? parentList.getListType()
             : element.getListType();
@@ -864,7 +866,7 @@ export default function ToolbarPlugin(): JSX.Element {
           updateToolbar();
         });
       }),
-      activeEditor.registerCommand(
+      activeEditor.registerCommand<boolean>(
         CAN_UNDO_COMMAND,
         (payload) => {
           setCanUndo(payload);
@@ -872,7 +874,7 @@ export default function ToolbarPlugin(): JSX.Element {
         },
         COMMAND_PRIORITY_CRITICAL,
       ),
-      activeEditor.registerCommand(
+      activeEditor.registerCommand<boolean>(
         CAN_REDO_COMMAND,
         (payload) => {
           setCanRedo(payload);
@@ -939,7 +941,7 @@ export default function ToolbarPlugin(): JSX.Element {
       <button
         disabled={!canUndo}
         onClick={() => {
-          activeEditor.dispatchCommand(UNDO_COMMAND);
+          activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
         }}
         title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
         className="toolbar-item spaced"
@@ -949,7 +951,7 @@ export default function ToolbarPlugin(): JSX.Element {
       <button
         disabled={!canRedo}
         onClick={() => {
-          activeEditor.dispatchCommand(REDO_COMMAND);
+          activeEditor.dispatchCommand(REDO_COMMAND, undefined);
         }}
         title={IS_APPLE ? 'Redo (⌘Y)' : 'Undo (Ctrl+Y)'}
         className="toolbar-item"
@@ -1059,7 +1061,7 @@ export default function ToolbarPlugin(): JSX.Element {
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
             aria-label="Insert link"
-            type="Insert link">
+            title="Insert link">
             <i className="format link" />
           </button>
           {isLink &&
@@ -1123,7 +1125,10 @@ export default function ToolbarPlugin(): JSX.Element {
             buttonIconClassName="icon plus">
             <button
               onClick={() => {
-                activeEditor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND);
+                activeEditor.dispatchCommand(
+                  INSERT_HORIZONTAL_RULE_COMMAND,
+                  undefined,
+                );
               }}
               className="item">
               <i className="icon horizontal-rule" />
@@ -1155,7 +1160,10 @@ export default function ToolbarPlugin(): JSX.Element {
             </button>
             <button
               onClick={() => {
-                activeEditor.dispatchCommand(INSERT_EXCALIDRAW_COMMAND);
+                activeEditor.dispatchCommand(
+                  INSERT_EXCALIDRAW_COMMAND,
+                  undefined,
+                );
               }}
               className="item">
               <i className="icon diagram-2" />
@@ -1282,7 +1290,7 @@ export default function ToolbarPlugin(): JSX.Element {
         <Divider />
         <button
           onClick={() => {
-            activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
+            activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }}
           className="item">
           <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
@@ -1290,7 +1298,7 @@ export default function ToolbarPlugin(): JSX.Element {
         </button>
         <button
           onClick={() => {
-            activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND);
+            activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
           }}
           className="item">
           <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />

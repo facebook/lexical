@@ -21,10 +21,13 @@ import {useEffect} from 'react';
 
 import {$createEquationNode, EquationNode} from '../nodes/EquationNode';
 
-export const INSERT_EQUATION_COMMAND: LexicalCommand<{
+type CommandPayload = {
   equation: string;
   inline: boolean;
-}> = createCommand();
+};
+
+export const INSERT_EQUATION_COMMAND: LexicalCommand<CommandPayload> =
+  createCommand();
 
 export default function EquationsPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
@@ -36,7 +39,7 @@ export default function EquationsPlugin(): JSX.Element | null {
       );
     }
 
-    return editor.registerCommand(
+    return editor.registerCommand<CommandPayload>(
       INSERT_EQUATION_COMMAND,
       (payload) => {
         const {equation, inline} = payload;

@@ -618,6 +618,7 @@ export declare class TextNode extends LexicalNode {
   canInsertTextAfter(): boolean;
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
+  isTextEntity(): boolean;
 }
 export function $createTextNode(text?: string): TextNode;
 export function $isTextNode(

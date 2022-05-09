@@ -14,7 +14,7 @@ export default function Placeholder({
   children,
   className,
 }: {
-  children: string;
+  children: JSX.Element | string | (JSX.Element | string)[];
   className?: string;
 }): JSX.Element {
   return <div className={className || 'Placeholder__root'}>{children}</div>;

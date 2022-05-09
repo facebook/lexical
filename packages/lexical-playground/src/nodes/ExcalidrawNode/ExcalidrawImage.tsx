@@ -6,7 +6,6 @@
  *
  */
 
-// $FlowFixMe: node modules are ignored by flow
 import {exportToSvg} from '@excalidraw/excalidraw';
 import {
   ExcalidrawElement,

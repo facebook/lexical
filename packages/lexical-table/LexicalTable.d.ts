@@ -18,9 +18,9 @@ import type {
   TextFormatType,
   LexicalCommand,
 } from 'lexical';
-import {TableSelection} from './src/TableSelection';
+import {$Values} from 'utility-types';
 
-export enum TableCellHeaderState {
+export enum TableCellHeaderStates {
   NO_STATUS = 0,
   ROW = 1,
   COLUMN = 2,
@@ -31,25 +31,16 @@ export enum TableCellHeaderState {
  * LexicalTableCellNode
  */
 
-export const TableCellHeaderStates = {
-  NO_STATUS: 0,
-  ROW: 1,
-  COLUMN: 2,
-  BOTH: 3,
-};
-
-export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
-
 export declare class TableCellNode extends ElementNode {
   static getType(): string;
   static clone(node: TableCellNode): TableCellNode;
   constructor(
-    headerState?: TableCellHeaderState,
+    headerState?: TableCellHeaderStates,
     colSpan?: number,
-    width?: ?number,
+    width?: number | null | undefined,
     key?: NodeKey,
   );
-  __headerState: TableCellHeaderState;
+  __headerState: TableCellHeaderStates;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
   insertNewAfter(
@@ -57,18 +48,22 @@ export declare class TableCellNode extends ElementNode {
   ): null | ParagraphNode | TableCellNode;
   collapseAtStart(): true;
   getTag(): string;
-  setHeaderState(headerState: TableCellHeaderState): TableCellHeaderState;
-  getHeaderState(): TableCellHeaderState;
-  toggleHeaderState(headerState: TableCellHeaderState): TableCellNode;
+  setHeaderState(headerState: TableCellHeaderStates): TableCellHeaderStates;
+  getHeaderState(): TableCellHeaderStates;
+  toggleHeaderState(headerState: TableCellHeaderStates): TableCellNode;
   hasHeader(): boolean;
-  setWidth(width: number): ?number;
-  getWidth(): ?number;
-  toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
+  setWidth(width: number): number | null | undefined;
+  getWidth(): number | null | undefined;
+  toggleHeaderStyle(headerState: TableCellHeaderStates): TableCellNode;
   updateDOM(prevNode: TableCellNode): boolean;
   collapseAtStart(): true;
   canBeEmpty(): false;
 }
-export declare function $createTableCellNode(): TableCellNode;
+declare function $createTableCellNode(
+  headerState: TableCellHeaderStates,
+  colSpan?: number,
+  width?: number | null | undefined,
+): TableCellNode;
 export declare function $isTableCellNode(
   node?: LexicalNode,
 ): node is TableCellNode;
@@ -86,7 +81,7 @@ export declare class TableNode extends ElementNode {
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   collapseAtStart(): true;
   getCordsFromCellNode(tableCellNode: TableCellNode): {x: number; y: number};
-  getCellFromCords(x: number, y: number, grid: Grid): ?Cell;
+  getCellFromCords(x: number, y: number, grid: Grid): Cell | null | undefined;
   getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell;
   getCellNodeFromCords(x: number, y: number): TableCellNode | null;
   getCellNodeFromCordsOrThrow(x: number, y: number): TableCellNode;
@@ -104,14 +99,14 @@ declare function $isTableNode(node?: LexicalNode): node is TableNode;
 declare class TableRowNode extends ElementNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
-  constructor(key?: NodeKey, height?: ?number);
+  constructor(key?: NodeKey, height?: number | null | undefined);
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
   ): null | ParagraphNode | TableRowNode;
-  setHeight(height: number): ?number;
-  getHeight(): ?number;
+  setHeight(height: number): number | null | undefined;
+  getHeight(): number | null | undefined;
   collapseAtStart(): true;
 }
 declare function $createTableRowNode(): TableRowNode;

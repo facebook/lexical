@@ -110,7 +110,10 @@ export default function ImageResizer({
     }
   };
 
-  const handlePointerDown = (event: PointerEvent, direction: number) => {
+  const handlePointerDown = (
+    event: React.PointerEvent<HTMLDivElement>,
+    direction: number,
+  ) => {
     const image = imageRef.current;
     if (image !== null) {
       const {width, height} = image.getBoundingClientRect();
@@ -188,7 +191,7 @@ export default function ImageResizer({
       }
     }
   };
-  const handlePointerUp = (_event: PointerEvent) => {
+  const handlePointerUp = () => {
     const image = imageRef.current;
     const positioning = positioningRef.current;
     if (image !== null && positioning.isResizing) {

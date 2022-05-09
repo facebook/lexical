@@ -30,7 +30,7 @@ export default function TwitterPlugin(): JSX.Element {
       throw new Error('TwitterPlugin: TweetNode not registered on editor');
     }
 
-    return editor.registerCommand(
+    return editor.registerCommand<string>(
       INSERT_TWEET_COMMAND,
       (payload) => {
         const selection = $getSelection();

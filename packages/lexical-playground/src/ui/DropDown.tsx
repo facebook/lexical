@@ -8,7 +8,6 @@
 
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
-// $FlowFixMe
 import {createPortal} from 'react-dom';
 
 export default function DropDown({
@@ -22,10 +21,10 @@ export default function DropDown({
   buttonClassName: string;
   buttonIconClassName?: string;
   buttonLabel?: string;
-  children: JSX.Element;
+  children: JSX.Element | string | (JSX.Element | string)[];
 }): JSX.Element {
-  const dropDownRef = useRef<HTMLElement | null>(null);
-  const buttonRef = useRef<HTMLElement | null>(null);
+  const dropDownRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [showDropDown, setShowDropDown] = useState(false);
 
   useEffect(() => {
@@ -47,8 +46,8 @@ export default function DropDown({
 
     if (button !== null && showDropDown) {
       const handle = (event: MouseEvent) => {
-        const target: HTMLElement = event.target;
-        if (!button.contains(target)) {
+        const target = event.target;
+        if (!button.contains(target as Node)) {
           setShowDropDown(false);
         }
       };

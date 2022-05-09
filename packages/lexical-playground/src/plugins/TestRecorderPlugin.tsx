@@ -117,7 +117,7 @@ function getPathFromNodeToEditor(node: Node, rootElement) {
   while (currentNode !== rootElement) {
     path.unshift(
       Array.from(currentNode?.parentNode?.childNodes ?? []).indexOf(
-        currentNode,
+        currentNode as ChildNode,
       ),
     );
     currentNode = currentNode?.parentNode;
@@ -136,7 +136,13 @@ const keyPresses = new Set([
   'ArrowDown',
 ]);
 
-type Steps = Array<unknown>;
+type Step = {
+  value: number;
+  count: number;
+  name: string;
+};
+
+type Steps = Step[];
 
 function useTestRecorder(editor: LexicalEditor): [JSX.Element, JSX.Element] {
   const [steps, setSteps] = useState<Steps>([]);

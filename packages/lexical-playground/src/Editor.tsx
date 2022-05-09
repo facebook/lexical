@@ -58,6 +58,7 @@ import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
+  // @ts-ignore
   window.parent != null && window.parent.frames.right === window;
 
 function prepopulatedRichText() {

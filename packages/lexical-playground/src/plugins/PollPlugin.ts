@@ -29,13 +29,13 @@ export default function PollPlugin(): JSX.Element {
       throw new Error('PollPlugin: PollNode not registered on editor');
     }
 
-    return editor.registerCommand(
+    return editor.registerCommand<string>(
       INSERT_POLL_COMMAND,
       (payload) => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          const question: string = payload;
+          const question = payload;
           const pollNode = $createPollNode(question);
 
           if ($isRootNode(selection.anchor.getNode())) {

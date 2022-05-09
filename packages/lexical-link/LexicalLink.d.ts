@@ -39,13 +39,17 @@ export declare class LinkNode extends ElementNode {
 }
 export function convertAnchorElement(domNode: Node): DOMConversionOutput;
 export function $createLinkNode(url: string): LinkNode;
-export function $isLinkNode(node: ?LexicalNode): node is LinkNode;
+export function $isLinkNode(
+  node: LinkNode | LexicalNode | null | undefined,
+): node is LinkNode;
 export declare class AutoLinkNode extends LinkNode {
   static getType(): string;
   static clone(node: AutoLinkNode): AutoLinkNode;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
 }
 export function $createAutoLinkNode(url: string): AutoLinkNode;
-export function $isAutoLinkNode(node: ?LexicalNode): node is AutoLinkNode;
+export function $isAutoLinkNode(
+  node: LinkNode | LexicalNode | null | undefined,
+): node is AutoLinkNode;
 
 export var TOGGLE_LINK_COMMAND: LexicalCommand<string | null>;

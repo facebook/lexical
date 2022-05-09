@@ -28,7 +28,7 @@ const Context: React.Context<SettingsContextShape> = createContext({
 export const SettingsContext = ({
   children,
 }: {
-  children: JSX.Element | JSX.Element[];
+  children: JSX.Element | string | (JSX.Element | string)[];
 }): JSX.Element => {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const setOption = useCallback((setting: SettingName, value: boolean) => {

@@ -6,14 +6,11 @@
  *
  */
 
-// $FlowFixMe: node modules are ignored by flow
 import './ExcalidrawModal.css';
 
-// $FlowFixMe: Flow doesn't have types for Excalidraw
 import Excalidraw from '@excalidraw/excalidraw';
 import * as React from 'react';
 import {ReactPortal, useEffect, useRef, useState} from 'react';
-// $FlowFixMe: Flow doesn't see react-dom module
 import {createPortal} from 'react-dom';
 
 import Button from '../../ui/Button';

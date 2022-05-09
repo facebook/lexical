@@ -30,14 +30,7 @@ import {
   $setSelection,
 } from 'lexical';
 import * as React from 'react';
-import {
-  ReactPortal,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 type TableCellActionMenuProps = Readonly<{
@@ -532,14 +525,5 @@ function TableCellActionMenuContainer(): JSX.Element {
 }
 
 export default function TableActionMenuPlugin(): ReactPortal {
-  const [editor] = useLexicalComposerContext();
-
-  return useMemo(
-    () =>
-      createPortal(
-        <TableCellActionMenuContainer editor={editor} />,
-        document.body,
-      ),
-    [editor],
-  );
+  return createPortal(<TableCellActionMenuContainer />, document.body);
 }

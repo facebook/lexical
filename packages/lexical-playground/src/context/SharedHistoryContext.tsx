@@ -23,7 +23,7 @@ const Context: React.Context<ContextShape> = createContext({
 export const SharedHistoryContext = ({
   children,
 }: {
-  children: JSX.Element | JSX.Element[];
+  children: JSX.Element | string | (JSX.Element | string)[];
 }): JSX.Element => {
   const historyContext = useMemo(
     () => ({historyState: createEmptyHistoryState()}),

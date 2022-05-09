@@ -35,7 +35,7 @@ export type ElementTransformer = {
 };
 
 export type TextFormatTransformer = {
-  format: Array<TextFormatType>;
+  format: ReadonlyArray<TextFormatType>;
   tag: string;
   type: 'text-format';
 };

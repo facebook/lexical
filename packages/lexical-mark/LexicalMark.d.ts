@@ -10,7 +10,7 @@ import {ElementNode, LexicalNode} from 'lexical';
 export declare class MarkNode extends ElementNode {
   __ids: Array<string>;
   clone(node: MarkNode): MarkNode;
-  constructor(ids: Array<string>, key?: NodeKey): void;
+  constructor(ids: Array<string>, key?: NodeKey);
   hasID(id: string): boolean;
   getIDs(): Array<string>;
   addID(id: string): void;

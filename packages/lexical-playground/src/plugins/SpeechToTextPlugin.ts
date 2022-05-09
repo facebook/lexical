@@ -33,10 +33,10 @@ const VOICE_COMMANDS: Readonly<
     selection.insertParagraph();
   },
   redo: ({editor}) => {
-    editor.dispatchCommand(REDO_COMMAND);
+    editor.dispatchCommand(REDO_COMMAND, undefined);
   },
   undo: ({editor}) => {
-    editor.dispatchCommand(UNDO_COMMAND);
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
   },
 };
 
@@ -47,6 +47,7 @@ function SpeechToTextPlugin(): null {
   const [editor] = useLexicalComposerContext();
   const [isEnabled, setIsEnabled] = useState<boolean>(false);
   const SpeechRecognition =
+    // @ts-ignore
     window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = useRef<typeof SpeechRecognition | null>(null);
   const report = useReport();

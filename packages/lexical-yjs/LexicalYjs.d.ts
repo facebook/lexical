@@ -8,7 +8,6 @@
 import type {
   Doc,
   RelativePosition,
-  TextOperation,
   UndoManager,
   XmlElement,
   XmlText,
@@ -26,7 +25,6 @@ import type {
   TextNode,
   IntentionallyMarkedAsDirtyElement,
 } from 'lexical';
-// @ts-expect-error: todo
 export type YjsEvent = Record<string, any>;
 export type UserState = {
   anchorPos: null | RelativePosition;
@@ -121,30 +119,35 @@ export declare class CollabDecoratorNode {
   destroy(binding: Binding): void;
 }
 export declare class CollabLineBreakNode {
-  _map: YMap;
+  _map: YMap<unknown>;
   _key: NodeKey;
   _parent: CollabElementNode;
   _type: 'linebreak';
-  constructor(map: YMap, parent: CollabElementNode);
+  constructor(map: YMap<unknown>, parent: CollabElementNode);
   getNode(): null | LineBreakNode;
   getKey(): NodeKey;
-  getSharedType(): YMap;
+  getSharedType(): YMap<unknown>;
   getType(): string;
   getSize(): number;
   getOffset(): number;
   destroy(binding: Binding): void;
 }
 export declare class CollabTextNode {
-  _map: YMap;
+  _map: YMap<unknown>;
   _key: NodeKey;
   _parent: CollabElementNode;
   _text: string;
   _type: string;
   _normalized: boolean;
-  constructor(map: YMap, text: string, parent: CollabElementNode, type: string);
+  constructor(
+    map: YMap<unknown>,
+    text: string,
+    parent: CollabElementNode,
+    type: string,
+  );
   getPrevNode(nodeMap: null | NodeMap): null | TextNode;
   getNode(): null | TextNode;
-  getSharedType(): YMap;
+  getSharedType(): YMap<unknown>;
   getType(): string;
   getKey(): NodeKey;
   getSize(): number;
@@ -185,7 +188,7 @@ export declare class CollabElementNode {
     binding: Binding,
     keysChanged: null | Set<string>,
   ): void;
-  applyChildrenYjsDelta(binding: Binding, deltas: Array<TextOperation>): void;
+  applyChildrenYjsDelta(binding: Binding, deltas: Array<unknown>): void;
   syncChildrenFromYjs(binding: Binding): void;
   syncPropertiesFromLexical(
     binding: Binding,

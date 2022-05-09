@@ -39,7 +39,6 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
-// $FlowFixMe: Flow doesn't see react-dom module
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
@@ -49,8 +48,6 @@ import CommentEditorTheme from '../themes/CommentEditorTheme';
 import Button from '../ui/Button';
 import ContentEditable from '../ui/ContentEditable.jsx';
 import Placeholder from '../ui/Placeholder.jsx';
-
-type RtfObject = Record<string, unknown>;
 
 function AddCommentBox({
   anchorKey,
@@ -385,7 +382,7 @@ function CommentsPanelFooter({
   footerRef,
   submitAddComment,
 }: {
-  footerRef: {current: null | HTMLElement};
+  footerRef: {current: null | HTMLDivElement};
   submitAddComment: (
     commentOrThread: Comment | Thread,
     isInlineComment: boolean,
@@ -448,7 +445,7 @@ function CommentsPanelListComment({
     // eslint-disable-next-line no-shadow
     thread?: Thread,
   ) => void;
-  rtf: RtfObject;
+  rtf: Intl.RelativeTimeFormat;
   thread?: Thread;
 }): JSX.Element {
   const seconds = Math.round((comment.timeStamp - performance.now()) / 1000);
@@ -496,7 +493,7 @@ function CommentsPanelList({
   activeIDs: Array<string>;
   comments: Comments;
   deleteComment: (commentOrThread: Comment, thread?: Thread) => void;
-  listRef: {current: null | HTMLElement};
+  listRef: {current: null | HTMLUListElement};
   markNodeMap: Map<string, Set<NodeKey>>;
   submitAddComment: (
     commentOrThread: Comment | Thread,
@@ -506,9 +503,8 @@ function CommentsPanelList({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [counter, setCounter] = useState(0);
-  const rtf: RtfObject = useMemo(
+  const rtf = useMemo(
     () =>
-      // $FlowFixMe: Flow hasn't got types yet
       new Intl.RelativeTimeFormat('en', {
         localeMatcher: 'best fit',
         numeric: 'auto',
@@ -545,7 +541,7 @@ function CommentsPanelList({
               editor.update(
                 () => {
                   const markNodeKey = Array.from(markNodeKeys)[0];
-                  const markNode = $getNodeByKey(markNodeKey);
+                  const markNode = $getNodeByKey<MarkNode>(markNodeKey);
                   if ($isMarkNode(markNode)) {
                     markNode.selectStart();
                   }
@@ -554,7 +550,7 @@ function CommentsPanelList({
                   onUpdate() {
                     // Restore selection to the previous element
                     if (activeElement !== null) {
-                      activeElement.focus();
+                      (activeElement as HTMLElement).focus();
                     }
                   },
                 },

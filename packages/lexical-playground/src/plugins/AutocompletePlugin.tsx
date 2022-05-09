@@ -70,7 +70,7 @@ function useTypeahead(editor: LexicalEditor): void {
                 let anchorNode = anchor.getNode();
                 let anchorNodeOffset = anchor.offset;
                 if (anchorNode.getKey() === currentTypeaheadNode.getKey()) {
-                  anchorNode = anchorNode.getPreviousSibling();
+                  anchorNode = anchorNode.getPreviousSibling() as TextNode;
                   if ($isTextNode(anchorNode)) {
                     anchorNodeOffset = anchorNode.getTextContent().length;
                   }
@@ -78,7 +78,7 @@ function useTypeahead(editor: LexicalEditor): void {
                 let focusNode = focus.getNode();
                 let focusNodeOffset = focus.offset;
                 if (focusNode.getKey() === currentTypeaheadNode.getKey()) {
-                  focusNode = focusNode.getPreviousSibling();
+                  focusNode = focusNode.getPreviousSibling() as TextNode;
                   if ($isTextNode(focusNode)) {
                     focusNodeOffset = focusNode.getTextContent().length;
                   }
@@ -269,7 +269,7 @@ class TypeaheadServer {
   ): {cancel: () => void; promise: () => Promise<string | null>} => {
     let isCancelled = false;
 
-    const promise = () =>
+    const promise = (): Promise<string | null> =>
       new Promise((resolve, reject) => {
         setTimeout(() => {
           const response = this.DATABASE[text] ?? null;

@@ -57,8 +57,14 @@ import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
 
+interface customWindow extends Window {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parent: any;
+}
+
+declare const window: customWindow;
+
 const skipCollaborationInit =
-  // @ts-ignore
   window.parent != null && window.parent.frames.right === window;
 
 function prepopulatedRichText() {

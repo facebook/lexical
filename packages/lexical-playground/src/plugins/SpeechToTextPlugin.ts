@@ -21,6 +21,15 @@ import {useEffect, useRef, useState} from 'react';
 
 import useReport from '../hooks/useReport';
 
+interface customWindow extends Window {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webkitSpeechRecognition?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  SpeechRecognition?: any;
+}
+
+declare const window: customWindow;
+
 export const SPEECH_TO_TEXT_COMMAND: LexicalCommand<boolean> = createCommand();
 
 const VOICE_COMMANDS: Readonly<
@@ -47,7 +56,6 @@ function SpeechToTextPlugin(): null {
   const [editor] = useLexicalComposerContext();
   const [isEnabled, setIsEnabled] = useState<boolean>(false);
   const SpeechRecognition =
-    // @ts-ignore
     window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = useRef<typeof SpeechRecognition | null>(null);
   const report = useReport();

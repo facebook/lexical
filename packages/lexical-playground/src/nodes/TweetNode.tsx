@@ -13,6 +13,13 @@ import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
+interface customWindow extends Window {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  twttr?: any;
+}
+
+declare const window: customWindow;
+
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
 const getHasScriptCached = () =>
@@ -42,7 +49,6 @@ function TweetComponent({
 
   const createTweet = useCallback(async () => {
     try {
-      // @ts-ignore
       await window.twttr.widgets.createTweet(tweetID, containerRef.current);
 
       setIsLoading(false);
@@ -67,7 +73,6 @@ function TweetComponent({
         script.async = true;
         document.body?.appendChild(script);
         script.onload = createTweet;
-        // @ts-ignore
         script.onerror = onError;
       } else {
         createTweet();

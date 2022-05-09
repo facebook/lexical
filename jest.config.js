@@ -68,6 +68,8 @@ module.exports = {
           '<rootDir>/packages/lexical-rich-text/src/index.js',
         '^@lexical/selection$':
           '<rootDir>/packages/lexical-selection/src/index.js',
+        '^@lexical/serialize$':
+          '<rootDir>/packages/lexical-serialize/src/index.js',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.js',
         '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.js',

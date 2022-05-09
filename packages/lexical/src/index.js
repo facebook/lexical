@@ -44,16 +44,30 @@ import {$isGridNode, GridNode} from './nodes/LexicalGridNode';
 import {$isGridRowNode, GridRowNode} from './nodes/LexicalGridRowNode';
 import {
   $createLineBreakNode,
+  $deserializeLineBreakNode,
   $isLineBreakNode,
+  $serializeLineBreakNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
 import {
   $createParagraphNode,
+  $deserializeParagraphNode,
   $isParagraphNode,
+  $serializeParagraphNode,
   ParagraphNode,
 } from './nodes/LexicalParagraphNode';
-import {$isRootNode} from './nodes/LexicalRootNode';
-import {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
+import {
+  $deserializeRootNode,
+  $isRootNode,
+  $serializeRootNode,
+} from './nodes/LexicalRootNode';
+import {
+  $createTextNode,
+  $deserializeTextNode,
+  $isTextNode,
+  $serializeTextNode,
+  TextNode,
+} from './nodes/LexicalTextNode';
 
 export {
   $createGridSelection,
@@ -63,6 +77,10 @@ export {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $deserializeLineBreakNode,
+  $deserializeParagraphNode,
+  $deserializeRootNode,
+  $deserializeTextNode,
   $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
@@ -83,6 +101,10 @@ export {
   $isRootNode,
   $isTextNode,
   $nodesOfType,
+  $serializeLineBreakNode,
+  $serializeParagraphNode,
+  $serializeRootNode,
+  $serializeTextNode,
   $setCompositionKey,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,

@@ -15,6 +15,10 @@ import type {
 
 import {LexicalNode} from '../LexicalNode';
 
+export type SerializedLineBreakNode = {
+  type: 'linebreak',
+};
+
 export class LineBreakNode extends LexicalNode {
   static getType(): string {
     return 'linebreak';
@@ -60,4 +64,18 @@ export function $createLineBreakNode(): LineBreakNode {
 
 export function $isLineBreakNode(node: ?LexicalNode): boolean %checks {
   return node instanceof LineBreakNode;
+}
+
+export function $serializeLineBreakNode(
+  node: LineBreakNode,
+): SerializedLineBreakNode {
+  return {
+    type: 'linebreak',
+  };
+}
+
+export function $deserializeLineBreakNode(
+  json: SerializedLineBreakNode,
+): LineBreakNode {
+  return $createLineBreakNode();
 }

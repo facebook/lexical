@@ -93,6 +93,10 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-mark/src/index.js'),
   },
   {
+    find: '@lexical/serialize',
+    replacement: path.resolve('../lexical-serialize/src/index.js'),
+  },
+  {
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
   },

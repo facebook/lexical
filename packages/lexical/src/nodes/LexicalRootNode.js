@@ -17,6 +17,14 @@ import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 
+export type SerializedRootNode<SerializedNode> = {
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: number,
+  indent: number,
+  type: 'root',
+};
+
 export class RootNode extends ElementNode {
   __cachedText: null | string;
 
@@ -112,4 +120,26 @@ export function $createRootNode(): RootNode {
 
 export function $isRootNode(node: ?LexicalNode): boolean %checks {
   return node instanceof RootNode;
+}
+
+export function $serializeRootNode<SerializedNode>(
+  node: RootNode,
+): SerializedRootNode<SerializedNode> {
+  return {
+    children: [],
+    direction: node.getDirection(),
+    format: node.getFormat(),
+    indent: node.getIndent(),
+    type: 'root',
+  };
+}
+
+export function $deserializeRootNode<SerializedNode>(
+  json: SerializedRootNode<SerializedNode>,
+): RootNode {
+  const rootNode = $createRootNode();
+  rootNode.__format = json.format;
+  rootNode.setIndent(json.indent);
+  rootNode.setDirection(json.direction);
+  return rootNode;
 }

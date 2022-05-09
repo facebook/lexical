@@ -26,6 +26,7 @@ const packages = {
   '@lexical/react': 'lexical-react',
   '@lexical/rich-text': 'lexical-rich-text',
   '@lexical/selection': 'lexical-selection',
+  '@lexical/serialize': 'lexical-serialize',
   '@lexical/table': 'lexical-table',
   '@lexical/text': 'lexical-text',
   '@lexical/utils': 'lexical-utils',

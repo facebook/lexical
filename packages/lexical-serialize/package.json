@@ -1,0 +1,24 @@
+{
+  "name": "@lexical/serialize",
+  "description": "This package contains serialization logic and helpers for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "list",
+    "serialize",
+    "export",
+    "import"
+  ],
+  "license": "MIT",
+  "version": "0.2.5",
+  "main": "LexicalSerialize.js",
+  "peerDependencies": {
+    "lexical": "0.2.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-serialize"
+  }
+}

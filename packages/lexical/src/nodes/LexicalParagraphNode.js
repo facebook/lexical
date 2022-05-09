@@ -22,6 +22,14 @@ import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
+export type SerializedParagraphNode<SerializedNode> = {
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: number,
+  indent: number,
+  type: 'paragraph',
+};
+
 export class ParagraphNode extends ElementNode {
   static getType(): string {
     return 'paragraph';
@@ -117,4 +125,26 @@ export function $createParagraphNode(): ParagraphNode {
 
 export function $isParagraphNode(node: ?LexicalNode): boolean %checks {
   return node instanceof ParagraphNode;
+}
+
+export function $serializeParagraphNode<SerializedNode>(
+  node: ParagraphNode,
+): SerializedParagraphNode<SerializedNode> {
+  return {
+    children: [],
+    direction: node.getDirection(),
+    format: node.getFormat(),
+    indent: node.getIndent(),
+    type: 'paragraph',
+  };
+}
+
+export function $deserializeParagraphNode<SerializedNode>(
+  json: SerializedParagraphNode<SerializedNode>,
+): ParagraphNode {
+  const rootNode = $createParagraphNode();
+  rootNode.__format = json.format;
+  rootNode.setIndent(json.indent);
+  rootNode.setDirection(json.direction);
+  return rootNode;
 }

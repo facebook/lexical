@@ -842,3 +842,64 @@ export type EventHandler = (
  * LexicalVersion
  */
 declare export var VERSION: string;
+
+// Serialize/Deserialize
+
+export type SerializedRootNode<SerializedNode> = {
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: number,
+  indent: number,
+  type: 'root',
+};
+
+export type SerializedLineBreakNode = {
+  type: 'linebreak',
+};
+
+export type SerializedParagraphNode<SerializedNode> = {
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: number,
+  indent: number,
+  type: 'paragraph',
+};
+
+export type SerializedTextNode = {
+  content: string,
+  detail: number,
+  format: number,
+  mode: 0 | 1 | 2 | 3,
+  style: string,
+  type: 'text',
+};
+
+declare export function $serializeLineBreakNode(
+  node: LineBreakNode,
+): SerializedLineBreakNode;
+
+declare export function $deserializeLineBreakNode(
+  json: SerializedLineBreakNode,
+): LineBreakNode;
+
+declare export function $serializeParagraphNode<SerializedNode>(
+  node: ParagraphNode,
+): SerializedParagraphNode<SerializedNode>;
+
+declare export function $deserializeParagraphNode<SerializedNode>(
+  json: SerializedParagraphNode<SerializedNode>,
+): ParagraphNode;
+
+declare export function $serializeTextNode(node: TextNode): SerializedTextNode;
+
+declare export function $deserializeTextNode(
+  json: SerializedTextNode,
+): TextNode;
+
+declare export function $serializeRootNode<SerializedNode>(
+  node: RootNode,
+): SerializedRootNode<SerializedNode>;
+
+declare export function $deserializeRootNode<SerializedNode>(
+  json: SerializedRootNode<SerializedNode>,
+): RootNode;

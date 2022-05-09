@@ -61,6 +61,7 @@ const wwwMappings = {
   '@lexical/plain-text': 'LexicalPlainText',
   '@lexical/rich-text': 'LexicalRichText',
   '@lexical/selection': 'LexicalSelection',
+  '@lexical/serialize': 'LexicalSerialize',
   '@lexical/table': 'LexicalTable',
   '@lexical/text': 'LexicalText',
   '@lexical/utils': 'LexicalUtils',
@@ -111,6 +112,7 @@ const externals = [
   '@lexical/hashtag',
   '@lexical/history',
   '@lexical/selection',
+  '@lexical/serialize',
   '@lexical/text',
   '@lexical/offset',
   '@lexical/utils',
@@ -514,6 +516,17 @@ const packages = [
     name: 'Lexical Mark',
     outputPath: './packages/lexical-mark/dist/',
     sourcePath: './packages/lexical-mark/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalSerialize',
+        sourceFileName: 'index.js',
+      },
+    ],
+    name: 'Lexical Serialize',
+    outputPath: './packages/lexical-serialize/dist/',
+    sourcePath: './packages/lexical-serialize/src/',
   },
   {
     modules: lexicalShared.map((module) => ({

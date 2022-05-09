@@ -18,7 +18,8 @@ for package in  'lexical' \
                 'lexical-link' \
                 'lexical-text' \
                 'lexical-markdown' \
-                'lexical-mark'
+                'lexical-mark' \
+                'lexical-serialize'
 do
   gen-flow-files "./packages/${package}/src" --out-dir "./packages/${package}/dist"
 done

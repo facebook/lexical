@@ -64,6 +64,12 @@ const config = {
         contextualSearch: true,
         indexName: 'lexical',
       },
+      docs: {
+        sidebar: {
+          autoCollapseCategories: true,
+          hideable: true,
+        },
+      },
       footer: {
         copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,
         links: [

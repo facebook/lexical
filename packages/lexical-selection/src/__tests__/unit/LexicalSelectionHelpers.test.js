@@ -19,12 +19,12 @@ import {
   $getSelection,
   TextNode,
 } from 'lexical';
-
 import {
   $createTestElementNode,
   $createTestExcludeFromCopyElementNode,
   createTestEditor,
-} from '../../../../lexical/src/__tests__/utils';
+} from 'lexical/src/__tests__/utils';
+
 import {setAnchorPoint, setFocusPoint} from '../utils';
 
 // No idea why we suddenly need to do this, but it fixes the tests

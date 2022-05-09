@@ -15,8 +15,7 @@ import {
   $isRangeSelection,
   EditorConfig,
 } from 'lexical';
-
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   theme: {

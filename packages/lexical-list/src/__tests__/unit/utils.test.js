@@ -8,8 +8,8 @@
 
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {$createParagraphNode, $getRoot} from 'lexical';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {$getListDepth, $getTopListNode, $isLastItemInList} from '../../utils';
 
 // No idea why we suddenly need to do this, but it fixes the tests

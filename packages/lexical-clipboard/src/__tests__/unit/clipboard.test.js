@@ -19,8 +19,8 @@ import {
   $getSelection,
   $setSelection,
 } from 'lexical';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {
   $cloneSelectedContent,
   $convertSelectedContentToHtml,

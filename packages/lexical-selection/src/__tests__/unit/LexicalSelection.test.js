@@ -20,16 +20,16 @@ import {
   $getSelection,
   Selection,
 } from 'lexical';
-import React from 'react';
-import {createRoot} from 'react-dom/client';
-import ReactTestUtils from 'react-dom/test-utils';
-
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
   TestComposer,
-} from '../../../../lexical/src/__tests__/utils';
+} from 'lexical/src/__tests__/utils';
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import ReactTestUtils from 'react-dom/test-utils';
+
 import {
   applySelectionInputs,
   convertToImmutableNode,

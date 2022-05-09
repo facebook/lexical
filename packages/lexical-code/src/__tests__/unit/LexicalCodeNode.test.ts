@@ -13,15 +13,15 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
-  EditorConfig,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
+  namespace: '',
   theme: {
     code: 'my-code-class',
   },
-}) as EditorConfig;
+});
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -42,7 +42,7 @@ describe('LexicalCodeNode tests', () => {
         expect(codeNode.createDOM(editorConfig).outerHTML).toBe(
           '<code class="my-code-class" spellcheck="false"></code>',
         );
-        expect(codeNode.createDOM({theme: {}} as EditorConfig).outerHTML).toBe(
+        expect(codeNode.createDOM({namespace: '', theme: {}}).outerHTML).toBe(
           '<code spellcheck="false"></code>',
         );
       });
@@ -53,7 +53,7 @@ describe('LexicalCodeNode tests', () => {
       await editor.update(() => {
         const newCodeNode = $createCodeNode();
         const codeNode = $createCodeNode();
-        const domElement = codeNode.createDOM({theme: {}} as EditorConfig);
+        const domElement = codeNode.createDOM({namespace: '', theme: {}});
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
         const result = newCodeNode.updateDOM(codeNode, domElement);
         expect(result).toBe(false);

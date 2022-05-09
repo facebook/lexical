@@ -143,8 +143,8 @@ export class CodeHighlightNode extends TextNode {
 
 function getHighlightThemeClass(
   theme: EditorThemeClasses,
-  highlightType: string | null | undefined,
-): string | null | undefined {
+  highlightType: string | undefined,
+): string | undefined {
   return (
     highlightType &&
     theme &&

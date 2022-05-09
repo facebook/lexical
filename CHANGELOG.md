@@ -1,3 +1,22 @@
+## 0.2.6 (May 9, 2022)
+
+- Fix Firefox composition bug with emojis (#2109)
+- Add a cache for selection.getNodes() (#2088)
+- remove root style from theme (#2084)
+- Fix character styles position + caret color (#2080)
+- Remove TextNode __marks (#2022)
+- Move isComposing to TextNode (#2032)
+- Markdown import/export/shortcuts (#1998)
+- Improve Lexical -> HTML and Lexical -> Lexical Copy and Paste Data Model Conversion (#1996)
+- Headless editor mode (#2046)
+- Checklist support (#2050)
+- Type definitions fixes (#2076, #2030, #2023, #2028)
+- Adding support for parsed JSON in addition to stringified JSON (#2055)
+- Remove root style from theme (#2084)
+- Fix character styles position + caret color (#2080)
+- Multiple fixes for node insertion and selection
+- Documentation updates
+
 ## 0.2.5 (April 28, 2022)
 
 - Add TextMarks to TextNode (#1912)

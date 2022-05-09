@@ -40,7 +40,6 @@ import {
   markSelectionChangeFromReconcile,
 } from './LexicalEvents';
 import {
-  $getNodeByKey,
   $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getElementByKeyOrThrow,
@@ -80,16 +79,15 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   }
 
   if ($isElementNode(node)) {
-    const first = node.__first;
-    if (first !== null) {
-      const firstNode = $getNodeByKey(first);
-      if (firstNode !== null) {
-        const nextSiblings = firstNode.getNextSiblings();
-        nextSiblings.forEach((sibling) => {
-          destroyNode(sibling.__key, null);
-        });
+    let next = node.__first;
+    while (next !== null) {
+      const currentNode = activePrevNodeMap.get(next);
+      if (currentNode !== undefined) {
+        destroyNode(next, null);
+        next = currentNode.__next;
+      } else {
+        break;
       }
-      destroyNode(first, null);
     }
   }
 

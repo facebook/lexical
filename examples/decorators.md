@@ -36,7 +36,7 @@ export class VideoNode extends DecoratorNode {
     writable.__url = url;
   }
 
-  decorate(editor: LexicalEditor): React$Node {
+  decorate(editor: LexicalEditor): ReactNode {
     return <VideoPlayer url={this.__url} />;
   }
 }

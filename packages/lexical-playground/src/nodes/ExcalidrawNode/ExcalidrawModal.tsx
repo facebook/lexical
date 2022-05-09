@@ -37,11 +37,11 @@ type Props = {
   /**
    * Handle modal closing
    */
-  onHide: () => unknown;
+  onHide: () => void;
   /**
    * Callback when the save button is clicked
    */
-  onSave: (elements: ReadonlyArray<ExcalidrawElementFragment>) => unknown;
+  onSave: (elements: ReadonlyArray<ExcalidrawElementFragment>) => void;
 };
 
 /**

@@ -55,6 +55,15 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 
+export type SerializedTextNode = {
+  content: string,
+  detail: number,
+  format: number,
+  mode: 0 | 1 | 2 | 3,
+  style: string,
+  type: 'text',
+};
+
 export type TextFormatType =
   | 'bold'
   | 'underline'
@@ -828,4 +837,25 @@ export function $createTextNode(text?: string = ''): TextNode {
 
 export function $isTextNode(node: ?LexicalNode): boolean %checks {
   return node instanceof TextNode;
+}
+
+export function $serializeTextNode(node: TextNode): SerializedTextNode {
+  const latest = node.getLatest();
+  return {
+    content: node.getTextContent(),
+    detail: latest.__detail,
+    format: node.getFormat(),
+    mode: latest.__mode,
+    style: node.getStyle(),
+    type: 'text',
+  };
+}
+
+export function $deserializeTextNode(json: SerializedTextNode): TextNode {
+  const textNode = $createTextNode(json.content);
+  textNode.setFormat(json.format);
+  textNode.setStyle(json.style);
+  textNode.__mode = json.mode;
+  textNode.__detail = json.detail;
+  return textNode;
 }

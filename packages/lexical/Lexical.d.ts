@@ -147,7 +147,7 @@ export declare class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(type: string, payload: P): boolean;
+  dispatchCommand<P>(type: LexicalCommand<P>, payload: P): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
   getDecorators<X>(): Record<NodeKey, X>;
   getRootElement(): null | HTMLElement;
@@ -306,8 +306,8 @@ export type DOMConversionFn = (
 ) => DOMConversionOutput;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
-  parentLexicalNode: LexicalNode | null,
-) => LexicalNode | void | null;
+  parentLexicalNode: LexicalNode | null | undefined,
+) => LexicalNode | null;
 export type DOMConversionMap = Record<
   NodeName,
   (node: Node) => DOMConversion | null
@@ -620,7 +620,7 @@ export declare class TextNode extends LexicalNode {
 }
 export function $createTextNode(text?: string): TextNode;
 export function $isTextNode(
-  node: LexicalNode | null | undefined,
+  node: TextNode | LexicalNode | null | undefined,
 ): node is TextNode;
 
 /**
@@ -705,6 +705,11 @@ export declare class ElementNode extends LexicalNode {
   canExtractContents(): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canInsertAfter(node: LexicalNode): boolean;
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
+  ): boolean;
   canBeEmpty(): boolean;
   canInsertTextBefore(): boolean;
   canInsertTextAfter(): boolean;

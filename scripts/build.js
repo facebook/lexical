@@ -144,7 +144,16 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
+const COMMON_BABEL_SETTINGS = {
+  babelHelpers: 'bundled',
+  babelrc: false,
+  configFile: false,
+  exclude: '/**/node_modules/**',
+};
+
 async function build(name, inputFile, outputFile, isProd) {
+  const isTypeScript = /\.tsx?$/.test(inputFile);
+
   const inputOptions = {
     external(modulePath, src) {
       return externals.includes(modulePath);
@@ -188,22 +197,39 @@ async function build(name, inputFile, outputFile, isProd) {
         },
       },
       nodeResolve({
-        extensions: ['.js', '.jsx'],
+        extensions: ['.js', '.jsx', '.ts', 'tsx'],
       }),
-      babel({
-        babelHelpers: 'bundled',
-        babelrc: false,
-        configFile: false,
-        exclude: '/**/node_modules/**',
-        plugins: [
-          '@babel/plugin-transform-flow-strip-types',
-          [
-            require('./error-codes/transform-error-messages'),
-            {noMinify: !isProd},
-          ],
-        ],
-        presets: ['@babel/preset-react'],
-      }),
+      isTypeScript
+        ? babel({
+            ...COMMON_BABEL_SETTINGS,
+            extensions: ['.js', '.jsx', '.ts', 'tsx'],
+            plugins: [
+              [
+                require('./error-codes/transform-error-messages'),
+                {noMinify: !isProd},
+              ],
+            ],
+            presets: [
+              [
+                '@babel/preset-typescript',
+                {
+                  tsconfig: path.resolve('./tsconfig.build.json'),
+                },
+              ],
+              '@babel/preset-react',
+            ],
+          })
+        : babel({
+            ...COMMON_BABEL_SETTINGS,
+            plugins: [
+              '@babel/plugin-transform-flow-strip-types',
+              [
+                require('./error-codes/transform-error-messages'),
+                {noMinify: !isProd},
+              ],
+            ],
+            presets: ['@babel/preset-react'],
+          }),
       {
         resolveId(importee, importer) {
           if (importee === 'formatProdErrorMessage') {
@@ -365,7 +391,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalHistory',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical History',
@@ -420,7 +446,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalCode',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Code',
@@ -431,7 +457,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalDragon',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Dragon',

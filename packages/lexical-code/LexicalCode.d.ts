@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {
@@ -23,7 +22,7 @@ declare class CodeNode extends ElementNode {
   static getType(): string;
   static clone(node: CodeNode): CodeNode;
   constructor(key?: NodeKey);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
@@ -54,12 +53,11 @@ declare class CodeHighlightNode extends TextNode {
   constructor(text: string, highlightType?: string, key?: NodeKey);
   static getType(): string;
   static clone(node: CodeHighlightNode): CodeHighlightNode;
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
-  updateDOM<EditorContext>(
-    // $FlowFixMe
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(
     prevNode: CodeHighlightNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean;
   setFormat(format: number): this;
 }
@@ -72,7 +70,7 @@ declare function $createCodeHighlightNode(
   highlightType?: string,
 ): CodeHighlightNode;
 declare function $isCodeHighlightNode(
-  node: ?LexicalNode,
+  node: LexicalNode | null | undefined,
 ): node is CodeHighlightNode;
 
 declare function registerCodeHighlighting(editor: LexicalEditor): () => void;

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode, ElementNode} from 'lexical';
-export type DFSNode = $ReadOnly<{
+import type {LexicalNode, ElementNode, LexicalEditor} from 'lexical';
+export type DFSNode = Readonly<{
   depth: number;
   node: LexicalNode;
 }>;
@@ -25,15 +25,16 @@ declare function $dfs(
 declare function $getDepth(node: LexicalNode): number;
 declare function $getNearestNodeOfType<T extends LexicalNode>(
   node: LexicalNode,
-  klass: Class<T>,
+  klass: T,
 ): T | null;
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
-export type DOMNodeToLexicalConversionMap = {
-  [string]: DOMNodeToLexicalConversion;
-};
+export type DOMNodeToLexicalConversionMap = Record<
+  string,
+  DOMNodeToLexicalConversion
+>;
 declare function $findMatchingParent(
   startingNode: LexicalNode,
-  findFn: (LexicalNode) => boolean,
+  findFn: (node: LexicalNode) => boolean,
 ): LexicalNode | null;
 type Func = () => void;
 declare function mergeRegister(...func: Array<Func>): () => void;
@@ -43,7 +44,7 @@ declare function $getNearestBlockElementAncestorOrThrow(
 
 declare function registerNestedElementResolver<N extends ElementNode>(
   editor: LexicalEditor,
-  targetNode: Class<N>,
+  targetNode: N,
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void;

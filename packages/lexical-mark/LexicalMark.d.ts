@@ -19,7 +19,9 @@ export declare class MarkNode extends ElementNode {
   canInsertTextAfter(): false;
   isInline(): true;
 }
-export function $isMarkNode(node: LexicalNode | null | undefined): boolean;
+export function $isMarkNode(
+  node: LexicalNode | null | undefined,
+): node is MarkNode;
 export function $createMarkNode(ids: Array<string>): MarkNode;
 export function $getMarkIDs(
   node: TextNode,

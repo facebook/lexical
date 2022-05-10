@@ -44,7 +44,7 @@ declare function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
 
-declare function registerNestedElementResolver<N extends ElementNode>(
+declare function registerNestedElementResolver<N>(
   editor: LexicalEditor,
   targetNode: Class<N>,
   cloneNode: (from: N) => N,

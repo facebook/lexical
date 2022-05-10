@@ -27,6 +27,8 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import {INSERT_INLINE_COMMAND} from './CommentPlugin';
+
 function setPopupPosition(
   editor: HTMLElement,
   rect: ClientRect,
@@ -34,7 +36,7 @@ function setPopupPosition(
 ): void {
   let top = rect.top - 8 + window.pageYOffset;
   let left =
-    rect.left + 310 + window.pageXOffset - editor.offsetWidth + rect.width;
+    rect.left + 340 + window.pageXOffset - editor.offsetWidth + rect.width;
   if (
     rect.width >= rootElementRect.width - 20 ||
     left > rootElementRect.width - 150
@@ -81,6 +83,10 @@ function FloatingCharacterStylesEditor({
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
     }
   }, [editor, isLink]);
+
+  const insertComment = () => {
+    editor.dispatchCommand(INSERT_INLINE_COMMAND, null);
+  };
 
   const updateCharacterStylesEditor = useCallback(() => {
     const selection = $getSelection();
@@ -220,6 +226,12 @@ function FloatingCharacterStylesEditor({
         className={'popup-item spaced ' + (isLink ? 'active' : '')}
         aria-label="Insert link">
         <i className="format link" />
+      </button>
+      <button
+        onClick={insertComment}
+        className={'popup-item spaced ' + (isLink ? 'active' : '')}
+        aria-label="Insert link">
+        <i className="format add-comment" />
       </button>
     </div>
   );

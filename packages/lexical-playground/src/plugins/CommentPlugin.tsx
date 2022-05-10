@@ -7,7 +7,12 @@
  */
 
 import type {Comment, Comments, Thread} from '../commenting';
-import type {EditorState, LexicalEditor, NodeKey} from 'lexical';
+import type {
+  EditorState,
+  LexicalCommand,
+  LexicalEditor,
+  NodeKey,
+} from 'lexical';
 
 import './CommentPlugin.css';
 
@@ -35,6 +40,8 @@ import {
   $isRangeSelection,
   $isTextNode,
   CLEAR_EDITOR_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
+  createCommand,
   KEY_ESCAPE_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -48,6 +55,8 @@ import CommentEditorTheme from '../themes/CommentEditorTheme';
 import Button from '../ui/Button';
 import ContentEditable from '../ui/ContentEditable.jsx';
 import Placeholder from '../ui/Placeholder.jsx';
+
+export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand();
 
 function AddCommentBox({
   anchorKey,
@@ -906,13 +915,21 @@ export default function CommentPlugin({
           setShowCommentInput(false);
         }
       }),
+      editor.registerCommand(
+        INSERT_INLINE_COMMAND,
+        () => {
+          const domSelection = window.getSelection();
+          domSelection.removeAllRanges();
+          setShowCommentInput(true);
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
     );
   }, [editor, markNodeMap]);
 
   const onAddComment = () => {
-    const domSelection = window.getSelection();
-    domSelection.removeAllRanges();
-    setShowCommentInput(true);
+    editor.dispatchCommand(INSERT_INLINE_COMMAND, null);
   };
 
   return (

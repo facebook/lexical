@@ -26,6 +26,7 @@ import {
   $setSelection,
 } from 'lexical';
 
+import {TRANSFORMERS} from '..';
 import {indexBy, transformersByType} from './utils';
 
 function runElementTransformers(
@@ -286,7 +287,7 @@ function isEqualSubString(
 
 export function registerMarkdownShortcuts(
   editor: LexicalEditor,
-  transformers: Array<Transformer>,
+  transformers: Array<Transformer> = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = indexBy(

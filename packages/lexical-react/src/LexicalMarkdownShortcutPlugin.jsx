@@ -7,14 +7,42 @@
  * @flow strict
  */
 
-import type {Transformer} from '@lexical/markdown';
+import type {ElementTransformer, Transformer} from '@lexical/markdown';
+import type {LexicalNode} from 'lexical';
 
-import {registerMarkdownShortcuts} from '@lexical/markdown';
+import {registerMarkdownShortcuts, TRANSFORMERS} from '@lexical/markdown';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
+import {
+  $createHorizontalRuleNode,
+  $isHorizontalRuleNode,
+} from './LexicalHorizontalRuleNode.jsx';
+
+const HR: ElementTransformer = {
+  export: (node: LexicalNode) => {
+    return $isHorizontalRuleNode(node) ? '***' : null;
+  },
+  regExp: /^(---|\*\*\*|___)\s?$/,
+  replace: (parentNode, _1, _2, isImport) => {
+    const line = $createHorizontalRuleNode();
+
+    // TODO: Get rid of isImport flag
+    if (isImport || parentNode.getNextSibling() != null) {
+      parentNode.replace(line);
+    } else {
+      parentNode.insertBefore(line);
+    }
+
+    line.selectNext();
+  },
+  type: 'element',
+};
+
+const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
+
 export default function LexicalMarkdownShortcutPlugin({
-  transformers,
+  transformers = DEFAULT_TRANSFORMERS,
 }: $ReadOnly<{transformers: Array<Transformer>}>): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {

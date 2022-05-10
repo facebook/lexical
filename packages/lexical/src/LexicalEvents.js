@@ -203,7 +203,8 @@ function onSelectionChange(
         // within the given time range – then attempt to use that format
         // instead of getting the format from the anchor node.
         const event = getActiveEvent();
-        const currentTimeStamp = event !== null ? event.timeStamp : Infinity;
+        const currentTimeStamp =
+          event !== null ? event.timeStamp : performance.now();
         const [lastFormat, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 

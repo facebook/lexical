@@ -884,14 +884,15 @@ export type SerializedParagraphNode<SerializedNode> = {
   type: 'paragraph',
 };
 
-export type SerializedTextNode = {
-  content: string,
-  detail: number,
-  format: number,
-  mode: 0 | 1 | 2 | 3,
-  style: string,
-  type: 'text',
-};
+export type SerializedTextNode = BaseSerializedNode &
+  $ReadOnly<{
+    content: string,
+    detail: number,
+    format: number,
+    mode: 0 | 1 | 2 | 3,
+    style: string,
+    type: 'text',
+  }>;
 
 declare export function $serializeLineBreakNode(
   node: LineBreakNode,

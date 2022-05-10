@@ -25,7 +25,7 @@ describe('LexicalSerialize tests', () => {
         const {editor} = testEnv;
         await editor.update(() => {
           const paragraphNode = $createParagraphNode();
-          const textNode = $createTextNode();
+          const textNode = $createTextNode('foo');
           $getRoot().append(paragraphNode);
           paragraphNode.append(textNode);
         });
@@ -34,13 +34,15 @@ describe('LexicalSerialize tests', () => {
         //   console.info(serializer.serialize($getRoot()));
         // });
         const serialized = editor.serialize();
-        console.info('serialized', serialized);
+        console.info('SERIALIZED', serialized);
 
         editor.deserialize(serialized);
-        console.info(editor.getEditorState()._nodeMap);
+        console.info(
+          'NODEMAP (after deserialize)',
+          editor.getEditorState()._nodeMap,
+        );
 
         const serialized2 = editor.serialize();
-        console.info('serialized2', serialized2);
 
         expect(serialized).toEqual(serialized2);
       });

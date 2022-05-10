@@ -48,12 +48,13 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
       const rootJSON = (json: SerializedRootNode<SerializedNode>);
       return $deserializeRootNode(rootJSON, (json) => this.deserialize(json));
     } else if (json.type === 'paragraph') {
-      return $deserializeParagraphNode(json);
+      return $deserializeParagraphNode(json, (json) => this.deserialize(json));
     } else if (json.type === 'linebreak') {
       return $deserializeLineBreakNode(json);
     } else if (json.type === 'text') {
       // $FlowFixMe Refine type
-      return $deserializeTextNode(json);
+      const textNodeJSON = (json: SerializedTextNode);
+      return $deserializeTextNode(textNodeJSON);
     }
     return null;
   }
@@ -63,7 +64,10 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
         this.serialize(node),
       );
     } else if ($isParagraphNode(node)) {
-      return $serializeParagraphNode<DefaultLeafNodes>(node);
+      return $serializeParagraphNode<DefaultLeafNodes>(
+        node,
+        (node: LexicalNode) => this.serialize(node),
+      );
     } else if ($isLineBreakNode(node)) {
       return $serializeLineBreakNode(node);
     } else if ($isTextNode(node)) {

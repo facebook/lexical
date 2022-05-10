@@ -131,12 +131,12 @@ export function $isRootNode(node: ?LexicalNode): boolean %checks {
 
 export function $serializeRootNode<SerializedNode>(
   node: RootNode,
-  serializeChild: (node: LexicalNode) => SerializedNode,
+  $serializeChild: (node: LexicalNode) => SerializedNode,
 ): SerializedRootNode<SerializedNode> {
   const serializedChildren = [];
   const nodeChildren = node.getChildren();
   for (let i = 0; i < nodeChildren.length; i++) {
-    serializedChildren.push(serializeChild(nodeChildren[i]));
+    serializedChildren.push($serializeChild(nodeChildren[i]));
   }
   return {
     children: serializedChildren,
@@ -149,7 +149,7 @@ export function $serializeRootNode<SerializedNode>(
 
 export function $deserializeRootNode<SerializedNode>(
   json: SerializedRootNode<SerializedNode>,
-  deserializeChild: (json: SerializedNode) => LexicalNode,
+  $deserializeChild: (json: SerializedNode) => LexicalNode,
 ): RootNode {
   const rootNode = $createRootNode();
   rootNode.__format = json.format;
@@ -157,7 +157,8 @@ export function $deserializeRootNode<SerializedNode>(
   rootNode.__dir = json.direction;
   const jsonChildren = json.children;
   for (let i = 0; i < jsonChildren.length; i++) {
-    const child = deserializeChild(jsonChildren[i]);
+    const child = $deserializeChild(jsonChildren[i]);
+    child.__parent = 'root';
     rootNode.__children.push(child.__key);
   }
   return rootNode;

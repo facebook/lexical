@@ -129,9 +129,15 @@ export function $isParagraphNode(node: ?LexicalNode): boolean %checks {
 
 export function $serializeParagraphNode<SerializedNode>(
   node: ParagraphNode,
+  $serializeChild: (node: LexicalNode) => SerializedNode,
 ): SerializedParagraphNode<SerializedNode> {
+  const serializedChildren = [];
+  const nodeChildren = node.getChildren();
+  for (let i = 0; i < nodeChildren.length; i++) {
+    serializedChildren.push($serializeChild(nodeChildren[i]));
+  }
   return {
-    children: [],
+    children: serializedChildren,
     direction: node.getDirection(),
     format: node.getFormat(),
     indent: node.getIndent(),
@@ -141,10 +147,15 @@ export function $serializeParagraphNode<SerializedNode>(
 
 export function $deserializeParagraphNode<SerializedNode>(
   json: SerializedParagraphNode<SerializedNode>,
+  $deserializeChild: (json: SerializedNode) => LexicalNode,
 ): ParagraphNode {
-  const rootNode = $createParagraphNode();
-  rootNode.__format = json.format;
-  rootNode.setIndent(json.indent);
-  rootNode.setDirection(json.direction);
-  return rootNode;
+  const paragraph = $createParagraphNode();
+  paragraph.__format = json.format;
+  paragraph.setIndent(json.indent);
+  paragraph.setDirection(json.direction);
+  const jsonChildren = json.children;
+  for (let i = 0; i < jsonChildren.length; i++) {
+    paragraph.append($deserializeChild(jsonChildren[i]));
+  }
+  return paragraph;
 }

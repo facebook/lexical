@@ -14,6 +14,7 @@ import type {
   LexicalNode,
   LexicalEditor,
   EditorState,
+  SerializedRootNode,
 } from 'lexical';
 
 import {
@@ -33,21 +34,18 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-type BaseSerializedNode = $ReadOnly<{
+export type BaseSerializedNode = $ReadOnly<{
   type: string,
   ...
 }>;
-
-type SNX = BaseSerializedNode &
-  $ReadOnly<{
-    foo: string,
-  }>;
 
 // Users can extend this class and override/delegate to the methods
 export class BaseSerializer<SerializedNode: BaseSerializedNode> {
   deserialize(json: SerializedNode): null | LexicalNode {
     if (json.type === 'root') {
-      return $deserializeRootNode(json, this.deserialize);
+      // $FlowFixMe
+      const rootJSON = (json: SerializedRootNode<SerializedNode>);
+      return $deserializeRootNode(rootJSON, (json) => this.deserialize(json));
     } else if (json.type === 'paragraph') {
       return $deserializeParagraphNode(json);
     } else if (json.type === 'linebreak') {
@@ -59,7 +57,9 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
   }
   serialize(node: LexicalNode): null | SerializedNode | DefaultSerializedNodes {
     if ($isRootNode(node)) {
-      return $serializeRootNode<DefaultBlockNodes>(node, this.serialize);
+      return $serializeRootNode<DefaultBlockNodes>(node, (node: LexicalNode) =>
+        this.serialize(node),
+      );
     } else if ($isParagraphNode(node)) {
       return $serializeParagraphNode<DefaultLeafNodes>(node);
     } else if ($isLineBreakNode(node)) {

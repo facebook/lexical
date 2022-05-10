@@ -7,7 +7,11 @@
  */
 
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
-import {BaseSerializer, $serializeRoot} from '@lexical/serialize';
+import {
+  BaseSerializer,
+  $serializeRoot,
+  $deserializeRoot,
+} from '@lexical/serialize';
 import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
 
 // No idea why we suddenly need to do this, but it fixes the tests
@@ -33,6 +37,15 @@ describe('LexicalSerialize tests', () => {
         return $serializeRoot(serializer, editor.getEditorState());
       });
       console.info(serialized);
+
+      await editor.update(() => {
+        $deserializeRoot(serializer, serialized);
+      });
+
+      const serialized2 = editor.getEditorState().read(() => {
+        return $serializeRoot(serializer, editor.getEditorState());
+      });
+      console.info(serialized2);
     });
   });
 });

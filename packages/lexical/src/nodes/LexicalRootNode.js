@@ -13,9 +13,14 @@ import type {ParsedElementNode} from '../LexicalParsing';
 import invariant from 'shared/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
-import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
+import {
+  errorOnReadOnly,
+  getActiveEditor,
+  isCurrentlyReadOnlyMode,
+} from '../LexicalUpdates';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
+import {removeNode} from '../LexicalNode';
 
 export type SerializedRootNode<SerializedNode> = {
   children: Array<SerializedNode>,
@@ -68,8 +73,28 @@ export class RootNode extends ElementNode {
     invariant(false, 'remove: cannot be called on root nodes');
   }
 
-  replace<N: LexicalNode>(node: N): N {
-    invariant(false, 'replace: cannot be called on root nodes');
+  // Make this nicer, revise edge cases
+  replace<RootNode>(replaceWith: RootNode): RootNode {
+    errorOnReadOnly();
+    const toReplaceKey = this.__key;
+    const writableReplaceWith = replaceWith.getWritable();
+    const newKey = writableReplaceWith.__key;
+    removeNode(this, false);
+    // const selection = $getSelection();
+    // if ($isRangeSelection(selection)) {
+    //   const anchor = selection.anchor;
+    //   const focus = selection.focus;
+    //   if (anchor.key === toReplaceKey) {
+    //     $moveSelectionPointToEnd(anchor, writableReplaceWith);
+    //   }
+    //   if (focus.key === toReplaceKey) {
+    //     $moveSelectionPointToEnd(focus, writableReplaceWith);
+    //   }
+    // }
+    // if ($getCompositionKey() === toReplaceKey) {
+    //   $setCompositionKey(newKey);
+    // }
+    return writableReplaceWith;
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {

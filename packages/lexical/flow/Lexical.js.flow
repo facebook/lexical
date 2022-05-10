@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {BaseSerializedNode} from '@lexical/serialize';
+
 /**
  * LexicalCommands
  */
@@ -861,13 +863,14 @@ declare export var VERSION: string;
 
 // Serialize/Deserialize
 
-export type SerializedRootNode<SerializedNode> = {
-  children: Array<SerializedNode>,
-  direction: 'ltr' | 'rtl' | null,
-  format: number,
-  indent: number,
-  type: 'root',
-};
+export type SerializedRootNode<SerializedNode> = BaseSerializedNode &
+  $ReadOnly<{
+    children: Array<SerializedNode>,
+    direction: 'ltr' | 'rtl' | null,
+    format: number,
+    indent: number,
+    type: 'root',
+  }>;
 
 export type SerializedLineBreakNode = {
   type: 'linebreak',
@@ -914,10 +917,12 @@ declare export function $deserializeTextNode(
 
 declare export function $serializeRootNode<SerializedNode>(
   node: RootNode,
+  serializeChild: (node: LexicalNode) => SerializedNode,
 ): SerializedRootNode<SerializedNode>;
 
 declare export function $deserializeRootNode<SerializedNode>(
   json: SerializedRootNode<SerializedNode>,
+  deserializeChild: (json: SerializedNode) => null | LexicalNode,
 ): RootNode;
 
 declare export function $isSerializedRootNode(json: {

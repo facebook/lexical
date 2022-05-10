@@ -132,6 +132,7 @@ if (CAN_USE_BEFORE_INPUT) {
   rootElementEvents.push(['drop', PASS_THROUGH_COMMAND]);
 }
 
+let lastEvent: null | Event = null;
 let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
@@ -201,7 +202,8 @@ function onSelectionChange(
         // If we have marked a collapsed selection format, and we're
         // within the given time range – then attempt to use that format
         // instead of getting the format from the anchor node.
-        const currentTimeStamp = window.event.timeStamp;
+        const event = getActiveEvent();
+        const currentTimeStamp = event !== null ? event.timeStamp : Infinity;
         const [lastFormat, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 
@@ -782,6 +784,7 @@ export function addRootElementEvents(
       typeof onEvent === 'function'
         ? (event: Event) => {
             if (!editor.isReadOnly()) {
+              lastEvent = event;
               onEvent(event, editor);
             }
           }
@@ -865,4 +868,12 @@ export function markCollapsedSelectionFormat(
   timeStamp: number,
 ): void {
   collapsedSelectionFormat = [format, offset, key, timeStamp];
+}
+
+export function getActiveEvent(): Event | null {
+  const windowEvent = window.event;
+  if (windowEvent != null) {
+    return windowEvent;
+  }
+  return lastEvent;
 }

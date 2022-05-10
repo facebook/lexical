@@ -52,6 +52,7 @@ import {
   TEXT_TYPE_TO_FORMAT,
   ZERO_WIDTH_CHAR,
 } from './LexicalConstants';
+import {getActiveEvent} from './LexicalEvents';
 import {flushRootMutations} from './LexicalMutations';
 import {
   errorOnInfiniteTransforms,
@@ -999,8 +1000,9 @@ export function $getDecoratorNode(
 }
 
 export function isFirefoxClipboardEvents(): boolean {
-  const event = window.event;
-  const inputType = event && event.inputType;
+  const event = getActiveEvent();
+  // $FlowFixMe: intend to refine after
+  const inputType = event !== null && event.inputType;
   return (
     inputType === 'insertFromPaste' ||
     inputType === 'insertFromPasteAsQuotation'

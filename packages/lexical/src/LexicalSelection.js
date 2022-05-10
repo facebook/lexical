@@ -33,6 +33,7 @@ import {
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {getActiveEvent} from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
 import {
   getActiveEditor,
@@ -2185,11 +2186,6 @@ export function $createEmptyGridSelection(): GridSelection {
   return new GridSelection('root', anchor, focus);
 }
 
-function getActiveEventType(): string | void {
-  const event = window.event;
-  return event && event.type;
-}
-
 export function internalCreateSelection(
   editor: LexicalEditor,
 ): null | RangeSelection | NodeSelection | GridSelection {
@@ -2223,7 +2219,8 @@ function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const eventType = getActiveEventType();
+  const event = getActiveEvent();
+  const eventType = event === null ? null : event.type;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
     !getIsProcesssingMutations() &&
@@ -2231,7 +2228,10 @@ function internalCreateRangeSelection(
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
       eventType === 'compositionend' ||
-      (eventType === 'click' && window.event.detail === 3) ||
+      (eventType === 'click' &&
+        event !== null &&
+        // $FlowFixMe: cast to mouse event
+        ((event: any): MouseEvent).detail === 3) ||
       eventType === undefined);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 

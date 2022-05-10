@@ -2232,7 +2232,7 @@ function internalCreateRangeSelection(
         event !== null &&
         // $FlowFixMe: cast to mouse event
         ((event: any): MouseEvent).detail === 3) ||
-      eventType === undefined);
+      eventType === null);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (!$isRangeSelection(lastSelection) || useDOMSelection) {

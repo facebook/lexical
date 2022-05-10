@@ -123,10 +123,10 @@ export default function ActionsPlugin({
             'action-button action-button-mic ' +
             (isSpeechToText ? 'active' : '')
           }
-          title="Speect To Text"
+          title="Speech To Text"
           aria-label={`${
             isSpeechToText ? 'Enable' : 'Disable'
-          } speect to text`}>
+          } speech to text`}>
           <i className="mic" />
         </button>
       )}

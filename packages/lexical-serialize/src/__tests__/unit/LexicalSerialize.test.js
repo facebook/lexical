@@ -7,7 +7,7 @@
  */
 
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
-import BaseSerializer from '@lexical/serialize';
+import {BaseSerializer, jsonSerialize} from '@lexical/serialize';
 import {$getRoot} from 'lexical';
 
 // No idea why we suddenly need to do this, but it fixes the tests
@@ -19,9 +19,11 @@ describe('LexicalSerialize tests', () => {
     test('BaseSerializer can serialize/deserialize', async () => {
       const {editor} = testEnv;
       const serializer = new BaseSerializer();
-      editor.getEditorState().read(() => {
-        console.info(serializer.serialize($getRoot()));
-      });
+      // editor.getEditorState().read(() => {
+      //   console.info(serializer.serialize($getRoot()));
+      // });
+      const serialized = jsonSerialize(serializer, editor.getEditorState());
+      console.info(serialized);
     });
   });
 });

@@ -12,6 +12,8 @@ import type {
   DefaultLeafNodes,
   DefaultSerializedNodes,
   LexicalNode,
+  LexicalEditor,
+  EditorState,
 } from 'lexical';
 
 import {
@@ -27,14 +29,14 @@ import {
   $serializeParagraphNode,
   $serializeRootNode,
   $serializeTextNode,
+  $getRoot,
 } from 'lexical';
 
 // Users can extend this class and override/delegate to the methods
 // $FlowFixMe - serialized nodes can have any shape.
-export default class BaseSerializer<SerializedNode: any> {
+export class BaseSerializer<SerializedNode: any> {
   deserialize(
     json: SerializedNode | DefaultSerializedNodes,
-    deep: boolean,
   ): null | LexicalNode {
     if (json.type === 'root') {
       return $deserializeRootNode(json);
@@ -47,10 +49,7 @@ export default class BaseSerializer<SerializedNode: any> {
     }
     return null;
   }
-  serialize(
-    node: LexicalNode,
-    deep: boolean,
-  ): null | SerializedNode | DefaultSerializedNodes {
+  serialize(node: LexicalNode): null | SerializedNode | DefaultSerializedNodes {
     if ($isRootNode(node)) {
       return $serializeRootNode<DefaultBlockNodes>(node);
     } else if ($isParagraphNode(node)) {
@@ -62,4 +61,21 @@ export default class BaseSerializer<SerializedNode: any> {
     }
     return null;
   }
+}
+
+export function jsonSerialize<T: BaseSerializer>(
+  serializer: T,
+  editorState: EditorState,
+): string {
+  return JSON.stringify(
+    editorState.read(() => serializer.serialize($getRoot())),
+  );
+}
+
+export function jsonDeserialize<T: BaseSerializer>(
+  editor: LexicalEditor,
+  serializer: T,
+  json: string,
+): EditorState {
+  //
 }

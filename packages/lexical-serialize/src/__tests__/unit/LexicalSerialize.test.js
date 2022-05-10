@@ -7,8 +7,8 @@
  */
 
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
-import {BaseSerializer, jsonSerialize} from '@lexical/serialize';
-import {$getRoot} from 'lexical';
+import {BaseSerializer, $serializeRoot} from '@lexical/serialize';
+import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
 
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.
@@ -18,11 +18,20 @@ describe('LexicalSerialize tests', () => {
   initializeUnitTest((testEnv) => {
     test('BaseSerializer can serialize/deserialize', async () => {
       const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraphNode = $createParagraphNode();
+        const textNode = $createTextNode();
+        $getRoot().append(paragraphNode);
+        paragraphNode.append(textNode);
+      });
+
       const serializer = new BaseSerializer();
       // editor.getEditorState().read(() => {
       //   console.info(serializer.serialize($getRoot()));
       // });
-      const serialized = jsonSerialize(serializer, editor.getEditorState());
+      const serialized = editor.getEditorState().read(() => {
+        return $serializeRoot(serializer, editor.getEditorState());
+      });
       console.info(serialized);
     });
   });

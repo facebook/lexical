@@ -124,9 +124,15 @@ export function $isRootNode(node: ?LexicalNode): boolean %checks {
 
 export function $serializeRootNode<SerializedNode>(
   node: RootNode,
+  serializeChild: (node: LexicalNode) => SerializedNode,
 ): SerializedRootNode<SerializedNode> {
+  const serializedChildren = [];
+  const nodeChildren = node.getChildren();
+  for (let i = 0; i < nodeChildren.length; i++) {
+    serializedChildren.push(serializeChild(nodeChildren[i]));
+  }
   return {
-    children: [],
+    children: serializedChildren,
     direction: node.getDirection(),
     format: node.getFormat(),
     indent: node.getIndent(),
@@ -136,10 +142,15 @@ export function $serializeRootNode<SerializedNode>(
 
 export function $deserializeRootNode<SerializedNode>(
   json: SerializedRootNode<SerializedNode>,
+  deserializeChild: (json: SerializedNode) => LexicalNode,
 ): RootNode {
   const rootNode = $createRootNode();
   rootNode.__format = json.format;
   rootNode.setIndent(json.indent);
   rootNode.setDirection(json.direction);
+  const jsonChildren = json.children;
+  for (let i = 0; i < jsonChildren.length; i++) {
+    rootNode.append(deserializeChild(jsonChildren[i]));
+  }
   return rootNode;
 }

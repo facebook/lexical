@@ -31,15 +31,23 @@ import {
   $serializeTextNode,
   $getRoot,
 } from 'lexical';
+import invariant from 'shared/invariant';
+
+type BaseSerializedNode = $ReadOnly<{
+  type: string,
+  ...
+}>;
+
+type SNX = BaseSerializedNode &
+  $ReadOnly<{
+    foo: string,
+  }>;
 
 // Users can extend this class and override/delegate to the methods
-// $FlowFixMe - serialized nodes can have any shape.
-export class BaseSerializer<SerializedNode: any> {
-  deserialize(
-    json: SerializedNode | DefaultSerializedNodes,
-  ): null | LexicalNode {
+export class BaseSerializer<SerializedNode: BaseSerializedNode> {
+  deserialize(json: SerializedNode): null | LexicalNode {
     if (json.type === 'root') {
-      return $deserializeRootNode(json);
+      return $deserializeRootNode(json, this.deserialize);
     } else if (json.type === 'paragraph') {
       return $deserializeParagraphNode(json);
     } else if (json.type === 'linebreak') {
@@ -51,7 +59,7 @@ export class BaseSerializer<SerializedNode: any> {
   }
   serialize(node: LexicalNode): null | SerializedNode | DefaultSerializedNodes {
     if ($isRootNode(node)) {
-      return $serializeRootNode<DefaultBlockNodes>(node);
+      return $serializeRootNode<DefaultBlockNodes>(node, this.serialize);
     } else if ($isParagraphNode(node)) {
       return $serializeParagraphNode<DefaultLeafNodes>(node);
     } else if ($isLineBreakNode(node)) {
@@ -63,19 +71,17 @@ export class BaseSerializer<SerializedNode: any> {
   }
 }
 
-export function jsonSerialize<T: BaseSerializer>(
-  serializer: T,
-  editorState: EditorState,
-): string {
-  return JSON.stringify(
-    editorState.read(() => serializer.serialize($getRoot())),
-  );
+export function $serializeRoot<T: BaseSerializer>(serializer: T): string {
+  return serializer.serialize($getRoot());
 }
 
-export function jsonDeserialize<T: BaseSerializer>(
-  editor: LexicalEditor,
+export function $deserializeRoot<T: BaseSerializer>(
   serializer: T,
   json: string,
-): EditorState {
-  //
+): void {
+  const rootNode = serializer.deserialize(json);
+  if (!$isRootNode(rootNode)) {
+    invariant(false, 'Expected RootNode');
+  }
+  $getRoot().replace(rootNode);
 }

@@ -95,7 +95,6 @@
     "@rollup/plugin-node-resolve": "^13.0.2",
     "@rollup/plugin-replace": "^3.0.0",
     "@types/jest": "^27.5.0",
-    "@types/katex": "^0.14.0",
     "@types/node": "^17.0.31",
     "@types/prismjs": "^1.26.0",
     "@types/react": "^18.0.8",
@@ -150,5 +149,8 @@
     "@playwright/test": {
       "playwright-core": "1.16.0-next-alpha-trueadm-fork"
     }
+  },
+  "dependencies": {
+    "@types/katex": "^0.14.0"
   }
 }

@@ -14,6 +14,7 @@ import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
+import {BaseSerializer} from '@lexical/serialize';
 import {createEditor} from 'lexical';
 import React, {useMemo} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -56,7 +57,8 @@ export default function LexicalComposer({
           nodes,
           onError: (error) => onError(error, newEditor),
           readOnly: true,
-          theme,
+          serializer: new BaseSerializer<>(),
+          theme: theme || {},
         });
         editor = newEditor;
       }

@@ -7,25 +7,13 @@
  * @flow strict
  */
 
-import type {
-  EditorState,
-  EditorThemeClasses,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
+import type {CreateEditorConfig,LexicalEditor} from 'lexical';
 
 import {createEditor} from 'lexical';
 
-export function createHeadlessEditor(editorConfig?: {
-  disableEvents?: boolean,
-  editorState?: EditorState,
-  namespace?: string,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-  onError: (error: Error) => void,
-  parentEditor?: LexicalEditor,
-  readOnly?: boolean,
-  theme?: EditorThemeClasses,
-}): LexicalEditor {
+export function createHeadlessEditor(
+  editorConfig?: CreateEditorConfig,
+): LexicalEditor {
   const editor = createEditor(editorConfig);
   editor._headless = true;
 

@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type {LexicalNode} from 'lexical';
+import type {LexicalNode, DefaultSerializedNodes} from 'lexical';
 
-declare export class Serializer<SerializedNode> {
+declare export class BaseSerializer<SerializedNode = DefaultSerializedNodes> {
   deserialize(json: SerializedNode, deep: boolean): null | LexicalNode;
   serialize(node: LexicalNode, deep: boolean): null | SerializedNode;
 }

@@ -7,28 +7,16 @@
  * @flow strict
  */
 
-import type {
-  EditorState,
-  EditorThemeClasses,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
+import type {CreateEditorConfig,LexicalEditor} from 'lexical';
 
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
 
 import useLexicalEditor from './DEPRECATED_useLexicalEditor';
 
-export default function useLexical(editorConfig: {
-  disableEvents?: boolean,
-  editorState?: EditorState,
-  namespace?: string,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-  onError: (error: Error) => void,
-  parentEditor?: LexicalEditor,
-  readOnly?: boolean,
-  theme?: EditorThemeClasses,
-}): [LexicalEditor, (null | HTMLElement) => void, boolean] {
+export default function useLexical(
+  editorConfig: CreateEditorConfig,
+): [LexicalEditor, (null | HTMLElement) => void, boolean] {
   const editor = useMemo(
     () => createEditor(editorConfig),
     // Init

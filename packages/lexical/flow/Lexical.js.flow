@@ -232,10 +232,34 @@ export type EditorThemeClasses = {
   // Handle other generic values
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
-export type EditorConfig = {
-  namespace: string,
+
+export type DefaultLeafNodes = SerializedLineBreakNode | SerializedTextNode;
+export type DefaultBlockNodes = SerializedParagraphNode<DefaultLeafNodes>;
+export type DefaultSerializedNodes =
+  | SerializedRootNode<DefaultBlockNodes>
+  | DefaultBlockNodes
+  | DefaultLeafNodes;
+
+interface Serializer<SerializedNode = DefaultSerializedNodes> {
+  deserialize(json: SerializedNode, deep: boolean): null | LexicalNode;
+  serialize(node: LexicalNode, deep: boolean): null | SerializedNode;
+}
+
+type EditorConfigBase = {
+  namespace?: string,
   theme: EditorThemeClasses,
   disableEvents?: boolean,
+};
+export type EditorConfig = EditorConfigBase;
+
+export type CreateEditorConfig = {
+  ...EditorConfigBase,
+  editorState?: EditorState,
+  parentEditor?: LexicalEditor,
+  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+  serializer?: Serializer<>,
+  onError: (error: Error) => void,
+  readOnly?: boolean,
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;
@@ -245,17 +269,9 @@ export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
 export type IntentionallyMarkedAsDirtyElement = boolean;
-declare export function createEditor(editorConfig?: {
-  namespace?: string,
-  editorState?: EditorState,
-  theme?: EditorThemeClasses,
-  parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-  onError: (error: Error) => void,
-  disableEvents?: boolean,
-  readOnly?: boolean,
-}): LexicalEditor;
-
+declare export function createEditor(
+  editorConfig?: CreateEditorConfig,
+): LexicalEditor;
 /**
  * LexicalEditorState
  */
@@ -903,3 +919,8 @@ declare export function $serializeRootNode<SerializedNode>(
 declare export function $deserializeRootNode<SerializedNode>(
   json: SerializedRootNode<SerializedNode>,
 ): RootNode;
+
+declare export function $isSerializedRootNode(json: {
+  type: string,
+  ...
+}): boolean %checks(json.type === 'root');

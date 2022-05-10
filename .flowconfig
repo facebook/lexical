@@ -36,7 +36,7 @@ module.name_mapper='^@lexical/link' -> '<PROJECT_ROOT>/packages/lexical-link/flo
 module.name_mapper='^@lexical/overflow' -> '<PROJECT_ROOT>/packages/lexical-overflow/flow/LexicalOverflow.js.flow'
 module.name_mapper='^@lexical/markdown' -> '<PROJECT_ROOT>/packages/lexical-markdown/flow/LexicalMarkdown.js.flow'
 module.name_mapper='^@lexical/mark' -> '<PROJECT_ROOT>/packages/lexical-mark/flow/LexicalMark.js.flow'
-module.name_mapper='^@lexical/serialize' -> '<PROJECT_ROOT>/packages/lexical-mark/flow/LexicalSerialize.js.flow'
+module.name_mapper='^@lexical/serialize' -> '<PROJECT_ROOT>/packages/lexical-serialize/flow/LexicalSerialize.js.flow'
 
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalEditor' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalEditor.js'
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalRichText' -> '<PROJECT_ROOT>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js'

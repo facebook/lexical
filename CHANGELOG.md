@@ -1,4 +1,4 @@
-## 0.2.6 (May 9, 2022)
+## 0.2.7 (May 9, 2022)
 
 - Fix Firefox composition bug with emojis (#2109)
 - Add a cache for selection.getNodes() (#2088)

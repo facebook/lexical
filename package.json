@@ -149,5 +149,8 @@
     "@playwright/test": {
       "playwright-core": "1.16.0-next-alpha-trueadm-fork"
     }
+  },
+  "dependencies": {
+    "@types/katex": "^0.14.0"
   }
 }

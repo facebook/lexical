@@ -23,7 +23,6 @@ import {
 } from 'lexical';
 import {startTransition, useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
-// $FlowFixMe
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
@@ -677,10 +676,10 @@ function MentionsTypeahead({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_DOWN_COMMAND,
         (payload) => {
-          const event: KeyboardEvent = payload;
+          const event = payload;
           if (results !== null && selectedIndex !== null) {
             if (
               selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
@@ -695,10 +694,10 @@ function MentionsTypeahead({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
         (payload) => {
-          const event: KeyboardEvent = payload;
+          const event = payload;
           if (results !== null && selectedIndex !== null) {
             if (selectedIndex !== 0) {
               updateSelectedIndex(selectedIndex - 1);
@@ -710,10 +709,10 @@ function MentionsTypeahead({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
         (payload) => {
-          const event: KeyboardEvent = payload;
+          const event = payload;
           if (results === null || selectedIndex === null) {
             return false;
           }
@@ -724,10 +723,10 @@ function MentionsTypeahead({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
         (payload) => {
-          const event: KeyboardEvent = payload;
+          const event = payload;
           if (results === null || selectedIndex === null) {
             return false;
           }

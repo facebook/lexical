@@ -14,7 +14,7 @@ type Props = Readonly<{
   'data-test-id'?: string;
   accept?: string;
   label: string;
-  onChange: (files: File[]) => void;
+  onChange: (files: FileList) => void;
 }>;
 
 export default function FileInput({

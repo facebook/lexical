@@ -27,8 +27,14 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-// $FlowFixMe
+import {
+  ReactPortal,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 type MousePosition = {
@@ -43,7 +49,7 @@ const MIN_COLUMN_WIDTH = 50;
 
 function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const targetRef = useRef<HTMLElement | null>(null);
-  const resizerRef = useRef<HTMLElement | null>(null);
+  const resizerRef = useRef<HTMLDivElement | null>(null);
   const tableRectRef = useRef<ClientRect | null>(null);
 
   const mouseStartPosRef = useRef<MousePosition | null>(null);
@@ -83,8 +89,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   useEffect(() => {
     const onMouseMove = (event: MouseEvent) => {
       setTimeout(() => {
-        // $FlowFixMe: event.target is always a Node on the DOM
-        const target: HTMLElement = event.target;
+        const target = event.target;
 
         if (draggingDirection) {
           updateMouseCurrentPos({
@@ -94,13 +99,13 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           return;
         }
 
-        if (resizerRef.current && resizerRef.current.contains(target)) {
+        if (resizerRef.current && resizerRef.current.contains(target as Node)) {
           return;
         }
 
         if (targetRef.current !== target) {
-          targetRef.current = target;
-          const cell = getCellFromTarget(target);
+          targetRef.current = target as HTMLElement;
+          const cell = getCellFromTarget(target as HTMLElement);
 
           if (cell && activeCell !== cell) {
             editor.update(() => {
@@ -117,7 +122,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
                 throw new Error('TableCellResizer: Table element not found.');
               }
 
-              targetRef.current = target;
+              targetRef.current = target as HTMLElement;
               tableRectRef.current = tableElement.getBoundingClientRect();
               updateActiveCell(cell);
             });
@@ -364,7 +369,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   );
 }
 
-export default function TableCellResizerPlugin(): React.Portal {
+export default function TableCellResizerPlugin(): ReactPortal {
   const [editor] = useLexicalComposerContext();
 
   return useMemo(

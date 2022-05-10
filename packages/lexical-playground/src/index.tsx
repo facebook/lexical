@@ -10,7 +10,6 @@ import './setupEnv';
 import './index.css';
 
 import * as React from 'react';
-// $FlowFixMe: Flow doesn't understand react-dom
 import {createRoot} from 'react-dom/client';
 
 import App from './App';

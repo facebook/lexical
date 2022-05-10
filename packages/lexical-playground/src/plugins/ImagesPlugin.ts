@@ -34,7 +34,7 @@ export default function ImagesPlugin(): JSX.Element {
       throw new Error('ImagesPlugin: ImageNode not registered on editor');
     }
 
-    return editor.registerCommand(
+    return editor.registerCommand<InsertImagePayload>(
       INSERT_IMAGE_COMMAND,
       (payload) => {
         const selection = $getSelection();

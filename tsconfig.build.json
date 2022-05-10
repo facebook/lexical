@@ -5,6 +5,6 @@
     "packages/lexical-dragon/**/*",
     "packages/lexical-history/**/*"
   ],
-  "exclude": ["packages/lexical-playground/**/*"],
+  "exclude": ["node_modules/**/*", "packages/lexical-playground/**/*"],
   "extends": "./tsconfig.json"
 }

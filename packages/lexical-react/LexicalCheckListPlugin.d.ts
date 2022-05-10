@@ -6,7 +6,4 @@
  *
  */
 
-type Props = Readonly<{
-  scrollRef: {current: HTMLElement | null};
-}>;
-export default function LexicalAutoScrollPlugin(props: Props): null;
+export default function LexicalCheckListPlugin(): null;

@@ -38,7 +38,7 @@ export default function ImageResizer({
   onResizeStart: () => void;
   setShowCaption: (boolean) => void;
   showCaption: boolean;
-}): React.Node {
+}): JSX.Element {
   const buttonRef = useRef(null);
   const positioningRef = useRef<{
     currentHeight: 'inherit' | number;
@@ -110,7 +110,10 @@ export default function ImageResizer({
     }
   };
 
-  const handlePointerDown = (event: PointerEvent, direction: number) => {
+  const handlePointerDown = (
+    event: React.PointerEvent<HTMLDivElement>,
+    direction: number,
+  ) => {
     const image = imageRef.current;
     if (image !== null) {
       const {width, height} = image.getBoundingClientRect();
@@ -188,7 +191,7 @@ export default function ImageResizer({
       }
     }
   };
-  const handlePointerUp = (_event: PointerEvent) => {
+  const handlePointerUp = () => {
     const image = imageRef.current;
     const positioning = positioningRef.current;
     if (image !== null && positioning.isResizing) {

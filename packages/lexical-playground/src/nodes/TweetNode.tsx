@@ -13,6 +13,13 @@ import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
+interface customWindow extends Window {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  twttr?: any;
+}
+
+declare const window: customWindow;
+
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
 const getHasScriptCached = () =>
@@ -20,9 +27,9 @@ const getHasScriptCached = () =>
 
 type TweetComponentProps = Readonly<{
   format: ElementFormatType | null;
-  loadingComponent?: JSX.Element;
+  loadingComponent?: JSX.Element | string;
   nodeKey: NodeKey;
-  onError?: (error?: Error) => void;
+  onError?: (error: string) => void;
   onLoad?: () => void;
   tweetID: string;
 }>;
@@ -37,7 +44,7 @@ function TweetComponent({
 }: TweetComponentProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const previousTweetIDRef = useRef(null);
+  const previousTweetIDRef = useRef<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   const createTweet = useCallback(async () => {
@@ -49,9 +56,9 @@ function TweetComponent({
       if (onLoad) {
         onLoad();
       }
-    } catch (e) {
+    } catch (error) {
       if (onError) {
-        onError(e);
+        onError(String(error));
       }
     }
   }, [onError, onLoad, tweetID]);
@@ -71,7 +78,9 @@ function TweetComponent({
         createTweet();
       }
 
-      previousTweetIDRef.current = tweetID;
+      if (previousTweetIDRef) {
+        previousTweetIDRef.current = tweetID;
+      }
     }
   }, [createTweet, onError, tweetID]);
 
@@ -97,7 +106,7 @@ export class TweetNode extends DecoratorBlockNode<JSX.Element> {
     return new TweetNode(node.__id, node.__format, node.__key);
   }
 
-  constructor(id: string, format: ElementFormatType | null, key?: NodeKey) {
+  constructor(id: string, format?: ElementFormatType | null, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }
@@ -126,6 +135,8 @@ export function $createTweetNode(tweetID: string): TweetNode {
   return new TweetNode(tweetID);
 }
 
-export function $isTweetNode(node: LexicalNode | null): node is TweetNode {
+export function $isTweetNode(
+  node: TweetNode | LexicalNode | null | undefined,
+): node is TweetNode {
   return node instanceof TweetNode;
 }

@@ -45,6 +45,8 @@ export function $createMentionNode(mentionName: string): MentionNode {
   return mentionNode;
 }
 
-export function $isMentionNode(node: LexicalNode | null): node is MentionNode {
+export function $isMentionNode(
+  node: LexicalNode | null | undefined,
+): node is MentionNode {
   return node instanceof MentionNode;
 }

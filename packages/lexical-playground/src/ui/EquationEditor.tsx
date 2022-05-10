@@ -8,12 +8,13 @@
 
 import './EquationEditor.css';
 
-import React from 'react';
+import * as React from 'react';
+import {ChangeEvent, RefObject} from 'react';
 
 type BaseEquationEditorProps = {
   equation: string;
   inline: boolean;
-  inputRef: {current: null | HTMLElement};
+  inputRef: {current: null | HTMLInputElement | HTMLTextAreaElement};
   setEquation: (string) => void;
 };
 
@@ -34,16 +35,22 @@ export default function EquationEditor({
   };
 
   return inline ? (
-    <InlineEquationEditor {...props} />
+    <InlineEquationEditor
+      {...props}
+      inputRef={inputRef as RefObject<HTMLInputElement>}
+    />
   ) : (
-    <BlockEquationEditor {...props} />
+    <BlockEquationEditor
+      {...props}
+      inputRef={inputRef as RefObject<HTMLTextAreaElement>}
+    />
   );
 }
 
 type EquationEditorImplProps = {
   equation: string;
-  inputRef: {current: null | HTMLElement};
-  onChange: (event: SyntheticInputEvent<HTMLInputElement>) => void;
+  inputRef: {current: null | HTMLInputElement};
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
 function InlineEquationEditor({
@@ -66,11 +73,17 @@ function InlineEquationEditor({
   );
 }
 
+type BlockEquationEditorImplProps = {
+  equation: string;
+  inputRef: {current: null | HTMLTextAreaElement};
+  onChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
+};
+
 function BlockEquationEditor({
   equation,
   onChange,
   inputRef,
-}: EquationEditorImplProps): JSX.Element {
+}: BlockEquationEditorImplProps): JSX.Element {
   return (
     <div className="EquationEditor_inputBackground">
       <span className="EquationEditor_dollarSign">{'$$\n'}</span>

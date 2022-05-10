@@ -21,6 +21,15 @@ import {useEffect, useRef, useState} from 'react';
 
 import useReport from '../hooks/useReport';
 
+interface customWindow extends Window {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webkitSpeechRecognition?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  SpeechRecognition?: any;
+}
+
+declare const window: customWindow;
+
 export const SPEECH_TO_TEXT_COMMAND: LexicalCommand<boolean> = createCommand();
 
 const VOICE_COMMANDS: Readonly<
@@ -33,10 +42,10 @@ const VOICE_COMMANDS: Readonly<
     selection.insertParagraph();
   },
   redo: ({editor}) => {
-    editor.dispatchCommand(REDO_COMMAND);
+    editor.dispatchCommand(REDO_COMMAND, undefined);
   },
   undo: ({editor}) => {
-    editor.dispatchCommand(UNDO_COMMAND);
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
   },
 };
 

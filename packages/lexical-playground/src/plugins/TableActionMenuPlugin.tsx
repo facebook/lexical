@@ -30,8 +30,7 @@ import {
   $setSelection,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-// $FlowFixMe
+import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 type TableCellActionMenuProps = Readonly<{
@@ -48,7 +47,7 @@ function TableActionMenu({
   contextRef,
 }: TableCellActionMenuProps) {
   const [editor] = useLexicalComposerContext();
-  const dropDownRef = useRef();
+  const dropDownRef = useRef<HTMLDivElement>();
   const [tableCellNode, updateTableCellNode] = useState(_tableCellNode);
   const [selectionCounts, updateSelectionCounts] = useState({
     columns: 1,
@@ -62,7 +61,7 @@ function TableActionMenu({
 
       if (nodeUpdated) {
         editor.getEditorState().read(() => {
-          updateTableCellNode(tableCellNode.getLatest());
+          updateTableCellNode(tableCellNode.getLatest<TableCellNode>());
         });
       }
     });
@@ -133,7 +132,7 @@ function TableActionMenu({
         tableSelection.clearHighlight();
 
         tableNode.markDirty();
-        updateTableCellNode(tableCellNode.getLatest());
+        updateTableCellNode(tableCellNode.getLatest<TableCellNode>());
       }
 
       $setSelection(null);
@@ -252,78 +251,72 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);
 
-  const toggleTableRowIsHeader = useCallback(
-    (isHeader) => {
-      editor.update(() => {
-        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+  const toggleTableRowIsHeader = useCallback(() => {
+    editor.update(() => {
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
-        const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+      const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
 
-        const tableRows = tableNode.getChildren();
+      const tableRows = tableNode.getChildren();
 
-        if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
-          throw new Error('Expected table cell to be inside of table row.');
+      if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
+        throw new Error('Expected table cell to be inside of table row.');
+      }
+
+      const tableRow = tableRows[tableRowIndex];
+
+      if (!$isTableRowNode(tableRow)) {
+        throw new Error('Expected table row');
+      }
+
+      tableRow.getChildren().forEach((tableCell) => {
+        if (!$isTableCellNode(tableCell)) {
+          throw new Error('Expected table cell');
         }
 
-        const tableRow = tableRows[tableRowIndex];
+        tableCell.toggleHeaderStyle(TableCellHeaderStates.ROW);
+      });
+
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
+
+  const toggleTableColumnIsHeader = useCallback(() => {
+    editor.update(() => {
+      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+
+      const tableColumnIndex =
+        $getTableColumnIndexFromTableCellNode(tableCellNode);
+
+      const tableRows = tableNode.getChildren();
+
+      for (let r = 0; r < tableRows.length; r++) {
+        const tableRow = tableRows[r];
 
         if (!$isTableRowNode(tableRow)) {
           throw new Error('Expected table row');
         }
 
-        tableRow.getChildren().forEach((tableCell) => {
-          if (!$isTableCellNode(tableCell)) {
-            throw new Error('Expected table cell');
-          }
+        const tableCells = tableRow.getChildren();
 
-          tableCell.toggleHeaderStyle(TableCellHeaderStates.ROW);
-        });
-
-        clearTableSelection();
-        onClose();
-      });
-    },
-    [editor, tableCellNode, clearTableSelection, onClose],
-  );
-
-  const toggleTableColumnIsHeader = useCallback(
-    (isHeader) => {
-      editor.update(() => {
-        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-        const tableColumnIndex =
-          $getTableColumnIndexFromTableCellNode(tableCellNode);
-
-        const tableRows = tableNode.getChildren();
-
-        for (let r = 0; r < tableRows.length; r++) {
-          const tableRow = tableRows[r];
-
-          if (!$isTableRowNode(tableRow)) {
-            throw new Error('Expected table row');
-          }
-
-          const tableCells = tableRow.getChildren();
-
-          if (tableColumnIndex >= tableCells.length || tableColumnIndex < 0) {
-            throw new Error('Expected table cell to be inside of table row.');
-          }
-
-          const tableCell = tableCells[tableColumnIndex];
-
-          if (!$isTableCellNode(tableCell)) {
-            throw new Error('Expected table cell');
-          }
-
-          tableCell.toggleHeaderStyle(TableCellHeaderStates.COLUMN);
+        if (tableColumnIndex >= tableCells.length || tableColumnIndex < 0) {
+          throw new Error('Expected table cell to be inside of table row.');
         }
 
-        clearTableSelection();
-        onClose();
-      });
-    },
-    [editor, tableCellNode, clearTableSelection, onClose],
-  );
+        const tableCell = tableCells[tableColumnIndex];
+
+        if (!$isTableCellNode(tableCell)) {
+          throw new Error('Expected table cell');
+        }
+
+        tableCell.toggleHeaderStyle(TableCellHeaderStates.COLUMN);
+      }
+
+      clearTableSelection();
+      onClose();
+    });
+  }, [editor, tableCellNode, clearTableSelection, onClose]);
 
   return createPortal(
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
@@ -404,7 +397,7 @@ function TableActionMenu({
   );
 }
 
-function TableCellActionMenuContainer(): React.MixedElement {
+function TableCellActionMenuContainer(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const menuButtonRef = useRef(null);
@@ -531,15 +524,6 @@ function TableCellActionMenuContainer(): React.MixedElement {
   );
 }
 
-export default function TableActionMenuPlugin(): React.Portal {
-  const [editor] = useLexicalComposerContext();
-
-  return useMemo(
-    () =>
-      createPortal(
-        <TableCellActionMenuContainer editor={editor} />,
-        document.body,
-      ),
-    [editor],
-  );
+export default function TableActionMenuPlugin(): ReactPortal {
+  return createPortal(<TableCellActionMenuContainer />, document.body);
 }

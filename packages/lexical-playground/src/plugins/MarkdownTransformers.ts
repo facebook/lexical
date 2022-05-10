@@ -199,7 +199,7 @@ export const TABLE: ElementTransformer = {
       table.append(tableRow);
 
       for (let i = 0; i < maxCells; i++) {
-        tableRow.append(i < cells.length ? cells[i] : createTableCell());
+        tableRow.append(i < cells.length ? cells[i] : createTableCell(null));
       }
     }
 

@@ -43,6 +43,8 @@ export function $createKeywordNode(keyword: string): KeywordNode {
   return new KeywordNode(keyword);
 }
 
-export function $isKeywordNode(node: LexicalNode | null | undefined): boolean {
+export function $isKeywordNode(
+  node: LexicalNode | null | undefined | undefined,
+): boolean {
   return node instanceof KeywordNode;
 }

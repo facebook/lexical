@@ -11,7 +11,7 @@ import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 import {TextNode} from 'lexical';
 
 export class EmojiNode extends TextNode {
-  __className: string;
+  __className?: string;
 
   static getType(): string {
     return 'emoji';
@@ -21,7 +21,7 @@ export class EmojiNode extends TextNode {
     return new EmojiNode(node.__className, node.__text, node.__key);
   }
 
-  constructor(className: string, text: string, key: void | NodeKey) {
+  constructor(className: string, text: string, key?: NodeKey) {
     super(text, key);
     this.__className = className;
   }
@@ -40,17 +40,18 @@ export class EmojiNode extends TextNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean {
-    // $FlowFixMe: this will always be an element or null
-    const inner: null | HTMLElement = dom.firstChild;
+    const inner = dom.firstChild;
     if (inner === null) {
       return true;
     }
-    super.updateDOM(prevNode, inner, config);
+    super.updateDOM(prevNode, inner as HTMLElement, config);
     return false;
   }
 }
 
-export function $isEmojiNode(node: LexicalNode | null): node is EmojiNode {
+export function $isEmojiNode(
+  node: LexicalNode | null | undefined,
+): node is EmojiNode {
   return node instanceof EmojiNode;
 }
 

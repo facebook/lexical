@@ -6,14 +6,11 @@
  *
  */
 
-// $FlowFixMe: node modules are ignored by flow
 import './ExcalidrawModal.css';
 
-// $FlowFixMe: Flow doesn't have types for Excalidraw
 import Excalidraw from '@excalidraw/excalidraw';
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
-// $FlowFixMe: Flow doesn't see react-dom module
+import {ReactPortal, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import Button from '../../ui/Button';
@@ -40,11 +37,11 @@ type Props = {
   /**
    * Handle modal closing
    */
-  onHide: () => mixed;
+  onHide: () => void;
   /**
    * Callback when the save button is clicked
    */
-  onSave: (elements: ReadonlyArray<ExcalidrawElementFragment>) => mixed;
+  onSave: (elements: ReadonlyArray<ExcalidrawElementFragment>) => void;
 };
 
 /**
@@ -59,7 +56,7 @@ export default function ExcalidrawModal({
   isShown = false,
   onHide,
   onDelete,
-}: Props): React.Portal | null {
+}: Props): ReactPortal | null {
   const excalidrawRef = useRef(null);
   const excaliDrawModelRef = useRef(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
@@ -75,8 +72,7 @@ export default function ExcalidrawModal({
   useEffect(() => {
     let modalOverlayElement = null;
     const clickOutsideHandler = (event: MouseEvent) => {
-      // $FlowFixMe: event.target is always a Node on the DOM
-      const target: HTMLElement = event.target;
+      const target = event.target;
       if (
         excaliDrawModelRef.current !== null &&
         !excaliDrawModelRef.current.contains(target) &&

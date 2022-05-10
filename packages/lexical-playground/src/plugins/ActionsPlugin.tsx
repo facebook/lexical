@@ -55,7 +55,7 @@ export default function ActionsPlugin({
       editor.registerReadOnlyListener((readOnly) => {
         setIsReadyOnly(readOnly);
       }),
-      editor.registerCommand(
+      editor.registerCommand<boolean>(
         CONNECTED_COMMAND,
         (payload) => {
           const isConnected = payload;
@@ -113,7 +113,10 @@ export default function ActionsPlugin({
       {SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {
-            editor.dispatchCommand(SPEECH_TO_TEXT_COMMAND, !isSpeechToText);
+            editor.dispatchCommand<boolean>(
+              SPEECH_TO_TEXT_COMMAND,
+              !isSpeechToText,
+            );
             setIsSpeechToText(!isSpeechToText);
           }}
           className={
@@ -207,7 +210,7 @@ function ShowClearDialog({
       <div className="Modal__content">
         <Button
           onClick={() => {
-            editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
+            editor.dispatchCommand<void>(CLEAR_EDITOR_COMMAND, undefined);
             editor.focus();
             onClose();
           }}>

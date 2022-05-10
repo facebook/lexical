@@ -392,6 +392,8 @@ export declare class LexicalNode {
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
+  setPrev(key: NodeKey): void;
+  setNext(key: NodeKey): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
 

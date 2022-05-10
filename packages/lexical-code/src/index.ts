@@ -734,7 +734,7 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
             lastNode.setNext(to.__key);
             to.setPrev(lastNode.__key);
           } else {
-            node.getWritable().__last = lastNode.__key;
+            node.getWritable<CodeNode>().__last = lastNode.__key;
           }
           return true;
         }
@@ -849,9 +849,9 @@ function getDiffRange(
   prevNodes: Array<LexicalNode>,
   nextNodes: Array<LexicalNode>,
 ): {
-  from: number;
+  from: LexicalNode | null | undefined;
   nodesForReplacement: Array<LexicalNode>;
-  to: number;
+  to: LexicalNode | null | undefined;
 } {
   let leadingMatch = 0;
   while (leadingMatch < prevNodes.length) {

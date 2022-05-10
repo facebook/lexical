@@ -17,7 +17,14 @@ import {createEmptyEditorState} from './LexicalEditorState';
 export function $serializeRoot<
   SerializedNode: BaseSerializedNode,
   T: BaseSerializer<SerializedNode>,
->(editor: LexicalEditor, serializer: T): SerializedNode {
+>(editor: LexicalEditor): SerializedNode {
+  const serializer = editor._serializer;
+  if (serializer === null) {
+    invariant(
+      false,
+      'Serializer not defined. You can pass a new serializer via EditorConfig -> createEditor({ serializer })',
+    );
+  }
   return editor.getEditorState().read(() => {
     const serializedRoot = serializer.serialize($getRoot());
     if (serializedRoot === null) {
@@ -30,7 +37,14 @@ export function $serializeRoot<
 export function $deserializeRoot<
   SerializedNode: BaseSerializedNode,
   T: BaseSerializer<SerializedNode>,
->(editor: LexicalEditor, serializer: T, json: SerializedNode): void {
+>(editor: LexicalEditor, json: SerializedNode): void {
+  const serializer = editor._serializer;
+  if (serializer === null) {
+    invariant(
+      false,
+      'Serializer not defined. You can pass a new serializer via EditorConfig -> createEditor({ serializer })',
+    );
+  }
   editor.update(() => {
     const rootNode = serializer.deserialize(json);
     if (!$isRootNode(rootNode)) {

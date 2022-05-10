@@ -40,14 +40,11 @@ export type BaseSerializedNode = $ReadOnly<{
 }>;
 
 // Users can extend this class and override/delegate to the methods
+// TODO prevent this class somehow from being used directly -> use editor config
 export class BaseSerializer<SerializedNode: BaseSerializedNode> {
   deserialize(json: SerializedNode): null | LexicalNode {
     if (json.type === 'root') {
-      // invariant(
-      //   false,
-      //   "RootNode can't be copied. Use $deserializeRoot instead to replace the entire tree.",
-      // );
-      // $FlowFixMe
+      // $FlowFixMe Refine type
       const rootJSON = (json: SerializedRootNode<SerializedNode>);
       return $deserializeRootNode(rootJSON, (json) => this.deserialize(json));
     } else if (json.type === 'paragraph') {
@@ -55,6 +52,7 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
     } else if (json.type === 'linebreak') {
       return $deserializeLineBreakNode(json);
     } else if (json.type === 'text') {
+      // $FlowFixMe Refine type
       return $deserializeTextNode(json);
     }
     return null;

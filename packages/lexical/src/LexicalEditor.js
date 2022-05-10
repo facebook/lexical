@@ -9,6 +9,7 @@
 
 import type {EditorState, ParsedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
+import type {BaseSerializer} from '@lexical/serialize';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -238,6 +239,8 @@ export function createEditor(editorConfig?: {
   parentEditor?: LexicalEditor,
   readOnly?: boolean,
   theme?: EditorThemeClasses,
+  // TODO I wonder if it should be Class<BaseSerializer>
+  serializer?: BaseSerializer<any>,
 }): LexicalEditor {
   const config = editorConfig || {};
   const namespace = config.namespace || createUID();
@@ -255,6 +258,7 @@ export function createEditor(editorConfig?: {
   ];
   const onError = config.onError;
   const isReadOnly = config.readOnly || false;
+  const serializer = config.serializer || null;
 
   const registeredNodes = new Map();
   for (let i = 0; i < nodes.length; i++) {
@@ -279,6 +283,7 @@ export function createEditor(editorConfig?: {
     onError,
     initializeConversionCache(registeredNodes),
     isReadOnly,
+    serializer,
   );
   if (initialEditorState !== undefined) {
     editor._pendingEditorState = initialEditorState;
@@ -315,6 +320,7 @@ export class LexicalEditor {
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
   _readOnly: boolean;
+  _serializer: null | BaseSerializer<any>;
 
   constructor(
     editorState: EditorState,
@@ -324,6 +330,7 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     readOnly: boolean,
+    serializer: null | BaseSerializer<any>,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -372,6 +379,7 @@ export class LexicalEditor {
     this._htmlConversions = htmlConversions;
     this._readOnly = false;
     this._headless = false;
+    this._serializer = serializer;
   }
   isComposing(): boolean {
     return this._compositionKey != null;
@@ -638,16 +646,11 @@ export class LexicalEditor {
       editorState: this._editorState,
     };
   }
-  serialize<
-    SerializedNode: BaseSerializedNode,
-    T: BaseSerializer<SerializedNode>,
-  >(serializer: T): SerializedNode {
-    return $serializeRoot(this, serializer);
+  // Or SerializedRootNode
+  serialize(): SerializedNode<any> {
+    return $serializeRoot(this);
   }
-  deserialize<
-    SerializedNode: BaseSerializedNode,
-    T: BaseSerializer<SerializedNode>,
-  >(serializer: T, json: SerializedNode): void {
-    $deserializeRoot(this, serializer, json);
+  deserialize<SerializedNode: BaseSerializedNode>(json: SerializedNode): void {
+    $deserializeRoot(this, json);
   }
 }

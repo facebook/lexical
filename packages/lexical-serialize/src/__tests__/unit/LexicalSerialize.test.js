@@ -19,30 +19,34 @@ import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('LexicalSerialize tests', () => {
-  initializeUnitTest((testEnv) => {
-    test('BaseSerializer can serialize/deserialize', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const paragraphNode = $createParagraphNode();
-        const textNode = $createTextNode();
-        $getRoot().append(paragraphNode);
-        paragraphNode.append(textNode);
+  initializeUnitTest(
+    (testEnv) => {
+      test('BaseSerializer can serialize/deserialize', async () => {
+        const {editor} = testEnv;
+        await editor.update(() => {
+          const paragraphNode = $createParagraphNode();
+          const textNode = $createTextNode();
+          $getRoot().append(paragraphNode);
+          paragraphNode.append(textNode);
+        });
+
+        // editor.getEditorState().read(() => {
+        //   console.info(serializer.serialize($getRoot()));
+        // });
+        const serialized = editor.serialize();
+        console.info('serialized', serialized);
+
+        editor.deserialize(serialized);
+        console.info(editor.getEditorState()._nodeMap);
+
+        const serialized2 = editor.serialize();
+        console.info('serialized2', serialized2);
+
+        expect(serialized).toEqual(serialized2);
       });
-
-      const serializer = new BaseSerializer();
-      // editor.getEditorState().read(() => {
-      //   console.info(serializer.serialize($getRoot()));
-      // });
-      const serialized = editor.serialize(serializer);
-      console.info('serialized', serialized);
-
-      editor.deserialize(serializer, serialized);
-      console.info(editor.getEditorState()._nodeMap);
-
-      const serialized2 = editor.serialize(serializer);
-      console.info('serialized2', serialized2);
-
-      expect(serialized).toEqual(serialized2);
-    });
-  });
+    },
+    {
+      serializer: new BaseSerializer(),
+    },
+  );
 });

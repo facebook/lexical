@@ -33,19 +33,16 @@ describe('LexicalSerialize tests', () => {
       // editor.getEditorState().read(() => {
       //   console.info(serializer.serialize($getRoot()));
       // });
-      const serialized = editor.getEditorState().read(() => {
-        return $serializeRoot(serializer, editor.getEditorState());
-      });
-      console.info(serialized);
+      const serialized = editor.serialize(serializer);
+      console.info('serialized', serialized);
 
-      await editor.update(() => {
-        $deserializeRoot(serializer, serialized);
-      });
+      editor.deserialize(serializer, serialized);
+      console.info(editor.getEditorState()._nodeMap);
 
-      const serialized2 = editor.getEditorState().read(() => {
-        return $serializeRoot(serializer, editor.getEditorState());
-      });
-      console.info(serialized2);
+      const serialized2 = editor.serialize(serializer);
+      console.info('serialized2', serialized2);
+
+      expect(serialized).toEqual(serialized2);
     });
   });
 });

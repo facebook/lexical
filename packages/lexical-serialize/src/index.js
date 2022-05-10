@@ -43,6 +43,10 @@ export type BaseSerializedNode = $ReadOnly<{
 export class BaseSerializer<SerializedNode: BaseSerializedNode> {
   deserialize(json: SerializedNode): null | LexicalNode {
     if (json.type === 'root') {
+      // invariant(
+      //   false,
+      //   "RootNode can't be copied. Use $deserializeRoot instead to replace the entire tree.",
+      // );
       // $FlowFixMe
       const rootJSON = (json: SerializedRootNode<SerializedNode>);
       return $deserializeRootNode(rootJSON, (json) => this.deserialize(json));
@@ -55,7 +59,7 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
     }
     return null;
   }
-  serialize(node: LexicalNode): null | SerializedNode | DefaultSerializedNodes {
+  serialize(node: LexicalNode): null | SerializedNode {
     if ($isRootNode(node)) {
       return $serializeRootNode<DefaultBlockNodes>(node, (node: LexicalNode) =>
         this.serialize(node),
@@ -69,19 +73,4 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
     }
     return null;
   }
-}
-
-export function $serializeRoot<T: BaseSerializer>(serializer: T): string {
-  return serializer.serialize($getRoot());
-}
-
-export function $deserializeRoot<T: BaseSerializer>(
-  serializer: T,
-  json: string,
-): void {
-  const rootNode = serializer.deserialize(json);
-  if (!$isRootNode(rootNode)) {
-    invariant(false, 'Expected RootNode');
-  }
-  $getRoot().replace(rootNode);
 }

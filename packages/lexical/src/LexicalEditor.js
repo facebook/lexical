@@ -33,6 +33,7 @@ import {
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
+import {$deserializeRoot, $serializeRoot} from './LexicalSerialize';
 
 export type EditorThemeClassName = string;
 
@@ -636,5 +637,17 @@ export class LexicalEditor {
     return {
       editorState: this._editorState,
     };
+  }
+  serialize<
+    SerializedNode: BaseSerializedNode,
+    T: BaseSerializer<SerializedNode>,
+  >(serializer: T): SerializedNode {
+    return $serializeRoot(this, serializer);
+  }
+  deserialize<
+    SerializedNode: BaseSerializedNode,
+    T: BaseSerializer<SerializedNode>,
+  >(serializer: T, json: SerializedNode): void {
+    $deserializeRoot(this, serializer, json);
   }
 }

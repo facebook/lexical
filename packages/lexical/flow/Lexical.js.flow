@@ -920,7 +920,7 @@ declare export function $serializeRootNode<SerializedNode>(
   serializeChild: (node: LexicalNode) => SerializedNode,
 ): SerializedRootNode<SerializedNode>;
 
-declare export function $deserializeRootNode<SerializedNode>(
+declare export function $deserializeOverrideRootNode<SerializedNode>(
   json: SerializedRootNode<SerializedNode>,
   deserializeChild: (json: SerializedNode) => null | LexicalNode,
 ): RootNode;

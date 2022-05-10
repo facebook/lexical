@@ -21,6 +21,7 @@ import {
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 import {removeNode} from '../LexicalNode';
+import {$getRoot} from '../LexicalUtils';
 
 export type SerializedRootNode<SerializedNode> = {
   children: Array<SerializedNode>,
@@ -75,26 +76,7 @@ export class RootNode extends ElementNode {
 
   // Make this nicer, revise edge cases
   replace<RootNode>(replaceWith: RootNode): RootNode {
-    errorOnReadOnly();
-    const toReplaceKey = this.__key;
-    const writableReplaceWith = replaceWith.getWritable();
-    const newKey = writableReplaceWith.__key;
-    removeNode(this, false);
-    // const selection = $getSelection();
-    // if ($isRangeSelection(selection)) {
-    //   const anchor = selection.anchor;
-    //   const focus = selection.focus;
-    //   if (anchor.key === toReplaceKey) {
-    //     $moveSelectionPointToEnd(anchor, writableReplaceWith);
-    //   }
-    //   if (focus.key === toReplaceKey) {
-    //     $moveSelectionPointToEnd(focus, writableReplaceWith);
-    //   }
-    // }
-    // if ($getCompositionKey() === toReplaceKey) {
-    //   $setCompositionKey(newKey);
-    // }
-    return writableReplaceWith;
+    // bring back invariant
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
@@ -171,11 +153,12 @@ export function $deserializeRootNode<SerializedNode>(
 ): RootNode {
   const rootNode = $createRootNode();
   rootNode.__format = json.format;
-  rootNode.setIndent(json.indent);
-  rootNode.setDirection(json.direction);
+  rootNode.__indent = json.indent;
+  rootNode.__dir = json.direction;
   const jsonChildren = json.children;
   for (let i = 0; i < jsonChildren.length; i++) {
-    rootNode.append(deserializeChild(jsonChildren[i]));
+    const child = deserializeChild(jsonChildren[i]);
+    rootNode.__children.push(child.__key);
   }
   return rootNode;
 }

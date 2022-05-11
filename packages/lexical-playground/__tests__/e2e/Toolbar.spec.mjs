@@ -47,7 +47,12 @@ test.describe('Toolbar', () => {
       html`
         <p>
           <span contenteditable="false" data-lexical-decorator="true">
-            <img alt="Yellow flower in tilt shift lens" src="${IMAGE_URL}" />
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${IMAGE_URL}" />
+            </div>
             <div>
               <div
                 contenteditable="true"
@@ -211,11 +216,14 @@ test.describe('Toolbar', () => {
             class="editor-image"
             contenteditable="false"
             data-lexical-decorator="true">
-            <img
-              alt="Yellow flower in tilt shift lens"
-              class="focused"
-              src="${IMAGE_URL}"
-              style="height: inherit; max-width: 500px; width: inherit" />
+            <div draggable="true">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                class="focused"
+                draggable="false"
+                src="${IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
             <button class="image-caption-button">Add Caption</button>
             <div class="image-resizer image-resizer-n"></div>
             <div class="image-resizer image-resizer-ne"></div>
@@ -242,11 +250,14 @@ test.describe('Toolbar', () => {
             class="editor-image"
             contenteditable="false"
             data-lexical-decorator="true">
-            <img
-              alt="Yellow flower in tilt shift lens"
-              class="focused"
-              src="${IMAGE_URL}"
-              style="height: inherit; max-width: 500px; width: inherit" />
+            <div draggable="true">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                class="focused"
+                draggable="false"
+                src="${IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
             <button class="image-caption-button">Add Caption</button>
             <div class="image-resizer image-resizer-n"></div>
             <div class="image-resizer image-resizer-ne"></div>

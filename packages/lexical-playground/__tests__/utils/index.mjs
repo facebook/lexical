@@ -513,16 +513,40 @@ export async function insertImageCaption(page, caption) {
   await page.keyboard.type(caption);
 }
 
-export async function dragMouse(page, firstBoundingBox, secondBoundingBox) {
+export async function dragMouse(
+  page,
+  firstBoundingBox,
+  secondBoundingBox,
+  position = 'middle',
+) {
   await page.mouse.move(
     firstBoundingBox.x + firstBoundingBox.width / 2,
     firstBoundingBox.y + firstBoundingBox.height / 2,
   );
   await page.mouse.down();
-  await page.mouse.move(
-    secondBoundingBox.x + secondBoundingBox.width / 2,
-    secondBoundingBox.y + secondBoundingBox.height / 2,
-  );
+
+  let targetX = secondBoundingBox.x;
+  let targetY = secondBoundingBox.y;
+
+  switch (position) {
+    case 'start':
+      break;
+
+    case 'middle':
+      targetX += secondBoundingBox.width / 2;
+      targetY += secondBoundingBox.height / 2;
+      break;
+
+    case 'end':
+      targetX += secondBoundingBox.width;
+      targetY += secondBoundingBox.height;
+      break;
+
+    default:
+      break;
+  }
+
+  await page.mouse.move(targetX, targetY);
   await page.mouse.up();
 }
 
@@ -667,4 +691,24 @@ export async function pressToggleUnderline(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('u');
   await keyUpCtrlOrMeta(page);
+}
+
+export async function dragImage(page, selector, position = 'middle') {
+  let p = page;
+
+  if (IS_COLLAB) {
+    await focusEditor(page);
+    p = await page.frame('left');
+  }
+
+  const imageBoundingBox = await p.locator('.editor-image img');
+
+  const targetBoundingBox = await p.locator(selector);
+
+  await dragMouse(
+    page,
+    await imageBoundingBox.boundingBox(),
+    await targetBoundingBox.boundingBox(),
+    position,
+  );
 }

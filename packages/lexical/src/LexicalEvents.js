@@ -38,6 +38,7 @@ import {
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   DRAGEND_COMMAND,
+  DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   FOCUS_COMMAND,
@@ -129,16 +130,16 @@ const rootElementEvents: RootElementEvents = [
   ['cut', PASS_THROUGH_COMMAND],
   ['copy', PASS_THROUGH_COMMAND],
   ['dragstart', PASS_THROUGH_COMMAND],
+  ['dragover', PASS_THROUGH_COMMAND],
   ['paste', PASS_THROUGH_COMMAND],
   ['focus', PASS_THROUGH_COMMAND],
   ['blur', PASS_THROUGH_COMMAND],
+  ['drop', PASS_THROUGH_COMMAND],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
   // $FlowIgnore bad event inheritance
   rootElementEvents.push(['beforeinput', onBeforeInput]);
-} else {
-  rootElementEvents.push(['drop', PASS_THROUGH_COMMAND]);
 }
 
 let lastKeyDownTimeStamp = 0;
@@ -809,6 +810,8 @@ export function addRootElementEvents(
                   return dispatchCommand(editor, PASTE_COMMAND, event);
                 case 'dragstart':
                   return dispatchCommand(editor, DRAGSTART_COMMAND, event);
+                case 'dragover':
+                  return dispatchCommand(editor, DRAGOVER_COMMAND, event);
                 case 'dragend':
                   return dispatchCommand(editor, DRAGEND_COMMAND, event);
                 case 'focus':

@@ -54,6 +54,7 @@ export const DROP_COMMAND: LexicalCommand<DragEvent> = createCommand();
 export const FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType> =
   createCommand();
 export const DRAGSTART_COMMAND: LexicalCommand<DragEvent> = createCommand();
+export const DRAGOVER_COMMAND: LexicalCommand<DragEvent> = createCommand();
 export const DRAGEND_COMMAND: LexicalCommand<DragEvent> = createCommand();
 export const COPY_COMMAND: LexicalCommand<ClipboardEvent> = createCommand();
 export const CUT_COMMAND: LexicalCommand<ClipboardEvent> = createCommand();

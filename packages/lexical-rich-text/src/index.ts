@@ -684,7 +684,6 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        // TODO: Make drag and drop work at some point.
         event.preventDefault();
         return true;
       },
@@ -697,7 +696,6 @@ export function registerRichText(
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        // TODO: Make drag and drop work at some point.
         event.preventDefault();
         return true;
       },

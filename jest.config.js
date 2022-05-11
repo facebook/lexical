@@ -29,8 +29,10 @@ module.exports = {
           '<rootDir>/packages/lexical-clipboard/src/index.js',
         '^@lexical/code$': '<rootDir>/packages/lexical-code/src/index.ts',
         '^@lexical/dragon$': '<rootDir>/packages/lexical-dragon/src/index.ts',
-        '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.js',
-        '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.js',
+        '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.ts',
+        '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.ts',
+        '^@lexical/headless$':
+          '<rootDir>/packages/lexical-headless/src/index.ts',
         '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.ts',
         '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.js',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
@@ -39,7 +41,7 @@ module.exports = {
         '^@lexical/overflow$':
           '<rootDir>/packages/lexical-overflow/src/index.js',
         '^@lexical/plain-text$':
-          '<rootDir>/packages/lexical-plain-text/src/index.js',
+          '<rootDir>/packages/lexical-plain-text/src/index.ts',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
         '^@lexical/react/LexicalAutoLinkPlugin$':
@@ -69,7 +71,7 @@ module.exports = {
         '^@lexical/react/useLexicalEditor$':
           '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
         '^@lexical/rich-text$':
-          '<rootDir>/packages/lexical-rich-text/src/index.js',
+          '<rootDir>/packages/lexical-rich-text/src/index.ts',
         '^@lexical/selection$':
           '<rootDir>/packages/lexical-selection/src/index.js',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
@@ -81,7 +83,7 @@ module.exports = {
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getDOMSelection$':
           '<rootDir>/packages/shared/src/getDOMSelection.js',
-        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
+        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.d.ts',
         '^shared/simpleDiffWithCursor$':
           '<rootDir>/packages/shared/src/simpleDiffWithCursor.js',
         '^shared/useLayoutEffect$':

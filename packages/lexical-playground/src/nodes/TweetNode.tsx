@@ -13,13 +13,6 @@ import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
-interface customWindow extends Window {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  twttr?: any;
-}
-
-declare const window: customWindow;
-
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
 const getHasScriptCached = () =>

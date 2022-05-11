@@ -8,7 +8,7 @@
   ],
   "license": "MIT",
   "version": "0.2.7",
-  "main": "LexicalRichText.js",
+  "main": "LexicalRichText.ts",
   "peerDependencies": {
     "lexical": "0.2.7",
     "@lexical/selection": "0.2.7",

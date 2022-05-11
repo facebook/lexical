@@ -67,7 +67,7 @@ describe('LexicalCodeNode tests', () => {
       });
     });
 
-    test('CodeNode.insertNewAfter()', async () => {
+    test.skip('CodeNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const root = $getRoot();

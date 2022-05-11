@@ -39,7 +39,6 @@ export function createHeadlessEditor(editorConfig?: {
     'focus',
     'blur',
   ].forEach((method) => {
-    // $FlowFixMe
     editor[method] = () => {
       throw new Error(`${method} is not supported in headless mode`);
     };

@@ -358,7 +358,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalFile',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical File',
@@ -380,7 +380,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalHashtag',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Hashtag',
@@ -490,7 +490,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalPlainText',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Plain Text',
@@ -501,7 +501,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalRichText',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Rich Text',
@@ -523,7 +523,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalHeadless',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Headless',

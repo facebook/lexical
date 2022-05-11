@@ -7,6 +7,4 @@
  *
  */
 
-'use strict';
-
-module.exports = require('./dist/LexicalRichText.js');
+module.exports = require('./dist/LexicalPlainText.js');

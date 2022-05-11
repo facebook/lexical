@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {EditorState, LexicalEditor} from 'lexical';
@@ -47,14 +46,17 @@ import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 // Convoluted logic to make this work with Flow. Order matters.
-const options = {tag: 'history-merge'};
+const options = {
+  tag: 'history-merge',
+};
+
 const setEditorOptions: {
-  tag?: string,
+  tag?: string;
 } = options;
 const updateOptions: {
-  onUpdate?: () => void,
-  skipTransforms?: true,
-  tag?: string,
+  onUpdate?: () => void;
+  skipTransforms?: true;
+  tag?: string;
 } = options;
 
 function onCopyForPlainText(
@@ -65,12 +67,15 @@ function onCopyForPlainText(
   editor.update(() => {
     const clipboardData = event.clipboardData;
     const selection = $getSelection();
+
     if (selection !== null) {
       if (clipboardData != null) {
         const htmlString = $getHtmlContent(editor);
+
         if (htmlString !== null) {
           clipboardData.setData('text/html', htmlString);
         }
+
         clipboardData.setData('text/plain', selection.getTextContent());
       }
     }
@@ -85,6 +90,7 @@ function onPasteForPlainText(
   editor.update(() => {
     const selection = $getSelection();
     const clipboardData = event.clipboardData;
+
     if (clipboardData != null && $isRangeSelection(selection)) {
       $insertDataTransferForPlainText(clipboardData, selection);
     }
@@ -95,6 +101,7 @@ function onCutForPlainText(event: ClipboardEvent, editor: LexicalEditor): void {
   onCopyForPlainText(event, editor);
   editor.update(() => {
     const selection = $getSelection();
+
     if ($isRangeSelection(selection)) {
       selection.removeText();
     }
@@ -111,10 +118,12 @@ function initializeEditor(
     editor.update(() => {
       const root = $getRoot();
       const firstChild = root.getFirstChild();
+
       if (firstChild === null) {
         const paragraph = $createParagraphNode();
         root.append(paragraph);
         const activeElement = document.activeElement;
+
         if (
           $getSelection() !== null ||
           (activeElement !== null && activeElement === editor.getRootElement())
@@ -130,10 +139,12 @@ function initializeEditor(
         editor.setEditorState(parsedEditorState, setEditorOptions);
         break;
       }
+
       case 'object': {
         editor.setEditorState(initialEditorState, setEditorOptions);
         break;
       }
+
       case 'function': {
         editor.update(initialEditorState, updateOptions);
         break;
@@ -147,85 +158,100 @@ export function registerPlainText(
   initialEditorState?: InitialEditorStateType,
 ): () => void {
   const removeListener = mergeRegister(
-    editor.registerCommand(
+    editor.registerCommand<boolean>(
       DELETE_CHARACTER_COMMAND,
-      (isBackward: boolean) => {
+      (isBackward) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         selection.deleteCharacter(isBackward);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<boolean>(
       DELETE_WORD_COMMAND,
-      (isBackward: boolean) => {
+      (isBackward) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         selection.deleteWord(isBackward);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<boolean>(
       DELETE_LINE_COMMAND,
-      (isBackward: boolean) => {
+      (isBackward) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         selection.deleteLine(isBackward);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<InputEvent | string>(
       INSERT_TEXT_COMMAND,
-      (eventOrText: InputEvent | string) => {
+      (eventOrText) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         if (typeof eventOrText === 'string') {
           selection.insertText(eventOrText);
         } else {
           const dataTransfer = eventOrText.dataTransfer;
+
           if (dataTransfer != null) {
             $insertDataTransferForPlainText(dataTransfer, selection);
           } else {
             const data = eventOrText.data;
+
             if (data) {
               selection.insertText(data);
             }
           }
         }
+
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       REMOVE_TEXT_COMMAND,
-      (payload) => {
+      () => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         selection.removeText();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<boolean>(
       INSERT_LINE_BREAK_COMMAND,
-      (selectStart: boolean) => {
+      (selectStart) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         selection.insertLineBreak(selectStart);
         return true;
       },
@@ -233,83 +259,99 @@ export function registerPlainText(
     ),
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
-      (payload) => {
+      () => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         selection.insertLineBreak();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
       (payload) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: KeyboardEvent = payload;
+
+        const event = payload;
         const isHoldingShift = event.shiftKey;
+
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
           event.preventDefault();
           $moveCharacter(selection, isHoldingShift, true);
           return true;
         }
+
         return false;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_RIGHT_COMMAND,
       (payload) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const event: KeyboardEvent = payload;
+
+        const event = payload;
         const isHoldingShift = event.shiftKey;
+
         if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
           event.preventDefault();
           $moveCharacter(selection, isHoldingShift, false);
           return true;
         }
+
         return false;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
-      (event: KeyboardEvent) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
-      (event: KeyboardEvent) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         event.preventDefault();
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, false);
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<KeyboardEvent | null>(
       KEY_ENTER_COMMAND,
-      (event: KeyboardEvent | null) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
@@ -321,68 +363,80 @@ export function registerPlainText(
           if ((IS_IOS || IS_SAFARI) && CAN_USE_BEFORE_INPUT) {
             return false;
           }
+
           event.preventDefault();
         }
+
         return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false);
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<ClipboardEvent>(
       COPY_COMMAND,
-      (event: ClipboardEvent) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         onCopyForPlainText(event, editor);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<ClipboardEvent>(
       CUT_COMMAND,
-      (event: ClipboardEvent) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         onCutForPlainText(event, editor);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<ClipboardEvent>(
       PASTE_COMMAND,
-      (event: ClipboardEvent) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         onPasteForPlainText(event, editor);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<DragEvent>(
       DROP_COMMAND,
-      (event: DragEvent) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         // TODO: Make drag and drop work at some point.
         event.preventDefault();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
+    editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
-      (event: DragEvent) => {
+      (event) => {
         const selection = $getSelection();
+
         if (!$isRangeSelection(selection)) {
           return false;
         }
+
         // TODO: Make drag and drop work at some point.
         event.preventDefault();
         return true;

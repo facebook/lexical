@@ -6,7 +6,7 @@
  *
  */
 
-import {redo, undo} from '../keyboardShortcuts/index.mjs';
+import {moveLeft, redo, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   clearEditor,
@@ -462,10 +462,10 @@ test.describe('Markdown', () => {
     await focusEditor(page);
     await pressToggleBold(page);
     await pressToggleUnderline(page);
-    await page.keyboard.type('h_e~~llo');
+    await page.keyboard.type('h*e~~llo');
     await pressToggleBold(page);
     await pressToggleUnderline(page);
-    await page.keyboard.type(' wo~~r_ld');
+    await page.keyboard.type(' wo~~r*ld');
     await assertHTML(
       page,
       html`
@@ -536,6 +536,36 @@ test.describe('Markdown', () => {
     await focusEditor(page);
     await page.keyboard.type(TYPED_MARKDOWN);
     await assertHTML(page, TYPED_MARKDOWN_HTML);
+  });
+
+  test('itraword text format', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('he_llo_ world');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">he_llo_ world</span>
+        </p>
+      `,
+    );
+
+    await clearEditor(page);
+    await page.keyboard.type('_hello world');
+    await moveLeft(page, 3);
+    await page.keyboard.type('_');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">_hello wo_rld</span>
+        </p>
+      `,
+    );
   });
 });
 

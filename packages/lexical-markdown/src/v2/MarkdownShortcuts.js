@@ -29,6 +29,8 @@ import {
 import {TRANSFORMERS} from '..';
 import {indexBy, transformersByType} from './utils';
 
+const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
+
 function runElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
@@ -150,6 +152,16 @@ function runTextFormatTransformers(
       continue;
     }
 
+    // Some tags can not be used within words, hence should have newline/space/punctuation after it
+    const afterCloseTagChar = textContent[closeTagEndIndex + 1];
+    if (
+      matcher.intraword === false &&
+      afterCloseTagChar &&
+      !PUNCTUATION_OR_SPACE.test(afterCloseTagChar)
+    ) {
+      continue;
+    }
+
     const closeNode = anchorNode;
     let openNode = closeNode;
 
@@ -196,6 +208,16 @@ function runTextFormatTransformers(
     if (
       openTagStartIndex > 0 &&
       prevOpenNodeText[openTagStartIndex - 1] === closeChar
+    ) {
+      continue;
+    }
+
+    // Some tags can not be used within words, hence should have newline/space/punctuation before it
+    const beforeOpenTagChar = prevOpenNodeText[openTagStartIndex - 1];
+    if (
+      matcher.intraword === false &&
+      beforeOpenTagChar &&
+      !PUNCTUATION_OR_SPACE.test(beforeOpenTagChar)
     ) {
       continue;
     }

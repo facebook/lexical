@@ -11,14 +11,11 @@ import {$getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
+  namespace: '',
   theme: {
     quote: 'my-quote-class',
   },
 });
-
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('LexicalQuoteNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -39,9 +36,12 @@ describe('LexicalQuoteNode tests', () => {
         expect(quoteNode.createDOM(editorConfig).outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',
         );
-        expect(quoteNode.createDOM({theme: {}}).outerHTML).toBe(
-          '<blockquote></blockquote>',
-        );
+        expect(
+          quoteNode.createDOM({
+            namespace: '',
+            theme: {},
+          }).outerHTML,
+        ).toBe('<blockquote></blockquote>');
       });
     });
 

@@ -34,7 +34,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/hashtag',
-    replacement: path.resolve('../lexical-hashtag/src/index.js'),
+    replacement: path.resolve('../lexical-hashtag/src/index.ts'),
   },
   {
     find: '@lexical/history',
@@ -46,7 +46,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/file',
-    replacement: path.resolve('../lexical-file/src/index.js'),
+    replacement: path.resolve('../lexical-file/src/index.ts'),
   },
   {
     find: '@lexical/table',
@@ -66,11 +66,11 @@ const moduleResolution = [
   },
   {
     find: '@lexical/plain-text',
-    replacement: path.resolve('../lexical-plain-text/src/index.js'),
+    replacement: path.resolve('../lexical-plain-text/src/index.ts'),
   },
   {
     find: '@lexical/rich-text',
-    replacement: path.resolve('../lexical-rich-text/src/index.js'),
+    replacement: path.resolve('../lexical-rich-text/src/index.ts'),
   },
   {
     find: '@lexical/dragon',
@@ -99,6 +99,10 @@ const moduleResolution = [
   {
     find: 'shared',
     replacement: path.resolve('../shared/src'),
+  },
+  {
+    find: 'shared-ts',
+    replacement: path.resolve('../shared-ts/src'),
   },
 ];
 // Lexical React

@@ -110,7 +110,6 @@ export class CodeHighlightNode extends TextNode {
   }
 
   updateDOM(
-    // $FlowFixMe
     prevNode: CodeHighlightNode,
     dom: HTMLElement,
     config: EditorConfig,

@@ -14,11 +14,8 @@ import {
 import {$createTextNode, $getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-global.IS_REACT_ACT_ENVIRONMENT = true;
-
 const editorConfig = Object.freeze({
+  namespace: '',
   theme: {
     heading: {
       h1: 'my-h1-class',
@@ -40,6 +37,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(headingNode.getTag()).toBe('h1');
         expect(headingNode.getTextContent()).toBe('');
       });
+      // @ts-ignore
       expect(() => new HeadingNode()).toThrow();
     });
 
@@ -50,10 +48,20 @@ describe('LexicalHeadingNode tests', () => {
         expect(headingNode.createDOM(editorConfig).outerHTML).toBe(
           '<h1 class="my-h1-class"></h1>',
         );
-        expect(headingNode.createDOM({theme: {heading: {}}}).outerHTML).toBe(
-          '<h1></h1>',
-        );
-        expect(headingNode.createDOM({theme: {}}).outerHTML).toBe('<h1></h1>');
+        expect(
+          headingNode.createDOM({
+            namespace: '',
+            theme: {
+              heading: {},
+            },
+          }).outerHTML,
+        ).toBe('<h1></h1>');
+        expect(
+          headingNode.createDOM({
+            namespace: '',
+            theme: {},
+          }).outerHTML,
+        ).toBe('<h1></h1>');
       });
     });
 
@@ -63,7 +71,7 @@ describe('LexicalHeadingNode tests', () => {
         const headingNode = new HeadingNode('h1');
         const domElement = headingNode.createDOM(editorConfig);
         expect(domElement.outerHTML).toBe('<h1 class="my-h1-class"></h1>');
-        const newHeadingNode = new HeadingNode();
+        const newHeadingNode = new HeadingNode('h2');
         const result = newHeadingNode.updateDOM(headingNode, domElement);
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe('<h1 class="my-h1-class"></h1>');
@@ -94,7 +102,7 @@ describe('LexicalHeadingNode tests', () => {
     test('HeadingNode.canInsertTab()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const headingNode = new HeadingNode();
+        const headingNode = new HeadingNode('h1');
         expect(headingNode.canInsertTab()).toBe(false);
       });
     });
@@ -102,8 +110,8 @@ describe('LexicalHeadingNode tests', () => {
     test('$createHeadingNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const headingNode = new HeadingNode();
-        const createdHeadingNode = $createHeadingNode();
+        const headingNode = new HeadingNode('h1');
+        const createdHeadingNode = $createHeadingNode('h1');
         expect(headingNode.__type).toEqual(createdHeadingNode.__type);
         expect(headingNode.__parent).toEqual(createdHeadingNode.__parent);
         expect(headingNode.__key).not.toEqual(createdHeadingNode.__key);
@@ -113,7 +121,7 @@ describe('LexicalHeadingNode tests', () => {
     test('$isHeadingNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const headingNode = new HeadingNode();
+        const headingNode = new HeadingNode('h1');
         expect($isHeadingNode(headingNode)).toBe(true);
       });
     });
@@ -130,7 +138,7 @@ describe('LexicalHeadingNode tests', () => {
         headingNode.append(textNode);
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable=\"true\" style=\"user-select: text; white-space: pre-wrap; word-break: break-word;\" data-lexical-editor=\"true\"><h2 dir=\"ltr\"><span data-lexical-text=\"true\">${text}</span></h2></div>`,
+        `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="ltr"><span data-lexical-text="true">${text}</span></h2></div>`,
       );
       await editor.update(() => {
         const result = headingNode.insertNewAfter();
@@ -138,7 +146,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable=\"true\" style=\"user-select: text; white-space: pre-wrap; word-break: break-word;\" data-lexical-editor=\"true\"><h2 dir=\"ltr\"><span data-lexical-text=\"true\">${text}</span></h2><p><br></p></div>`,
+        `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="ltr"><span data-lexical-text="true">${text}</span></h2><p><br></p></div>`,
       );
     });
   });

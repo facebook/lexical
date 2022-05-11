@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.2.7",
-  "main": "LexicalHeadless.js",
+  "main": "LexicalHeadless.ts",
   "peerDependencies": {
     "lexical": "0.2.7"
   },

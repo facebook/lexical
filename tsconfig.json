@@ -196,7 +196,10 @@
       ],
       "shared/invariant": ["packages/shared/src/invariant.js"],
       "shared/environment": ["packages/shared/src/environment.js"],
-      "shared/useLayoutEffect": ["packages/shared/src/useLayoutEffect.js"]
+      "shared/useLayoutEffect": ["packages/shared/src/useLayoutEffect.js"],
+
+      "shared-ts/canUseDOM": ["packages/shared-ts/src/canUseDOM.ts"],
+      "shared-ts/environment": ["packages/shared-ts/src/environment.ts"]
     }
   },
   "exclude": ["node_modules/**/*"]

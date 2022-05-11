@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "version": "0.2.7",
-  "main": "LexicalDragon.js",
+  "main": "LexicalDragon.ts",
   "peerDependencies": {
     "lexical": "0.2.7"
   },

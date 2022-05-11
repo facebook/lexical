@@ -8,7 +8,7 @@
   ],
   "license": "MIT",
   "version": "0.2.7",
-  "main": "LexicalPlainText.js",
+  "main": "LexicalPlainText.ts",
   "peerDependencies": {
     "lexical": "0.2.7",
     "@lexical/utils": "0.2.7",

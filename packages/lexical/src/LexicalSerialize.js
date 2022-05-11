@@ -75,10 +75,8 @@ export function deserializeEditorState<SerializedNode: BaseSerializedNode>(
   // $FlowFixMe[unclear-type]
   json: Object | SerializedRootNode<SerializedNode> | BaseSerializedNode,
 ): EditorState {
-  const serializedRootNode =
-    typeof json === 'string'
-      ? (JSON.parse(json): SerializedRootNode<SerializedNode>)
-      : json;
+  // $FlowFixMe Refine type
+  const serializedRootNode: SerializedRootNode<SerializedNode> = json;
   const previousPendingEditorState = editor._pendingEditorState;
   const pendingEditorState = createEmptyEditorState();
   editor._pendingEditorState = pendingEditorState;

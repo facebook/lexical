@@ -194,6 +194,7 @@ export const BOLD_ITALIC_STAR: TextFormatTransformer = {
 
 export const BOLD_ITALIC_UNDERSCORE: TextFormatTransformer = {
   format: ['bold', 'italic'],
+  intraword: false,
   tag: '___',
   type: 'text-format',
 };
@@ -206,6 +207,7 @@ export const BOLD_STAR: TextFormatTransformer = {
 
 export const BOLD_UNDERSCORE: TextFormatTransformer = {
   format: ['bold'],
+  intraword: false,
   tag: '__',
   type: 'text-format',
 };
@@ -224,6 +226,7 @@ export const ITALIC_STAR: TextFormatTransformer = {
 
 export const ITALIC_UNDERSCORE: TextFormatTransformer = {
   format: ['italic'],
+  intraword: false,
   tag: '_',
   type: 'text-format',
 };

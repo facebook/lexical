@@ -21,7 +21,7 @@ export class HashtagNode extends TextNode {
     return new HashtagNode(node.__text, node.__key);
   }
 
-  constructor(text: string, key?: NodeKey): void {
+  constructor(text: string, key?: NodeKey) {
     super(text, key);
   }
 
@@ -40,10 +40,12 @@ export class HashtagNode extends TextNode {
   }
 }
 
-export function $createHashtagNode(text?: string = ''): HashtagNode {
+export function $createHashtagNode(text = ''): HashtagNode {
   return new HashtagNode(text);
 }
 
-export function $isHashtagNode(node: ?LexicalNode): boolean %checks {
+export function $isHashtagNode(
+  node: LexicalNode | null | undefined,
+): node is HashtagNode {
   return node instanceof HashtagNode;
 }

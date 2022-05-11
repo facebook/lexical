@@ -194,7 +194,7 @@
       "shared/simpleDiffWithCursor": [
         "packages/shared/src/simpleDiffWithCursor.js"
       ],
-      "shared/invariant": ["packages/shared/src/invariant.js"],
+      "shared/invariant": ["packages/shared/src/invariant.d.ts"],
       "shared/environment": ["packages/shared/src/environment.js"],
       "shared/useLayoutEffect": ["packages/shared/src/useLayoutEffect.js"]
     }

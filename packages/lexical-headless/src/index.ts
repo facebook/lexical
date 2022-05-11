@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {
@@ -15,16 +14,17 @@ import type {
 } from 'lexical';
 
 import {createEditor} from 'lexical';
+import {Class} from 'utility-types';
 
 export function createHeadlessEditor(editorConfig?: {
-  disableEvents?: boolean,
-  editorState?: EditorState,
-  namespace?: string,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-  onError: (error: Error) => void,
-  parentEditor?: LexicalEditor,
-  readOnly?: boolean,
-  theme?: EditorThemeClasses,
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  onError: (error: Error) => void;
+  parentEditor?: LexicalEditor;
+  readOnly?: boolean;
+  theme?: EditorThemeClasses;
 }): LexicalEditor {
   const editor = createEditor(editorConfig);
   editor._headless = true;

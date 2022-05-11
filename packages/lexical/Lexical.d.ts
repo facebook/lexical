@@ -128,6 +128,7 @@ export declare class LexicalEditor {
   _observer: null | MutationObserver;
   _key: string;
   _readOnly: boolean;
+  _headless: boolean;
   isComposing(): boolean;
   registerUpdateListener(listener: UpdateListener): () => void;
   registerRootListener(listener: RootListener): () => void;
@@ -249,7 +250,7 @@ export function createEditor(editorConfig?: {
   editorState?: EditorState;
   theme?: EditorThemeClasses;
   parentEditor?: LexicalEditor;
-  nodes?: Array<Class<LexicalNode>>;
+  nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError: (error: Error) => void;
   disableEvents?: boolean;
   readOnly?: boolean;
@@ -353,9 +354,7 @@ export declare class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  // $FlowFixMe
   getLatest<T extends LexicalNode>(): T;
-  // $FlowFixMe
   getWritable<T extends LexicalNode>(): T;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getTextContentSize(

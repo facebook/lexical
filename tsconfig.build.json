@@ -1,10 +1,5 @@
 {
-  "include": [
-    "packages/lexical-clipboard/**/*",
-    "packages/lexical-code/**/*",
-    "packages/lexical-dragon/**/*",
-    "packages/lexical-history/**/*"
-  ],
+  "include": ["packages/**/*"],
   "exclude": ["node_modules/**/*", "packages/lexical-playground/**/*"],
   "extends": "./tsconfig.json"
 }

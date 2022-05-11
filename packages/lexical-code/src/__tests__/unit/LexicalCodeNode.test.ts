@@ -42,9 +42,12 @@ describe('LexicalCodeNode tests', () => {
         expect(codeNode.createDOM(editorConfig).outerHTML).toBe(
           '<code class="my-code-class" spellcheck="false"></code>',
         );
-        expect(codeNode.createDOM({namespace: '', theme: {}}).outerHTML).toBe(
-          '<code spellcheck="false"></code>',
-        );
+        expect(
+          codeNode.createDOM({
+            namespace: '',
+            theme: {},
+          }).outerHTML,
+        ).toBe('<code spellcheck="false"></code>');
       });
     });
 
@@ -53,7 +56,10 @@ describe('LexicalCodeNode tests', () => {
       await editor.update(() => {
         const newCodeNode = $createCodeNode();
         const codeNode = $createCodeNode();
-        const domElement = codeNode.createDOM({namespace: '', theme: {}});
+        const domElement = codeNode.createDOM({
+          namespace: '',
+          theme: {},
+        });
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
         const result = newCodeNode.updateDOM(codeNode, domElement);
         expect(result).toBe(false);
@@ -61,7 +67,7 @@ describe('LexicalCodeNode tests', () => {
       });
     });
 
-    test.skip('CodeNode.insertNewAfter()', async () => {
+    test('CodeNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
         const root = $getRoot();
@@ -86,6 +92,7 @@ describe('LexicalCodeNode tests', () => {
       await editor.update(() => {
         const codeNode = $createCodeNode();
         const selection = $getSelection();
+
         if ($isRangeSelection(selection)) {
           codeNode.insertNewAfter(selection);
         }

@@ -75,6 +75,7 @@ function exportChildren(
 ): string {
   const output = [];
   const children = node.getChildren();
+
   mainLoop: for (const child of children) {
     if ($isLineBreakNode(child)) {
       output.push('\n');
@@ -172,6 +173,10 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
           ? sibling.getPreviousSibling()
           : sibling.getNextSibling();
       }
+    }
+
+    if ($isLineBreakNode(sibling)) {
+      return null;
     }
 
     if ($isTextNode(sibling)) {

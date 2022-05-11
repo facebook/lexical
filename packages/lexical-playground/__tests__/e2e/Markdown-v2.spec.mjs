@@ -567,6 +567,41 @@ test.describe('Markdown', () => {
       `,
     );
   });
+
+  test('can export text format next to a newline', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.up('Shift');
+    await page.keyboard.type('_world_');
+    await click(page, '.action-button .markdown');
+    await assertHTML(
+      page,
+      html`
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+          data-highlight-language="markdown"
+          data-gutter="12">
+          <span data-lexical-text="true">Hello</span>
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            *
+          </span>
+          <span data-lexical-text="true">world</span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            *
+          </span>
+        </code>
+      `,
+    );
+  });
 });
 
 const TYPED_MARKDOWN = `# Markdown Shortcuts

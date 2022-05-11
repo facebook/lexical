@@ -2029,8 +2029,9 @@ describe('LexicalEditor tests', () => {
 
     expect(textNodeMutation1[0].size).toBe(1);
     expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
-    expect(textNodeMutation2[0].size).toBe(1);
+    expect(textNodeMutation2[0].size).toBe(2);
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('created');
+    expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('updated');
     expect(textNodeMutation3[0].size).toBe(2);
     expect(textNodeMutation3[0].get(textNodeKeys[0])).toBe('updated');
     expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('destroyed');

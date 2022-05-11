@@ -175,12 +175,12 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
       }
     }
 
-    if ($isLineBreakNode(sibling)) {
-      return null;
-    }
-
     if ($isTextNode(sibling)) {
       return sibling;
+    }
+
+    if (!$isElementNode(sibling)) {
+      return null;
     }
   }
 

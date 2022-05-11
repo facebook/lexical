@@ -9,7 +9,7 @@
 
 import type {EditorState, ParsedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
-import type {BaseSerializer} from '@lexical/serialize';
+import type {BaseSerializer, BaseSerializedNode} from '@lexical/serialize';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -239,8 +239,7 @@ export function createEditor(editorConfig?: {
   parentEditor?: LexicalEditor,
   readOnly?: boolean,
   theme?: EditorThemeClasses,
-  // TODO I wonder if it should be Class<BaseSerializer>
-  serializer?: BaseSerializer<any>,
+  serializer?: BaseSerializer<BaseSerializedNode>,
 }): LexicalEditor {
   const config = editorConfig || {};
   const namespace = config.namespace || createUID();
@@ -320,7 +319,7 @@ export class LexicalEditor {
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
   _readOnly: boolean;
-  _serializer: null | BaseSerializer<any>;
+  _serializer: null | BaseSerializer<BaseSerializedNode>;
 
   constructor(
     editorState: EditorState,
@@ -330,7 +329,7 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     readOnly: boolean,
-    serializer: null | BaseSerializer<any>,
+    serializer: null | BaseSerializer<BaseSerializedNode>,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -645,12 +644,5 @@ export class LexicalEditor {
     return {
       editorState: this._editorState,
     };
-  }
-  // Or SerializedRootNode
-  serialize(): SerializedNode<any> {
-    return $serializeRoot(this);
-  }
-  deserialize<SerializedNode: BaseSerializedNode>(json: SerializedNode): void {
-    $deserializeRoot(this, json);
   }
 }

@@ -12,7 +12,13 @@ import {
   $serializeRoot,
   $deserializeRoot,
 } from '@lexical/serialize';
-import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
+import {
+  $getRoot,
+  $createParagraphNode,
+  $createTextNode,
+  serializeEditorState,
+  deserializeEditorState,
+} from 'lexical';
 
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.
@@ -30,19 +36,23 @@ describe('LexicalSerialize tests', () => {
           paragraphNode.append(textNode);
         });
 
-        // editor.getEditorState().read(() => {
-        //   console.info(serializer.serialize($getRoot()));
-        // });
-        const serialized = editor.serialize();
+        const serialized = serializeEditorState(
+          editor,
+          editor.getEditorState(),
+        );
         console.info('SERIALIZED', serialized);
 
-        editor.deserialize(serialized);
+        const deserialized = deserializeEditorState(editor, serialized);
+        editor.setEditorState(deserialized);
         console.info(
           'NODEMAP (after deserialize)',
           editor.getEditorState()._nodeMap,
         );
 
-        const serialized2 = editor.serialize();
+        const serialized2 = serializeEditorState(
+          editor,
+          editor.getEditorState(),
+        );
 
         expect(serialized).toEqual(serialized2);
       });

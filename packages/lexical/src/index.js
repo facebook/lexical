@@ -68,12 +68,15 @@ import {
   $serializeTextNode,
   TextNode,
 } from './nodes/LexicalTextNode';
+import {serializeEditorState, deserializeEditorState} from './LexicalSerialize';
 
 export {
   $createGridSelection,
   $createLineBreakNode,
   $createNodeFromParse,
   $createNodeSelection,
+  serializeEditorState,
+  deserializeEditorState,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,

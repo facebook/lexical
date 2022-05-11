@@ -8,10 +8,10 @@
     "overflow"
   ],
   "license": "MIT",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "main": "LexicalOverflow.js",
   "peerDependencies": {
-    "lexical": "0.2.7"
+    "lexical": "0.2.8"
   },
   "repository": {
     "type": "git",

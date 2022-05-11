@@ -1,3 +1,8 @@
+## 0.2.8 (May 11, 2022)
+
+- Migrate more packages to TypeScript (#2135)
+- Fix several TypeScript type bugs (#2116)
+- Fix several Markdown export bugs (#2136m #2137, #2139)
 ## 0.2.7 (May 9, 2022)
 
 - Fix Firefox composition bug with emojis (#2109)

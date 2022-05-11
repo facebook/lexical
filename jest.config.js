@@ -79,11 +79,23 @@ module.exports = {
         '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.js',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
         '^lexical$': '<rootDir>/packages/lexical/src/index.js',
+        '^shared-ts/canUseDOM$':
+          '<rootDir>/packages/shared-ts/src/canUseDOM.ts',
+        '^shared-ts/environment$':
+          '<rootDir>/packages/shared-ts/src/environment.ts',
+        '^shared-ts/getDOMSelection$':
+          '<rootDir>/packages/shared-ts/src/getDOMSelection.ts',
+        '^shared-ts/invariant$':
+          '<rootDir>/packages/shared-ts/src/invariant.ts',
+        '^shared-ts/simpleDiffWithCursor$':
+          '<rootDir>/packages/shared-ts/src/simpleDiffWithCursor.ts',
+        '^shared-ts/useLayoutEffect$':
+          '<rootDir>/packages/shared-ts/src/useLayoutEffect.ts',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
         '^shared/getDOMSelection$':
           '<rootDir>/packages/shared/src/getDOMSelection.js',
-        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.d.ts',
+        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
         '^shared/simpleDiffWithCursor$':
           '<rootDir>/packages/shared/src/simpleDiffWithCursor.js',
         '^shared/useLayoutEffect$':

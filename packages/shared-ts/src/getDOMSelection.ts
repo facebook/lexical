@@ -6,4 +6,6 @@
  *
  */
 
-export default function invariant(cond?: boolean, message?: string): never;
+const getSelection = (): Selection => window.getSelection();
+
+export default getSelection;

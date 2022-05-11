@@ -11,7 +11,7 @@
   ],
   "license": "MIT",
   "version": "0.2.8",
-  "main": "LexicalFile.ts",
+  "main": "LexicalFile.js",
   "peerDependencies": {
     "lexical": "0.2.8"
   },

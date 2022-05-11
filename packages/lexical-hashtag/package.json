@@ -9,7 +9,7 @@
   ],
   "license": "MIT",
   "version": "0.2.8",
-  "main": "LexicalHashtag.ts",
+  "main": "LexicalHashtag.js",
   "peerDependencies": {
     "lexical": "0.2.8"
   },

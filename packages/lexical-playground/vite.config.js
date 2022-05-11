@@ -100,6 +100,10 @@ const moduleResolution = [
     find: 'shared',
     replacement: path.resolve('../shared/src'),
   },
+  {
+    find: 'shared-ts',
+    replacement: path.resolve('../shared-ts/src'),
+  },
 ];
 // Lexical React
 [

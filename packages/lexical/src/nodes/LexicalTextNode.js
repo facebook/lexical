@@ -55,14 +55,14 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 
-export type SerializedTextNode = {
+export type SerializedTextNode = $ReadOnly<{
   content: string,
   detail: number,
   format: number,
   mode: 0 | 1 | 2 | 3,
   style: string,
   type: 'text',
-};
+}>;
 
 export type TextFormatType =
   | 'bold'

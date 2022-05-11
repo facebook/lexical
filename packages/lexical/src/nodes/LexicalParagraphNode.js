@@ -22,12 +22,12 @@ import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
-export type SerializedParagraphNode<SerializedNode> = {
+export type SerializedParagraphNode<SerializedNode, Type: string> = {
   children: Array<SerializedNode>,
   direction: 'ltr' | 'rtl' | null,
   format: number,
   indent: number,
-  type: 'paragraph',
+  type: Type,
 };
 
 export class ParagraphNode extends ElementNode {
@@ -79,6 +79,39 @@ export class ParagraphNode extends ElementNode {
       element,
     };
   }
+
+  // static serialize<SerializedNode>(
+  //   node: ParagraphNode,
+  //   // $serializeChild: (node: LexicalNode) => SerializedNode,
+  // ): SerializedParagraphNode<SerializedNode> {
+  //   const serializedChildren = [];
+  //   // const nodeChildren = node.getChildren();
+  //   // for (let i = 0; i < nodeChildren.length; i++) {
+  //   //   serializedChildren.push($serializeChild(nodeChildren[i]));
+  //   // }
+  //   return {
+  //     children: serializedChildren,
+  //     direction: node.getDirection(),
+  //     format: node.getFormat(),
+  //     indent: node.getIndent(),
+  //     type: 'paragraph',
+  //   };
+  // }
+
+  // static deserializeParagraphNode<SerializedNode>(
+  //   json: SerializedParagraphNode<SerializedNode>,
+  //   $deserializeChild: (json: SerializedNode) => LexicalNode,
+  // ): ParagraphNode {
+  //   const paragraph = $createParagraphNode();
+  //   paragraph.__format = json.format;
+  //   paragraph.setIndent(json.indent);
+  //   paragraph.setDirection(json.direction);
+  //   const jsonChildren = json.children;
+  //   for (let i = 0; i < jsonChildren.length; i++) {
+  //     paragraph.append($deserializeChild(jsonChildren[i]));
+  //   }
+  //   return paragraph;
+  // }
 
   // Mutation
 

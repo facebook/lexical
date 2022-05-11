@@ -25,12 +25,12 @@ import {
   $isLineBreakNode,
   $isParagraphNode,
   $isRootNode,
-  $isTextNode,
   $serializeLineBreakNode,
   $serializeParagraphNode,
   $serializeRootNode,
   $serializeTextNode,
   $getRoot,
+  $isTextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 import {$isElementNode} from 'lexical';
@@ -43,8 +43,9 @@ import type {
 export type LexicalSerializedNode =
   | SerializedRootNode<LexicalSerializedNode>
   | SerializedTextNode
-  | SerializedLineBreakNode
   | SerializedParagraphNode<LexicalSerializedNode>;
+
+export type Foo = LexicalSerializedNode | SerializedLineBreakNode;
 
 // Users can extend this class and override/delegate to the methods
 // TODO prevent this class somehow from being used directly -> use editor config
@@ -59,9 +60,7 @@ export class LexicalSerializer<T: LexicalSerializedNode> {
     } else if (json.type === 'linebreak') {
       return $deserializeLineBreakNode(json);
     } else if (json.type === 'text') {
-      // $FlowFixMe Refine type
-      const textNodeJSON = (json: SerializedTextNode);
-      return $deserializeTextNode(textNodeJSON);
+      return $deserializeTextNode(json);
     }
     // if ($isElementNode(node)) {
     //   this.deserialize();
@@ -87,6 +86,96 @@ export class LexicalSerializer<T: LexicalSerializedNode> {
   }
 }
 
+class FooSerializer extends LexicalSerializer<Foo> {}
+
+function deserialize(json: LexicalSerializedNode): null | LexicalNode {
+  //
+}
+
+function fooDeserialize(json: Foo): null | LexicalNode {
+  if (json.type === 'linebreak') {
+  } else {
+    deserialize(json);
+  }
+}
+
 // createSerializer([
-//   'text': {serialize: $serializeTextNode, deserialize: () => $deserializeTextNode}
+//   'text': {serialize: $serializeTextNode, deserialize:  $deserializeTextNode}
+
 // ])
+
+type LexicalNodeType2<Type> = $ReadOnly<{
+  type: Type,
+  ...
+}>;
+
+export type SerializedXNode = $ReadOnly<{
+  // children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: number,
+  indent: number,
+  type: 'x',
+}>;
+
+export type SerializedYNode = $ReadOnly<{
+  // children: Array<SerializedNode>,
+  z: number,
+  format: number,
+  indent: number,
+  type: 'y',
+}>;
+
+export type XYNodes = SerializedXNode | SerializedYNode;
+
+export function $serializeXNode(node: LexicalNode): SerializedXNode {
+  // const latest = node.getLatest();
+  // return {
+  //   content: node.getTextContent(),
+  //   detail: latest.__detail,
+  //   format: node.getFormat(),
+  //   mode: latest.__mode,
+  //   style: node.getStyle(),
+  //   type: 'text',
+  // };
+}
+
+export function $deserializeXNode(json: SerializedXNode<'x'>): LexicalNode {
+  // const textNode = $createTextNode(json.content);
+  // textNode.setFormat(json.format);
+  // textNode.setStyle(json.style);
+  // textNode.__mode = json.mode;
+  // textNode.__detail = json.detail;
+  // return textNode;
+}
+
+class Serializer<K> {
+  // : LexicalNodeType2<Type>
+  add<Type: string, TheSerializedNode: SerializedXNode>(
+    type: Type,
+    serializeFn: (node: LexicalNode) => TheSerializedNode,
+    deserializeFn: (json: TheSerializedNode) => null | LexicalNode,
+    zz: (K) => null | SerializedXNode,
+  ) {}
+}
+
+class Foo2Serializer extends Serializer<XYNodes> {}
+
+new Foo2Serializer().add<'x', SerializedXNode>(
+  'x',
+  (node) => {
+    if (!$isTextNode(node)) {
+      throw new Error('bad');
+    }
+    return $serializeXNode(node);
+  },
+  (json): null | LexicalNode => {
+    return $deserializeXNode(json);
+  },
+  (serializedNode: XYNodes): null | SerializedXNode => {
+    if (serializedNode.type === 'x') {
+      return serializedNode;
+    } else {
+      return null;
+    }
+  },
+);

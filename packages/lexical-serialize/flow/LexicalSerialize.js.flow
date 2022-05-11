@@ -9,10 +9,10 @@
 
 import type {LexicalNode} from 'lexical';
 
-export type BaseSerializedNode = $ReadOnly<{
-  type: string,
-  ...
-}>;
+// export type BaseSerializedNode = $ReadOnly<{
+//   type: string,
+//   ...
+// }>;
 
 declare export class BaseSerializer<SerializedNode = DefaultSerializedNodes> {
   deserialize(json: SerializedNode, deep: boolean): null | LexicalNode;

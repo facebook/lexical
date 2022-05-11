@@ -279,6 +279,28 @@ export function parseEditorState(
   return editorState;
 }
 
+export function createEditorState(
+  editor: LexicalEditor,
+  updateFn: (pendingEditorState: EditorState) => void,
+): EditorState {
+  const nodeMap = new Map();
+  const editorState = new EditorState(nodeMap);
+  const previousActiveEditorState = activeEditorState;
+  const previousReadOnlyMode = isReadOnlyMode;
+  const previousActiveEditor = activeEditor;
+  activeEditorState = editorState;
+  isReadOnlyMode = false;
+  activeEditor = editor;
+  try {
+    updateFn(editorState);
+  } finally {
+    activeEditorState = previousActiveEditorState;
+    isReadOnlyMode = previousReadOnlyMode;
+    activeEditor = previousActiveEditor;
+  }
+  return editorState;
+}
+
 // This technically isn't an update but given we need
 // exposure to the module's active bindings, we have this
 // function here

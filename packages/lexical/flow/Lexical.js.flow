@@ -863,14 +863,13 @@ declare export var VERSION: string;
 
 // Serialize/Deserialize
 
-export type SerializedRootNode<SerializedNode> = BaseSerializedNode &
-  $ReadOnly<{
-    children: Array<SerializedNode>,
-    direction: 'ltr' | 'rtl' | null,
-    format: number,
-    indent: number,
-    type: 'root',
-  }>;
+export type SerializedRootNode<SerializedNode> = $ReadOnly<{
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: number,
+  indent: number,
+  type: 'root',
+}>;
 
 export type SerializedLineBreakNode = {
   type: 'linebreak',

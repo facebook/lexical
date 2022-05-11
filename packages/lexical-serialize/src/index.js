@@ -33,20 +33,27 @@ import {
   $getRoot,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import {$isElementNode} from 'lexical';
+import type {
+  SerializedLineBreakNode,
+  SerializedParagraphNode,
+  SerializedTextNode,
+} from '../../lexical/flow/Lexical';
 
-export type BaseSerializedNode = $ReadOnly<{
-  type: string,
-  ...
-}>;
+export type LexicalSerializedNode =
+  | SerializedRootNode<LexicalSerializedNode>
+  | SerializedTextNode
+  | SerializedLineBreakNode
+  | SerializedParagraphNode<LexicalSerializedNode>;
 
 // Users can extend this class and override/delegate to the methods
 // TODO prevent this class somehow from being used directly -> use editor config
-export class BaseSerializer<SerializedNode: BaseSerializedNode> {
-  deserialize(json: SerializedNode): null | LexicalNode {
+export class LexicalSerializer<T: LexicalSerializedNode> {
+  deserialize(json: T): null | LexicalNode {
+    let node = null;
     if (json.type === 'root') {
-      // $FlowFixMe Refine type
-      const rootJSON = (json: SerializedRootNode<SerializedNode>);
-      return $deserializeRootNode(rootJSON, (json) => this.deserialize(json));
+      node = $deserializeRootNode(json, (json) => this.deserialize(json));
+      return node;
     } else if (json.type === 'paragraph') {
       return $deserializeParagraphNode(json, (json) => this.deserialize(json));
     } else if (json.type === 'linebreak') {
@@ -56,6 +63,9 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
       const textNodeJSON = (json: SerializedTextNode);
       return $deserializeTextNode(textNodeJSON);
     }
+    // if ($isElementNode(node)) {
+    //   this.deserialize();
+    // }
     return null;
   }
   serialize(node: LexicalNode): null | SerializedNode {
@@ -76,3 +86,7 @@ export class BaseSerializer<SerializedNode: BaseSerializedNode> {
     return null;
   }
 }
+
+// createSerializer([
+//   'text': {serialize: $serializeTextNode, deserialize: () => $deserializeTextNode}
+// ])

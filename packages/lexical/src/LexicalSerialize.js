@@ -17,7 +17,11 @@ import {$getRoot, $isRootNode} from 'lexical';
 import invariant from 'shared/invariant';
 import {createEmptyEditorState} from './LexicalEditorState';
 import {flushRootMutations} from './LexicalMutations';
-import {commitPendingUpdates, getActiveEditor} from './LexicalUpdates';
+import {
+  commitPendingUpdates,
+  createEditorState,
+  getActiveEditor,
+} from './LexicalUpdates';
 import {FULL_RECONCILE} from './LexicalConstants';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
@@ -70,19 +74,12 @@ export function serializeEditorState<SerializedNode: BaseSerializedNode>(
   });
 }
 
-export function deserializeEditorState<SerializedNode: BaseSerializedNode>(
+export function deserializeEditorState(
   editor: LexicalEditor,
-  // $FlowFixMe[unclear-type]
-  json: Object | SerializedRootNode<SerializedNode> | BaseSerializedNode,
+  json: BaseSerializedNode,
 ): EditorState {
-  // $FlowFixMe Refine type
-  const serializedRootNode: SerializedRootNode<SerializedNode> = json;
-  const previousPendingEditorState = editor._pendingEditorState;
-  const pendingEditorState = createEmptyEditorState();
-  editor._pendingEditorState = pendingEditorState;
-  editor.update(() => {
-    // No need .deserialize already does that
-    // $getRoot().markDirty(); // Create pendingEditorState
+  const serializedRootNode = json;
+  return createEditorState(editor, (pendingEditorState: EditorState) => {
     const serializer = $getSerializerOrThrow();
     const rootNode = serializer.deserialize(serializedRootNode, true);
     if (rootNode === null) {
@@ -90,8 +87,6 @@ export function deserializeEditorState<SerializedNode: BaseSerializedNode>(
     }
     pendingEditorState._nodeMap.set('root', rootNode);
   });
-  editor._pendingEditorState = previousPendingEditorState;
-  return pendingEditorState;
 }
 
 // export function $serializeRoot<

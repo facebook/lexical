@@ -8,7 +8,7 @@
 
 import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {
-  BaseSerializer,
+  LexicalSerializer,
   $serializeRoot,
   $deserializeRoot,
 } from '@lexical/serialize';
@@ -58,7 +58,7 @@ describe('LexicalSerialize tests', () => {
       });
     },
     {
-      serializer: new BaseSerializer(),
+      serializer: new LexicalSerializer(),
     },
   );
 });

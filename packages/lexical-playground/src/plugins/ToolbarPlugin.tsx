@@ -220,6 +220,19 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
   }, [editor]);
 
   useEffect(() => {
+    const onResize = () => {
+      editor.getEditorState().read(() => {
+        updateLinkEditor();
+      });
+    };
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [editor, updateLinkEditor]);
+
+  useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {

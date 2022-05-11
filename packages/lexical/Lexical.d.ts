@@ -325,12 +325,17 @@ export type DOMExportOutput = {
   element: HTMLElement | null;
 };
 export type NodeKey = string;
+export interface SerializedNode {
+  type: string;
+}
 export declare class LexicalNode {
   __type: string;
   __key: NodeKey;
   __parent: null | NodeKey;
   getType(): string;
   clone(data: any): LexicalNode;
+  serialize(): SerializedNode;
+  deserialize(json: SerializedNode): LexicalNode;
   importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey);
   getType(): string;

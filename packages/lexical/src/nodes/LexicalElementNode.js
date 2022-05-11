@@ -6,7 +6,7 @@
  *
  * @flow strict
  */
-import type {NodeKey} from '../LexicalNode';
+import type {NodeKey, SerializedNode} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
@@ -33,12 +33,31 @@ import {
 } from '../LexicalUtils';
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
+export type SerializedElementNode = {
+  ...SerializedNode,
+  __children: Array<NodeKey>,
+  __dir: 'ltr' | 'rtl' | null,
+  __format: number,
+  __indent: number,
+  ...
+};
 
 export class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
   __format: number;
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
+
+  serialize(): SerializedElementNode {
+    invariant(
+      false,
+      'Unserializable Node: %s does not implement serialize',
+      this.constructor.name,
+    );
+  }
+  static deserialize(json: $FlowFixMe): LexicalNode {
+    invariant(false, 'Cannot deserialize to Lexical Node.', this.name);
+  }
 
   constructor(key?: NodeKey): void {
     super(key);

@@ -17,10 +17,17 @@ import type {
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
+import type {SerializedElementNode} from './LexicalElementNode';
 
+import invariant from '../../../shared/src/invariant';
 import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
+
+type SerializedParagraphNode = {
+  ...SerializedElementNode,
+  ...
+};
 
 export class ParagraphNode extends ElementNode {
   static getType(): string {
@@ -29,6 +36,30 @@ export class ParagraphNode extends ElementNode {
 
   static clone(node: ParagraphNode): ParagraphNode {
     return new ParagraphNode(node.__key);
+  }
+
+  serialize(): SerializedParagraphNode {
+    const {__format, __key, __children, __indent, __dir} = this;
+    return {
+      __children,
+      __dir,
+      __format,
+      __indent,
+      __key,
+      __type: this.getType(),
+    };
+  }
+  static deserialize(json: SerializedParagraphNode): ParagraphNode {
+    if (json.__type === this.getType()) {
+      const {__format, __key, __children, __indent, __dir} = json;
+      const node = new ParagraphNode(__key);
+      node.__format = __format;
+      node.__children = __children;
+      node.setDirection(__dir);
+      node.setIndent(__indent);
+      return node;
+    }
+    invariant(false, 'Type mismatch');
   }
 
   // View

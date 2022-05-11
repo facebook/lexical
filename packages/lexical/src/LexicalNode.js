@@ -42,6 +42,7 @@ import {
 } from './LexicalUtils';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
+export type SerializedNode = {__key: NodeKey, __type: string, ...};
 
 export function removeNode(
   nodeToRemove: LexicalNode,
@@ -170,6 +171,16 @@ export class LexicalNode {
       'LexicalNode: Node %s does not implement .clone().',
       this.name,
     );
+  }
+  serialize(): SerializedNode {
+    invariant(
+      false,
+      'Unserializable Node: %s does not implement serialize',
+      this.constructor.name,
+    );
+  }
+  static deserialize(json: $FlowFixMe): LexicalNode {
+    invariant(false, 'Cannot deserialize to Lexical Node.', this.name);
   }
 
   constructor(key?: NodeKey): void {

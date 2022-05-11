@@ -326,6 +326,7 @@ export type DOMExportOutput = {
   element?: HTMLElement | null,
 };
 export type NodeKey = string;
+export type SerializedNode = {__type: string, ...};
 declare export class LexicalNode {
   __type: string;
   __key: NodeKey;
@@ -336,6 +337,8 @@ declare export class LexicalNode {
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   getType(): string;
+  serialize(): SerializedNode;
+  deserialize(json: SerializedNode): LexicalNode;
   isAttached(): boolean;
   isSelected(): boolean;
   getKey(): NodeKey;

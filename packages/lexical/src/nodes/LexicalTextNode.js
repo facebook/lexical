@@ -12,7 +12,7 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
-} from '../LexicalNode';
+SerializedNode} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
@@ -69,6 +69,16 @@ export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 export type TextMark = {end: null | number, id: string, start: null | number};
 
 export type TextMarks = Array<TextMark>;
+
+type SerializedTextNode = {
+  ...SerializedNode,
+  __detail: number,
+  __format: number,
+  __mode: 0 | 1 | 2 | 3,
+  __style: string,
+  __text: string,
+  ...
+};
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -250,6 +260,64 @@ export class TextNode extends LexicalNode {
     return new TextNode(node.__text, node.__key);
   }
 
+  serialize(): SerializedTextNode {
+    const {__text, __format, __style, __mode, __detail, __key} = this;
+    return {
+      __detail,
+      __format,
+      __key,
+      __mode,
+      __style,
+      __text,
+      __type: this.getType(),
+    };
+  }
+  static deserialize(json: SerializedTextNode): TextNode {
+    if (json.__type === this.getType()) {
+      const {__text, __format, __style, __mode, __detail, __key} = json;
+      const node = new TextNode(__text, __key);
+      node.__detail = __detail;
+      node.__format = __format;
+      node.__style = __style;
+      node.__mode = __mode;
+      return node;
+    }
+    invariant(false, 'Type mismatch');
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      '#text': (node: Node) => ({
+        conversion: convertTextDOMNode,
+        priority: 0,
+      }),
+      b: (node: Node) => ({
+        conversion: convertBringAttentionToElement,
+        priority: 0,
+      }),
+      em: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      i: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      span: (node: Node) => ({
+        conversion: convertSpanElement,
+        priority: 0,
+      }),
+      strong: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      u: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+    };
+  }
+
   constructor(text: string, key?: NodeKey): void {
     super(key);
     this.__text = text;
@@ -412,39 +480,6 @@ export class TextNode extends LexicalNode {
       dom.style.cssText = nextStyle;
     }
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      '#text': (node: Node) => ({
-        conversion: convertTextDOMNode,
-        priority: 0,
-      }),
-      b: (node: Node) => ({
-        conversion: convertBringAttentionToElement,
-        priority: 0,
-      }),
-      em: (node: Node) => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      i: (node: Node) => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      span: (node: Node) => ({
-        conversion: convertSpanElement,
-        priority: 0,
-      }),
-      strong: (node: Node) => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      u: (node: Node) => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-    };
   }
 
   // Mutators

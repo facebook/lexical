@@ -1,3 +1,7 @@
+## 0.2.9 (May 11, 2022)
+
+- Fix a breaking change to the NPM release (#2144)
+
 ## 0.2.8 (May 11, 2022)
 
 - Migrate more packages to TypeScript (#2135)

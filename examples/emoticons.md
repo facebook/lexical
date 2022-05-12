@@ -40,7 +40,7 @@ export class EmoticonNode extends TextNode {
 }
 ```
 
-Once we have this class, we can override the createDOM method to control how our new node is rendered in the browser. In this case, we want to give it a specific class name to apply our emoticon styles, so we'll add an argument to the constructor to accomodate that:
+Once we have this class, we can override the createDOM method to control how our new node is rendered in the browser. In this case, we want to give it a specific class name to apply our emoticon styles, so we'll add an argument to the constructor to accommodate that:
 
 ```jsx
 import {TextNode} from 'lexical';
@@ -175,7 +175,7 @@ export default function EmoticonPlugin() {
 }
 ```
 
-Now, everytime a TextNode changes, the console will output "hello"! This isn't what we ultimately want to do though, so let's look at how we can make this work for our purposes.
+Now, every time a TextNode changes, the console will output "hello"! This isn't what we ultimately want to do though, so let's look at how we can make this work for our purposes.
 
 ### Insert EmoticonNode
 

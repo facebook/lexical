@@ -90,7 +90,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/mark',
-    replacement: path.resolve('../lexical-mark/src/index.js'),
+    replacement: path.resolve('../lexical-mark/src/index.ts'),
   },
   {
     find: '@lexical/yjs',

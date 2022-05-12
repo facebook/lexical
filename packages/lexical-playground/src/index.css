@@ -350,6 +350,14 @@ i.horizontal-rule {
   background-image: url(images/icons/dropdown-more.svg);
 }
 
+.icon.font-color {
+  background-image: url(images/icons/font-color.svg);
+}
+
+.icon.bg-color {
+  background-image: url(images/icons/bg-color.svg);
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }

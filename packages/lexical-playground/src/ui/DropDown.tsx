@@ -16,12 +16,14 @@ export default function DropDown({
   buttonClassName,
   buttonIconClassName,
   children,
+  stopCloseOnClickSelf
 }: {
   buttonAriaLabel?: string;
   buttonClassName: string;
   buttonIconClassName?: string;
-  buttonLabel?: string;
+  buttonLabel?: string | JSX.Element;
   children: JSX.Element | string | (JSX.Element | string)[];
+  stopCloseOnClickSelf?: boolean;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -47,6 +49,9 @@ export default function DropDown({
     if (button !== null && showDropDown) {
       const handle = (event: MouseEvent) => {
         const target = event.target;
+        if (stopCloseOnClickSelf) {
+            if (dropDownRef.current.contains(target as Node)) return;
+        }
         if (!button.contains(target as Node)) {
           setShowDropDown(false);
         }
@@ -57,12 +62,12 @@ export default function DropDown({
         document.removeEventListener('click', handle);
       };
     }
-  }, [dropDownRef, buttonRef, showDropDown]);
+  }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
 
   return (
     <>
       <button
-        aria-label={buttonAriaLabel || buttonLabel}
+        aria-label={typeof buttonLabel === 'string' ? buttonLabel : buttonAriaLabel}
         className={buttonClassName}
         onClick={() => setShowDropDown(!showDropDown)}
         ref={buttonRef}>

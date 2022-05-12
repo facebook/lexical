@@ -19,10 +19,11 @@ import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 
-export interface SerializedRootNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  type: 'root';
-}
+export type SerializedRootNode<SerializedNode> = {
+  ...SerializedElementNode<SerializedNode>,
+  type: 'root',
+  ...
+};
 
 export class RootNode extends ElementNode {
   __cachedText: null | string;

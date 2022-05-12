@@ -23,10 +23,11 @@ import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
-export interface SerializedParagraphNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  type: 'paragraph';
-}
+export type SerializedParagraphNode<SerializedNode> = {
+  ...SerializedElementNode<SerializedNode>,
+  type: 'paragraph',
+  ...
+};
 
 export class ParagraphNode extends ElementNode {
   static getType(): string {
@@ -89,7 +90,6 @@ export class ParagraphNode extends ElementNode {
   }
 
   exportJSON<SerializedNode>(): SerializedParagraphNode<SerializedNode> {
-    // $FlowFixMe: Flow limitation
     return {
       ...super.exportJSON(),
       type: 'paragraph',

@@ -26,13 +26,14 @@ import {$createTextNode, ElementNode} from 'lexical';
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
 
-export interface SerializedListNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  listType: ListType;
-  start: number;
-  tag: ListNodeTagType;
-  type: 'list';
-}
+export type SerializedListNode<SerializedNode> = {
+  ...SerializedElementNode<SerializedNode>,
+  listType: ListType,
+  start: number,
+  tag: ListNodeTagType,
+  type: 'list',
+  ...
+};
 
 export type ListType = 'number' | 'bullet' | 'check';
 
@@ -123,7 +124,6 @@ export class ListNode extends ElementNode {
   }
 
   exportJSON<SerializedNode>(): SerializedListNode<SerializedNode> {
-    // $FlowFixMe: Flow limitation
     return {
       ...super.exportJSON(),
       listType: this.getListType(),

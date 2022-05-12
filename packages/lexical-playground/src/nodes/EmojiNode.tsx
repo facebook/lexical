@@ -71,7 +71,6 @@ export class EmojiNode extends TextNode {
   }
 
   exportJSON(): SerializedHashtagNode {
-    // $FlowFixMe: Flow limitation
     return {
       ...super.exportJSON(),
       className: this.getClassName(),

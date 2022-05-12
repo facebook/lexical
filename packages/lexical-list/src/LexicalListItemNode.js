@@ -42,12 +42,13 @@ import {
   updateChildrenListItemValue,
 } from './formatList';
 
-export interface SerializedListItemNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  checked: boolean | void;
-  type: 'listitem';
-  value: number;
-}
+export type SerializedListItemNode<SerializedNode> = {
+  ...SerializedElementNode<SerializedNode>,
+  checked: boolean | void,
+  type: 'listitem',
+  value: number,
+  ...
+};
 
 export class ListItemNode extends ElementNode {
   __value: number;
@@ -115,7 +116,6 @@ export class ListItemNode extends ElementNode {
   }
 
   exportJSON<SerializedNode>(): SerializedListItemNode<SerializedNode> {
-    // $FlowFixMe: Flow limitation
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),

@@ -866,37 +866,39 @@ declare export var VERSION: string;
 
 // Serialization
 
-export interface SerializedTextNode {
-  detail: number;
-  format: number;
-  mode: TextModeType;
-  style: string;
-  text: string;
-  +type: string;
-}
+export type SerializedTextNode = {
+  detail: number,
+  format: number,
+  mode: TextModeType,
+  style: string,
+  text: string,
+  +type: string,
+};
 
-export interface SerializedElementNode<SerializedNode> {
-  children: Array<SerializedNode>;
-  direction: 'ltr' | 'rtl' | null;
-  format: 'left' | 'center' | 'right' | 'justify';
-  indent: number;
-  +type: string;
-}
+export type SerializedElementNode<SerializedNode> = {
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: 'left' | 'center' | 'right' | 'justify',
+  indent: number,
+  +type: string,
+  ...
+};
 
-export interface SerializedParagraphNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  type: 'paragraph';
-}
+export type SerializedParagraphNode<SerializedNode> = {
+  ...SerializedElementNode<SerializedNode>,
+  type: 'paragraph',
+  ...
+};
 
-export interface SerializedLineBreakNode {
-  type: 'linebreak';
-}
+export type SerializedLineBreakNode = {
+  type: 'linebreak',
+};
 
-export interface SerializedRootNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  type: 'root';
-}
+export type SerializedRootNode<SerializedNode> = {
+  ...SerializedElementNode<SerializedNode>,
+  type: 'root',
+};
 
-export interface SerializedEditorState<SerializedNode> {
-  root: SerializedRootNode<SerializedNode>;
-}
+export type SerializedEditorState<SerializedNode> = {
+  root: SerializedRootNode<SerializedNode>,
+};

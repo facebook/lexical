@@ -36,12 +36,13 @@ import {
   removeFromParent,
 } from '../LexicalUtils';
 
-export interface SerializedElementNode<SerializedNode> {
-  children: Array<SerializedNode>;
-  direction: 'ltr' | 'rtl' | null;
-  format: 'left' | 'center' | 'right' | 'justify' | '';
-  indent: number;
-}
+export type SerializedElementNode<SerializedNode> = {
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  format: 'left' | 'center' | 'right' | 'justify' | '',
+  indent: number,
+  ...
+};
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 

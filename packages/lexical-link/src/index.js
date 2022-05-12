@@ -21,11 +21,12 @@ import type {
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
 
-export interface SerializedLinkNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  type: 'link';
-  url: string;
-}
+export type SerializedLinkNode<SerializedNode> = {
+  ...SerializedElementNode<SerializedNode>,
+  type: 'link',
+  url: string,
+  ...
+};
 
 export class LinkNode extends ElementNode {
   __url: string;
@@ -85,7 +86,6 @@ export class LinkNode extends ElementNode {
   }
 
   exportJSON<SerializedNode>(): SerializedLinkNode<SerializedNode> {
-    // $FlowFixMe: Flow limitation
     return {
       ...super.exportJSON(),
       type: 'link',

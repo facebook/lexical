@@ -16,6 +16,7 @@ import type {
   LexicalNode,
   NodeKey,
   ParagraphNode,
+  SerializedElementNode,
   TextFormatType,
 } from 'lexical';
 
@@ -72,6 +73,17 @@ import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
+export interface SerializedHeadingNode<SerializedNode>
+  extends SerializedElementNode<SerializedNode> {
+  tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+  type: 'heading';
+}
+
+export interface SerializedQuoteNode<SerializedNode>
+  extends SerializedElementNode<SerializedNode> {
+  type: 'quote';
+}
+
 // Convoluted logic to make this work with Flow. Order matters.
 const options = {tag: 'history-merge'};
 const setEditorOptions: {
@@ -105,6 +117,23 @@ export class QuoteNode extends ElementNode {
   }
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  static importJSON<SerializedNode>(
+    serializedNode: SerializedQuoteNode<SerializedNode>,
+  ): QuoteNode {
+    const node = $createQuoteNode();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON<SerializedNode>(): SerializedQuoteNode<SerializedNode> {
+    return {
+      ...super.exportJSON(),
+      type: 'quote',
+    };
   }
 
   // Mutation
@@ -199,6 +228,24 @@ export class HeadingNode extends ElementNode {
         conversion: convertHeadingElement,
         priority: 0,
       }),
+    };
+  }
+
+  static importJSON<SerializedNode>(
+    serializedNode: SerializedHeadingNode<SerializedNode>,
+  ): HeadingNode {
+    const node = $createHeadingNode(serializedNode.tag);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON<SerializedNode>(): SerializedHeadingNode<SerializedNode> {
+    return {
+      ...super.exportJSON(),
+      tag: this.__tag,
+      type: 'heading',
     };
   }
 

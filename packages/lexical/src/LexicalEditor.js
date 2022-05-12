@@ -7,7 +7,11 @@
  * @flow strict
  */
 
-import type {EditorState, ParsedEditorState} from './LexicalEditorState';
+import type {
+  EditorState,
+  ParsedEditorState,
+  SerialzedEditorState,
+} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
@@ -22,6 +26,7 @@ import {
   commitPendingUpdates,
   parseEditorState,
   triggerListeners,
+  unstable_parseEditorState,
   updateEditor,
 } from './LexicalUpdates';
 import {
@@ -575,6 +580,7 @@ export class LexicalEditor {
     }
     commitPendingUpdates(this);
   }
+  // TODO: once unstable_parseEditorState is stable, swap that for this.
   parseEditorState(
     maybeStringifiedEditorState: string | ParsedEditorState,
   ): EditorState {
@@ -583,6 +589,16 @@ export class LexicalEditor {
         ? JSON.parse(maybeStringifiedEditorState)
         : maybeStringifiedEditorState;
     return parseEditorState(parsedEditorState, this);
+  }
+  unstable_parseEditorState<SerializedNode>(
+    maybeStringifiedEditorState: string | SerialzedEditorState<SerializedNode>,
+    updateFn?: () => void,
+  ): EditorState {
+    const serialzedEditorState =
+      typeof maybeStringifiedEditorState === 'string'
+        ? JSON.parse(maybeStringifiedEditorState)
+        : maybeStringifiedEditorState;
+    return unstable_parseEditorState(serialzedEditorState, this, updateFn);
   }
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
     updateEditor(this, updateFn, options);

@@ -19,6 +19,7 @@ import type {
   NodeSelection,
   ParagraphNode,
   RangeSelection,
+  SerializedElementNode,
 } from 'lexical';
 
 import {
@@ -40,6 +41,13 @@ import {
   $handleOutdent,
   updateChildrenListItemValue,
 } from './formatList';
+
+export interface SerializedListItemNode<SerializedNode>
+  extends SerializedElementNode<SerializedNode> {
+  checked: boolean | void;
+  type: 'listitem';
+  value: number;
+}
 
 export class ListItemNode extends ElementNode {
   __value: number;
@@ -93,6 +101,26 @@ export class ListItemNode extends ElementNode {
         conversion: convertListItemElement,
         priority: 0,
       }),
+    };
+  }
+
+  static importJSON<SerializedNode>(
+    serializedNode: SerializedListItemNode<SerializedNode>,
+  ): ListItemNode {
+    const node = new ListItemNode(serializedNode.value, serializedNode.checked);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON<SerializedNode>(): SerializedListItemNode<SerializedNode> {
+    // $FlowFixMe: Flow limitation
+    return {
+      ...super.exportJSON(),
+      checked: this.getChecked(),
+      type: 'listitem',
+      value: this.getValue(),
     };
   }
 
@@ -262,8 +290,13 @@ export class ListItemNode extends ElementNode {
   }
 
   getIndent(): number {
+    // If we don't have a parent, we are likely serializing
+    const parent = this.getParent();
+    if (parent === null) {
+      return this.getLatest().__indent;
+    }
     // ListItemNode should always have a ListNode for a parent.
-    let listNodeParent = this.getParentOrThrow().getParentOrThrow();
+    let listNodeParent = parent.getParentOrThrow();
     let indentLevel = 0;
     while ($isListItemNode(listNodeParent)) {
       listNodeParent = listNodeParent.getParentOrThrow().getParentOrThrow();

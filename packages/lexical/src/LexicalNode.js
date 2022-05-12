@@ -600,6 +600,22 @@ export class LexicalNode {
     return null;
   }
 
+  // $FlowFixMe: TODO
+  exportJSON(): Object {
+    invariant(false, 'exportJSON: base method not extended');
+  }
+
+  static importJSON(
+    // $FlowFixMe: TODO
+    serialzedNode: Object,
+  ): LexicalNode {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .importJSON().',
+      this.name,
+    );
+  }
+
   // Setters and mutators
 
   remove(preserveEmptyParent?: boolean): void {

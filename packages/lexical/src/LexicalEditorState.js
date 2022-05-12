@@ -15,24 +15,33 @@ import type {
   NodeSelection,
   RangeSelection,
 } from './LexicalSelection';
+import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
+import invariant from '../../shared/src/invariant';
+import {$isElementNode} from '.';
 import {
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
 } from './LexicalSelection';
 import {readEditorState} from './LexicalUpdates';
+import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
+// TODO: deprecated
 export type ParsedEditorState = {
   _nodeMap: Array<[NodeKey, ParsedNode]>,
   _selection: null | ParsedSelection,
 };
-
+// TODO: deprecated
 export type JSONEditorState = {
   _nodeMap: Array<[NodeKey, LexicalNode]>,
   _selection: null | ParsedSelection,
 };
+
+export interface SerialzedEditorState<SerializedNode> {
+  root: SerializedRootNode<SerializedNode>;
+}
 
 export function editorStateHasDirtySelection(
   editorState: EditorState,
@@ -57,6 +66,35 @@ export function cloneEditorState(current: EditorState): EditorState {
 
 export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', $createRootNode()]]));
+}
+
+function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
+  const serializedNode = node.exportJSON();
+  const nodeClass = node.constructor;
+  if (serializedNode.type !== nodeClass.getType()) {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .exportJSON().',
+      nodeClass.name,
+    );
+  }
+  const serializedChildren = serializedNode.children;
+  if ($isElementNode(node)) {
+    if (!Array.isArray(serializedChildren)) {
+      invariant(
+        false,
+        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
+        nodeClass.name,
+      );
+    }
+    const children = node.getChildren();
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const serializedChildNode = exportNodeToJSON(child);
+      serializedChildren.push(serializedChildNode);
+    }
+  }
+  return serializedNode;
 }
 
 export class EditorState {
@@ -90,6 +128,7 @@ export class EditorState {
     editorState._readOnly = true;
     return editorState;
   }
+  // TODO: remove when we use the other toJSON
   toJSON(space?: string | number): JSONEditorState {
     const selection = this._selection;
 
@@ -131,5 +170,10 @@ export class EditorState {
           }
         : null,
     };
+  }
+  unstable_toJSON<SerializedNode>(): SerialzedEditorState<SerializedNode> {
+    return readEditorState(this, () => ({
+      root: exportNodeToJSON($getRoot()),
+    }));
   }
 }

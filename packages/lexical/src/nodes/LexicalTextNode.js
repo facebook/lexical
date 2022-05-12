@@ -37,6 +37,8 @@ import {
   IS_UNMERGEABLE,
   TEXT_MODE_TO_TYPE,
   TEXT_TYPE_TO_FORMAT,
+  TEXT_TYPE_TO_MODE,
+  ZERO_WIDTH_CHAR,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
@@ -54,6 +56,15 @@ import {
   internalMarkSiblingsAsDirty,
   toggleTextFormatType,
 } from '../LexicalUtils';
+
+export interface SerializedTextNode {
+  detail: number;
+  format: number;
+  mode: TextModeType;
+  style: string;
+  text: string;
+  +type: string;
+}
 
 export type TextFormatType =
   | 'bold'
@@ -264,6 +275,16 @@ export class TextNode extends LexicalNode {
     return self.__format;
   }
 
+  getDetail(): number {
+    const self = this.getLatest();
+    return self.__detail;
+  }
+
+  getMode(): TextModeType {
+    const self = this.getLatest();
+    return TEXT_TYPE_TO_MODE[self.__mode];
+  }
+
   getStyle(): string {
     const self = this.getLatest();
     return self.__style;
@@ -447,6 +468,26 @@ export class TextNode extends LexicalNode {
     };
   }
 
+  static importJSON(serializedNode: SerializedTextNode): TextNode {
+    const node = $createTextNode(serializedNode.text);
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
+    return node;
+  }
+
+  exportJSON(): SerializedTextNode {
+    return {
+      detail: this.getDetail(),
+      format: this.getFormat(),
+      mode: this.getMode(),
+      style: this.getStyle(),
+      text: this.getTextContent(),
+      type: 'text',
+    };
+  }
+
   // Mutators
   selectionTransform(
     prevSelection: null | RangeSelection | NodeSelection | GridSelection,
@@ -457,6 +498,13 @@ export class TextNode extends LexicalNode {
     errorOnReadOnly();
     const self = this.getWritable();
     self.__format = format;
+    return self;
+  }
+
+  setDetail(detail: number): this {
+    errorOnReadOnly();
+    const self = this.getWritable();
+    self.__detail = detail;
     return self;
   }
 

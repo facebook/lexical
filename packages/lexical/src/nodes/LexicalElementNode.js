@@ -17,7 +17,11 @@ import type {
 import invariant from 'shared/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';
-import {DOUBLE_LINE_BREAK, ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
+import {
+  DOUBLE_LINE_BREAK,
+  ELEMENT_FORMAT_TO_TYPE,
+  ELEMENT_TYPE_TO_FORMAT,
+} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
@@ -32,7 +36,14 @@ import {
   removeFromParent,
 } from '../LexicalUtils';
 
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
+export interface SerializedElementNode<SerializedNode> {
+  children: Array<SerializedNode>;
+  direction: 'ltr' | 'rtl' | null;
+  format: 'left' | 'center' | 'right' | 'justify' | '';
+  indent: number;
+}
+
+export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 
 export class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
@@ -51,6 +62,10 @@ export class ElementNode extends LexicalNode {
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;
+  }
+  getFormatType(): 'left' | 'center' | 'right' | 'justify' | '' {
+    const format = this.getFormat();
+    return ELEMENT_FORMAT_TO_TYPE[format] || '';
   }
   getIndent(): number {
     const self = this.getLatest();
@@ -283,7 +298,7 @@ export class ElementNode extends LexicalNode {
   setFormat(type: ElementFormatType): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    self.__format = ELEMENT_TYPE_TO_FORMAT[type];
+    self.__format = ELEMENT_TYPE_TO_FORMAT[type] || 0;
     return this;
   }
   setIndent(indentLevel: number): this {
@@ -409,6 +424,16 @@ export class ElementNode extends LexicalNode {
     }
 
     return writableSelf;
+  }
+  // JSON serialization
+  exportJSON<SerializedNode>(): SerializedElementNode<SerializedNode> {
+    return {
+      children: [],
+      direction: this.getDirection(),
+      format: this.getFormatType(),
+      indent: this.getIndent(),
+      type: 'element',
+    };
   }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(selection: RangeSelection): null | LexicalNode {

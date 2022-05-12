@@ -15,6 +15,10 @@ import type {
 
 import {LexicalNode} from '../LexicalNode';
 
+export interface SerializedLineBreakNode {
+  type: 'linebreak';
+}
+
 export class LineBreakNode extends LexicalNode {
   static getType(): string {
     return 'linebreak';
@@ -46,6 +50,18 @@ export class LineBreakNode extends LexicalNode {
         conversion: convertLineBreakElement,
         priority: 0,
       }),
+    };
+  }
+
+  static importJSON(
+    serializedLineBreakNode: SerializedLineBreakNode,
+  ): LineBreakNode {
+    return $createLineBreakNode();
+  }
+
+  exportJSON(): SerializedLineBreakNode {
+    return {
+      type: 'linebreak',
     };
   }
 }

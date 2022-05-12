@@ -15,10 +15,17 @@ import type {
   LexicalNode,
   NodeKey,
   RangeSelection,
+  SerializedElementNode,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
+
+export interface SerializedLinkNode<SerializedNode>
+  extends SerializedElementNode<SerializedNode> {
+  type: 'link';
+  url: string;
+}
 
 export class LinkNode extends ElementNode {
   __url: string;
@@ -64,6 +71,25 @@ export class LinkNode extends ElementNode {
         conversion: convertAnchorElement,
         priority: 1,
       }),
+    };
+  }
+
+  static importJSON<SerializedNode>(
+    serializedNode: SerializedLinkNode<SerializedNode>,
+  ): LinkNode {
+    const node = $createLinkNode(serializedNode.url);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON<SerializedNode>(): SerializedLinkNode<SerializedNode> {
+    // $FlowFixMe: Flow limitation
+    return {
+      ...super.exportJSON(),
+      type: 'link',
+      url: this.getURL(),
     };
   }
 

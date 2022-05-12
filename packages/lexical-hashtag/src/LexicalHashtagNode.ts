@@ -7,10 +7,19 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {TextNode} from 'lexical';
+
+interface SerializedHashtagNode extends SerializedTextNode {
+  type: 'hashtag';
+}
 
 export class HashtagNode extends TextNode {
   static getType(): string {
@@ -29,6 +38,22 @@ export class HashtagNode extends TextNode {
     const element = super.createDOM(config);
     addClassNamesToElement(element, config.theme.hashtag);
     return element;
+  }
+
+  static importJSON(serializedNode: SerializedHashtagNode): HashtagNode {
+    const node = $createHashtagNode(serializedNode.text);
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
+    return node;
+  }
+
+  exportJSON(): SerializedHashtagNode {
+    return {
+      ...super.exportJSON(),
+      type: 'hashtag',
+    };
   }
 
   canInsertTextBefore(): boolean {

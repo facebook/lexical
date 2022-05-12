@@ -812,15 +812,13 @@ function reconcileSelection(
   const focusOffset = domSelection.focusOffset;
   const activeElement = document.activeElement;
   const rootElement = editor._rootElement;
-  // TODO: make this not hard-coded, and add another config option
-  // that makes this configurable.
-  if (
-    editor._updateTags.has('collaboration') &&
-    activeElement !== rootElement
-  ) {
+  const rootElementHasFocus =
+    rootElement !== null &&
+    activeElement !== null &&
+    rootElement.contains(activeElement);
+  if (!rootElementHasFocus && editor._skipRootElementFocus) {
     return;
   }
-
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
     // of editor.setRootElement(). If this occurs on init when the
@@ -881,10 +879,6 @@ function reconcileSelection(
     );
   }
 
-  // Diff against the native DOM selection to ensure we don't do
-  // an unnecessary selection update. We also skip this check if
-  // we're moving selection to within an element, as this can
-  // sometimes be problematic around scrolling.
   if (
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
@@ -894,10 +888,7 @@ function reconcileSelection(
     !(domSelection.type === 'Range' && isCollapsed)
   ) {
     // If the root element does not have focus, ensure it has focus
-    if (
-      rootElement !== null &&
-      (activeElement === null || !rootElement.contains(activeElement))
-    ) {
+    if (rootElement !== null && !rootElementHasFocus) {
       rootElement.focus({preventScroll: true});
     }
     // In Safari/iOS if we have selection on an element, then we also

@@ -16,7 +16,8 @@ export type SettingName =
   | 'isAutocomplete'
   | 'showTreeView'
   | 'showNestedEditorTreeView'
-  | 'emptyEditor';
+  | 'emptyEditor'
+  | 'testSkipSelection';
 
 export type Settings = Record<SettingName, boolean>;
 
@@ -36,4 +37,5 @@ export const DEFAULT_SETTINGS: Settings = {
   measureTypingPerf: false,
   showNestedEditorTreeView: false,
   showTreeView: true,
+  testSkipSelection: false,
 };

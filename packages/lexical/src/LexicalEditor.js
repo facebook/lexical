@@ -48,6 +48,7 @@ export type TextNodeThemeClasses = {
 
 export type EditorUpdateOptions = {|
   onUpdate?: () => void,
+  skipRootElementFocus?: true,
   skipTransforms?: true,
   tag?: string,
 |};
@@ -309,6 +310,7 @@ export class LexicalEditor {
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
+  _skipRootElementFocus: boolean;
   _observer: null | MutationObserver;
   _key: string;
   _onError: ErrorHandler;
@@ -363,6 +365,7 @@ export class LexicalEditor {
     this._dirtyElements = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
+    this._skipRootElementFocus = false;
     // Handling of DOM mutations
     this._observer = null;
     // Used for identifying owning editors

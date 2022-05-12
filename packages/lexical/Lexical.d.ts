@@ -125,6 +125,7 @@ export declare class LexicalEditor {
   _dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   _normalizedNodes: Set<NodeKey>;
   _updateTags: Set<string>;
+  _skipRootElementFocus: boolean;
   _observer: null | MutationObserver;
   _key: string;
   _readOnly: boolean;
@@ -170,6 +171,7 @@ type EditorUpdateOptions = {
   onUpdate?: () => void;
   tag?: string;
   skipTransforms?: true;
+  skipRootElementFocus?: true;
 };
 type EditorSetOptions = {
   tag?: string;

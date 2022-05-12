@@ -575,6 +575,8 @@ function beginUpdate(
     }
     skipTransforms = options.skipTransforms;
   }
+  editor._skipRootElementFocus =
+    (options !== undefined && options.skipRootElementFocus) || false;
   if (onUpdate) {
     editor._deferred.push(onUpdate);
   }

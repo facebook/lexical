@@ -2100,11 +2100,7 @@ function internalResolveSelectionPoints(
   editor: LexicalEditor,
   lastSelection: null | RangeSelection | NodeSelection | GridSelection,
 ): null | [PointType, PointType] {
-  if (
-    anchorDOM === null ||
-    focusDOM === null ||
-    !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
-  ) {
+  if (anchorDOM === null || focusDOM === null) {
     return null;
   }
   const resolvedAnchorPoint = internalResolveSelectionPoint(
@@ -2243,6 +2239,12 @@ function internalCreateRangeSelection(
     focusDOM = domSelection.focusNode;
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
+    if (
+      $isRangeSelection(lastSelection) &&
+      !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+    ) {
+      return lastSelection.clone();
+    }
   } else {
     return lastSelection.clone();
   }

@@ -20,6 +20,7 @@ const setEditorOptions: {
 } = options;
 const updateOptions: {
   onUpdate?: () => void,
+  skipRootElementFocus?: true,
   skipTransforms?: true,
   tag?: string,
 } = options;

@@ -50,6 +50,7 @@ import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
+import TestSkipSelectionPlugin from './plugins/TestSkipSelectionPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
@@ -152,6 +153,7 @@ export default function Editor(): JSX.Element {
       isRichText,
       showTreeView,
       emptyEditor,
+      testSkipSelection,
     },
   } = useSettings();
   const text = isCollab
@@ -234,6 +236,7 @@ export default function Editor(): JSX.Element {
         <ActionsPlugin isRichText={isRichText} />
       </div>
       {showTreeView && <TreeViewPlugin />}
+      {testSkipSelection && <TestSkipSelectionPlugin />}
     </>
   );
 }

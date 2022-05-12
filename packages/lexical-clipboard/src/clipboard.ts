@@ -114,6 +114,7 @@ export function $appendSelectedNodesToHTML(
 
   return shouldInclude;
 }
+
 export function $convertSelectedContentToHtml(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection,
@@ -129,6 +130,7 @@ export function $convertSelectedContentToHtml(
 
   return container.innerHTML;
 }
+
 export function $appendSelectedNodesToClone(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection,
@@ -270,6 +272,7 @@ export function $cloneSelectedContent<
     range,
   };
 }
+
 export function $getLexicalContent(editor: LexicalEditor): string | null {
   const selection = $getSelection();
 
@@ -284,6 +287,7 @@ export function $getLexicalContent(editor: LexicalEditor): string | null {
 
   return null;
 }
+
 export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: RangeSelection,
@@ -675,6 +679,7 @@ export function $generateNodesFromDOM(
 
   return lexicalNodes;
 }
+
 export function $splitClonedTextNode(
   selection: RangeSelection | GridSelection | NodeSelection,
   clone: TextNode,

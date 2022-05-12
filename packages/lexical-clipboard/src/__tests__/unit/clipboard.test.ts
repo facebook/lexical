@@ -108,6 +108,7 @@ function expectMatchingOutput(editor, cloneState, htmlString) {
 
 const fillEditorWithComplexData = () => {
   const root = $getRoot();
+
   const paragraph = $createParagraphNode();
   const nodesToInsert = [];
 
@@ -368,6 +369,7 @@ describe('Clipboard tests', () => {
 
         expect(nodeMap.size).toBe(5);
         expect(rangeSet.size).toBe(1);
+
         // We want to make sure that the list node is the top level and is included.
         expect(rangeSet.has(list.getKey())).toBe(true);
         expect(nodeMap.has(list.getKey())).toBe(true);
@@ -389,6 +391,7 @@ describe('Clipboard tests', () => {
         expect(htmlString).toBe(
           '<ul><li value="1"><span>: Lorem ipsum dolor sit amet</span></li><li value="2"><span>2: Lorem ipsum dolor sit</span></li></ul>',
         );
+
         expectMatchingOutput(editor, state, htmlString);
       });
     });
@@ -398,9 +401,12 @@ describe('Clipboard tests', () => {
 
       await editor.update(() => {
         const {table} = fillEditorWithComplexData();
+
         const [tableRow1, tableRow2] = table.getChildren();
+
         const tableCell1x1 = tableRow1.getFirstChild();
         const tableCell2x2 = tableRow2.getChildren()[1];
+
         const selection = $createGridSelection();
 
         selection.set(

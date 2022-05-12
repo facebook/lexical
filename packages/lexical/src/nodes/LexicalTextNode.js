@@ -7,12 +7,17 @@
  * @flow strict
  */
 
-import type {EditorConfig, TextNodeThemeClasses} from '../LexicalEditor';
+import type {
+  EditorConfig,
+  LexicalEditor,
+  TextNodeThemeClasses,
+} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
-SerializedNode} from '../LexicalNode';
+  SerializedNode,
+} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
@@ -272,7 +277,10 @@ export class TextNode extends LexicalNode {
       __type: this.getType(),
     };
   }
-  static deserialize(json: SerializedTextNode): TextNode {
+  static deserialize(
+    json: SerializedTextNode,
+    editor: LexicalEditor,
+  ): TextNode {
     if (json.__type === this.getType()) {
       const {__text, __format, __style, __mode, __detail, __key} = json;
       const node = new TextNode(__text, __key);

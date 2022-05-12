@@ -179,7 +179,7 @@ export class LexicalNode {
       this.constructor.name,
     );
   }
-  static deserialize(json: $FlowFixMe): LexicalNode {
+  static deserialize(json: $FlowFixMe, editor: LexicalEditor): LexicalNode {
     invariant(false, 'Cannot deserialize to Lexical Node.', this.name);
   }
 

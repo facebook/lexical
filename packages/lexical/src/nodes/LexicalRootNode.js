@@ -7,8 +7,9 @@
  * @flow strict
  */
 
+import type {LexicalEditor} from '../LexicalEditor';
 import type {LexicalNode} from '../LexicalNode';
-import type {ParsedElementNode} from '../LexicalParsing';
+import type {SerializedElementNode} from './LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
@@ -16,6 +17,8 @@ import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
+
+export type SerializedRootNode = SerializedElementNode;
 
 export class RootNode extends ElementNode {
   __cachedText: null | string;
@@ -26,6 +29,43 @@ export class RootNode extends ElementNode {
 
   static clone(): RootNode {
     return new RootNode();
+  }
+
+  static deserialize(
+    json: SerializedRootNode,
+    editor: LexicalEditor,
+  ): RootNode {
+    const rootNode = $createRootNode();
+    rootNode.__format = json.__format;
+    rootNode.__indent = json.__indent;
+    rootNode.__dir = json.__dir;
+    const jsonChildren = json.__children;
+    for (let i = 0; i < jsonChildren.length; i++) {
+      const childType = jsonChildren[i].__type;
+      const node = editor._nodes.get(childType);
+      if (node !== undefined) {
+        const child = node?.klass.deserialize(jsonChildren[i], editor);
+        child.__parent = 'root';
+        rootNode.__children.push(child.__key);
+      }
+    }
+    return rootNode;
+  }
+
+  serialize(): SerializedRootNode {
+    const serializedChildren = [];
+    const nodeChildren = this.getChildren();
+    for (let i = 0; i < nodeChildren.length; i++) {
+      serializedChildren.push(nodeChildren[i].serialize());
+    }
+    return {
+      __children: serializedChildren,
+      __dir: this.getDirection(),
+      __format: this.getFormat(),
+      __indent: this.getIndent(),
+      __key: this.getKey(),
+      __type: 'root',
+    };
   }
 
   constructor(): void {
@@ -91,18 +131,6 @@ export class RootNode extends ElementNode {
       }
     }
     return super.append(...nodesToAppend);
-  }
-
-  toJSON(): ParsedElementNode {
-    return {
-      __children: this.__children,
-      __dir: this.__dir,
-      __format: this.__format,
-      __indent: this.__indent,
-      __key: 'root',
-      __parent: null,
-      __type: 'root',
-    };
   }
 }
 

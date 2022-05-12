@@ -9,11 +9,12 @@
 
 import type {EditorState, ParsedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
+import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
-import {$getRoot, $getSelection, TextNode} from '.';
+import {$getRoot, $getSelection, $isRootNode, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
@@ -636,5 +637,23 @@ export class LexicalEditor {
     return {
       editorState: this._editorState,
     };
+  }
+  serialize(): SerializedRootNode {
+    return this.getEditorState().read(() => {
+      // $FlowFixMe TODO we can potentially leverage inheritance to resolve this
+      return $getRoot().serialize();
+    });
+  }
+
+  deserialize(json: SerializedRootNode): RootNode {
+    const node = this._nodes.get('root');
+    if (node !== undefined) {
+      const rootNode = node.klass.deserialize(json, this);
+      if ($isRootNode(rootNode)) {
+        return rootNode;
+      }
+      invariant(false, 'Failed to deserialize root node');
+    }
+    invariant(false, 'Node of type %s is not registered', json.__type);
   }
 }

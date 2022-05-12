@@ -146,12 +146,13 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
+  listItem.append(...node.getChildren());
   if (
     $isListNode(previousSibling) &&
     listType === previousSibling.getListType()
   ) {
-    listItem.append(node);
     previousSibling.append(listItem);
+    node.remove();
     // if the same type of list is on both sides, merge them.
     if ($isListNode(nextSibling) && listType === nextSibling.getListType()) {
       previousSibling.append(...nextSibling.getChildren());
@@ -162,14 +163,13 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
     $isListNode(nextSibling) &&
     listType === nextSibling.getListType()
   ) {
-    listItem.append(node);
     nextSibling.getFirstChildOrThrow().insertBefore(listItem);
+    node.remove();
     return nextSibling;
   } else {
     const list = $createListNode(listType);
     list.append(listItem);
     node.replace(list);
-    listItem.append(node);
     updateChildrenListItemValue(list);
     return list;
   }

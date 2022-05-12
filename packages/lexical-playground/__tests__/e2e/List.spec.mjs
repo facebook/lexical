@@ -1425,4 +1425,34 @@ test.describe('Nested List', () => {
 
     await assertCheckCount(3, 3);
   });
+
+  test('replaces existing element node', async ({page}) => {
+    // Create two quote blocks, select it and format to a list
+    // should replace quotes (instead of moving quotes into the list items)
+    await focusEditor(page);
+    await page.keyboard.type('> Hello from');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('> the other side');
+    await selectAll(page);
+    await toggleBulletList(page);
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">Hello from</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">the other side</span>
+          </li>
+        </ul>
+      `,
+    );
+  });
 });

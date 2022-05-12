@@ -31,11 +31,13 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
   showNestedEditorTreeView,
+  testSkipSelection,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
   appSettings.disableBeforeInput = LEGACY_EVENTS;
+  appSettings.testSkipSelection = testSkipSelection;
   if (isCollab) {
     appSettings.isCollab = isCollab;
     appSettings.collabId = uuidv4();
@@ -152,6 +154,18 @@ export async function assertHTML(
       ignoreInlineStyles,
     );
   }
+}
+
+export async function assertFocus(pageOrFrame, expected = true) {
+  const contentEditableHasFocus = await hasFocus(pageOrFrame);
+  return contentEditableHasFocus === expected;
+}
+
+export async function hasFocus(pageOrFrame) {
+  return await pageOrFrame.evaluate(() => {
+    const editor = document.querySelector('div[contenteditable="true"]');
+    return editor === document.activeElement;
+  });
 }
 
 async function retryAsync(page, fn, attempts) {

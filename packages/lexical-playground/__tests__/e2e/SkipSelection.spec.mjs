@@ -7,44 +7,58 @@
  */
 
 import {
+  assertFocus,
   assertHTML,
-  assertSelection,
-  expect,
+  click,
   focusEditor,
+  hasFocus,
   html,
   initialize,
+  repeat,
   test,
-  textContent,
 } from '../utils/index.mjs';
 
 test.describe('Placeholder', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isCollab, page}) =>
+    initialize({isCollab, page, testSkipSelection: true}),
+  );
   test(`Shows foo 10 times, editor is not focused`, async ({
     page,
     isRichText,
     isCollab,
   }) => {
     await focusEditor(page);
-    const content = await textContent(page, '.Placeholder__root');
-    if (isCollab) {
-      expect(content).toBe('Enter some collaborative rich text...');
-    } else if (isRichText) {
-      expect(content).toBe('Enter some rich text...');
-    } else {
-      expect(content).toBe('Enter some plain text...');
-    }
 
+    await repeat(10, async () => await click(page, '.skip-selection-button'));
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">${'foo'.repeat(10)}</span>
+        </p>
       `,
     );
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0],
-      focusOffset: 0,
-      focusPath: [0],
-    });
+    await assertFocus(page, false);
+
+    // For some reason, the browser moves the selection to the beginning when calling editor.focus()
+    let focused = false;
+    while (!focused) {
+      await page.keyboard.press('Tab');
+      focused = await hasFocus(page);
+    }
+
+    await page.keyboard.type('bar');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">${'foo'.repeat(10)}bar</span>
+        </p>
+      `,
+    );
   });
 });

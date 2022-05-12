@@ -43,7 +43,7 @@ const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
 
 export default function LexicalMarkdownShortcutPlugin({
   transformers = DEFAULT_TRANSFORMERS,
-}: $ReadOnly<{transformers: Array<Transformer>}>): null {
+}: $ReadOnly<{transformers?: Array<Transformer>}>): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     return registerMarkdownShortcuts(editor, transformers);

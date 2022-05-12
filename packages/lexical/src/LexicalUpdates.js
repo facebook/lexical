@@ -335,6 +335,11 @@ export function unstable_parseEditorState<SerializedNode>(
     if (updateFn) {
       updateFn();
     }
+    // Make the editorState immutable
+    editorState._readOnly = true;
+    if (__DEV__) {
+      handleDEVOnlyPendingUpdateGuarantees(editorState);
+    }
   } finally {
     activeEditorState = previousActiveEditorState;
     isReadOnlyMode = previousReadOnlyMode;

@@ -291,17 +291,24 @@ type InternalSerializedNode = {
 };
 
 function parseSerializedNode<SerializedNode: InternalSerializedNode>(
-  serialzedJSONNode: SerializedNode,
+  serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,
 ): LexicalNode {
-  const type = serialzedJSONNode.type;
+  const type = serializedNode.type;
   const registeredNode = registeredNodes.get(type);
   if (registeredNode === undefined) {
     invariant(false, 'parseEditorState: type "%s" + not found', type);
   }
-  const registeredNodeClass = registeredNode.klass;
-  const node = registeredNodeClass.importJSON(serialzedJSONNode);
-  const children = serialzedJSONNode.children;
+  const nodeClass = registeredNode.klass;
+  if (serializedNode.type !== nodeClass.getType()) {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .importJSON().',
+      nodeClass.name,
+    );
+  }
+  const node = nodeClass.importJSON(serializedNode);
+  const children = serializedNode.children;
   if ($isElementNode(node) && Array.isArray(children)) {
     for (let i = 0; i < children.length; i++) {
       const serialzedJSONChildNode = children[i];

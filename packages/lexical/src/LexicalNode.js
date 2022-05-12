@@ -600,13 +600,13 @@ export class LexicalNode {
     return null;
   }
 
-  // $FlowFixMe: TODO
+  // $FlowFixMe: Intentional work around for Flow
   exportJSON(): Object {
     invariant(false, 'exportJSON: base method not extended');
   }
 
   static importJSON(
-    // $FlowFixMe: TODO
+    // $FlowFixMe: Intentional work around for Flow
     serializedNode: Object,
   ): LexicalNode {
     invariant(

@@ -311,9 +311,9 @@ function parseSerializedNode<SerializedNode: InternalSerializedNode>(
   const children = serializedNode.children;
   if ($isElementNode(node) && Array.isArray(children)) {
     for (let i = 0; i < children.length; i++) {
-      const serialzedJSONChildNode = children[i];
+      const serializedJSONChildNode = children[i];
       const childNode = parseSerializedNode(
-        serialzedJSONChildNode,
+        serializedJSONChildNode,
         registeredNodes,
       );
       node.append(childNode);

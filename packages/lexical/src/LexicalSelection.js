@@ -106,10 +106,12 @@ class Point {
     const bOffset = b.offset;
 
     if ($isElementNode(aNode)) {
-      aNode = aNode.getDescendantByIndex(aOffset);
+      const aNodeDescendant = aNode.getDescendantByIndex(aOffset);
+      aNode = aNodeDescendant != null ? aNodeDescendant : aNode;
     }
     if ($isElementNode(bNode)) {
-      bNode = bNode.getDescendantByIndex(bOffset);
+      const bNodeDescendant = bNode.getDescendantByIndex(bOffset);
+      bNode = bNodeDescendant != null ? bNodeDescendant : bNode;
     }
     if (aNode === bNode) {
       return aOffset < bOffset;
@@ -533,11 +535,14 @@ export class RangeSelection implements BaseSelection {
     let lastNode = focus.getNode();
 
     if ($isElementNode(firstNode)) {
-      firstNode = firstNode.getDescendantByIndex(anchor.offset);
+      const firstNodeDescendant = firstNode.getDescendantByIndex(anchor.offset);
+      firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
     }
     if ($isElementNode(lastNode)) {
-      lastNode = lastNode.getDescendantByIndex(focus.offset);
+      const lastNodeDescendant = lastNode.getDescendantByIndex(focus.offset);
+      lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
+
     let nodes;
 
     if (firstNode.is(lastNode)) {

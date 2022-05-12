@@ -199,7 +199,15 @@
       "shared/useLayoutEffect": ["packages/shared/src/useLayoutEffect.js"],
 
       "shared-ts/canUseDOM": ["packages/shared-ts/src/canUseDOM.ts"],
-      "shared-ts/environment": ["packages/shared-ts/src/environment.ts"]
+      "shared-ts/getDOMSelection": [
+        "packages/shared-ts/src/getDOMSelection.ts"
+      ],
+      "shared-ts/simpleDiffWithCursor": [
+        "packages/shared-ts/src/simpleDiffWithCursor.ts"
+      ],
+      "shared-ts/invariant": ["packages/shared-ts/src/invariant.ts"],
+      "shared-ts/environment": ["packages/shared-ts/src/environment.ts"],
+      "shared-ts/useLayoutEffect": ["packages/shared-ts/src/useLayoutEffect.ts"]
     }
   },
   "exclude": ["node_modules/**/*"]

@@ -373,7 +373,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalClipboard',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical File',

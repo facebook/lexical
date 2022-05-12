@@ -26,7 +26,7 @@ module.exports = {
       moduleNameMapper: {
         '^./dist/(.+)': './src/$1',
         '^@lexical/clipboard$':
-          '<rootDir>/packages/lexical-clipboard/src/index.js',
+          '<rootDir>/packages/lexical-clipboard/src/index.ts',
         '^@lexical/code$': '<rootDir>/packages/lexical-code/src/index.ts',
         '^@lexical/dragon$': '<rootDir>/packages/lexical-dragon/src/index.ts',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.ts',

@@ -201,12 +201,12 @@ async function build(name, inputFile, outputFile, isProd) {
         },
       },
       nodeResolve({
-        extensions: ['.js', '.jsx', '.ts', 'tsx'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
       }),
       isTypeScript
         ? babel({
             ...COMMON_BABEL_SETTINGS,
-            extensions: ['.js', '.jsx', '.ts', 'tsx'],
+            extensions: ['.js', '.jsx', '.ts', '.tsx'],
             plugins: [
               [
                 require('./error-codes/transform-error-messages'),

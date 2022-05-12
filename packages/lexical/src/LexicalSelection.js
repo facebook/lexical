@@ -155,7 +155,7 @@ function $createPoint(
 }
 
 function selectPointOnNode(point: PointType, node: LexicalNode): void {
-  const key = node.__key;
+  let key = node.__key;
   let offset = point.offset;
   let type = 'element';
   if ($isTextNode(node)) {
@@ -163,6 +163,18 @@ function selectPointOnNode(point: PointType, node: LexicalNode): void {
     const textContentLength = node.getTextContentSize();
     if (offset > textContentLength) {
       offset = textContentLength;
+    }
+  } else if (!$isElementNode(node)) {
+    const nextSibling = node.getNextSibling();
+    if ($isTextNode(nextSibling)) {
+      key = nextSibling.__key;
+      offset = 0;
+    } else {
+      const parentNode = node.getParent();
+      if (parentNode) {
+        key = parentNode.__key;
+        offset = node.getIndexWithinParent() + 1;
+      }
     }
   }
   point.set(key, offset, type);
@@ -179,7 +191,7 @@ export function $moveSelectionPointToEnd(
     } else {
       selectPointOnNode(point, node);
     }
-  } else if ($isTextNode(node)) {
+  } else {
     selectPointOnNode(point, node);
   }
 }

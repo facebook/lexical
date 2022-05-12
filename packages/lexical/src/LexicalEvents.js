@@ -101,6 +101,7 @@ import {
   isOpenLineBreak,
   isParagraph,
   isRedo,
+  isSelectionWithinEditor,
   isSpace,
   isTab,
   isUnderline,
@@ -170,9 +171,14 @@ function onSelectionChange(
   editor: LexicalEditor,
   isActive: boolean,
 ): void {
+  const {
+    anchorNode: anchorDOM,
+    anchorOffset,
+    focusNode: focusDOM,
+    focusOffset,
+  } = domSelection;
   if (isSelectionChangeFromReconcile) {
     isSelectionChangeFromReconcile = false;
-    const {anchorNode, anchorOffset, focusNode, focusOffset} = domSelection;
     // If native DOM selection is on a DOM element, then
     // we should continue as usual, as Lexical's selection
     // may have normalized to a better child. If the DOM
@@ -182,8 +188,8 @@ function onSelectionChange(
     // because in this case, we might need to normalize to a
     // sibling instead.
     if (
-      shouldSkipSelectionChange(anchorNode, anchorOffset) &&
-      shouldSkipSelectionChange(focusNode, focusOffset)
+      shouldSkipSelectionChange(anchorDOM, anchorOffset) &&
+      shouldSkipSelectionChange(focusDOM, focusOffset)
     ) {
       return;
     }
@@ -193,6 +199,9 @@ function onSelectionChange(
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
     if (!isActive) {
       $setSelection(null);
+      return;
+    }
+    if (!isSelectionWithinEditor(editor, anchorDOM, focusDOM)) {
       return;
     }
 

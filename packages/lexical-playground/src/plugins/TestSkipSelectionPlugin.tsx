@@ -14,7 +14,7 @@ import * as React from 'react';
 export default function TestSkipSelectionPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
-  const clickHandler = () => {
+  const typeHandler = () => {
     editor.update(
       () => {
         const selection = $getSelection();
@@ -26,9 +26,18 @@ export default function TestSkipSelectionPlugin(): JSX.Element {
     );
   };
 
+  const focusHandler = () => {
+    editor.focus();
+  };
+
   return (
-    <button className="skip-selection-button" onClick={clickHandler}>
-      Type foo
-    </button>
+    <>
+      <button className="skip-selection-type-button" onClick={typeHandler}>
+        Type foo
+      </button>
+      <button className="skip-selection-focus-button" onClick={focusHandler}>
+        Focus
+      </button>
+    </>
   );
 }

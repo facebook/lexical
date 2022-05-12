@@ -160,6 +160,7 @@ export function syncYjsChangesToLexical(
       onUpdate: () => {
         syncCursorPositions(binding, provider);
       },
+      skipRootElementFocus: true,
       skipTransforms: true,
       tag: 'collaboration',
     },

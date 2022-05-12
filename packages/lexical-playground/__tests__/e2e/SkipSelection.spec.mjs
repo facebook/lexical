@@ -11,7 +11,6 @@ import {
   assertHTML,
   click,
   focusEditor,
-  hasFocus,
   html,
   initialize,
   repeat,
@@ -29,7 +28,10 @@ test.describe('Placeholder', () => {
   }) => {
     await focusEditor(page);
 
-    await repeat(10, async () => await click(page, '.skip-selection-button'));
+    await repeat(
+      10,
+      async () => await click(page, '.skip-selection-type-button'),
+    );
     await assertHTML(
       page,
       html`
@@ -42,12 +44,10 @@ test.describe('Placeholder', () => {
     );
     await assertFocus(page, false);
 
-    // For some reason, the browser moves the selection to the beginning when calling editor.focus()
-    let focused = false;
-    while (!focused) {
-      await page.keyboard.press('Tab');
-      focused = await hasFocus(page);
-    }
+    // For some reason, some browsers don't trigger a focus event on editorElement.focus() so let's
+    // use editor.focus() for the sake of the test
+    // with
+    await click(page, '.skip-selection-focus-button');
 
     await page.keyboard.type('bar');
     await assertHTML(

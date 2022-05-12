@@ -157,15 +157,11 @@ export async function assertHTML(
 }
 
 export async function assertFocus(pageOrFrame, expected = true) {
-  const contentEditableHasFocus = await hasFocus(pageOrFrame);
-  return contentEditableHasFocus === expected;
-}
-
-export async function hasFocus(pageOrFrame) {
-  return await pageOrFrame.evaluate(() => {
+  const contentEditableHasFocus = await pageOrFrame.evaluate(() => {
     const editor = document.querySelector('div[contenteditable="true"]');
     return editor === document.activeElement;
   });
+  return contentEditableHasFocus === expected;
 }
 
 async function retryAsync(page, fn, attempts) {

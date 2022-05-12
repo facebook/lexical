@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {RangeSelection, TextNode} from 'lexical';
+import type {LexicalNode, RangeSelection, TextNode} from 'lexical';
 
 import {$isElementNode, $isTextNode} from 'lexical';
 
@@ -53,7 +53,7 @@ export function $wrapSelectionInMarkNode(
     }
     const isFirstNode = i === 0;
     const isLastNode = i === nodesLength - 1;
-    let targetNode;
+    let targetNode: LexicalNode;
 
     if ($isTextNode(node)) {
       const textContentSize = node.getTextContentSize();
@@ -98,7 +98,7 @@ export function $getMarkIDs(
   node: TextNode,
   offset: number,
 ): null | Array<string> {
-  let currentNode = node;
+  let currentNode: LexicalNode = node;
   while (currentNode !== null) {
     if ($isMarkNode(currentNode)) {
       return currentNode.getIDs();

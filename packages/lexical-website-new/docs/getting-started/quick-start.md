@@ -21,6 +21,7 @@ const config = {
   theme: {
     ...
   },
+  onError : console.warn // onError is not optional type
 };
 
 const editor = createEditor(config);

@@ -93,7 +93,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           list.append(listItem);
         } else if ($isListItemNode(anchorNode)) {
           const parent = anchorNode.getParentOrThrow();
-          list.append(...parent.getChildren());
+          append(list, parent.getChildren());
           parent.replace(list);
         }
         return;
@@ -116,7 +116,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
               if ($isListNode(parent)) {
                 if (!handled.has(parentKey)) {
                   const newListNode = $createListNode(listType);
-                  newListNode.append(...parent.getChildren());
+                  append(newListNode, parent.getChildren());
                   parent.replace(newListNode);
                   updateChildrenListItemValue(newListNode);
                   handled.add(parentKey);
@@ -139,6 +139,10 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
   });
 }
 
+function append(node: ElementNode, nodesToAppend: Array<LexicalNode>) {
+  node.splice(node.getChildrenSize(), 0, nodesToAppend);
+}
+
 function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   if ($isListNode(node)) {
     return node;
@@ -146,7 +150,7 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
-  listItem.append(...node.getChildren());
+  append(listItem, node.getChildren());
   if (
     $isListNode(previousSibling) &&
     listType === previousSibling.getListType()
@@ -155,7 +159,7 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
     node.remove();
     // if the same type of list is on both sides, merge them.
     if ($isListNode(nextSibling) && listType === nextSibling.getListType()) {
-      previousSibling.append(...nextSibling.getChildren());
+      append(previousSibling, nextSibling.getChildren());
       nextSibling.remove();
     }
     return previousSibling;
@@ -201,7 +205,7 @@ export function removeList(editor: LexicalEditor): void {
         listItems.forEach((listItemNode) => {
           if (listItemNode != null) {
             const paragraph = $createParagraphNode();
-            paragraph.append(...listItemNode.getChildren());
+            append(paragraph, listItemNode.getChildren());
             insertionPoint.insertAfter(paragraph);
             insertionPoint = paragraph;
             listItemNode.remove();
@@ -246,7 +250,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
         const nextInnerList = nextSibling.getFirstChild();
         if ($isListNode(nextInnerList)) {
           const children = nextInnerList.getChildren();
-          innerList.append(...children);
+          append(innerList, children);
           nextSibling.remove();
           removed.add(nextSibling.getKey());
         }
@@ -335,7 +339,7 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
         const nextSiblingsListItem = $createListItemNode();
         const nextSiblingsList = $createListNode(listType);
         nextSiblingsListItem.append(nextSiblingsList);
-        nextSiblingsList.append(...listItemNode.getNextSiblings());
+        append(nextSiblingsList, listItemNode.getNextSiblings());
         // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
         grandparentListItem.insertBefore(previousSiblingsListItem);
         grandparentListItem.insertAfter(nextSiblingsListItem);

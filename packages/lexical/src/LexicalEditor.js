@@ -10,7 +10,7 @@
 import type {
   EditorState,
   ParsedEditorState,
-  SerialzedEditorState,
+  SerializedEditorState,
 } from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
@@ -591,14 +591,14 @@ export class LexicalEditor {
     return parseEditorState(parsedEditorState, this);
   }
   unstable_parseEditorState<SerializedNode>(
-    maybeStringifiedEditorState: string | SerialzedEditorState<SerializedNode>,
+    maybeStringifiedEditorState: string | SerializedEditorState<SerializedNode>,
     updateFn?: () => void,
   ): EditorState {
-    const serialzedEditorState =
+    const serializedEditorState =
       typeof maybeStringifiedEditorState === 'string'
         ? JSON.parse(maybeStringifiedEditorState)
         : maybeStringifiedEditorState;
-    return unstable_parseEditorState(serialzedEditorState, this, updateFn);
+    return unstable_parseEditorState(serializedEditorState, this, updateFn);
   }
   update(updateFn: () => void, options?: EditorUpdateOptions): void {
     updateEditor(this, updateFn, options);

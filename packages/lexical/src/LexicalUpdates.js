@@ -17,7 +17,7 @@ import type {
 } from './LexicalEditor';
 import type {
   ParsedEditorState,
-  SerialzedEditorState,
+  SerializedEditorState,
 } from './LexicalEditorState';
 import type {LexicalNode} from './LexicalNode';
 import type {NodeParserState, ParsedNode} from './LexicalParsing';
@@ -316,7 +316,7 @@ function parseSerializedNode<SerializedNode: InternalSerializedNode>(
 }
 
 export function unstable_parseEditorState<SerializedNode>(
-  serialzedEditorState: SerialzedEditorState<SerializedNode>,
+  serializedEditorState: SerializedEditorState<SerializedNode>,
   editor: LexicalEditor,
   updateFn: void | (() => void),
 ): EditorState {
@@ -330,8 +330,8 @@ export function unstable_parseEditorState<SerializedNode>(
   try {
     const registeredNodes = editor._nodes;
     // $FlowFixMe: intentional cast to our internal type
-    const serialzedJSONNode: InternalSerializedNode = serialzedEditorState.root;
-    parseSerializedNode(serialzedJSONNode, registeredNodes);
+    const serializedNode: InternalSerializedNode = serializedEditorState.root;
+    parseSerializedNode(serializedNode, registeredNodes);
     if (updateFn) {
       updateFn();
     }

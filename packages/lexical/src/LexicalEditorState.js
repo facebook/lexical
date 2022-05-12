@@ -39,7 +39,7 @@ export type JSONEditorState = {
   _selection: null | ParsedSelection,
 };
 
-export interface SerialzedEditorState<SerializedNode> {
+export interface SerializedEditorState<SerializedNode> {
   root: SerializedRootNode<SerializedNode>;
 }
 
@@ -171,7 +171,7 @@ export class EditorState {
         : null,
     };
   }
-  unstable_toJSON<SerializedNode>(): SerialzedEditorState<SerializedNode> {
+  unstable_toJSON<SerializedNode>(): SerializedEditorState<SerializedNode> {
     return readEditorState(this, () => ({
       root: exportNodeToJSON($getRoot()),
     }));

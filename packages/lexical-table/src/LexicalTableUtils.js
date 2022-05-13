@@ -200,7 +200,7 @@ export function $insertTableRow(
           headerState |= TableCellHeaderStates.COLUMN;
         }
 
-        const tableCellNode = $createTableCellNode(headerState, 1, width);
+        const tableCellNode = $createTableCellNode(headerState, 1, 1, width);
 
         tableCellNode.append($createParagraphNode());
         newTableRowNode.append(tableCellNode);

@@ -219,6 +219,9 @@ function importTextMatchTransformers(
   }
 }
 
+const URL_MATCHER =
+  /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
+
 // Finds first "<tag>content<tag>" match that is not nested into another tag
 function findOutermostMatch(
   textContent: string,
@@ -226,6 +229,10 @@ function findOutermostMatch(
 ): RegExp$matchResult | null {
   const openTagsMatch = textContent.match(textTransformersIndex.openTagsRegExp);
   if (openTagsMatch == null) {
+    return null;
+  }
+
+  if (textContent.match(URL_MATCHER)) {
     return null;
   }
 

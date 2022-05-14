@@ -103,7 +103,7 @@ export default function ColorPicker({
               className={basicColor === selfColor.hex ? ' active' : ''}
               key={basicColor}
               style={{backgroundColor: basicColor}}
-              onClick={() => onChange(basicColor)}
+              onClick={() => setSelfColor(transformColor('hex', basicColor))}
             />
           ))}
         </div>

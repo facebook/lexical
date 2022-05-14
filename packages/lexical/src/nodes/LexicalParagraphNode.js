@@ -23,11 +23,8 @@ import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
-export type SerializedParagraphNode<SerializedNode> = {
-  ...SerializedElementNode<SerializedNode>,
-  type: 'paragraph',
-  ...
-};
+export type SerializedParagraphNode<SerializedNode> =
+  SerializedElementNode<SerializedNode>;
 
 export class ParagraphNode extends ElementNode {
   static getType(): string {

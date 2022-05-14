@@ -6,7 +6,7 @@
  *
  * @flow strict
  */
-import type {NodeKey} from '../LexicalNode';
+import type {BaseSerializedNode,NodeKey} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
@@ -37,6 +37,7 @@ import {
 } from '../LexicalUtils';
 
 export type SerializedElementNode<SerializedNode> = {
+  ...BaseSerializedNode,
   children: Array<SerializedNode>,
   direction: 'ltr' | 'rtl' | null,
   format: 'left' | 'center' | 'right' | 'justify' | '',
@@ -434,6 +435,7 @@ export class ElementNode extends LexicalNode {
       format: this.getFormatType(),
       indent: this.getIndent(),
       type: 'element',
+      version: 1,
     };
   }
   // These are intended to be extends for specific element heuristics.

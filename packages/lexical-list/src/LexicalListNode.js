@@ -31,7 +31,6 @@ export type SerializedListNode<SerializedNode> = {
   listType: ListType,
   start: number,
   tag: ListNodeTagType,
-  type: 'list',
   ...
 };
 

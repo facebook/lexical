@@ -23,7 +23,6 @@ import {$isElementNode, createCommand, ElementNode} from 'lexical';
 
 export type SerializedLinkNode<SerializedNode> = {
   ...SerializedElementNode<SerializedNode>,
-  type: 'link',
   url: string,
   ...
 };

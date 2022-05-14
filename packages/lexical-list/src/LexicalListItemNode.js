@@ -45,7 +45,6 @@ import {
 export type SerializedListItemNode<SerializedNode> = {
   ...SerializedElementNode<SerializedNode>,
   checked: boolean | void,
-  type: 'listitem',
   value: number,
   ...
 };

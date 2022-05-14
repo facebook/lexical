@@ -43,6 +43,11 @@ import {
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
+export type BaseSerializedNode = {
+  type: string,
+  version: number,
+};
+
 export function removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,

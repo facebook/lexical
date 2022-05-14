@@ -288,6 +288,7 @@ export function parseEditorState(
 type InternalSerializedNode = {
   children?: Array<InternalSerializedNode>,
   type: string,
+  version: number,
 };
 
 function parseSerializedNode<SerializedNode: InternalSerializedNode>(

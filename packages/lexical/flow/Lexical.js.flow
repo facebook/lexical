@@ -11,6 +11,8 @@
  * LexicalCommands
  */
 
+import {version} from 'punycode';
+
 export type LexicalCommand<P> = $ReadOnly<{}>;
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
@@ -866,39 +868,46 @@ declare export var VERSION: string;
 
 // Serialization
 
+export type BaseSerializedNode = {
+  type: string,
+  version: number,
+  ...
+};
+
 export type SerializedTextNode = {
+  ...BaseSerializedNode,
   detail: number,
   format: number,
   mode: TextModeType,
   style: string,
   text: string,
-  +type: string,
+  ...
 };
 
 export type SerializedElementNode<SerializedNode> = {
+  ...BaseSerializedNode,
   children: Array<SerializedNode>,
   direction: 'ltr' | 'rtl' | null,
   format: 'left' | 'center' | 'right' | 'justify',
   indent: number,
-  +type: string,
   ...
 };
 
 export type SerializedParagraphNode<SerializedNode> = {
   ...SerializedElementNode<SerializedNode>,
-  type: 'paragraph',
   ...
 };
 
 export type SerializedLineBreakNode = {
-  type: 'linebreak',
+  ...BaseSerializedNode,
+  ...
 };
 
 export type SerializedRootNode<SerializedNode> = {
   ...SerializedElementNode<SerializedNode>,
-  type: 'root',
+  ...
 };
 
-export type SerializedEditorState<SerializedNode> = {
-  root: SerializedRootNode<SerializedNode>,
-};
+export interface SerializedEditorState<SerializedNode> {
+  root: SerializedRootNode<SerializedNode>;
+}

@@ -19,11 +19,8 @@ import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 
-export type SerializedRootNode<SerializedNode> = {
-  ...SerializedElementNode<SerializedNode>,
-  type: 'root',
-  ...
-};
+export type SerializedRootNode<SerializedNode> =
+  SerializedElementNode<SerializedNode>;
 
 export class RootNode extends ElementNode {
   __cachedText: null | string;
@@ -119,6 +116,7 @@ export class RootNode extends ElementNode {
       format: this.getFormatType(),
       indent: this.getIndent(),
       type: 'root',
+      version: 1,
     };
   }
   // TODO: Deprecated

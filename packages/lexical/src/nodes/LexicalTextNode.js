@@ -9,6 +9,7 @@
 
 import type {EditorConfig, TextNodeThemeClasses} from '../LexicalEditor';
 import type {
+  BaseSerializedNode,
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
@@ -57,14 +58,14 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 
-export interface SerializedTextNode {
-  detail: number;
-  format: number;
-  mode: TextModeType;
-  style: string;
-  text: string;
-  +type: string;
-}
+export type SerializedTextNode = {
+  ...BaseSerializedNode,
+  detail: number,
+  format: number,
+  mode: TextModeType,
+  style: string,
+  text: string,
+};
 
 export type TextFormatType =
   | 'bold'
@@ -485,6 +486,7 @@ export class TextNode extends LexicalNode {
       style: this.getStyle(),
       text: this.getTextContent(),
       type: 'text',
+      version: 1,
     };
   }
 

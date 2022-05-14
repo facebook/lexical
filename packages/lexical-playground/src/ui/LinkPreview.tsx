@@ -10,17 +10,15 @@ import './LinkPreview.css';
 
 import * as React from 'react';
 import {Suspense} from 'react';
+import isUrl from 'shared-ts/isUrl';
 
 // Cached responses or running request promises
 const PREVIEW_CACHE = {};
 
-const URL_MATCHER =
-  /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
-
 function useSuspenseRequest(url: string) {
   let cached = PREVIEW_CACHE[url];
 
-  if (!url.match(URL_MATCHER)) {
+  if (!isUrl(url)) {
     return {preview: null};
   }
 

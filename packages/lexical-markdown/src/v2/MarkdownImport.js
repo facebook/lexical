@@ -19,6 +19,7 @@ import type {RootNode, TextNode} from 'lexical';
 import {$createCodeNode} from '@lexical/code';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
+import isUrl from '../../../shared/src/isUrl';
 import {transformersByType} from './utils';
 
 const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
@@ -219,9 +220,6 @@ function importTextMatchTransformers(
   }
 }
 
-const URL_MATCHER =
-  /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
-
 // Finds first "<tag>content<tag>" match that is not nested into another tag
 function findOutermostMatch(
   textContent: string,
@@ -232,7 +230,7 @@ function findOutermostMatch(
     return null;
   }
 
-  if (textContent.match(URL_MATCHER)) {
+  if (isUrl(textContent)) {
     return null;
   }
 

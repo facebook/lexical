@@ -19,7 +19,7 @@ import type {RootNode, TextNode} from 'lexical';
 import {$createCodeNode} from '@lexical/code';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
-import isUrl from '../../../shared/src/isUrl';
+import {isUrl} from '../../../shared/src/isUrl';
 import {transformersByType} from './utils';
 
 const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;

@@ -6,9 +6,9 @@
  *
  */
 
-const URL_MATCHER =
+export const URL_MATCHER =
   /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
 
-export default function isUrl(text: string): boolean {
+export function isUrl(text: string): boolean {
   return URL_MATCHER.test(text);
 }

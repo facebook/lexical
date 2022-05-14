@@ -10,7 +10,7 @@ import './LinkPreview.css';
 
 import * as React from 'react';
 import {Suspense} from 'react';
-import isUrl from 'shared-ts/isUrl';
+import {isUrl} from 'shared-ts/isUrl';
 
 // Cached responses or running request promises
 const PREVIEW_CACHE = {};

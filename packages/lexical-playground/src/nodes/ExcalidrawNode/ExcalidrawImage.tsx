@@ -85,10 +85,6 @@ export default function ExcalidrawImage({
 
   useEffect(() => {
     const setContent = async () => {
-      if (!appState) {
-        return;
-      }
-
       const svg: Element = await exportToSvg({
         appState,
         elements,

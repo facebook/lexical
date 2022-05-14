@@ -21,7 +21,7 @@ export default function DropDown({
   buttonAriaLabel?: string;
   buttonClassName: string;
   buttonIconClassName?: string;
-  buttonLabel?: string | JSX.Element;
+  buttonLabel?: string;
   children: JSX.Element | string | (JSX.Element | string)[];
   stopCloseOnClickSelf?: boolean;
 }): JSX.Element {
@@ -67,9 +67,7 @@ export default function DropDown({
   return (
     <>
       <button
-        aria-label={
-          typeof buttonLabel === 'string' ? buttonLabel : buttonAriaLabel
-        }
+        aria-label={buttonAriaLabel || buttonLabel}
         className={buttonClassName}
         onClick={() => setShowDropDown(!showDropDown)}
         ref={buttonRef}>

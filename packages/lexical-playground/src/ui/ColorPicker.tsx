@@ -17,7 +17,7 @@ interface ColorPickerProps {
   buttonAriaLabel?: string;
   buttonClassName: string;
   buttonIconClassName?: string;
-  buttonLabel?: string | JSX.Element;
+  buttonLabel?: string;
   color?: string;
   children?: JSX.Element;
   onChange?: (color: string) => void;

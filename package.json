@@ -160,6 +160,7 @@
     }
   },
   "dependencies": {
-    "@types/katex": "^0.14.0"
+    "@types/katex": "^0.14.0",
+    "react-giphy-searchbox": "^1.2.2"
   }
 }

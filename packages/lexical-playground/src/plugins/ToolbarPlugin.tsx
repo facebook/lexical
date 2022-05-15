@@ -7,11 +7,35 @@
  */
 
 import type {InsertImagePayload} from './ImagesPlugin';
+<<<<<<< HEAD
 import type {
   GridSelection,
   LexicalEditor,
   NodeSelection,
   RangeSelection,
+=======
+import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
+import type {LexicalEditor, RangeSelection} from 'lexical';
+import {
+  $createParagraphNode,
+  $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_LOW,
+  ElementNode,
+  FORMAT_ELEMENT_COMMAND,
+  FORMAT_TEXT_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  OUTDENT_CONTENT_COMMAND,
+  REDO_COMMAND,
+  SELECTION_CHANGE_COMMAND,
+  TextNode,
+  UNDO_COMMAND,
+>>>>>>> 3d2f0aff (Add support for Giphy plugin)
 } from 'lexical';
 
 import './ToolbarPlugin.css';
@@ -44,6 +68,7 @@ import {
   $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
+<<<<<<< HEAD
 import {
   $getNearestBlockElementAncestorOrThrow,
   $getNearestNodeOfType,
@@ -71,13 +96,15 @@ import {
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+=======
+import {$getNearestNodeOfType, mergeRegister} from '@lexical/utils';
+>>>>>>> 3d2f0aff (Add support for Giphy plugin)
 import * as React from 'react';
 import {ChangeEvent, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../hooks/useModal';
-import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
@@ -89,10 +116,10 @@ import LinkPreview from '../ui/LinkPreview';
 import TextInput from '../ui/TextInput';
 import {INSERT_EQUATION_COMMAND} from './EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
-import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
 import {INSERT_POLL_COMMAND} from './PollPlugin';
 import {INSERT_TWEET_COMMAND} from './TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from './YouTubePlugin';
+import ReactGiphySearchbox from 'react-giphy-searchbox';
 
 const blockTypeToBlockName = {
   bullet: 'Bulleted List',
@@ -461,6 +488,36 @@ function InsertImageDialog({
       {mode === 'url' && <InsertImageUriDialogBody onClick={onClick} />}
       {mode === 'file' && <InsertImageUploadedDialogBody onClick={onClick} />}
     </>
+  );
+}
+
+function InsertGifDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor;
+  onClose: () => void;
+}): JSX.Element {
+  const giphyApiKey = 'gslE624Ax1m7LThTdDztLGZpci6XhfIL';
+  const onSelect = (payload: InsertImagePayload) => {
+    activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
+    onClose();
+  };
+
+  return (
+    <ReactGiphySearchbox
+      apiKey={giphyApiKey}
+      onSelect={(item) =>
+        onSelect({
+          altText: item.title,
+          src: item.embed_url,
+        })
+      }
+      masonryConfig={[
+        {columns: 2, gutter: 5, imageWidth: 110},
+        {columns: 3, gutter: 5, imageWidth: 120, mq: '700px'},
+      ]}
+    />
   );
 }
 
@@ -1027,9 +1084,6 @@ export default function ToolbarPlugin(): JSX.Element {
     },
     [activeEditor, selectedElementKey],
   );
-  const insertGifOnClick = (payload: InsertImagePayload) => {
-    activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
-  };
 
   return (
     <div className="toolbar">
@@ -1261,12 +1315,14 @@ export default function ToolbarPlugin(): JSX.Element {
               <span className="text">Image</span>
             </DropDownItem>
             <DropDownItem
-              onClick={() =>
-                insertGifOnClick({
-                  altText: 'Cat typing on a laptop',
-                  src: catTypingGif,
-                })
-              }
+            onClick={() => {
+            showModal('Insert Gif', (onClose) => (
+            <InsertGifDialog
+            activeEditor={activeEditor}
+            onClose={onClose}
+            />
+            ));
+            }}
               className="item">
               <i className="icon gif" />
               <span className="text">GIF</span>

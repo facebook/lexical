@@ -134,6 +134,6 @@ registerLexicalTextEntity<N: TextNode>(
 ## Examples
 
 1. [Emoticons (guided example)](https://github.com/facebook/lexical/blob/main/examples/emoticons.md)
-2. [Emojis](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/EmojisPlugin.js)
-3. [AutoLink](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin.jsx)
+2. [Emojis](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/EmojisPlugin.ts)
+3. [AutoLink](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin.tsx)
 4. [HashtagPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-react/src/LexicalHashtagPlugin.js)

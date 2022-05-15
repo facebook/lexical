@@ -47,13 +47,16 @@ export function useYjsCollaboration(
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
+
   const binding = useMemo(
     () => createBinding(editor, provider, id, doc, docMap),
     [editor, provider, id, docMap, doc],
   );
+
   const connect = useCallback(() => {
     provider.connect();
   }, [provider]);
+
   const disconnect = useCallback(() => {
     try {
       provider.disconnect();
@@ -193,6 +196,7 @@ export function useYjsCollaboration(
       COMMAND_PRIORITY_EDITOR,
     );
   }, [connect, disconnect, editor]);
+
   return [cursorsContainer, binding];
 }
 

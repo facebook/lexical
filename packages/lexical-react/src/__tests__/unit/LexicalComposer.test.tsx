@@ -26,6 +26,7 @@ describe('LexicalNodeHelpers tests', () => {
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
+
     jest.restoreAllMocks();
   });
 

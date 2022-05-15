@@ -54,6 +54,7 @@ export function LexicalNestedComposer({
 
       return [initialEditor, context];
     },
+
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

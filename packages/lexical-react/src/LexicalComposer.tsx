@@ -67,6 +67,7 @@ export function LexicalComposer({
 
       return [editor, context];
     },
+
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -76,6 +77,7 @@ export function LexicalComposer({
     const isReadOnly = initialConfig.readOnly;
     const [editor] = composerContext;
     editor.setReadOnly(isReadOnly || false);
+
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -131,6 +131,7 @@ describe('Collaboration', () => {
         paragraph.append(text);
       });
     });
+
     expect(client2.getHTML()).toEqual(
       '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
@@ -162,6 +163,7 @@ describe('Collaboration', () => {
         text.spliceText(11, 11, '');
       });
     });
+
     expect(client1.getHTML()).toEqual(
       '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
@@ -192,6 +194,7 @@ describe('Collaboration', () => {
       root: '[object Object]Hello world!',
     });
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
     client1.stop();
     client2.stop();
   });
@@ -236,6 +239,7 @@ describe('Collaboration', () => {
         paragraph.getFirstChild().remove();
       });
     });
+
     expect(client1.getHTML()).toEqual('<p><br></p>');
     expect(client2.getHTML()).toEqual(
       '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
@@ -251,13 +255,16 @@ describe('Collaboration', () => {
         paragraph.getFirstChild<TextNode>().spliceText(11, 0, 'Hello world');
       });
     });
+
     expect(client1.getHTML()).toEqual('<p><br></p>');
     expect(client2.getHTML()).toEqual(
       '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
+
     await waitForReact(() => {
       client1.connect();
     });
+
     // TODO we can probably handle these conflicts better. We could keep around
     // a "fallback" {Map} when we remove text without any adjacent text nodes. This
     // would require big changes in `CollabElementNode.splice` and also need adjustments

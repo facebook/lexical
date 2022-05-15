@@ -35,6 +35,7 @@ describe('useLexicalIsTextContentEmpty', () => {
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
+
     jest.restoreAllMocks();
   });
 
@@ -54,6 +55,7 @@ describe('useLexicalIsTextContentEmpty', () => {
       const rootElement = rootElementRef.current;
       editor.setRootElement(rootElement);
     }, [rootElementRef, editor]);
+
     return editor;
   }
 

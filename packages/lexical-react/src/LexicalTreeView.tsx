@@ -339,10 +339,12 @@ const FORMAT_PREDICATES = [
   (node) => node.hasFormat('superscript') && 'Superscript',
   (node) => node.hasFormat('underline') && 'Underline',
 ];
+
 const DETAIL_PREDICATES = [
   (node) => node.isDirectionless() && 'Directionless',
   (node) => node.isUnmergeable() && 'Unmergeable',
 ];
+
 const MODE_PREDICATES = [
   (node) => node.isToken() && 'Token',
   (node) => node.isSegmented() && 'Segmented',
@@ -438,6 +440,7 @@ function printSelectedCharsLine({
     indent[indent.length - 1] === SYMBOLS.hasNextSibling
       ? SYMBOLS.ancestorHasNextSibling
       : SYMBOLS.ancestorIsLastChild;
+
   const indentionChars = [
     ...indent.slice(0, indent.length - 1),
     selectionLastIndent,
@@ -464,6 +467,7 @@ function $getSelectionStartEnd(node, selection): [number, number] {
   const focus = selection.focus;
   const textContent = node.getTextContent(true);
   const textLength = textContent.length;
+
   let start = -1;
   let end = -1;
 

@@ -43,6 +43,7 @@ const entries = [
   ['Gull', '255,0,153'],
   ['Squid', '0,220,255'],
 ];
+
 const randomEntry = entries[Math.floor(Math.random() * entries.length)];
 
 export function CollaborationPlugin({

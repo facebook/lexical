@@ -6,7 +6,7 @@
  *
  * @flow strict
  */
-import type {BaseSerializedNode,NodeKey} from '../LexicalNode';
+import type {BaseSerializedNode, NodeKey} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,

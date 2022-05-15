@@ -8,7 +8,7 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from './LexicalComposerContext';
 import {
   $createNodeSelection,
   $getNodeByKey,

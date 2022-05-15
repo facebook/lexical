@@ -12,7 +12,7 @@ import {
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from './LexicalComposerContext';
 import {
   $getSelection,
   $isElementNode,

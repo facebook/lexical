@@ -11,7 +11,7 @@ import type {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import useLayoutEffect from 'shared-ts/useLayoutEffect';
 
 export function useDecorators(editor: LexicalEditor): Array<React.Node> {
   const [decorators, setDecorators] = useState<{[string]: React.Node}>(() =>

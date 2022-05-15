@@ -9,7 +9,7 @@
 import type {InsertTableCommandPayload, TableSelection} from '@lexical/table';
 import type {ElementNode, NodeKey} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from './LexicalComposerContext';
 import {
   $createTableNodeWithDimensions,
   applyTableHandlers,
@@ -27,7 +27,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import {useEffect} from 'react';
-import invariant from 'shared/invariant';
+import invariant from 'shared-ts/invariant';
 
 export function TablePlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();

@@ -76,7 +76,10 @@ const lexicalShared = fs
 
 const lexicalReactModules = fs
   .readdirSync(path.resolve('./packages/lexical-react/src'))
-  .map((str) => path.basename(path.basename(str, '.ts'), '.tsx'))
+  .map(
+    (str) =>
+      path.basename(path.basename(str, '.ts'), '.tsx') + path.extname(str),
+  )
   .filter(
     (str) =>
       !str.includes('__tests__') &&
@@ -566,6 +569,7 @@ const packages = [
           'useRichTextSetup',
           'useYjsCollaboration',
         ];
+
         return !ignoredModules.includes(module);
       })
       .map((module) => ({

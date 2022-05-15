@@ -9,7 +9,7 @@
 import type {EntityMatch} from '@lexical/text';
 import type {TextNode} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from './LexicalComposerContext';
 import {registerLexicalTextEntity} from '@lexical/text';
 import {mergeRegister} from '@lexical/utils';
 import {useEffect} from 'react';

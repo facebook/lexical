@@ -47,3 +47,5 @@ export function transformersByType(
     textMatch: byType['text-match'],
   };
 }
+
+export const PUNCTUATION_OR_SPACE: RegExp = /[!-/:-@[-`{-~\s]/;

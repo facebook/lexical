@@ -8,7 +8,6 @@
 
 import type {EditorState, LexicalEditor} from 'lexical';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
 import useLayoutEffect from 'shared-ts/useLayoutEffect';
 
 export function OnChangePlugin({

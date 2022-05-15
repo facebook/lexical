@@ -9,7 +9,6 @@
 import type {HistoryState} from '@lexical/history';
 
 import {useLexicalComposerContext} from './LexicalComposerContext';
-
 import {useHistory} from './shared/useHistory';
 
 export {createEmptyHistoryState} from '@lexical/history';

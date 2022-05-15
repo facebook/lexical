@@ -498,7 +498,7 @@ function InsertGifDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
-  const giphyApiKey = 'gslE624Ax1m7LThTdDztLGZpci6XhfIL';
+  const GIPHY_API_KEY = 'gslE624Ax1m7LThTdDztLGZpci6XhfIL';
   const onSelect = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
     onClose();
@@ -506,7 +506,7 @@ function InsertGifDialog({
 
   return (
     <ReactGiphySearchbox
-      apiKey={giphyApiKey}
+      apiKey={GIPHY_API_KEY}
       onSelect={(item) =>
         onSelect({
           altText: item.title,

@@ -9,15 +9,16 @@
 import type {LexicalComposerContextType} from './LexicalComposerContext';
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 
-import {
-  createLexicalComposerContext,
-  LexicalComposerContext,
-} from './LexicalComposerContext';
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
 import useLayoutEffect from 'shared-ts/useLayoutEffect';
 import {Class} from 'utility-types';
+
+import {
+  createLexicalComposerContext,
+  LexicalComposerContext,
+} from './LexicalComposerContext';
 
 type Props = {
   children: JSX.Element | string | (JSX.Element | string)[];

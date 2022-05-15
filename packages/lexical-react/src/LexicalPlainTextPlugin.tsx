@@ -8,7 +8,6 @@
 
 import type {InitialEditorStateType} from './shared/PlainRichTextUtils';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
 import * as React from 'react';
 
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';

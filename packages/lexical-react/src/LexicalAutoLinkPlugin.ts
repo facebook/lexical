@@ -14,7 +14,6 @@ import {
   $isLinkNode,
   AutoLinkNode,
 } from '@lexical/link';
-import {useLexicalComposerContext} from './LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createTextNode,
@@ -25,6 +24,8 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared-ts/invariant';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 

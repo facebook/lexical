@@ -140,6 +140,7 @@ export function CheckListPlugin(): null {
 
   return null;
 }
+
 let listenersCount = 0;
 
 function listenPointerDown() {

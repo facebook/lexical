@@ -112,6 +112,7 @@ describe('CollaborationWithCollisions', () => {
     document.body.removeChild(container);
     container = null;
   });
+
   const SIMPLE_TEXT_COLLISION_TESTS: Array<{
     clients: Array<() => void>;
     expectedHTML: string | null | undefined;
@@ -194,6 +195,7 @@ describe('CollaborationWithCollisions', () => {
       name: 'Editing first and second paragraphs colliding with editing second and third paragraphs (with overlapping edit)',
     },
   ];
+
   SIMPLE_TEXT_COLLISION_TESTS.forEach((testCase) => {
     it(testCase.name, async () => {
       const connection = createTestConnection();
@@ -202,15 +204,19 @@ describe('CollaborationWithCollisions', () => {
         container,
         testCase.clients.length,
       );
+
       // Set initial content (into first editor only, the rest will be sync'd)
       const clientA = clients[0];
+
       await waitForReact(() => {
         clientA.update(() => {
           $getRoot().clear();
           testCase.init();
         });
       });
+
       testClientsForEquality(clients);
+
       // Disconnect clients and apply client-specific actions, reconnect them back and
       // verify that they're sync'd and have the same content
       disconnectClients(clients);

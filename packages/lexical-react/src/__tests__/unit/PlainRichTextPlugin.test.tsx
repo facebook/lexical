@@ -46,6 +46,7 @@ describe('LexicalNodeHelpers tests', () => {
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
+
     jest.restoreAllMocks();
   });
 
@@ -113,7 +114,9 @@ describe('LexicalNodeHelpers tests', () => {
       await ReactTestUtils.act(async () => {
         reactRoot.render(<App />);
       });
+
       const text = editor.getEditorState().read($rootTextContentCurry);
+
       expect(text).toBe('foo');
     });
   }
@@ -224,6 +227,7 @@ describe('LexicalNodeHelpers tests', () => {
       await ReactTestUtils.act(async () => {
         reactRoot.render(<App />);
       });
+
       await editor.getEditorState().read(() => {
         expect($rootTextContentCurry()).toBe('foo');
 

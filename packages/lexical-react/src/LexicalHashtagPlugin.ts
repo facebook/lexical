@@ -40,6 +40,7 @@ function getHashtagRegexStringChars(): Readonly<{
     '\u02bb' +
     '\u0300-\u036f' +
     '\u1e00-\u1eff';
+
   // Cyrillic (Russian, Ukrainian, etc.)
   const nonLatinChars =
     '\u0400-\u04ff' + // Cyrillic
@@ -86,9 +87,10 @@ function getHashtagRegexStringChars(): Readonly<{
     '\uA960-\uA97F' + // Hangul Jamo Extended-A
     '\uAC00-\uD7AF' + // Hangul Syllables
     '\uD7B0-\uD7FF' + // Hangul Jamo Extended-B
-    '\uFFA1-\uFFDC';
-  // Half-width Hangul
+    '\uFFA1-\uFFDC'; // Half-width Hangul
+
   const charCode = String.fromCharCode;
+
   const cjkChars =
     '\u30A1-\u30FA\u30FC-\u30FE' + // Katakana (full-width)
     '\uFF66-\uFF9F' + // Katakana (half-width)
@@ -108,10 +110,11 @@ function getHashtagRegexStringChars(): Readonly<{
     charCode(0x2f800) +
     '-' +
     charCode(0x2fa1f) +
-    '\u3003\u3005\u303B';
-  // Kanji (CJK supplement)
+    '\u3003\u3005\u303B'; // Kanji (CJK supplement)
+
   const otherChars = latinAccents + nonLatinChars + cjkChars;
   // equivalent of \p{L}
+
   const unicodeLetters =
     '\u0041-\u005A\u0061-\u007A\u00AA\u00B5\u00BA\u00C0-\u00D6\u00D8-\u00F6' +
     '\u00F8-\u0241\u0250-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EE\u037A\u0386' +
@@ -164,6 +167,7 @@ function getHashtagRegexStringChars(): Readonly<{
     '\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A' +
     '\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7' +
     '\uFFDA-\uFFDC';
+
   // equivalent of \p{Mn}\p{Mc}
   const unicodeAccents =
     '\u0300-\u036F\u0483-\u0486\u0591-\u05B9\u05BB-\u05BD\u05BF' +
@@ -187,6 +191,7 @@ function getHashtagRegexStringChars(): Readonly<{
     '\u1A17-\u1A1B\u1DC0-\u1DC3\u20D0-\u20DC\u20E1\u20E5-\u20EB\u302A-\u302F' +
     '\u3099-\u309A\uA802\uA806\uA80B\uA823-\uA827\uFB1E\uFE00-\uFE0F' +
     '\uFE20-\uFE23';
+
   // equivalent of \p{Dn}
   const unicodeDigits =
     '\u0030-\u0039\u0660-\u0669\u06F0-\u06F9\u0966-\u096F\u09E6-\u09EF' +
@@ -194,13 +199,16 @@ function getHashtagRegexStringChars(): Readonly<{
     '\u0CE6-\u0CEF\u0D66-\u0D6F\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F29' +
     '\u1040-\u1049\u17E0-\u17E9\u1810-\u1819\u1946-\u194F\u19D0-\u19D9' +
     '\uFF10-\uFF19';
+
   // An alpha char is a unicode chars including unicode marks or
   // letter or char in otherChars range
   const alpha = unicodeLetters + unicodeAccents + otherChars;
+
   // A numeric character is any with the number digit property, or
   // underscore. These characters can be included in hashtags, but a hashtag
   // cannot have only these characters.
   const numeric = unicodeDigits + '_';
+
   // Alphanumeric char is any alpha char or a unicode char with decimal
   // number property \p{Nd}
   const alphanumeric = alpha + numeric;
@@ -215,10 +223,12 @@ function getHashtagRegexStringChars(): Readonly<{
 
 function getHashtagRegexString(): string {
   const {alpha, alphanumeric, hashChars} = getHashtagRegexStringChars();
+
   const hashtagAlpha = '[' + alpha + ']';
   const hashtagAlphanumeric = '[' + alphanumeric + ']';
   const hashtagBoundary = '^|$|[^&/' + alphanumeric + ']';
   const hashCharList = '[' + hashChars + ']';
+
   // A hashtag contains characters, numbers and underscores,
   // but not all numbers.
   const hashtag =

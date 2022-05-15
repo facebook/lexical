@@ -23,6 +23,7 @@ export function useRichTextSetup(
       registerRichText(editor, initialEditorState),
       registerDragonSupport(editor),
     );
+
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);

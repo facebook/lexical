@@ -97,6 +97,7 @@ function handleLinkCreation(
     const matchOffset = match.index;
     const offset = textOffset + matchOffset;
     const matchLength = match.length;
+
     // Previous node is valid if any of:
     // 1. Space before same node
     // 2. Space in previous simple text node

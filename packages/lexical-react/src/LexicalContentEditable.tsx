@@ -61,6 +61,7 @@ export function ContentEditable({
   const [editor] = useLexicalComposerContext();
 
   const [isReadOnly, setReadOnly] = useState(true);
+
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {
       editor.setRootElement(rootElement);

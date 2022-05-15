@@ -4,17 +4,16 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
 
-export class DecoratorBlockNode extends DecoratorNode<React$Node> {
-  __format: ?ElementFormatType;
+export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
+  __format: ElementFormatType;
 
-  constructor(format?: ?ElementFormatType, key?: NodeKey) {
+  constructor(format?: ElementFormatType, key?: NodeKey) {
     super(key);
     this.__format = format;
   }
@@ -28,10 +27,13 @@ export class DecoratorBlockNode extends DecoratorNode<React$Node> {
   }
 
   setFormat(format: ElementFormatType): void {
-    const self = this.getWritable();
+    const self = this.getWritable<DecoratorBlockNode>();
     self.__format = format;
   }
 }
-export function $isDecoratorBlockNode(node: ?LexicalNode): node is FindAndReplace {
+
+export function $isDecoratorBlockNode(
+  node: LexicalNode | null | undefined,
+): node is DecoratorBlockNode {
   return node instanceof DecoratorBlockNode;
 }

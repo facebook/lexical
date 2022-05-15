@@ -17,7 +17,7 @@ export declare class HashtagNode extends TextNode {
   canInsertTextBefore(): boolean;
   isTextEntity(): true;
 }
-export function $createHashtagNode(text?: string): TextNode;
+export function $createHashtagNode(text?: string): HashtagNode;
 export function $isHashtagNode(
   node: LexicalNode | null | undefined,
 ): node is HashtagNode;

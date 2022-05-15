@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {
@@ -25,7 +24,7 @@ function HorizontalRuleComponent() {
   return <hr />;
 }
 
-export class HorizontalRuleNode extends DecoratorNode<React$Node> {
+export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   static getType(): string {
     return 'horizontalrule';
   }
@@ -65,7 +64,7 @@ export class HorizontalRuleNode extends DecoratorNode<React$Node> {
     return false;
   }
 
-  decorate(): React$Node {
+  decorate(): JSX.Element {
     return <HorizontalRuleComponent />;
   }
 }
@@ -78,6 +77,8 @@ export function $createHorizontalRuleNode(): HorizontalRuleNode {
   return new HorizontalRuleNode();
 }
 
-export function $isHorizontalRuleNode(node: ?LexicalNode): node is FindAndReplace {
+export function $isHorizontalRuleNode(
+  node: LexicalNode | null | undefined,
+): node is HorizontalRuleNode {
   return node instanceof HorizontalRuleNode;
 }

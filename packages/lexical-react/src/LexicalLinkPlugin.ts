@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import {
   $createLinkNode,
   $isLinkNode,
@@ -65,6 +73,7 @@ function toggleLink(url: null | string) {
 
       let prevParent = null;
       let linkNode = null;
+
       nodes.forEach((node) => {
         const parent = node.getParent();
 
@@ -120,21 +129,23 @@ function toggleLink(url: null | string) {
 
 export function LinkPlugin(): null {
   const [editor] = useLexicalComposerContext();
+
   useEffect(() => {
     if (!editor.hasNodes([LinkNode])) {
       throw new Error('LinkPlugin: LinkNode not registered on editor');
     }
   }, [editor]);
+
   useEffect(() => {
-    return editor.registerCommand(
+    return editor.registerCommand<string | null>(
       TOGGLE_LINK_COMMAND,
-      (payload) => {
-        const url: string | null = payload;
+      (url) => {
         toggleLink(url);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
     );
   }, [editor]);
+
   return null;
 }

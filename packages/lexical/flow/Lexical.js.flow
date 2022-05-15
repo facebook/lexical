@@ -340,17 +340,17 @@ declare export class LexicalNode {
   isSelected(): boolean;
   getKey(): NodeKey;
   getIndexWithinParent(): number;
-  getParent(): ElementNode | null;
-  getParentOrThrow(): ElementNode;
-  getTopLevelElement(): null | ElementNode;
-  getTopLevelElementOrThrow(): ElementNode;
-  getParents(): Array<ElementNode>;
+  getParent<T: ElementNode>(): T | null;
+  getParentOrThrow<T: ElementNode>(): T;
+  getTopLevelElement<T: ElementNode>(): T | null;
+  getTopLevelElementOrThrow<T: ElementNode>(): T;
+  getParents<T: ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling(): LexicalNode | null;
   getPreviousSiblings(): Array<LexicalNode>;
   getNextSibling(): LexicalNode | null;
   getNextSiblings(): Array<LexicalNode>;
-  getCommonAncestor(node: LexicalNode): ElementNode | null;
+  getCommonAncestor<T: ElementNode>(node: LexicalNode): T | null;
   is(object: ?LexicalNode): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;
@@ -831,12 +831,7 @@ declare export function $getDecoratorNode(
   isBackward: boolean,
 ): null | LexicalNode;
 
-// TODO the Flow types here needs fixing
-export type EventHandler = (
-  // $FlowFixMe: not sure how to handle this generic properly
-  event: Object,
-  editor: LexicalEditor,
-) => void;
+export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 
 /**
  * LexicalVersion

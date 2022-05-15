@@ -25,5 +25,6 @@ export function ListPlugin(): null {
   }, [editor]);
 
   useList(editor);
+
   return null;
 }

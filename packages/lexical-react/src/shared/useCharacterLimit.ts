@@ -1,4 +1,13 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {LexicalEditor, LexicalNode} from 'lexical';
+
 import {
   $createOverflowNode,
   $isOverflowNode,
@@ -15,10 +24,12 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
+
 type OptionalProps = {
   remainingCharacters?: (characters: number) => void;
   strlen?: (input: string) => number;
 };
+
 export function useCharacterLimit(
   editor: LexicalEditor,
   maxCharacters: number,
@@ -27,8 +38,11 @@ export function useCharacterLimit(
   const {
     strlen = (input) => input.length,
     // UTF-16
-    remainingCharacters = (characters) => {},
+    remainingCharacters = () => {
+      return;
+    },
   } = optional;
+
   useEffect(() => {
     if (!editor.hasNodes([OverflowNode])) {
       invariant(
@@ -37,9 +51,11 @@ export function useCharacterLimit(
       );
     }
   }, [editor]);
+
   useEffect(() => {
     let text = editor.getEditorState().read($rootTextContentCurry);
     let lastComputedTextLength = 0;
+
     return mergeRegister(
       editor.registerTextContentListener((currentText: string) => {
         text = currentText;
@@ -58,6 +74,7 @@ export function useCharacterLimit(
           (lastComputedTextLength !== null &&
             lastComputedTextLength > maxCharacters);
         const diff = maxCharacters - textLength;
+
         remainingCharacters(diff);
 
         if (lastComputedTextLength === null || textLengthAboveThreshold) {
@@ -83,6 +100,7 @@ function findOffset(
   maxCharacters: number,
   strlen: (input: string) => number,
 ): number {
+  // @ts-ignore This is due to be added in a later version of TS
   const Segmenter = Intl.Segmenter;
   let offsetUtf16 = 0;
   let offset = 0;

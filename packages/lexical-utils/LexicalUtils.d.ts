@@ -12,6 +12,7 @@ export type DFSNode = Readonly<{
   depth: number;
   node: LexicalNode;
 }>;
+
 declare function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>

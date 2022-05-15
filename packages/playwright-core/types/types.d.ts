@@ -6931,6 +6931,8 @@ export interface BrowserContext {
       sameSite: "Strict"|"Lax"|"None";
     }>;
 
+
+
     origins: Array<{
       origin: string;
 
@@ -6939,8 +6941,14 @@ export interface BrowserContext {
 
         value: string;
       }>;
+
+
     }>;
+
+
   }>;
+
+
 
   tracing: Tracing;
 
@@ -7704,6 +7712,8 @@ export interface ElementHandle<T=Node> extends JSHandle<T> {
      */
     height: number;
   }>;
+
+
 
   /**
    * This method checks the element by performing the following steps:
@@ -8805,6 +8815,8 @@ export interface Locator {
      */
     height: number;
   }>;
+
+
 
   /**
    * This method checks the element by performing the following steps:
@@ -12093,6 +12105,8 @@ export interface APIRequest {
         sameSite: "Strict"|"Lax"|"None";
       }>;
 
+
+
       origins: Array<{
         origin: string;
 
@@ -12101,7 +12115,11 @@ export interface APIRequest {
 
           value: string;
         }>;
+
+
       }>;
+
+
     };
 
     /**
@@ -12614,6 +12632,8 @@ export interface APIRequestContext {
       sameSite: "Strict"|"Lax"|"None";
     }>;
 
+
+
     origins: Array<{
       origin: string;
 
@@ -12622,8 +12642,14 @@ export interface APIRequestContext {
 
         value: string;
       }>;
+
+
     }>;
+
+
   }>;
+
+
 }
 
 /**
@@ -12663,6 +12689,8 @@ export interface APIResponse {
      */
     value: string;
   }>;
+
+
 
   /**
    * Returns the JSON representation of response body.
@@ -13074,6 +13102,8 @@ export interface Browser extends EventEmitter {
         sameSite: "Strict"|"Lax"|"None";
       }>;
 
+
+
       /**
        * localStorage to set for context
        */
@@ -13085,7 +13115,11 @@ export interface Browser extends EventEmitter {
 
           value: string;
         }>;
+
+
       }>;
+
+
     };
 
     /**
@@ -13403,6 +13437,8 @@ export interface Coverage {
        */
       end: number;
     }>;
+
+
   }>>;
 
   /**
@@ -13441,7 +13477,11 @@ export interface Coverage {
 
         endOffset: number;
       }>;
+
+
     }>;
+
+
   }>>;
 }
 
@@ -14356,6 +14396,8 @@ export interface Request {
    */
   allHeaders(): Promise<{ [key: string]: string; }>;
 
+
+
   /**
    * The method returns `null` unless this request has failed, as reported by `requestfailed` event.
    *
@@ -14512,6 +14554,8 @@ export interface Request {
     responseHeadersSize: number;
   }>;
 
+
+
   /**
    * Returns resource timing information for given request. Most of the timing values become available upon the response,
    * `responseEnd` becomes available when request finishes. Find more information at
@@ -14595,6 +14639,8 @@ export interface Response {
    * An object with all the response HTTP headers associated with this response.
    */
   allHeaders(): Promise<{ [key: string]: string; }>;
+
+
 
   /**
    * Returns the buffer with response body.
@@ -14698,6 +14744,8 @@ export interface Response {
     validTo?: number;
   }>;
 
+
+
   /**
    * Returns the IP address and port of the server.
    */
@@ -14709,6 +14757,8 @@ export interface Response {
 
     port: number;
   }>;
+
+
 
   /**
    * Contains the status code of the response (e.g., 200 for a success).
@@ -15278,6 +15328,8 @@ export interface WebSocket {
   payload: string|Buffer;
 }>;
 
+
+
   /**
    * Fired when the websocket sends a frame.
    */
@@ -15297,6 +15349,8 @@ export interface WebSocket {
    */
   payload: string|Buffer;
 }>;
+
+
 
   /**
    * Fired when the websocket has an error.
@@ -15548,6 +15602,8 @@ export interface BrowserContextOptions {
       sameSite: "Strict"|"Lax"|"None";
     }>;
 
+
+
     /**
      * localStorage to set for context
      */
@@ -15559,7 +15615,11 @@ export interface BrowserContextOptions {
 
         value: string;
       }>;
+
+
     }>;
+
+
   };
 
   /**

@@ -75,7 +75,10 @@ export {
   TableSelection,
 };
 
-export const INSERT_TABLE_COMMAND: LexicalCommand<{
+export type InsertTableCommandPayload = $ReadOnly<{
   columns: string,
   rows: string,
-}> = createCommand();
+}>;
+
+export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =
+  createCommand();

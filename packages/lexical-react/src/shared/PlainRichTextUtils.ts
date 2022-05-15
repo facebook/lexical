@@ -1,18 +1,32 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {EditorState, LexicalEditor} from 'lexical';
+
 import {$createParagraphNode, $getRoot, $getSelection} from 'lexical';
+
 export type InitialEditorStateType = null | string | EditorState | (() => void);
+
 // Convoluted logic to make this work with Flow. Order matters.
 const options = {
   tag: 'history-merge',
 };
+
 const setEditorOptions: {
   tag?: string;
 } = options;
+
 const updateOptions: {
   onUpdate?: () => void;
   skipTransforms?: true;
   tag?: string;
 } = options;
+
 export function initializeEditor(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,

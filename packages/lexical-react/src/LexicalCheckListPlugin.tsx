@@ -1,5 +1,14 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {ListItemNode} from '@lexical/list';
 import type {LexicalEditor} from 'lexical';
+
 import {
   $isListItemNode,
   $isListNode,
@@ -24,6 +33,7 @@ import {useEffect} from 'react';
 
 export function CheckListPlugin(): null {
   const [editor] = useLexicalComposerContext();
+
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
@@ -34,21 +44,21 @@ export function CheckListPlugin(): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_DOWN_COMMAND,
         (event) => {
           return handleArrownUpOrDown(event, editor, false);
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
         (event) => {
           return handleArrownUpOrDown(event, editor, true);
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
         (event) => {
           const activeItem = getActiveCheckListItem();
@@ -67,7 +77,7 @@ export function CheckListPlugin(): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_SPACE_COMMAND,
         (event) => {
           const activeItem = getActiveCheckListItem();
@@ -88,7 +98,7 @@ export function CheckListPlugin(): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_LEFT_COMMAND,
         (event) => {
           return editor.getEditorState().read(() => {
@@ -128,23 +138,20 @@ export function CheckListPlugin(): null {
       listenPointerDown(),
     );
   });
+
   return null;
 }
 let listenersCount = 0;
 
 function listenPointerDown() {
   if (listenersCount++ === 0) {
-    // $FlowFixMe[speculation-ambiguous]
     document.addEventListener('click', handleClick);
-    // $FlowFixMe[speculation-ambiguous]
     document.addEventListener('pointerdown', handlePointerDown);
   }
 
   return () => {
     if (--listenersCount === 0) {
-      // $FlowFixMe[speculation-ambiguous]
       document.removeEventListener('click', handleClick);
-      // $FlowFixMe[speculation-ambiguous]
       document.removeEventListener('pointerdown', handlePointerDown);
     }
   };
@@ -158,8 +165,7 @@ function handleCheckItemEvent(event: PointerEvent, callback) {
   }
 
   // Ignore clicks on LI that have nested lists
-  // $FlowFixMe
-  const firstChild: HTMLElement | null = target.firstChild;
+  const firstChild = target.firstChild as HTMLElement;
 
   if (
     firstChild != null &&
@@ -170,7 +176,7 @@ function handleCheckItemEvent(event: PointerEvent, callback) {
 
   const parentNode = target.parentNode;
 
-  // $FlowFixMe[prop-missing] internal field
+  // @ts-ignore internal field
   if (!parentNode || parentNode.__lexicalListType !== 'check') {
     return;
   }
@@ -226,10 +232,12 @@ function findEditor(target) {
 }
 
 function getActiveCheckListItem(): HTMLElement | null {
-  const {activeElement} = document;
+  const activeElement = document.activeElement as HTMLElement;
+
   return activeElement != null &&
     activeElement.tagName === 'LI' &&
-    activeElement.parentNode != null && // $FlowFixMe[prop-missing] internal field
+    activeElement.parentNode != null &&
+    // @ts-ignore internal field
     activeElement.parentNode.__lexicalListType === 'check'
     ? activeElement
     : null;

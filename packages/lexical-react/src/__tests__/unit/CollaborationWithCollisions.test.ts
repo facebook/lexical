@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
  */
 
 import {
@@ -14,8 +13,10 @@ import {
   $getRoot,
   $isTextNode,
   $setSelection,
+  GridSelection,
   LexicalNode,
-  Selection,
+  NodeSelection,
+  RangeSelection,
 } from 'lexical';
 
 import {
@@ -27,9 +28,6 @@ import {
   testClientsForEquality,
   waitForReact,
 } from './utils';
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-global.IS_REACT_ACT_ENVIRONMENT = true;
 
 const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();
@@ -51,9 +49,10 @@ const $createSelectionByPath = ({
   anchorPath: Array<number>;
   focusOffset: number;
   focusPath: Array<number>;
-}): Selection => {
+}): GridSelection | NodeSelection | RangeSelection => {
   const selection = $createRangeSelection();
   const root = $getRoot();
+
   const anchorNode = anchorPath.reduce(
     (node, index) => node.getChildAtIndex(index),
     root,
@@ -62,6 +61,7 @@ const $createSelectionByPath = ({
     (node, index) => node.getChildAtIndex(index),
     root,
   );
+
   selection.anchor.set(
     anchorNode.getKey(),
     anchorOffset,
@@ -72,7 +72,9 @@ const $createSelectionByPath = ({
     focusOffset,
     $isTextNode(focusNode) ? 'text' : 'element',
   );
+
   $setSelection(selection);
+
   return selection;
 };
 
@@ -100,10 +102,12 @@ const $replaceTextByPath = ({
 
 describe('CollaborationWithCollisions', () => {
   let container = null;
+
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
   });
+
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
@@ -123,6 +127,7 @@ describe('CollaborationWithCollisions', () => {
             anchorPath: [0, 0],
             focusOffset: 6,
             focusPath: [1, 0],
+            text: '',
           });
         },
         () => {
@@ -130,6 +135,7 @@ describe('CollaborationWithCollisions', () => {
           $getRoot().getFirstChild().remove();
         },
       ],
+      expectedHTML: null,
       init: () => {
         $insertParagraph('Hello world 1');
         $insertParagraph('Hello world 2');
@@ -150,6 +156,7 @@ describe('CollaborationWithCollisions', () => {
           $getRoot().getFirstChild().remove();
         },
       ],
+      expectedHTML: null,
       init: () => {
         $insertParagraph('Hello world 1');
         $insertParagraph('Hello world 2');
@@ -178,6 +185,7 @@ describe('CollaborationWithCollisions', () => {
           });
         },
       ],
+      expectedHTML: null,
       init: () => {
         $insertParagraph('Hello world 1');
         $insertParagraph('Hello world 2');

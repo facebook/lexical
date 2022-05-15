@@ -1,18 +1,30 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {Provider} from '@lexical/yjs';
 import type {Doc} from 'yjs';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {createContext, useContext, useMemo} from 'react';
+
 import {
   useYjsCollaboration,
   useYjsFocusTracking,
   useYjsHistory,
 } from './shared/useYjsCollaboration';
+
 type CollaborationContextType = {
   clientID: number;
   color: string;
   name: string;
   yjsDocMap: Map<string, Doc>;
 };
+
 const entries = [
   ['Cat', '255,165,0'],
   ['Dog', '0,200,55'],
@@ -32,6 +44,7 @@ const entries = [
   ['Squid', '0,220,255'],
 ];
 const randomEntry = entries[Math.floor(Math.random() * entries.length)];
+
 export function CollaborationPlugin({
   id,
   providerFactory,
@@ -39,18 +52,22 @@ export function CollaborationPlugin({
   username,
 }: {
   id: string;
+  // eslint-disable-next-line no-shadow
   providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider;
   shouldBootstrap: boolean;
   username?: string;
-}): React.ReactNode {
+}): JSX.Element {
   const collabContext = useCollaborationContext(username);
+
   const {yjsDocMap, name, color} = collabContext;
+
   const [editor] = useLexicalComposerContext();
-  const provider = useMemo(() => providerFactory(id, yjsDocMap), [
-    id,
-    providerFactory,
-    yjsDocMap,
-  ]);
+
+  const provider = useMemo(
+    () => providerFactory(id, yjsDocMap),
+    [id, providerFactory, yjsDocMap],
+  );
+
   const [cursors, binding] = useYjsCollaboration(
     editor,
     id,
@@ -60,19 +77,23 @@ export function CollaborationPlugin({
     color,
     shouldBootstrap,
   );
+
   collabContext.clientID = binding.clientID;
+
   useYjsHistory(editor, binding);
   useYjsFocusTracking(editor, provider, name, color);
+
   return cursors;
 }
-export const CollaborationContext: React.Context<CollaborationContextType> = createContext(
-  {
+
+export const CollaborationContext: React.Context<CollaborationContextType> =
+  createContext({
     clientID: 0,
     color: randomEntry[1],
     name: randomEntry[0],
     yjsDocMap: new Map(),
-  },
-);
+  });
+
 export function useCollaborationContext(
   username?: string,
 ): CollaborationContextType {

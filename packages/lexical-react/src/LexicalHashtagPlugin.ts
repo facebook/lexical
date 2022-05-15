@@ -1,11 +1,19 @@
-import {$ReadOnly} from 'utility-types';
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {TextNode} from 'lexical';
+
 import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalTextEntity} from '@lexical/react/useLexicalTextEntity';
 import {useCallback, useEffect} from 'react';
 
-function getHashtagRegexStringChars(): $ReadOnly<{
+function getHashtagRegexStringChars(): Readonly<{
   alpha: string;
   alphanumeric: string;
   hashChars: string;
@@ -224,6 +232,7 @@ function getHashtagRegexString(): string {
     hashtagAlpha +
     hashtagAlphanumeric +
     '*)';
+
   return hashtag;
 }
 
@@ -231,14 +240,17 @@ const REGEX = new RegExp(getHashtagRegexString(), 'i');
 
 export function HashtagPlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
+
   useEffect(() => {
     if (!editor.hasNodes([HashtagNode])) {
       throw new Error('HashtagPlugin: HashtagNode not registered on editor');
     }
   }, [editor]);
+
   const createHashtagNode = useCallback((textNode: TextNode): HashtagNode => {
     return $createHashtagNode(textNode.getTextContent());
   }, []);
+
   const getHashtagMatch = useCallback((text: string) => {
     const matchArr = REGEX.exec(text);
 
@@ -254,10 +266,12 @@ export function HashtagPlugin(): React$Node {
       start: startOffset,
     };
   }, []);
+
   useLexicalTextEntity<HashtagNode>(
     getHashtagMatch,
     HashtagNode,
     createHashtagNode,
   );
+
   return null;
 }

@@ -7,35 +7,11 @@
  */
 
 import type {InsertImagePayload} from './ImagesPlugin';
-<<<<<<< HEAD
 import type {
-  GridSelection,
-  LexicalEditor,
-  NodeSelection,
-  RangeSelection,
-=======
-import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
-import type {LexicalEditor, RangeSelection} from 'lexical';
-import {
-  $createParagraphNode,
-  $getNodeByKey,
-  $getRoot,
-  $getSelection,
-  $isRangeSelection,
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
-  COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_LOW,
-  ElementNode,
-  FORMAT_ELEMENT_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  INDENT_CONTENT_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
-  REDO_COMMAND,
-  SELECTION_CHANGE_COMMAND,
-  TextNode,
-  UNDO_COMMAND,
->>>>>>> 3d2f0aff (Add support for Giphy plugin)
+    GridSelection,
+    LexicalEditor,
+    NodeSelection,
+    RangeSelection,
 } from 'lexical';
 
 import './ToolbarPlugin.css';
@@ -43,68 +19,65 @@ import './ToolbarPlugin.css';
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
-  $isListNode,
-  INSERT_CHECK_LIST_COMMAND,
-  INSERT_ORDERED_LIST_COMMAND,
-  INSERT_UNORDERED_LIST_COMMAND,
-  ListNode,
-  REMOVE_LIST_COMMAND,
+    $isListNode,
+    INSERT_CHECK_LIST_COMMAND,
+    INSERT_ORDERED_LIST_COMMAND,
+    INSERT_UNORDERED_LIST_COMMAND,
+    ListNode,
+    REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
-  $createHeadingNode,
-  $createQuoteNode,
-  $isHeadingNode,
-  HeadingTagType,
+    $createHeadingNode,
+    $createQuoteNode,
+    $isHeadingNode,
+    HeadingTagType,
 } from '@lexical/rich-text';
 import {
-  $getSelectionStyleValueForProperty,
-  $isAtNodeEnd,
-  $isParentElementRTL,
-  $patchStyleText,
-  $selectAll,
-  $wrapLeafNodesInElements,
+    $getSelectionStyleValueForProperty,
+    $isAtNodeEnd,
+    $isParentElementRTL,
+    $patchStyleText,
+    $selectAll,
+    $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
-<<<<<<< HEAD
 import {
-  $getNearestBlockElementAncestorOrThrow,
-  $getNearestNodeOfType,
-  mergeRegister,
+    $getNearestBlockElementAncestorOrThrow,
+    $getNearestNodeOfType,
+    mergeRegister,
 } from '@lexical/utils';
 import {
-  $createParagraphNode,
-  $getNodeByKey,
-  $getRoot,
-  $getSelection,
-  $isRangeSelection,
-  $isTextNode,
-  CAN_REDO_COMMAND,
-  CAN_UNDO_COMMAND,
-  COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_LOW,
-  ElementNode,
-  FORMAT_ELEMENT_COMMAND,
-  FORMAT_TEXT_COMMAND,
-  INDENT_CONTENT_COMMAND,
-  NodeKey,
-  OUTDENT_CONTENT_COMMAND,
-  REDO_COMMAND,
-  SELECTION_CHANGE_COMMAND,
-  TextNode,
-  UNDO_COMMAND,
+    $createParagraphNode,
+    $getNodeByKey,
+    $getRoot,
+    $getSelection,
+    $isRangeSelection,
+    $isTextNode,
+    CAN_REDO_COMMAND,
+    CAN_UNDO_COMMAND,
+    COMMAND_PRIORITY_CRITICAL,
+    COMMAND_PRIORITY_LOW,
+    ElementNode,
+    FORMAT_ELEMENT_COMMAND,
+    FORMAT_TEXT_COMMAND,
+    INDENT_CONTENT_COMMAND,
+    NodeKey,
+    OUTDENT_CONTENT_COMMAND,
+    REDO_COMMAND,
+    SELECTION_CHANGE_COMMAND,
+    TextNode,
+    UNDO_COMMAND,
 } from 'lexical';
-=======
-import {$getNearestNodeOfType, mergeRegister} from '@lexical/utils';
->>>>>>> 3d2f0aff (Add support for Giphy plugin)
 import * as React from 'react';
 import {ChangeEvent, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../hooks/useModal';
+import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
@@ -116,10 +89,10 @@ import LinkPreview from '../ui/LinkPreview';
 import TextInput from '../ui/TextInput';
 import {INSERT_EQUATION_COMMAND} from './EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
+import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
 import {INSERT_POLL_COMMAND} from './PollPlugin';
 import {INSERT_TWEET_COMMAND} from './TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from './YouTubePlugin';
-import ReactGiphySearchbox from 'react-giphy-searchbox';
 
 const blockTypeToBlockName = {
   bullet: 'Bulleted List',

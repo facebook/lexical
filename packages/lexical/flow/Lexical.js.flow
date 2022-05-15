@@ -11,8 +11,6 @@
  * LexicalCommands
  */
 
-import {version} from 'punycode';
-
 export type LexicalCommand<P> = $ReadOnly<{}>;
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;

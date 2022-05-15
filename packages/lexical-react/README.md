@@ -47,7 +47,9 @@ function onChange(editorState) {
 function MyCustomAutoFocusPlugin() {
   const [editor] = useLexicalComposerContext();
 
-  useEffect(() => {
+  
+
+useEffect(() => {
     // Focus the editor when the effect fires!
     editor.focus();
   }, [editor]);
@@ -68,7 +70,9 @@ function Editor() {
     onError,
   };
 
-  return (
+  
+
+return (
     <LexicalComposer initialConfig={initialConfig}>
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}

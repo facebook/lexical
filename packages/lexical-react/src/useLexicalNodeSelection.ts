@@ -1,4 +1,13 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {LexicalEditor, NodeKey} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createNodeSelection,
@@ -25,14 +34,17 @@ export function useLexicalNodeSelection(
   key: NodeKey,
 ): [boolean, (arg0: boolean) => void, () => void] {
   const [editor] = useLexicalComposerContext();
+
   const [isSelected, setIsSelected] = useState(() =>
     isNodeSelected(editor, key),
   );
+
   useEffect(() => {
     return editor.registerUpdateListener(() => {
       setIsSelected(isNodeSelected(editor, key));
     });
   }, [editor, key]);
+
   const setSelected = useCallback(
     (selected: boolean) => {
       editor.update(() => {
@@ -52,6 +64,7 @@ export function useLexicalNodeSelection(
     },
     [editor, key],
   );
+
   const clearSelected = useCallback(() => {
     editor.update(() => {
       const selection = $getSelection();
@@ -61,5 +74,6 @@ export function useLexicalNodeSelection(
       }
     });
   }, [editor]);
+
   return [isSelected, setSelected, clearSelected];
 }

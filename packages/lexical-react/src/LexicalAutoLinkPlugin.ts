@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
@@ -28,12 +27,14 @@ import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
+
 type LinkMatcherResult = {
   index: number;
   length: number;
   text: string;
   url: string;
 };
+
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
 function findFirstMatch(
@@ -230,9 +231,9 @@ function useAutoLink(
       );
     }
 
-    const onChangeWrapped = (...args) => {
+    const onChangeWrapped = (url: string | null, prevUrl: string | null) => {
       if (onChange) {
-        onChange(...args);
+        onChange(url, prevUrl);
       }
     };
 
@@ -263,8 +264,10 @@ export function AutoLinkPlugin({
 }: {
   matchers: Array<LinkMatcher>;
   onChange?: ChangeHandler;
-}): React.ReactNode {
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
+
   useAutoLink(editor, matchers, onChange);
+
   return null;
 }

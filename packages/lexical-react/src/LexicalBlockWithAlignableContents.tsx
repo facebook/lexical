@@ -1,5 +1,13 @@
-import {$ReadOnly} from 'utility-types';
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {ElementFormatType, NodeKey} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -21,21 +29,24 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef} from 'react';
-type Props = $ReadOnly<{
-  children: React.ReactNode;
+
+type Props = Readonly<{
+  children: JSX.Element;
   format: ElementFormatType | null | undefined;
   nodeKey: NodeKey;
 }>;
+
 export function BlockWithAlignableContents({
   children,
   format,
   nodeKey,
-}: Props): React.ReactNode {
+}: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(
-    nodeKey,
-  );
+
+  const [isSelected, setSelected, clearSelection] =
+    useLexicalNodeSelection(nodeKey);
   const ref = useRef();
+
   const onDelete = useCallback(
     (payload) => {
       if (isSelected && $isNodeSelection($getSelection())) {
@@ -56,11 +67,12 @@ export function BlockWithAlignableContents({
     },
     [editor, isSelected, nodeKey, setSelected],
   );
+
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand(
+      editor.registerCommand<ElementFormatType>(
         FORMAT_ELEMENT_COMMAND,
-        (payload) => {
+        (formatType) => {
           if (isSelected) {
             const selection = $getSelection();
 
@@ -68,17 +80,17 @@ export function BlockWithAlignableContents({
               const node = $getNodeByKey(nodeKey);
 
               if ($isDecoratorBlockNode(node)) {
-                node.setFormat(payload);
+                node.setFormat(formatType);
               }
             } else if ($isRangeSelection(selection)) {
               const nodes = selection.getNodes();
 
               for (const node of nodes) {
                 if ($isDecoratorBlockNode(node)) {
-                  node.setFormat(payload);
+                  node.setFormat(formatType);
                 } else {
                   const element = $getNearestBlockElementAncestorOrThrow(node);
-                  element.setFormat(payload);
+                  element.setFormat(formatType);
                 }
               }
             }
@@ -90,10 +102,9 @@ export function BlockWithAlignableContents({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
+      editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
-        (payload) => {
-          const event: MouseEvent = payload;
+        (event) => {
           event.preventDefault();
 
           if (event.target === ref.current) {
@@ -121,14 +132,14 @@ export function BlockWithAlignableContents({
       ),
     );
   }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
+
   return (
     <div
       className={`embed-block${isSelected ? ' focused' : ''}`}
       ref={ref}
       style={{
         textAlign: format,
-      }}
-    >
+      }}>
       {children}
     </div>
   );

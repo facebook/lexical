@@ -105,7 +105,7 @@ module.exports = {
       },
       preset: 'ts-jest',
       testEnvironment: 'jsdom',
-      testMatch: ['**/__tests__/unit/**/*.test{.ts,.js}'],
+      testMatch: ['**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
       transform: {
         '^.+\\.jsx?$': 'babel-jest',
         '^.+\\.tsx$': 'ts-jest',

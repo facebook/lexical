@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
@@ -21,8 +20,9 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isNodeSelection,
 } from 'lexical';
-import React from 'react';
+import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
@@ -30,17 +30,19 @@ import {LexicalComposer} from '../../../src/LexicalComposer';
 import {PlainTextPlugin} from '../../../src/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '../../../src/LexicalRichTextPlugin';
 import {useLexicalComposerContext} from '../../LexicalComposerContext';
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-global.IS_REACT_ACT_ENVIRONMENT = true;
+import PlainTextPlugin from '../../LexicalPlainTextPlugin';
+import RichTextPlugin from '../../LexicalRichTextPlugin';
+
 describe('LexicalNodeHelpers tests', () => {
   let container = null;
   let reactRoot;
+
   beforeEach(() => {
     container = document.createElement('div');
     reactRoot = createRoot(container);
     document.body.appendChild(container);
   });
+
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
@@ -85,6 +87,9 @@ describe('LexicalNodeHelpers tests', () => {
                       LinkNode,
                       OverflowNode,
                     ],
+              onError: () => {
+                throw Error();
+              },
               theme: {},
             }}>
             <GrabEditor />
@@ -92,11 +97,13 @@ describe('LexicalNodeHelpers tests', () => {
               <PlainTextPlugin
                 contentEditable={<ContentEditable />}
                 initialEditorState={$initialEditorState}
+                placeholder=""
               />
             ) : (
               <RichTextPlugin
                 contentEditable={<ContentEditable />}
                 initialEditorState={$initialEditorState}
+                placeholder=""
               />
             )}
           </LexicalComposer>
@@ -191,6 +198,9 @@ describe('LexicalNodeHelpers tests', () => {
                       LinkNode,
                       OverflowNode,
                     ],
+              onError: () => {
+                throw Error();
+              },
               theme: {},
             }}>
             <GrabEditor />
@@ -198,11 +208,13 @@ describe('LexicalNodeHelpers tests', () => {
               <PlainTextPlugin
                 contentEditable={<ContentEditable />}
                 initialEditorState={initialEditorStateJson}
+                placeholder=""
               />
             ) : (
               <RichTextPlugin
                 contentEditable={<ContentEditable />}
                 initialEditorState={initialEditorStateJson}
+                placeholder=""
               />
             )}
           </LexicalComposer>
@@ -214,8 +226,15 @@ describe('LexicalNodeHelpers tests', () => {
       });
       await editor.getEditorState().read(() => {
         expect($rootTextContentCurry()).toBe('foo');
-        expect($getSelection().anchor.getNode().getTextContent()).toBe('foo');
-        expect($getSelection().focus.getNode().getTextContent()).toBe('foo');
+
+        const selection = $getSelection();
+
+        if ($isNodeSelection(selection)) {
+          return;
+        }
+
+        expect(selection.anchor.getNode().getTextContent()).toBe('foo');
+        expect(selection.focus.getNode().getTextContent()).toBe('foo');
       });
     });
   }

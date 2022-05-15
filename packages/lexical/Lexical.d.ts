@@ -6,14 +6,14 @@
  *
  */
 
-import {Class, $ReadOnly} from 'utility-types';
+import {Class} from 'utility-types';
 import {Spread} from 'globals';
 
 /**
  * LexicalCommands
  */
 
-export type LexicalCommand<P> = $ReadOnly<{}>;
+export type LexicalCommand<P> = Readonly<{}>;
 
 export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
@@ -345,17 +345,17 @@ export declare class LexicalNode {
   isSelected(): boolean;
   getKey(): NodeKey;
   getIndexWithinParent(): number;
-  getParent(): ElementNode | null;
-  getParentOrThrow(): ElementNode;
-  getTopLevelElement(): null | ElementNode;
-  getTopLevelElementOrThrow(): ElementNode;
-  getParents(): Array<ElementNode>;
+  getParent<T extends ElementNode>(): T | null;
+  getParentOrThrow<T extends ElementNode>(): T;
+  getTopLevelElement<T extends ElementNode>(): T | null;
+  getTopLevelElementOrThrow<T extends ElementNode>(): T;
+  getParents<T extends ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling(): LexicalNode | null;
   getPreviousSiblings(): Array<LexicalNode>;
   getNextSibling(): LexicalNode | null;
   getNextSiblings(): Array<LexicalNode>;
-  getCommonAncestor(node: LexicalNode): ElementNode | null;
+  getCommonAncestor<T extends ElementNode>(node: LexicalNode): T | null;
   is(object: LexicalNode | null | undefined): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;
@@ -815,6 +815,8 @@ export function $getDecoratorNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
+
+export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 
 /**
  * LexicalVersion

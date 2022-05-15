@@ -1,5 +1,14 @@
-import type {TableSelection} from '@lexical/table';
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import type {InsertTableCommandPayload, TableSelection} from '@lexical/table';
 import type {ElementNode, NodeKey} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTableNodeWithDimensions,
@@ -20,8 +29,9 @@ import {
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
-export function TablePlugin(): React$Node {
+export function TablePlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
+
   useEffect(() => {
     if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
       invariant(
@@ -30,10 +40,9 @@ export function TablePlugin(): React$Node {
       );
     }
 
-    return editor.registerCommand(
+    return editor.registerCommand<InsertTableCommandPayload>(
       INSERT_TABLE_COMMAND,
-      (payload) => {
-        const {columns, rows} = payload;
+      ({columns, rows}) => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -76,14 +85,16 @@ export function TablePlugin(): React$Node {
       COMMAND_PRIORITY_EDITOR,
     );
   }, [editor]);
+
   useEffect(() => {
     const tableSelections = new Map<NodeKey, TableSelection>();
+
     return editor.registerMutationListener(TableNode, (nodeMutations) => {
       for (const [nodeKey, mutation] of nodeMutations) {
         if (mutation === 'created') {
           editor.update(() => {
             const tableElement = editor.getElementByKey(nodeKey);
-            const tableNode = $getNodeByKey(nodeKey);
+            const tableNode = $getNodeByKey<TableNode>(nodeKey);
 
             if (tableElement && tableNode) {
               const tableSelection = applyTableHandlers(
@@ -105,5 +116,6 @@ export function TablePlugin(): React$Node {
       }
     });
   }, [editor]);
+
   return null;
 }

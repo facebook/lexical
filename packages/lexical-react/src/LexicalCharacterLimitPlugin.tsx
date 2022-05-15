@@ -1,7 +1,17 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 import {useMemo, useState} from 'react';
+
 import {useCharacterLimit} from './shared/useCharacterLimit';
+
 const CHARACTER_LIMIT = 5;
 let textEncoderInstance = null;
 
@@ -33,9 +43,11 @@ export function CharacterLimitPlugin({
   charset = 'UTF-16',
 }: {
   charset: 'UTF-8' | 'UTF-16';
-}): React.ReactNode {
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
+
   const [remainingCharacters, setRemainingCharacters] = useState(0);
+
   const characterLimitProps = useMemo(
     () => ({
       remainingCharacters: setRemainingCharacters,
@@ -51,13 +63,14 @@ export function CharacterLimitPlugin({
     }),
     [charset],
   );
+
   useCharacterLimit(editor, CHARACTER_LIMIT, characterLimitProps);
+
   return (
     <span
       className={`characters-limit ${
         remainingCharacters < 0 ? 'characters-limit-exceeded' : ''
-      }`}
-    >
+      }`}>
       {remainingCharacters}
     </span>
   );

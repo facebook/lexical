@@ -15,6 +15,7 @@ type LinkMatcherResult = {
   length: number,
   index: number,
 };
+
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
 declare export function AutoLinkPlugin(props: {

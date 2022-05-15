@@ -1,6 +1,15 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {Binding, Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 import type {Doc} from 'yjs';
+
 import {mergeRegister} from '@lexical/utils';
 import {
   CONNECTED_COMMAND,
@@ -25,8 +34,8 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-// @ts-expect-error
 import {createPortal} from 'react-dom';
+
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
@@ -35,7 +44,7 @@ export function useYjsCollaboration(
   name: string,
   color: string,
   shouldBootstrap: boolean,
-): [React.ReactNode, Binding] {
+): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
   const binding = useMemo(
@@ -52,6 +61,7 @@ export function useYjsCollaboration(
       // Do nothing
     }
   }, [provider]);
+
   useEffect(() => {
     const {root} = binding;
     const {awareness} = provider;
@@ -127,6 +137,7 @@ export function useYjsCollaboration(
       },
     );
     connect();
+
     return () => {
       if (isReloadingDoc.current === false) {
         disconnect();
@@ -158,6 +169,7 @@ export function useYjsCollaboration(
 
     return createPortal(<div ref={ref} />, document.body);
   }, [binding]);
+
   useEffect(() => {
     return editor.registerCommand(
       TOGGLE_CONNECT_COMMAND,
@@ -183,6 +195,7 @@ export function useYjsCollaboration(
   }, [connect, disconnect, editor]);
   return [cursorsContainer, binding];
 }
+
 export function useYjsFocusTracking(
   editor: LexicalEditor,
   provider: Provider,
@@ -210,6 +223,7 @@ export function useYjsFocusTracking(
     );
   }, [color, editor, name, provider]);
 }
+
 export function useYjsHistory(
   editor: LexicalEditor,
   binding: Binding,
@@ -218,6 +232,7 @@ export function useYjsHistory(
     () => createUndoManager(binding, binding.root.getSharedType()),
     [binding],
   );
+
   useEffect(() => {
     const undo = () => {
       undoManager.undo();
@@ -277,7 +292,7 @@ function initializeEditor(editor: LexicalEditor): void {
   );
 }
 
-function clearEditorSkipCollab(editor, binding) {
+function clearEditorSkipCollab(editor: LexicalEditor, binding: Binding) {
   // reset editor state
   editor.update(
     () => {
@@ -294,6 +309,11 @@ function clearEditorSkipCollab(editor, binding) {
     return;
   }
 
+  const cursors = binding.cursors;
+
+  if (cursors == null) {
+    return;
+  }
   const cursorsContainer = binding.cursorsContainer;
 
   if (cursorsContainer == null) {
@@ -301,10 +321,10 @@ function clearEditorSkipCollab(editor, binding) {
   }
 
   // reset cursors in dom
-  const cursors = Array.from(binding.cursors.values());
+  const cursorsArr = Array.from(cursors.values());
 
-  for (let i = 0; i < cursors.length; i++) {
-    const cursor = cursors[i];
+  for (let i = 0; i < cursorsArr.length; i++) {
+    const cursor = cursorsArr[i];
     const selection = cursor.selection;
 
     if (selection && selection.selections != null) {

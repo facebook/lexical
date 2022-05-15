@@ -1,4 +1,13 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import type {EditorState, LexicalEditor} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
@@ -12,6 +21,7 @@ export function OnChangePlugin({
   onChange: (editorState: EditorState, editor: LexicalEditor) => void;
 }): null {
   const [editor] = useLexicalComposerContext();
+
   useLayoutEffect(() => {
     if (onChange) {
       return editor.registerUpdateListener(
@@ -33,5 +43,6 @@ export function OnChangePlugin({
       );
     }
   }, [editor, ignoreInitialChange, ignoreSelectionChange, onChange]);
+
   return null;
 }

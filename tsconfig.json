@@ -38,34 +38,34 @@
       "@lexical/mark": ["./packages/lexical-mark/LexicalMark.d.ts"],
 
       "@lexical/react/DEPRECATED_useLexicalEditor": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalEditor.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalEditor.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalRichText": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalRichText.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalRichText.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalPlainText": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalPlainText.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalPlainText.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalEditorEvents": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalEditorEvents.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalEditorEvents.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalAutoFormatter": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalAutoFormatter.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalAutoFormatter.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalDecorators": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalDecorators.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalDecorators.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalList": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalList.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalList.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalCanShowPlaceholder.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalCanShowPlaceholder.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalCharacterLimit": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalCharacterLimit.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalCharacterLimit.ts"
       ],
       "@lexical/react/DEPRECATED_useLexicalHistory": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalHistory.js"
+        "./packages/lexical-react/src/DEPRECATED_useLexicalHistory.ts"
       ],
 
       "@lexical/react/LexicalComposer": [

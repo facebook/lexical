@@ -135,7 +135,7 @@ const moduleResolution = [
   'LexicalOnChangePlugin',
   'LexicalAutoScrollPlugin',
 ].forEach((module) => {
-  let resolvedPath = path.resolve(`../lexical-react/src/${module}.js`);
+  let resolvedPath = path.resolve(`../lexical-react/src/${module}.ts`);
 
   if (fs.existsSync(resolvedPath)) {
     moduleResolution.push({
@@ -143,7 +143,7 @@ const moduleResolution = [
       replacement: resolvedPath,
     });
   } else {
-    resolvedPath = path.resolve(`../lexical-react/src/${module}.jsx`);
+    resolvedPath = path.resolve(`../lexical-react/src/${module}.tsx`);
     moduleResolution.push({
       find: `@lexical/react/${module}`,
       replacement: resolvedPath,

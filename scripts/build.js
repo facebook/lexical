@@ -71,7 +71,7 @@ const wwwMappings = {
 
 const lexicalReactModules = fs
   .readdirSync(path.resolve('./packages/lexical-react/src'))
-  .map((str) => path.basename(path.basename(str, '.js'), '.jsx'))
+  .map((str) => path.basename(path.basename(str, '.ts'), '.tsx'))
   .filter(
     (str) =>
       !str.includes('__tests__') &&

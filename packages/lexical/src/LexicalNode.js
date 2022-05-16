@@ -447,7 +447,6 @@ export class LexicalNode {
     const nodes = [];
     const visited = new Set();
     let node = this;
-    let dfsAncestor = null;
     while (true) {
       const key = node.__key;
       if (!visited.has(key)) {
@@ -463,9 +462,6 @@ export class LexicalNode {
           : node.getLastChild()
         : null;
       if (child !== null) {
-        if (dfsAncestor === null) {
-          dfsAncestor = node;
-        }
         node = child;
         continue;
       }
@@ -485,9 +481,6 @@ export class LexicalNode {
       }
       let parentSibling = null;
       let ancestor = parent;
-      if (parent.is(dfsAncestor)) {
-        dfsAncestor = null;
-      }
       do {
         if (ancestor === null) {
           invariant(false, 'getNodesBetween: ancestor is null');
@@ -497,9 +490,6 @@ export class LexicalNode {
           : ancestor.getPreviousSibling();
         ancestor = ancestor.getParent();
         if (ancestor !== null) {
-          if (ancestor.is(dfsAncestor)) {
-            dfsAncestor = null;
-          }
           if (parentSibling === null && !visited.has(ancestor.__key)) {
             nodes.push(ancestor);
           }

@@ -193,10 +193,12 @@ export class OffsetView {
       }
     } else {
       const node = anchor.getNode().getDescendantByIndex(anchorOffset);
-      const offsetNode = offsetMap.get(node.getKey());
-      if (offsetNode !== undefined) {
-        const isAtEnd = node.getIndexWithinParent() !== anchorOffset;
-        start = isAtEnd ? offsetNode.end : offsetNode.start;
+      if (node !== null) {
+        const offsetNode = offsetMap.get(node.getKey());
+        if (offsetNode !== undefined) {
+          const isAtEnd = node.getIndexWithinParent() !== anchorOffset;
+          start = isAtEnd ? offsetNode.end : offsetNode.start;
+        }
       }
     }
     if (focus.type === 'text') {
@@ -206,10 +208,12 @@ export class OffsetView {
       }
     } else {
       const node = focus.getNode().getDescendantByIndex(focusOffset);
-      const offsetNode = offsetMap.get(node.getKey());
-      if (offsetNode !== undefined) {
-        const isAtEnd = node.getIndexWithinParent() !== focusOffset;
-        end = isAtEnd ? offsetNode.end : offsetNode.start;
+      if (node !== null) {
+        const offsetNode = offsetMap.get(node.getKey());
+        if (offsetNode !== undefined) {
+          const isAtEnd = node.getIndexWithinParent() !== focusOffset;
+          end = isAtEnd ? offsetNode.end : offsetNode.start;
+        }
       }
     }
     return [start, end];

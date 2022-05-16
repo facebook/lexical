@@ -296,6 +296,51 @@ test.describe('CopyAndPaste', () => {
     });
   });
 
+  test(`Copy and paste code`, async ({isPlainText, page, browserName}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('`code`');
+    await page.keyboard.press('Enter');
+
+    await moveToEditorBeginning(page);
+    await page.keyboard.down('Shift');
+    await moveToLineEnd(page);
+    await page.keyboard.up('Shift');
+
+    const clipboard = await copyToClipboard(page);
+
+    await moveToEditorEnd(page);
+    await page.keyboard.press('Enter');
+
+    // Paste the content
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Heading</span>
+        </h1>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Some text</span>
+        </p>
+        <code data-lexical-text="true">code</code>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 7,
+      anchorPath: [2, 0, 0],
+      focusOffset: 7,
+      focusPath: [2, 0, 0],
+    });
+  });
+
   test(`Copy and paste between sections`, async ({
     isRichText,
     page,

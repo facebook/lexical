@@ -64,7 +64,6 @@ import {
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
 import {
   COMPOSITION_START_CHAR,
-  COMPOSITION_SUFFIX,
   DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
 } from './LexicalConstants';
@@ -330,7 +329,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             anchor.offset === 0 &&
             $isTextNode(node) &&
             $isTextNode(prevNode) &&
-            node.getTextContent() === COMPOSITION_SUFFIX &&
+            node.getTextContent() === COMPOSITION_START_CHAR &&
             prevNode.getFormat() !== selection.format
           ) {
             const prevTextContent = prevNode.getTextContent();

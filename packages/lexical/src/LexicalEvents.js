@@ -579,7 +579,7 @@ function onCompositionStart(
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {
-        // We insert an zero width character, ready for the composition
+        // We insert a zero width character, ready for the composition
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.

@@ -1,0 +1,5 @@
+{
+  "include": ["packages/**/*"],
+  "exclude": ["node_modules/**/*", "packages/lexical-playground/**/*"],
+  "extends": "./tsconfig.json"
+}

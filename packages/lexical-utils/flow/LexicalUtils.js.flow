@@ -6,7 +6,7 @@
  *
  * @flow strict
  */
-import type {LexicalNode, ElementNode} from 'lexical';
+import type {LexicalEditor, LexicalNode, ElementNode} from 'lexical';
 export type DFSNode = $ReadOnly<{
   depth: number,
   node: LexicalNode,
@@ -17,7 +17,7 @@ declare export function addClassNamesToElement(
 ): void;
 declare export function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<string>
+  ...classNames: Array<typeof undefined | boolean | null | string>
 ): void;
 declare export function $dfs(
   startingNode?: LexicalNode,
@@ -41,3 +41,10 @@ declare export function mergeRegister(...func: Array<Func>): () => void;
 declare export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
+
+declare export function registerNestedElementResolver<N: ElementNode>(
+  editor: LexicalEditor,
+  targetNode: Class<N>,
+  cloneNode: (from: N) => N,
+  handleOverlap: (from: N, to: N) => void,
+): () => void;

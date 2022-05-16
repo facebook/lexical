@@ -8,13 +8,13 @@
     "hashtag"
   ],
   "license": "MIT",
-  "version": "0.2.3",
+  "version": "0.2.9",
   "main": "LexicalHashtag.js",
   "peerDependencies": {
-    "lexical": "0.2.3"
+    "lexical": "0.2.9"
   },
   "dependencies": {
-    "@lexical/utils": "0.2.3"
+    "@lexical/utils": "0.2.9"
   },
   "repository": {
     "type": "git",

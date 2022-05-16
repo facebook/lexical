@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -34,10 +34,7 @@ export default function useList(editor: LexicalEditor): void {
       editor.registerCommand(
         INDENT_CONTENT_COMMAND,
         () => {
-          const hasHandledIndention = indentList();
-          if (hasHandledIndention) {
-            return true;
-          }
+          indentList();
           return false;
         },
         COMMAND_PRIORITY_LOW,
@@ -45,10 +42,7 @@ export default function useList(editor: LexicalEditor): void {
       editor.registerCommand(
         OUTDENT_CONTENT_COMMAND,
         () => {
-          const hasHandledIndention = outdentList();
-          if (hasHandledIndention) {
-            return true;
-          }
+          outdentList();
           return false;
         },
         COMMAND_PRIORITY_LOW,
@@ -56,7 +50,7 @@ export default function useList(editor: LexicalEditor): void {
       editor.registerCommand(
         INSERT_ORDERED_LIST_COMMAND,
         () => {
-          insertList(editor, 'ol');
+          insertList(editor, 'number');
           return true;
         },
         COMMAND_PRIORITY_LOW,
@@ -64,7 +58,7 @@ export default function useList(editor: LexicalEditor): void {
       editor.registerCommand(
         INSERT_UNORDERED_LIST_COMMAND,
         () => {
-          insertList(editor, 'ul');
+          insertList(editor, 'bullet');
           return true;
         },
         COMMAND_PRIORITY_LOW,

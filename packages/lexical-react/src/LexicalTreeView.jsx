@@ -16,6 +16,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {$isMarkNode} from '@lexical/mark';
 import {
   $getRoot,
   $getSelection,
@@ -225,7 +226,7 @@ function printObjectSelection(selection: NodeSelection): string {
 }
 
 function printGridSelection(selection: GridSelection): string {
-  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchorCellKey}, focusCell: ${selection.focusCellKey} }`;
+  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
 }
 
 function generateContent(editorState: EditorState): string {
@@ -239,10 +240,13 @@ function generateContent(editorState: EditorState): string {
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
       const isSelected = node.isSelected();
+      const idsDisplay = $isMarkNode(node)
+        ? ` id: [ ${node.getIDs().join(', ')} ] `
+        : '';
 
       res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
         ' ',
-      )} ${nodeKeyDisplay} ${typeDisplay} ${printNode(node)}\n`;
+      )} ${nodeKeyDisplay} ${typeDisplay} ${idsDisplay} ${printNode(node)}\n`;
 
       res += printSelectedCharsLine({
         indent,
@@ -320,6 +324,8 @@ const FORMAT_PREDICATES = [
   (node) => node.hasFormat('code') && 'Code',
   (node) => node.hasFormat('italic') && 'Italic',
   (node) => node.hasFormat('strikethrough') && 'Strikethrough',
+  (node) => node.hasFormat('subscript') && 'Subscript',
+  (node) => node.hasFormat('superscript') && 'Superscript',
   (node) => node.hasFormat('underline') && 'Underline',
 ];
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -133,7 +133,7 @@ describe('LexicalEditorState tests', () => {
       });
 
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        '{"_nodeMap":[["root",{"__children":["1"],"__dir":null,"__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"table","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":null}],["2",{"__type":"tablerow","__parent":"1","__key":"2","__children":["3"],"__format":0,"__indent":0,"__dir":null}],["3",{"__type":"tablecell","__parent":"2","__key":"3","__children":[],"__format":0,"__indent":0,"__dir":null,"__headerState":0}]],"_selection":{"anchorCellKey":"3","focusCellKey":"3","gridKey":"1","type":"grid"}}',
+        '{"_nodeMap":[["root",{"__children":["1"],"__dir":null,"__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"table","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":null}],["2",{"__type":"tablerow","__parent":"1","__key":"2","__children":["3"],"__format":0,"__indent":0,"__dir":null}],["3",{"__type":"tablecell","__parent":"2","__key":"3","__children":[],"__format":0,"__indent":0,"__dir":null,"__headerState":0}]],"_selection":{"anchor":{"key":"3","offset":0,"type":"element"},"focus":{"key":"3","offset":0,"type":"element"},"gridKey":"1","type":"grid"}}',
       );
     });
 

@@ -10,10 +10,10 @@
     "export"
   ],
   "license": "MIT",
-  "version": "0.2.3",
+  "version": "0.2.9",
   "main": "LexicalFile.js",
   "peerDependencies": {
-    "lexical": "0.2.3"
+    "lexical": "0.2.9"
   },
   "repository": {
     "type": "git",

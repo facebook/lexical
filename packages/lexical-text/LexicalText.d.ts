@@ -6,6 +6,7 @@
  *
  */
 import type {ElementNode, LexicalEditor, RootNode, TextNode} from 'lexical';
+import {Class} from 'utility-types';
 export type TextNodeWithOffset = {
   node: TextNode;
   offset: number;
@@ -27,7 +28,7 @@ export function $findNodeWithOffsetFromJoinedText(
   joinedTextLength: number,
   separatorLength: number,
   elementNode: ElementNode,
-): ?TextNodeWithOffset;
+): TextNodeWithOffset | null | undefined;
 export function $isRootTextContentEmpty(
   isEditorComposing: boolean,
   trim?: boolean,

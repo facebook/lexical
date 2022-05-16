@@ -23,17 +23,17 @@ declare export class CodeNode extends ElementNode {
   static getType(): string;
   static clone(node: CodeNode): CodeNode;
   constructor(key?: NodeKey): void;
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
   ): null | ParagraphNode | CodeHighlightNode;
-  canInsertTab(): true;
+  canInsertTab(): boolean;
   collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;
 }
-declare export function $createCodeNode(): CodeNode;
+declare export function $createCodeNode(language?: string): CodeNode;
 declare export function $isCodeNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof CodeNode);
@@ -54,12 +54,12 @@ declare export class CodeHighlightNode extends TextNode {
   constructor(text: string, highlightType?: string, key?: NodeKey): void;
   static getType(): string;
   static clone(node: CodeHighlightNode): CodeHighlightNode;
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
-  updateDOM<EditorContext>(
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(
     // $FlowFixMe
     prevNode: CodeHighlightNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean;
   setFormat(format: number): this;
 }

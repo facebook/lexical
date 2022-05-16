@@ -6,14 +6,18 @@
  *
  * @flow strict
  */
-
 import type {NodeKey} from '../LexicalNode';
-import type {PointType, RangeSelection} from '../LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  PointType,
+  RangeSelection,
+} from '../LexicalSelection';
 
 import invariant from 'shared/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';
-import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
+import {DOUBLE_LINE_BREAK, ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
@@ -52,7 +56,7 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__indent;
   }
-  getChildren(): Array<LexicalNode> {
+  getChildren<T: Array<LexicalNode>>(): T {
     const self = this.getLatest();
     const children = self.__children;
     const childrenNodes = [];
@@ -62,6 +66,7 @@ export class ElementNode extends LexicalNode {
         childrenNodes.push(childNode);
       }
     }
+    // $FlowFixMe
     return childrenNodes;
   }
   getChildrenKeys(): Array<NodeKey> {
@@ -79,6 +84,11 @@ export class ElementNode extends LexicalNode {
     const dirtyElements = editor._dirtyElements;
     return dirtyElements !== null && dirtyElements.has(this.__key);
   }
+  isLastChild(): boolean {
+    const self = this.getLatest();
+    const parent = self.getParentOrThrow();
+    return parent.getLastChild() === self;
+  }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
     const self = this.getLatest();
@@ -94,7 +104,7 @@ export class ElementNode extends LexicalNode {
     }
     return textNodes;
   }
-  getFirstDescendant(): null | LexicalNode {
+  getFirstDescendant<T: LexicalNode>(): null | T {
     let node = this.getFirstChild();
     while (node !== null) {
       if ($isElementNode(node)) {
@@ -108,7 +118,7 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getLastDescendant(): null | LexicalNode {
+  getLastDescendant<T: LexicalNode>(): null | T {
     let node = this.getLastChild();
     while (node !== null) {
       if ($isElementNode(node)) {
@@ -122,12 +132,9 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getDescendantByIndex(index: number): LexicalNode {
+  getDescendantByIndex<T: LexicalNode>(index: number): null | T {
     const children = this.getChildren();
     const childrenLength = children.length;
-    if (childrenLength === 0) {
-      return this;
-    }
     // For non-empty element nodes, we resolve its descendant
     // (either a leaf node or the bottom-most element)
     if (index >= childrenLength) {
@@ -159,16 +166,16 @@ export class ElementNode extends LexicalNode {
     }
     return firstChild;
   }
-  getLastChild(): null | LexicalNode {
+  getLastChild<T: LexicalNode>(): null | T {
     const self = this.getLatest();
     const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
       return null;
     }
-    return $getNodeByKey<LexicalNode>(children[childrenLength - 1]);
+    return $getNodeByKey<T>(children[childrenLength - 1]);
   }
-  getChildAtIndex(index: number): null | LexicalNode {
+  getChildAtIndex<T: LexicalNode>(index: number): null | T {
     const self = this.getLatest();
     const children = self.__children;
     const key = children[index];
@@ -189,7 +196,7 @@ export class ElementNode extends LexicalNode {
         i !== childrenLength - 1 &&
         !child.isInline()
       ) {
-        textContent += '\n\n';
+        textContent += DOUBLE_LINE_BREAK;
       }
     }
     return textContent;
@@ -410,6 +417,9 @@ export class ElementNode extends LexicalNode {
   canInsertTab(): boolean {
     return false;
   }
+  canIndent(): boolean {
+    return true;
+  }
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
   }
@@ -438,6 +448,13 @@ export class ElementNode extends LexicalNode {
     return false;
   }
   canMergeWith(node: ElementNode): boolean {
+    return false;
+  }
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
+  ): boolean {
     return false;
   }
 }

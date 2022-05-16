@@ -16,7 +16,10 @@ import {replaceCodePlugin} from 'vite-plugin-replace';
 import babel from '@rollup/plugin-babel';
 
 const moduleResolution = [
-  {find: /lexical$/, replacement: path.resolve('../lexical/src/index.js')},
+  {
+    find: /lexical$/,
+    replacement: path.resolve('../lexical/src/index.js'),
+  },
   {
     find: '@lexical/clipboard',
     replacement: path.resolve('../lexical-clipboard/src/index.js'),
@@ -31,11 +34,11 @@ const moduleResolution = [
   },
   {
     find: '@lexical/hashtag',
-    replacement: path.resolve('../lexical-hashtag/src/index.js'),
+    replacement: path.resolve('../lexical-hashtag/src/index.ts'),
   },
   {
     find: '@lexical/history',
-    replacement: path.resolve('../lexical-history/src/index.js'),
+    replacement: path.resolve('../lexical-history/src/index.ts'),
   },
   {
     find: '@lexical/list',
@@ -43,7 +46,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/file',
-    replacement: path.resolve('../lexical-file/src/index.js'),
+    replacement: path.resolve('../lexical-file/src/index.ts'),
   },
   {
     find: '@lexical/table',
@@ -59,19 +62,19 @@ const moduleResolution = [
   },
   {
     find: '@lexical/code',
-    replacement: path.resolve('../lexical-code/src/index.js'),
+    replacement: path.resolve('../lexical-code/src/index.ts'),
   },
   {
     find: '@lexical/plain-text',
-    replacement: path.resolve('../lexical-plain-text/src/index.js'),
+    replacement: path.resolve('../lexical-plain-text/src/index.ts'),
   },
   {
     find: '@lexical/rich-text',
-    replacement: path.resolve('../lexical-rich-text/src/index.js'),
+    replacement: path.resolve('../lexical-rich-text/src/index.ts'),
   },
   {
     find: '@lexical/dragon',
-    replacement: path.resolve('../lexical-dragon/src/index.js'),
+    replacement: path.resolve('../lexical-dragon/src/index.ts'),
   },
   {
     find: '@lexical/link',
@@ -86,12 +89,22 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-markdown/src/index.js'),
   },
   {
+    find: '@lexical/mark',
+    replacement: path.resolve('../lexical-mark/src/index.js'),
+  },
+  {
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/src/index.js'),
   },
-  {find: 'shared', replacement: path.resolve('../shared/src')},
+  {
+    find: 'shared',
+    replacement: path.resolve('../shared/src'),
+  },
+  {
+    find: 'shared-ts',
+    replacement: path.resolve('../shared-ts/src'),
+  },
 ];
-
 // Lexical React
 [
   'LexicalTreeView',
@@ -102,6 +115,8 @@ const moduleResolution = [
   'LexicalContentEditable',
   'LexicalNestedComposer',
   'LexicalHorizontalRuleNode',
+  'LexicalDecoratorBlockNode',
+  'LexicalBlockWithAlignableContents',
   'useLexicalNodeSelection',
   'LexicalMarkdownShortcutPlugin',
   'LexicalCharacterLimitPlugin',
@@ -114,12 +129,14 @@ const moduleResolution = [
   'LexicalTablePlugin',
   'LexicalLinkPlugin',
   'LexicalListPlugin',
+  'LexicalCheckListPlugin',
   'LexicalAutoFocusPlugin',
   'LexicalAutoLinkPlugin',
   'LexicalOnChangePlugin',
   'LexicalAutoScrollPlugin',
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/src/${module}.js`);
+
   if (fs.existsSync(resolvedPath)) {
     moduleResolution.push({
       find: `@lexical/react/${module}`,
@@ -132,7 +149,7 @@ const moduleResolution = [
       replacement: resolvedPath,
     });
   }
-});
+}); 
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -159,7 +176,9 @@ export default defineConfig({
         '@babel/plugin-transform-flow-strip-types',
         [
           require('../../scripts/error-codes/transform-error-messages'),
-          {noMinify: true},
+          {
+            noMinify: true,
+          },
         ],
       ],
       presets: ['@babel/preset-react'],

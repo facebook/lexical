@@ -7,13 +7,16 @@
  * @flow strict
  */
 
+import type {ListNode} from './';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
+  GridSelection,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
@@ -26,42 +29,60 @@ import {
   $createParagraphNode,
   $isElementNode,
   $isParagraphNode,
+  $isRangeSelection,
   ElementNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$createListNode, $isListNode} from './';
-import {$handleIndent, $handleOutdent} from './formatList';
+import {
+  $handleIndent,
+  $handleOutdent,
+  updateChildrenListItemValue,
+} from './formatList';
 
 export class ListItemNode extends ElementNode {
+  __value: number;
+  __checked: boolean | void;
+
   static getType(): string {
     return 'listitem';
   }
 
   static clone(node: ListItemNode): ListItemNode {
-    return new ListItemNode(node.__key);
+    return new ListItemNode(node.__value, node.__checked, node.__key);
   }
 
-  constructor(key?: NodeKey): void {
+  constructor(value?: number, checked?: boolean, key?: NodeKey): void {
     super(key);
+    this.__value = value === undefined ? 1 : value;
+    this.__checked = checked;
   }
 
-  // View
-
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
-    element.value = getListItemValue(this);
+    const parent = this.getParent();
+    if ($isListNode(parent)) {
+      updateChildrenListItemValue(parent);
+      updateListItemChecked(element, this, null, parent);
+    }
+    element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
     return element;
   }
 
-  updateDOM<EditorContext>(
+  updateDOM(
     prevNode: ListItemNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
-    //$FlowFixMe - this is always HTMLListItemElement
-    dom.value = getListItemValue(this);
+    const parent = this.getParent();
+    if ($isListNode(parent)) {
+      updateChildrenListItemValue(parent);
+      updateListItemChecked(dom, this, prevNode, parent);
+    }
+    // $FlowFixMe - this is always HTMLListItemElement
+    dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
     return false;
   }
@@ -74,8 +95,6 @@ export class ListItemNode extends ElementNode {
       }),
     };
   }
-
-  // Mutation
 
   append(...nodes: LexicalNode[]): ListItemNode {
     for (let i = 0; i < nodes.length; i++) {
@@ -106,7 +125,7 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
       } else {
         // Split the list
-        const newList = $createListNode(list.getTag());
+        const newList = $createListNode(list.getListType());
         const children = list.getChildren();
         for (let i = index + 1; i < childrenLength; i++) {
           const child = children[i];
@@ -124,13 +143,6 @@ export class ListItemNode extends ElementNode {
   }
 
   insertAfter(node: LexicalNode): LexicalNode {
-    const siblings = this.getNextSiblings();
-    if ($isListItemNode(node)) {
-      // mark subsequent list items dirty so we update their value attribute.
-      siblings.forEach((sibling) => sibling.markDirty());
-      return super.insertAfter(node);
-    }
-
     const listNode = this.getParentOrThrow();
     if (!$isListNode(listNode)) {
       invariant(
@@ -139,8 +151,18 @@ export class ListItemNode extends ElementNode {
       );
     }
 
+    const siblings = this.getNextSiblings();
+    if ($isListItemNode(node)) {
+      const after = super.insertAfter(node);
+      const afterListNode = node.getParentOrThrow();
+      if ($isListNode(afterListNode)) {
+        updateChildrenListItemValue(afterListNode);
+      }
+      return after;
+    }
+
     // Attempt to merge if the list is of the same type.
-    if ($isListNode(node) && node.getTag() === listNode.getTag()) {
+    if ($isListNode(node) && node.getListType() === listNode.getListType()) {
       let child = node;
       const children = node.getChildren();
       for (let i = children.length - 1; i >= 0; i--) {
@@ -154,15 +176,28 @@ export class ListItemNode extends ElementNode {
     // Split the lists and insert the node in between them
     listNode.insertAfter(node);
     if (siblings.length !== 0) {
-      const newListNode = $createListNode(listNode.getTag());
+      const newListNode = $createListNode(listNode.getListType());
       siblings.forEach((sibling) => newListNode.append(sibling));
       node.insertAfter(newListNode);
     }
     return node;
   }
 
+  remove(preserveEmptyParent?: boolean): void {
+    const nextSibling = this.getNextSibling();
+    super.remove(preserveEmptyParent);
+    if (nextSibling !== null) {
+      const parent = nextSibling.getParent();
+      if ($isListNode(parent)) {
+        updateChildrenListItemValue(parent);
+      }
+    }
+  }
+
   insertNewAfter(): ListItemNode | ParagraphNode {
-    const newElement = $createListItemNode();
+    const newElement = $createListItemNode(
+      this.__checked == null ? undefined : false,
+    );
     this.insertAfter(newElement);
 
     return newElement;
@@ -202,6 +237,30 @@ export class ListItemNode extends ElementNode {
     return true;
   }
 
+  getValue(): number {
+    const self = this.getLatest();
+    return self.__value;
+  }
+
+  setValue(value: number): void {
+    const self = this.getWritable();
+    self.__value = value;
+  }
+
+  getChecked(): boolean | void {
+    const self = this.getLatest();
+    return self.__checked;
+  }
+
+  setChecked(checked: boolean | void): void {
+    const self = this.getWritable();
+    self.__checked = checked;
+  }
+
+  toggleChecked(): void {
+    this.setChecked(!this.__checked);
+  }
+
   getIndent(): number {
     // ListItemNode should always have a ListNode for a parent.
     let listNodeParent = this.getParentOrThrow().getParentOrThrow();
@@ -227,11 +286,18 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
+  canIndent(): false {
+    // Indent/outdent is handled specifically in the RichText logic.
+    return false;
+  }
+
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    const siblings = this.getNextSiblings();
     if ($isListItemNode(nodeToInsert)) {
-      // mark subsequent list items dirty so we update their value attribute.
-      siblings.forEach((sibling) => sibling.markDirty());
+      const parent = this.getParentOrThrow();
+      if ($isListNode(parent)) {
+        const siblings = this.getNextSiblings();
+        updateChildrenListItemValue(parent, siblings);
+      }
     }
     return super.insertBefore(nodeToInsert);
   }
@@ -247,31 +313,22 @@ export class ListItemNode extends ElementNode {
   canMergeWith(node: LexicalNode): boolean {
     return $isParagraphNode(node) || $isListItemNode(node);
   }
-}
 
-function getListItemValue(listItem: ListItemNode): number {
-  const list = listItem.getParent();
-
-  let value = 1;
-  if (list != null) {
-    if (!$isListNode(list)) {
-      invariant(
-        false,
-        'getListItemValue: list node is not parent of list item node',
-      );
-    } else {
-      value = list.getStart();
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
+      return false;
     }
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      this.getTextContent().length === selection.getTextContent().length
+    );
   }
-
-  const siblings = listItem.getPreviousSiblings();
-  for (let i = 0; i < siblings.length; i++) {
-    const sibling = siblings[i];
-    if ($isListItemNode(sibling) && !$isListNode(sibling.getFirstChild())) {
-      value++;
-    }
-  }
-  return value;
 }
 
 function $setListItemThemeClassNames(
@@ -293,6 +350,24 @@ function $setListItemThemeClassNames(
     classesToAdd.push(...listItemClasses);
   }
 
+  if (listTheme) {
+    const parentNode = node.getParent();
+    const isCheckList =
+      $isListNode(parentNode) && parentNode.getListType() === 'check';
+    const checked = node.getChecked();
+    if (!isCheckList || checked) {
+      classesToRemove.push(listTheme.listitemUnchecked);
+    }
+    if (!isCheckList || !checked) {
+      classesToRemove.push(listTheme.listitemChecked);
+    }
+    if (isCheckList) {
+      classesToAdd.push(
+        checked ? listTheme.listitemChecked : listTheme.listitemUnchecked,
+      );
+    }
+  }
+
   if (nestedListItemClassName !== undefined) {
     const nestedListItemClasses = nestedListItemClassName.split(' ');
     if (node.getChildren().some((child) => $isListNode(child))) {
@@ -302,12 +377,46 @@ function $setListItemThemeClassNames(
     }
   }
 
+  if (classesToRemove.length > 0) {
+    removeClassNamesFromElement(dom, ...classesToRemove);
+  }
   if (classesToAdd.length > 0) {
     addClassNamesToElement(dom, ...classesToAdd);
   }
+}
 
-  if (classesToRemove.length > 0) {
-    removeClassNamesFromElement(dom, ...classesToRemove);
+function updateListItemChecked(
+  dom: HTMLElement,
+  listItemNode: ListItemNode,
+  prevListItemNode: ListItemNode | null,
+  listNode: ListNode,
+): void {
+  const isCheckList = listNode.getListType() === 'check';
+  if (isCheckList) {
+    // Only add attributes for leaf list items
+    if ($isListNode(listItemNode.getFirstChild())) {
+      dom.removeAttribute('role');
+      dom.removeAttribute('tabIndex');
+      dom.removeAttribute('aria-checked');
+    } else {
+      dom.setAttribute('role', 'checkbox');
+      dom.setAttribute('tabIndex', '-1');
+
+      if (
+        !prevListItemNode ||
+        listItemNode.__checked !== prevListItemNode.__checked
+      ) {
+        dom.setAttribute(
+          'aria-checked',
+          listItemNode.getChecked() ? 'true' : 'false',
+        );
+      }
+    }
+  } else {
+    // Clean up checked state
+    if (listItemNode.getChecked() != null) {
+      listItemNode.setChecked(undefined);
+    }
   }
 }
 
@@ -315,8 +424,8 @@ function convertListItemElement(domNode: Node): DOMConversionOutput {
   return {node: $createListItemNode()};
 }
 
-export function $createListItemNode(): ListItemNode {
-  return new ListItemNode();
+export function $createListItemNode(checked?: boolean | void): ListItemNode {
+  return new ListItemNode(undefined, checked);
 }
 
 export function $isListItemNode(node: ?LexicalNode): boolean %checks {

@@ -6,7 +6,12 @@
  *
  */
 
-import type {LexicalEditor, RangeSelection} from 'lexical';
+import type {
+  GridSelection,
+  LexicalEditor,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
 
 /*
  * Rich Text
@@ -14,11 +19,11 @@ import type {LexicalEditor, RangeSelection} from 'lexical';
 
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection | NodeSelection,
   editor: LexicalEditor,
 ): void;
 
-export function getHtmlContent(editor: LexicalEditor): string;
+export function $getHtmlContent(editor: LexicalEditor): string;
 export function $getLexicalContent(editor: LexicalEditor): string;
 
 /*

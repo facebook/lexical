@@ -6,7 +6,6 @@
  *
  * @flow strict
  */
-
 import type {
   EditorConfig,
   EditorThemeClasses,
@@ -34,7 +33,7 @@ export class ParagraphNode extends ElementNode {
 
   // View
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const dom = document.createElement('p');
     const classNames = getCachedClassNameArray<EditorThemeClasses>(
       config.theme,

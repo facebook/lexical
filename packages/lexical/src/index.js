@@ -45,6 +45,7 @@ import {$isGridRowNode, GridRowNode} from './nodes/LexicalGridRowNode';
 import {
   $createLineBreakNode,
   $isLineBreakNode,
+  LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
 import {
   $createParagraphNode,
@@ -95,6 +96,7 @@ export {
   GridCellNode,
   GridNode,
   GridRowNode,
+  LineBreakNode,
   ParagraphNode,
   TextNode,
   VERSION,

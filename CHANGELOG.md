@@ -1,3 +1,56 @@
+## 0.2.9 (May 11, 2022)
+
+- Fix a breaking change to the NPM release (#2144)
+
+## 0.2.8 (May 11, 2022)
+
+- Migrate more packages to TypeScript (#2135)
+- Fix several TypeScript type bugs (#2116)
+- Fix several Markdown export bugs (#2136m #2137, #2139)
+## 0.2.7 (May 9, 2022)
+
+- Fix Firefox composition bug with emojis (#2109)
+- Add a cache for selection.getNodes() (#2088)
+- remove root style from theme (#2084)
+- Fix character styles position + caret color (#2080)
+- Remove TextNode __marks (#2022)
+- Move isComposing to TextNode (#2032)
+- Markdown import/export/shortcuts (#1998)
+- Improve Lexical -> HTML and Lexical -> Lexical Copy and Paste Data Model Conversion (#1996)
+- Headless editor mode (#2046)
+- Checklist support (#2050)
+- Type definitions fixes (#2076, #2030, #2023, #2028)
+- Adding support for parsed JSON in addition to stringified JSON (#2055)
+- Remove root style from theme (#2084)
+- Fix character styles position + caret color (#2080)
+- Multiple fixes for node insertion and selection
+- Documentation updates
+
+## 0.2.5 (April 28, 2022)
+
+- Add TextMarks to TextNode (#1912)
+- Fix various collab bugs with lists (#1984)
+- Fix cached getTextContent() to reflect new lines (#1993)
+- Fix equation node handling on Android (#1968) 
+- Fix formatting on embeds (#1963)
+- Improve multi element indentation - added ElementNode.canIndent (#1982)
+- Fix bugs around pressing the enter key in Safari (#1943)
+- Fix delete empty lines on tables (#1905)
+- Fix copy-paste format loss (#1913)
+- Fix memory leak with EditorContext (#1767) 
+- Fix various selection issues on node boundaries (#1917)
+- Fix some .js.flow and d.ts types
+
+## 0.2.4 (April 21, 2022)
+
+- Add subscript/superscript elements to TextNode (#1903)
+- Do not reconcile selection during readOnly (#1900)
+- Add embed block to playground (#1895)
+- Fix list outdent & indent bug (#1883)
+- Excalidraw fixes (#1871)
+- Updates to type definitions for Flow and TS
+- Updates to documentation
+
 ## 0.2.3 (April 19, 2022)
 
 - Fix bug in lists causing extra list items to be appended in some cases. (#1802)

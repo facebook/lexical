@@ -21,7 +21,7 @@ export class VideoNode extends DecoratorNode {
     this.__url = url;
   }
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const div = document.createElement('div');
     div.style.display = 'contents';
     return div;
@@ -103,13 +103,11 @@ import {INSERT_VIDEO_COMMAND} from 'VideoPlugin';
 
 function ToolbarVideoButton(): React$Node {
   const [editor] = useLexicalComposerContext();
-  const insertVideo = useCallback(
-    (url) => {
+  const insertVideo = url => {
       // Executing command defined in a plugin
       editor.dispatchCommand(INSERT_VIDEO_COMMAND, url);
-    },
-    [editor],
-  );
+    };
+   
   const showDialog = useVideoDialog({onSubmit: insertVideo});
   return <button onClick={showDialog}>Add video</button>;
 }

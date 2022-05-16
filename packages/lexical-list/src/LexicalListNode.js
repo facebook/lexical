@@ -25,28 +25,39 @@ import {$createTextNode, ElementNode} from 'lexical';
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
 
+export type ListType = 'number' | 'bullet' | 'check';
+
 export type ListNodeTagType = 'ul' | 'ol';
 
 export class ListNode extends ElementNode {
   __tag: ListNodeTagType;
   __start: number;
+  __listType: ListType;
 
   static getType(): string {
     return 'list';
   }
 
   static clone(node: ListNode): ListNode {
-    return new ListNode(node.__tag, node.__start, node.__key);
+    const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
+    return new ListNode(listType, node.__start, node.__key);
   }
 
-  constructor(tag: ListNodeTagType, start: number, key?: NodeKey): void {
+  constructor(listType: ListType, start: number, key?: NodeKey): void {
     super(key);
-    this.__tag = tag;
+    // $FlowFixMe added for backward compatibility to map tags to list type
+    const _listType = TAG_TO_LIST_TYPE[listType] || listType;
+    this.__listType = _listType;
+    this.__tag = _listType === 'number' ? 'ol' : 'ul';
     this.__start = start;
   }
 
   getTag(): ListNodeTagType {
     return this.__tag;
+  }
+
+  getListType(): ListType {
+    return this.__listType;
   }
 
   getStart(): number {
@@ -55,20 +66,22 @@ export class ListNode extends ElementNode {
 
   // View
 
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const tag = this.__tag;
     const dom = document.createElement(tag);
     if (this.__start !== 1) {
       dom.setAttribute('start', String(this.__start));
     }
+    // $FlowFixMe internal field
+    dom.__lexicalListType = this.__listType;
     setListThemeClassNames(dom, config.theme, this);
     return dom;
   }
 
-  updateDOM<EditorContext>(
+  updateDOM(
     prevNode: ListNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     if (prevNode.__tag !== this.__tag) {
       return true;
@@ -94,6 +107,10 @@ export class ListNode extends ElementNode {
     return false;
   }
 
+  canIndent(): false {
+    return false;
+  }
+
   append(...nodesToAppend: LexicalNode[]): ListNode {
     for (let i = 0; i < nodesToAppend.length; i++) {
       const currentNode = nodesToAppend[i];
@@ -111,6 +128,9 @@ export class ListNode extends ElementNode {
       }
     }
     return this;
+  }
+  extractWithChild(child: LexicalNode): boolean {
+    return $isListItemNode(child);
   }
 }
 
@@ -158,28 +178,35 @@ function setListThemeClassNames(
     }
   }
 
-  if (classesToAdd.length > 0) {
-    addClassNamesToElement(dom, ...classesToAdd);
-  }
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
+  }
+  if (classesToAdd.length > 0) {
+    addClassNamesToElement(dom, ...classesToAdd);
   }
 }
 
 function convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
-  if (nodeName === 'ol' || nodeName === 'ul') {
-    node = $createListNode(nodeName);
+  if (nodeName === 'ol') {
+    node = $createListNode('number');
+  } else if (nodeName === 'ul') {
+    node = $createListNode('bullet');
   }
   return {node};
 }
 
+const TAG_TO_LIST_TYPE: $ReadOnly<{[ListNodeTagType]: ListType}> = {
+  ol: 'number',
+  ul: 'bullet',
+};
+
 export function $createListNode(
-  tag: ListNodeTagType,
+  listType: ListType,
   start?: number = 1,
 ): ListNode {
-  return new ListNode(tag, start);
+  return new ListNode(listType, start);
 }
 
 export function $isListNode(node: ?LexicalNode): boolean %checks {

@@ -11,5 +11,5 @@ import type {LexicalEditor, EditorThemeClasses} from 'lexical';
 export default function LexicalNestedComposer(arg0: {
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
-  children: JSX.Element | JSX.Element[] | null;
+  children: JSX.Element | (JSX.Element | string | null)[] | null;
 }): JSX.Element | null;

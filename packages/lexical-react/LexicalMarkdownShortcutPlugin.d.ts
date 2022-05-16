@@ -6,4 +6,8 @@
  *
  */
 
-export default function LexicalMarkdownShortcutPlugin(): JSX.Element | null;
+import type {Transformer} from '@lexical/markdown';
+
+export default function LexicalMarkdownShortcutPlugin(arg0: {
+  transformers?: Array<Transformer>;
+}): JSX.Element | null;

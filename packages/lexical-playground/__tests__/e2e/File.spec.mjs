@@ -6,12 +6,7 @@
  *
  */
 
-import {
-  moveRight,
-  selectAll,
-  selectCharacters,
-  toggleBold,
-} from '../keyboardShortcuts/index.mjs';
+import {selectAll, toggleBold} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
@@ -30,10 +25,10 @@ test.describe('File', () => {
   test(`Can import/export`, async ({page, isPlainText}) => {
     test.skip(isPlainText);
     await focusEditor(page);
-    await page.keyboard.type('Hello World');
-    await selectCharacters(page, 'left', 'World'.length);
     await toggleBold(page);
-    await moveRight(page);
+    await page.keyboard.type('Hello');
+    await toggleBold(page);
+    await page.keyboard.type(' World');
     await page.keyboard.press('Enter');
     await page.keyboard.type('1. one');
     await page.keyboard.press('Enter');
@@ -48,12 +43,12 @@ test.describe('File', () => {
       <p
         class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
         dir="ltr">
-        <span data-lexical-text="true">Hello</span>
         <strong
           class="PlaygroundEditorTheme__textBold"
           data-lexical-text="true">
-          World
+          Hello
         </strong>
+        <span data-lexical-text="true">World</span>
       </p>
       <ol class="PlaygroundEditorTheme__ol1">
         <li

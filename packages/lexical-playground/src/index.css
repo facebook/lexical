@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 @import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
@@ -129,10 +128,6 @@ pre::-webkit-scrollbar-thumb {
   background-color: #444;
 }
 
-.editor-dev-button + .editor-dev-button {
-  margin-left: 8px;
-}
-
 .editor-dev-button::after {
   content: '';
   position: absolute;
@@ -195,13 +190,13 @@ pre::-webkit-scrollbar-thumb {
 
 #options-button {
   position: fixed;
-  right: 20px;
+  left: 20px;
   bottom: 20px;
 }
 
 #test-recorder-button {
   position: fixed;
-  right: 70px;
+  left: 70px;
   bottom: 20px;
 }
 
@@ -264,7 +259,7 @@ pre::-webkit-scrollbar-thumb {
 
 .link-editor {
   position: absolute;
-  z-index: 100;
+  z-index: 10;
   top: -10000px;
   left: -10000px;
   margin-top: -6px;
@@ -331,6 +326,14 @@ i.strikethrough {
   background-image: url(images/icons/type-strikethrough.svg);
 }
 
+i.subscript {
+  background-image: url(images/icons/type-subscript.svg);
+}
+
+i.superscript {
+  background-image: url(images/icons/type-superscript.svg);
+}
+
 i.link {
   background-image: url(images/icons/link.svg);
 }
@@ -341,6 +344,10 @@ i.horizontal-rule {
 
 .icon.plus {
   background-image: url(images/icons/plus.svg);
+}
+
+.icon.dropdown-more {
+  background-image: url(images/icons/dropdown-more.svg);
 }
 
 i.image {
@@ -585,7 +592,7 @@ select.font-family {
 }
 
 .dropdown {
-  z-index: 5;
+  z-index: 10;
   display: block;
   position: absolute;
   box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
@@ -680,12 +687,17 @@ select.font-family {
 }
 
 .icon.bullet-list,
-.icon.ul {
+.icon.bullet {
   background-image: url(images/icons/list-ul.svg);
 }
 
+.icon.check-list,
+.icon.check {
+  background-image: url(images/icons/square-check.svg);
+}
+
 .icon.numbered-list,
-.icon.ol {
+.icon.number {
   background-image: url(images/icons/list-ol.svg);
 }
 
@@ -700,7 +712,7 @@ select.font-family {
 .switches {
   z-index: 6;
   position: fixed;
-  right: 10px;
+  left: 10px;
   bottom: 70px;
   animation: slide-in 0.4s ease;
 }
@@ -708,7 +720,7 @@ select.font-family {
 @keyframes slide-in {
   0% {
     opacity: 0;
-    transform: translateX(200px);
+    transform: translateX(-200px);
   }
   100% {
     opacity: 1;
@@ -838,56 +850,66 @@ select.font-family {
   background-color: rgba(60, 132, 244, 0.5);
 }
 
-.editor-shell .editor-image .image-resizer-sw {
+.editor-shell .editor-image .image-resizer {
   display: block;
   width: 7px;
   height: 7px;
   position: absolute;
-  bottom: -2px;
-  left: -6px;
   background-color: rgb(60, 132, 244);
   border: 1px solid #fff;
-  cursor: sw-resize;
 }
 
-.editor-shell .editor-image .image-resizer-ne {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-n {
+  top: -6px;
+  left: 48%;
+  cursor: n-resize;
+}
+
+.editor-shell .editor-image .image-resizer.image-resizer-ne {
   top: -6px;
   right: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: ne-resize;
 }
 
-.editor-shell .editor-image .image-resizer-nw {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
-  cursor: nw-resize;
+.editor-shell .editor-image .image-resizer.image-resizer-e {
+  bottom: 48%;
+  right: -6px;
+  cursor: e-resize;
 }
 
-.editor-shell .editor-image .image-resizer-se {
-  display: block;
-  width: 7px;
-  height: 7px;
-  position: absolute;
+.editor-shell .editor-image .image-resizer.image-resizer-se {
   bottom: -2px;
   right: -6px;
-  background-color: rgb(60, 132, 244);
-  border: 1px solid #fff;
   cursor: nwse-resize;
+}
+
+.editor-shell .editor-image .image-resizer.image-resizer-s {
+  bottom: -2px;
+  left: 48%;
+  cursor: s-resize;
+}
+
+.editor-shell .editor-image .image-resizer.image-resizer-sw {
+  bottom: -2px;
+  left: -6px;
+  cursor: sw-resize;
+}
+
+.editor-shell .editor-image .image-resizer.image-resizer-w {
+  bottom: 48%;
+  left: -6px;
+  cursor: w-resize;
+}
+
+.editor-shell .editor-image .image-resizer.image-resizer-nw {
+  top: -6px;
+  left: -6px;
+  cursor: nw-resize;
 }
 
 .emoji {
   color: transparent;
+  caret-color: rgb(5, 5, 5);
   background-size: 16px 16px;
   background-position: center;
   background-repeat: no-repeat;
@@ -1131,6 +1153,7 @@ button.action-button:disabled {
   border-top-right-radius: 10px;
   vertical-align: middle;
   overflow: auto;
+  height: 36px;
 }
 
 .toolbar button.toolbar-item {
@@ -1195,8 +1218,7 @@ button.action-button:disabled {
 }
 
 .toolbar select.code-language {
-  text-transform: capitalize;
-  width: 130px;
+  width: 150px;
 }
 
 .toolbar .toolbar-item .text {
@@ -1246,18 +1268,25 @@ button.action-button:disabled {
   margin: 0 4px;
 }
 
+.sticky-note-container {
+  position: absolute;
+  z-index: 9;
+  width: 120px;
+  display: inline-block;
+}
+
 .sticky-note {
   line-height: 1;
   text-align: left;
   width: 120px;
   margin: 25px;
   padding: 20px 10px;
-  position: absolute;
+  position: relative;
   border: 1px solid #e8e8e8;
   font-family: 'Reenie Beanie';
   font-size: 24px;
   border-bottom-right-radius: 60px 5px;
-  display: inline-block;
+  display: block;
   cursor: move;
 }
 
@@ -1296,7 +1325,7 @@ button.action-button:disabled {
   );
 }
 
-.sticky-note.dragging {
+.sticky-note-container.dragging {
   transition: none !important;
 }
 
@@ -1356,7 +1385,7 @@ button.action-button:disabled {
   padding: 4px;
   vertical-align: middle;
   position: absolute;
-  z-index: 100;
+  z-index: 10;
   top: -10000px;
   left: -10000px;
   margin-top: -6px;
@@ -1491,4 +1520,47 @@ button.action-button:disabled {
 .excalidraw-button.selected {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
+}
+
+.embed-block.focused {
+  outline: 2px solid rgb(60, 132, 244);
+  user-select: none;
+}
+
+.github-corner:hover .octo-arm {
+  animation: octocat-wave 560ms ease-in-out;
+}
+@keyframes octocat-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  60% {
+    transform: rotate(-25deg);
+  }
+  40%,
+  80% {
+    transform: rotate(10deg);
+  }
+}
+@media (max-width: 500px) {
+  .github-corner:hover .octo-arm {
+    animation: none;
+  }
+  .github-corner .octo-arm {
+    animation: octocat-wave 560ms ease-in-out;
+  }
+}
+
+.spacer {
+  letter-spacing: -2px;
+}
+
+button.item.dropdown-item-active {
+  background-color: rgba(223, 232, 250, 0.3);
+}
+
+button.item.dropdown-item-active i {
+  opacity: 1;
 }

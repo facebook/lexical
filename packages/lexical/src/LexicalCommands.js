@@ -40,6 +40,7 @@ export const KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
 export const KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent | null> =
   createCommand();
+export const KEY_SPACE_COMMAND: LexicalCommand<KeyboardEvent> = createCommand();
 export const KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
 export const KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent> =
@@ -53,6 +54,7 @@ export const DROP_COMMAND: LexicalCommand<DragEvent> = createCommand();
 export const FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType> =
   createCommand();
 export const DRAGSTART_COMMAND: LexicalCommand<DragEvent> = createCommand();
+export const DRAGEND_COMMAND: LexicalCommand<DragEvent> = createCommand();
 export const COPY_COMMAND: LexicalCommand<ClipboardEvent> = createCommand();
 export const CUT_COMMAND: LexicalCommand<ClipboardEvent> = createCommand();
 export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand();

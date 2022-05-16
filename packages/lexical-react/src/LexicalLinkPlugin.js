@@ -75,6 +75,11 @@ function toggleLink(url: null | string) {
         ) {
           return;
         }
+        if ($isLinkNode(parent)) {
+          linkNode = parent;
+          parent.setURL(url);
+          return;
+        }
         if (!parent.is(prevParent)) {
           prevParent = parent;
           linkNode = $createLinkNode(url);

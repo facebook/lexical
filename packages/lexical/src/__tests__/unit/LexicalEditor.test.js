@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -986,6 +986,26 @@ describe('LexicalEditor tests', () => {
     let textKey;
     let parsedEditorState;
 
+    it('parses parsed JSON', async () => {
+      await update(() => {
+        const paragraph = $createParagraphNode();
+        originalText = $createTextNode('Hello world');
+        originalText.select(6, 11);
+        paragraph.append(originalText);
+        $getRoot().append(paragraph);
+      });
+      const stringifiedEditorState = JSON.stringify(
+        editor.getEditorState().toJSON(),
+      );
+      const parsedEditorStateFromObject = editor.parseEditorState(
+        JSON.parse(stringifiedEditorState),
+      );
+      parsedEditorStateFromObject.read(() => {
+        const root = $getRoot();
+        expect(root.getTextContent()).toMatch(/Hello world/);
+      });
+    });
+
     describe('range selection', () => {
       beforeEach(async () => {
         init();
@@ -1214,11 +1234,11 @@ describe('LexicalEditor tests', () => {
 
       it('Remaps the selection keys of a stringified editor state', async () => {
         expect(parsedSelection.gridKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.anchorCellKey).not.toEqual(originalText.__key);
-        expect(parsedSelection.focusCellKey).not.toEqual(originalText.__key);
+        expect(parsedSelection.anchor.key).not.toEqual(originalText.__key);
+        expect(parsedSelection.focus.key).not.toEqual(originalText.__key);
         expect(parsedSelection.gridKey).toEqual(parsedText.__key);
-        expect(parsedSelection.anchorCellKey).toEqual(parsedText.__key);
-        expect(parsedSelection.focusCellKey).toEqual(parsedText.__key);
+        expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
+        expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
     });
   });

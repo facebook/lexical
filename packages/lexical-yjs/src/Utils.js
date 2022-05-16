@@ -344,7 +344,7 @@ export function getPositionFromElementAndOffset(
       if (textOffset < 0) {
         textOffset = 0;
       }
-      const diffLength = size - textOffset;
+      const diffLength = index - offset;
       return {
         length: diffLength,
         node: child,

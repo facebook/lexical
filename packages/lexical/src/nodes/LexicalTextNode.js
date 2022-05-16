@@ -29,6 +29,8 @@ import {
   IS_ITALIC,
   IS_SEGMENTED,
   IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
   IS_TOKEN,
   IS_UNDERLINE,
   IS_UNMERGEABLE,
@@ -64,9 +66,19 @@ export type TextFormatType =
 
 export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 
+export type TextMark = {end: null | number, id: string, start: null | number};
+
+export type TextMarks = Array<TextMark>;
+
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
     return 'code';
+  }
+  if (format & IS_SUBSCRIPT) {
+    return 'sub';
+  }
+  if (format & IS_SUPERSCRIPT) {
+    return 'sup';
   }
   return null;
 }
@@ -205,13 +217,13 @@ function setTextContent(
   }
 }
 
-function createTextInnerDOM<EditorContext>(
+function createTextInnerDOM(
   innerDOM: HTMLElement,
   node: TextNode,
   innerTag: string,
   format: number,
   text: string,
-  config: EditorConfig<EditorContext>,
+  config: EditorConfig,
 ): void {
   setTextContent(text, innerDOM, node);
   const theme = config.theme;
@@ -262,6 +274,10 @@ export class TextNode extends LexicalNode {
     return self.__mode === IS_TOKEN;
   }
 
+  isComposing(): boolean {
+    return this.__key === $getCompositionKey();
+  }
+
   isSegmented(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_SEGMENTED;
@@ -310,10 +326,7 @@ export class TextNode extends LexicalNode {
 
   // View
 
-  // $FlowFixMe: Revise typings for EditorContext
-  createDOM<EditorContext: Object>(
-    config: EditorConfig<EditorContext>,
-  ): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const format = this.__format;
     const outerTag = getElementOuterTag(this, format);
     const innerTag = getElementInnerTag(this, format);
@@ -332,11 +345,11 @@ export class TextNode extends LexicalNode {
     }
     return dom;
   }
-  // $FlowFixMe: Revise typings for EditorContext
-  updateDOM<EditorContext: Object>(
+
+  updateDOM(
     prevNode: TextNode,
     dom: HTMLElement,
-    config: EditorConfig<EditorContext>,
+    config: EditorConfig,
   ): boolean {
     const nextText = this.__text;
     const prevFormat = prevNode.__format;
@@ -559,7 +572,9 @@ export class TextNode extends LexicalNode {
 
     const updatedText =
       text.slice(0, index) + newText + text.slice(index + delCount);
-    return writableSelf.setTextContent(updatedText);
+
+    writableSelf.__text = updatedText;
+    return writableSelf;
   }
 
   canInsertTextBefore(): boolean {
@@ -625,6 +640,7 @@ export class TextNode extends LexicalNode {
     // Then handle all other parts
     const splitNodes = [writableNode];
     let textSize = firstPart.length;
+
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
@@ -735,11 +751,12 @@ export class TextNode extends LexicalNode {
         selection.dirty = true;
       }
     }
-    const newText = isBefore ? target.__text + text : text + target.__text;
+    const targetText = target.__text;
+    const newText = isBefore ? targetText + text : text + targetText;
     this.setTextContent(newText);
-
+    const writableSelf = this.getWritable();
     target.remove();
-    return this.getLatest();
+    return writableSelf;
   }
 
   isTextEntity(): boolean {

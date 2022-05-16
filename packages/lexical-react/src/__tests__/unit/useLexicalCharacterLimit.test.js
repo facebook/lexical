@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,8 +21,8 @@ import {
   $getRoot,
   $getSelection,
 } from 'lexical';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {mergePrevious} from '../../DEPRECATED_useLexicalCharacterLimit';
 
 // No idea why we suddenly need to do this, but it fixes the tests
@@ -90,7 +90,7 @@ describe('LexicalNodeHelpers tests', () => {
           const editor: LexicalEditor = testEnv.editor;
           const [overflowLeftKey, overflowRightKey] =
             await initializeEditorWithLeftRightOverflowNodes();
-          let text2Key: NodeKey;
+          let text1Key: NodeKey;
           await editor.update(() => {
             const overflowLeft = $getNodeByKey(overflowLeftKey);
             const overflowRight = $getNodeByKey(overflowRightKey);
@@ -98,7 +98,7 @@ describe('LexicalNodeHelpers tests', () => {
             const text2 = $createTextNode('2');
             const text3 = $createTextNode('3');
             const text4 = $createTextNode('4');
-            text2Key = text2.getKey();
+            text1Key = text1.getKey();
             overflowLeft.append(text1, text2);
             text2.toggleFormat('bold'); // Prevent merging with text1
             overflowRight.append(text3, text4);
@@ -116,10 +116,10 @@ describe('LexicalNodeHelpers tests', () => {
             if (selection === null) {
               throw new Error('Lost selection');
             }
-            expect(selection.anchor.key).toBe(text2Key);
-            expect(selection.anchor.offset).toBe(0);
-            expect(selection.focus.key).toBe(text2Key);
-            expect(selection.anchor.offset).toBe(0);
+            expect(selection.anchor.key).toBe(text1Key);
+            expect(selection.anchor.offset).toBe(1);
+            expect(selection.focus.key).toBe(text1Key);
+            expect(selection.anchor.offset).toBe(1);
           });
         });
 
@@ -128,7 +128,7 @@ describe('LexicalNodeHelpers tests', () => {
           const [overflowLeftKey, overflowRightKey] =
             await initializeEditorWithLeftRightOverflowNodes();
           let text2Key: NodeKey;
-          let text4Key: NodeKey;
+          let text3Key: NodeKey;
           await editor.update(() => {
             const overflowLeft = $getNodeByKey(overflowLeftKey);
             const overflowRight = $getNodeByKey(overflowRightKey);
@@ -137,7 +137,7 @@ describe('LexicalNodeHelpers tests', () => {
             const text3 = $createTextNode('3');
             const text4 = $createTextNode('4');
             text2Key = text2.getKey();
-            text4Key = text4.getKey();
+            text3Key = text3.getKey();
             overflowLeft.append(text1);
             overflowLeft.append(text2);
             text2.toggleFormat('bold'); // Prevent merging with text1
@@ -161,8 +161,8 @@ describe('LexicalNodeHelpers tests', () => {
             }
             expect(selection.anchor.key).toBe(text2Key);
             expect(selection.anchor.offset).toBe(0);
-            expect(selection.focus.key).toBe(text4Key);
-            expect(selection.anchor.offset).toBe(0);
+            expect(selection.focus.key).toBe(text3Key);
+            expect(selection.focus.offset).toBe(1);
           });
         });
       });

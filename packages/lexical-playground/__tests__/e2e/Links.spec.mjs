@@ -23,6 +23,8 @@ import {
   focusEditor,
   html,
   initialize,
+  keyDownCtrlOrMeta,
+  keyUpCtrlOrMeta,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -126,6 +128,616 @@ test.describe('Links', () => {
       anchorPath: [0, 0, 0],
       focusOffset: 5,
       focusPath: [0, 0, 0],
+    });
+  });
+
+  test(`Can convert multi-formatted text into a link (backward)`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('b');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type('def');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('b');
+    await keyUpCtrlOrMeta(page);
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('i');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type('ghi');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('i');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type(' ');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            def
+          </strong>
+          <em
+            class="PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            ghi
+          </em>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 3, 0],
+      focusOffset: 1,
+      focusPath: [0, 3, 0],
+    });
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 9);
+
+    // link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              def
+            </strong>
+            <em
+              class="PlaygroundEditorTheme__textItalic"
+              data-lexical-text="true">
+              ghi
+            </em>
+          </a>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    // set url
+    await click(page, '.link-edit');
+    await focus(page, '.link-input');
+    await page.keyboard.type('facebook.com');
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://facebook.com">
+            <span data-lexical-text="true">abc</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              def
+            </strong>
+            <em
+              class="PlaygroundEditorTheme__textItalic"
+              data-lexical-text="true">
+              ghi
+            </em>
+          </a>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can convert multi-formatted text into a link (forward)`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('b');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type('def');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('b');
+    await keyUpCtrlOrMeta(page);
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('i');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type('ghi');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('i');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type(' ');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            def
+          </strong>
+          <em
+            class="PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            ghi
+          </em>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 3, 0],
+      focusOffset: 1,
+      focusPath: [0, 3, 0],
+    });
+
+    await moveLeft(page, 10);
+    await selectCharacters(page, 'right', 9);
+
+    // link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              def
+            </strong>
+            <em
+              class="PlaygroundEditorTheme__textItalic"
+              data-lexical-text="true">
+              ghi
+            </em>
+          </a>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    // set url
+    await click(page, '.link-edit');
+    await focus(page, '.link-input');
+    await page.keyboard.type('facebook.com');
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://facebook.com">
+            <span data-lexical-text="true">abc</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              def
+            </strong>
+            <em
+              class="PlaygroundEditorTheme__textItalic"
+              data-lexical-text="true">
+              ghi
+            </em>
+          </a>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link in a list and insert a paragraph at the start`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('- hello');
+    await selectCharacters(page, 'left', 5);
+
+    // link
+    await click(page, '.link');
+
+    await moveLeft(page, 1);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://">
+              <span data-lexical-text="true">hello</span>
+            </a>
+          </li>
+        </ul>
+      `,
+    );
+
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="2">
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://">
+              <span data-lexical-text="true">hello</span>
+            </a>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
+  test(`Can create a link with some text after, insert paragraph, then backspace, it should merge correctly`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc def ');
+    await moveLeft(page, 5);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+
+    await moveLeft(page, 1);
+    await moveRight(page, 2);
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">ab</span>
+          </a>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">c</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">ab</span>
+          </a>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">c</span>
+          </a>
+          <span data-lexical-text="true">def</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link then replace it with plain text`, async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc ');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+          </a>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.type('a');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link then replace it with plain text #2`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc ');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await selectCharacters(page, 'left', 1);
+    await page.keyboard.type('a');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link then partly replace it with plain text`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc ');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 3);
+
+    // link
+    await click(page, '.link');
+
+    await selectCharacters(page, 'right', 1);
+    await page.keyboard.type('a');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">a</span>
+          </a>
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can convert multi-formatted text into a link and then modify text after`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(' abc');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('b');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type('def');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('b');
+    await keyUpCtrlOrMeta(page);
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('i');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type('ghi');
+
+    await keyDownCtrlOrMeta(page);
+    await page.keyboard.press('i');
+    await keyUpCtrlOrMeta(page);
+
+    await page.keyboard.type(' ');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            def
+          </strong>
+          <em
+            class="PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            ghi
+          </em>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 3, 0],
+      focusOffset: 1,
+      focusPath: [0, 3, 0],
+    });
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 9);
+
+    // link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              def
+            </strong>
+            <em
+              class="PlaygroundEditorTheme__textItalic"
+              data-lexical-text="true">
+              ghi
+            </em>
+          </a>
+          <span data-lexical-text="true"></span>
+        </p>
+      `,
+    );
+
+    await moveRight(page, 1);
+    await selectCharacters(page, 'right', 1);
+    await page.keyboard.type('a');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true"></span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">abc</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              def
+            </strong>
+            <em
+              class="PlaygroundEditorTheme__textItalic"
+              data-lexical-text="true">
+              ghi
+            </em>
+          </a>
+          <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 2, 0],
+      focusOffset: 1,
+      focusPath: [0, 2, 0],
     });
   });
 
@@ -312,8 +924,8 @@ test.describe('Links', () => {
       });
     } else {
       await assertSelection(page, {
-        anchorOffset: 6,
-        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        anchorPath: [0, 1],
         focusOffset: 5,
         focusPath: [0, 1, 0, 0],
       });
@@ -431,8 +1043,8 @@ test.describe('Links', () => {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
-        focusOffset: 6,
-        focusPath: [0, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 1],
       });
     }
 
@@ -651,7 +1263,7 @@ test.describe('Links', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type(' world');
 
-    await moveLeft(page, 6);
+    await moveLeft(page, 6, 100);
 
     await page.keyboard.press('Enter');
 

@@ -51,10 +51,7 @@ export class TableNode extends GridNode {
     super(key);
   }
 
-  createDOM<EditorContext>(
-    config: EditorConfig<EditorContext>,
-    editor: LexicalEditor,
-  ): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
 
     addClassNamesToElement(tableElement, config.theme.table);
@@ -185,6 +182,10 @@ export class TableNode extends GridNode {
 
   canSelectBefore(): true {
     return true;
+  }
+
+  canIndent(): false {
+    return false;
   }
 }
 

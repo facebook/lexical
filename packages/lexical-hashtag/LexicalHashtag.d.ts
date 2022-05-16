@@ -13,9 +13,11 @@ export declare class HashtagNode extends TextNode {
   static getType(): string;
   static clone(node: HashtagNode): HashtagNode;
   constructor(text: string, key?: NodeKey);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   canInsertTextBefore(): boolean;
   isTextEntity(): true;
 }
 export function $createHashtagNode(text?: string): TextNode;
-export function $isHashtagNode(node: LexicalNode | null | undefined): boolean;
+export function $isHashtagNode(
+  node: LexicalNode | null | undefined,
+): node is HashtagNode;

@@ -27,6 +27,19 @@ Here are some examples of what you can do with Lexical:
 - [Plain text sandbox](https://codesandbox.io/s/lexical-plain-text-example-g932e)
 - [Rich text sandbox](https://codesandbox.io/s/lexical-rich-text-example-5tncvy)
 
+
+---
+
+- [Getting started with React](#getting-started-with-react)
+
+- [Lexical is a framework](#lexical-is-a-framework)
+  
+- [Working with Lexical](#working-with-lexical)
+
+- [Contributing to Lexical](#contributing-to-lexical)
+
+---
+
 ## Getting started with React
 
 > Note: Lexical is not only limited to React. Lexical can support any underlying DOM based library once bindings for that library have been created.
@@ -138,7 +151,7 @@ Editor States are also fully serializable to JSON and can easily be serialized b
 
 When you want to change something in an Editor State, you must do it via an update, `editor.update(() => {...})`. The closure passed
 to the update call is important. It's a place where you have full "lexical" context of the active editor state, and it exposes
-access to the underling Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
+access to the underlying Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
 where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropriate error.
 For those familiar with React Hooks, you can think of these has having a similar functionality (except `$` functions can be used in any order).
 
@@ -301,10 +314,10 @@ editor.registerUpdateListener(({editorState}) => {
 
 3. Start local server and run tests
    - `npm run start`
-   - `npm run test`
+   - `npm run test-e2e:chromium` to run only chromium e2e tests
      - The server needs to be running for the e2e tests
 
-Note: for collaboration, ensure you start the websocket server separately with `npm run collab`.
+`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
 
 ### Optional but recommended, use VSCode for development
 

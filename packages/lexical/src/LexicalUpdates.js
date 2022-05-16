@@ -143,7 +143,12 @@ function $normalizeAllDirtyTextNodes(
   const nodeMap = editorState._nodeMap;
   for (const nodeKey of dirtyLeaves) {
     const node = nodeMap.get(nodeKey);
-    if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
+    if (
+      $isTextNode(node) &&
+      node.isAttached() &&
+      node.isSimpleText() &&
+      !node.isUnmergeable()
+    ) {
       $normalizeTextNode(node);
     }
   }
@@ -182,7 +187,12 @@ function $applyAllTransforms(
       editor._dirtyLeaves = new Set();
       for (const nodeKey of untransformedDirtyLeaves) {
         const node = nodeMap.get(nodeKey);
-        if ($isTextNode(node) && node.isSimpleText() && !node.isUnmergeable()) {
+        if (
+          $isTextNode(node) &&
+          node.isAttached() &&
+          node.isSimpleText() &&
+          !node.isUnmergeable()
+        ) {
           $normalizeTextNode(node);
         }
         if (
@@ -314,7 +324,8 @@ function handleDEVOnlyPendingUpdateGuarantees(
 export function commitPendingUpdates(editor: LexicalEditor): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
-  if (rootElement === null || pendingEditorState === null) {
+  const headless = editor._headless;
+  if ((rootElement === null && !headless) || pendingEditorState === null) {
     return;
   }
   const currentEditorState = editor._editorState;
@@ -335,22 +346,24 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._updating = true;
 
   try {
-    const mutatedNodes = updateEditorState(
-      rootElement,
-      currentEditorState,
-      pendingEditorState,
-      currentSelection,
-      pendingSelection,
-      needsUpdate,
-      editor,
-    );
-    if (mutatedNodes !== null) {
-      triggerMutationListeners(
-        editor,
+    if (!headless && rootElement !== null) {
+      const mutatedNodes = updateEditorState(
+        rootElement,
         currentEditorState,
         pendingEditorState,
-        mutatedNodes,
+        currentSelection,
+        pendingSelection,
+        needsUpdate,
+        editor,
       );
+      if (mutatedNodes !== null) {
+        triggerMutationListeners(
+          editor,
+          currentEditorState,
+          pendingEditorState,
+          mutatedNodes,
+        );
+      }
     }
   } catch (error) {
     // Report errors
@@ -458,7 +471,7 @@ export function triggerListeners(
 export function triggerCommandListeners<P>(
   editor: LexicalEditor,
   type: LexicalCommand<P>,
-  payload?: P,
+  payload: P,
 ): boolean {
   if (editor._updating === false || activeEditor !== editor) {
     let returnVal = false;
@@ -513,9 +526,12 @@ function triggerDeferredUpdateCallbacks(editor: LexicalEditor): void {
   }
 }
 
-function processNestedUpdates(editor: LexicalEditor): boolean {
+function processNestedUpdates(
+  editor: LexicalEditor,
+  initialSkipTransforms?: boolean,
+): boolean {
   const queuedUpdates = editor._updates;
-  let skipTransforms = false;
+  let skipTransforms = initialSkipTransforms || false;
   // Updates might grow as we process them, we so we'll need
   // to handle each update as we go until the updates array is
   // empty.
@@ -582,12 +598,12 @@ function beginUpdate(
   activeEditor = editor;
 
   try {
-    if (editorStateWasCloned) {
+    if (editorStateWasCloned && !editor._headless) {
       pendingEditorState._selection = internalCreateSelection(editor);
     }
     const startingCompositionKey = editor._compositionKey;
     updateFn();
-    skipTransforms = processNestedUpdates(editor);
+    skipTransforms = processNestedUpdates(editor, skipTransforms);
     applySelectionTransforms(pendingEditorState, editor);
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       if (skipTransforms) {

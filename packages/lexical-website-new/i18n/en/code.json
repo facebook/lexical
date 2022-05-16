@@ -230,38 +230,6 @@
     "message": "We are deeply committed to being open-source. That means openly helping each other in improving Lexical. We’ve listed some Lexical-related communities that you should check out.",
     "description": "The descriptive text of the header section of the community page"
   },
-  "pages.community.contributors.howToSubHeader": {
-    "message": "How to contribute",
-    "description": "Subtitle of section on contribution guidelines"
-  },
-  "pages.community.contributors.beforeParticipating": {
-    "message": "Before participating in React’s communities, please read our",
-    "description": "Phrase before paragraph listing documents and policies to read before contributing"
-  },
-  "pages.community.contributors.codeOfConductLink": {
-    "message": "Code of Conduct",
-    "description": "Hyperlink to code of conduct"
-  },
-  "pages.community.contributors.covenant": {
-    "message": "We have adopted the",
-    "description": "Phrase about adoption of the contributor covenant policy"
-  },
-  "pages.community.contributors.covenantLink": {
-    "message": "Contributor Covenant",
-    "description": "Hyperlink to contributor covenant"
-  },
-  "pages.community.contributors.guidelines": {
-    "message": "and we expect that all community members adhere to the",
-    "description": "Phrase about our expectations that all contributors adhere to all policies listed herein."
-  },
-  "pages.community.contributors.contributingLink": {
-    "message": "contributing guidelines",
-    "description": "Hyperlink to contributing technical instructions"
-  },
-  "pages.community.contributors.joinUs": {
-    "message": "Once you've read over those, we invite you to join us on the",
-    "description": "Phrase inviting users to join us as contributors after agreeing to the guidelines"
-  },
   "pages.community.contributors.joinUsRepoLink": {
     "message": "Lexical Github repo"
   },
@@ -269,25 +237,13 @@
     "message": "GitHub",
     "description": "Hyperlink to Github"
   },
-  "pages.community.links.github.description": {
-    "message": "Some copy about stack overflow Some copy about stack overflowSome copy about stack overflow",
-    "description": "Description of Github community"
-  },
   "pages.community.links.stackoverflow.title": {
     "message": "Stack Overflow",
     "description": "Hyperlink to Stack Overflow"
   },
-  "pages.community.links.stackoverflow.description": {
-    "message": "Some copy about stack overflow Some copy about stack overflowSome copy about stack overflow",
-    "description": "Description of StackOverflow community"
-  },
   "pages.community.links.discord.title": {
     "message": "Discord",
     "description": "Hyperlink to Discord"
-  },
-  "pages.community.links.discord.description": {
-    "message": "Some copy about stack overflow Some copy about stack overflowSome copy about stack overflow",
-    "description": "Description of Discord community"
   },
   "page.home.features.reliable": {
     "message": "Lexical is comprised of editor instances that each attach to a single content editable element. A set of editor states represent the current and pending states of the editor at any given time.",
@@ -300,5 +256,100 @@
   "page.home.features.fast": {
     "message": "Lexical is minimal. It doesn't directly concern itself with UI components, toolbars or rich-text features and markdown. The logic for these features can be included via a plugin interface.",
     "description": "short description of why Lexical is fast"
+  },
+  "pages.community.contributors.subHeader": {
+    "message": "Contributors",
+    "description": "Subtitle of section on contributors"
+  },
+  "pages.community.contributors.subtext": {
+    "message": "Lexical development is led by small team at Meta. It also receives contributions from people all over the world. Here are just a few members.",
+    "description": "The descriptive text of the header section of the community page"
+  },
+  "pages.community.contributors.gitHubLink": {
+    "message": "See the rest of the contributors on Github.",
+    "description": "Link to GitHub's contribute page for the repository"
+  },
+  "pages.community.howTo.howToSubHeader": {
+    "message": "How to contribute",
+    "description": "Subtitle of section on contribution guidelines"
+  },
+  "pages.community.howTo.beforeParticipating": {
+    "message": "Before participating in React's communities, please read our",
+    "description": "Phrase before paragraph listing documents and policies to read before contributing"
+  },
+  "pages.community.howTo.codeOfConductLink": {
+    "message": "Code of Conduct",
+    "description": "Hyperlink to code of conduct"
+  },
+  "pages.community.howTo.covenant": {
+    "message": "We have adopted the",
+    "description": "Phrase about adoption of the contributor covenant policy"
+  },
+  "pages.community.howTo.covenantLink": {
+    "message": "Contributor Covenant",
+    "description": "Hyperlink to contributor covenant"
+  },
+  "pages.community.howTo.guidelines": {
+    "message": "and we expect that all community members adhere to the",
+    "description": "Phrase about our expectations that all contributors adhere to all policies listed herein."
+  },
+  "pages.community.howTo.contributingLink": {
+    "message": "contributing guidelines",
+    "description": "Hyperlink to contributing technical instructions"
+  },
+  "pages.community.howTo.joinUs": {
+    "message": "Once you've read over those, we invite you to join us on the",
+    "description": "Phrase inviting users to join us as contributors after agreeing to the guidelines"
+  },
+  "theme.SearchBar.seeAll": {
+    "message": "See all {count} results"
+  },
+  "theme.SearchBar.label": {
+    "message": "Search",
+    "description": "The ARIA label and placeholder for search button"
+  },
+  "theme.SearchPage.documentsFound.plurals": {
+    "message": "One document found|{count} documents found",
+    "description": "Pluralized label for \"{count} documents found\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.SearchPage.existingResultsTitle": {
+    "message": "Search results for \"{query}\"",
+    "description": "The search page title for non-empty query"
+  },
+  "theme.SearchPage.emptyResultsTitle": {
+    "message": "Search the documentation",
+    "description": "The search page title for empty query"
+  },
+  "theme.SearchPage.inputPlaceholder": {
+    "message": "Type your search here",
+    "description": "The placeholder for search page input"
+  },
+  "theme.SearchPage.inputLabel": {
+    "message": "Search",
+    "description": "The ARIA label for search page input"
+  },
+  "theme.SearchPage.algoliaLabel": {
+    "message": "Search by Algolia",
+    "description": "The ARIA label for Algolia mention"
+  },
+  "theme.SearchPage.noResultsText": {
+    "message": "No results were found",
+    "description": "The paragraph for empty search result"
+  },
+  "theme.SearchPage.fetchingNewResults": {
+    "message": "Fetching new results...",
+    "description": "The paragraph for fetching new search results"
+  },
+  "pages.community.links.github.description": {
+    "message": "Want to add a new feature or get a bug fixed? Create a pull request or raise an issue.",
+    "description": "Description of Github community"
+  },
+  "pages.community.links.stackoverflow.description": {
+    "message": "Having trouble using Lexical? Just shoot us a question.",
+    "description": "Description of StackOverflow community"
+  },
+  "pages.community.links.discord.description": {
+    "message": "Let's discuss upcoming features and plans together.",
+    "description": "Description of Discord community"
   }
 }

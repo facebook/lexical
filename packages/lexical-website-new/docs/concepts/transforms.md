@@ -32,7 +32,7 @@ Transforms are executed sequentially before changes are propagated to the DOM an
 
 **Beware!**
 
-In most cases, it is possible to achieve the same or very similar result through an [update listener](link here) followed by an update. This is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
+In most cases, it is possible to achieve the same or very similar result through an [update listener](/docs/concepts/listeners#registerupdatelistener) followed by an update. This is highly discouraged as it triggers an additional render (the most expensive lifecycle operation).
 
 Additionally, each cycle creates a brand new EditorState object which can interfere with plugins like HistoryPlugin (undo-redo) if not handled correctly.
 
@@ -134,6 +134,6 @@ registerLexicalTextEntity<N: TextNode>(
 ## Examples
 
 1. [Emoticons (guided example)](https://github.com/facebook/lexical/blob/main/examples/emoticons.md)
-2. [Emojis](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/EmojisPlugin.js)
-3. [AutoLink](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin.jsx)
+2. [Emojis](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/EmojisPlugin.ts)
+3. [AutoLink](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin.tsx)
 4. [HashtagPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-react/src/LexicalHashtagPlugin.js)

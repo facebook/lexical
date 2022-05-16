@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode, ElementNode} from 'lexical';
-export type DFSNode = $ReadOnly<{
+import {Class} from 'utility-types';
+
+import type {LexicalNode, ElementNode, LexicalEditor} from 'lexical';
+export type DFSNode = Readonly<{
   depth: number;
   node: LexicalNode;
 }>;
@@ -16,7 +18,7 @@ declare function addClassNamesToElement(
 ): void;
 declare function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<string>
+  ...classNames: Array<typeof undefined | boolean | null | string>
 ): void;
 declare function $dfs(
   startingNode?: LexicalNode,
@@ -28,15 +30,23 @@ declare function $getNearestNodeOfType<T extends LexicalNode>(
   klass: Class<T>,
 ): T | null;
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
-export type DOMNodeToLexicalConversionMap = {
-  [string]: DOMNodeToLexicalConversion;
-};
+export type DOMNodeToLexicalConversionMap = Record<
+  string,
+  DOMNodeToLexicalConversion
+>;
 declare function $findMatchingParent(
   startingNode: LexicalNode,
-  findFn: (LexicalNode) => boolean,
+  findFn: (node: LexicalNode) => boolean,
 ): LexicalNode | null;
 type Func = () => void;
 declare function mergeRegister(...func: Array<Func>): () => void;
 declare function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
+
+declare function registerNestedElementResolver<N>(
+  editor: LexicalEditor,
+  targetNode: Class<N>,
+  cloneNode: (from: N) => N,
+  handleOverlap: (from: N, to: N) => void,
+): () => void;

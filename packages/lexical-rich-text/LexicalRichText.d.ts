@@ -12,23 +12,24 @@ import type {
   LexicalNode,
   NodeKey,
   ParagraphNode,
-  HeadingNode,
+  LexicalEditor,
 } from 'lexical';
 import {ElementNode} from 'lexical';
-
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 export declare class QuoteNode extends ElementNode {
   static getType(): string;
   static clone(node: QuoteNode): QuoteNode;
   constructor(key?: NodeKey);
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
 }
 export function $createQuoteNode(): QuoteNode;
-export function $isQuoteNode(node: ?LexicalNode): boolean;
+export function $isQuoteNode(
+  node: LexicalNode | null | undefined,
+): node is QuoteNode;
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 export declare class HeadingNode extends ElementNode {
   __tag: HeadingTagType;
@@ -36,14 +37,16 @@ export declare class HeadingNode extends ElementNode {
   static clone(node: HeadingNode): HeadingNode;
   constructor(tag: HeadingTagType, key?: NodeKey);
   getTag(): HeadingTagType;
-  createDOM<EditorContext>(config: EditorConfig<EditorContext>): HTMLElement;
+  createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean;
   static importDOM(): DOMConversionMap | null;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
 }
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode;
-export function $isHeadingNode(node: ?LexicalNode): boolean;
+export function $isHeadingNode(
+  node: LexicalNode | null | undefined,
+): node is HeadingNode;
 export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,

@@ -170,6 +170,6 @@ export function $createMarkNode(ids: Array<string>): MarkNode {
   return new MarkNode(ids);
 }
 
-export function $isMarkNode(node?: LexicalNode | null): node is MarkNode {
+export function $isMarkNode(node: LexicalNode | null): node is MarkNode {
   return node instanceof MarkNode;
 }

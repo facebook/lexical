@@ -63,10 +63,10 @@ import {
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
 import {
+  COMPOSITION_START_CHAR,
+  COMPOSITION_SUFFIX,
   DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
-  NON_BREAKING_SPACE,
-  ZERO_WIDTH_CHAR,
 } from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
@@ -330,7 +330,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             anchor.offset === 0 &&
             $isTextNode(node) &&
             $isTextNode(prevNode) &&
-            node.getTextContent() === ZERO_WIDTH_CHAR &&
+            node.getTextContent() === COMPOSITION_SUFFIX &&
             prevNode.getFormat() !== selection.format
           ) {
             const prevTextContent = prevNode.getTextContent();
@@ -580,11 +580,6 @@ function onCompositionStart(
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {
-        // For FF, we need to use a non-breaking space, or it gets composition
-        // in a stuck state.
-        const COMPOSITION_START_CHAR = IS_FIREFOX
-          ? NON_BREAKING_SPACE
-          : ZERO_WIDTH_CHAR;
         // We insert an zero width character, ready for the composition
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because

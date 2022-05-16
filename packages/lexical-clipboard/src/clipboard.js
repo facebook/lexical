@@ -308,7 +308,9 @@ export function $insertDataTransferForRichText(
   }
 
   const textHtmlMimeType = 'text/html';
-  const htmlString = dataTransfer.getData(textHtmlMimeType);
+  const htmlString = dataTransfer
+    .getData(textHtmlMimeType)
+    .replace(/ {2}|\r\n|\n|\r/gm, '');
 
   if (htmlString) {
     const parser = new DOMParser();

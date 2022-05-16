@@ -2190,11 +2190,6 @@ export function $createEmptyGridSelection(): GridSelection {
   return new GridSelection('root', anchor, focus);
 }
 
-function getActiveEventType(): string | void {
-  const event = window.event;
-  return event && event.type;
-}
-
 export function internalCreateSelection(
   editor: LexicalEditor,
 ): null | RangeSelection | NodeSelection | GridSelection {
@@ -2228,7 +2223,8 @@ function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const eventType = getActiveEventType();
+  const windowEvent = window.event;
+  const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
     !getIsProcesssingMutations() &&
@@ -2236,7 +2232,7 @@ function internalCreateRangeSelection(
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
       eventType === 'compositionend' ||
-      (eventType === 'click' && window.event.detail === 3) ||
+      (eventType === 'click' && windowEvent && windowEvent.detail === 3) ||
       eventType === undefined);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 

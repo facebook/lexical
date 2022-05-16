@@ -45,12 +45,12 @@ import {
   ElementNode,
 } from '.';
 import {
+  COMPOSITION_SUFFIX,
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
-  ZERO_WIDTH_CHAR,
 } from './LexicalConstants';
 import {flushRootMutations} from './LexicalMutations';
 import {
@@ -502,7 +502,7 @@ export function $updateSelectedTextFromDOM(
       let textContent = anchorNode.nodeValue;
 
       // Data is intentionally truthy, as we check for boolean, null and empty string.
-      if (textContent === ZERO_WIDTH_CHAR && data) {
+      if (textContent === COMPOSITION_SUFFIX && data) {
         const offset = data.length;
         textContent = data;
         anchorOffset = offset;
@@ -535,7 +535,7 @@ export function $updateTextNodeFromDOMContent(
 
     if (
       (isComposing || compositionEnd) &&
-      textContent[textContent.length - 1] === ZERO_WIDTH_CHAR
+      textContent[textContent.length - 1] === COMPOSITION_SUFFIX
     ) {
       normalizedTextContent = textContent.slice(0, -1);
     }

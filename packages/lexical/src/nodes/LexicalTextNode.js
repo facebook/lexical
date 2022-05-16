@@ -22,6 +22,7 @@ import type {
 import invariant from 'shared/invariant';
 
 import {
+  COMPOSITION_SUFFIX,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -36,7 +37,6 @@ import {
   IS_UNMERGEABLE,
   TEXT_MODE_TO_TYPE,
   TEXT_TYPE_TO_FORMAT,
-  ZERO_WIDTH_CHAR,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
@@ -197,7 +197,7 @@ function setTextContent(
   const firstChild: ?Text = dom.firstChild;
   const isComposing = node.isComposing();
   // Always add a suffix if we're composing a node
-  const suffix = isComposing ? ZERO_WIDTH_CHAR : '';
+  const suffix = isComposing ? COMPOSITION_SUFFIX : '';
   const text = nextText + suffix;
 
   if (firstChild == null) {

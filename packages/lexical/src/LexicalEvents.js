@@ -13,7 +13,12 @@ import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+import {
+  CAN_USE_BEFORE_INPUT,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
@@ -57,7 +62,11 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
-import {DOM_TEXT_TYPE, DOUBLE_LINE_BREAK} from './LexicalConstants';
+import {
+  COMPOSITION_START_CHAR,
+  DOM_TEXT_TYPE,
+  DOUBLE_LINE_BREAK,
+} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -323,7 +332,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             anchor.offset === 0 &&
             $isTextNode(node) &&
             $isTextNode(prevNode) &&
-            node.getTextContent() === ' ' &&
+            node.getTextContent() === COMPOSITION_START_CHAR &&
             prevNode.getFormat() !== selection.format
           ) {
             const prevTextContent = prevNode.getTextContent();
@@ -535,7 +544,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       }
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
       // This ensures consistency on Android.
-      if (editor._compositionKey !== null) {
+      if (!IS_SAFARI && !IS_IOS && editor._compositionKey !== null) {
         lastKeyDownTimeStamp = 0;
         $setCompositionKey(null);
       }
@@ -564,19 +573,20 @@ function onCompositionStart(
       $setCompositionKey(anchor.key);
       if (
         // If it has been 30ms since the last keydown, then we should
-        // apply the empty space heuristic.
+        // apply the empty space heuristic. We can't do this for Safari,
+        // as the keydown fires after composition start.
         event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
         // FF has issues around composing multibyte characters, so we also
         // need to invoke the empty space heuristic below.
-        (IS_FIREFOX && anchor.type === 'element') ||
+        anchor.type === 'element' ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {
-        // We insert an empty space, ready for the composition
+        // We insert a zero width character, ready for the composition
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        dispatchCommand(editor, INSERT_TEXT_COMMAND, ' ');
+        dispatchCommand(editor, INSERT_TEXT_COMMAND, COMPOSITION_START_CHAR);
       }
     }
   });

@@ -13,7 +13,6 @@ type LinkMatcherResult = {
   length: number;
   index: number;
 };
-
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 export function AutoLinkPlugin(props: {
   matchers: Array<LinkMatcher>;

@@ -12,5 +12,4 @@ type Props = Readonly<{
   format: ElementFormatType | null;
   nodeKey: NodeKey;
 }>;
-
 declare function BlockWithAlignableContents(arg0: Props): JSX.Element;

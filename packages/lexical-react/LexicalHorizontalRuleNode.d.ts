@@ -18,11 +18,8 @@ export declare class HorizontalRuleNode extends DecoratorNode<JSX.Element | null
   updateDOM(): false;
   decorate(): JSX.Element | null;
 }
-
 export function $createHorizontalRuleNode(): HorizontalRuleNode;
-
 export function $isHorizontalRuleNode(
   node: LexicalNode | null | undefined,
 ): node is HorizontalRuleNode;
-
 export var INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void>;

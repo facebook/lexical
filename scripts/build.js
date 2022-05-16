@@ -71,10 +71,6 @@ const wwwMappings = {
 
 const lexicalReactModules = fs
   .readdirSync(path.resolve('./packages/lexical-react/src'))
-  .map(
-    (str) =>
-      path.basename(path.basename(str, '.ts'), '.tsx') + path.extname(str),
-  )
   .filter(
     (str) =>
       !str.includes('__tests__') &&
@@ -557,11 +553,14 @@ const packages = [
 
         return !ignoredModules.includes(module);
       })
-      .map((module) => ({
-        name: module,
-        outputFileName: module,
-        sourceFileName: module,
-      })),
+      .map((module) => {
+        const basename = path.basename(path.basename(module, '.ts'), '.tsx');
+        return {
+          name: basename,
+          outputFileName: basename,
+          sourceFileName: module,
+        };
+      }),
     name: 'Lexical React',
     outputPath: './packages/lexical-react/dist/',
     sourcePath: './packages/lexical-react/src/',

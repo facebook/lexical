@@ -13,21 +13,17 @@ import type {
   NodeSelection,
   RangeSelection,
 } from 'lexical';
-
 export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
   undoSelection?: RangeSelection | NodeSelection | GridSelection | null;
 };
-
 export type HistoryState = {
   current: null | HistoryStateEntry;
   redoStack: Array<HistoryStateEntry>;
   undoStack: Array<HistoryStateEntry>;
 };
-
 export function HistoryPlugin(arg0: {
   externalHistoryState?: HistoryState;
 }): JSX.Element | null;
-
 export function createEmptyHistoryState(): HistoryState;

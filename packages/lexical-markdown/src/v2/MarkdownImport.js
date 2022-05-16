@@ -19,7 +19,6 @@ import type {RootNode, TextNode} from 'lexical';
 import {$createCodeNode} from '@lexical/code';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
-import {isUrl} from '../../../shared/src/isUrl';
 import {transformersByType} from './utils';
 
 const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
@@ -230,16 +229,16 @@ function findOutermostMatch(
     return null;
   }
 
-  if (isUrl(textContent)) {
-    return null;
-  }
-
   for (const match of openTagsMatch) {
     // Open tags reg exp might capture leading space so removing it
     // before using match to find transformer
-    const fullMatchRegExp =
-      textTransformersIndex.fullMatchRegExpByTag[match.replace(/^\s/, '')];
+    const symbol = match.replace(/^\s/, '');
+    const fullMatchRegExp = textTransformersIndex.fullMatchRegExpByTag[symbol];
     if (fullMatchRegExp == null) {
+      continue;
+    }
+
+    if (textTransformersIndex.transformersByTag[symbol].intraword === false) {
       continue;
     }
 

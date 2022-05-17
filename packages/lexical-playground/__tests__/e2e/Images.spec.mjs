@@ -19,6 +19,7 @@ import {
   insertSampleImage,
   insertUploadImage,
   insertUrlImage,
+  IS_WINDOWS,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -437,6 +438,7 @@ test.describe('Images', () => {
   }) => {
     test.skip(isPlainText);
     test.skip(browserName === 'firefox' && isCollab);
+    test.skip(browserName === 'firefox' && IS_WINDOWS);
 
     await focusEditor(page);
 

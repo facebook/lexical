@@ -62,7 +62,6 @@ function DropDownItems({
   >(null);
   const [highlightedItem, setHighlightedItem] =
     useState<React.RefObject<HTMLButtonElement>>(null);
-  const shiftPressedRef = useRef(false);
 
   const registerItem = useCallback(
     (itemRef: React.RefObject<HTMLButtonElement>) => {
@@ -80,30 +79,15 @@ function DropDownItems({
       event.preventDefault();
     }
 
-    if (key === 'Escape') {
+    if (key === 'Escape' || key === 'Tab') {
       onClose();
-    } else if (key === 'Shift') {
-      shiftPressedRef.current = true;
-    } else if (
-      key === 'ArrowUp' ||
-      (key === 'Tab' && shiftPressedRef.current)
-    ) {
+    } else if (key === 'ArrowUp') {
       setHighlightedItem((prev) => {
         const index = items.indexOf(prev) - 1;
         return items[index === -1 ? items.length - 1 : index];
       });
-    } else if (
-      key === 'ArrowDown' ||
-      (key === 'Tab' && !shiftPressedRef.current)
-    ) {
+    } else if (key === 'ArrowDown') {
       setHighlightedItem((prev) => items[items.indexOf(prev) + 1]);
-    }
-  };
-
-  const handleKeyUp = (event) => {
-    const key = event.key;
-    if (key === 'Shift') {
-      shiftPressedRef.current = false;
     }
   };
 
@@ -128,8 +112,7 @@ function DropDownItems({
       <div
         className="dropdown"
         ref={dropDownRef}
-        onKeyDown={handleKeyDown}
-        onKeyUp={handleKeyUp}>
+        onKeyDown={handleKeyDown}>
         {children}
       </div>
     </DropDownContext.Provider>

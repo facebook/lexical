@@ -195,8 +195,8 @@ function getDragSelection(event: DragEvent): Range {
   const domSelection = getSelection();
   if (document.caretRangeFromPoint) {
     range = document.caretRangeFromPoint(event.clientX, event.clientY);
-  } else if (event.rangeParent && event.rangeOffset) {
-    domSelection.collapse(event.rangeParent || null, event.rangeOffset || 0);
+  } else if (event.rangeParent) {
+    domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
     range = domSelection.getRangeAt(0);
   } else {
     throw Error(`Cannot get the selection when dragging`);

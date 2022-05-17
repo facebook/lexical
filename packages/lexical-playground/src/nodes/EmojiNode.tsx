@@ -15,8 +15,7 @@ import type {
 
 import {TextNode} from 'lexical';
 
-interface SerializedHashtagNode extends SerializedTextNode {
-  type: 'emoji';
+interface SerializedEmojiNode extends SerializedTextNode {
   className: string;
 }
 
@@ -58,7 +57,7 @@ export class EmojiNode extends TextNode {
     return false;
   }
 
-  static importJSON(serializedNode: SerializedHashtagNode): EmojiNode {
+  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
     const node = $createEmojiNode(
       serializedNode.className,
       serializedNode.text,
@@ -70,7 +69,7 @@ export class EmojiNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedHashtagNode {
+  exportJSON(): SerializedEmojiNode {
     return {
       ...super.exportJSON(),
       className: this.getClassName(),

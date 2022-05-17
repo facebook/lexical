@@ -17,10 +17,6 @@ import type {
 import {addClassNamesToElement} from '@lexical/utils';
 import {TextNode} from 'lexical';
 
-interface SerializedHashtagNode extends SerializedTextNode {
-  type: 'hashtag';
-}
-
 export class HashtagNode extends TextNode {
   static getType(): string {
     return 'hashtag';
@@ -40,7 +36,7 @@ export class HashtagNode extends TextNode {
     return element;
   }
 
-  static importJSON(serializedNode: SerializedHashtagNode): HashtagNode {
+  static importJSON(serializedNode: SerializedTextNode): HashtagNode {
     const node = $createHashtagNode(serializedNode.text);
     node.setFormat(serializedNode.format);
     node.setDetail(serializedNode.detail);
@@ -49,7 +45,7 @@ export class HashtagNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedHashtagNode {
+  exportJSON(): SerializedTextNode {
     return {
       ...super.exportJSON(),
       type: 'hashtag',

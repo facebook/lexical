@@ -19,8 +19,10 @@ import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 
-export type SerializedRootNode<SerializedNode> =
-  SerializedElementNode<SerializedNode>;
+export type SerializedRootNode = {
+  ...SerializedElementNode,
+  ...
+};
 
 export class RootNode extends ElementNode {
   __cachedText: null | string;
@@ -98,9 +100,7 @@ export class RootNode extends ElementNode {
     return super.append(...nodesToAppend);
   }
 
-  static importJSON<SerializedNode>(
-    serializedNode: SerializedRootNode<SerializedNode>,
-  ): RootNode {
+  static importJSON(serializedNode: SerializedRootNode): RootNode {
     // We don't create a root, and instead use the existing root.
     const node = $getRoot();
     node.setFormat(serializedNode.format);
@@ -109,7 +109,7 @@ export class RootNode extends ElementNode {
     return node;
   }
 
-  exportJSON<SerializedNode>(): SerializedRootNode<SerializedNode> {
+  exportJSON(): SerializedRootNode {
     return {
       children: [],
       direction: this.getDirection(),

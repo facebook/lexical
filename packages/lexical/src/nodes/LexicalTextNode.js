@@ -9,10 +9,10 @@
 
 import type {EditorConfig, TextNodeThemeClasses} from '../LexicalEditor';
 import type {
-  BaseSerializedNode,
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
+  SerializedLexicalNode,
 } from '../LexicalNode';
 import type {
   GridSelection,
@@ -59,7 +59,7 @@ import {
 } from '../LexicalUtils';
 
 export type SerializedTextNode = {
-  ...BaseSerializedNode,
+  ...SerializedLexicalNode,
   detail: number,
   format: number,
   mode: TextModeType,

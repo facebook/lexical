@@ -11,13 +11,12 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
+  SerializedLexicalNode,
 } from '../LexicalNode';
 
 import {LexicalNode} from '../LexicalNode';
 
-export interface SerializedLineBreakNode {
-  type: 'linebreak';
-}
+export type SerializedLineBreakNode = SerializedLexicalNode;
 
 export class LineBreakNode extends LexicalNode {
   static getType(): string {
@@ -62,6 +61,7 @@ export class LineBreakNode extends LexicalNode {
   exportJSON(): SerializedLineBreakNode {
     return {
       type: 'linebreak',
+      version: 1,
     };
   }
 }

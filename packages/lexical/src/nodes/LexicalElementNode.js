@@ -6,7 +6,7 @@
  *
  * @flow strict
  */
-import type {BaseSerializedNode, NodeKey} from '../LexicalNode';
+import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
@@ -36,9 +36,9 @@ import {
   removeFromParent,
 } from '../LexicalUtils';
 
-export type SerializedElementNode<SerializedNode> = {
-  ...BaseSerializedNode,
-  children: Array<SerializedNode>,
+export type SerializedElementNode = {
+  ...SerializedLexicalNode,
+  children: Array<SerializedLexicalNode>,
   direction: 'ltr' | 'rtl' | null,
   format: 'left' | 'center' | 'right' | 'justify' | '',
   indent: number,
@@ -428,7 +428,7 @@ export class ElementNode extends LexicalNode {
     return writableSelf;
   }
   // JSON serialization
-  exportJSON<SerializedNode>(): SerializedElementNode<SerializedNode> {
+  exportJSON(): SerializedElementNode {
     return {
       children: [],
       direction: this.getDirection(),

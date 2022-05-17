@@ -646,9 +646,9 @@ export declare class LineBreakNode extends LexicalNode {
   createDOM(): HTMLElement;
   updateDOM(): false;
   static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
+    serializedLineBreakNode: SerializedLexicalNode,
   ): LineBreakNode;
-  exportJSON(): SerializedLineBreakNode;
+  exportJSON(): SerializedLexicalNode;
 }
 export function $createLineBreakNode(): LineBreakNode;
 export function $isLineBreakNode(
@@ -672,10 +672,8 @@ export declare class RootNode extends ElementNode {
   updateDOM(prevNode: RootNode, dom: HTMLElement): false;
   append(...nodesToAppend: Array<LexicalNode>): ElementNode;
   canBeEmpty(): false;
-  static importJSON<SerializedNode>(
-    serializedRootNode: SerializedRootNode<SerializedNode>,
-  ): RootNode;
-  exportJSON<SerializedNode>(): SerializedRootNode<SerializedNode>;
+  static importJSON(serializedRootNode: SerializedRootNode): RootNode;
+  exportJSON(): SerializedElementNode;
 }
 export function $isRootNode(
   node: LexicalNode | null | undefined,
@@ -741,7 +739,7 @@ export declare class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): ElementNode;
-  exportJSON<SerializedNode>(): SerializedElementNode<SerializedNode>;
+  exportJSON<SerializedNode>(): SerializedElementNode;
 }
 export function $isElementNode(
   node: LexicalNode | null | undefined,
@@ -771,10 +769,10 @@ export declare class ParagraphNode extends ElementNode {
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;
-  static importJSON<SerializedNode>(
-    serializedParagraphNode: SerializedParagraphNode<SerializedNode>,
+  static importJSON(
+    serializedParagraphNode: SerializedElementNode,
   ): ParagraphNode;
-  exportJSON<SerializedNode>(): SerializedParagraphNode<SerializedNode>;
+  exportJSON(): SerializedElementNode;
 }
 export function $createParagraphNode(): ParagraphNode;
 export function $isParagraphNode(
@@ -824,37 +822,30 @@ export declare var VERSION: string;
 
 // Serialization
 
-export interface SerializedTextNode {
+export interface SerializedLexicalNode {
+  type: string;
+  version?: number;
+}
+
+export interface SerializedTextNode extends SerializedLexicalNode {
   detail: number;
   format: number;
   mode: TextModeType;
   style: string;
   text: string;
-  type: string;
 }
 
-export interface SerializedElementNode<SerializedNode> {
-  children: Array<SerializedNode>;
+export interface SerializedElementNode extends SerializedLexicalNode {
+  children: Array<SerializedLexicalNode>;
   direction: 'ltr' | 'rtl' | null;
   format: 'left' | 'center' | 'right' | 'justify';
   indent: number;
-  type: string;
 }
 
-export interface SerializedParagraphNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  type: 'paragraph';
-}
-
-export interface SerializedLineBreakNode {
-  type: 'linebreak';
-}
-
-export interface SerializedRootNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
+export interface SerializedRootNode extends SerializedElementNode {
   type: 'root';
 }
 
 export interface SerializedEditorState<SerializedNode> {
-  root: SerializedRootNode<SerializedNode>;
+  root: SerializedRootNode;
 }

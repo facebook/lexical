@@ -23,10 +23,19 @@ import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
-export type SerializedParagraphNode<SerializedNode> =
-  SerializedElementNode<SerializedNode>;
+export type SerializedParagraphNode = SerializedElementNode;
+
+export type SerializedParagraphNodeV1 = {
+  ...SerializedParagraphNode,
+};
+
+export type SerializedParagraphNodeV2 = {
+  ...SerializedParagraphNodeV1,
+  coolProp: string,
+};
 
 export class ParagraphNode extends ElementNode {
+  __coolProp: string;
   static getType(): string {
     return 'paragraph';
   }
@@ -76,9 +85,7 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  static importJSON<SerializedNode>(
-    serializedNode: SerializedParagraphNode<SerializedNode>,
-  ): ParagraphNode {
+  static importJSON(serializedNode: SerializedParagraphNode): ParagraphNode {
     const node = $createParagraphNode();
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -86,7 +93,7 @@ export class ParagraphNode extends ElementNode {
     return node;
   }
 
-  exportJSON<SerializedNode>(): SerializedParagraphNode<SerializedNode> {
+  exportJSON(): SerializedParagraphNode {
     return {
       ...super.exportJSON(),
       type: 'paragraph',

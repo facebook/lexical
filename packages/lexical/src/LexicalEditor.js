@@ -590,8 +590,8 @@ export class LexicalEditor {
         : maybeStringifiedEditorState;
     return parseEditorState(parsedEditorState, this);
   }
-  unstable_parseEditorState<SerializedNode>(
-    maybeStringifiedEditorState: string | SerializedEditorState<SerializedNode>,
+  unstable_parseEditorState(
+    maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState {
     const serializedEditorState =

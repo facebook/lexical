@@ -61,10 +61,8 @@ import {
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
-interface SerializedCodeNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
+interface SerializedCodeNode extends SerializedElementNode {
   language: string | null | undefined;
-  type: 'code';
 }
 
 interface SerializedCodeHighlightNode extends SerializedTextNode {
@@ -303,9 +301,7 @@ export class CodeNode extends ElementNode {
     };
   }
 
-  static importJSON<SerializedNode>(
-    serializedNode: SerializedCodeNode<SerializedNode>,
-  ): CodeNode {
+  static importJSON(serializedNode: SerializedCodeNode): CodeNode {
     const node = $createCodeNode(serializedNode.language);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -313,7 +309,7 @@ export class CodeNode extends ElementNode {
     return node;
   }
 
-  exportJSON<SerializedNode>(): SerializedCodeNode<SerializedNode> {
+  exportJSON(): SerializedCodeNode {
     return {
       ...super.exportJSON(),
       language: this.getLanguage(),

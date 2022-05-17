@@ -43,7 +43,7 @@ import {
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
-export type BaseSerializedNode = {
+export type SerializedLexicalNode = {
   type: string,
   version: number,
 };

@@ -323,8 +323,8 @@ function parseSerializedNode<SerializedNode: InternalSerializedNode>(
   return node;
 }
 
-export function unstable_parseEditorState<SerializedNode>(
-  serializedEditorState: SerializedEditorState<SerializedNode>,
+export function unstable_parseEditorState(
+  serializedEditorState: SerializedEditorState,
   editor: LexicalEditor,
   updateFn: void | (() => void),
 ): EditorState {

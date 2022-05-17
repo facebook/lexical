@@ -39,8 +39,8 @@ export type JSONEditorState = {
   _selection: null | ParsedSelection,
 };
 
-export interface SerializedEditorState<SerializedNode> {
-  root: SerializedRootNode<SerializedNode>;
+export interface SerializedEditorState {
+  root: SerializedRootNode;
 }
 
 export function editorStateHasDirtySelection(
@@ -171,7 +171,7 @@ export class EditorState {
         : null,
     };
   }
-  unstable_toJSON<SerializedNode>(): SerializedEditorState<SerializedNode> {
+  unstable_toJSON(): SerializedEditorState {
     return readEditorState(this, () => ({
       root: exportNodeToJSON($getRoot()),
     }));

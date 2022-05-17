@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,8 +21,8 @@ import {
   $getRoot,
   $getSelection,
 } from 'lexical';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
 import {mergePrevious} from '../../DEPRECATED_useLexicalCharacterLimit';
 
 // No idea why we suddenly need to do this, but it fixes the tests

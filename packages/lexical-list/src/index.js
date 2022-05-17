@@ -45,4 +45,5 @@ export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
   createCommand();
 export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> =
   createCommand();
+export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand();
 export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand();

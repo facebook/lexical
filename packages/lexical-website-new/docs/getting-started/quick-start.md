@@ -21,6 +21,7 @@ const config = {
   theme: {
     ...
   },
+  onError: console.error
 };
 
 const editor = createEditor(config);

@@ -1,0 +1,20 @@
+{
+  "name": "shared-ts",
+  "private": "true",
+  "keywords": [
+    "react",
+    "lexical",
+    "editor",
+    "rich-text"
+  ],
+  "license": "MIT",
+  "version": "0.2.7",
+  "dependencies": {
+    "lexical": "0.2.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/shared-ts"
+  }
+}

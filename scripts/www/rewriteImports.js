@@ -44,6 +44,7 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from '@lexical\/link\'/g, "from 'LexicalLink'")
         .replace(/from '@lexical\/list\'/g, "from 'LexicalList'")
         .replace(/from '@lexical\/markdown\'/g, "from 'LexicalMarkdown'")
+        .replace(/from '@lexical\/headless\'/g, "from 'LexicalHeadless'")
         .replace(/from '@lexical\/offset\'/g, "from 'LexicalOffset'")
         .replace(/from '@lexical\/overflow\'/g, "from 'LexicalOverflow'")
         .replace(/from '@lexical\/plain\'/g, "from': 'LexicalPlainText'")

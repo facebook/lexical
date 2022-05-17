@@ -10,6 +10,7 @@
 import type {
   ElementNode,
   GridSelection,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   NodeSelection,
@@ -34,7 +35,7 @@ import invariant from 'shared/invariant';
 
 const cssToStyles: Map<string, {[string]: string}> = new Map();
 
-function $cloneWithProperties<T: LexicalNode>(node: T): T {
+export function $cloneWithProperties<T: LexicalNode>(node: T): T {
   const latest = node.getLatest();
   const constructor = latest.constructor;
   const clone = constructor.clone(latest);
@@ -45,12 +46,10 @@ function $cloneWithProperties<T: LexicalNode>(node: T): T {
     clone.__indent = latest.__indent;
     clone.__dir = latest.__dir;
   } else if ($isTextNode(latest) && $isTextNode(clone)) {
-    const marks = latest.__marks;
     clone.__format = latest.__format;
     clone.__style = latest.__style;
     clone.__mode = latest.__mode;
     clone.__detail = latest.__detail;
-    clone.__marks = marks === null ? null : Array.from(marks);
   }
   // $FlowFixMe
   return clone;
@@ -72,7 +71,7 @@ function $getParentAvoidingExcludedElements(
   node: LexicalNode,
 ): ElementNode | null {
   let parent = node.getParent();
-  while (parent !== null && parent.excludeFromCopy()) {
+  while (parent !== null && parent.excludeFromCopy('clone')) {
     parent = parent.getParent();
   }
   return parent;
@@ -93,7 +92,7 @@ function $copyLeafNodeBranchToRoot(
     if (parent === null) {
       break;
     }
-    if (!$isElementNode(node) || !node.excludeFromCopy()) {
+    if (!$isElementNode(node) || !node.excludeFromCopy('clone')) {
       const key = node.getKey();
       let clone = nodeMap.get(key);
       const needsClone = clone === undefined;
@@ -222,7 +221,7 @@ function $cloneContentsImpl(
       const key = node.getKey();
       if (
         !nodeMap.has(key) &&
-        (!$isElementNode(node) || !node.excludeFromCopy())
+        (!$isElementNode(node) || !node.excludeFromCopy('clone'))
       ) {
         const clone = $cloneWithProperties<LexicalNode>(node);
         if ($isRootNode(node.getParent())) {
@@ -649,9 +648,7 @@ export function $wrapLeafNodesInElements(
     isPointAttached(prevSelection.anchor) &&
     isPointAttached(prevSelection.focus)
   ) {
-    const clonedSelection = prevSelection.clone();
-    clonedSelection.dirty = true;
-    $setSelection(clonedSelection);
+    $setSelection(prevSelection.clone());
   } else {
     selection.dirty = true;
   }
@@ -674,4 +671,131 @@ export function $shouldOverrideDefaultCharacterSelection(
 ): boolean {
   const possibleNode = $getDecoratorNode(selection.focus, isBackward);
   return $isDecoratorNode(possibleNode) && !possibleNode.isIsolated();
+}
+
+function getDOMTextNode(element: Node | null): Text | null {
+  let node = element;
+  while (node != null) {
+    if (node.nodeType === 3) {
+      // $FlowFixMe: this is a Text
+      return node;
+    }
+    node = node.firstChild;
+  }
+  return null;
+}
+
+function getDOMIndexWithinParent(node: Node): [Node, number] {
+  const parent = node.parentNode;
+  if (parent == null) {
+    throw new Error('Should never happen');
+  }
+  return [parent, Array.from(parent.childNodes).indexOf(node)];
+}
+
+export function createDOMRange(
+  editor: LexicalEditor,
+  anchorNode: LexicalNode,
+  _anchorOffset: number,
+  focusNode: LexicalNode,
+  _focusOffset: number,
+): Range | null {
+  const anchorKey = anchorNode.getKey();
+  const focusKey = focusNode.getKey();
+  const range = document.createRange();
+  let anchorDOM = editor.getElementByKey(anchorKey);
+  let focusDOM = editor.getElementByKey(focusKey);
+  let anchorOffset = _anchorOffset;
+  let focusOffset = _focusOffset;
+
+  if ($isTextNode(anchorNode)) {
+    anchorDOM = getDOMTextNode(anchorDOM);
+  }
+  if ($isTextNode(focusNode)) {
+    focusDOM = getDOMTextNode(focusDOM);
+  }
+  if (
+    anchorNode === undefined ||
+    focusNode === undefined ||
+    anchorDOM === null ||
+    focusDOM === null
+  ) {
+    return null;
+  }
+  if (anchorDOM.nodeName === 'BR') {
+    [anchorDOM, anchorOffset] = getDOMIndexWithinParent(anchorDOM);
+  }
+  if (focusDOM.nodeName === 'BR') {
+    [focusDOM, focusOffset] = getDOMIndexWithinParent(focusDOM);
+  }
+  const firstChild = anchorDOM.firstChild;
+  if (
+    anchorDOM === focusDOM &&
+    firstChild != null &&
+    firstChild.nodeName === 'BR' &&
+    anchorOffset === 0 &&
+    focusOffset === 0
+  ) {
+    focusOffset = 1;
+  }
+  try {
+    range.setStart(anchorDOM, anchorOffset);
+    range.setEnd(focusDOM, focusOffset);
+  } catch (e) {
+    return null;
+  }
+
+  if (
+    range.collapsed &&
+    (anchorOffset !== focusOffset || anchorKey !== focusKey)
+  ) {
+    // Range is backwards, we need to reverse it
+    range.setStart(focusDOM, focusOffset);
+    range.setEnd(anchorDOM, anchorOffset);
+  }
+  return range;
+}
+
+export function createRectsFromDOMRange(
+  editor: LexicalEditor,
+  range: Range,
+): Array<ClientRect> {
+  const rootElement = editor.getRootElement();
+  if (rootElement === null) {
+    return [];
+  }
+  const rootRect = rootElement.getBoundingClientRect();
+  const computedStyle = getComputedStyle(rootElement);
+  const rootPadding =
+    parseFloat(computedStyle.paddingLeft) +
+    parseFloat(computedStyle.paddingRight);
+  const selectionRects = Array.from(range.getClientRects());
+  let selectionRectsLength = selectionRects.length;
+  let prevRect;
+
+  for (let i = 0; i < selectionRectsLength; i++) {
+    const selectionRect = selectionRects[i];
+    // Exclude a rect that is the exact same as the last rect. getClientRects() can return
+    // the same rect twice for some elements. A more sophisticated thing to do here is to
+    // merge all the rects together into a set of rects that don't overlap, so we don't
+    // generate backgrounds that are too dark.
+    const isDuplicateRect =
+      prevRect &&
+      prevRect.top === selectionRect.top &&
+      prevRect.left === selectionRect.left &&
+      prevRect.width === selectionRect.width &&
+      prevRect.height === selectionRect.height;
+
+    // Exclude selections that span the entire element
+    const selectionSpansElement =
+      selectionRect.width + rootPadding === rootRect.width;
+
+    if (isDuplicateRect || selectionSpansElement) {
+      selectionRects.splice(i--, 1);
+      selectionRectsLength--;
+      continue;
+    }
+    prevRect = selectionRect;
+  }
+  return selectionRects;
 }

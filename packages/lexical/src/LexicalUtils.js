@@ -40,16 +40,17 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   ElementNode,
 } from '.';
 import {
+  COMPOSITION_SUFFIX,
   DOM_TEXT_TYPE,
   HAS_DIRTY_NODES,
   LTR_REGEX,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
-  ZERO_WIDTH_CHAR,
 } from './LexicalConstants';
 import {flushRootMutations} from './LexicalMutations';
 import {
@@ -403,10 +404,15 @@ export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
   const editorState = getActiveEditorState();
-  if (__DEV__ && selection !== null && Object.isFrozen(selection)) {
-    console.warn(
-      '$setSelection called on frozen selection object. Ensure selection is cloned before passing in.',
-    );
+  if (selection !== null) {
+    if (Object.isFrozen(selection)) {
+      invariant(
+        false,
+        '$setSelection called on frozen selection object. Ensure selection is cloned before passing in.',
+      );
+    }
+    selection.dirty = true;
+    selection._cachedNodes = null;
   }
   editorState._selection = selection;
 }
@@ -480,7 +486,8 @@ export function createUID(): string {
 
 export function $updateSelectedTextFromDOM(
   editor: LexicalEditor,
-  compositionEndEvent: null | CompositionEvent,
+  isCompositionEnd: boolean,
+  data?: ?string,
 ): void {
   // Update the text content with the latest composition text
   const domSelection = getDOMSelection();
@@ -493,10 +500,9 @@ export function $updateSelectedTextFromDOM(
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if ($isTextNode(node)) {
       let textContent = anchorNode.nodeValue;
-      const data = compositionEndEvent !== null && compositionEndEvent.data;
 
       // Data is intentionally truthy, as we check for boolean, null and empty string.
-      if (textContent === ZERO_WIDTH_CHAR && data) {
+      if (textContent === COMPOSITION_SUFFIX && data) {
         const offset = data.length;
         textContent = data;
         anchorOffset = offset;
@@ -508,7 +514,7 @@ export function $updateSelectedTextFromDOM(
         textContent,
         anchorOffset,
         focusOffset,
-        compositionEndEvent !== null,
+        isCompositionEnd,
       );
     }
   }
@@ -529,7 +535,7 @@ export function $updateTextNodeFromDOMContent(
 
     if (
       (isComposing || compositionEnd) &&
-      textContent[textContent.length - 1] === ZERO_WIDTH_CHAR
+      textContent[textContent.length - 1] === COMPOSITION_SUFFIX
     ) {
       normalizedTextContent = textContent.slice(0, -1);
     }
@@ -852,6 +858,10 @@ export function isModifier(
   return ctrlKey || shiftKey || altKey || metaKey;
 }
 
+export function isSpace(keyCode: number): boolean {
+  return keyCode === 32;
+}
+
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
   if (IS_APPLE) {
     return metaKey;
@@ -1000,7 +1010,13 @@ export function isFirefoxClipboardEvents(): boolean {
 export function dispatchCommand<P>(
   editor: LexicalEditor,
   type: LexicalCommand<P>,
-  payload?: P,
+  payload: P,
 ): boolean {
   return triggerCommandListeners(editor, type, payload);
+}
+
+export function $textContentRequiresDoubleLinebreakAtEnd(
+  node: ElementNode,
+): boolean {
+  return !$isRootNode(node) && !node.isLastChild() && !node.isInline();
 }

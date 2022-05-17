@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,6 +8,7 @@
 
 import type {State} from 'lexical';
 
+import {$createLinkNode} from '@lexical/link';
 import {$createHeadingNode} from '@lexical/rich-text';
 import {$cloneContents} from '@lexical/selection';
 import {
@@ -89,61 +90,77 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
         expect($getNodeByKey('a').getTextContent()).toBe('Testa');
-        expect(selection.anchor).toEqual({
-          key: 'a',
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'a',
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // insertNodes
       setupTestCase((selection, element) => {
         selection.insertNodes([$createTextNode('foo')]);
-        expect(selection.anchor).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 3,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 3,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 3,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 3,
+            type: 'text',
+          }),
+        );
       });
 
       // insertParagraph
       setupTestCase((selection) => {
         selection.insertParagraph();
-        expect(selection.anchor).toEqual({
-          key: 'a',
-          offset: 0,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'a',
-          offset: 0,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 0,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 0,
+            type: 'text',
+          }),
+        );
       });
 
       // insertLineBreak
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
-        expect(selection.anchor).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // Format text
@@ -151,16 +168,20 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
         expect(element.getFirstChild().getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
         expect(element.getFirstChild().getNextSibling().getTextContent()).toBe(
           'a',
         );
@@ -221,16 +242,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: 'a',
-          offset: 2,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'a',
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 2,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
     });
 
@@ -270,16 +295,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: 'a',
-          offset: 0,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'a',
-          offset: 3,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 0,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 3,
+            type: 'text',
+          }),
+        );
       });
     });
 
@@ -314,16 +343,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
     });
 
@@ -361,16 +394,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: 'b',
-          offset: 1,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'b',
-          offset: 1,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'b',
+            offset: 1,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'b',
+            offset: 1,
+            type: 'text',
+          }),
+        );
       });
     });
 
@@ -410,16 +447,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: 'c',
-          offset: 2,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'c',
-          offset: 2,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'c',
+            offset: 2,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'c',
+            offset: 2,
+            type: 'text',
+          }),
+        );
       });
     });
 
@@ -459,16 +500,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: 'c',
-          offset: 2,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'c',
-          offset: 2,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'c',
+            offset: 2,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'c',
+            offset: 2,
+            type: 'text',
+          }),
+        );
       });
     });
 
@@ -510,47 +555,59 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
         const nextElement = element.getNextSibling();
-        expect(selection.anchor).toEqual({
-          key: nextElement.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: nextElement.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: nextElement.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: nextElement.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // insertLineBreak
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
-        expect(selection.anchor).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // Format text
@@ -559,16 +616,20 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // Extract selection
@@ -627,47 +688,59 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
         const firstChild = element;
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // insertLineBreak
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
-        expect(selection.anchor).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // Format text
@@ -676,16 +749,20 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // Extract selection
@@ -747,48 +824,60 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const lastChild = element.getLastChild();
         expect(lastChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: lastChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: lastChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: lastChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: lastChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
         const nextSibling = element.getNextSibling();
-        expect(selection.anchor).toEqual({
-          key: nextSibling.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: nextSibling.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: nextSibling.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: nextSibling.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // insertLineBreak
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
         const thirdChild = $getNodeByKey('c');
-        expect(selection.anchor).toEqual({
-          key: thirdChild.getKey(),
-          offset: 1,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: thirdChild.getKey(),
-          offset: 1,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: thirdChild.getKey(),
+            offset: 1,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: thirdChild.getKey(),
+            offset: 1,
+            type: 'text',
+          }),
+        );
       });
 
       // Format text
@@ -797,16 +886,20 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const lastChild = element.getLastChild();
         expect(lastChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: lastChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: lastChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: lastChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: lastChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // Extract selection
@@ -857,16 +950,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: 'a',
-          offset: 2,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'a',
-          offset: 2,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 2,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 2,
+            type: 'text',
+          }),
+        );
       });
     });
 
@@ -901,16 +998,20 @@ describe('LexicalSelectionHelpers tests', () => {
 
       editor.getEditorState().read(() => {
         const selection = $getSelection();
-        expect(selection.anchor).toEqual({
-          key: 'a',
-          offset: 3,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'a',
-          offset: 3,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 3,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 3,
+            type: 'text',
+          }),
+        );
       });
     });
   });
@@ -960,61 +1061,77 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
         expect($getNodeByKey('a').getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: 'a',
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'a',
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'a',
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // insertNodes
       setupTestCase((selection, element) => {
         selection.insertNodes([$createTextNode('foo')]);
-        expect(selection.anchor).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 3,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 3,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 3,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 3,
+            type: 'text',
+          }),
+        );
       });
 
       // insertParagraph
       setupTestCase((selection) => {
         selection.insertParagraph();
-        expect(selection.anchor).toEqual({
-          key: 'b',
-          offset: 0,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: 'b',
-          offset: 0,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: 'b',
+            offset: 0,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: 'b',
+            offset: 0,
+            type: 'text',
+          }),
+        );
       });
 
       // insertLineBreak
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
-        expect(selection.anchor).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // Format text
@@ -1022,16 +1139,20 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
         expect(element.getFirstChild().getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getFirstChild().getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getFirstChild().getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // Extract selection
@@ -1097,47 +1218,59 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
         const firstChild = element.getFirstChild();
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 0,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 0,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 0,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 0,
+            type: 'text',
+          }),
+        );
       });
 
       // insertLineBreak
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
-        expect(selection.anchor).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // Format text
@@ -1146,16 +1279,20 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // Extract selection
@@ -1229,47 +1366,59 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
         const nextElement = element.getNextSibling();
-        expect(selection.anchor).toEqual({
-          key: nextElement.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: nextElement.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: nextElement.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: nextElement.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // insertLineBreak
       setupTestCase((selection, element) => {
         selection.insertLineBreak(true);
-        expect(selection.anchor).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
-        expect(selection.focus).toEqual({
-          key: element.getKey(),
-          offset: 0,
-          type: 'element',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: element.getKey(),
+            offset: 0,
+            type: 'element',
+          }),
+        );
       });
 
       // Format text
@@ -1278,16 +1427,20 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.insertText('Test');
         const firstChild = element.getFirstChild();
         expect(firstChild.getTextContent()).toBe('Test');
-        expect(selection.anchor).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
-        expect(selection.focus).toEqual({
-          key: firstChild.getKey(),
-          offset: 4,
-          type: 'text',
-        });
+        expect(selection.anchor).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
+        expect(selection.focus).toEqual(
+          expect.objectContaining({
+            key: firstChild.getKey(),
+            offset: 4,
+            type: 'text',
+          }),
+        );
       });
 
       // Extract selection
@@ -1506,6 +1659,43 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(element.innerHTML).toBe(
           '<p dir="ltr"><span data-lexical-text="true">foobar</span></p>',
+        );
+      });
+
+      test('link insertion without parent element', async () => {
+        const editor = createTestEditor();
+        const element = document.createElement('div');
+        editor.setRootElement(element);
+
+        await editor.update((state: State) => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+
+          setAnchorPoint({
+            key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
+          });
+          setFocusPoint({
+            key: paragraph.getKey(),
+            offset: 0,
+            type: 'element',
+          });
+          const selection = $getSelection();
+
+          const link = $createLinkNode('https://');
+          link.append($createTextNode('ello worl'));
+
+          selection.insertNodes([
+            $createTextNode('h'),
+            link,
+            $createTextNode('d'),
+          ]);
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p dir="ltr"><span data-lexical-text="true">h</span><a href="https://" dir="ltr"><span data-lexical-text="true">ello worl</span></a><span data-lexical-text="true">d</span></p>',
         );
       });
 

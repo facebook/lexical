@@ -220,8 +220,8 @@ export class LexicalNode {
     if (selection == null) {
       return false;
     }
-    const selectedNodeKeys = new Set(selection.getNodes().map((n) => n.__key));
-    const isSelected = selectedNodeKeys.has(this.__key);
+
+    const isSelected = selection.getNodes().some((n) => n.__key === this.__key);
 
     if ($isTextNode(this)) {
       return isSelected;
@@ -447,7 +447,6 @@ export class LexicalNode {
     const nodes = [];
     const visited = new Set();
     let node = this;
-    let dfsAncestor = null;
     while (true) {
       const key = node.__key;
       if (!visited.has(key)) {
@@ -463,9 +462,6 @@ export class LexicalNode {
           : node.getLastChild()
         : null;
       if (child !== null) {
-        if (dfsAncestor === null) {
-          dfsAncestor = node;
-        }
         node = child;
         continue;
       }
@@ -485,9 +481,6 @@ export class LexicalNode {
       }
       let parentSibling = null;
       let ancestor = parent;
-      if (parent.is(dfsAncestor)) {
-        dfsAncestor = null;
-      }
       do {
         if (ancestor === null) {
           invariant(false, 'getNodesBetween: ancestor is null');
@@ -497,9 +490,6 @@ export class LexicalNode {
           : ancestor.getPreviousSibling();
         ancestor = ancestor.getParent();
         if (ancestor !== null) {
-          if (ancestor.is(dfsAncestor)) {
-            dfsAncestor = null;
-          }
           if (parentSibling === null && !visited.has(ancestor.__key)) {
             nodes.push(ancestor);
           }
@@ -517,11 +507,6 @@ export class LexicalNode {
     const editor = getActiveEditor();
     const dirtyLeaves = editor._dirtyLeaves;
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
-  }
-
-  // TODO remove this and move to TextNode
-  isComposing(): boolean {
-    return this.__key === $getCompositionKey();
   }
 
   getLatest(): this {
@@ -542,6 +527,10 @@ export class LexicalNode {
     const latestNode = this.getLatest();
     const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
+    const selection = $getSelection();
+    if (selection !== null) {
+      selection._cachedNodes = null;
+    }
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
       internalMarkNodeAsDirty(latestNode);
@@ -556,12 +545,10 @@ export class LexicalNode {
       mutableNode.__format = latestNode.__format;
       mutableNode.__dir = latestNode.__dir;
     } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      const marks = latestNode.__marks;
       mutableNode.__format = latestNode.__format;
       mutableNode.__style = latestNode.__style;
       mutableNode.__mode = latestNode.__mode;
       mutableNode.__detail = latestNode.__detail;
-      mutableNode.__marks = marks === null ? marks : Array.from(marks);
     }
     cloneNotNeeded.add(key);
     mutableNode.__key = key;
@@ -571,11 +558,11 @@ export class LexicalNode {
     // $FlowFixMe this is LexicalNode
     return mutableNode;
   }
-  // TODO remove this completely
+
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
     return '';
   }
-  // TODO remove this completely
+
   getTextContentSize(
     includeInert?: boolean,
     includeDirectionless?: false,

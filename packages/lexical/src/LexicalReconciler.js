@@ -23,6 +23,7 @@ import type {
 } from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -36,6 +37,7 @@ import {
 } from '.';
 import {
   DOM_TEXT_TYPE,
+  DOUBLE_LINE_BREAK,
   FULL_RECONCILE,
   IS_ALIGN_CENTER,
   IS_ALIGN_JUSTIFY,
@@ -48,6 +50,7 @@ import {
   markSelectionChangeFromReconcile,
 } from './LexicalEvents';
 import {
+  $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getDOMTextNode,
   getTextDirection,
@@ -177,6 +180,10 @@ function createNode(
       setElementFormat(dom, format);
     }
     reconcileElementTerminatingLineBreak(null, children, dom);
+    if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
+    }
   } else {
     const text = node.getTextContent();
     if ($isDecoratorNode(node)) {
@@ -377,12 +384,13 @@ function reconcileChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  reconcileChildren(prevChildren, nextChildren, dom);
+  reconcileChildren(element, prevChildren, nextChildren, dom);
   reconcileBlockDirection(element, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
 }
 
 function reconcileChildren(
+  element: ElementNode,
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
@@ -428,8 +436,12 @@ function reconcileChildren(
       nextChildren,
       prevChildrenLength,
       nextChildrenLength,
+      element,
       dom,
     );
+  }
+  if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
+    subTreeTextContent += DOUBLE_LINE_BREAK;
   }
   // $FlowFixMe: internal field
   dom.__lexicalTextContent = subTreeTextContent;
@@ -518,6 +530,10 @@ function reconcileNode(
         reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
     }
+    if ($textContentRequiresDoubleLinebreakAtEnd(nextNode)) {
+      subTreeTextContent += DOUBLE_LINE_BREAK;
+      editorTextContent += DOUBLE_LINE_BREAK;
+    }
   } else {
     const text = nextNode.getTextContent();
     if ($isDecoratorNode(nextNode)) {
@@ -525,6 +541,8 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
+      subTreeTextContent += text;
+      editorTextContent += text;
     } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
       subTreeDirectionedTextContent += text;
@@ -576,6 +594,7 @@ function reconcileNodeChildren(
   nextChildren: Array<NodeKey>,
   prevChildrenLength: number,
   nextChildrenLength: number,
+  element: ElementNode,
   dom: HTMLElement,
 ): void {
   const prevEndIndex = prevChildrenLength - 1;
@@ -833,19 +852,14 @@ function reconcileSelection(
   const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode = anchorDOM;
   let nextFocusNode = focusDOM;
-  let skipNativeSelectionDiff = false;
   let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
     anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
-  } else {
-    skipNativeSelectionDiff = true;
   }
   if (focus.type === 'text') {
     nextFocusNode = getDOMTextNode(focusDOM);
-  } else {
-    skipNativeSelectionDiff = true;
   }
   // If we can't get an underlying text node for selection, then
   // we should avoid setting selection to something incorrect.
@@ -872,7 +886,6 @@ function reconcileSelection(
   // we're moving selection to within an element, as this can
   // sometimes be problematic around scrolling.
   if (
-    !skipNativeSelectionDiff &&
     anchorOffset === nextAnchorOffset &&
     focusOffset === nextFocusOffset &&
     anchorDOMNode === nextAnchorNode &&
@@ -887,7 +900,12 @@ function reconcileSelection(
     ) {
       rootElement.focus({preventScroll: true});
     }
-    return;
+    // In Safari/iOS if we have selection on an element, then we also
+    // need to additionally set the DOM selection, otherwise a selectionchange
+    // event will not fire.
+    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
+      return;
+    }
   }
 
   // Apply the updated selection to the DOM. Note: this will trigger

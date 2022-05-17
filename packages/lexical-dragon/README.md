@@ -1,5 +1,5 @@
 # `@lexical/dragon`
 
-This package contains compatability with Dragon NaturallySpeaking accessibility tools.
+This package contains compatibility with Dragon NaturallySpeaking accessibility tools.
 
 More documentation coming soon.

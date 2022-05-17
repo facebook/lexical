@@ -72,6 +72,14 @@ React wrapper for `@lexical/list` that adds support for lists (ordered and unord
 <LexicalLinkPlugin />
 ```
 
+### `LexicalCheckListPlugin`
+
+React wrapper for `@lexical/list` that adds support for check lists. Note that it requires some css to render check/uncheck marks. See PlaygroundEditorTheme.css for details.
+
+```jsx
+<LexicalLinkPlugin />
+```
+
 ### `LexicalTablePlugin`
 
 React wrapper for `@lexical/table` that adds support for tables

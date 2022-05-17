@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type {ListNode} from '@lexical/list';
+import type {ListNode, ListType} from '@lexical/list';
 import type {TextNodeWithOffset} from '@lexical/text';
 import type {
   DecoratorNode,
@@ -707,7 +707,7 @@ function getNewNodeForCriteria<T>(
           element,
           children,
           patternMatchResults,
-          'ul',
+          'bullet',
         );
         return {newNode: null, shouldDelete: false};
       }
@@ -729,7 +729,7 @@ function getNewNodeForCriteria<T>(
           element,
           children,
           patternMatchResults,
-          'ol',
+          'number',
           start,
         );
         return {newNode: null, shouldDelete: false};
@@ -814,7 +814,7 @@ function createListOrMergeWithPrevious(
   element: ElementNode,
   children: Array<LexicalNode>,
   patternMatchResults: PatternMatchResults,
-  tag: 'ol' | 'ul',
+  listType: ListType,
   start?: number,
 ): void {
   const listItem = $createListItemNode();
@@ -825,11 +825,11 @@ function createListOrMergeWithPrevious(
   // Checking if previous element is a list, and if so append
   // new list item inside instead of creating new list
   const prevElement = element.getPreviousSibling();
-  if ($isListNode(prevElement) && prevElement.getTag() === tag) {
+  if ($isListNode(prevElement) && prevElement.getListType() === listType) {
     prevElement.append(listItem);
     element.remove();
   } else {
-    const list = $createListNode(tag, start);
+    const list = $createListNode(listType, start);
     list.append(listItem);
     element.replace(list);
   }
@@ -1350,7 +1350,9 @@ function processNestedLists(
       }
       const indent = ' '.repeat(depth * LIST_INDENT_SIZE);
       const prefix =
-        listNode.getTag() === 'ul' ? '- ' : `${listNode.getStart() + index}. `;
+        listNode.getListType() === 'bullet'
+          ? '- '
+          : `${listNode.getStart() + index}. `;
       output.push(indent + prefix + exportChildren(listItemNode));
       index++;
     }

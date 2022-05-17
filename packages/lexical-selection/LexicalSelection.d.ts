@@ -9,6 +9,7 @@
 import type {
   ElementNode,
   GridSelection,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   NodeSelection,
@@ -21,6 +22,9 @@ export function $cloneContents(
   nodeMap: Array<[NodeKey, LexicalNode]>;
   range: Array<NodeKey>;
 };
+export function $cloneWithProperties<LexicalNode>(
+  node: LexicalNode,
+): LexicalNode;
 export function getStyleObjectFromCSS(css: string): {
   [key: string]: string;
 } | null;
@@ -58,3 +62,16 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean;
+
+declare function createDOMRange(
+  editor: LexicalEditor,
+  anchorNode: LexicalNode,
+  anchorOffset: number,
+  focusNode: LexicalNode,
+  focusOffset: number,
+): Range | null;
+
+declare function createRectsFromDOMRange(
+  editor: LexicalEditor,
+  range: Range,
+): Array<ClientRect>;

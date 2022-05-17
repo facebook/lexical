@@ -1,11 +1,10 @@
 # NOTE: In general this should be kept in sync with .eslintignore
 
-packages/**/dist/*.js
-packages/**/config/*.js
-packages/**/*.js.flow
-packages/**/*.d.ts
-packages/playwright
-packages/playwright-core
-packages/**/vite.config.js
-packages/lexical-website-new/build
+**/dist/**
+**/config/**
+**/build/**
+**/*.js.flow
+**/*.d.ts
+**/playwright*/**
+**/vite.config.js
 **/node_modules

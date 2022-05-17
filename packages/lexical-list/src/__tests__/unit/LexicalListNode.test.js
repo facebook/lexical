@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,8 +15,7 @@ import {
   ListNode,
 } from '@lexical/list';
 import {ParagraphNode, TextNode} from 'lexical';
-
-import {initializeUnitTest} from '../../../../lexical/src/__tests__/utils';
+import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.
@@ -65,10 +64,12 @@ describe('LexicalListNode tests', () => {
     test('ListNode.getTag()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {
-        const ulListNode = $createListNode('ul', 1);
+        const ulListNode = $createListNode('bullet', 1);
         expect(ulListNode.getTag()).toBe('ul');
-        const olListNode = $createListNode('ol', 1);
+        const olListNode = $createListNode('number', 1);
         expect(olListNode.getTag()).toBe('ol');
+        const checkListNode = $createListNode('check', 1);
+        expect(checkListNode.getTag()).toBe('ul');
       });
     });
 
@@ -160,7 +161,7 @@ describe('LexicalListNode tests', () => {
         expect(domElement.outerHTML).toBe(
           '<ul class="my-ul-list-class my-ul-list-class-1"></ul>',
         );
-        const newListNode = new ListNode();
+        const newListNode = $createListNode('ol', 1);
         const result = newListNode.updateDOM(
           listNode,
           domElement,
@@ -242,6 +243,34 @@ describe('LexicalListNode tests', () => {
       await editor.update(() => {
         const listNode = $createListNode();
         expect($isListNode(listNode)).toBe(true);
+      });
+    });
+
+    test('$createListNode() with tag name (backward compatibility)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const numberList = $createListNode('ol', 1);
+        const bulletList = $createListNode('ul', 1);
+        expect(numberList.__listType).toBe('number');
+        expect(bulletList.__listType).toBe('bullet');
+      });
+    });
+
+    test('ListNode.clone() without list type (backward compatibility)', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const olNode = ListNode.clone({
+          __key: '1',
+          __start: 1,
+          __tag: 'ol',
+        });
+        const ulNode = ListNode.clone({
+          __key: '1',
+          __start: 1,
+          __tag: 'ul',
+        });
+        expect(olNode.__listType).toBe('number');
+        expect(ulNode.__listType).toBe('bullet');
       });
     });
   });

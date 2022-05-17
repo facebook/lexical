@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -986,6 +986,26 @@ describe('LexicalEditor tests', () => {
     let textKey;
     let parsedEditorState;
 
+    it('parses parsed JSON', async () => {
+      await update(() => {
+        const paragraph = $createParagraphNode();
+        originalText = $createTextNode('Hello world');
+        originalText.select(6, 11);
+        paragraph.append(originalText);
+        $getRoot().append(paragraph);
+      });
+      const stringifiedEditorState = JSON.stringify(
+        editor.getEditorState().toJSON(),
+      );
+      const parsedEditorStateFromObject = editor.parseEditorState(
+        JSON.parse(stringifiedEditorState),
+      );
+      parsedEditorStateFromObject.read(() => {
+        const root = $getRoot();
+        expect(root.getTextContent()).toMatch(/Hello world/);
+      });
+    });
+
     describe('range selection', () => {
       beforeEach(async () => {
         init();
@@ -1034,7 +1054,6 @@ describe('LexicalEditor tests', () => {
           __detail: 0,
           __format: 0,
           __key: textKey,
-          __marks: null,
           __mode: 0,
           __parent: paragraphKey,
           __style: '',
@@ -1115,7 +1134,6 @@ describe('LexicalEditor tests', () => {
           __detail: 0,
           __format: 0,
           __key: textKey,
-          __marks: null,
           __mode: 0,
           __parent: paragraphKey,
           __style: '',
@@ -1197,7 +1215,6 @@ describe('LexicalEditor tests', () => {
           __detail: 0,
           __format: 0,
           __key: textKey,
-          __marks: null,
           __mode: 0,
           __parent: paragraphKey,
           __style: '',

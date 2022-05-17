@@ -32,6 +32,7 @@ export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent | null>;
+export var KEY_SPACE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;
@@ -63,7 +64,7 @@ export declare function createCommand<T>(): LexicalCommand<T>;
  */
 type ErrorHandler = (error: Error) => void;
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
-export type NodeMutation = 'created' | 'destroyed';
+export type NodeMutation = 'created' | 'updated' | 'destroyed';
 type UpdateListener = (arg0: {
   tags: Set<string>;
   prevEditorState: EditorState;
@@ -127,6 +128,7 @@ export declare class LexicalEditor {
   _observer: null | MutationObserver;
   _key: string;
   _readOnly: boolean;
+  _headless: boolean;
   isComposing(): boolean;
   registerUpdateListener(listener: UpdateListener): () => void;
   registerRootListener(listener: RootListener): () => void;
@@ -146,15 +148,18 @@ export declare class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(type: string, payload: P): boolean;
+  dispatchCommand<P>(type: LexicalCommand<P>, payload: P): boolean;
   hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
+  getKey(): string;
   getDecorators<X>(): Record<NodeKey, X>;
   getRootElement(): null | HTMLElement;
   setRootElement(rootElement: null | HTMLElement): void;
   getElementByKey(key: NodeKey): null | HTMLElement;
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
-  parseEditorState(stringifiedEditorState: string): EditorState;
+  parseEditorState(
+    maybeStringifiedEditorState: string | ParsedEditorState,
+  ): EditorState;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
   blur(): void;
@@ -178,11 +183,12 @@ type TextNodeThemeClasses = {
   underlineStrikethrough?: EditorThemeClassName;
   italic?: EditorThemeClassName;
   code?: EditorThemeClassName;
+  subscript?: EditorThemeClassName;
+  superscript?: EditorThemeClassName;
 };
 export type EditorThemeClasses = {
   ltr?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
-  root?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   paragraph?: EditorThemeClassName;
   image?: EditorThemeClassName;
@@ -192,6 +198,8 @@ export type EditorThemeClasses = {
     ol?: EditorThemeClassName;
     olDepth?: Array<EditorThemeClassName>;
     listitem?: EditorThemeClassName;
+    listitemChecked?: EditorThemeClassName;
+    listitemUnchecked?: EditorThemeClassName;
     nested?: {
       list?: EditorThemeClassName;
       listitem?: EditorThemeClassName;
@@ -201,6 +209,8 @@ export type EditorThemeClasses = {
   tableRow?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
+  mark?: EditorThemeClassName;
+  markOverlap?: EditorThemeClassName;
   link?: EditorThemeClassName;
   quote?: EditorThemeClassName;
   code?: EditorThemeClassName;
@@ -240,7 +250,7 @@ export function createEditor(editorConfig?: {
   editorState?: EditorState;
   theme?: EditorThemeClasses;
   parentEditor?: LexicalEditor;
-  nodes?: Array<Class<LexicalNode>>;
+  nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError: (error: Error) => void;
   disableEvents?: boolean;
   readOnly?: boolean;
@@ -298,8 +308,8 @@ export type DOMConversionFn = (
 ) => DOMConversionOutput;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
-  parentLexicalNode: LexicalNode | null,
-) => LexicalNode | void | null;
+  parentLexicalNode: LexicalNode | null | undefined,
+) => LexicalNode | null;
 export type DOMConversionMap = Record<
   NodeName,
   (node: Node) => DOMConversion | null
@@ -344,10 +354,7 @@ export declare class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  isComposing(): boolean;
-  // $FlowFixMe
   getLatest<T extends LexicalNode>(): T;
-  // $FlowFixMe
   getWritable<T extends LexicalNode>(): T;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getTextContentSize(
@@ -558,24 +565,19 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
-export type TextMark = {end: null | number; id: string; start: null | number};
 
-export type TextMarks = Array<TextMark>;
 export declare class TextNode extends LexicalNode {
   __text: string;
   __format: number;
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  __marks: null | TextMarks;
   static getType(): string;
   static clone(node: any): TextNode;
   constructor(text: string, key?: NodeKey);
-  getMark(id: string): null | TextMark;
-  setMark(id: string, start: null | number, end: null | number): void;
-  deleteMark(id: string): void;
   getFormat(): number;
   getStyle(): string;
+  isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
   isInert(): boolean;
@@ -615,10 +617,11 @@ export declare class TextNode extends LexicalNode {
   canInsertTextAfter(): boolean;
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
+  isTextEntity(): boolean;
 }
 export function $createTextNode(text?: string): TextNode;
 export function $isTextNode(
-  node: LexicalNode | null | undefined,
+  node: TextNode | LexicalNode | null | undefined,
 ): node is TextNode;
 
 /**
@@ -671,19 +674,19 @@ export declare class ElementNode extends LexicalNode {
   constructor(key?: NodeKey);
   getFormat(): number;
   getIndent(): number;
-  getChildren(): Array<LexicalNode>;
+  getChildren<T extends Array<LexicalNode>>(): T;
   getChildrenKeys(): Array<NodeKey>;
   getChildrenSize(): number;
   isEmpty(): boolean;
   isDirty(): boolean;
   getAllTextNodes(includeInert?: boolean): Array<TextNode>;
-  getFirstDescendant(): null | LexicalNode;
-  getLastDescendant(): null | LexicalNode;
-  getDescendantByIndex(index: number): LexicalNode;
+  getFirstDescendant<T extends LexicalNode>(): null | T;
+  getLastDescendant<T extends LexicalNode>(): null | T;
+  getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
   getFirstChild<T extends LexicalNode>(): null | T;
   getFirstChildOrThrow<T extends LexicalNode>(): T;
-  getLastChild(): null | LexicalNode;
-  getChildAtIndex(index: number): null | LexicalNode;
+  getLastChild<T extends LexicalNode>(): null | T;
+  getChildAtIndex<T extends LexicalNode>(index: number): null | T;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getDirection(): 'ltr' | 'rtl' | null;
   hasFormat(type: ElementFormatType): boolean;
@@ -699,10 +702,15 @@ export declare class ElementNode extends LexicalNode {
   canInsertTab(): boolean;
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
-  excludeFromCopy(): boolean;
+  excludeFromCopy(destination: 'clone' | 'html'): boolean;
   canExtractContents(): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canInsertAfter(node: LexicalNode): boolean;
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
+  ): boolean;
   canBeEmpty(): boolean;
   canInsertTextBefore(): boolean;
   canInsertTextAfter(): boolean;
@@ -771,7 +779,9 @@ export function $getNearestNodeFromDOMNode(
 ): LexicalNode | null;
 export function $getNodeByKey<N extends LexicalNode>(key: NodeKey): N | null;
 export function $getRoot(): RootNode;
-export function $isLeafNode(node: LexicalNode | null | undefined): boolean;
+export function $isLeafNode(
+  node: LexicalNode | null | undefined,
+): node is TextNode | LineBreakNode | DecoratorNode<unknown>;
 export function $setCompositionKey(compositionKey: null | NodeKey): void;
 export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,

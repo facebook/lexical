@@ -33,7 +33,7 @@ declare export class CodeNode extends ElementNode {
   setLanguage(language: string): void;
   getLanguage(): string | void;
 }
-declare export function $createCodeNode(): CodeNode;
+declare export function $createCodeNode(language?: string): CodeNode;
 declare export function $isCodeNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof CodeNode);

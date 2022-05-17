@@ -10,6 +10,8 @@
 import type {ElementFormatType} from './nodes/LexicalElementNode';
 import type {TextFormatType, TextModeType} from './nodes/LexicalTextNode';
 
+import {IS_FIREFOX, IS_IOS, IS_SAFARI} from 'shared/environment';
+
 // DOM
 export const DOM_ELEMENT_TYPE = 1;
 export const DOM_TEXT_TYPE = 3;
@@ -45,7 +47,17 @@ export const IS_ALIGN_RIGHT = 3;
 export const IS_ALIGN_JUSTIFY = 4;
 
 // Reconciliation
-export const ZERO_WIDTH_CHAR = '\u200b';
+export const NON_BREAKING_SPACE = '\u00A0';
+// For iOS/Safari we use a non breaking space, otherwise the cursor appears
+// overlapping the composed text.
+export const COMPOSITION_SUFFIX: string =
+  IS_SAFARI || IS_IOS ? NON_BREAKING_SPACE : '\u200b';
+export const DOUBLE_LINE_BREAK = '\n\n';
+// For FF, we need to use a non-breaking space, or it gets composition
+// in a stuck state.
+export const COMPOSITION_START_CHAR: string = IS_FIREFOX
+  ? NON_BREAKING_SPACE
+  : COMPOSITION_SUFFIX;
 
 const RTL = '\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC';
 const LTR =

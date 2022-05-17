@@ -38,7 +38,7 @@ const config = {
           showReadingTime: true, // TODO: Update when directory finalized
         },
         docs: {
-          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/docs/`,
+          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/`,
           remarkPlugins: [importPlugin],
           // TODO: Update when directory finalized
           sidebarPath: require.resolve('./sidebars.js'),
@@ -63,6 +63,12 @@ const config = {
         appId: 'YRGKJK6OMH',
         contextualSearch: true,
         indexName: 'lexical',
+      },
+      docs: {
+        sidebar: {
+          autoCollapseCategories: true,
+          hideable: true,
+        },
       },
       footer: {
         copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,

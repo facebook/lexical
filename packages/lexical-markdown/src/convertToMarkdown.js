@@ -32,8 +32,8 @@ export function $convertToMarkdownString(): string {
 }
 
 function exportTopLevelElementOrDecorator(node: LexicalNode): string | null {
-  const blockTransformers = getAllMarkdownCriteriaForParagraphs();
-  for (const transformer of blockTransformers) {
+  const elementTransformers = getAllMarkdownCriteriaForParagraphs();
+  for (const transformer of elementTransformers) {
     if (transformer.export != null) {
       const result = transformer.export(node, (_node) => exportChildren(_node));
       if (result != null) {

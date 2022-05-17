@@ -23,7 +23,7 @@ export const IS_COLLAB =
   process.env.E2E_EDITOR_MODE === 'rich-text-with-collab';
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
-const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
+export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 
 export async function initialize({
   page,
@@ -89,7 +89,6 @@ export async function clickSelectors(page, selectors) {
 }
 
 async function assertHTMLOnPageOrFrame(
-  page,
   pageOrFrame,
   expectedHtml,
   ignoreClasses,
@@ -122,7 +121,6 @@ export async function assertHTML(
       async () => {
         const leftFrame = await page.frame('left');
         return assertHTMLOnPageOrFrame(
-          page,
           leftFrame,
           expectedHtml,
           ignoreClasses,
@@ -137,7 +135,6 @@ export async function assertHTML(
         async () => {
           const rightFrame = await page.frame('right');
           return assertHTMLOnPageOrFrame(
-            page,
             rightFrame,
             expectedHtml,
             ignoreClasses,
@@ -149,7 +146,6 @@ export async function assertHTML(
     }
   } else {
     await assertHTMLOnPageOrFrame(
-      page,
       page,
       expectedHtml,
       ignoreClasses,
@@ -384,6 +380,13 @@ export async function focusEditor(page, parentSelector = '.editor-shell') {
   }
 }
 
+export async function getHTML(page, selector = 'div[contenteditable="true"]') {
+  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
+  await pageOrFrame.waitForSelector(selector);
+  const element = await pageOrFrame.$(selector);
+  return element.innerHTML();
+}
+
 export async function getEditorElement(page, parentSelector = '.editor-shell') {
   const selector = `${parentSelector} div[contenteditable="true"]`;
 
@@ -558,6 +561,14 @@ export function html(partials, ...params) {
   return output;
 }
 
+export async function selectFromAdditionalStylesDropdown(page, selector) {
+  await click(
+    page,
+    '.toolbar-item[aria-label="Formatting options for additional text styles"]',
+  );
+  await click(page, '.dropdown ' + selector);
+}
+
 export async function selectFromFormatDropdown(page, selector) {
   await click(
     page,
@@ -638,4 +649,22 @@ export async function enableCompositionKeyEvents(page) {
       true,
     );
   });
+}
+
+export async function pressToggleBold(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('b');
+  await keyUpCtrlOrMeta(page);
+}
+
+export async function pressToggleItalic(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('b');
+  await keyUpCtrlOrMeta(page);
+}
+
+export async function pressToggleUnderline(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('u');
+  await keyUpCtrlOrMeta(page);
 }

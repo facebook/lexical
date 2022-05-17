@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -80,7 +80,6 @@ describe('LexicalEditorState tests', () => {
         __detail: 0,
         __format: 0,
         __key: '2',
-        __marks: null,
         __mode: 0,
         __parent: '1',
         __style: '',
@@ -99,7 +98,7 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__children\":[\"1\"],\"__dir\":\"ltr\",\"__format\":0,\"__indent\":0,\"__key\":\"root\",\"__parent\":null,\"__type\":\"root\"}],[\"1\",{\"__type\":\"paragraph\",\"__parent\":\"root\",\"__key\":\"1\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__parent\":\"1\",\"__key\":\"2\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0,\"__marks\":null}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"},\"type\":\"range\"}}`,
+        `{\"_nodeMap\":[[\"root\",{\"__children\":[\"1\"],\"__dir\":\"ltr\",\"__format\":0,\"__indent\":0,\"__key\":\"root\",\"__parent\":null,\"__type\":\"root\"}],[\"1\",{\"__type\":\"paragraph\",\"__parent\":\"root\",\"__key\":\"1\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__parent\":\"1\",\"__key\":\"2\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"},\"type\":\"range\"}}`,
       );
     });
 
@@ -115,7 +114,7 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        '{"_nodeMap":[["root",{"__children":["1"],"__dir":"ltr","__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"paragraph","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":"ltr"}],["2",{"__type":"text","__parent":"1","__key":"2","__text":"Hello world","__format":0,"__style":"","__mode":0,"__detail":0,"__marks":null}]],"_selection":{"nodes":["2"],"type":"node"}}',
+        '{"_nodeMap":[["root",{"__children":["1"],"__dir":"ltr","__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"paragraph","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":"ltr"}],["2",{"__type":"text","__parent":"1","__key":"2","__text":"Hello world","__format":0,"__style":"","__mode":0,"__detail":0}]],"_selection":{"nodes":["2"],"type":"node"}}',
       );
     });
 

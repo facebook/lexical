@@ -13,7 +13,12 @@ import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {CAN_USE_BEFORE_INPUT, IS_FIREFOX} from 'shared/environment';
+import {
+  CAN_USE_BEFORE_INPUT,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 
 import {
@@ -48,6 +53,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
   PASTE_COMMAND,
   REDO_COMMAND,
@@ -56,7 +62,11 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
-import {DOM_TEXT_TYPE} from './LexicalConstants';
+import {
+  COMPOSITION_START_CHAR,
+  DOM_TEXT_TYPE,
+  DOUBLE_LINE_BREAK,
+} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -91,6 +101,7 @@ import {
   isOpenLineBreak,
   isParagraph,
   isRedo,
+  isSpace,
   isTab,
   isUnderline,
   isUndo,
@@ -134,6 +145,7 @@ let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromReconcile = false;
 let isInsertLineBreak = false;
+let isFirefoxEndingComposition = false;
 let collapsedSelectionFormat: [number, number, NodeKey, number] = [
   0,
   0,
@@ -198,7 +210,10 @@ function onSelectionChange(
         // If we have marked a collapsed selection format, and we're
         // within the given time range – then attempt to use that format
         // instead of getting the format from the anchor node.
-        const currentTimeStamp = window.event.timeStamp;
+        const windowEvent = window.event;
+        const currentTimeStamp = windowEvent
+          ? windowEvent.timeStamp
+          : performance.now();
         const [lastFormat, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 
@@ -317,7 +332,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             anchor.offset === 0 &&
             $isTextNode(node) &&
             $isTextNode(prevNode) &&
-            node.getTextContent() === ' ' &&
+            node.getTextContent() === COMPOSITION_START_CHAR &&
             prevNode.getFormat() !== selection.format
           ) {
             const prevTextContent = prevNode.getTextContent();
@@ -356,7 +371,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
       // Fixes an Android bug where selection flickers when backspacing
       setTimeout(() => {
-        editor.update(() => {
+        updateEditor(editor, () => {
           $setCompositionKey(null);
         });
       }, ANDROID_COMPOSITION_LATENCY);
@@ -385,7 +400,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       if (data === '\n') {
         event.preventDefault();
         dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND);
-      } else if (data === '\n\n') {
+      } else if (data === DOUBLE_LINE_BREAK) {
         event.preventDefault();
         dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
       } else if (data == null && event.dataTransfer) {
@@ -520,14 +535,26 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(selection, data, false)
     ) {
+      // Given we're over-riding the default behavior, we will need
+      // to ensure to disable composition before dispatching the
+      // insertText command for when changing the sequence for FF.
+      if (isFirefoxEndingComposition) {
+        onCompositionEndImpl(editor, data);
+        isFirefoxEndingComposition = false;
+      }
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
-      // For Android
-      if (editor._compositionKey !== null) {
+      // This ensures consistency on Android.
+      if (!IS_SAFARI && !IS_IOS && editor._compositionKey !== null) {
         lastKeyDownTimeStamp = 0;
         $setCompositionKey(null);
       }
     } else {
-      $updateSelectedTextFromDOM(editor, null);
+      $updateSelectedTextFromDOM(editor, false);
+      // onInput always fires after onCompositionEnd for FF.
+      if (isFirefoxEndingComposition) {
+        onCompositionEndImpl(editor, data);
+        isFirefoxEndingComposition = false;
+      }
     }
     // Also flush any other mutations that might have occurred
     // since the change.
@@ -546,63 +573,79 @@ function onCompositionStart(
       $setCompositionKey(anchor.key);
       if (
         // If it has been 30ms since the last keydown, then we should
-        // apply the empty space heuristic.
+        // apply the empty space heuristic. We can't do this for Safari,
+        // as the keydown fires after composition start.
         event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
         // FF has issues around composing multibyte characters, so we also
         // need to invoke the empty space heuristic below.
-        (IS_FIREFOX && anchor.type === 'element') ||
+        anchor.type === 'element' ||
         !selection.isCollapsed() ||
         selection.anchor.getNode().getFormat() !== selection.format
       ) {
-        // We insert an empty space, ready for the composition
+        // We insert a zero width character, ready for the composition
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        dispatchCommand(editor, INSERT_TEXT_COMMAND, ' ');
+        dispatchCommand(editor, INSERT_TEXT_COMMAND, COMPOSITION_START_CHAR);
       }
     }
   });
+}
+
+function onCompositionEndImpl(editor: LexicalEditor, data: ?string): void {
+  const compositionKey = editor._compositionKey;
+  $setCompositionKey(null);
+  // Handle termination of composition.
+  if (compositionKey !== null && data != null) {
+    // Composition can sometimes move to an adjacent DOM node when backspacing.
+    // So check for the empty case.
+    if (data === '') {
+      const node = $getNodeByKey(compositionKey);
+      const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
+      if (textNode !== null && $isTextNode(node)) {
+        $updateTextNodeFromDOMContent(
+          node,
+          textNode.nodeValue,
+          null,
+          null,
+          true,
+        );
+      }
+      return;
+    }
+    // Composition can sometimes be that of a new line. In which case, we need to
+    // handle that accordingly.
+    if (data[data.length - 1] === '\n') {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        // If the last character is a line break, we also need to insert
+        // a line break.
+        const focus = selection.focus;
+        selection.anchor.set(focus.key, focus.offset, focus.type);
+        dispatchCommand(editor, KEY_ENTER_COMMAND, null);
+        return;
+      }
+    }
+  }
+  $updateSelectedTextFromDOM(editor, true, data);
 }
 
 function onCompositionEnd(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
-  updateEditor(editor, () => {
-    const compositionKey = editor._compositionKey;
-    $setCompositionKey(null);
-    const data = event.data;
-    // Handle termination of composition.
-    if (compositionKey !== null && data != null) {
-      // It can sometimes move to an adjacent DOM node when backspacing.
-      // So check for the empty case.
-      if (data === '') {
-        const node = $getNodeByKey(compositionKey);
-        const textNode = getDOMTextNode(editor.getElementByKey(compositionKey));
-        if (textNode !== null && $isTextNode(node)) {
-          $updateTextNodeFromDOMContent(
-            node,
-            textNode.nodeValue,
-            null,
-            null,
-            true,
-          );
-        }
-        return;
-      } else if (data[data.length - 1] === '\n') {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          // If the last character is a line break, we also need to insert
-          // a line break.
-          const focus = selection.focus;
-          selection.anchor.set(focus.key, focus.offset, focus.type);
-          dispatchCommand(editor, KEY_ENTER_COMMAND, null);
-          return;
-        }
-      }
-    }
-    $updateSelectedTextFromDOM(editor, event);
-  });
+  // Firefox fires onCompositionEnd before onInput, but Chrome/Webkit,
+  // fire onInput before onCompositionEnd. To ensure the sequence works
+  // like Chrome/Webkit we use the isFirefoxEndingComposition flag to
+  // defer handling of onCompositionEnd in Firefox till we have processed
+  // the logic in onInput.
+  if (IS_FIREFOX) {
+    isFirefoxEndingComposition = true;
+  } else {
+    updateEditor(editor, () => {
+      onCompositionEndImpl(editor, event.data);
+    });
+  }
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
@@ -623,6 +666,8 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isLineBreak(keyCode, shiftKey)) {
     isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
+  } else if (isSpace(keyCode)) {
+    dispatchCommand(editor, KEY_SPACE_COMMAND, event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
     isInsertLineBreak = true;

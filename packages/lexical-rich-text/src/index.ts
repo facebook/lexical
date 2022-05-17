@@ -73,15 +73,10 @@ import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
-export interface SerializedHeadingNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
+export interface SerializedHeadingNode
+  extends SerializedElementNode {
   tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
   type: 'heading';
-}
-
-export interface SerializedQuoteNode<SerializedNode>
-  extends SerializedElementNode<SerializedNode> {
-  type: 'quote';
 }
 
 // Convoluted logic to make this work with Flow. Order matters.
@@ -119,8 +114,8 @@ export class QuoteNode extends ElementNode {
     return false;
   }
 
-  static importJSON<SerializedNode>(
-    serializedNode: SerializedQuoteNode<SerializedNode>,
+  static importJSON(
+    serializedNode: SerializedElementNode,
   ): QuoteNode {
     const node = $createQuoteNode();
     node.setFormat(serializedNode.format);
@@ -129,7 +124,7 @@ export class QuoteNode extends ElementNode {
     return node;
   }
 
-  exportJSON<SerializedNode>(): SerializedQuoteNode<SerializedNode> {
+  exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),
       type: 'quote',
@@ -231,8 +226,8 @@ export class HeadingNode extends ElementNode {
     };
   }
 
-  static importJSON<SerializedNode>(
-    serializedNode: SerializedHeadingNode<SerializedNode>,
+  static importJSON(
+    serializedNode: SerializedHeadingNode,
   ): HeadingNode {
     const node = $createHeadingNode(serializedNode.tag);
     node.setFormat(serializedNode.format);
@@ -241,7 +236,7 @@ export class HeadingNode extends ElementNode {
     return node;
   }
 
-  exportJSON<SerializedNode>(): SerializedHeadingNode<SerializedNode> {
+  exportJSON(): SerializedHeadingNode {
     return {
       ...super.exportJSON(),
       tag: this.__tag,

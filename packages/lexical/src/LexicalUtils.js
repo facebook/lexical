@@ -624,7 +624,6 @@ function $shouldInsertTextAfterOrBeforeTextNode(
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   text: string,
-  isBeforeInput: boolean,
 ): boolean {
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -633,23 +632,28 @@ export function $shouldPreventDefaultAndInsertText(
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = getActiveEditor().getElementByKey(anchorKey);
+  const textLength = text.length;
 
   return (
     anchorKey !== focus.key ||
     // If we're working with a non-text node.
     !$isTextNode(anchorNode) ||
-    // If we're working with a range that is not during composition.
-    (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
+    // If we are replacing a range with a single character.
+    (textLength < 2 && anchor.offset !== focus.offset) ||
+    // Any non standard text node.
+    $isTokenOrInertOrSegmented(anchorNode) ||
     // If the text length is more than a single character and we're either
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).
-    ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
+    (anchorNode.isDirty() && textLength > 1) ||
     // If the DOM selection element is not the same as the backing node
     (backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
+    // If we detect graphemes, it's safer to insert.
+    doesContainGrapheme(text) ||
     // One last set of heuristics to check against.
     $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
   );

@@ -410,7 +410,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         selection.insertRawText(text);
       } else if (
         data != null &&
-        $shouldPreventDefaultAndInsertText(selection, data, true)
+        $shouldPreventDefaultAndInsertText(selection, data)
       ) {
         event.preventDefault();
         dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
@@ -530,10 +530,14 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
     const data = event.data;
+    const possibleTextReplacement =
+      event.inputType === 'insertText' && data != null && data.length > 1;
+
     if (
       data != null &&
       $isRangeSelection(selection) &&
-      $shouldPreventDefaultAndInsertText(selection, data, false)
+      (possibleTextReplacement ||
+        $shouldPreventDefaultAndInsertText(selection, data))
     ) {
       // Given we're over-riding the default behavior, we will need
       // to ensure to disable composition before dispatching the
@@ -543,8 +547,20 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         isFirefoxEndingComposition = false;
       }
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
+      if (possibleTextReplacement) {
+        // If the DOM selection offset is higher than the existing
+        // offset, then restore the offset as it's likely correct
+        // in the case of text replacements.
+        const {anchorOffset} = window.getSelection();
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        if (anchorOffset > anchor.offset) {
+          anchor.set(anchor.key, anchorOffset, anchor.type);
+          focus.set(anchor.key, anchorOffset, anchor.type);
+        }
+      }
       // This ensures consistency on Android.
-      if (!IS_SAFARI && !IS_IOS && editor._compositionKey !== null) {
+      if (!IS_SAFARI && !IS_IOS && editor.isComposing()) {
         lastKeyDownTimeStamp = 0;
         $setCompositionKey(null);
       }

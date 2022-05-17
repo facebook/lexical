@@ -1127,7 +1127,7 @@ export default function ToolbarPlugin(): JSX.Element {
             buttonLabel=""
             buttonAriaLabel="Formatting options for additional text styles"
             buttonIconClassName="icon dropdown-more">
-            <button
+            <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(
                   FORMAT_TEXT_COMMAND,
@@ -1141,7 +1141,7 @@ export default function ToolbarPlugin(): JSX.Element {
               aria-label="Format text with a strikethrough">
               <i className="icon strikethrough" />
               <span className="text">Strikethrough</span>
-            </button>
+            </DropDownItem>
             <button
               onClick={() => {
                 activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');

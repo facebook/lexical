@@ -622,6 +622,13 @@ function createScheme(tChannel) {
     text: _validatorPrimitives.tString,
     delay: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
+  scheme.PageKeyboardImeSetCompositionParams = (0, _validatorPrimitives.tObject)({
+    text: _validatorPrimitives.tString,
+    selectionStart: _validatorPrimitives.tNumber,
+    selectionEnd: _validatorPrimitives.tNumber,
+    replacementStart: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    replacementEnd: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
+  });
   scheme.PageKeyboardPressParams = (0, _validatorPrimitives.tObject)({
     key: _validatorPrimitives.tString,
     delay: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)

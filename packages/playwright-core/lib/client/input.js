@@ -45,6 +45,15 @@ class Keyboard {
     });
   }
 
+  async imeSetComposition(text, selectionStart, selectionEnd, options) {
+    await this._page._channel.keyboardImeSetComposition({
+      text,
+      selectionStart,
+      selectionEnd,
+      ...options
+    });
+  }
+
   async type(text, options = {}) {
     await this._page._channel.keyboardType({
       text,

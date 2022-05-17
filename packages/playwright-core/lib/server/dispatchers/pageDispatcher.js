@@ -259,6 +259,10 @@ class PageDispatcher extends _dispatcher.Dispatcher {
     await this._page.keyboard.up(params.key);
   }
 
+  async keyboardImeSetComposition(params, metadata) {
+    await this._page.keyboard.imeSetComposition(params.text, params.selectionStart, params.selectionEnd, params);
+  }
+
   async keyboardInsertText(params, metadata) {
     await this._page.keyboard.insertText(params.text);
   }

@@ -85,6 +85,15 @@ class Keyboard {
     await this._page._doSlowMo();
   }
 
+  async imeSetComposition(text, selectionStart, selectionEnd, options) {
+    let replacementStart = -1;
+    let replacementEnd = -1;
+    if (options && options.replacementStart !== undefined) replacementStart = options.replacementStart;
+    if (options && options.replacementEnd !== undefined) replacementEnd = options.replacementEnd;
+    await this._raw.imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd);
+    await this._page._doSlowMo();
+  }
+
   async type(text, options) {
     const delay = options && options.delay || undefined;
 

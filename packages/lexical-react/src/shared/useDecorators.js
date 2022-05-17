@@ -27,14 +27,14 @@ export function useDecorators(editor: LexicalEditor): Array<React.Node> {
       });
     });
   }, [editor]);
+
   useEffect(() => {
-    setDecorators((_decorators) => {
-      if (Object.keys(_decorators).length === 0) {
-        return editor.getDecorators();
-      }
-      return _decorators;
-    });
+    // If the content editable mounts before the subscription is added, then
+    // nothing will be rendered on initial pass. We can get around that by
+    // ensuring that we set the value.
+    setDecorators(editor.getDecorators());
   }, [editor]);
+  
   // Return decorators defined as React Portals
   return useMemo(() => {
     const decoratedPortals = [];

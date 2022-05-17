@@ -11,7 +11,7 @@ import * as React from 'react';
 import {createPortal} from 'react-dom';
 
 type DropDownContextType = {
-  registerItem: (ref: React.Ref<HTMLElement|null>) => void,
+  registerItem: (ref: React.Ref<HTMLElement | null>) => void;
 };
 
 const DropDownContext = React.createContext<DropDownContextType | null>(null);
@@ -21,11 +21,11 @@ export function DropDownItem({
   className,
   onClick,
 }: {
-  children: React$Node,
-  className: string,
-  onClick: (event: MouseEvent) => void,
-}): React$Node {
-  const ref = useRef<HTMLElement | null>(null);
+  children: React.ReactNode;
+  className: string;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  const ref = useRef<HTMLButtonElement | null>(null);
 
   const dropDownContext = React.useContext(DropDownContext);
 
@@ -53,19 +53,19 @@ function DropDownItems({
   dropDownRef,
   onClose,
 }: {
-  children: React$Node,
-  dropDownRef: {current: HTMLElement | null},
-  onClose: () => void,
-}): React$Node {
+  children: React.ReactNode;
+  dropDownRef: React.Ref<HTMLDivElement>;
+  onClose: () => void;
+}) {
   const [items, setItems] = useState<
-    React$ElementRef<React$ElementType>[] | null,
+    React.RefObject<HTMLButtonElement>[] | null
   >(null);
   const [highlightedItem, setHighlightedItem] =
-    useState<React$ElementRef<React$ElementType> | null>(null);
+    useState<React.RefObject<HTMLButtonElement>>(null);
   const shiftPressedRef = useRef(false);
 
   const registerItem = useCallback(
-    (itemRef: React$ElementRef<React$ElementType>) => {
+    (itemRef: React.RefObject<HTMLButtonElement>) => {
       setItems((prev) => (prev ? [...prev, itemRef] : [itemRef]));
     },
     [setItems],
@@ -88,24 +88,15 @@ function DropDownItems({
       key === 'ArrowUp' ||
       (key === 'Tab' && shiftPressedRef.current)
     ) {
-      setHighlightedItem(
-        (
-          prev: React$ElementRef<React$ElementType>,
-        ): React$ElementRef<React$ElementType> => {
-          const index = items.indexOf(prev) - 1;
-          return items[index === -1 ? items.length - 1 : index];
-        },
-      );
+      setHighlightedItem((prev) => {
+        const index = items.indexOf(prev) - 1;
+        return items[index === -1 ? items.length - 1 : index];
+      });
     } else if (
       key === 'ArrowDown' ||
       (key === 'Tab' && !shiftPressedRef.current)
     ) {
-      setHighlightedItem(
-        (
-          prev: React$ElementRef<React$ElementType>,
-        ): React$ElementRef<React$ElementType> =>
-          items[items.indexOf(prev) + 1],
-      );
+      setHighlightedItem((prev) => items[items.indexOf(prev) + 1]);
     }
   };
 

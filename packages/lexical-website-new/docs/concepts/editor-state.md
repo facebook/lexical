@@ -37,7 +37,7 @@ registerRichText(editor, initialEditorState);
 
 // Handler to store content (e.g. when user submits a form)
 const onSubmit = () => {
-  await saveContent(editor.getEditorState().toJSON());
+  await saveContent(JSON.stringify(editor.getEditorState()));
 }
 ```
 
@@ -52,7 +52,7 @@ const editorStateRef = useRef();
   <LexicalOnChangePlugin onChange={editorState => editorStateRef.current = editorState} />
   <Button label="Save" onPress={() => {
     if (editorStateRef.current) {
-      saveContent(editorStateRef.current.toJSON())
+      saveContent(JSON.stringify(editorStateRef.current))
     }
   }} />
 </LexicalComposer>

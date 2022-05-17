@@ -1,6 +1,6 @@
 {
   "name": "@lexical/dragon",
-  "description": "This package contains compatability with Dragon NaturallySpeaking accessibility tools.",
+  "description": "This package contains compatibility with Dragon NaturallySpeaking accessibility tools.",
   "keywords": [
     "lexical",
     "editor",

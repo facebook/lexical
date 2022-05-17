@@ -33,7 +33,7 @@ export class MarkNode extends ElementNode {
     return new MarkNode(Array.from(node.__ids), node.__key);
   }
 
-  constructor(ids: Array<string>, key?: NodeKey): void {
+  constructor(ids: Array<string>, key?: NodeKey) {
     super(key);
     this.__ids = ids || [];
   }
@@ -82,30 +82,32 @@ export class MarkNode extends ElementNode {
 
   getIDs(): Array<string> {
     const self = this.getLatest();
-    return self.__ids;
+    return $isMarkNode(self) ? self.__ids : [];
   }
 
   addID(id: string): void {
     const self = this.getWritable();
-    const ids = self.__ids;
-    self.__ids = ids;
-    for (let i = 0; i < ids.length; i++) {
-      // If we already have it, don't add again
-      if (id === ids[i]) {
-        return;
+    if ($isMarkNode(self)) {
+      const ids = self.__ids;
+      self.__ids = ids;
+      for (let i = 0; i < ids.length; i++) {
+        // If we already have it, don't add again
+        if (id === ids[i]) return;
       }
+      ids.push(id);
     }
-    ids.push(id);
   }
 
   deleteID(id: string): void {
     const self = this.getWritable();
-    const ids = self.__ids;
-    self.__ids = ids;
-    for (let i = 0; i < ids.length; i++) {
-      if (id === ids[i]) {
-        ids.splice(i, 1);
-        return;
+    if ($isMarkNode(self)) {
+      const ids = self.__ids;
+      self.__ids = ids;
+      for (let i = 0; i < ids.length; i++) {
+        if (id === ids[i]) {
+          ids.splice(i, 1);
+          return;
+        }
       }
     }
   }
@@ -168,6 +170,6 @@ export function $createMarkNode(ids: Array<string>): MarkNode {
   return new MarkNode(ids);
 }
 
-export function $isMarkNode(node: ?LexicalNode): boolean %checks {
+export function $isMarkNode(node: LexicalNode | null): node is MarkNode {
   return node instanceof MarkNode;
 }

@@ -6,4 +6,4 @@
  *
  */
 
-export default function LexicalCheckListPlugin(): null;
+export function CheckListPlugin(): null;

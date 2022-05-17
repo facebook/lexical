@@ -28,7 +28,7 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
-export default function useList(editor: LexicalEditor): void {
+export function useList(editor: LexicalEditor): void {
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(

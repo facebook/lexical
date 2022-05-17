@@ -19,4 +19,4 @@ type Props = {
   };
   children: JSX.Element | JSX.Element[] | null;
 };
-export default function LexicalComposer(arg0: Props): JSX.Element | null;
+export function LexicalComposer(arg0: Props): JSX.Element | null;

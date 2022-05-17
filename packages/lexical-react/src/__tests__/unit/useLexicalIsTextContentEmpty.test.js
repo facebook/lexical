@@ -18,7 +18,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import useLexicalIsTextContentEmpty from '../../useLexicalIsTextContentEmpty';
+import {useLexicalIsTextContentEmpty} from '../../useLexicalIsTextContentEmpty';
 
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.

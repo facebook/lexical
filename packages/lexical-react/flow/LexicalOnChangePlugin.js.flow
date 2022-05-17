@@ -9,7 +9,7 @@
 
 import type {EditorState, LexicalEditor} from 'lexical';
 
-declare export default function OnChangePlugin({
+declare export function OnChangePlugin({
   ignoreInitialChange?: boolean,
   ignoreSelectionChange?: boolean,
   onChange: (editorState: EditorState, editor: LexicalEditor) => void,

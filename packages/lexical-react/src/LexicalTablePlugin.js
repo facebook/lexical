@@ -30,7 +30,7 @@ import {
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
-export default function TablePlugin(): React$Node {
+export function TablePlugin(): React$Node {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

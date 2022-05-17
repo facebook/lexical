@@ -11,7 +11,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import LexicalComposer from '../../../src/LexicalComposer';
+import {LexicalComposer} from '../../../src/LexicalComposer';
 import {useLexicalComposerContext} from '../../LexicalComposerContext';
 
 // No idea why we suddenly need to do this, but it fixes the tests

@@ -111,7 +111,7 @@ function toggleLink(url: null | string) {
   }
 }
 
-export default function LinkPlugin(): null {
+export function LinkPlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

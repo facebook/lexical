@@ -15,7 +15,7 @@ import {registerPlainText} from '@lexical/plain-text';
 import {mergeRegister} from '@lexical/utils';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export default function usePlainTextSetup(
+export function usePlainTextSetup(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): void {

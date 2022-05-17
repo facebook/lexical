@@ -7,4 +7,4 @@
  * @flow strict
  */
 
-declare export default function LexicalHashtagPlugin(): React$Node;
+declare export function HashtagPlugin(): React$Node;

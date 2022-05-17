@@ -9,10 +9,10 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import useLexicalCanShowPlaceholder from '@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder';
+import {useLexicalCanShowPlaceholder} from '@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder';
 import {useCallback} from 'react';
 
-export default function useLexicalEditor(
+export function useLexicalEditor(
   editor: LexicalEditor,
 ): [(null | HTMLElement) => void, boolean] {
   const showPlaceholder = useLexicalCanShowPlaceholder(editor);

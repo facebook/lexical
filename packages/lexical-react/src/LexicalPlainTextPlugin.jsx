@@ -12,11 +12,11 @@ import type {InitialEditorStateType} from './shared/PlainRichTextUtils';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 
-import useCanShowPlaceholder from './shared/useCanShowPlaceholder';
-import useDecorators from './shared/useDecorators';
-import usePlainTextSetup from './shared/usePlainTextSetup';
+import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
+import {useDecorators} from './shared/useDecorators';
+import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
-export default function PlainTextPlugin({
+export function PlainTextPlugin({
   contentEditable,
   placeholder,
   initialEditorState,

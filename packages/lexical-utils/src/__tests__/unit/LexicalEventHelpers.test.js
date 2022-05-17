@@ -13,8 +13,8 @@ import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
-import LexicalContentEditable from '@lexical/react/src/LexicalContentEditable';
-import RichTextPlugin from '@lexical/react/src/LexicalRichTextPlugin';
+import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   applySelectionInputs,
@@ -114,7 +114,7 @@ describe('LexicalEventHelpers', () => {
           <RichTextPlugin
             contentEditable={
               // eslint-disable-next-line jsx-a11y/aria-role
-              <LexicalContentEditable role={null} spellCheck={null} />
+              <ContentEditable role={null} spellCheck={null} />
             }
           />
           <TestPlugin />

@@ -8,7 +8,7 @@
 
 import type {EditorState} from 'lexical';
 type InitialEditorStateType = null | string | EditorState | (() => void);
-export default function PlainTextPlugin(arg0: {
+export function PlainTextPlugin(arg0: {
   contentEditable: JSX.Element | null;
   initialEditorState?: InitialEditorStateType;
   placeholder: JSX.Element | null;

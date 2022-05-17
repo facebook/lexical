@@ -15,9 +15,7 @@ import {useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export default function useDecorators(
-  editor: LexicalEditor,
-): Array<React.Node> {
+export function useDecorators(editor: LexicalEditor): Array<React.Node> {
   const [decorators, setDecorators] = useState<{[string]: React.Node}>(() =>
     editor.getDecorators<React.Node>(),
   );

@@ -9,6 +9,6 @@
 
 import type {Transformer} from '@lexical/markdown';
 
-declare export default function LexicalMarkdownShortcutPlugin({
+declare export function MarkdownShortcutPlugin({
   transformers?: Array<Transformer>,
 }): React$Node;

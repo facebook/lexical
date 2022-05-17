@@ -7,4 +7,4 @@
  * @flow strict
  */
 
-declare export default function LexicalLinkPlugin(): null;
+declare export function LinkPlugin(): null;

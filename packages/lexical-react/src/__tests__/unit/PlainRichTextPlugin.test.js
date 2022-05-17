@@ -12,7 +12,7 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
-import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {$rootTextContentCurry} from '@lexical/text';
@@ -26,9 +26,9 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
 
-import LexicalComposer from '../../../src/LexicalComposer';
-import PlainTextPlugin from '../../../src/LexicalPlainTextPlugin';
-import RichTextPlugin from '../../../src/LexicalRichTextPlugin';
+import {LexicalComposer} from '../../../src/LexicalComposer';
+import {PlainTextPlugin} from '../../../src/LexicalPlainTextPlugin';
+import {RichTextPlugin} from '../../../src/LexicalRichTextPlugin';
 import {useLexicalComposerContext} from '../../LexicalComposerContext';
 
 // No idea why we suddenly need to do this, but it fixes the tests
@@ -94,12 +94,12 @@ describe('LexicalNodeHelpers tests', () => {
             <GrabEditor />
             {plugin === 'PlainTextPlugin' ? (
               <PlainTextPlugin
-                contentEditable={<LexicalContentEditable />}
+                contentEditable={<ContentEditable />}
                 initialEditorState={$initialEditorState}
               />
             ) : (
               <RichTextPlugin
-                contentEditable={<LexicalContentEditable />}
+                contentEditable={<ContentEditable />}
                 initialEditorState={$initialEditorState}
               />
             )}
@@ -202,12 +202,12 @@ describe('LexicalNodeHelpers tests', () => {
             <GrabEditor />
             {plugin === 'PlainTextPlugin' ? (
               <PlainTextPlugin
-                contentEditable={<LexicalContentEditable />}
+                contentEditable={<ContentEditable />}
                 initialEditorState={initialEditorStateJson}
               />
             ) : (
               <RichTextPlugin
-                contentEditable={<LexicalContentEditable />}
+                contentEditable={<ContentEditable />}
                 initialEditorState={initialEditorStateJson}
               />
             )}

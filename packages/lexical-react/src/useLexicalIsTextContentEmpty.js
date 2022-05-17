@@ -13,7 +13,7 @@ import {$isRootTextContentEmptyCurry} from '@lexical/text';
 import {useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export default function useLexicalIsTextContentEmpty(
+export function useLexicalIsTextContentEmpty(
   editor: LexicalEditor,
   trim?: boolean,
 ): boolean {

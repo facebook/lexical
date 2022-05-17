@@ -32,7 +32,7 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
-export default function ListPlugin(): null {
+export function CheckListPlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

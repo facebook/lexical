@@ -41,7 +41,7 @@ const HR: ElementTransformer = {
 
 const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
 
-export default function LexicalMarkdownShortcutPlugin({
+export function MarkdownShortcutPlugin({
   transformers = DEFAULT_TRANSFORMERS,
 }: $ReadOnly<{transformers?: Array<Transformer>}>): null {
   const [editor] = useLexicalComposerContext();

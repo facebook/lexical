@@ -17,9 +17,9 @@ import type {
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
 
-import useLexicalEditor from './DEPRECATED_useLexicalEditor';
+import {useLexicalEditor} from './DEPRECATED_useLexicalEditor';
 
-export default function useLexical(editorConfig: {
+export function useLexical(editorConfig: {
   disableEvents?: boolean,
   editorState?: EditorState,
   namespace?: string,

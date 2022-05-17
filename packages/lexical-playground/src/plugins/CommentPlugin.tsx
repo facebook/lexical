@@ -24,13 +24,13 @@ import {
   $wrapSelectionInMarkNode,
   MarkNode,
 } from '@lexical/mark';
-import AutoFocusPlugin from '@lexical/react/LexicalAutoFocusPlugin';
-import LexicalClearEditorPlugin from '@lexical/react/LexicalClearEditorPlugin';
-import LexicalComposer from '@lexical/react/LexicalComposer';
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
+import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
-import PlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
+import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$isRootTextContentEmpty, $rootTextContentCurry} from '@lexical/text';
 import {mergeRegister, registerNestedElementResolver} from '@lexical/utils';
@@ -173,11 +173,11 @@ function PlainTextEditor({
           contentEditable={<ContentEditable className={className} />}
           placeholder={<Placeholder>{placeholder}</Placeholder>}
         />
-        <LexicalOnChangePlugin onChange={onChange} />
+        <OnChangePlugin onChange={onChange} />
         <HistoryPlugin />
         {autoFocus !== false && <AutoFocusPlugin />}
         <EscapeHandlerPlugin onEscape={onEscape} />
-        <LexicalClearEditorPlugin />
+        <ClearEditorPlugin />
         {editorRef !== undefined && <EditorRefPlugin editorRef={editorRef} />}
       </div>
     </LexicalComposer>

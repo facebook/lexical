@@ -9,9 +9,9 @@
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
-import LexicalContentEditable from '@lexical/react/src/LexicalContentEditable';
+import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
-import RichTextPlugin from '@lexical/react/src/LexicalRichTextPlugin';
+import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -128,7 +128,7 @@ describe('LexicalSelection tests', () => {
           <RichTextPlugin
             contentEditable={
               // eslint-disable-next-line jsx-a11y/aria-role
-              <LexicalContentEditable role={null} spellCheck={null} />
+              <ContentEditable role={null} spellCheck={null} />
             }
           />
           <HistoryPlugin />

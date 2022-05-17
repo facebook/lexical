@@ -6,7 +6,7 @@
  *
  */
 
-import LexicalAutoLinkPlugin from '@lexical/react/LexicalAutoLinkPlugin';
+import {AutoLinkPlugin} from '@lexical/react/LexicalAutoLinkPlugin';
 import * as React from 'react';
 
 const URL_MATCHER =
@@ -40,6 +40,6 @@ const MATCHERS = [
   },
 ];
 
-export default function AutoLinkPlugin(): JSX.Element {
-  return <LexicalAutoLinkPlugin matchers={MATCHERS} />;
+export default function LexicalAutoLinkPlugin(): JSX.Element {
+  return <AutoLinkPlugin matchers={MATCHERS} />;
 }

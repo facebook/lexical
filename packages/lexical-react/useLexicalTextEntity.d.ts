@@ -12,7 +12,7 @@ export type EntityMatch = {
   end: number;
   start: number;
 };
-export default function useLexicalTextEntity<N extends TextNode>(
+export function useLexicalTextEntity<N extends TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Class<N>,
   createNode: (textNode: TextNode) => N,

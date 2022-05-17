@@ -6,7 +6,7 @@
  *
  */
 
-import LexicalComposer from '@lexical/react/LexicalComposer';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import * as React from 'react';
 
 import {isDevPlayground} from './appSettings';

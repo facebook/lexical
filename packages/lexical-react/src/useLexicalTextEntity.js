@@ -15,7 +15,7 @@ import {registerLexicalTextEntity} from '@lexical/text';
 import {mergeRegister} from '@lexical/utils';
 import {useEffect} from 'react';
 
-export default function useLexicalTextEntity<N: TextNode>(
+export function useLexicalTextEntity<N: TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Class<N>,
   createNode: (textNode: TextNode) => N,

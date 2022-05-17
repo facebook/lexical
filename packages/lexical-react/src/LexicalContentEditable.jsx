@@ -36,7 +36,7 @@ export type Props = $ReadOnly<{
   testid?: string,
 }>;
 
-export default function LexicalContentEditable({
+export function ContentEditable({
   ariaActiveDescendantID,
   ariaAutoComplete,
   ariaControls,

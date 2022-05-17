@@ -11,7 +11,7 @@ import type {EditorState} from 'lexical';
 
 type InitialEditorStateType = null | string | EditorState | (() => void);
 
-declare export default function PlainTextPlugin({
+declare export function PlainTextPlugin({
   contentEditable: React$Node,
   initialEditorState?: InitialEditorStateType,
   placeholder: React$Node,

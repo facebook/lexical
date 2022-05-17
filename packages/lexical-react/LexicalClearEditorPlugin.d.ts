@@ -11,6 +11,4 @@ import {$ReadOnly} from 'utility-types';
 type Props = $ReadOnly<{
   onClear?: () => void;
 }>;
-export default function LexicalClearEditorPlugin(
-  arg0: Props,
-): JSX.Element | null;
+export function ClearEditorPlugin(arg0: Props): JSX.Element | null;

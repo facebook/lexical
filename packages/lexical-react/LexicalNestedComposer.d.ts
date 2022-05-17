@@ -8,7 +8,7 @@
 
 import type {LexicalEditor, EditorThemeClasses} from 'lexical';
 
-export default function LexicalNestedComposer(arg0: {
+export function LexicalNestedComposer(arg0: {
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
   children: JSX.Element | (JSX.Element | string | null)[] | null;

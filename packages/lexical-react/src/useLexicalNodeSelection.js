@@ -29,7 +29,7 @@ function isNodeSelected(editor: LexicalEditor, key: NodeKey): boolean {
   });
 }
 
-export default function useLexicalNodeSelection(
+export function useLexicalNodeSelection(
   key: NodeKey,
 ): [boolean, (boolean) => void, () => void] {
   const [editor] = useLexicalComposerContext();

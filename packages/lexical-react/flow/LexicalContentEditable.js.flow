@@ -30,6 +30,4 @@ export type Props = $ReadOnly<{
   testid?: string,
 }>;
 
-declare export default function LexicalContentEditable(
-  props: Props,
-): React$Node;
+declare export function ContentEditable(props: Props): React$Node;

@@ -9,7 +9,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-declare export default function TreeView(props: {
+declare export function TreeView(props: {
   timeTravelPanelClassName: string,
   timeTravelPanelSliderClassName: string,
   timeTravelPanelButtonClassName: string,

@@ -47,7 +47,7 @@ const SYMBOLS = Object.freeze({
   selectedLine: '>',
 });
 
-export default function TreeView({
+export function TreeView({
   timeTravelButtonClassName,
   timeTravelPanelSliderClassName,
   timeTravelPanelButtonClassName,

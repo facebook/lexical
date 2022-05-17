@@ -15,9 +15,7 @@ type Props = $ReadOnly<{
   scrollRef: {current: HTMLElement | null},
 }>;
 
-export default function LexicalAutoScrollPlugin({
-  scrollRef,
-}: Props): React$Node {
+export function AutoScrollPlugin({scrollRef}: Props): React$Node {
   const [editor] = useLexicalComposerContext();
   useLayoutEffect(() => {
     return editor.registerUpdateListener(({tags, editorState}) => {

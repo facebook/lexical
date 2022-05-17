@@ -8,7 +8,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import ReactTestUtils from 'react-dom/test-utils';
@@ -18,8 +18,8 @@ import {
   CollaborationPlugin,
   useCollaborationContext,
 } from '../../LexicalCollaborationPlugin';
-import LexicalComposer from '../../LexicalComposer';
-import LexicalRichTextPlugin from '../../LexicalRichTextPlugin';
+import {LexicalComposer} from '../../LexicalComposer';
+import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
 function Editor({doc, provider, setEditor}) {
   const {yjsDocMap} = useCollaborationContext();
@@ -36,8 +36,8 @@ function Editor({doc, provider, setEditor}) {
         providerFactory={() => provider}
         shouldBootstrap={true}
       />
-      <LexicalRichTextPlugin
-        contentEditable={<LexicalContentEditable />}
+      <RichTextPlugin
+        contentEditable={<ContentEditable />}
         placeholder={null}
       />
     </>

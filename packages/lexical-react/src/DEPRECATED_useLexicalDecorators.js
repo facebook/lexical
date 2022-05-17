@@ -9,10 +9,8 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import useDecorators from './shared/useDecorators';
+import {useDecorators} from './shared/useDecorators';
 
-export default function useLexicalDecorators(
-  editor: LexicalEditor,
-): Array<React$Node> {
+export function useLexicalDecorators(editor: LexicalEditor): Array<React$Node> {
   return useDecorators(editor);
 }

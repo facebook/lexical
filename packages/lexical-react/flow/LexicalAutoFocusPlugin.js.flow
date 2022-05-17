@@ -7,4 +7,4 @@
  * @flow strict
  */
 
-declare export default function LexicalAutoFocusPlugin(): null;
+declare export function AutoFocusPlugin(): null;

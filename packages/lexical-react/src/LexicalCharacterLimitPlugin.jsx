@@ -36,7 +36,7 @@ function utf8Length(text: string) {
   return currentTextEncoder.encode(text).length;
 }
 
-export default function CharacterLimitPlugin({
+export function CharacterLimitPlugin({
   charset = 'UTF-16',
 }: {
   charset: 'UTF-8' | 'UTF-16',

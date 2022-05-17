@@ -21,7 +21,7 @@ type Props = $ReadOnly<{
   onClear?: () => void,
 }>;
 
-export default function LexicalClearEditorPlugin({onClear}: Props): React$Node {
+export function ClearEditorPlugin({onClear}: Props): React$Node {
   const [editor] = useLexicalComposerContext();
   useLayoutEffect(() => {
     return editor.registerCommand(

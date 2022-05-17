@@ -21,13 +21,13 @@ import {
   useCollaborationContext,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import HashtagsPlugin from '@lexical/react/LexicalHashtagPlugin';
+import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import LinkPlugin from '@lexical/react/LexicalLinkPlugin';
-import LexicalNestedComposer from '@lexical/react/LexicalNestedComposer';
-import RichTextPlugin from '@lexical/react/LexicalRichTextPlugin';
-import TablesPlugin from '@lexical/react/LexicalTablePlugin';
-import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
+import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
+import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
+import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
@@ -246,12 +246,12 @@ function ImageComponent({
           <div className="image-caption-container">
             <LexicalNestedComposer initialEditor={caption}>
               <MentionsPlugin />
-              <TablesPlugin />
+              <TablePlugin />
               <TableCellActionMenuPlugin />
               <ImagesPlugin />
               <LinkPlugin />
               <EmojisPlugin />
-              <HashtagsPlugin />
+              <HashtagPlugin />
               <KeywordsPlugin />
               {isCollab ? (
                 <CollaborationPlugin

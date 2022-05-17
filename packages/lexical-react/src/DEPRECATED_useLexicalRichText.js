@@ -11,9 +11,9 @@ import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 import type {EditorState, LexicalEditor} from 'lexical';
 
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
-import useRichTextSetup from './shared/useRichTextSetup';
+import {useRichTextSetup} from './shared/useRichTextSetup';
 
-export default function useLexicalRichText(
+export function useLexicalRichText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
   initialEditorState?: null | string | EditorState | (() => void),

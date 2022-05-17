@@ -30,7 +30,7 @@ type Props = {
   }>,
 };
 
-export default function LexicalComposer({
+export function LexicalComposer({
   initialConfig,
   children,
 }: Props): React$MixedElement {

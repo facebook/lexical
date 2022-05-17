@@ -11,7 +11,7 @@ import type {ElementFormatType, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
-import useLexicalNodeSelection from '@lexical/react/useLexicalNodeSelection';
+import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
   $getNearestBlockElementAncestorOrThrow,
   mergeRegister,

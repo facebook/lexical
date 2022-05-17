@@ -13,9 +13,7 @@ import {$canShowPlaceholderCurry} from '@lexical/text';
 import {useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export default function useLexicalCanShowPlaceholder(
-  editor: LexicalEditor,
-): boolean {
+export function useCanShowPlaceholder(editor: LexicalEditor): boolean {
   const [canShowPlaceholder, setCanShowPlaceholder] = useState(
     editor
       .getEditorState()

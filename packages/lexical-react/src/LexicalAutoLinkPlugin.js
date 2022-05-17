@@ -240,7 +240,7 @@ function useAutoLink(
   }, [editor, matchers, onChange]);
 }
 
-export default function AutoLinkPlugin({
+export function AutoLinkPlugin({
   matchers,
   onChange,
 }: {

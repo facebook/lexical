@@ -7,8 +7,8 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import ContentEditable from '@lexical/react/src/LexicalContentEditable';
-import RichTextPlugin from '@lexical/react/src/LexicalRichTextPlugin';
+import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {
   $createTableCellNode,
   $createTableNode,

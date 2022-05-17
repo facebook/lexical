@@ -15,7 +15,7 @@ import {registerRichText} from '@lexical/rich-text';
 import {mergeRegister} from '@lexical/utils';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export default function useRichTextSetup(
+export function useRichTextSetup(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): void {

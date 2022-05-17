@@ -19,7 +19,7 @@ import * as React from 'react';
 import {useContext, useMemo} from 'react';
 import invariant from 'shared/invariant';
 
-export default function LexicalNestedComposer({
+export function LexicalNestedComposer({
   initialEditor,
   children,
   initialTheme,

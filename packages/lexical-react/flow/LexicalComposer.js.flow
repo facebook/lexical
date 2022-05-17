@@ -21,4 +21,4 @@ type Props = {
   children: React$Node,
 };
 
-declare export default function LexicalComposer(Props): React$MixedElement;
+declare export function LexicalComposer(Props): React$MixedElement;

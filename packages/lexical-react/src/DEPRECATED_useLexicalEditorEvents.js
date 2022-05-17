@@ -10,9 +10,9 @@
 import type {InputEvents} from './shared/useEditorEvents';
 import type {LexicalEditor} from 'lexical';
 
-import useEditorEvents from './shared/useEditorEvents';
+import {useEditorEvents} from './shared/useEditorEvents';
 
-export default function useLexicalEditorEvents(
+export function useLexicalEditorEvents(
   events: InputEvents,
   editor: LexicalEditor,
 ): void {

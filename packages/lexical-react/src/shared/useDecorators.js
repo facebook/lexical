@@ -10,7 +10,7 @@
 import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 // $FlowFixMe: Flow doesn't like this for some reason
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -25,6 +25,14 @@ export function useDecorators(editor: LexicalEditor): Array<React.Node> {
       flushSync(() => {
         setDecorators(nextDecorators);
       });
+    });
+  }, [editor]);
+  useEffect(() => {
+    setDecorators((_decorators) => {
+      if (Object.keys(_decorators).length === 0) {
+        return editor.getDecorators();
+      }
+      return _decorators;
     });
   }, [editor]);
   // Return decorators defined as React Portals

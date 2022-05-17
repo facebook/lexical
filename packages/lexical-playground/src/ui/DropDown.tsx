@@ -11,7 +11,7 @@ import * as React from 'react';
 import {createPortal} from 'react-dom';
 
 type DropDownContextType = {
-  registerItem: (ref: React.Ref<HTMLElement | null>) => void;
+  registerItem: (ref: React.RefObject<HTMLButtonElement>) => void;
 };
 
 const DropDownContext = React.createContext<DropDownContextType | null>(null);
@@ -27,7 +27,7 @@ export function DropDownItem({
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   title?: string;
 }) {
-  const ref = useRef<HTMLButtonElement | null>(null);
+  const ref = useRef<HTMLButtonElement>();
 
   const dropDownContext = React.useContext(DropDownContext);
 
@@ -111,10 +111,7 @@ function DropDownItems({
 
   return (
     <DropDownContext.Provider value={contextValue}>
-      <div
-        className="dropdown"
-        ref={dropDownRef}
-        onKeyDown={handleKeyDown}>
+      <div className="dropdown" ref={dropDownRef} onKeyDown={handleKeyDown}>
         {children}
       </div>
     </DropDownContext.Provider>

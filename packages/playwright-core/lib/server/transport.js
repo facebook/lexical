@@ -5,11 +5,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.WebSocketTransport = void 0;
 
-var _ws = _interopRequireDefault(require("ws"));
+var _utilsBundle = require("../utilsBundle");
 
-var _utils = require("../utils/utils");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _utils = require("../utils");
 
 /**
  * Copyright 2018 Google Inc. All rights reserved.
@@ -28,9 +26,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * limitations under the License.
  */
 class WebSocketTransport {
-  static async connect(progress, url, headers) {
+  static async connect(progress, url, headers, followRedirects) {
     progress.log(`<ws connecting> ${url}`);
-    const transport = new WebSocketTransport(progress, url, headers);
+    const transport = new WebSocketTransport(progress, url, headers, followRedirects);
     let success = false;
     progress.cleanupWhenAborted(async () => {
       if (!success) await transport.closeAndWait().catch(e => null);
@@ -52,19 +50,21 @@ class WebSocketTransport {
     return transport;
   }
 
-  constructor(progress, url, headers) {
+  constructor(progress, url, headers, followRedirects) {
     this._ws = void 0;
     this._progress = void 0;
     this.onmessage = void 0;
     this.onclose = void 0;
     this.wsEndpoint = void 0;
     this.wsEndpoint = url;
-    this._ws = new _ws.default(url, [], {
+    this._ws = new _utilsBundle.ws(url, [], {
       perMessageDeflate: false,
       maxPayload: 256 * 1024 * 1024,
       // 256Mb,
-      handshakeTimeout: progress.timeUntilDeadline(),
-      headers
+      // Prevent internal http client error when passing negative timeout.
+      handshakeTimeout: Math.max(progress.timeUntilDeadline(), 1),
+      headers,
+      followRedirects
     });
     this._progress = progress; // The 'ws' module in node sometimes sends us multiple messages in a single task.
     // In Web, all IO callbacks (e.g. WebSocket callbacks)
@@ -84,12 +84,12 @@ class WebSocketTransport {
     });
 
     this._ws.addEventListener('close', event => {
-      this._progress && this._progress.log(`<ws disconnected> ${url}`);
+      this._progress && this._progress.log(`<ws disconnected> ${url} code=${event.code} reason=${event.reason}`);
       if (this.onclose) this.onclose.call(null);
     }); // Prevent Error: read ECONNRESET.
 
 
-    this._ws.addEventListener('error', () => {});
+    this._ws.addEventListener('error', error => this._progress && this._progress.log(`<ws error> ${error}`));
   }
 
   send(message) {
@@ -103,6 +103,7 @@ class WebSocketTransport {
   }
 
   async closeAndWait() {
+    if (this._ws.readyState === _utilsBundle.ws.CLOSED) return;
     const promise = new Promise(f => this._ws.once('close', f));
     this.close();
     await promise; // Make sure to await the actual disconnect.

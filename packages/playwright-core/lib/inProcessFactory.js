@@ -5,11 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.createInProcessPlaywright = createInProcessPlaywright;
 
-var _dispatcher = require("./dispatchers/dispatcher");
-
-var _playwright = require("./server/playwright");
-
-var _playwrightDispatcher = require("./dispatchers/playwrightDispatcher");
+var _server = require("./server");
 
 var _connection = require("./client/connection");
 
@@ -31,17 +27,17 @@ var _browserServerImpl = require("./browserServerImpl");
  * limitations under the License.
  */
 function createInProcessPlaywright() {
-  const playwright = (0, _playwright.createPlaywright)('javascript');
+  const playwright = (0, _server.createPlaywright)('javascript');
   const clientConnection = new _connection.Connection();
-  const dispatcherConnection = new _dispatcher.DispatcherConnection(); // Dispatch synchronously at first.
+  const dispatcherConnection = new _server.DispatcherConnection(); // Dispatch synchronously at first.
 
   dispatcherConnection.onmessage = message => clientConnection.dispatch(message);
 
   clientConnection.onmessage = message => dispatcherConnection.dispatch(message);
 
-  const rootScope = new _dispatcher.Root(dispatcherConnection); // Initialize Playwright channel.
+  const rootScope = new _server.Root(dispatcherConnection); // Initialize Playwright channel.
 
-  new _playwrightDispatcher.PlaywrightDispatcher(rootScope, playwright);
+  new _server.PlaywrightDispatcher(rootScope, playwright);
   const playwrightAPI = clientConnection.getObjectWithKnownName('Playwright');
   playwrightAPI.chromium._serverLauncher = new _browserServerImpl.BrowserServerLauncherImpl('chromium');
   playwrightAPI.firefox._serverLauncher = new _browserServerImpl.BrowserServerLauncherImpl('firefox');
@@ -51,7 +47,8 @@ function createInProcessPlaywright() {
 
   clientConnection.onmessage = message => setImmediate(() => dispatcherConnection.dispatch(message));
 
-  playwrightAPI._toImpl = x => dispatcherConnection._dispatchers.get(x._guid)._object;
+  clientConnection.toImpl = x => dispatcherConnection._dispatchers.get(x._guid)._object;
 
+  playwrightAPI._toImpl = clientConnection.toImpl;
   return playwrightAPI;
 }

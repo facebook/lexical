@@ -13,6 +13,10 @@ var _wkConnection = require("./wkConnection");
 
 var _browserType = require("../browserType");
 
+var _stackTrace = require("../../utils/stackTrace");
+
+var _utils = require("../../utils");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -47,6 +51,7 @@ class WebKit extends _browserType.BrowserType {
   }
 
   _rewriteStartupError(error) {
+    if (error.message.includes('cannot open display')) return (0, _stackTrace.rewriteErrorMessage)(error, '\n' + (0, _utils.wrapInASCIIBox)(_browserType.kNoXServerRunningError, 1));
     return error;
   }
 
@@ -62,14 +67,13 @@ class WebKit extends _browserType.BrowserType {
     const {
       args = [],
       proxy,
-      devtools,
       headless
     } = options;
-    if (devtools) console.warn('devtools parameter as a launch argument in WebKit is not supported. Also starting Web Inspector manually will terminate the execution in WebKit.');
     const userDataDirArg = args.find(arg => arg.startsWith('--user-data-dir'));
     if (userDataDirArg) throw new Error('Pass userDataDir parameter to `browserType.launchPersistentContext(userDataDir, ...)` instead of specifying --user-data-dir argument');
     if (args.find(arg => !arg.startsWith('-'))) throw new Error('Arguments can not specify page to be opened');
     const webkitArguments = ['--inspector-pipe'];
+    if (process.platform === 'win32') webkitArguments.push('--disable-accelerated-compositing');
     if (headless) webkitArguments.push('--headless');
     if (isPersistent) webkitArguments.push(`--user-data-dir=${userDataDir}`);else webkitArguments.push(`--no-startup-window`);
 

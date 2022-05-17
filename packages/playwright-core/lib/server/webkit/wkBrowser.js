@@ -9,9 +9,9 @@ var _browser = require("../browser");
 
 var _browserContext = require("../browserContext");
 
-var _eventsHelper = require("../../utils/eventsHelper");
+var _utils = require("../../utils");
 
-var _utils = require("../../utils/utils");
+var _eventsHelper = require("../../utils/eventsHelper");
 
 var network = _interopRequireWildcard(require("../network"));
 
@@ -19,7 +19,7 @@ var _wkConnection = require("./wkConnection");
 
 var _wkPage = require("./wkPage");
 
-var _errors = require("../../utils/errors");
+var _errors = require("../../common/errors");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -81,8 +81,7 @@ class WKBrowser extends _browser.Browser {
     this._didClose();
   }
 
-  async newContext(options) {
-    (0, _browserContext.validateBrowserContextOptions)(options, this.options);
+  async doCreateNewContext(options) {
     const createOptions = options.proxy ? {
       proxyServer: options.proxy.server,
       proxyBypassList: options.proxy.bypass
@@ -222,8 +221,6 @@ exports.WKBrowser = WKBrowser;
 class WKBrowserContext extends _browserContext.BrowserContext {
   constructor(browser, browserContextId, options) {
     super(browser, options, browserContextId);
-    this._evaluateOnNewDocumentSources = void 0;
-    this._evaluateOnNewDocumentSources = [];
 
     this._authenticateProxyViaHeader();
   }
@@ -270,7 +267,7 @@ class WKBrowserContext extends _browserContext.BrowserContext {
     return this._browser._wkPages.get(pageProxyId);
   }
 
-  async _doCookies(urls) {
+  async doGetCookies(urls) {
     const {
       cookies
     } = await this._browser._browserSession.send('Playwright.getAllCookies', {
@@ -302,11 +299,11 @@ class WKBrowserContext extends _browserContext.BrowserContext {
     });
   }
 
-  async _doGrantPermissions(origin, permissions) {
+  async doGrantPermissions(origin, permissions) {
     await Promise.all(this.pages().map(page => page._delegate._grantPermissions(origin, permissions)));
   }
 
-  async _doClearPermissions() {
+  async doClearPermissions() {
     await Promise.all(this.pages().map(page => page._delegate._clearPermissions()));
   }
 
@@ -334,29 +331,35 @@ class WKBrowserContext extends _browserContext.BrowserContext {
     for (const page of this.pages()) await page._delegate.updateOffline();
   }
 
-  async _doSetHTTPCredentials(httpCredentials) {
+  async doSetHTTPCredentials(httpCredentials) {
     this._options.httpCredentials = httpCredentials;
 
     for (const page of this.pages()) await page._delegate.updateHttpCredentials();
   }
 
-  async _doAddInitScript(source) {
-    this._evaluateOnNewDocumentSources.push(source);
-
+  async doAddInitScript(source) {
     for (const page of this.pages()) await page._delegate._updateBootstrapScript();
   }
 
-  async _doExposeBinding(binding) {
+  async doRemoveInitScripts() {
+    for (const page of this.pages()) await page._delegate._updateBootstrapScript();
+  }
+
+  async doExposeBinding(binding) {
     for (const page of this.pages()) await page._delegate.exposeBinding(binding);
   }
 
-  async _doUpdateRequestInterception() {
+  async doRemoveExposedBindings() {
+    for (const page of this.pages()) await page._delegate.removeExposedBindings();
+  }
+
+  async doUpdateRequestInterception() {
     for (const page of this.pages()) await page._delegate.updateRequestInterception();
   }
 
-  _onClosePersistent() {}
+  onClosePersistent() {}
 
-  async _doClose() {
+  async doClose() {
     (0, _utils.assert)(this._browserContextId);
     await this._browser._browserSession.send('Playwright.deleteContext', {
       browserContextId: this._browserContextId
@@ -365,7 +368,7 @@ class WKBrowserContext extends _browserContext.BrowserContext {
     this._browser._contexts.delete(this._browserContextId);
   }
 
-  async _doCancelDownload(uuid) {
+  async cancelDownload(uuid) {
     await this._browser._browserSession.send('Playwright.cancelDownload', {
       uuid
     });

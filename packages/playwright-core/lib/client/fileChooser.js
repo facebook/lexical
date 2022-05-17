@@ -43,9 +43,7 @@ class FileChooser {
   }
 
   async setFiles(files, options) {
-    return this._page._wrapApiCall(async () => {
-      return this._elementHandle.setInputFiles(files, options);
-    });
+    return this._elementHandle.setInputFiles(files, options);
   }
 
 }

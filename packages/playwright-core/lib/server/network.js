@@ -3,17 +3,17 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.WebSocket = exports.STATUS_TEXTS = exports.Route = exports.Response = exports.Request = void 0;
 exports.filterCookies = filterCookies;
-exports.rewriteCookies = rewriteCookies;
-exports.parsedURL = parsedURL;
-exports.stripFragmentFromUrl = stripFragmentFromUrl;
-exports.singleHeader = singleHeader;
 exports.mergeHeaders = mergeHeaders;
-exports.STATUS_TEXTS = exports.WebSocket = exports.Response = exports.Route = exports.Request = void 0;
+exports.parsedURL = parsedURL;
+exports.rewriteCookies = rewriteCookies;
+exports.singleHeader = singleHeader;
+exports.stripFragmentFromUrl = stripFragmentFromUrl;
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-var _async = require("../utils/async");
+var _manualPromise = require("../utils/manualPromise");
 
 var _instrumentation = require("./instrumentation");
 
@@ -45,20 +45,26 @@ function filterCookies(cookies, urls) {
       if (!domain.startsWith('.')) domain = '.' + domain;
       if (!('.' + parsedURL.hostname).endsWith(domain)) continue;
       if (!parsedURL.pathname.startsWith(c.path)) continue;
-      if (parsedURL.protocol !== 'https:' && c.secure) continue;
+      if (parsedURL.protocol !== 'https:' && parsedURL.hostname !== 'localhost' && c.secure) continue;
       return true;
     }
 
     return false;
   });
-}
+} // Rollover to 5-digit year:
+// 253402300799 == Fri, 31 Dec 9999 23:59:59 +0000 (UTC)
+// 253402300800 == Sat,  1 Jan 1000 00:00:00 +0000 (UTC)
+
+
+const kMaxCookieExpiresDateInSeconds = 253402300799;
 
 function rewriteCookies(cookies) {
   return cookies.map(c => {
-    (0, _utils.assert)(c.name, 'Cookie should have a name');
     (0, _utils.assert)(c.url || c.domain && c.path, 'Cookie should have a url or a domain/path pair');
     (0, _utils.assert)(!(c.url && c.domain), 'Cookie should have either url or domain');
     (0, _utils.assert)(!(c.url && c.path), 'Cookie should have either url or path');
+    (0, _utils.assert)(!(c.expires && c.expires < 0 && c.expires !== -1), 'Cookie should have a valid expires, only -1 or a positive number for the unix timestamp in seconds is allowed');
+    (0, _utils.assert)(!(c.expires && c.expires > 0 && c.expires > kMaxCookieExpiresDateInSeconds), 'Cookie should have a valid expires, only -1 or a positive number for the unix timestamp in seconds is allowed');
     const copy = { ...c
     };
 
@@ -105,7 +111,7 @@ class Request extends _instrumentation.SdkObject {
     this._headersMap = new Map();
     this._rawRequestHeadersPromise = void 0;
     this._frame = void 0;
-    this._waitForResponsePromise = new _async.ManualPromise();
+    this._waitForResponsePromise = new _manualPromise.ManualPromise();
     this._responseEndTiming = -1;
     this.responseSize = {
       encodedBodySize: 0,
@@ -162,11 +168,11 @@ class Request extends _instrumentation.SdkObject {
   }
 
   setWillReceiveExtraHeaders() {
-    if (!this._rawRequestHeadersPromise) this._rawRequestHeadersPromise = new _async.ManualPromise();
+    if (!this._rawRequestHeadersPromise) this._rawRequestHeadersPromise = new _manualPromise.ManualPromise();
   }
 
   setRawRequestHeaders(headers) {
-    if (!this._rawRequestHeadersPromise) this._rawRequestHeadersPromise = new _async.ManualPromise();
+    if (!this._rawRequestHeadersPromise) this._rawRequestHeadersPromise = new _manualPromise.ManualPromise();
 
     this._rawRequestHeadersPromise.resolve(headers);
   }
@@ -256,14 +262,14 @@ class Route extends _instrumentation.SdkObject {
   }
 
   async abort(errorCode = 'failed') {
-    (0, _utils.assert)(!this._handled, 'Route is already handled!');
-    this._handled = true;
+    this._startHandling();
+
     await this._delegate.abort(errorCode);
   }
 
   async fulfill(overrides) {
-    (0, _utils.assert)(!this._handled, 'Route is already handled!');
-    this._handled = true;
+    this._startHandling();
+
     let body = overrides.body;
     let isBase64 = overrides.isBase64 || false;
 
@@ -271,7 +277,7 @@ class Route extends _instrumentation.SdkObject {
       if (overrides.fetchResponseUid) {
         const context = this._request.frame()._page._browserContext;
 
-        const buffer = context.fetchRequest.fetchResponses.get(overrides.fetchResponseUid) || _fetch.FetchRequest.findResponseBody(overrides.fetchResponseUid);
+        const buffer = context.fetchRequest.fetchResponses.get(overrides.fetchResponseUid) || _fetch.APIRequestContext.findResponseBody(overrides.fetchResponseUid);
 
         (0, _utils.assert)(buffer, 'Fetch response has been disposed');
         body = buffer.toString('base64');
@@ -282,16 +288,46 @@ class Route extends _instrumentation.SdkObject {
       }
     }
 
+    const headers = [...(overrides.headers || [])];
+
+    this._maybeAddCorsHeaders(headers);
+
     await this._delegate.fulfill({
       status: overrides.status || 200,
-      headers: overrides.headers || [],
+      headers,
       body,
       isBase64
+    });
+  } // See https://github.com/microsoft/playwright/issues/12929
+
+
+  _maybeAddCorsHeaders(headers) {
+    const origin = this._request.headerValue('origin');
+
+    if (!origin) return;
+    const requestUrl = new URL(this._request.url());
+    if (!requestUrl.protocol.startsWith('http')) return;
+    if (requestUrl.origin === origin.trim()) return;
+    const corsHeader = headers.find(({
+      name
+    }) => name === 'access-control-allow-origin');
+    if (corsHeader) return;
+    headers.push({
+      name: 'access-control-allow-origin',
+      value: origin
+    });
+    headers.push({
+      name: 'access-control-allow-credentials',
+      value: 'true'
+    });
+    headers.push({
+      name: 'vary',
+      value: 'Origin'
     });
   }
 
   async continue(overrides = {}) {
-    (0, _utils.assert)(!this._handled, 'Route is already handled!');
+    this._startHandling();
 
     if (overrides.url) {
       const newUrl = new URL(overrides.url);
@@ -300,6 +336,11 @@ class Route extends _instrumentation.SdkObject {
     }
 
     await this._delegate.continue(this._request, overrides);
+  }
+
+  _startHandling() {
+    (0, _utils.assert)(!this._handled, 'Route is already handled!');
+    this._handled = true;
   }
 
 }
@@ -311,7 +352,7 @@ class Response extends _instrumentation.SdkObject {
     super(request.frame(), 'response');
     this._request = void 0;
     this._contentPromise = null;
-    this._finishedPromise = new _async.ManualPromise();
+    this._finishedPromise = new _manualPromise.ManualPromise();
     this._status = void 0;
     this._statusText = void 0;
     this._url = void 0;
@@ -319,8 +360,8 @@ class Response extends _instrumentation.SdkObject {
     this._headersMap = new Map();
     this._getResponseBodyCallback = void 0;
     this._timing = void 0;
-    this._serverAddrPromise = new _async.ManualPromise();
-    this._securityDetailsPromise = new _async.ManualPromise();
+    this._serverAddrPromise = new _manualPromise.ManualPromise();
+    this._securityDetailsPromise = new _manualPromise.ManualPromise();
     this._rawResponseHeadersPromise = void 0;
     this._httpVersion = void 0;
     this._request = request;
@@ -387,11 +428,11 @@ class Response extends _instrumentation.SdkObject {
   setWillReceiveExtraHeaders() {
     this._request.setWillReceiveExtraHeaders();
 
-    this._rawResponseHeadersPromise = new _async.ManualPromise();
+    this._rawResponseHeadersPromise = new _manualPromise.ManualPromise();
   }
 
   setRawResponseHeaders(headers) {
-    if (!this._rawResponseHeadersPromise) this._rawResponseHeadersPromise = new _async.ManualPromise();
+    if (!this._rawResponseHeadersPromise) this._rawResponseHeadersPromise = new _manualPromise.ManualPromise();
 
     this._rawResponseHeadersPromise.resolve(headers);
   }
@@ -430,6 +471,7 @@ class Response extends _instrumentation.SdkObject {
   httpVersion() {
     if (!this._httpVersion) return 'HTTP/1.1';
     if (this._httpVersion === 'http/1.1') return 'HTTP/1.1';
+    if (this._httpVersion === 'h2') return 'HTTP/2.0';
     return this._httpVersion;
   }
 
@@ -488,7 +530,17 @@ class WebSocket extends _instrumentation.SdkObject {
   constructor(parent, url) {
     super(parent, 'ws');
     this._url = void 0;
+    this._notified = false;
     this._url = url;
+  }
+
+  markAsNotified() {
+    // Sometimes we get "onWebSocketRequest" twice, at least in Chromium.
+    // Perhaps websocket is restarted because of chrome.webRequest extensions api?
+    // Or maybe the handshake response was a redirect?
+    if (this._notified) return false;
+    this._notified = true;
+    return true;
   }
 
   url() {

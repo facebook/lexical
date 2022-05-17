@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.USKeyboardLayout = exports.keypadLocation = void 0;
+exports.keypadLocation = exports.USKeyboardLayout = void 0;
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.

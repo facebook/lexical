@@ -3,21 +3,29 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.FetchResponse = exports.FetchRequest = exports.Fetch = void 0;
+exports.APIResponse = exports.APIRequestContext = exports.APIRequest = void 0;
 
 var _fs = _interopRequireDefault(require("fs"));
 
 var _path = _interopRequireDefault(require("path"));
 
-var mime = _interopRequireWildcard(require("mime"));
+var util = _interopRequireWildcard(require("util"));
 
-var _errors = require("../utils/errors");
+var _errors = require("../common/errors");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
+
+var _fileUtils = require("../utils/fileUtils");
 
 var _channelOwner = require("./channelOwner");
 
 var network = _interopRequireWildcard(require("./network"));
+
+var _clientInstrumentation = require("./clientInstrumentation");
+
+var _tracing = require("./tracing");
+
+let _util$inspect$custom;
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -25,54 +33,55 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * Copyright (c) Microsoft Corporation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-class Fetch {
+class APIRequest {
+  // Instrumentation.
   constructor(playwright) {
     this._playwright = void 0;
+    this._contexts = new Set();
+    this._onDidCreateContext = void 0;
+    this._onWillCloseContext = void 0;
     this._playwright = playwright;
   }
 
   async newContext(options = {}) {
-    return await this._playwright._wrapApiCall(async channel => {
-      const storageState = typeof options.storageState === 'string' ? JSON.parse(await _fs.default.promises.readFile(options.storageState, 'utf8')) : options.storageState;
-      return FetchRequest.from((await channel.newRequest({ ...options,
-        extraHTTPHeaders: options.extraHTTPHeaders ? (0, _utils.headersObjectToArray)(options.extraHTTPHeaders) : undefined,
-        storageState
-      })).request);
-    });
+    var _this$_onDidCreateCon;
+
+    const storageState = typeof options.storageState === 'string' ? JSON.parse(await _fs.default.promises.readFile(options.storageState, 'utf8')) : options.storageState;
+    const context = APIRequestContext.from((await this._playwright._channel.newRequest({ ...options,
+      extraHTTPHeaders: options.extraHTTPHeaders ? (0, _utils.headersObjectToArray)(options.extraHTTPHeaders) : undefined,
+      storageState
+    })).request);
+    context._tracing._localUtils = this._playwright._utils;
+
+    this._contexts.add(context);
+
+    context._request = this;
+    await ((_this$_onDidCreateCon = this._onDidCreateContext) === null || _this$_onDidCreateCon === void 0 ? void 0 : _this$_onDidCreateCon.call(this, context));
+    return context;
   }
 
 }
 
-exports.Fetch = Fetch;
+exports.APIRequest = APIRequest;
 
-class FetchRequest extends _channelOwner.ChannelOwner {
+class APIRequestContext extends _channelOwner.ChannelOwner {
   static from(channel) {
     return channel._object;
   }
 
   constructor(parent, type, guid, initializer) {
-    super(parent, type, guid, initializer);
+    super(parent, type, guid, initializer, (0, _clientInstrumentation.createInstrumentation)());
+    this._request = void 0;
+    this._tracing = void 0;
+    this._tracing = _tracing.Tracing.from(initializer.tracing);
   }
 
-  dispose() {
-    return this._wrapApiCall(async channel => {
-      await channel.dispose();
-    });
+  async dispose() {
+    var _this$_request, _this$_request$_onWil, _this$_request2;
+
+    await ((_this$_request = this._request) === null || _this$_request === void 0 ? void 0 : (_this$_request$_onWil = _this$_request._onWillCloseContext) === null || _this$_request$_onWil === void 0 ? void 0 : _this$_request$_onWil.call(_this$_request, this));
+    await this._channel.dispose();
+    (_this$_request2 = this._request) === null || _this$_request2 === void 0 ? void 0 : _this$_request2._contexts.delete(this);
   }
 
   async delete(url, options) {
@@ -112,7 +121,7 @@ class FetchRequest extends _channelOwner.ChannelOwner {
   }
 
   async fetch(urlOrRequest, options = {}) {
-    return this._wrapApiCall(async channel => {
+    return this._wrapApiCall(async () => {
       const request = urlOrRequest instanceof network.Request ? urlOrRequest : undefined;
       (0, _utils.assert)(request || typeof urlOrRequest === 'string', 'First argument must be either URL string or Request');
       (0, _utils.assert)((options.data === undefined ? 0 : 1) + (options.form === undefined ? 0 : 1) + (options.multipart === undefined ? 0 : 1) <= 1, `Only one of 'data', 'form' or 'multipart' can be specified`);
@@ -128,7 +137,15 @@ class FetchRequest extends _channelOwner.ChannelOwner {
       let postDataBuffer;
 
       if (options.data !== undefined) {
-        if ((0, _utils.isString)(options.data)) postDataBuffer = Buffer.from(options.data, 'utf8');else if (Buffer.isBuffer(options.data)) postDataBuffer = options.data;else if (typeof options.data === 'object') jsonData = options.data;else throw new Error(`Unexpected 'data' type`);
+        if ((0, _utils.isString)(options.data)) {
+          if (isJsonContentType(headers)) jsonData = options.data;else postDataBuffer = Buffer.from(options.data, 'utf8');
+        } else if (Buffer.isBuffer(options.data)) {
+          postDataBuffer = options.data;
+        } else if (typeof options.data === 'object' || typeof options.data === 'number' || typeof options.data === 'boolean') {
+          jsonData = options.data;
+        } else {
+          throw new Error(`Unexpected 'data' type`);
+        }
       } else if (options.form) {
         formData = (0, _utils.objectToArray)(options.form);
       } else if (options.multipart) {
@@ -158,7 +175,7 @@ class FetchRequest extends _channelOwner.ChannelOwner {
 
       if (postDataBuffer === undefined && jsonData === undefined && formData === undefined && multipartData === undefined) postDataBuffer = (request === null || request === void 0 ? void 0 : request.postDataBuffer()) || undefined;
       const postData = postDataBuffer ? postDataBuffer.toString('base64') : undefined;
-      const result = await channel.fetch({
+      const result = await this._channel.fetch({
         url,
         params,
         method,
@@ -171,29 +188,27 @@ class FetchRequest extends _channelOwner.ChannelOwner {
         failOnStatusCode: options.failOnStatusCode,
         ignoreHTTPSErrors: options.ignoreHTTPSErrors
       });
-      if (result.error) throw new Error(result.error);
-      return new FetchResponse(this, result.response);
+      return new APIResponse(this, result.response);
     });
   }
 
   async storageState(options = {}) {
-    return await this._wrapApiCall(async channel => {
-      const state = await channel.storageState();
+    const state = await this._channel.storageState();
 
-      if (options.path) {
-        await (0, _utils.mkdirIfNeeded)(options.path);
-        await _fs.default.promises.writeFile(options.path, JSON.stringify(state, undefined, 2), 'utf8');
-      }
+    if (options.path) {
+      await (0, _fileUtils.mkdirIfNeeded)(options.path);
+      await _fs.default.promises.writeFile(options.path, JSON.stringify(state, undefined, 2), 'utf8');
+    }
 
-      return state;
-    });
+    return state;
   }
 
 }
 
-exports.FetchRequest = FetchRequest;
+exports.APIRequestContext = APIRequestContext;
+_util$inspect$custom = util.inspect.custom;
 
-class FetchResponse {
+class APIResponse {
   constructor(context, initializer) {
     this._initializer = void 0;
     this._headers = void 0;
@@ -204,7 +219,7 @@ class FetchResponse {
   }
 
   ok() {
-    return this._initializer.status === 0 || this._initializer.status >= 200 && this._initializer.status <= 299;
+    return this._initializer.status >= 200 && this._initializer.status <= 299;
   }
 
   url() {
@@ -228,18 +243,16 @@ class FetchResponse {
   }
 
   async body() {
-    return this._request._wrapApiCall(async channel => {
-      try {
-        const result = await channel.fetchResponseBody({
-          fetchUid: this._fetchUid()
-        });
-        if (result.binary === undefined) throw new Error('Response has been disposed');
-        return Buffer.from(result.binary, 'base64');
-      } catch (e) {
-        if (e.message === _errors.kBrowserOrContextClosedError) throw new Error('Response has been disposed');
-        throw e;
-      }
-    });
+    try {
+      const result = await this._request._channel.fetchResponseBody({
+        fetchUid: this._fetchUid()
+      });
+      if (result.binary === undefined) throw new Error('Response has been disposed');
+      return Buffer.from(result.binary, 'base64');
+    } catch (e) {
+      if (e.message.includes(_errors.kBrowserOrContextClosedError)) throw new Error('Response has been disposed');
+      throw e;
+    }
   }
 
   async text() {
@@ -253,20 +266,35 @@ class FetchResponse {
   }
 
   async dispose() {
-    return this._request._wrapApiCall(async channel => {
-      await channel.disposeFetchResponse({
-        fetchUid: this._fetchUid()
-      });
+    await this._request._channel.disposeAPIResponse({
+      fetchUid: this._fetchUid()
     });
+  }
+
+  [_util$inspect$custom]() {
+    const headers = this.headersArray().map(({
+      name,
+      value
+    }) => `  ${name}: ${value}`);
+    return `APIResponse: ${this.status()} ${this.statusText()}\n${headers.join('\n')}`;
   }
 
   _fetchUid() {
     return this._initializer.fetchUid;
   }
 
+  async _fetchLog() {
+    const {
+      log
+    } = await this._request._channel.fetchLog({
+      fetchUid: this._fetchUid()
+    });
+    return log;
+  }
+
 }
 
-exports.FetchResponse = FetchResponse;
+exports.APIResponse = APIResponse;
 
 function filePayloadToJson(payload) {
   return {
@@ -286,7 +314,19 @@ async function readStreamToJson(stream) {
   const streamPath = Buffer.isBuffer(stream.path) ? stream.path.toString('utf8') : stream.path;
   return {
     name: _path.default.basename(streamPath),
-    mimeType: mime.getType(streamPath) || 'application/octet-stream',
     buffer: buffer.toString('base64')
   };
+}
+
+function isJsonContentType(headers) {
+  if (!headers) return false;
+
+  for (const {
+    name,
+    value
+  } of headers) {
+    if (name.toLocaleLowerCase() === 'content-type') return value === 'application/json';
+  }
+
+  return false;
 }

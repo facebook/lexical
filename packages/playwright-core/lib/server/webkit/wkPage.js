@@ -5,15 +5,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.WKPage = void 0;
 
-var jpeg = _interopRequireWildcard(require("jpeg-js"));
-
 var _path = _interopRequireDefault(require("path"));
 
-var png = _interopRequireWildcard(require("pngjs"));
+var _utilsBundle = require("../../utilsBundle");
 
 var _stackTrace = require("../../utils/stackTrace");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
+
+var _hostPlatform = require("../../utils/hostPlatform");
 
 var dialog = _interopRequireWildcard(require("../dialog"));
 
@@ -41,15 +41,15 @@ var _wkProvisionalPage = require("./wkProvisionalPage");
 
 var _wkWorkers = require("./wkWorkers");
 
-var _debugLogger = require("../../utils/debugLogger");
+var _debugLogger = require("../../common/debugLogger");
 
-var _async = require("../../utils/async");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _manualPromise = require("../../utils/manualPromise");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -80,7 +80,7 @@ class WKPage {
     this._session = void 0;
     this._provisionalPage = null;
     this._page = void 0;
-    this._pagePromise = new _async.ManualPromise();
+    this._pagePromise = new _manualPromise.ManualPromise();
     this._pageProxySession = void 0;
     this._opener = void 0;
     this._requestIdToRequest = new Map();
@@ -102,6 +102,7 @@ class WKPage {
     this._nextWindowOpenPopupFeatures = void 0;
     this._recordingVideoFile = null;
     this._screencastGeneration = 0;
+    this._interceptingFileChooser = false;
     this._pageProxySession = pageProxySession;
     this._opener = opener;
     this.rawKeyboard = new _wkInput.RawKeyboardImpl(pageProxySession);
@@ -133,7 +134,12 @@ class WKPage {
     }
   }
 
+  potentiallyUninitializedPage() {
+    return this._page;
+  }
+
   async _initializePageProxySession() {
+    if (this._page._browserContext.isSettingStorageState()) return;
     const promises = [this._pageProxySession.send('Dialog.enable'), this._pageProxySession.send('Emulation.setActiveAndFocused', {
       active: true
     })];
@@ -208,6 +214,11 @@ class WKPage {
       }));
     }
 
+    if (this._page._browserContext.isSettingStorageState()) {
+      await Promise.all(promises);
+      return;
+    }
+
     const contextOptions = this._browserContext._options;
     if (contextOptions.userAgent) promises.push(session.send('Page.overrideUserAgent', {
       value: contextOptions.userAgent
@@ -254,6 +265,9 @@ class WKPage {
       }));
     }
 
+    if (this._interceptingFileChooser) promises.push(session.send('Page.setInterceptFileChooserDialog', {
+      enabled: true
+    }));
     promises.push(session.send('Page.overrideSetting', {
       setting: 'DeviceOrientationEventEnabled',
       value: contextOptions.isMobile
@@ -462,8 +476,7 @@ class WKPage {
   }
 
   _addSessionListeners() {
-    // TODO: remove Page.willRequestOpenWindow and Page.didRequestOpenWindow from the protocol.
-    this._sessionListeners = [_eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameNavigated', event => this._onFrameNavigated(event.frame, false)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.navigatedWithinDocument', event => this._onFrameNavigatedWithinDocument(event.frameId, event.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameAttached', event => this._onFrameAttached(event.frameId, event.parentFrameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameDetached', event => this._onFrameDetached(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameScheduledNavigation', event => this._onFrameScheduledNavigation(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameStoppedLoading', event => this._onFrameStoppedLoading(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.loadEventFired', event => this._onLifecycleEvent(event.frameId, 'load')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.domContentEventFired', event => this._onLifecycleEvent(event.frameId, 'domcontentloaded')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Runtime.executionContextCreated', event => this._onExecutionContextCreated(event.context)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageAdded', event => this._onConsoleMessage(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageRepeatCountUpdated', event => this._onConsoleRepeatCountUpdated(event)), _eventsHelper.eventsHelper.addEventListener(this._pageProxySession, 'Dialog.javascriptDialogOpening', event => this._onDialog(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.fileChooserOpened', event => this._onFileChooserOpened(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestWillBeSent', e => this._onRequestWillBeSent(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestIntercepted', e => this._onRequestIntercepted(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.responseReceived', e => this._onResponseReceived(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFinished', e => this._onLoadingFinished(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFailed', e => this._onLoadingFailed(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketCreated', e => this._page._frameManager.onWebSocketCreated(e.requestId, e.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketWillSendHandshakeRequest', e => this._page._frameManager.onWebSocketRequest(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketHandshakeResponseReceived', e => this._page._frameManager.onWebSocketResponse(e.requestId, e.response.status, e.response.statusText)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameSent', e => e.response.payloadData && this._page._frameManager.onWebSocketFrameSent(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameReceived', e => e.response.payloadData && this._page._frameManager.webSocketFrameReceived(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketClosed', e => this._page._frameManager.webSocketClosed(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameError', e => this._page._frameManager.webSocketError(e.requestId, e.errorMessage))];
+    this._sessionListeners = [_eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameNavigated', event => this._onFrameNavigated(event.frame, false)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.navigatedWithinDocument', event => this._onFrameNavigatedWithinDocument(event.frameId, event.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameAttached', event => this._onFrameAttached(event.frameId, event.parentFrameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameDetached', event => this._onFrameDetached(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.willCheckNavigationPolicy', event => this._onWillCheckNavigationPolicy(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.didCheckNavigationPolicy', event => this._onDidCheckNavigationPolicy(event.frameId, event.cancel)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameScheduledNavigation', event => this._onFrameScheduledNavigation(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.frameStoppedLoading', event => this._onFrameStoppedLoading(event.frameId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.loadEventFired', event => this._onLifecycleEvent(event.frameId, 'load')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.domContentEventFired', event => this._onLifecycleEvent(event.frameId, 'domcontentloaded')), _eventsHelper.eventsHelper.addEventListener(this._session, 'Runtime.executionContextCreated', event => this._onExecutionContextCreated(event.context)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageAdded', event => this._onConsoleMessage(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Console.messageRepeatCountUpdated', event => this._onConsoleRepeatCountUpdated(event)), _eventsHelper.eventsHelper.addEventListener(this._pageProxySession, 'Dialog.javascriptDialogOpening', event => this._onDialog(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Page.fileChooserOpened', event => this._onFileChooserOpened(event)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestWillBeSent', e => this._onRequestWillBeSent(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.requestIntercepted', e => this._onRequestIntercepted(this._session, e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.responseReceived', e => this._onResponseReceived(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFinished', e => this._onLoadingFinished(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.loadingFailed', e => this._onLoadingFailed(e)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketCreated', e => this._page._frameManager.onWebSocketCreated(e.requestId, e.url)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketWillSendHandshakeRequest', e => this._page._frameManager.onWebSocketRequest(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketHandshakeResponseReceived', e => this._page._frameManager.onWebSocketResponse(e.requestId, e.response.status, e.response.statusText)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameSent', e => e.response.payloadData && this._page._frameManager.onWebSocketFrameSent(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameReceived', e => e.response.payloadData && this._page._frameManager.webSocketFrameReceived(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketClosed', e => this._page._frameManager.webSocketClosed(e.requestId)), _eventsHelper.eventsHelper.addEventListener(this._session, 'Network.webSocketFrameError', e => this._page._frameManager.webSocketError(e.requestId, e.errorMessage))];
   }
 
   async _updateState(method, params) {
@@ -476,6 +489,30 @@ class WKPage {
 
     if (this._provisionalPage) sessions.push(this._provisionalPage._session);
     await Promise.all(sessions.map(session => callback(session).catch(e => {})));
+  }
+
+  _onWillCheckNavigationPolicy(frameId) {
+    // It may happen that new policy check occurs while there is an ongoing
+    // provisional load, in this case it should be safe to ignore it as it will
+    // either:
+    // - end up canceled, e.g. ctrl+click opening link in new tab, having no effect
+    //   on this page
+    // - start new provisional load which we will miss in our signal trackers but
+    //   we certainly won't hang waiting for it to finish and there is high chance
+    //   that the current provisional page will commit navigation canceling the new
+    //   one.
+    if (this._provisionalPage) return;
+
+    this._page._frameManager.frameRequestedNavigation(frameId);
+  }
+
+  _onDidCheckNavigationPolicy(frameId, cancel) {
+    if (!cancel) return; // This is a cross-process navigation that is canceled in the original page and continues in
+    // the provisional page. Bail out as we are tracking it.
+
+    if (this._provisionalPage) return;
+
+    this._page._frameManager.frameAbortedNavigation(frameId, 'Navigation canceled by policy check');
   }
 
   _onFrameScheduledNavigation(frameId) {
@@ -533,8 +570,6 @@ class WKPage {
   _removeContextsForFrame(frame, notifyFrame) {
     for (const [contextId, context] of this._contextIdToContext) {
       if (context.frame === frame) {
-        context._delegate._dispose();
-
         this._contextIdToContext.delete(contextId);
 
         if (notifyFrame) frame._contextDestroyed(context);
@@ -552,6 +587,7 @@ class WKPage {
     let worldName = null;
     if (contextPayload.type === 'normal') worldName = 'main';else if (contextPayload.type === 'user' && contextPayload.name === UTILITY_WORLD_NAME) worldName = 'utility';
     const context = new dom.FrameExecutionContext(delegate, frame, worldName);
+    context[contextDelegateSymbol] = delegate;
     if (worldName) frame._contextCreated(worldName, context);
     if (contextPayload.type === 'normal' && frame === this._page.mainFrame()) this._mainFrameContextId = contextPayload.id;
 
@@ -819,6 +855,7 @@ class WKPage {
   }
 
   async setFileChooserIntercepted(enabled) {
+    this._interceptingFileChooser = enabled;
     await this._session.send('Page.setInterceptFileChooserDialog', {
       enabled
     }).catch(e => {}); // target can be closed.
@@ -847,13 +884,21 @@ class WKPage {
     await this._evaluateBindingScript(binding);
   }
 
+  async removeExposedBindings() {
+    await this._updateBootstrapScript();
+  }
+
   async _evaluateBindingScript(binding) {
     const script = this._bindingToScript(binding);
 
     await Promise.all(this._page.frames().map(frame => frame.evaluateExpression(script, false, {}).catch(e => {})));
   }
 
-  async evaluateOnNewDocument(script) {
+  async addInitScript(script) {
+    await this._updateBootstrapScript();
+  }
+
+  async removeInitScripts() {
     await this._updateBootstrapScript();
   }
 
@@ -864,11 +909,17 @@ class WKPage {
   _calculateBootstrapScript() {
     const scripts = [];
 
+    if (!this._page.context()._options.isMobile) {
+      scripts.push('delete window.orientation');
+      scripts.push('delete window.ondevicemotion');
+      scripts.push('delete window.ondeviceorientation');
+    }
+
     for (const binding of this._page.allBindings()) scripts.push(this._bindingToScript(binding));
 
-    scripts.push(...this._browserContext._evaluateOnNewDocumentSources);
-    scripts.push(...this._page._evaluateOnNewDocumentSources);
-    return scripts.join(';');
+    scripts.push(...this._browserContext.initScripts);
+    scripts.push(...this._page.initScripts);
+    return scripts.join(';\n');
   }
 
   async _updateBootstrapScript() {
@@ -885,10 +936,6 @@ class WKPage {
     });
   }
 
-  canScreenshotOutsideViewport() {
-    return true;
-  }
-
   async setBackgroundColor(color) {
     await this._session.send('Page.setDefaultBackgroundColorOverride', {
       color
@@ -898,7 +945,7 @@ class WKPage {
   _toolbarHeight() {
     var _this$_page$_browserC;
 
-    if ((_this$_page$_browserC = this._page._browserContext._browser) !== null && _this$_page$_browserC !== void 0 && _this$_page$_browserC.options.headful) return _utils.hostPlatform === 'mac10.15' ? 55 : 59;
+    if ((_this$_page$_browserC = this._page._browserContext._browser) !== null && _this$_page$_browserC !== void 0 && _this$_page$_browserC.options.headful) return _hostPlatform.hostPlatform === 'mac10.15' ? 55 : 59;
     return 0;
   }
 
@@ -923,19 +970,16 @@ class WKPage {
     this._recordingVideoFile = null;
   }
 
-  async takeScreenshot(progress, format, documentRect, viewportRect, quality) {
+  async takeScreenshot(progress, format, documentRect, viewportRect, quality, fitsViewport, scale) {
     const rect = documentRect || viewportRect;
     const result = await this._session.send('Page.snapshotRect', { ...rect,
-      coordinateSystem: documentRect ? 'Page' : 'Viewport'
+      coordinateSystem: documentRect ? 'Page' : 'Viewport',
+      omitDeviceScaleFactor: scale === 'css'
     });
     const prefix = 'data:image/png;base64,';
     let buffer = Buffer.from(result.dataURL.substr(prefix.length), 'base64');
-    if (format === 'jpeg') buffer = jpeg.encode(png.PNG.sync.read(buffer), quality).data;
+    if (format === 'jpeg') buffer = _utilsBundle.jpegjs.encode(_utilsBundle.PNG.sync.read(buffer), quality).data;
     return buffer;
-  }
-
-  async resetViewport() {
-    (0, _utils.assert)(false, 'Should not be called');
   }
 
   async getContentFrame(handle) {
@@ -1063,10 +1107,22 @@ class WKPage {
     });
   }
 
+  async setInputFilePaths(handle, paths) {
+    const pageProxyId = this._pageProxySession.sessionId;
+    const objectId = handle._objectId;
+    await Promise.all([this._pageProxySession.connection.browserSession.send('Playwright.grantFileReadAccess', {
+      pageProxyId,
+      paths
+    }), this._session.send('DOM.setInputFiles', {
+      objectId,
+      paths
+    })]);
+  }
+
   async adoptElementHandle(handle, to) {
     const result = await this._session.sendMayFail('DOM.resolveNode', {
       objectId: handle._objectId,
-      executionContextId: to._delegate._contextId
+      executionContextId: to[contextDelegateSymbol]._contextId
     });
     if (!result || result.object.subtype === 'null') throw new Error(dom.kUnableToAdoptErrorMessage);
     return to.createHandle(result.object);
@@ -1081,7 +1137,10 @@ class WKPage {
   async getFrameElement(frame) {
     const parent = frame.parentFrame();
     if (!parent) throw new Error('Frame has been detached.');
-    const handles = await this._page.selectors._queryAll(parent, 'frame,iframe', undefined);
+
+    const info = this._page.parseSelector('frame,iframe');
+
+    const handles = await this._page.selectors._queryAll(parent, info);
     const items = await Promise.all(handles.map(async handle => {
       const frame = await handle.contentFrame().catch(e => null);
       return {
@@ -1337,3 +1396,5 @@ function isLoadedSecurely(url, timing) {
     return true;
   } catch (_) {}
 }
+
+const contextDelegateSymbol = Symbol('delegate');

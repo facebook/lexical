@@ -3,6 +3,24 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+Object.defineProperty(exports, "APIRequest", {
+  enumerable: true,
+  get: function () {
+    return _fetch.APIRequest;
+  }
+});
+Object.defineProperty(exports, "APIRequestContext", {
+  enumerable: true,
+  get: function () {
+    return _fetch.APIRequestContext;
+  }
+});
+Object.defineProperty(exports, "APIResponse", {
+  enumerable: true,
+  get: function () {
+    return _fetch.APIResponse;
+  }
+});
 Object.defineProperty(exports, "Accessibility", {
   enumerable: true,
   get: function () {
@@ -21,12 +39,6 @@ Object.defineProperty(exports, "AndroidDevice", {
     return _android.AndroidDevice;
   }
 });
-Object.defineProperty(exports, "AndroidWebView", {
-  enumerable: true,
-  get: function () {
-    return _android.AndroidWebView;
-  }
-});
 Object.defineProperty(exports, "AndroidInput", {
   enumerable: true,
   get: function () {
@@ -37,6 +49,12 @@ Object.defineProperty(exports, "AndroidSocket", {
   enumerable: true,
   get: function () {
     return _android.AndroidSocket;
+  }
+});
+Object.defineProperty(exports, "AndroidWebView", {
+  enumerable: true,
+  get: function () {
+    return _android.AndroidWebView;
   }
 });
 Object.defineProperty(exports, "Browser", {
@@ -55,6 +73,12 @@ Object.defineProperty(exports, "BrowserType", {
   enumerable: true,
   get: function () {
     return _browserType.BrowserType;
+  }
+});
+Object.defineProperty(exports, "CDPSession", {
+  enumerable: true,
+  get: function () {
+    return _cdpSession.CDPSession;
   }
 });
 Object.defineProperty(exports, "ConsoleMessage", {
@@ -93,12 +117,6 @@ Object.defineProperty(exports, "ElectronApplication", {
     return _electron.ElectronApplication;
   }
 });
-Object.defineProperty(exports, "Locator", {
-  enumerable: true,
-  get: function () {
-    return _locator.Locator;
-  }
-});
 Object.defineProperty(exports, "ElementHandle", {
   enumerable: true,
   get: function () {
@@ -111,16 +129,22 @@ Object.defineProperty(exports, "FileChooser", {
     return _fileChooser.FileChooser;
   }
 });
-Object.defineProperty(exports, "TimeoutError", {
-  enumerable: true,
-  get: function () {
-    return _errors.TimeoutError;
-  }
-});
 Object.defineProperty(exports, "Frame", {
   enumerable: true,
   get: function () {
     return _frame.Frame;
+  }
+});
+Object.defineProperty(exports, "FrameLocator", {
+  enumerable: true,
+  get: function () {
+    return _locator.FrameLocator;
+  }
+});
+Object.defineProperty(exports, "JSHandle", {
+  enumerable: true,
+  get: function () {
+    return _jsHandle.JSHandle;
   }
 });
 Object.defineProperty(exports, "Keyboard", {
@@ -129,22 +153,28 @@ Object.defineProperty(exports, "Keyboard", {
     return _input.Keyboard;
   }
 });
+Object.defineProperty(exports, "Locator", {
+  enumerable: true,
+  get: function () {
+    return _locator.Locator;
+  }
+});
 Object.defineProperty(exports, "Mouse", {
   enumerable: true,
   get: function () {
     return _input.Mouse;
   }
 });
-Object.defineProperty(exports, "Touchscreen", {
+Object.defineProperty(exports, "Page", {
   enumerable: true,
   get: function () {
-    return _input.Touchscreen;
+    return _page.Page;
   }
 });
-Object.defineProperty(exports, "JSHandle", {
+Object.defineProperty(exports, "Playwright", {
   enumerable: true,
   get: function () {
-    return _jsHandle.JSHandle;
+    return _playwright.Playwright;
   }
 });
 Object.defineProperty(exports, "Request", {
@@ -165,40 +195,22 @@ Object.defineProperty(exports, "Route", {
     return _network.Route;
   }
 });
-Object.defineProperty(exports, "WebSocket", {
-  enumerable: true,
-  get: function () {
-    return _network.WebSocket;
-  }
-});
-Object.defineProperty(exports, "APIRequest", {
-  enumerable: true,
-  get: function () {
-    return _fetch.Fetch;
-  }
-});
-Object.defineProperty(exports, "APIRequestContext", {
-  enumerable: true,
-  get: function () {
-    return _fetch.FetchRequest;
-  }
-});
-Object.defineProperty(exports, "APIResponse", {
-  enumerable: true,
-  get: function () {
-    return _fetch.FetchResponse;
-  }
-});
-Object.defineProperty(exports, "Page", {
-  enumerable: true,
-  get: function () {
-    return _page.Page;
-  }
-});
 Object.defineProperty(exports, "Selectors", {
   enumerable: true,
   get: function () {
     return _selectors.Selectors;
+  }
+});
+Object.defineProperty(exports, "TimeoutError", {
+  enumerable: true,
+  get: function () {
+    return _errors.TimeoutError;
+  }
+});
+Object.defineProperty(exports, "Touchscreen", {
+  enumerable: true,
+  get: function () {
+    return _input.Touchscreen;
   }
 });
 Object.defineProperty(exports, "Tracing", {
@@ -213,22 +225,16 @@ Object.defineProperty(exports, "Video", {
     return _video.Video;
   }
 });
+Object.defineProperty(exports, "WebSocket", {
+  enumerable: true,
+  get: function () {
+    return _network.WebSocket;
+  }
+});
 Object.defineProperty(exports, "Worker", {
   enumerable: true,
   get: function () {
     return _worker.Worker;
-  }
-});
-Object.defineProperty(exports, "CDPSession", {
-  enumerable: true,
-  get: function () {
-    return _cdpSession.CDPSession;
-  }
-});
-Object.defineProperty(exports, "Playwright", {
-  enumerable: true,
-  get: function () {
-    return _playwright.Playwright;
   }
 });
 
@@ -258,7 +264,7 @@ var _elementHandle = require("./elementHandle");
 
 var _fileChooser = require("./fileChooser");
 
-var _errors = require("../utils/errors");
+var _errors = require("../common/errors");
 
 var _frame = require("./frame");
 

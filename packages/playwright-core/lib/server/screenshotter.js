@@ -4,10 +4,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Screenshotter = void 0;
+exports.validateScreenshotOptions = validateScreenshotOptions;
 
 var _helper = require("./helper");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
+
+var _multimap = require("../utils/multimap");
 
 /**
  * Copyright 2019 Google Inc. All rights reserved.
@@ -61,10 +64,12 @@ class Screenshotter {
   async screenshotPage(progress, options) {
     const format = validateScreenshotOptions(options);
     return this._queue.postTask(async () => {
+      progress.log('taking page screenshot');
       const {
-        viewportSize,
-        originalViewportSize
+        viewportSize
       } = await this._originalViewportSize(progress);
+      await this._preparePageForScreenshot(progress, options.caret !== 'initial', options.animations === 'disabled');
+      progress.throwIfAborted(); // Avoid restoring after failure - should be done by cleanup.
 
       if (options.fullPage) {
         const fullPageSize = await this._fullPageSize(progress);
@@ -74,22 +79,12 @@ class Screenshotter {
           width: fullPageSize.width,
           height: fullPageSize.height
         };
-        let overriddenViewportSize = null;
         const fitsViewport = fullPageSize.width <= viewportSize.width && fullPageSize.height <= viewportSize.height;
-
-        if (!this._page._delegate.canScreenshotOutsideViewport() && !fitsViewport) {
-          overriddenViewportSize = fullPageSize;
-          progress.throwIfAborted(); // Avoid side effects.
-
-          await this._page.setViewportSize(overriddenViewportSize);
-          progress.cleanupWhenAborted(() => this._restoreViewport(originalViewportSize));
-        }
-
         if (options.clip) documentRect = trimClipToSize(options.clip, documentRect);
-        const buffer = await this._screenshot(progress, format, documentRect, undefined, options);
+        const buffer = await this._screenshot(progress, format, documentRect, undefined, fitsViewport, options);
         progress.throwIfAborted(); // Avoid restoring after failure - should be done by cleanup.
 
-        if (overriddenViewportSize) await this._restoreViewport(originalViewportSize);
+        await this._restorePageAfterScreenshot();
         return buffer;
       }
 
@@ -98,45 +93,34 @@ class Screenshotter {
         y: 0,
         ...viewportSize
       };
-      return await this._screenshot(progress, format, undefined, viewportRect, options);
+      const buffer = await this._screenshot(progress, format, undefined, viewportRect, true, options);
+      progress.throwIfAborted(); // Avoid restoring after failure - should be done by cleanup.
+
+      await this._restorePageAfterScreenshot();
+      return buffer;
     });
   }
 
-  async screenshotElement(progress, handle, options = {}) {
+  async screenshotElement(progress, handle, options) {
     const format = validateScreenshotOptions(options);
     return this._queue.postTask(async () => {
+      progress.log('taking element screenshot');
       const {
-        viewportSize,
-        originalViewportSize
+        viewportSize
       } = await this._originalViewportSize(progress);
-      await handle._waitAndScrollIntoViewIfNeeded(progress);
+      await this._preparePageForScreenshot(progress, options.caret !== 'initial', options.animations === 'disabled');
       progress.throwIfAborted(); // Do not do extra work.
 
-      let boundingBox = await handle.boundingBox();
+      await handle._waitAndScrollIntoViewIfNeeded(progress, true
+      /* waitForVisible */
+      );
+      progress.throwIfAborted(); // Do not do extra work.
+
+      const boundingBox = await handle.boundingBox();
       (0, _utils.assert)(boundingBox, 'Node is either not visible or not an HTMLElement');
       (0, _utils.assert)(boundingBox.width !== 0, 'Node has 0 width.');
       (0, _utils.assert)(boundingBox.height !== 0, 'Node has 0 height.');
-      let overriddenViewportSize = null;
       const fitsViewport = boundingBox.width <= viewportSize.width && boundingBox.height <= viewportSize.height;
-
-      if (!this._page._delegate.canScreenshotOutsideViewport() && !fitsViewport) {
-        overriddenViewportSize = _helper.helper.enclosingIntSize({
-          width: Math.max(viewportSize.width, boundingBox.width),
-          height: Math.max(viewportSize.height, boundingBox.height)
-        });
-        progress.throwIfAborted(); // Avoid side effects.
-
-        await this._page.setViewportSize(overriddenViewportSize);
-        progress.cleanupWhenAborted(() => this._restoreViewport(originalViewportSize));
-        progress.throwIfAborted(); // Avoid extra work.
-
-        await handle._waitAndScrollIntoViewIfNeeded(progress);
-        boundingBox = await handle.boundingBox();
-        (0, _utils.assert)(boundingBox, 'Node is either not visible or not an HTMLElement');
-        (0, _utils.assert)(boundingBox.width !== 0, 'Node has 0 width.');
-        (0, _utils.assert)(boundingBox.height !== 0, 'Node has 0 height.');
-      }
-
       progress.throwIfAborted(); // Avoid extra work.
 
       const scrollOffset = await this._page.mainFrame().waitForFunctionValueInUtility(progress, () => ({
@@ -147,15 +131,135 @@ class Screenshotter {
       };
       documentRect.x += scrollOffset.x;
       documentRect.y += scrollOffset.y;
-      const buffer = await this._screenshot(progress, format, _helper.helper.enclosingIntRect(documentRect), undefined, options);
+      const buffer = await this._screenshot(progress, format, _helper.helper.enclosingIntRect(documentRect), undefined, fitsViewport, options);
       progress.throwIfAborted(); // Avoid restoring after failure - should be done by cleanup.
 
-      if (overriddenViewportSize) await this._restoreViewport(originalViewportSize);
+      await this._restorePageAfterScreenshot();
       return buffer;
     });
   }
 
-  async _screenshot(progress, format, documentRect, viewportRect, options) {
+  async _preparePageForScreenshot(progress, hideCaret, disableAnimations) {
+    if (disableAnimations) progress.log('  disabled all CSS animations');
+    await Promise.all(this._page.frames().map(async frame => {
+      await frame.nonStallingEvaluateInExistingContext('(' + async function (hideCaret, disableAnimations) {
+        const styleTag = document.createElement('style');
+
+        if (hideCaret) {
+          styleTag.textContent = `
+            *:not(#playwright-aaaaaaaaaa.playwright-bbbbbbbbbbb.playwright-cccccccccc.playwright-dddddddddd.playwright-eeeeeeeee) {
+              caret-color: transparent !important;
+            }
+          `;
+          document.documentElement.append(styleTag);
+        }
+
+        const infiniteAnimationsToResume = new Set();
+        const cleanupCallbacks = [];
+
+        if (disableAnimations) {
+          const collectRoots = (root, roots = []) => {
+            roots.push(root);
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+
+            do {
+              const node = walker.currentNode;
+              const shadowRoot = node instanceof Element ? node.shadowRoot : null;
+              if (shadowRoot) collectRoots(shadowRoot, roots);
+            } while (walker.nextNode());
+
+            return roots;
+          };
+
+          const handleAnimations = root => {
+            for (const animation of root.getAnimations()) {
+              if (!animation.effect || animation.playbackRate === 0 || infiniteAnimationsToResume.has(animation)) continue;
+              const endTime = animation.effect.getComputedTiming().endTime;
+
+              if (Number.isFinite(endTime)) {
+                try {
+                  animation.finish();
+                } catch (e) {// animation.finish() should not throw for
+                  // finite animations, but we'd like to be on the
+                  // safe side.
+                }
+              } else {
+                try {
+                  animation.cancel();
+                  infiniteAnimationsToResume.add(animation);
+                } catch (e) {// animation.cancel() should not throw for
+                  // infinite animations, but we'd like to be on the
+                  // safe side.
+                }
+              }
+            }
+          };
+
+          for (const root of collectRoots(document)) {
+            const handleRootAnimations = handleAnimations.bind(null, root);
+            handleRootAnimations();
+            root.addEventListener('transitionrun', handleRootAnimations);
+            root.addEventListener('animationstart', handleRootAnimations);
+            cleanupCallbacks.push(() => {
+              root.removeEventListener('transitionrun', handleRootAnimations);
+              root.removeEventListener('animationstart', handleRootAnimations);
+            });
+          }
+        }
+
+        window.__cleanupScreenshot = () => {
+          styleTag.remove();
+
+          for (const animation of infiniteAnimationsToResume) {
+            try {
+              animation.play();
+            } catch (e) {// animation.play() should never throw, but
+              // we'd like to be on the safe side.
+            }
+          }
+
+          for (const cleanupCallback of cleanupCallbacks) cleanupCallback();
+
+          delete window.__cleanupScreenshot;
+        };
+      }.toString() + `)(${hideCaret}, ${disableAnimations})`, false, 'utility').catch(() => {});
+    }));
+    progress.cleanupWhenAborted(() => this._restorePageAfterScreenshot());
+  }
+
+  async _restorePageAfterScreenshot() {
+    await Promise.all(this._page.frames().map(async frame => {
+      frame.nonStallingEvaluateInExistingContext('window.__cleanupScreenshot && window.__cleanupScreenshot()', false, 'utility').catch(() => {});
+    }));
+  }
+
+  async _maskElements(progress, options) {
+    const framesToParsedSelectors = new _multimap.MultiMap();
+
+    const cleanup = async () => {
+      await Promise.all([...framesToParsedSelectors.keys()].map(async frame => {
+        await frame.hideHighlight();
+      }));
+    };
+
+    if (!options.mask || !options.mask.length) return cleanup;
+    await Promise.all((options.mask || []).map(async ({
+      frame,
+      selector
+    }) => {
+      const pair = await frame.resolveFrameForSelectorNoWait(selector);
+      if (pair) framesToParsedSelectors.set(pair.frame, pair.info.parsed);
+    }));
+    progress.throwIfAborted(); // Avoid extra work.
+
+    await Promise.all([...framesToParsedSelectors.keys()].map(async frame => {
+      await frame.maskSelectors(framesToParsedSelectors.get(frame));
+    }));
+    progress.cleanupWhenAborted(cleanup);
+    return cleanup;
+  }
+
+  async _screenshot(progress, format, documentRect, viewportRect, fitsViewport, options) {
     if (options.__testHookBeforeScreenshot) await options.__testHookBeforeScreenshot();
     progress.throwIfAborted(); // Screenshotting is expensive - avoid extra work.
 
@@ -173,7 +277,13 @@ class Screenshotter {
 
     progress.throwIfAborted(); // Avoid extra work.
 
-    const buffer = await this._page._delegate.takeScreenshot(progress, format, documentRect, viewportRect, options.quality);
+    const cleanupHighlight = await this._maskElements(progress, options);
+    progress.throwIfAborted(); // Avoid extra work.
+
+    const buffer = await this._page._delegate.takeScreenshot(progress, format, documentRect, viewportRect, options.quality, fitsViewport, options.scale || 'device');
+    progress.throwIfAborted(); // Avoid restoring after failure - should be done by cleanup.
+
+    await cleanupHighlight();
     progress.throwIfAborted(); // Avoid restoring after failure - should be done by cleanup.
 
     if (shouldSetDefaultBackground) await this._page._delegate.setBackgroundColor();
@@ -181,11 +291,6 @@ class Screenshotter {
 
     if (options.__testHookAfterScreenshot) await options.__testHookAfterScreenshot();
     return buffer;
-  }
-
-  async _restoreViewport(originalViewportSize) {
-    (0, _utils.assert)(!this._page._delegate.canScreenshotOutsideViewport());
-    if (originalViewportSize) await this._page.setViewportSize(originalViewportSize);else await this._page._delegate.resetViewport();
   }
 
 }

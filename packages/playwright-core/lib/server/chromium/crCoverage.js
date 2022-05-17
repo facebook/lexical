@@ -7,7 +7,7 @@ exports.CRCoverage = void 0;
 
 var _eventsHelper = require("../../utils/eventsHelper");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.

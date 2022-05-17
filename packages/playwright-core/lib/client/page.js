@@ -3,13 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.BindingCall = exports.Page = void 0;
+exports.Page = exports.BindingCall = void 0;
 
 var _events = require("./events");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-var _timeoutSettings = require("../utils/timeoutSettings");
+var _timeoutSettings = require("../common/timeoutSettings");
 
 var _serializers = require("../protocol/serializers");
 
@@ -49,7 +49,9 @@ var _path = _interopRequireDefault(require("path"));
 
 var _clientHelper = require("./clientHelper");
 
-var _errors = require("../utils/errors");
+var _fileUtils = require("../utils/fileUtils");
+
+var _errors = require("../common/errors");
 
 var _video = require("./video");
 
@@ -217,10 +219,14 @@ class Page extends _channelOwner.ChannelOwner {
   _onRoute(route, request) {
     for (const routeHandler of this._routes) {
       if (routeHandler.matches(request.url())) {
-        if (routeHandler.handle(route, request)) {
-          this._routes.splice(this._routes.indexOf(routeHandler), 1);
+        try {
+          routeHandler.handle(route, request);
+        } finally {
+          if (!routeHandler.isActive()) {
+            this._routes.splice(this._routes.indexOf(routeHandler), 1);
 
-          if (!this._routes.length) this._wrapApiCall(channel => this._disableInterception(channel), undefined, true).catch(() => {});
+            if (!this._routes.length) this._wrapApiCall(() => this._disableInterception(), true).catch(() => {});
+          }
         }
 
         return;
@@ -292,17 +298,21 @@ class Page extends _channelOwner.ChannelOwner {
   setDefaultNavigationTimeout(timeout) {
     this._timeoutSettings.setDefaultNavigationTimeout(timeout);
 
-    this._channel.setDefaultNavigationTimeoutNoReply({
-      timeout
-    });
+    this._wrapApiCall(async () => {
+      this._channel.setDefaultNavigationTimeoutNoReply({
+        timeout
+      });
+    }, true);
   }
 
   setDefaultTimeout(timeout) {
     this._timeoutSettings.setDefaultTimeout(timeout);
 
-    this._channel.setDefaultTimeoutNoReply({
-      timeout
-    });
+    this._wrapApiCall(async () => {
+      this._channel.setDefaultTimeoutNoReply({
+        timeout
+      });
+    }, true);
   }
 
   _forceVideo() {
@@ -358,34 +368,36 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   async exposeFunction(name, callback) {
-    return this._wrapApiCall(async channel => {
-      await channel.exposeBinding({
-        name
-      });
-
-      const binding = (source, ...args) => callback(...args);
-
-      this._bindings.set(name, binding);
+    await this._channel.exposeBinding({
+      name
     });
+
+    const binding = (source, ...args) => callback(...args);
+
+    this._bindings.set(name, binding);
   }
 
   async exposeBinding(name, callback, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.exposeBinding({
-        name,
-        needsHandle: options.handle
-      });
-
-      this._bindings.set(name, callback);
+    await this._channel.exposeBinding({
+      name,
+      needsHandle: options.handle
     });
+
+    this._bindings.set(name, callback);
+  }
+
+  async _removeExposedBindings() {
+    for (const key of this._bindings.keys()) {
+      if (!key.startsWith('__pw_')) this._bindings.delete(key);
+    }
+
+    await this._channel.removeExposedBindings();
   }
 
   async setExtraHTTPHeaders(headers) {
-    return this._wrapApiCall(async channel => {
-      (0, _network.validateHeaders)(headers);
-      await channel.setExtraHTTPHeaders({
-        headers: (0, _utils.headersObjectToArray)(headers)
-      });
+    (0, _network.validateHeaders)(headers);
+    await this._channel.setExtraHTTPHeaders({
+      headers: (0, _utils.headersObjectToArray)(headers)
     });
   }
 
@@ -406,12 +418,10 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   async reload(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const waitUntil = (0, _frame.verifyLoadState)('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
-      return _network.Response.fromNullable((await channel.reload({ ...options,
-        waitUntil
-      })).response);
-    });
+    const waitUntil = (0, _frame.verifyLoadState)('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
+    return _network.Response.fromNullable((await this._channel.reload({ ...options,
+      waitUntil
+    })).response);
   }
 
   async waitForLoadState(state, options) {
@@ -427,94 +437,82 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   async waitForRequest(urlOrPredicate, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const predicate = request => {
-        if ((0, _utils.isString)(urlOrPredicate) || (0, _utils.isRegExp)(urlOrPredicate)) return (0, _clientHelper.urlMatches)(this._browserContext._options.baseURL, request.url(), urlOrPredicate);
-        return urlOrPredicate(request);
-      };
+    const predicate = request => {
+      if ((0, _utils.isString)(urlOrPredicate) || (0, _utils.isRegExp)(urlOrPredicate)) return (0, _clientHelper.urlMatches)(this._browserContext._options.baseURL, request.url(), urlOrPredicate);
+      return urlOrPredicate(request);
+    };
 
-      const trimmedUrl = trimUrl(urlOrPredicate);
-      const logLine = trimmedUrl ? `waiting for request ${trimmedUrl}` : undefined;
-      return this._waitForEvent(channel, _events.Events.Page.Request, {
-        predicate,
-        timeout: options.timeout
-      }, logLine);
-    });
+    const trimmedUrl = trimUrl(urlOrPredicate);
+    const logLine = trimmedUrl ? `waiting for request ${trimmedUrl}` : undefined;
+    return this._waitForEvent(_events.Events.Page.Request, {
+      predicate,
+      timeout: options.timeout
+    }, logLine);
   }
 
   async waitForResponse(urlOrPredicate, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const predicate = response => {
-        if ((0, _utils.isString)(urlOrPredicate) || (0, _utils.isRegExp)(urlOrPredicate)) return (0, _clientHelper.urlMatches)(this._browserContext._options.baseURL, response.url(), urlOrPredicate);
-        return urlOrPredicate(response);
-      };
+    const predicate = response => {
+      if ((0, _utils.isString)(urlOrPredicate) || (0, _utils.isRegExp)(urlOrPredicate)) return (0, _clientHelper.urlMatches)(this._browserContext._options.baseURL, response.url(), urlOrPredicate);
+      return urlOrPredicate(response);
+    };
 
-      const trimmedUrl = trimUrl(urlOrPredicate);
-      const logLine = trimmedUrl ? `waiting for response ${trimmedUrl}` : undefined;
-      return this._waitForEvent(channel, _events.Events.Page.Response, {
-        predicate,
-        timeout: options.timeout
-      }, logLine);
-    });
+    const trimmedUrl = trimUrl(urlOrPredicate);
+    const logLine = trimmedUrl ? `waiting for response ${trimmedUrl}` : undefined;
+    return this._waitForEvent(_events.Events.Page.Response, {
+      predicate,
+      timeout: options.timeout
+    }, logLine);
   }
 
   async waitForEvent(event, optionsOrPredicate = {}) {
-    return this._wrapApiCall(async channel => {
-      return this._waitForEvent(channel, event, optionsOrPredicate, `waiting for event "${event}"`);
-    });
+    return this._waitForEvent(event, optionsOrPredicate, `waiting for event "${event}"`);
   }
 
-  async _waitForEvent(channel, event, optionsOrPredicate, logLine) {
-    const timeout = this._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
+  async _waitForEvent(event, optionsOrPredicate, logLine) {
+    return this._wrapApiCall(async () => {
+      const timeout = this._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
 
-    const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
+      const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
-    const waiter = _waiter.Waiter.createForEvent(channel, event);
+      const waiter = _waiter.Waiter.createForEvent(this, event);
 
-    if (logLine) waiter.log(logLine);
-    waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
-    if (event !== _events.Events.Page.Crash) waiter.rejectOnEvent(this, _events.Events.Page.Crash, new Error('Page crashed'));
-    if (event !== _events.Events.Page.Close) waiter.rejectOnEvent(this, _events.Events.Page.Close, new Error('Page closed'));
-    const result = await waiter.waitForEvent(this, event, predicate);
-    waiter.dispose();
-    return result;
+      if (logLine) waiter.log(logLine);
+      waiter.rejectOnTimeout(timeout, `Timeout ${timeout}ms exceeded while waiting for event "${event}"`);
+      if (event !== _events.Events.Page.Crash) waiter.rejectOnEvent(this, _events.Events.Page.Crash, new Error('Page crashed'));
+      if (event !== _events.Events.Page.Close) waiter.rejectOnEvent(this, _events.Events.Page.Close, new Error('Page closed'));
+      const result = await waiter.waitForEvent(this, event, predicate);
+      waiter.dispose();
+      return result;
+    });
   }
 
   async goBack(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const waitUntil = (0, _frame.verifyLoadState)('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
-      return _network.Response.fromNullable((await channel.goBack({ ...options,
-        waitUntil
-      })).response);
-    });
+    const waitUntil = (0, _frame.verifyLoadState)('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
+    return _network.Response.fromNullable((await this._channel.goBack({ ...options,
+      waitUntil
+    })).response);
   }
 
   async goForward(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const waitUntil = (0, _frame.verifyLoadState)('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
-      return _network.Response.fromNullable((await channel.goForward({ ...options,
-        waitUntil
-      })).response);
-    });
+    const waitUntil = (0, _frame.verifyLoadState)('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
+    return _network.Response.fromNullable((await this._channel.goForward({ ...options,
+      waitUntil
+    })).response);
   }
 
   async emulateMedia(options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.emulateMedia({
-        media: options.media === null ? 'null' : options.media,
-        colorScheme: options.colorScheme === null ? 'null' : options.colorScheme,
-        reducedMotion: options.reducedMotion === null ? 'null' : options.reducedMotion,
-        forcedColors: options.forcedColors === null ? 'null' : options.forcedColors
-      });
+    await this._channel.emulateMedia({
+      media: options.media === null ? 'null' : options.media,
+      colorScheme: options.colorScheme === null ? 'null' : options.colorScheme,
+      reducedMotion: options.reducedMotion === null ? 'null' : options.reducedMotion,
+      forcedColors: options.forcedColors === null ? 'null' : options.forcedColors
     });
   }
 
   async setViewportSize(viewportSize) {
-    return this._wrapApiCall(async channel => {
-      this._viewportSize = viewportSize;
-      await channel.setViewportSize({
-        viewportSize
-      });
+    this._viewportSize = viewportSize;
+    await this._channel.setViewportSize({
+      viewportSize
     });
   }
 
@@ -528,53 +526,96 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   async addInitScript(script, arg) {
-    return this._wrapApiCall(async channel => {
-      const source = await (0, _clientHelper.evaluationScript)(script, arg);
-      await channel.addInitScript({
-        source
-      });
+    const source = await (0, _clientHelper.evaluationScript)(script, arg);
+    await this._channel.addInitScript({
+      source
     });
   }
 
-  async route(url, handler, options = {}) {
-    return this._wrapApiCall(async channel => {
-      this._routes.unshift(new _network.RouteHandler(this._browserContext._options.baseURL, url, handler, options.times));
+  async _removeInitScripts() {
+    await this._channel.removeInitScripts();
+  }
 
-      if (this._routes.length === 1) await channel.setNetworkInterceptionEnabled({
-        enabled: true
-      });
+  async route(url, handler, options = {}) {
+    this._routes.unshift(new _network.RouteHandler(this._browserContext._options.baseURL, url, handler, options.times));
+
+    if (this._routes.length === 1) await this._channel.setNetworkInterceptionEnabled({
+      enabled: true
     });
   }
 
   async unroute(url, handler) {
-    return this._wrapApiCall(async channel => {
-      this._routes = this._routes.filter(route => route.url !== url || handler && route.handler !== handler);
-      if (!this._routes.length) await this._disableInterception(channel);
-    });
+    this._routes = this._routes.filter(route => route.url !== url || handler && route.handler !== handler);
+    if (!this._routes.length) await this._disableInterception();
   }
 
-  async _disableInterception(channel) {
-    await channel.setNetworkInterceptionEnabled({
+  async _unrouteAll() {
+    this._routes = [];
+    await this._disableInterception();
+  }
+
+  async _disableInterception() {
+    await this._channel.setNetworkInterceptionEnabled({
       enabled: false
     });
   }
 
   async screenshot(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const copy = { ...options
+    const copy = { ...options,
+      mask: undefined
+    };
+    if (!copy.type) copy.type = (0, _elementHandle.determineScreenshotType)(options);
+
+    if (options.mask) {
+      copy.mask = options.mask.map(locator => ({
+        frame: locator._frame._channel,
+        selector: locator._selector
+      }));
+    }
+
+    const result = await this._channel.screenshot(copy);
+
+    const buffer = _buffer.Buffer.from(result.binary, 'base64');
+
+    if (options.path) {
+      await (0, _fileUtils.mkdirIfNeeded)(options.path);
+      await _fs.default.promises.writeFile(options.path, buffer);
+    }
+
+    return buffer;
+  }
+
+  async _expectScreenshot(customStackTrace, options) {
+    return this._wrapApiCall(async () => {
+      var _options$screenshotOp, _options$screenshotOp2;
+
+      const mask = (_options$screenshotOp = options.screenshotOptions) !== null && _options$screenshotOp !== void 0 && _options$screenshotOp.mask ? (_options$screenshotOp2 = options.screenshotOptions) === null || _options$screenshotOp2 === void 0 ? void 0 : _options$screenshotOp2.mask.map(locator => ({
+        frame: locator._frame._channel,
+        selector: locator._selector
+      })) : undefined;
+      const locator = options.locator ? {
+        frame: options.locator._frame._channel,
+        selector: options.locator._selector
+      } : undefined;
+      const expected = options.expected ? options.expected.toString('base64') : undefined;
+      const result = await this._channel.expectScreenshot({ ...options,
+        isNot: !!options.isNot,
+        expected,
+        locator,
+        screenshotOptions: { ...options.screenshotOptions,
+          mask
+        }
+      });
+      return {
+        log: result.log,
+        actual: result.actual ? _buffer.Buffer.from(result.actual, 'base64') : undefined,
+        previous: result.previous ? _buffer.Buffer.from(result.previous, 'base64') : undefined,
+        diff: result.diff ? _buffer.Buffer.from(result.diff, 'base64') : undefined,
+        errorMessage: result.errorMessage
       };
-      if (!copy.type) copy.type = (0, _elementHandle.determineScreenshotType)(options);
-      const result = await channel.screenshot(copy);
-
-      const buffer = _buffer.Buffer.from(result.binary, 'base64');
-
-      if (options.path) {
-        await (0, _utils.mkdirIfNeeded)(options.path);
-        await _fs.default.promises.writeFile(options.path, buffer);
-      }
-
-      return buffer;
-    });
+    }, false
+    /* isInternal */
+    , customStackTrace);
   }
 
   async title() {
@@ -582,18 +623,14 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   async bringToFront() {
-    return this._wrapApiCall(async channel => {
-      await channel.bringToFront();
-    });
+    await this._channel.bringToFront();
   }
 
   async close(options = {
     runBeforeUnload: undefined
   }) {
     try {
-      await this._wrapApiCall(async channel => {
-        if (this._ownedContext) await this._ownedContext.close();else await channel.close(options);
-      });
+      if (this._ownedContext) await this._ownedContext.close();else await this._channel.close(options);
     } catch (e) {
       if ((0, _errors.isSafeCloseError)(e)) return;
       throw e;
@@ -624,8 +661,12 @@ class Page extends _channelOwner.ChannelOwner {
     return this._mainFrame.fill(selector, value, options);
   }
 
-  locator(selector) {
-    return this.mainFrame().locator(selector);
+  locator(selector, options) {
+    return this.mainFrame().locator(selector, options);
+  }
+
+  frameLocator(selector) {
+    return this.mainFrame().frameLocator(selector);
   }
 
   async focus(selector, options) {
@@ -753,38 +794,40 @@ class Page extends _channelOwner.ChannelOwner {
   }
 
   async pause() {
-    return this.context()._wrapApiCall(async channel => {
-      await channel.pause();
-    });
+    if (!require('inspector').url()) await this.context()._channel.pause();
   }
 
   async pdf(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const transportOptions = { ...options
-      };
-      if (transportOptions.margin) transportOptions.margin = { ...transportOptions.margin
-      };
-      if (typeof options.width === 'number') transportOptions.width = options.width + 'px';
-      if (typeof options.height === 'number') transportOptions.height = options.height + 'px';
+    const transportOptions = { ...options
+    };
+    if (transportOptions.margin) transportOptions.margin = { ...transportOptions.margin
+    };
+    if (typeof options.width === 'number') transportOptions.width = options.width + 'px';
+    if (typeof options.height === 'number') transportOptions.height = options.height + 'px';
 
-      for (const margin of ['top', 'right', 'bottom', 'left']) {
-        const index = margin;
-        if (options.margin && typeof options.margin[index] === 'number') transportOptions.margin[index] = transportOptions.margin[index] + 'px';
-      }
+    for (const margin of ['top', 'right', 'bottom', 'left']) {
+      const index = margin;
+      if (options.margin && typeof options.margin[index] === 'number') transportOptions.margin[index] = transportOptions.margin[index] + 'px';
+    }
 
-      const result = await channel.pdf(transportOptions);
+    const result = await this._channel.pdf(transportOptions);
 
-      const buffer = _buffer.Buffer.from(result.pdf, 'base64');
+    const buffer = _buffer.Buffer.from(result.pdf, 'base64');
 
-      if (options.path) {
-        await _fs.default.promises.mkdir(_path.default.dirname(options.path), {
-          recursive: true
-        });
-        await _fs.default.promises.writeFile(options.path, buffer);
-      }
+    if (options.path) {
+      await _fs.default.promises.mkdir(_path.default.dirname(options.path), {
+        recursive: true
+      });
+      await _fs.default.promises.writeFile(options.path, buffer);
+    }
 
-      return buffer;
-    });
+    return buffer;
+  }
+
+  async _resetForReuse() {
+    await this._unrouteAll();
+    await this._removeInitScripts();
+    await this._removeExposedBindings();
   }
 
 }

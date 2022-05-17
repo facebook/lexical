@@ -3,17 +3,19 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.BrowserContext = void 0;
 exports.assertBrowserContextIsNotOwned = assertBrowserContextIsNotOwned;
+exports.normalizeProxySettings = normalizeProxySettings;
 exports.validateBrowserContextOptions = validateBrowserContextOptions;
 exports.verifyGeolocation = verifyGeolocation;
-exports.normalizeProxySettings = normalizeProxySettings;
-exports.BrowserContext = void 0;
 
 var os = _interopRequireWildcard(require("os"));
 
-var _timeoutSettings = require("../utils/timeoutSettings");
+var _timeoutSettings = require("../common/timeoutSettings");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
+
+var _fileUtils = require("../utils/fileUtils");
 
 var _helper = require("./helper");
 
@@ -23,15 +25,17 @@ var _page = require("./page");
 
 var _path = _interopRequireDefault(require("path"));
 
+var _fs = _interopRequireDefault(require("fs"));
+
 var _instrumentation = require("./instrumentation");
 
-var _debugger = require("./supplements/debugger");
+var _debugger = require("./debugger");
 
 var _tracing = require("./trace/recorder/tracing");
 
-var _harRecorder = require("./supplements/har/harRecorder");
+var _harRecorder = require("./har/harRecorder");
 
-var _recorderSupplement = require("./supplements/recorderSupplement");
+var _recorder = require("./recorder");
 
 var consoleApiSource = _interopRequireWildcard(require("../generated/consoleApiSource"));
 
@@ -79,26 +83,28 @@ class BrowserContext extends _instrumentation.SdkObject {
     this._harRecorder = void 0;
     this.tracing = void 0;
     this.fetchRequest = void 0;
+    this._customCloseHandler = void 0;
+    this._tempDirs = [];
+    this._settingStorageState = false;
+    this.initScripts = [];
     this.attribution.context = this;
     this._browser = browser;
     this._options = options;
     this._browserContextId = browserContextId;
     this._isPersistentContext = !browserContextId;
-    this._closePromise = new Promise(fulfill => this._closePromiseFulfill = fulfill); // Create instrumentation per context.
-
-    this.instrumentation = (0, _instrumentation.createInstrumentation)();
+    this._closePromise = new Promise(fulfill => this._closePromiseFulfill = fulfill);
+    this.fetchRequest = new _fetch.BrowserContextAPIRequestContext(this);
     if (this._options.recordHar) this._harRecorder = new _harRecorder.HarRecorder(this, { ...this._options.recordHar,
       path: _path.default.join(this._browser.options.artifactsDir, `${(0, _utils.createGuid)()}.har`)
     });
-    this.tracing = new _tracing.Tracing(this);
-    this.fetchRequest = new _fetch.BrowserContextFetchRequest(this);
+    this.tracing = new _tracing.Tracing(this, browser.options.tracesDir);
   }
 
   isPersistentContext() {
     return this._isPersistentContext;
   }
 
-  _setSelectors(selectors) {
+  setSelectors(selectors) {
     this._selectors = selectors;
   }
 
@@ -107,24 +113,23 @@ class BrowserContext extends _instrumentation.SdkObject {
   }
 
   async _initialize() {
-    if (this.attribution.isInternal) return; // Debugger will pause execution upon page.pause in headed mode.
+    if (this.attribution.isInternalPlaywright) return; // Debugger will pause execution upon page.pause in headed mode.
 
-    const contextDebugger = new _debugger.Debugger(this);
-    this.instrumentation.addListener(contextDebugger); // When PWDEBUG=1, show inspector for each context.
+    const contextDebugger = new _debugger.Debugger(this); // When PWDEBUG=1, show inspector for each context.
 
-    if ((0, _utils.debugMode)() === 'inspector') await _recorderSupplement.RecorderSupplement.show(this, {
+    if ((0, _utils.debugMode)() === 'inspector') await _recorder.Recorder.show(this, {
       pauseOnNextStatement: true
     }); // When paused, show inspector.
 
-    if (contextDebugger.isPaused()) _recorderSupplement.RecorderSupplement.showInspector(this);
+    if (contextDebugger.isPaused()) _recorder.Recorder.showInspector(this);
     contextDebugger.on(_debugger.Debugger.Events.PausedStateChanged, () => {
-      _recorderSupplement.RecorderSupplement.showInspector(this);
+      _recorder.Recorder.showInspector(this);
     });
     if ((0, _utils.debugMode)() === 'console') await this.extendInjectedScript(consoleApiSource.source);
   }
 
   async _ensureVideosPath() {
-    if (this._options.recordVideo) await (0, _utils.mkdirIfNeeded)(_path.default.join(this._options.recordVideo.dir, 'dummy'));
+    if (this._options.recordVideo) await (0, _fileUtils.mkdirIfNeeded)(_path.default.join(this._options.recordVideo.dir, 'dummy'));
   }
 
   _browserClosed() {
@@ -146,7 +151,8 @@ class BrowserContext extends _instrumentation.SdkObject {
 
     this._downloads.clear();
 
-    if (this._isPersistentContext) this._onClosePersistent();
+    this.tracing.dispose();
+    if (this._isPersistentContext) this.onClosePersistent();
 
     this._closePromiseFulfill(new Error('Context closed'));
 
@@ -156,11 +162,11 @@ class BrowserContext extends _instrumentation.SdkObject {
 
   async cookies(urls = []) {
     if (urls && !Array.isArray(urls)) urls = [urls];
-    return await this._doCookies(urls);
+    return await this.doGetCookies(urls);
   }
 
   setHTTPCredentials(httpCredentials) {
-    return this._doSetHTTPCredentials(httpCredentials);
+    return this.doSetHTTPCredentials(httpCredentials);
   }
 
   async exposeBinding(name, needsHandle, playwrightBinding) {
@@ -174,7 +180,15 @@ class BrowserContext extends _instrumentation.SdkObject {
 
     this._pageBindings.set(name, binding);
 
-    await this._doExposeBinding(binding);
+    await this.doExposeBinding(binding);
+  }
+
+  async removeExposedBindings() {
+    for (const key of this._pageBindings.keys()) {
+      if (!key.startsWith('__pw')) this._pageBindings.delete(key);
+    }
+
+    await this.doRemoveExposedBindings();
   }
 
   async grantPermissions(permissions, origin) {
@@ -191,13 +205,13 @@ class BrowserContext extends _instrumentation.SdkObject {
 
     this._permissions.set(resolvedOrigin, list);
 
-    await this._doGrantPermissions(resolvedOrigin, list);
+    await this.doGrantPermissions(resolvedOrigin, list);
   }
 
   async clearPermissions() {
     this._permissions.clear();
 
-    await this._doClearPermissions();
+    await this.doClearPermissions();
   }
 
   setDefaultNavigationTimeout(timeout) {
@@ -269,9 +283,19 @@ class BrowserContext extends _instrumentation.SdkObject {
     };
   }
 
-  async _setRequestInterceptor(handler) {
+  async addInitScript(script) {
+    this.initScripts.push(script);
+    await this.doAddInitScript(script);
+  }
+
+  async removeInitScripts() {
+    this.initScripts.splice(0, this.initScripts.length);
+    await this.doRemoveInitScripts();
+  }
+
+  async setRequestInterceptor(handler) {
     this._requestInterceptor = handler;
-    await this._doUpdateRequestInterception();
+    await this.doUpdateRequestInterception();
   }
 
   isClosingOrClosed() {
@@ -282,6 +306,14 @@ class BrowserContext extends _instrumentation.SdkObject {
     await Promise.all(Array.from(this._downloads).map(download => download.artifact.deleteOnContextClose()));
   }
 
+  async _deleteAllTempDirs() {
+    await Promise.all(this._tempDirs.map(async dir => await _fs.default.promises.unlink(dir).catch(e => {})));
+  }
+
+  setCustomCloseHandler(handler) {
+    this._customCloseHandler = handler;
+  }
+
   async close(metadata) {
     if (this._closedStatus === 'open') {
       var _this$_harRecorder;
@@ -289,7 +321,7 @@ class BrowserContext extends _instrumentation.SdkObject {
       this.emit(BrowserContext.Events.BeforeClose);
       this._closedStatus = 'closing';
       await ((_this$_harRecorder = this._harRecorder) === null || _this$_harRecorder === void 0 ? void 0 : _this$_harRecorder.flush());
-      await this.tracing.dispose(); // Cleanup.
+      await this.tracing.flush(); // Cleanup.
 
       const promises = [];
 
@@ -301,19 +333,24 @@ class BrowserContext extends _instrumentation.SdkObject {
         if (context === this) promises.push(artifact.finishedPromise());
       }
 
-      if (this._isPersistentContext) {
+      if (this._customCloseHandler) {
+        await this._customCloseHandler();
+      } else if (this._isPersistentContext) {
         // Close all the pages instead of the context,
         // because we cannot close the default context.
         await Promise.all(this.pages().map(page => page.close(metadata)));
       } else {
         // Close the context.
-        await this._doClose();
+        await this.doClose();
       } // We delete downloads after context closure
       // so that browser does not write to the download file anymore.
 
 
       promises.push(this._deleteAllDownloads());
-      await Promise.all(promises); // Persistent context should also close the browser.
+      promises.push(this._deleteAllTempDirs());
+      await Promise.all(promises); // Custom handler should trigger didCloseInternal itself.
+
+      if (this._customCloseHandler) return; // Persistent context should also close the browser.
 
       if (this._isPersistentContext) await this._browser.close(); // Bookkeeping.
 
@@ -325,6 +362,7 @@ class BrowserContext extends _instrumentation.SdkObject {
 
   async newPage(metadata) {
     const pageDelegate = await this.newPageDelegate();
+    if (metadata.isServerSide) pageDelegate.potentiallyUninitializedPage().markAsServerSideOnly();
     const pageOrError = await pageDelegate.pageOrError();
 
     if (pageOrError instanceof _page.Page) {
@@ -346,7 +384,7 @@ class BrowserContext extends _instrumentation.SdkObject {
     };
 
     if (this._origins.size) {
-      const internalMetadata = (0, _instrumentation.internalCallMetadata)();
+      const internalMetadata = (0, _instrumentation.serverSideCallMetadata)();
       const page = await this.newPage(internalMetadata);
       await page._setServerRequestInterceptor(handler => {
         handler.fulfill({
@@ -374,29 +412,39 @@ class BrowserContext extends _instrumentation.SdkObject {
     return result;
   }
 
+  isSettingStorageState() {
+    return this._settingStorageState;
+  }
+
   async setStorageState(metadata, state) {
-    if (state.cookies) await this.addCookies(state.cookies);
+    this._settingStorageState = true;
 
-    if (state.origins && state.origins.length) {
-      const internalMetadata = (0, _instrumentation.internalCallMetadata)();
-      const page = await this.newPage(internalMetadata);
-      await page._setServerRequestInterceptor(handler => {
-        handler.fulfill({
-          body: '<html></html>'
-        }).catch(() => {});
-      });
+    try {
+      if (state.cookies) await this.addCookies(state.cookies);
 
-      for (const originState of state.origins) {
-        const frame = page.mainFrame();
-        await frame.goto(metadata, originState.origin);
-        await frame.evaluateExpression(`
-          originState => {
-            for (const { name, value } of (originState.localStorage || []))
-              localStorage.setItem(name, value);
-          }`, true, originState, 'utility');
+      if (state.origins && state.origins.length) {
+        const internalMetadata = (0, _instrumentation.serverSideCallMetadata)();
+        const page = await this.newPage(internalMetadata);
+        await page._setServerRequestInterceptor(handler => {
+          handler.fulfill({
+            body: '<html></html>'
+          }).catch(() => {});
+        });
+
+        for (const originState of state.origins) {
+          const frame = page.mainFrame();
+          await frame.goto(metadata, originState.origin);
+          await frame.evaluateExpression(`
+            originState => {
+              for (const { name, value } of (originState.localStorage || []))
+                localStorage.setItem(name, value);
+            }`, true, originState, 'utility');
+        }
+
+        await page.close(internalMetadata);
       }
-
-      await page.close(internalMetadata);
+    } finally {
+      this._settingStorageState = false;
     }
   }
 
@@ -435,6 +483,7 @@ function assertBrowserContextIsNotOwned(context) {
 function validateBrowserContextOptions(options, browserOptions) {
   if (options.noDefaultViewport && options.deviceScaleFactor !== undefined) throw new Error(`"deviceScaleFactor" option is not supported with null "viewport"`);
   if (options.noDefaultViewport && options.isMobile !== undefined) throw new Error(`"isMobile" option is not supported with null "viewport"`);
+  if (options.acceptDownloads === undefined) options.acceptDownloads = true;
   if (!options.viewport && !options.noDefaultViewport) options.viewport = {
     width: 1280,
     height: 720

@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.DragManager = void 0;
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _crProtocolHelper = require("./crProtocolHelper");
 
@@ -101,6 +101,7 @@ class DragManager {
           window.removeEventListener('dragstart', dragListener, {
             capture: true
           });
+          delete window.__cleanupDrag;
           return val;
         };
       }.toString(), true, 'utility').catch(() => {});

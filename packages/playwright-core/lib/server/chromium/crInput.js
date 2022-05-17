@@ -9,7 +9,7 @@ var input = _interopRequireWildcard(require("../input"));
 
 var _macEditingCommands = require("../macEditingCommands");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _crProtocolHelper = require("./crProtocolHelper");
 
@@ -95,20 +95,6 @@ class RawKeyboardImpl {
     });
   }
 
-  async imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd) {
-    if (replacementStart === -1 && replacementEnd === -1) await this._client.send('Input.imeSetComposition', {
-      text,
-      selectionStart,
-      selectionEnd
-    });else await this._client.send('Input.imeSetComposition', {
-      text,
-      selectionStart,
-      selectionEnd,
-      replacementStart,
-      replacementEnd
-    });
-  }
-
 }
 
 exports.RawKeyboardImpl = RawKeyboardImpl;
@@ -123,16 +109,25 @@ class RawMouseImpl {
     this._dragManager = dragManager;
   }
 
-  async move(x, y, button, buttons, modifiers) {
-    await this._dragManager.interceptDragCausedByMove(x, y, button, buttons, modifiers, async () => {
+  async move(x, y, button, buttons, modifiers, forClick) {
+    const actualMove = async () => {
       await this._client.send('Input.dispatchMouseEvent', {
         type: 'mouseMoved',
         button,
+        buttons: (0, _crProtocolHelper.toButtonsMask)(buttons),
         x,
         y,
         modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers)
       });
-    });
+    };
+
+    if (forClick) {
+      // Avoid extra protocol calls related to drag and drop, because click relies on
+      // move-down-up protocol commands being sent synchronously.
+      return actualMove();
+    }
+
+    await this._dragManager.interceptDragCausedByMove(x, y, button, buttons, modifiers, actualMove);
   }
 
   async down(x, y, button, buttons, modifiers, clickCount) {
@@ -140,6 +135,7 @@ class RawMouseImpl {
     await this._client.send('Input.dispatchMouseEvent', {
       type: 'mousePressed',
       button,
+      buttons: (0, _crProtocolHelper.toButtonsMask)(buttons),
       x,
       y,
       modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),
@@ -156,6 +152,7 @@ class RawMouseImpl {
     await this._client.send('Input.dispatchMouseEvent', {
       type: 'mouseReleased',
       button,
+      buttons: (0, _crProtocolHelper.toButtonsMask)(buttons),
       x,
       y,
       modifiers: (0, _crProtocolHelper.toModifiersMask)(modifiers),

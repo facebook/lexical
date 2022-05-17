@@ -3,8 +3,8 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.prepareBrowserContextParams = prepareBrowserContextParams;
 exports.BrowserContext = void 0;
+exports.prepareBrowserContextParams = prepareBrowserContextParams;
 
 var _page = require("./page");
 
@@ -24,13 +24,15 @@ var _worker = require("./worker");
 
 var _events = require("./events");
 
-var _timeoutSettings = require("../utils/timeoutSettings");
+var _timeoutSettings = require("../common/timeoutSettings");
 
 var _waiter = require("./waiter");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-var _errors = require("../utils/errors");
+var _fileUtils = require("../utils/fileUtils");
+
+var _errors = require("../common/errors");
 
 var _cdpSession = require("./cdpSession");
 
@@ -41,6 +43,8 @@ var _artifact = require("./artifact");
 var _fetch = require("./fetch");
 
 var _clientInstrumentation = require("./clientInstrumentation");
+
+var _stackTrace = require("../utils/stackTrace");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -93,8 +97,8 @@ class BrowserContext extends _channelOwner.ChannelOwner {
     this._isChromium = void 0;
     if (parent instanceof _browser.Browser) this._browser = parent;
     this._isChromium = ((_this$_browser = this._browser) === null || _this$_browser === void 0 ? void 0 : _this$_browser._name) === 'chromium';
-    this.tracing = new _tracing.Tracing(this);
-    this.request = _fetch.FetchRequest.from(initializer.fetchRequest);
+    this.tracing = _tracing.Tracing.from(initializer.tracing);
+    this.request = _fetch.APIRequestContext.from(initializer.APIRequestContext);
 
     this._channel.on('bindingCall', ({
       binding
@@ -203,10 +207,14 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   _onRoute(route, request) {
     for (const routeHandler of this._routes) {
       if (routeHandler.matches(request.url())) {
-        if (routeHandler.handle(route, request)) {
-          this._routes.splice(this._routes.indexOf(routeHandler), 1);
+        try {
+          routeHandler.handle(route, request);
+        } finally {
+          if (!routeHandler.isActive()) {
+            this._routes.splice(this._routes.indexOf(routeHandler), 1);
 
-          if (!this._routes.length) this._wrapApiCall(channel => this._disableInterception(channel), undefined, true).catch(() => {});
+            if (!this._routes.length) this._wrapApiCall(() => this._disableInterception(), true).catch(() => {});
+          }
         }
 
         return;
@@ -227,17 +235,21 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   setDefaultNavigationTimeout(timeout) {
     this._timeoutSettings.setDefaultNavigationTimeout(timeout);
 
-    this._channel.setDefaultNavigationTimeoutNoReply({
-      timeout
-    });
+    this._wrapApiCall(async () => {
+      this._channel.setDefaultNavigationTimeoutNoReply({
+        timeout
+      });
+    }, true);
   }
 
   setDefaultTimeout(timeout) {
     this._timeoutSettings.setDefaultTimeout(timeout);
 
-    this._channel.setDefaultTimeoutNoReply({
-      timeout
-    });
+    this._wrapApiCall(async () => {
+      this._channel.setDefaultTimeoutNoReply({
+        timeout
+      });
+    }, true);
   }
 
   browser() {
@@ -249,149 +261,135 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   async newPage() {
-    return this._wrapApiCall(async channel => {
-      if (this._ownerPage) throw new Error('Please use browser.newContext()');
-      return _page.Page.from((await channel.newPage()).page);
-    });
+    if (this._ownerPage) throw new Error('Please use browser.newContext()');
+    return _page.Page.from((await this._channel.newPage()).page);
   }
 
   async cookies(urls) {
     if (!urls) urls = [];
     if (urls && typeof urls === 'string') urls = [urls];
-    return this._wrapApiCall(async channel => {
-      return (await channel.cookies({
-        urls: urls
-      })).cookies;
-    });
+    return (await this._channel.cookies({
+      urls: urls
+    })).cookies;
   }
 
   async addCookies(cookies) {
-    return this._wrapApiCall(async channel => {
-      await channel.addCookies({
-        cookies
-      });
+    await this._channel.addCookies({
+      cookies
     });
   }
 
   async clearCookies() {
-    return this._wrapApiCall(async channel => {
-      await channel.clearCookies();
-    });
+    await this._channel.clearCookies();
   }
 
   async grantPermissions(permissions, options) {
-    return this._wrapApiCall(async channel => {
-      await channel.grantPermissions({
-        permissions,
-        ...options
-      });
+    await this._channel.grantPermissions({
+      permissions,
+      ...options
     });
   }
 
   async clearPermissions() {
-    return this._wrapApiCall(async channel => {
-      await channel.clearPermissions();
-    });
+    await this._channel.clearPermissions();
   }
 
   async setGeolocation(geolocation) {
-    return this._wrapApiCall(async channel => {
-      await channel.setGeolocation({
-        geolocation: geolocation || undefined
-      });
+    await this._channel.setGeolocation({
+      geolocation: geolocation || undefined
     });
   }
 
   async setExtraHTTPHeaders(headers) {
-    return this._wrapApiCall(async channel => {
-      network.validateHeaders(headers);
-      await channel.setExtraHTTPHeaders({
-        headers: (0, _utils.headersObjectToArray)(headers)
-      });
+    network.validateHeaders(headers);
+    await this._channel.setExtraHTTPHeaders({
+      headers: (0, _utils.headersObjectToArray)(headers)
     });
   }
 
   async setOffline(offline) {
-    return this._wrapApiCall(async channel => {
-      await channel.setOffline({
-        offline
-      });
+    await this._channel.setOffline({
+      offline
     });
   }
 
   async setHTTPCredentials(httpCredentials) {
-    if (!(0, _utils.isUnderTest)()) (0, _clientHelper.deprecate)(`context.setHTTPCredentials`, `warning: method |context.setHTTPCredentials()| is deprecated. Instead of changing credentials, create another browser context with new credentials.`);
-    return this._wrapApiCall(async channel => {
-      await channel.setHTTPCredentials({
-        httpCredentials: httpCredentials || undefined
-      });
+    await this._channel.setHTTPCredentials({
+      httpCredentials: httpCredentials || undefined
     });
   }
 
   async addInitScript(script, arg) {
-    return this._wrapApiCall(async channel => {
-      const source = await (0, _clientHelper.evaluationScript)(script, arg);
-      await channel.addInitScript({
-        source
-      });
+    const source = await (0, _clientHelper.evaluationScript)(script, arg);
+    await this._channel.addInitScript({
+      source
     });
+  }
+
+  async _removeInitScripts() {
+    await this._channel.removeInitScripts();
   }
 
   async exposeBinding(name, callback, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.exposeBinding({
-        name,
-        needsHandle: options.handle
-      });
-
-      this._bindings.set(name, callback);
+    await this._channel.exposeBinding({
+      name,
+      needsHandle: options.handle
     });
+
+    this._bindings.set(name, callback);
+  }
+
+  async _removeExposedBindings() {
+    for (const key of this._bindings.keys()) {
+      if (!key.startsWith('__pw_')) this._bindings.delete(key);
+    }
+
+    await this._channel.removeExposedBindings();
   }
 
   async exposeFunction(name, callback) {
-    return this._wrapApiCall(async channel => {
-      await channel.exposeBinding({
-        name
-      });
-
-      const binding = (source, ...args) => callback(...args);
-
-      this._bindings.set(name, binding);
+    await this._channel.exposeBinding({
+      name
     });
+
+    const binding = (source, ...args) => callback(...args);
+
+    this._bindings.set(name, binding);
   }
 
   async route(url, handler, options = {}) {
-    return this._wrapApiCall(async channel => {
-      this._routes.unshift(new network.RouteHandler(this._options.baseURL, url, handler, options.times));
+    this._routes.unshift(new network.RouteHandler(this._options.baseURL, url, handler, options.times));
 
-      if (this._routes.length === 1) await channel.setNetworkInterceptionEnabled({
-        enabled: true
-      });
+    if (this._routes.length === 1) await this._channel.setNetworkInterceptionEnabled({
+      enabled: true
     });
   }
 
   async unroute(url, handler) {
-    return this._wrapApiCall(async channel => {
-      this._routes = this._routes.filter(route => route.url !== url || handler && route.handler !== handler);
-      if (!this._routes.length) await this._disableInterception(channel);
-    });
+    this._routes = this._routes.filter(route => route.url !== url || handler && route.handler !== handler);
+    if (!this._routes.length) await this._disableInterception();
   }
 
-  async _disableInterception(channel) {
-    await channel.setNetworkInterceptionEnabled({
+  async _unrouteAll() {
+    this._routes = [];
+    await this._disableInterception();
+  }
+
+  async _disableInterception() {
+    await this._channel.setNetworkInterceptionEnabled({
       enabled: false
     });
   }
 
   async waitForEvent(event, optionsOrPredicate = {}) {
-    return this._wrapApiCall(async channel => {
+    return this._wrapApiCall(async () => {
       const timeout = this._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
 
       const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
-      const waiter = _waiter.Waiter.createForEvent(channel, event);
+      const waiter = _waiter.Waiter.createForEvent(this, event);
 
-      waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
+      waiter.rejectOnTimeout(timeout, `Timeout ${timeout}ms exceeded while waiting for event "${event}"`);
       if (event !== _events.Events.BrowserContext.Close) waiter.rejectOnEvent(this, _events.Events.BrowserContext.Close, new Error('Context closed'));
       const result = await waiter.waitForEvent(this, event, predicate);
       waiter.dispose();
@@ -400,16 +398,14 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   }
 
   async storageState(options = {}) {
-    return await this._wrapApiCall(async channel => {
-      const state = await channel.storageState();
+    const state = await this._channel.storageState();
 
-      if (options.path) {
-        await (0, _utils.mkdirIfNeeded)(options.path);
-        await _fs.default.promises.writeFile(options.path, JSON.stringify(state, undefined, 2), 'utf8');
-      }
+    if (options.path) {
+      await (0, _fileUtils.mkdirIfNeeded)(options.path);
+      await _fs.default.promises.writeFile(options.path, JSON.stringify(state, undefined, 2), 'utf8');
+    }
 
-      return state;
-    });
+    return state;
   }
 
   backgroundPages() {
@@ -423,14 +419,12 @@ class BrowserContext extends _channelOwner.ChannelOwner {
   async newCDPSession(page) {
     // channelOwner.ts's validation messages don't handle the pseudo-union type, so we're explicit here
     if (!(page instanceof _page.Page) && !(page instanceof _frame.Frame)) throw new Error('page: expected Page or Frame');
-    return this._wrapApiCall(async channel => {
-      const result = await channel.newCDPSession(page instanceof _page.Page ? {
-        page: page._channel
-      } : {
-        frame: page._channel
-      });
-      return _cdpSession.CDPSession.from(result.session);
+    const result = await this._channel.newCDPSession(page instanceof _page.Page ? {
+      page: page._channel
+    } : {
+      frame: page._channel
     });
+    return _cdpSession.CDPSession.from(result.session);
   }
 
   _onClose() {
@@ -443,7 +437,7 @@ class BrowserContext extends _channelOwner.ChannelOwner {
 
   async close() {
     try {
-      await this._wrapApiCall(async channel => {
+      await this._wrapApiCall(async () => {
         var _this$_browserType2, _this$_browserType2$_;
 
         await ((_this$_browserType2 = this._browserType) === null || _this$_browserType2 === void 0 ? void 0 : (_this$_browserType2$_ = _this$_browserType2._onWillCloseContext) === null || _this$_browserType2$_ === void 0 ? void 0 : _this$_browserType2$_.call(_this$_browserType2, this));
@@ -456,10 +450,9 @@ class BrowserContext extends _channelOwner.ChannelOwner {
           await artifact.saveAs(this._options.recordHar.path);
           await artifact.delete();
         }
-
-        await channel.close();
-        await this._closedPromise;
-      });
+      }, true);
+      await this._channel.close();
+      await this._closedPromise;
     } catch (e) {
       if ((0, _errors.isSafeCloseError)(e)) return;
       throw e;
@@ -470,9 +463,26 @@ class BrowserContext extends _channelOwner.ChannelOwner {
     await this._channel.recorderSupplementEnable(params);
   }
 
+  async _resetForReuse() {
+    await this._unrouteAll();
+    await this._removeInitScripts();
+    await this._removeExposedBindings();
+  }
+
 }
 
 exports.BrowserContext = BrowserContext;
+
+async function prepareStorageState(options) {
+  if (typeof options.storageState !== 'string') return options.storageState;
+
+  try {
+    return JSON.parse(await _fs.default.promises.readFile(options.storageState, 'utf8'));
+  } catch (e) {
+    (0, _stackTrace.rewriteErrorMessage)(e, `Error reading storage state from ${options.storageState}:\n` + e.message);
+    throw e;
+  }
+}
 
 async function prepareBrowserContextParams(options) {
   if (options.videoSize && !options.videosPath) throw new Error(`"videoSize" option requires "videosPath" to be specified`);
@@ -481,7 +491,7 @@ async function prepareBrowserContextParams(options) {
     viewport: options.viewport === null ? undefined : options.viewport,
     noDefaultViewport: options.viewport === null,
     extraHTTPHeaders: options.extraHTTPHeaders ? (0, _utils.headersObjectToArray)(options.extraHTTPHeaders) : undefined,
-    storageState: typeof options.storageState === 'string' ? JSON.parse(await _fs.default.promises.readFile(options.storageState, 'utf8')) : options.storageState
+    storageState: await prepareStorageState(options)
   };
 
   if (!contextParams.recordVideo && options.videosPath) {

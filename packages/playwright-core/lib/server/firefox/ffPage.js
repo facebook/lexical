@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.FFPage = exports.UTILITY_WORLD_NAME = void 0;
+exports.UTILITY_WORLD_NAME = exports.FFPage = void 0;
 
 var dialog = _interopRequireWildcard(require("../dialog"));
 
@@ -11,7 +11,7 @@ var dom = _interopRequireWildcard(require("../dom"));
 
 var _eventsHelper = require("../../utils/eventsHelper");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _page = require("../page");
 
@@ -27,9 +27,9 @@ var _ffNetworkManager = require("./ffNetworkManager");
 
 var _stackTrace = require("../../utils/stackTrace");
 
-var _debugLogger = require("../../utils/debugLogger");
+var _debugLogger = require("../../common/debugLogger");
 
-var _async = require("../../utils/async");
+var _manualPromise = require("../../utils/manualPromise");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -64,7 +64,7 @@ class FFPage {
     this._page = void 0;
     this._networkManager = void 0;
     this._browserContext = void 0;
-    this._pagePromise = new _async.ManualPromise();
+    this._pagePromise = new _manualPromise.ManualPromise();
     this._initializedPage = null;
     this._initializationFailed = false;
     this._opener = void 0;
@@ -72,6 +72,7 @@ class FFPage {
     this._eventListeners = void 0;
     this._workers = new Map();
     this._screencastId = void 0;
+    this._initScripts = [];
     this._session = session;
     this._opener = opener;
     this.rawKeyboard = new _ffInput.RawKeyboardImpl(session);
@@ -107,10 +108,11 @@ class FFPage {
     // Therefore, we can end up with an initialized page without utility world, although very unlikely.
 
 
-    this._session.send('Page.addScriptToEvaluateOnNewDocument', {
-      script: '',
-      worldName: UTILITY_WORLD_NAME
-    }).catch(e => this._markAsError(e));
+    this.addInitScript('', UTILITY_WORLD_NAME).catch(e => this._markAsError(e));
+  }
+
+  potentiallyUninitializedPage() {
+    return this._page;
   }
 
   async _markAsError(error) {
@@ -164,6 +166,7 @@ class FFPage {
     let worldName = null;
     if (auxData.name === UTILITY_WORLD_NAME) worldName = 'utility';else if (!auxData.name) worldName = 'main';
     const context = new dom.FrameExecutionContext(delegate, frame, worldName);
+    context[contextDelegateSymbol] = delegate;
     if (worldName) frame._contextCreated(worldName, context);
 
     this._contextIdToContext.set(executionContextId, context);
@@ -372,6 +375,9 @@ class FFPage {
     });
   }
 
+  async removeExposedBindings() {// TODO: implement me.
+  }
+
   didClose() {
     this._session.dispose();
 
@@ -460,9 +466,21 @@ class FFPage {
     return success;
   }
 
-  async evaluateOnNewDocument(source) {
-    await this._session.send('Page.addScriptToEvaluateOnNewDocument', {
-      script: source
+  async addInitScript(script, worldName) {
+    this._initScripts.push({
+      script,
+      worldName
+    });
+
+    await this._session.send('Page.setInitScripts', {
+      scripts: this._initScripts
+    });
+  }
+
+  async removeInitScripts() {
+    this._initScripts = [];
+    await this._session.send('Page.setInitScripts', {
+      scripts: []
     });
   }
 
@@ -472,15 +490,11 @@ class FFPage {
     });
   }
 
-  canScreenshotOutsideViewport() {
-    return true;
-  }
-
   async setBackgroundColor(color) {
     if (color) throw new Error('Not implemented');
   }
 
-  async takeScreenshot(progress, format, documentRect, viewportRect, quality) {
+  async takeScreenshot(progress, format, documentRect, viewportRect, quality, fitsViewport, scale) {
     if (!documentRect) {
       const scrollOffset = await this._page.mainFrame().waitForFunctionValueInUtility(progress, () => ({
         x: window.scrollX,
@@ -501,13 +515,10 @@ class FFPage {
       data
     } = await this._session.send('Page.screenshot', {
       mimeType: 'image/' + format,
-      clip: documentRect
+      clip: documentRect,
+      omitDeviceScaleFactor: scale === 'css'
     });
     return Buffer.from(data, 'base64');
-  }
-
-  async resetViewport() {
-    (0, _utils.assert)(false, 'Should not be called');
   }
 
   async getContentFrame(handle) {
@@ -619,11 +630,19 @@ class FFPage {
     await handle.evaluateInUtility(([injected, node, files]) => injected.setInputFiles(node, files), files);
   }
 
+  async setInputFilePaths(handle, files) {
+    await Promise.all([this._session.send('Page.setFileInputFiles', {
+      frameId: handle._context.frame._id,
+      objectId: handle._objectId,
+      files
+    }), handle.dispatchEvent('input'), handle.dispatchEvent('change')]);
+  }
+
   async adoptElementHandle(handle, to) {
     const result = await this._session.send('Page.adoptNode', {
       frameId: handle._context.frame._id,
       objectId: handle._objectId,
-      executionContextId: to._delegate._executionContextId
+      executionContextId: to[contextDelegateSymbol]._executionContextId
     });
     if (!result.remoteObject) throw new Error(dom.kUnableToAdoptErrorMessage);
     return to.createHandle(result.remoteObject);
@@ -638,7 +657,10 @@ class FFPage {
   async getFrameElement(frame) {
     const parent = frame.parentFrame();
     if (!parent) throw new Error('Frame has been detached.');
-    const handles = await this._page.selectors._queryAll(parent, 'frame,iframe', undefined);
+
+    const info = this._page.parseSelector('frame,iframe');
+
+    const handles = await this._page.selectors._queryAll(parent, info);
     const items = await Promise.all(handles.map(async handle => {
       const frame = await handle.contentFrame().catch(e => null);
       return {
@@ -659,3 +681,5 @@ exports.FFPage = FFPage;
 function webSocketId(frameId, wsid) {
   return `${frameId}---${wsid}`;
 }
+
+const contextDelegateSymbol = Symbol('delegate');

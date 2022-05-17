@@ -3,8 +3,8 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.domainMatches = domainMatches;
 exports.CookieStore = void 0;
+exports.domainMatches = domainMatches;
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -33,7 +33,7 @@ class Cookie {
 
 
   matches(url) {
-    if (this._raw.secure && url.protocol !== 'https:') return false;
+    if (this._raw.secure && url.protocol !== 'https:' && url.hostname !== 'localhost') return false;
     if (!domainMatches(url.hostname, this._raw.domain)) return false;
     if (!pathMatches(url.pathname, this._raw.path)) return false;
     return true;

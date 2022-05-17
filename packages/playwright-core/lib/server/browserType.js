@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.BrowserType = void 0;
+exports.kNoXServerRunningError = exports.BrowserType = void 0;
 
 var _fs = _interopRequireDefault(require("fs"));
 
@@ -13,7 +13,7 @@ var _path = _interopRequireDefault(require("path"));
 
 var _browserContext = require("./browserContext");
 
-var _registry = require("../utils/registry");
+var _registry = require("./registry");
 
 var _transport = require("./transport");
 
@@ -23,13 +23,15 @@ var _pipeTransport = require("./pipeTransport");
 
 var _progress = require("./progress");
 
-var _timeoutSettings = require("../utils/timeoutSettings");
+var _timeoutSettings = require("../common/timeoutSettings");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
+
+var _fileUtils = require("../utils/fileUtils");
 
 var _helper = require("./helper");
 
-var _debugLogger = require("../utils/debugLogger");
+var _debugLogger = require("../common/debugLogger");
 
 var _instrumentation = require("./instrumentation");
 
@@ -54,7 +56,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const ARTIFACTS_FOLDER = _path.default.join(os.tmpdir(), 'playwright-artifacts-');
+const kNoXServerRunningError = 'Looks like you launched a headed browser without having a XServer running.\n' + 'Set either \'headless: true\' or use \'xvfb-run <your-playwright-app>\' before running Playwright.\n\n<3 Playwright Team';
+exports.kNoXServerRunningError = kNoXServerRunningError;
 
 class BrowserType extends _instrumentation.SdkObject {
   constructor(browserName, playwrightOptions) {
@@ -103,7 +106,7 @@ class BrowserType extends _instrumentation.SdkObject {
 
   async _innerLaunchWithRetries(progress, options, persistent, protocolLogger, userDataDir) {
     try {
-      return this._innerLaunch(progress, options, persistent, protocolLogger, userDataDir);
+      return await this._innerLaunch(progress, options, persistent, protocolLogger, userDataDir);
     } catch (error) {
       // @see https://github.com/microsoft/playwright/issues/5214
       const errorMessage = typeof error === 'object' && typeof error.message === 'string' ? error.message : '';
@@ -117,14 +120,15 @@ class BrowserType extends _instrumentation.SdkObject {
     }
   }
 
-  async _innerLaunch(progress, options, persistent, protocolLogger, userDataDir) {
+  async _innerLaunch(progress, options, persistent, protocolLogger, maybeUserDataDir) {
     options.proxy = options.proxy ? (0, _browserContext.normalizeProxySettings)(options.proxy) : undefined;
     const browserLogsCollector = new _debugLogger.RecentLogsCollector();
     const {
       browserProcess,
+      userDataDir,
       artifactsDir,
       transport
-    } = await this._launchProcess(progress, options, !!persistent, browserLogsCollector, userDataDir);
+    } = await this._launchProcess(progress, options, !!persistent, browserLogsCollector, maybeUserDataDir);
     if (options.__testHookBeforeCreateBrowser) await options.__testHookBeforeCreateBrowser();
     const browserOptions = { ...this._playwrightOptions,
       name: this._name,
@@ -145,7 +149,8 @@ class BrowserType extends _instrumentation.SdkObject {
     };
     if (persistent) (0, _browserContext.validateBrowserContextOptions)(persistent, browserOptions);
     copyTestHooks(options, browserOptions);
-    const browser = await this._connectToTransport(transport, browserOptions); // We assume no control when using custom arguments, and do not prepare the default context in that case.
+    const browser = await this._connectToTransport(transport, browserOptions);
+    browser._userDataDirForTest = userDataDir; // We assume no control when using custom arguments, and do not prepare the default context in that case.
 
     if (persistent && !options.ignoreAllDefaultArgs) await browser._defaultContext._loadDefaultContext(progress);
     return browser;
@@ -171,12 +176,12 @@ class BrowserType extends _instrumentation.SdkObject {
     if (options.tracesDir) await _fs.default.promises.mkdir(options.tracesDir, {
       recursive: true
     });
-    const artifactsDir = await _fs.default.promises.mkdtemp(ARTIFACTS_FOLDER);
+    const artifactsDir = await _fs.default.promises.mkdtemp(_path.default.join(os.tmpdir(), 'playwright-artifacts-'));
     tempDirectories.push(artifactsDir);
 
     if (userDataDir) {
       // Firefox bails if the profile directory does not exist, Chrome creates it. We ensure consistent behavior here.
-      if (!(await (0, _utils.existsAsync)(userDataDir))) await _fs.default.promises.mkdir(userDataDir, {
+      if (!(await (0, _fileUtils.existsAsync)(userDataDir))) await _fs.default.promises.mkdir(userDataDir, {
         recursive: true,
         mode: 0o700
       });
@@ -190,7 +195,7 @@ class BrowserType extends _instrumentation.SdkObject {
     let executable;
 
     if (executablePath) {
-      if (!(await (0, _utils.existsAsync)(executablePath))) throw new Error(`Failed to launch ${this._name} because executable doesn't exist at ${executablePath}`);
+      if (!(await (0, _fileUtils.existsAsync)(executablePath))) throw new Error(`Failed to launch ${this._name} because executable doesn't exist at ${executablePath}`);
       executable = executablePath;
     } else {
       const registryExecutable = _registry.registry.findExecutable(options.channel || this._name);
@@ -273,6 +278,7 @@ class BrowserType extends _instrumentation.SdkObject {
     return {
       browserProcess,
       artifactsDir,
+      userDataDir,
       transport
     };
   }

@@ -3,24 +3,20 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.launchBrowserServer = launchBrowserServer;
 exports.printApiJson = printApiJson;
 exports.runDriver = runDriver;
 exports.runServer = runServer;
-exports.launchBrowserServer = launchBrowserServer;
 
 var _fs = _interopRequireDefault(require("fs"));
 
 var playwright = _interopRequireWildcard(require("../.."));
 
-var _dispatcher = require("../dispatchers/dispatcher");
-
-var _playwrightDispatcher = require("../dispatchers/playwrightDispatcher");
+var _server = require("../server");
 
 var _transport = require("../protocol/transport");
 
 var _playwrightServer = require("../remote/playwrightServer");
-
-var _playwright = require("../server/playwright");
 
 var _processLauncher = require("../utils/processLauncher");
 
@@ -53,14 +49,14 @@ function printApiJson() {
 }
 
 function runDriver() {
-  const dispatcherConnection = new _dispatcher.DispatcherConnection();
-  new _dispatcher.Root(dispatcherConnection, async (rootScope, {
+  const dispatcherConnection = new _server.DispatcherConnection();
+  new _server.Root(dispatcherConnection, async (rootScope, {
     sdkLanguage
   }) => {
-    const playwright = (0, _playwright.createPlaywright)(sdkLanguage);
-    return new _playwrightDispatcher.PlaywrightDispatcher(rootScope, playwright);
+    const playwright = (0, _server.createPlaywright)(sdkLanguage);
+    return new _server.PlaywrightDispatcher(rootScope, playwright);
   });
-  const transport = new _transport.Transport(process.stdout, process.stdin);
+  const transport = process.send ? new _transport.IpcTransport(process) : new _transport.PipeTransport(process.stdout, process.stdin);
 
   transport.onmessage = message => dispatcherConnection.dispatch(JSON.parse(message));
 
@@ -78,8 +74,12 @@ function runDriver() {
   };
 }
 
-async function runServer(port) {
-  const server = await _playwrightServer.PlaywrightServer.startDefault();
+async function runServer(port, path = '/', maxClients = Infinity, enableSocksProxy = true) {
+  const server = await _playwrightServer.PlaywrightServer.startDefault({
+    path,
+    maxClients,
+    enableSocksProxy
+  });
   const wsEndpoint = await server.listen(port);
   process.on('exit', () => server.close().catch(console.error));
   console.log('Listening on ' + wsEndpoint); // eslint-disable-line no-console

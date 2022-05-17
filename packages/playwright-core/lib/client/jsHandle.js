@@ -3,10 +3,10 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.serializeArgument = serializeArgument;
-exports.parseResult = parseResult;
-exports.assertMaxArguments = assertMaxArguments;
 exports.JSHandle = void 0;
+exports.assertMaxArguments = assertMaxArguments;
+exports.parseResult = parseResult;
+exports.serializeArgument = serializeArgument;
 
 var _channelOwner = require("./channelOwner");
 
@@ -43,53 +43,43 @@ class JSHandle extends _channelOwner.ChannelOwner {
   }
 
   async evaluate(pageFunction, arg) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evaluateExpression({
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: serializeArgument(arg)
-      });
-      return parseResult(result.value);
+    const result = await this._channel.evaluateExpression({
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: serializeArgument(arg)
     });
+    return parseResult(result.value);
   }
 
   async evaluateHandle(pageFunction, arg) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evaluateExpressionHandle({
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: serializeArgument(arg)
-      });
-      return JSHandle.from(result.handle);
+    const result = await this._channel.evaluateExpressionHandle({
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: serializeArgument(arg)
     });
+    return JSHandle.from(result.handle);
   }
 
   async getProperty(propertyName) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.getProperty({
-        name: propertyName
-      });
-      return JSHandle.from(result.handle);
+    const result = await this._channel.getProperty({
+      name: propertyName
     });
+    return JSHandle.from(result.handle);
   }
 
   async getProperties() {
-    return this._wrapApiCall(async channel => {
-      const map = new Map();
+    const map = new Map();
 
-      for (const {
-        name,
-        value
-      } of (await channel.getPropertyList()).properties) map.set(name, JSHandle.from(value));
+    for (const {
+      name,
+      value
+    } of (await this._channel.getPropertyList()).properties) map.set(name, JSHandle.from(value));
 
-      return map;
-    });
+    return map;
   }
 
   async jsonValue() {
-    return this._wrapApiCall(async channel => {
-      return parseResult((await channel.jsonValue()).value);
-    });
+    return parseResult((await this._channel.jsonValue()).value);
   }
 
   asElement() {
@@ -97,9 +87,7 @@ class JSHandle extends _channelOwner.ChannelOwner {
   }
 
   async dispose() {
-    return this._wrapApiCall(async channel => {
-      return await channel.dispose();
-    });
+    return await this._channel.dispose();
   }
 
   toString() {
@@ -127,7 +115,7 @@ function serializeArgument(arg) {
     return {
       fallThrough: value
     };
-  }, new Set());
+  });
   return {
     value,
     handles

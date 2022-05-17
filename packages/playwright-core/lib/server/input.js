@@ -3,9 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Touchscreen = exports.Mouse = exports.Keyboard = exports.keypadLocation = void 0;
+exports.keypadLocation = exports.Touchscreen = exports.Mouse = exports.Keyboard = void 0;
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var keyboardLayout = _interopRequireWildcard(require("./usKeyboardLayout"));
 
@@ -82,15 +82,6 @@ class Keyboard {
 
   async insertText(text) {
     await this._raw.sendText(text);
-    await this._page._doSlowMo();
-  }
-
-  async imeSetComposition(text, selectionStart, selectionEnd, options) {
-    let replacementStart = -1;
-    let replacementEnd = -1;
-    if (options && options.replacementStart !== undefined) replacementStart = options.replacementStart;
-    if (options && options.replacementEnd !== undefined) replacementEnd = options.replacementEnd;
-    await this._raw.imeSetComposition(text, selectionStart, selectionEnd, replacementStart, replacementEnd);
     await this._page._doSlowMo();
   }
 
@@ -201,7 +192,7 @@ class Mouse {
     for (let i = 1; i <= steps; i++) {
       const middleX = fromX + (x - fromX) * (i / steps);
       const middleY = fromY + (y - fromY) * (i / steps);
-      await this._raw.move(middleX, middleY, this._lastButton, this._buttons, this._keyboard._modifiers());
+      await this._raw.move(middleX, middleY, this._lastButton, this._buttons, this._keyboard._modifiers(), !!options.forClick);
       await this._page._doSlowMo();
     }
   }
@@ -239,7 +230,9 @@ class Mouse {
     } = options;
 
     if (delay) {
-      this.move(x, y);
+      this.move(x, y, {
+        forClick: true
+      });
 
       for (let cc = 1; cc <= clickCount; ++cc) {
         await this.down({ ...options,
@@ -253,7 +246,9 @@ class Mouse {
       }
     } else {
       const promises = [];
-      promises.push(this.move(x, y));
+      promises.push(this.move(x, y, {
+        forClick: true
+      }));
 
       for (let cc = 1; cc <= clickCount; ++cc) {
         promises.push(this.down({ ...options,

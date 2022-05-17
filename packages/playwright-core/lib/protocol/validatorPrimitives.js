@@ -3,9 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.tEnum = exports.tObject = exports.tArray = exports.tOptional = exports.tAny = exports.tUndefined = exports.tBinary = exports.tString = exports.tBoolean = exports.tNumber = exports.ValidationError = void 0;
+exports.tUndefined = exports.tString = exports.tOptional = exports.tObject = exports.tNumber = exports.tEnum = exports.tBoolean = exports.tBinary = exports.tArray = exports.tAny = exports.ValidationError = void 0;
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 /**
  * Copyright (c) Microsoft Corporation.

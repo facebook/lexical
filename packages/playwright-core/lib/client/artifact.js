@@ -9,7 +9,7 @@ var fs = _interopRequireWildcard(require("fs"));
 
 var _stream = require("./stream");
 
-var _utils = require("../utils/utils");
+var _fileUtils = require("../utils/fileUtils");
 
 var _channelOwner = require("./channelOwner");
 
@@ -39,58 +39,46 @@ class Artifact extends _channelOwner.ChannelOwner {
 
   async pathAfterFinished() {
     if (this._connection.isRemote()) throw new Error(`Path is not available when connecting remotely. Use saveAs() to save a local copy.`);
-    return this._wrapApiCall(async channel => {
-      return (await channel.pathAfterFinished()).value || null;
-    });
+    return (await this._channel.pathAfterFinished()).value || null;
   }
 
   async saveAs(path) {
-    return this._wrapApiCall(async channel => {
-      if (!this._connection.isRemote()) {
-        await channel.saveAs({
-          path
-        });
-        return;
-      }
-
-      const result = await channel.saveAsStream();
-
-      const stream = _stream.Stream.from(result.stream);
-
-      await (0, _utils.mkdirIfNeeded)(path);
-      await new Promise((resolve, reject) => {
-        stream.stream().pipe(fs.createWriteStream(path)).on('finish', resolve).on('error', reject);
+    if (!this._connection.isRemote()) {
+      await this._channel.saveAs({
+        path
       });
+      return;
+    }
+
+    const result = await this._channel.saveAsStream();
+
+    const stream = _stream.Stream.from(result.stream);
+
+    await (0, _fileUtils.mkdirIfNeeded)(path);
+    await new Promise((resolve, reject) => {
+      stream.stream().pipe(fs.createWriteStream(path)).on('finish', resolve).on('error', reject);
     });
   }
 
   async failure() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.failure()).error || null;
-    });
+    return (await this._channel.failure()).error || null;
   }
 
   async createReadStream() {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.stream();
-      if (!result.stream) return null;
+    const result = await this._channel.stream();
+    if (!result.stream) return null;
 
-      const stream = _stream.Stream.from(result.stream);
+    const stream = _stream.Stream.from(result.stream);
 
-      return stream.stream();
-    });
+    return stream.stream();
   }
 
   async cancel() {
-    return this._wrapApiCall(async channel => {
-      return channel.cancel();
-    });
+    return this._channel.cancel();
   }
 
   async delete() {
-    return this._wrapApiCall(async channel => {
-      return channel.delete();
-    });
+    return this._channel.delete();
   }
 
 }

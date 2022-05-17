@@ -3,10 +3,10 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.verifyLoadState = verifyLoadState;
 exports.Frame = void 0;
+exports.verifyLoadState = verifyLoadState;
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var _channelOwner = require("./channelOwner");
 
@@ -29,6 +29,8 @@ var _events2 = require("./events");
 var _types = require("./types");
 
 var _clientHelper = require("./clientHelper");
+
+var _debugLogger = require("../common/debugLogger");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -106,18 +108,16 @@ class Frame extends _channelOwner.ChannelOwner {
   }
 
   async goto(url, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const waitUntil = verifyLoadState('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
-      return network.Response.fromNullable((await channel.goto({
-        url,
-        ...options,
-        waitUntil
-      })).response);
-    });
+    const waitUntil = verifyLoadState('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
+    return network.Response.fromNullable((await this._channel.goto({
+      url,
+      ...options,
+      waitUntil
+    })).response);
   }
 
-  _setupNavigationWaiter(channel, options) {
-    const waiter = new _waiter.Waiter(channel, '');
+  _setupNavigationWaiter(options) {
+    const waiter = new _waiter.Waiter(this._page, '');
     if (this._page.isClosed()) waiter.rejectImmediately(new Error('Navigation failed because page was closed!'));
     waiter.rejectOnEvent(this._page, _events2.Events.Page.Close, new Error('Navigation failed because page was closed!'));
     waiter.rejectOnEvent(this._page, _events2.Events.Page.Crash, new Error('Navigation failed because page crashed!'));
@@ -130,10 +130,10 @@ class Frame extends _channelOwner.ChannelOwner {
   }
 
   async waitForNavigation(options = {}) {
-    return this._page._wrapApiCall(async channel => {
+    return this._page._wrapApiCall(async () => {
       const waitUntil = verifyLoadState('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
 
-      const waiter = this._setupNavigationWaiter(channel, options);
+      const waiter = this._setupNavigationWaiter(options);
 
       const toUrl = typeof options.url === 'string' ? ` to "${options.url}"` : '';
       waiter.log(`waiting for navigation${toUrl} until "${waitUntil}"`);
@@ -169,8 +169,8 @@ class Frame extends _channelOwner.ChannelOwner {
   async waitForLoadState(state = 'load', options = {}) {
     state = verifyLoadState('state', state);
     if (this._loadStates.has(state)) return;
-    return this._page._wrapApiCall(async channel => {
-      const waiter = this._setupNavigationWaiter(channel, options);
+    return this._page._wrapApiCall(async () => {
+      const waiter = this._setupNavigationWaiter(options);
 
       await waiter.waitForEvent(this._eventEmitter, 'loadstate', s => {
         waiter.log(`  "${s}" event fired`);
@@ -191,117 +191,101 @@ class Frame extends _channelOwner.ChannelOwner {
   }
 
   async frameElement() {
-    return this._wrapApiCall(async channel => {
-      return _elementHandle.ElementHandle.from((await channel.frameElement()).element);
-    });
+    return _elementHandle.ElementHandle.from((await this._channel.frameElement()).element);
   }
 
   async evaluateHandle(pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 2);
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evaluateExpressionHandle({
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return _jsHandle.JSHandle.from(result.handle);
+    const result = await this._channel.evaluateExpressionHandle({
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return _jsHandle.JSHandle.from(result.handle);
   }
 
   async evaluate(pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 2);
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evaluateExpression({
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return (0, _jsHandle.parseResult)(result.value);
+    const result = await this._channel.evaluateExpression({
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return (0, _jsHandle.parseResult)(result.value);
   }
 
   async $(selector, options) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.querySelector({
-        selector,
-        ...options
-      });
-      return _elementHandle.ElementHandle.fromNullable(result.element);
+    const result = await this._channel.querySelector({
+      selector,
+      ...options
     });
+    return _elementHandle.ElementHandle.fromNullable(result.element);
   }
 
   async waitForSelector(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      if (options.visibility) throw new Error('options.visibility is not supported, did you mean options.state?');
-      if (options.waitFor && options.waitFor !== 'visible') throw new Error('options.waitFor is not supported, did you mean options.state?');
-      const result = await channel.waitForSelector({
-        selector,
-        ...options
-      });
-      return _elementHandle.ElementHandle.fromNullable(result.element);
+    if (options.visibility) throw new Error('options.visibility is not supported, did you mean options.state?');
+    if (options.waitFor && options.waitFor !== 'visible') throw new Error('options.waitFor is not supported, did you mean options.state?');
+    const result = await this._channel.waitForSelector({
+      selector,
+      ...options
     });
+    return _elementHandle.ElementHandle.fromNullable(result.element);
   }
 
   async dispatchEvent(selector, type, eventInit, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.dispatchEvent({
-        selector,
-        type,
-        eventInit: (0, _jsHandle.serializeArgument)(eventInit),
-        ...options
-      });
+    await this._channel.dispatchEvent({
+      selector,
+      type,
+      eventInit: (0, _jsHandle.serializeArgument)(eventInit),
+      ...options
     });
   }
 
   async $eval(selector, pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 3);
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evalOnSelector({
-        selector,
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return (0, _jsHandle.parseResult)(result.value);
+    const result = await this._channel.evalOnSelector({
+      selector,
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return (0, _jsHandle.parseResult)(result.value);
   }
 
   async $$eval(selector, pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 3);
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evalOnSelectorAll({
-        selector,
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return (0, _jsHandle.parseResult)(result.value);
+    const result = await this._channel.evalOnSelectorAll({
+      selector,
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return (0, _jsHandle.parseResult)(result.value);
   }
 
   async $$(selector) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.querySelectorAll({
-        selector
-      });
-      return result.elements.map(e => _elementHandle.ElementHandle.from(e));
+    const result = await this._channel.querySelectorAll({
+      selector
     });
+    return result.elements.map(e => _elementHandle.ElementHandle.from(e));
+  }
+
+  async _queryCount(selector) {
+    return (await this._channel.queryCount({
+      selector
+    })).value;
   }
 
   async content() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.content()).value;
-    });
+    return (await this._channel.content()).value;
   }
 
   async setContent(html, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const waitUntil = verifyLoadState('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
-      await channel.setContent({
-        html,
-        ...options,
-        waitUntil
-      });
+    const waitUntil = verifyLoadState('waitUntil', options.waitUntil === undefined ? 'load' : options.waitUntil);
+    await this._channel.setContent({
+      html,
+      ...options,
+      waitUntil
     });
   }
 
@@ -326,261 +310,231 @@ class Frame extends _channelOwner.ChannelOwner {
   }
 
   async addScriptTag(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const copy = { ...options
-      };
+    const copy = { ...options
+    };
 
-      if (copy.path) {
-        copy.content = (await _fs.default.promises.readFile(copy.path)).toString();
-        copy.content += '//# sourceURL=' + copy.path.replace(/\n/g, '');
-      }
+    if (copy.path) {
+      copy.content = (await _fs.default.promises.readFile(copy.path)).toString();
+      copy.content += '//# sourceURL=' + copy.path.replace(/\n/g, '');
+    }
 
-      return _elementHandle.ElementHandle.from((await channel.addScriptTag({ ...copy
-      })).element);
-    });
+    return _elementHandle.ElementHandle.from((await this._channel.addScriptTag({ ...copy
+    })).element);
   }
 
   async addStyleTag(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const copy = { ...options
-      };
+    const copy = { ...options
+    };
 
-      if (copy.path) {
-        copy.content = (await _fs.default.promises.readFile(copy.path)).toString();
-        copy.content += '/*# sourceURL=' + copy.path.replace(/\n/g, '') + '*/';
-      }
+    if (copy.path) {
+      copy.content = (await _fs.default.promises.readFile(copy.path)).toString();
+      copy.content += '/*# sourceURL=' + copy.path.replace(/\n/g, '') + '*/';
+    }
 
-      return _elementHandle.ElementHandle.from((await channel.addStyleTag({ ...copy
-      })).element);
-    });
+    return _elementHandle.ElementHandle.from((await this._channel.addStyleTag({ ...copy
+    })).element);
   }
 
   async click(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.click({
-        selector,
-        ...options
-      });
+    return await this._channel.click({
+      selector,
+      ...options
     });
   }
 
   async dblclick(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.dblclick({
-        selector,
-        ...options
-      });
+    return await this._channel.dblclick({
+      selector,
+      ...options
     });
   }
 
   async dragAndDrop(source, target, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.dragAndDrop({
-        source,
-        target,
-        ...options
-      });
+    return await this._channel.dragAndDrop({
+      source,
+      target,
+      ...options
     });
   }
 
   async tap(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.tap({
-        selector,
-        ...options
-      });
+    return await this._channel.tap({
+      selector,
+      ...options
     });
   }
 
   async fill(selector, value, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.fill({
-        selector,
-        value,
-        ...options
-      });
+    return await this._channel.fill({
+      selector,
+      value,
+      ...options
     });
   }
 
-  locator(selector) {
-    return new _locator.Locator(this, selector);
+  async _highlight(selector) {
+    return await this._channel.highlight({
+      selector
+    });
+  }
+
+  locator(selector, options) {
+    return new _locator.Locator(this, selector, options);
+  }
+
+  frameLocator(selector) {
+    return new _locator.FrameLocator(this, selector);
   }
 
   async focus(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.focus({
-        selector,
-        ...options
-      });
+    await this._channel.focus({
+      selector,
+      ...options
     });
   }
 
   async textContent(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const value = (await channel.textContent({
-        selector,
-        ...options
-      })).value;
-      return value === undefined ? null : value;
-    });
+    const value = (await this._channel.textContent({
+      selector,
+      ...options
+    })).value;
+    return value === undefined ? null : value;
   }
 
   async innerText(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.innerText({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.innerText({
+      selector,
+      ...options
+    })).value;
   }
 
   async innerHTML(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.innerHTML({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.innerHTML({
+      selector,
+      ...options
+    })).value;
   }
 
   async getAttribute(selector, name, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const value = (await channel.getAttribute({
-        selector,
-        name,
-        ...options
-      })).value;
-      return value === undefined ? null : value;
-    });
+    const value = (await this._channel.getAttribute({
+      selector,
+      name,
+      ...options
+    })).value;
+    return value === undefined ? null : value;
   }
 
   async inputValue(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.inputValue({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.inputValue({
+      selector,
+      ...options
+    })).value;
   }
 
   async isChecked(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isChecked({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.isChecked({
+      selector,
+      ...options
+    })).value;
   }
 
   async isDisabled(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isDisabled({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.isDisabled({
+      selector,
+      ...options
+    })).value;
   }
 
   async isEditable(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isEditable({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.isEditable({
+      selector,
+      ...options
+    })).value;
   }
 
   async isEnabled(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isEnabled({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.isEnabled({
+      selector,
+      ...options
+    })).value;
   }
 
   async isHidden(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isHidden({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.isHidden({
+      selector,
+      ...options
+    })).value;
   }
 
   async isVisible(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isVisible({
-        selector,
-        ...options
-      })).value;
-    });
+    return (await this._channel.isVisible({
+      selector,
+      ...options
+    })).value;
   }
 
   async hover(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.hover({
-        selector,
-        ...options
-      });
+    await this._channel.hover({
+      selector,
+      ...options
     });
   }
 
   async selectOption(selector, values, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return (await channel.selectOption({
-        selector,
-        ...(0, _elementHandle.convertSelectOptionValues)(values),
-        ...options
-      })).values;
-    });
+    return (await this._channel.selectOption({
+      selector,
+      ...(0, _elementHandle.convertSelectOptionValues)(values),
+      ...options
+    })).values;
   }
 
   async setInputFiles(selector, files, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.setInputFiles({
+    const converted = await (0, _elementHandle.convertInputFiles)(files, this.page().context());
+
+    if (converted.files) {
+      await this._channel.setInputFiles({
         selector,
-        files: await (0, _elementHandle.convertInputFiles)(files),
+        files: converted.files,
         ...options
       });
-    });
+    } else {
+      _debugLogger.debugLogger.log('api', 'switching to large files mode');
+
+      await this._channel.setInputFilePaths({
+        selector,
+        ...converted,
+        ...options
+      });
+    }
   }
 
   async type(selector, text, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.type({
-        selector,
-        text,
-        ...options
-      });
+    await this._channel.type({
+      selector,
+      text,
+      ...options
     });
   }
 
   async press(selector, key, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.press({
-        selector,
-        key,
-        ...options
-      });
+    await this._channel.press({
+      selector,
+      key,
+      ...options
     });
   }
 
   async check(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.check({
-        selector,
-        ...options
-      });
+    await this._channel.check({
+      selector,
+      ...options
     });
   }
 
   async uncheck(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.uncheck({
-        selector,
-        ...options
-      });
+    await this._channel.uncheck({
+      selector,
+      ...options
     });
   }
 
@@ -589,30 +543,24 @@ class Frame extends _channelOwner.ChannelOwner {
   }
 
   async waitForTimeout(timeout) {
-    return this._wrapApiCall(async channel => {
-      await channel.waitForTimeout({
-        timeout
-      });
+    await this._channel.waitForTimeout({
+      timeout
     });
   }
 
   async waitForFunction(pageFunction, arg, options = {}) {
-    return this._wrapApiCall(async channel => {
-      if (typeof options.polling === 'string') (0, _utils.assert)(options.polling === 'raf', 'Unknown polling option: ' + options.polling);
-      const result = await channel.waitForFunction({ ...options,
-        pollingInterval: options.polling === 'raf' ? undefined : options.polling,
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return _jsHandle.JSHandle.from(result.handle);
+    if (typeof options.polling === 'string') (0, _utils.assert)(options.polling === 'raf', 'Unknown polling option: ' + options.polling);
+    const result = await this._channel.waitForFunction({ ...options,
+      pollingInterval: options.polling === 'raf' ? undefined : options.polling,
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return _jsHandle.JSHandle.from(result.handle);
   }
 
   async title() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.title()).value;
-    });
+    return (await this._channel.title()).value;
   }
 
 }

@@ -3,8 +3,8 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createPlaywright = createPlaywright;
 exports.Playwright = void 0;
+exports.createPlaywright = createPlaywright;
 
 var _android = require("./android/android");
 
@@ -22,7 +22,7 @@ var _webkit = require("./webkit/webkit");
 
 var _instrumentation = require("./instrumentation");
 
-var _debugLogger = require("../utils/debugLogger");
+var _debugLogger = require("../common/debugLogger");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -40,10 +40,10 @@ var _debugLogger = require("../utils/debugLogger");
  * limitations under the License.
  */
 class Playwright extends _instrumentation.SdkObject {
-  constructor(sdkLanguage, isInternal) {
+  constructor(sdkLanguage, isInternalPlaywright) {
     super({
       attribution: {
-        isInternal
+        isInternalPlaywright
       },
       instrumentation: (0, _instrumentation.createInstrumentation)()
     }, undefined, 'Playwright');
@@ -54,11 +54,14 @@ class Playwright extends _instrumentation.SdkObject {
     this.firefox = void 0;
     this.webkit = void 0;
     this.options = void 0;
+    this._allPages = new Set();
     this.instrumentation.addListener({
-      onCallLog: (logName, message, sdkObject, metadata) => {
+      onPageOpen: page => this._allPages.add(page),
+      onPageClose: page => this._allPages.delete(page),
+      onCallLog: (sdkObject, metadata, logName, message) => {
         _debugLogger.debugLogger.log(logName, message);
       }
-    });
+    }, null);
     this.options = {
       rootSdkObject: this,
       selectors: new _selectors.Selectors(),
@@ -72,10 +75,14 @@ class Playwright extends _instrumentation.SdkObject {
     this.selectors = this.options.selectors;
   }
 
+  async hideHighlight() {
+    await Promise.all([...this._allPages].map(p => p.hideHighlight().catch(() => {})));
+  }
+
 }
 
 exports.Playwright = Playwright;
 
-function createPlaywright(sdkLanguage, isInternal = false) {
-  return new Playwright(sdkLanguage, isInternal);
+function createPlaywright(sdkLanguage, isInternalPlaywright = false) {
+  return new Playwright(sdkLanguage, isInternalPlaywright);
 }

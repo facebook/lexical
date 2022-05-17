@@ -3,22 +3,23 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.WKSession = exports.WKConnection = void 0;
 exports.createProtocolError = createProtocolError;
-exports.WKSession = exports.WKConnection = exports.kPageProxyMessageReceived = exports.kBrowserCloseMessageId = void 0;
+exports.kPageProxyMessageReceived = exports.kBrowserCloseMessageId = void 0;
 
 var _events = require("events");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _stackTrace = require("../../utils/stackTrace");
 
-var _debugLogger = require("../../utils/debugLogger");
+var _debugLogger = require("../../common/debugLogger");
 
 var _helper = require("../helper");
 
-var _errors = require("../../utils/errors");
+var _errors = require("../../common/errors");
 
-var _protocolError = require("../common/protocolError");
+var _protocolError = require("../protocolError");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.

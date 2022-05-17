@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.helper = void 0;
 
-var _debugLogger = require("../utils/debugLogger");
+var _debugLogger = require("../common/debugLogger");
 
 var _eventsHelper = require("../utils/eventsHelper");
 

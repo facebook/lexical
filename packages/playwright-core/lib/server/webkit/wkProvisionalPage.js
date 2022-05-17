@@ -7,7 +7,7 @@ exports.WKProvisionalPage = void 0;
 
 var _eventsHelper = require("../../utils/eventsHelper");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 /**
  * Copyright (c) Microsoft Corporation.

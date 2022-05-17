@@ -3,19 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createScheme = createScheme;
-Object.defineProperty(exports, "Validator", {
-  enumerable: true,
-  get: function () {
-    return _validatorPrimitives.Validator;
-  }
-});
 Object.defineProperty(exports, "ValidationError", {
   enumerable: true,
   get: function () {
     return _validatorPrimitives.ValidationError;
   }
 });
+exports.createScheme = createScheme;
 
 var _validatorPrimitives = require("./validatorPrimitives");
 
@@ -82,7 +76,9 @@ function createScheme(tChannel) {
       k: _validatorPrimitives.tString,
       v: tType('SerializedValue')
     }))),
-    h: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
+    h: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    id: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    ref: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.SerializedArgument = (0, _validatorPrimitives.tObject)({
     value: tType('SerializedValue'),
@@ -166,11 +162,11 @@ function createScheme(tChannel) {
     value: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     file: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
       name: _validatorPrimitives.tString,
-      mimeType: _validatorPrimitives.tString,
+      mimeType: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
       buffer: _validatorPrimitives.tBinary
     }))
   });
-  scheme.FetchRequestFetchParams = (0, _validatorPrimitives.tObject)({
+  scheme.APIRequestContextFetchParams = (0, _validatorPrimitives.tObject)({
     url: _validatorPrimitives.tString,
     params: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(tType('NameValue'))),
     method: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
@@ -183,15 +179,18 @@ function createScheme(tChannel) {
     failOnStatusCode: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     ignoreHTTPSErrors: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
-  scheme.FetchRequestFetchResponseBodyParams = (0, _validatorPrimitives.tObject)({
+  scheme.APIRequestContextFetchResponseBodyParams = (0, _validatorPrimitives.tObject)({
     fetchUid: _validatorPrimitives.tString
   });
-  scheme.FetchRequestStorageStateParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
-  scheme.FetchRequestDisposeFetchResponseParams = (0, _validatorPrimitives.tObject)({
+  scheme.APIRequestContextFetchLogParams = (0, _validatorPrimitives.tObject)({
     fetchUid: _validatorPrimitives.tString
   });
-  scheme.FetchRequestDisposeParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
-  scheme.FetchResponse = (0, _validatorPrimitives.tObject)({
+  scheme.APIRequestContextStorageStateParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.APIRequestContextDisposeAPIResponseParams = (0, _validatorPrimitives.tObject)({
+    fetchUid: _validatorPrimitives.tString
+  });
+  scheme.APIRequestContextDisposeParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.APIResponse = (0, _validatorPrimitives.tObject)({
     fetchUid: _validatorPrimitives.tString,
     url: _validatorPrimitives.tString,
     status: _validatorPrimitives.tNumber,
@@ -199,28 +198,12 @@ function createScheme(tChannel) {
     headers: (0, _validatorPrimitives.tArray)(tType('NameValue'))
   });
   scheme.LifecycleEvent = (0, _validatorPrimitives.tEnum)(['load', 'domcontentloaded', 'networkidle', 'commit']);
+  scheme.LocalUtilsZipParams = (0, _validatorPrimitives.tObject)({
+    zipFile: _validatorPrimitives.tString,
+    entries: (0, _validatorPrimitives.tArray)(tType('NameValue'))
+  });
   scheme.RootInitializeParams = (0, _validatorPrimitives.tObject)({
     sdkLanguage: _validatorPrimitives.tString
-  });
-  scheme.PlaywrightSocksConnectedParams = (0, _validatorPrimitives.tObject)({
-    uid: _validatorPrimitives.tString,
-    host: _validatorPrimitives.tString,
-    port: _validatorPrimitives.tNumber
-  });
-  scheme.PlaywrightSocksFailedParams = (0, _validatorPrimitives.tObject)({
-    uid: _validatorPrimitives.tString,
-    errorCode: _validatorPrimitives.tString
-  });
-  scheme.PlaywrightSocksDataParams = (0, _validatorPrimitives.tObject)({
-    uid: _validatorPrimitives.tString,
-    data: _validatorPrimitives.tBinary
-  });
-  scheme.PlaywrightSocksErrorParams = (0, _validatorPrimitives.tObject)({
-    uid: _validatorPrimitives.tString,
-    error: _validatorPrimitives.tString
-  });
-  scheme.PlaywrightSocksEndParams = (0, _validatorPrimitives.tObject)({
-    uid: _validatorPrimitives.tString
   });
   scheme.PlaywrightNewRequestParams = (0, _validatorPrimitives.tObject)({
     baseURL: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
@@ -241,7 +224,29 @@ function createScheme(tChannel) {
     storageState: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
       cookies: (0, _validatorPrimitives.tArray)(tType('NetworkCookie')),
       origins: (0, _validatorPrimitives.tArray)(tType('OriginStorage'))
-    }))
+    })),
+    tracesDir: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
+  });
+  scheme.PlaywrightHideHighlightParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.SocksSupportSocksConnectedParams = (0, _validatorPrimitives.tObject)({
+    uid: _validatorPrimitives.tString,
+    host: _validatorPrimitives.tString,
+    port: _validatorPrimitives.tNumber
+  });
+  scheme.SocksSupportSocksFailedParams = (0, _validatorPrimitives.tObject)({
+    uid: _validatorPrimitives.tString,
+    errorCode: _validatorPrimitives.tString
+  });
+  scheme.SocksSupportSocksDataParams = (0, _validatorPrimitives.tObject)({
+    uid: _validatorPrimitives.tString,
+    data: _validatorPrimitives.tBinary
+  });
+  scheme.SocksSupportSocksErrorParams = (0, _validatorPrimitives.tObject)({
+    uid: _validatorPrimitives.tString,
+    error: _validatorPrimitives.tString
+  });
+  scheme.SocksSupportSocksEndParams = (0, _validatorPrimitives.tObject)({
+    uid: _validatorPrimitives.tString
   });
   scheme.SelectorsRegisterParams = (0, _validatorPrimitives.tObject)({
     name: _validatorPrimitives.tString,
@@ -252,7 +257,8 @@ function createScheme(tChannel) {
     wsEndpoint: _validatorPrimitives.tString,
     headers: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tAny),
     slowMo: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    socksProxyRedirectPortForTest: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.BrowserTypeLaunchParams = (0, _validatorPrimitives.tObject)({
     channel: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
@@ -446,6 +452,7 @@ function createScheme(tChannel) {
   scheme.BrowserContextAddInitScriptParams = (0, _validatorPrimitives.tObject)({
     source: _validatorPrimitives.tString
   });
+  scheme.BrowserContextRemoveInitScriptsParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.BrowserContextClearCookiesParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.BrowserContextClearPermissionsParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.BrowserContextCloseParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
@@ -456,6 +463,7 @@ function createScheme(tChannel) {
     name: _validatorPrimitives.tString,
     needsHandle: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
+  scheme.BrowserContextRemoveExposedBindingsParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.BrowserContextGrantPermissionsParams = (0, _validatorPrimitives.tObject)({
     permissions: (0, _validatorPrimitives.tArray)(_validatorPrimitives.tString),
     origin: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
@@ -505,20 +513,10 @@ function createScheme(tChannel) {
     page: (0, _validatorPrimitives.tOptional)(tChannel('Page')),
     frame: (0, _validatorPrimitives.tOptional)(tChannel('Frame'))
   });
-  scheme.BrowserContextTracingStartParams = (0, _validatorPrimitives.tObject)({
-    name: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
-    snapshots: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
-    screenshots: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
-  });
-  scheme.BrowserContextTracingStartChunkParams = (0, _validatorPrimitives.tObject)({
-    title: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
-  });
-  scheme.BrowserContextTracingStopChunkParams = (0, _validatorPrimitives.tObject)({
-    save: _validatorPrimitives.tBoolean,
-    skipCompress: _validatorPrimitives.tBoolean
-  });
-  scheme.BrowserContextTracingStopParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.BrowserContextHarExportParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.BrowserContextCreateTempFileParams = (0, _validatorPrimitives.tObject)({
+    name: _validatorPrimitives.tString
+  });
   scheme.PageSetDefaultNavigationTimeoutNoReplyParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
@@ -531,6 +529,7 @@ function createScheme(tChannel) {
   scheme.PageAddInitScriptParams = (0, _validatorPrimitives.tObject)({
     source: _validatorPrimitives.tString
   });
+  scheme.PageRemoveInitScriptsParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.PageCloseParams = (0, _validatorPrimitives.tObject)({
     runBeforeUnload: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
@@ -544,6 +543,7 @@ function createScheme(tChannel) {
     name: _validatorPrimitives.tString,
     needsHandle: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
+  scheme.PageRemoveExposedBindingsParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.PageGoBackParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     waitUntil: (0, _validatorPrimitives.tOptional)(tType('LifecycleEvent'))
@@ -556,13 +556,46 @@ function createScheme(tChannel) {
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     waitUntil: (0, _validatorPrimitives.tOptional)(tType('LifecycleEvent'))
   });
+  scheme.PageExpectScreenshotParams = (0, _validatorPrimitives.tObject)({
+    expected: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBinary),
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    isNot: _validatorPrimitives.tBoolean,
+    locator: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
+      frame: tChannel('Frame'),
+      selector: _validatorPrimitives.tString
+    })),
+    comparatorOptions: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
+      maxDiffPixels: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+      maxDiffPixelRatio: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+      threshold: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
+    })),
+    screenshotOptions: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
+      fullPage: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+      clip: (0, _validatorPrimitives.tOptional)(tType('Rect')),
+      omitBackground: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+      caret: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['hide', 'initial'])),
+      animations: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['disabled', 'allow'])),
+      scale: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['css', 'device'])),
+      mask: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)((0, _validatorPrimitives.tObject)({
+        frame: tChannel('Frame'),
+        selector: _validatorPrimitives.tString
+      })))
+    }))
+  });
   scheme.PageScreenshotParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     type: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['png', 'jpeg'])),
     quality: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    omitBackground: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     fullPage: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
-    clip: (0, _validatorPrimitives.tOptional)(tType('Rect'))
+    clip: (0, _validatorPrimitives.tOptional)(tType('Rect')),
+    omitBackground: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    caret: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['hide', 'initial'])),
+    animations: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['disabled', 'allow'])),
+    scale: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['css', 'device'])),
+    mask: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)((0, _validatorPrimitives.tObject)({
+      frame: tChannel('Frame'),
+      selector: _validatorPrimitives.tString
+    })))
   });
   scheme.PageSetExtraHTTPHeadersParams = (0, _validatorPrimitives.tObject)({
     headers: (0, _validatorPrimitives.tArray)(tType('NameValue'))
@@ -588,13 +621,6 @@ function createScheme(tChannel) {
   scheme.PageKeyboardTypeParams = (0, _validatorPrimitives.tObject)({
     text: _validatorPrimitives.tString,
     delay: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
-  });
-  scheme.PageKeyboardImeSetCompositionParams = (0, _validatorPrimitives.tObject)({
-    text: _validatorPrimitives.tString,
-    selectionStart: _validatorPrimitives.tNumber,
-    selectionEnd: _validatorPrimitives.tNumber,
-    replacementStart: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    replacementEnd: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.PageKeyboardPressParams = (0, _validatorPrimitives.tObject)({
     key: _validatorPrimitives.tString,
@@ -714,7 +740,8 @@ function createScheme(tChannel) {
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     trial: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     sourcePosition: (0, _validatorPrimitives.tOptional)(tType('Point')),
-    targetPosition: (0, _validatorPrimitives.tOptional)(tType('Point'))
+    targetPosition: (0, _validatorPrimitives.tOptional)(tType('Point')),
+    strict: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
   scheme.FrameDblclickParams = (0, _validatorPrimitives.tObject)({
     selector: _validatorPrimitives.tString,
@@ -759,6 +786,9 @@ function createScheme(tChannel) {
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.FrameFrameElementParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.FrameHighlightParams = (0, _validatorPrimitives.tObject)({
+    selector: _validatorPrimitives.tString
+  });
   scheme.FrameGetAttributeParams = (0, _validatorPrimitives.tObject)({
     selector: _validatorPrimitives.tString,
     strict: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
@@ -838,6 +868,9 @@ function createScheme(tChannel) {
   scheme.FrameQuerySelectorAllParams = (0, _validatorPrimitives.tObject)({
     selector: _validatorPrimitives.tString
   });
+  scheme.FrameQueryCountParams = (0, _validatorPrimitives.tObject)({
+    selector: _validatorPrimitives.tString
+  });
   scheme.FrameSelectOptionParams = (0, _validatorPrimitives.tObject)({
     selector: _validatorPrimitives.tString,
     strict: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
@@ -864,6 +897,14 @@ function createScheme(tChannel) {
       mimeType: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
       buffer: _validatorPrimitives.tBinary
     })),
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    noWaitAfter: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
+  });
+  scheme.FrameSetInputFilePathsParams = (0, _validatorPrimitives.tObject)({
+    selector: _validatorPrimitives.tString,
+    strict: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    localPaths: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(_validatorPrimitives.tString)),
+    streams: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(tChannel('WritableStream'))),
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     noWaitAfter: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
@@ -1051,7 +1092,14 @@ function createScheme(tChannel) {
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     type: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['png', 'jpeg'])),
     quality: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
-    omitBackground: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
+    omitBackground: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    caret: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['hide', 'initial'])),
+    animations: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['disabled', 'allow'])),
+    scale: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['css', 'device'])),
+    mask: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)((0, _validatorPrimitives.tObject)({
+      frame: tChannel('Frame'),
+      selector: _validatorPrimitives.tString
+    })))
   });
   scheme.ElementHandleScrollIntoViewIfNeededParams = (0, _validatorPrimitives.tObject)({
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
@@ -1077,6 +1125,12 @@ function createScheme(tChannel) {
       mimeType: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
       buffer: _validatorPrimitives.tBinary
     })),
+    timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    noWaitAfter: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
+  });
+  scheme.ElementHandleSetInputFilePathsParams = (0, _validatorPrimitives.tObject)({
+    localPaths: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(_validatorPrimitives.tString)),
+    streams: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tArray)(tChannel('WritableStream'))),
     timeout: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
     noWaitAfter: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
   });
@@ -1172,6 +1226,19 @@ function createScheme(tChannel) {
     promptText: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
   });
   scheme.DialogDismissParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.TracingTracingStartParams = (0, _validatorPrimitives.tObject)({
+    name: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
+    snapshots: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    screenshots: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    sources: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
+  });
+  scheme.TracingTracingStartChunkParams = (0, _validatorPrimitives.tObject)({
+    title: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString)
+  });
+  scheme.TracingTracingStopChunkParams = (0, _validatorPrimitives.tObject)({
+    mode: (0, _validatorPrimitives.tEnum)(['doNotSave', 'compressTrace', 'compressTraceAndSources'])
+  });
+  scheme.TracingTracingStopParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.ArtifactPathAfterFinishedParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.ArtifactSaveAsParams = (0, _validatorPrimitives.tObject)({
     path: _validatorPrimitives.tString
@@ -1185,6 +1252,10 @@ function createScheme(tChannel) {
     size: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber)
   });
   scheme.StreamCloseParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.WritableStreamWriteParams = (0, _validatorPrimitives.tObject)({
+    binary: _validatorPrimitives.tBinary
+  });
+  scheme.WritableStreamCloseParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.CDPSessionSendParams = (0, _validatorPrimitives.tObject)({
     method: _validatorPrimitives.tString,
     params: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tAny)
@@ -1240,7 +1311,11 @@ function createScheme(tChannel) {
     arg: tType('SerializedArgument')
   });
   scheme.ElectronApplicationCloseParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
-  scheme.AndroidDevicesParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
+  scheme.AndroidDevicesParams = (0, _validatorPrimitives.tObject)({
+    host: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
+    port: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tNumber),
+    omitDriverInstall: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean)
+  });
   scheme.AndroidSetDefaultTimeoutNoReplyParams = (0, _validatorPrimitives.tObject)({
     timeout: _validatorPrimitives.tNumber
   });
@@ -1328,7 +1403,15 @@ function createScheme(tChannel) {
     steps: _validatorPrimitives.tNumber
   });
   scheme.AndroidDeviceLaunchBrowserParams = (0, _validatorPrimitives.tObject)({
-    pkg: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
+    noDefaultViewport: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    viewport: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
+      width: _validatorPrimitives.tNumber,
+      height: _validatorPrimitives.tNumber
+    })),
+    screen: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
+      width: _validatorPrimitives.tNumber,
+      height: _validatorPrimitives.tNumber
+    })),
     ignoreHTTPSErrors: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     javaScriptEnabled: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
     bypassCSP: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
@@ -1354,6 +1437,7 @@ function createScheme(tChannel) {
     reducedMotion: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['reduce', 'no-preference'])),
     forcedColors: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tEnum)(['active', 'none'])),
     acceptDownloads: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    baseURL: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     recordVideo: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
       dir: _validatorPrimitives.tString,
       size: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
@@ -1366,6 +1450,7 @@ function createScheme(tChannel) {
       path: _validatorPrimitives.tString
     })),
     strictSelectors: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),
+    pkg: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
     proxy: (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({
       server: _validatorPrimitives.tString,
       bypass: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tString),
@@ -1392,12 +1477,13 @@ function createScheme(tChannel) {
     timeout: _validatorPrimitives.tNumber
   });
   scheme.AndroidDeviceConnectToWebViewParams = (0, _validatorPrimitives.tObject)({
-    pid: _validatorPrimitives.tNumber
+    socketName: _validatorPrimitives.tString
   });
   scheme.AndroidDeviceCloseParams = (0, _validatorPrimitives.tOptional)((0, _validatorPrimitives.tObject)({}));
   scheme.AndroidWebView = (0, _validatorPrimitives.tObject)({
     pid: _validatorPrimitives.tNumber,
-    pkg: _validatorPrimitives.tString
+    pkg: _validatorPrimitives.tString,
+    socketName: _validatorPrimitives.tString
   });
   scheme.AndroidSelector = (0, _validatorPrimitives.tObject)({
     checkable: (0, _validatorPrimitives.tOptional)(_validatorPrimitives.tBoolean),

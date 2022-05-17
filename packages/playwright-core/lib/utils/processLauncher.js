@@ -3,22 +3,22 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.gracefullyCloseAll = gracefullyCloseAll;
-exports.launchProcess = launchProcess;
 exports.envArrayToObject = envArrayToObject;
+exports.gracefullyCloseAll = gracefullyCloseAll;
 exports.gracefullyCloseSet = void 0;
+exports.launchProcess = launchProcess;
 
 var childProcess = _interopRequireWildcard(require("child_process"));
 
 var readline = _interopRequireWildcard(require("readline"));
 
+var path = _interopRequireWildcard(require("path"));
+
 var _eventsHelper = require("./eventsHelper");
 
-var _utils = require("./utils");
+var _ = require("./");
 
-var _rimraf = _interopRequireDefault(require("rimraf"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _fileUtils = require("./fileUtils");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -69,7 +69,7 @@ async function launchProcess(options) {
 
   const cleanup = async () => {
     options.log(`[pid=${spawnedProcess.pid || 'N/A'}] starting temporary directories cleanup`);
-    const errors = await (0, _utils.removeFolders)(options.tempDirectories);
+    const errors = await (0, _fileUtils.removeFolders)(options.tempDirectories);
 
     for (let i = 0; i < options.tempDirectories.length; ++i) {
       if (errors[i]) options.log(`[pid=${spawnedProcess.pid || 'N/A'}] exception while removing ${options.tempDirectories[i]}: ${errors[i]}`);
@@ -105,10 +105,6 @@ async function launchProcess(options) {
   });
   let processClosed = false;
 
-  let fulfillClose = () => {};
-
-  const waitForClose = new Promise(f => fulfillClose = f);
-
   let fulfillCleanup = () => {};
 
   const waitForCleanup = new Promise(f => fulfillCleanup = f);
@@ -119,8 +115,7 @@ async function launchProcess(options) {
     _eventsHelper.eventsHelper.removeEventListeners(listeners);
 
     gracefullyCloseSet.delete(gracefullyClose);
-    options.onExit(exitCode, signal);
-    fulfillClose(); // Cleanup as process exits.
+    options.onExit(exitCode, signal); // Cleanup as process exits.
 
     cleanup().then(fulfillCleanup);
   });
@@ -130,7 +125,7 @@ async function launchProcess(options) {
     listeners.push(_eventsHelper.eventsHelper.addEventListener(process, 'SIGINT', () => {
       gracefullyClose().then(() => {
         // Give tests a chance to dispatch any async calls.
-        if ((0, _utils.isUnderTest)()) setTimeout(() => process.exit(130), 0);else process.exit(130);
+        if ((0, _.isUnderTest)()) setTimeout(() => process.exit(130), 0);else process.exit(130);
       });
     }));
   }
@@ -149,7 +144,7 @@ async function launchProcess(options) {
     if (gracefullyClosing) {
       options.log(`[pid=${spawnedProcess.pid}] <forecefully close>`);
       killProcess();
-      await waitForClose; // Ensure the process is dead and we called options.onkill.
+      await waitForCleanup; // Ensure the process is dead and we have cleaned up.
 
       return;
     }
@@ -173,8 +168,12 @@ async function launchProcess(options) {
 
       try {
         if (process.platform === 'win32') {
-          const stdout = childProcess.execSync(`taskkill /pid ${spawnedProcess.pid} /T /F /FI "MEMUSAGE gt 0"`);
-          options.log(`[pid=${spawnedProcess.pid}] taskkill output: ${stdout.toString()}`);
+          const taskkillProcess = childProcess.spawnSync(`taskkill /pid ${spawnedProcess.pid} /T /F`, {
+            shell: true
+          });
+          const [stdout, stderr] = [taskkillProcess.stdout.toString(), taskkillProcess.stderr.toString()];
+          if (stdout) options.log(`[pid=${spawnedProcess.pid}] taskkill stdout: ${stdout}`);
+          if (stderr) options.log(`[pid=${spawnedProcess.pid}] taskkill stderr: ${stderr}`);
         } else {
           process.kill(-spawnedProcess.pid, 'SIGKILL');
         }
@@ -190,14 +189,11 @@ async function launchProcess(options) {
     killProcess();
     options.log(`[pid=${spawnedProcess.pid || 'N/A'}] starting temporary directories cleanup`);
 
-    for (const dir of options.tempDirectories) {
-      try {
-        _rimraf.default.sync(dir, {
-          maxBusyTries: 10
-        });
-      } catch (e) {
-        options.log(`[pid=${spawnedProcess.pid || 'N/A'}] exception while removing ${dir}: ${e}`);
-      }
+    if (options.tempDirectories.length) {
+      const cleanupProcess = childProcess.spawnSync(process.argv0, [path.join(__dirname, 'processLauncherCleanupEntrypoint.js'), ...options.tempDirectories]);
+      const [stdout, stderr] = [cleanupProcess.stdout.toString(), cleanupProcess.stderr.toString()];
+      if (stdout) options.log(`[pid=${spawnedProcess.pid || 'N/A'}] ${stdout}`);
+      if (stderr) options.log(`[pid=${spawnedProcess.pid || 'N/A'}] ${stderr}`);
     }
 
     options.log(`[pid=${spawnedProcess.pid || 'N/A'}] finished temporary directories cleanup`);

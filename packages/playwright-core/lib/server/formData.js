@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.MultipartFormData = void 0;
 
+var _utilsBundle = require("../utilsBundle");
+
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -46,7 +48,7 @@ class MultipartFormData {
 
     this._chunks.push(Buffer.from(`; filename="${value.name}"`));
 
-    this._chunks.push(Buffer.from(`\r\ncontent-type: ${value.mimeType || 'application/octet-stream'}`));
+    this._chunks.push(Buffer.from(`\r\ncontent-type: ${value.mimeType || _utilsBundle.mime.getType(value.name) || 'application/octet-stream'}`));
 
     this._finishMultiPartHeader();
 

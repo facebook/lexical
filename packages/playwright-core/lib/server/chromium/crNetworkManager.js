@@ -11,7 +11,7 @@ var _eventsHelper = require("../../utils/eventsHelper");
 
 var network = _interopRequireWildcard(require("../network"));
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -54,7 +54,7 @@ class CRNetworkManager {
   }
 
   instrumentNetworkEvents(session, workerFrame) {
-    return [_eventsHelper.eventsHelper.addEventListener(session, 'Fetch.requestPaused', this._onRequestPaused.bind(this, workerFrame)), _eventsHelper.eventsHelper.addEventListener(session, 'Fetch.authRequired', this._onAuthRequired.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.requestWillBeSent', this._onRequestWillBeSent.bind(this, workerFrame)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.requestWillBeSentExtraInfo', this._onRequestWillBeSentExtraInfo.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.responseReceived', this._onResponseReceived.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.responseReceivedExtraInfo', this._onResponseReceivedExtraInfo.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.loadingFinished', this._onLoadingFinished.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.loadingFailed', this._onLoadingFailed.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketCreated', e => this._page._frameManager.onWebSocketCreated(e.requestId, e.url)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketWillSendHandshakeRequest', e => this._page._frameManager.onWebSocketRequest(e.requestId)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketHandshakeResponseReceived', e => this._page._frameManager.onWebSocketResponse(e.requestId, e.response.status, e.response.statusText)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketFrameSent', e => e.response.payloadData && this._page._frameManager.onWebSocketFrameSent(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketFrameReceived', e => e.response.payloadData && this._page._frameManager.webSocketFrameReceived(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketClosed', e => this._page._frameManager.webSocketClosed(e.requestId)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketFrameError', e => this._page._frameManager.webSocketError(e.requestId, e.errorMessage))];
+    return [_eventsHelper.eventsHelper.addEventListener(session, 'Fetch.requestPaused', this._onRequestPaused.bind(this, workerFrame)), _eventsHelper.eventsHelper.addEventListener(session, 'Fetch.authRequired', this._onAuthRequired.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.requestWillBeSent', this._onRequestWillBeSent.bind(this, workerFrame)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.requestWillBeSentExtraInfo', this._onRequestWillBeSentExtraInfo.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.requestServedFromCache', this._onRequestServedFromCache.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.responseReceived', this._onResponseReceived.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.responseReceivedExtraInfo', this._onResponseReceivedExtraInfo.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.loadingFinished', this._onLoadingFinished.bind(this)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.loadingFailed', this._onLoadingFailed.bind(this, workerFrame)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketCreated', e => this._page._frameManager.onWebSocketCreated(e.requestId, e.url)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketWillSendHandshakeRequest', e => this._page._frameManager.onWebSocketRequest(e.requestId)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketHandshakeResponseReceived', e => this._page._frameManager.onWebSocketResponse(e.requestId, e.response.status, e.response.statusText)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketFrameSent', e => e.response.payloadData && this._page._frameManager.onWebSocketFrameSent(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketFrameReceived', e => e.response.payloadData && this._page._frameManager.webSocketFrameReceived(e.requestId, e.response.opcode, e.response.payloadData)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketClosed', e => this._page._frameManager.webSocketClosed(e.requestId)), _eventsHelper.eventsHelper.addEventListener(session, 'Network.webSocketFrameError', e => this._page._frameManager.webSocketError(e.requestId, e.errorMessage))];
   }
 
   async initialize() {
@@ -128,6 +128,10 @@ class CRNetworkManager {
     }
   }
 
+  _onRequestServedFromCache(event) {
+    this._responseExtraInfoTracker.requestServedFromCache(event);
+  }
+
   _onRequestWillBeSentExtraInfo(event) {
     this._responseExtraInfoTracker.requestWillBeSentExtraInfo(event);
   }
@@ -167,12 +171,6 @@ class CRNetworkManager {
       const request = this._requestIdToRequest.get(event.networkId);
 
       if (request) this._responseExtraInfoTracker.requestPaused(request.request, event);
-    }
-
-    if (!this._userRequestInterceptionEnabled && this._protocolRequestInterceptionEnabled) {
-      this._client._sendMayFail('Fetch.continueRequest', {
-        requestId: event.requestId
-      });
     }
 
     if (!event.networkId) {
@@ -273,7 +271,7 @@ class CRNetworkManager {
 
     if (requestPausedEvent) {
       // We do not support intercepting redirects.
-      if (redirectedFrom) this._client._sendMayFail('Fetch.continueRequest', {
+      if (redirectedFrom || !this._userRequestInterceptionEnabled && this._protocolRequestInterceptionEnabled) this._client._sendMayFail('Fetch.continueRequest', {
         requestId: requestPausedEvent.requestId
       });else route = new RouteImpl(this._client, requestPausedEvent.requestId);
     }
@@ -413,13 +411,29 @@ class CRNetworkManager {
     this._page._frameManager.reportRequestFinished(request.request, response);
   }
 
-  _onLoadingFailed(event) {
+  _onLoadingFailed(workerFrame, event) {
     this._responseExtraInfoTracker.loadingFailed(event);
 
     let request = this._requestIdToRequest.get(event.requestId);
 
-    if (!request) request = this._maybeAdoptMainRequest(event.requestId); // For certain requestIds we never receive requestWillBeSent event.
+    if (!request) request = this._maybeAdoptMainRequest(event.requestId);
+
+    if (!request) {
+      const requestWillBeSentEvent = this._requestIdToRequestWillBeSentEvent.get(event.requestId);
+
+      if (requestWillBeSentEvent) {
+        // This is a case where request has failed before we had a chance to intercept it.
+        // We stop waiting for Fetch.requestPaused (it might never come), and dispatch request event
+        // right away, followed by requestfailed event.
+        this._requestIdToRequestWillBeSentEvent.delete(event.requestId);
+
+        this._onRequest(workerFrame, requestWillBeSentEvent, null);
+
+        request = this._requestIdToRequest.get(event.requestId);
+      }
+    } // For certain requestIds we never receive requestWillBeSent event.
     // @see https://crbug.com/750469
+
 
     if (!request) return;
 
@@ -625,10 +639,15 @@ class ResponseExtraInfoTracker {
   requestWillBeSentExtraInfo(event) {
     const info = this._getOrCreateEntry(event.requestId);
 
-    if (!info) return;
     info.requestWillBeSentExtraInfo.push(event);
 
     this._patchHeaders(info, info.requestWillBeSentExtraInfo.length - 1);
+  }
+
+  requestServedFromCache(event) {
+    const info = this._getOrCreateEntry(event.requestId);
+
+    info.requestServedFromCache = true;
   }
 
   responseReceived(event) {
@@ -675,7 +694,7 @@ class ResponseExtraInfoTracker {
     const info = this._requests.get(requestId);
 
     if (!info || info.sawResponseWithoutConnectionId) return;
-    response.setWillReceiveExtraHeaders();
+    if (!info.requestServedFromCache) response.setWillReceiveExtraHeaders();
     info.responses.push(response);
 
     this._patchHeaders(info, info.responses.length - 1);
@@ -708,7 +727,8 @@ class ResponseExtraInfoTracker {
         requestWillBeSentExtraInfo: [],
         responseReceivedExtraInfo: [],
         responses: [],
-        sawResponseWithoutConnectionId: false
+        sawResponseWithoutConnectionId: false,
+        requestServedFromCache: false
       };
 
       this._requests.set(requestId, info);

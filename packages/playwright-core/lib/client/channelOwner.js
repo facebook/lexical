@@ -3,18 +3,20 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.renderCallWithParams = renderCallWithParams;
 exports.ChannelOwner = void 0;
+exports.renderCallWithParams = renderCallWithParams;
 
 var _events = require("events");
 
 var _validator = require("../protocol/validator");
 
-var _debugLogger = require("../utils/debugLogger");
+var _debugLogger = require("../common/debugLogger");
 
 var _stackTrace = require("../utils/stackTrace");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
+
+var _zones = require("../utils/zones");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -60,7 +62,7 @@ class ChannelOwner extends _events.EventEmitter {
       this._logger = this._parent._logger;
     }
 
-    this._channel = this._createChannel(new _events.EventEmitter(), null);
+    this._channel = this._createChannel(new _events.EventEmitter());
     this._initializer = initializer;
   }
 
@@ -83,22 +85,30 @@ class ChannelOwner extends _events.EventEmitter {
     };
   }
 
-  _createChannel(base, stackTrace, csi, callCookie) {
+  _createChannel(base) {
     const channel = new Proxy(base, {
       get: (obj, prop) => {
-        if (prop === 'debugScopeState') return params => this._connection.sendMessageToServer(this, prop, params, stackTrace);
+        if (prop === 'debugScopeState') return params => this._connection.sendMessageToServer(this, prop, params, null);
 
         if (typeof prop === 'string') {
           const validator = scheme[paramsName(this._type, prop)];
 
           if (validator) {
             return params => {
-              if (callCookie && csi) {
-                csi.onApiCallBegin(renderCallWithParams(stackTrace.apiName, params), stackTrace, callCookie);
-                csi = undefined;
-              }
-
-              return this._connection.sendMessageToServer(this, prop, validator(params, ''), stackTrace);
+              return this._wrapApiCall(apiZone => {
+                const {
+                  stackTrace,
+                  csi,
+                  callCookie
+                } = apiZone.reported ? {
+                  csi: undefined,
+                  callCookie: undefined,
+                  stackTrace: null
+                } : apiZone;
+                apiZone.reported = true;
+                if (csi && stackTrace && stackTrace.apiName) csi.onApiCallBegin(renderCallWithParams(stackTrace.apiName, params), stackTrace, callCookie);
+                return this._connection.sendMessageToServer(this, prop, validator(params, ''), stackTrace);
+              });
             };
           }
         }
@@ -110,29 +120,34 @@ class ChannelOwner extends _events.EventEmitter {
     return channel;
   }
 
-  async _wrapApiCall(func, logger, isInternal) {
-    logger = logger || this._logger;
-    const stackTrace = (0, _stackTrace.captureStackTrace)();
-    const {
-      apiName,
-      frameTexts
-    } = stackTrace; // Do not report nested async calls to _wrapApiCall.
+  async _wrapApiCall(func, isInternal = false, customStackTrace) {
+    const logger = this._logger;
+    const stack = (0, _stackTrace.captureRawStack)();
 
-    isInternal = isInternal || stackTrace.allFrames.filter(f => {
-      var _f$function;
+    const apiZone = _zones.zones.zoneData('apiZone', stack);
 
-      return (_f$function = f.function) === null || _f$function === void 0 ? void 0 : _f$function.includes('_wrapApiCall');
-    }).length > 1;
+    if (apiZone) return func(apiZone);
+    const stackTrace = customStackTrace || (0, _stackTrace.captureStackTrace)(stack);
     if (isInternal) delete stackTrace.apiName;
     const csi = isInternal ? undefined : this._instrumentation;
     const callCookie = {};
+    const {
+      apiName,
+      frameTexts
+    } = stackTrace;
 
     try {
       logApiCall(logger, `=> ${apiName} started`, isInternal);
-
-      const channel = this._createChannel({}, stackTrace, csi, callCookie);
-
-      const result = await func(channel, stackTrace);
+      const apiZone = {
+        stackTrace,
+        isInternal,
+        reported: false,
+        csi,
+        callCookie
+      };
+      const result = await _zones.zones.run('apiZone', apiZone, async () => {
+        return await func(apiZone);
+      });
       csi === null || csi === void 0 ? void 0 : csi.onApiCallEnd(callCookie);
       logApiCall(logger, `<= ${apiName} succeeded`, isInternal);
       return result;
@@ -144,6 +159,12 @@ class ChannelOwner extends _events.EventEmitter {
       logApiCall(logger, `<= ${apiName} failed`, isInternal);
       throw e;
     }
+  }
+
+  _toImpl() {
+    var _this$_connection$toI, _this$_connection;
+
+    return (_this$_connection$toI = (_this$_connection = this._connection).toImpl) === null || _this$_connection$toI === void 0 ? void 0 : _this$_connection$toI.call(_this$_connection, this);
   }
 
   toJSON() {

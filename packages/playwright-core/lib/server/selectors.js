@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Selectors = void 0;
 
-var _selectorParser = require("./common/selectorParser");
+var _selectorParser = require("./isomorphic/selectorParser");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -31,7 +31,7 @@ class Selectors {
     this._engines = void 0;
     this.guid = `selectors@${(0, _utils.createGuid)()}`;
     // Note: keep in sync with InjectedScript class.
-    this._builtinEngines = new Set(['css', 'css:light', 'xpath', 'xpath:light', '_react', '_vue', 'text', 'text:light', 'id', 'id:light', 'data-testid', 'data-testid:light', 'data-test-id', 'data-test-id:light', 'data-test', 'data-test:light', 'nth', 'visible']);
+    this._builtinEngines = new Set(['css', 'css:light', 'xpath', 'xpath:light', '_react', '_vue', 'text', 'text:light', 'id', 'id:light', 'data-testid', 'data-testid:light', 'data-test-id', 'data-test-id:light', 'data-test', 'data-test:light', 'nth', 'visible', 'control', 'has', 'role']);
     this._builtinEnginesInMainWorld = new Set(['_react', '_vue']);
     this._engines = new Map();
   }
@@ -52,9 +52,7 @@ class Selectors {
     this._engines.clear();
   }
 
-  async query(frame, selector, options, scope) {
-    const info = frame._page.parseSelector(selector, options);
-
+  async query(frame, info, scope) {
     const context = await frame._context(info.world);
     const injectedScript = await context.injectedScript();
     const handle = await injectedScript.evaluateHandle((injected, {
@@ -79,8 +77,7 @@ class Selectors {
     return this._adoptIfNeeded(elementHandle, mainContext);
   }
 
-  async _queryArray(frame, selector, scope) {
-    const info = this.parseSelector(selector, false);
+  async _queryArrayInMainWorld(frame, info, scope) {
     const context = await frame._mainContext();
     const injectedScript = await context.injectedScript();
     const arrayHandle = await injectedScript.evaluateHandle((injected, {
@@ -95,8 +92,22 @@ class Selectors {
     return arrayHandle;
   }
 
+  async _queryCount(frame, info, scope) {
+    const context = await frame._context(info.world);
+    const injectedScript = await context.injectedScript();
+    return await injectedScript.evaluate((injected, {
+      parsed,
+      scope
+    }) => {
+      return injected.querySelectorAll(parsed, scope || document).length;
+    }, {
+      parsed: info.parsed,
+      scope
+    });
+  }
+
   async _queryAll(frame, selector, scope, adoptToMain) {
-    const info = this.parseSelector(selector, false);
+    const info = typeof selector === 'string' ? frame._page.parseSelector(selector) : selector;
     const context = await frame._context(info.world);
     const injectedScript = await context.injectedScript();
     const arrayHandle = await injectedScript.evaluateHandle((injected, {
@@ -133,20 +144,19 @@ class Selectors {
   }
 
   parseSelector(selector, strict) {
-    const parsed = (0, _selectorParser.parseSelector)(selector);
+    const parsed = typeof selector === 'string' ? (0, _selectorParser.parseSelector)(selector) : selector;
     let needsMainWorld = false;
 
-    for (const part of parsed.parts) {
-      const custom = this._engines.get(part.name);
+    for (const name of (0, _selectorParser.allEngineNames)(parsed)) {
+      const custom = this._engines.get(name);
 
-      if (!custom && !this._builtinEngines.has(part.name)) throw new Error(`Unknown engine "${part.name}" while parsing selector ${selector}`);
+      if (!custom && !this._builtinEngines.has(name)) throw new _selectorParser.InvalidSelectorError(`Unknown engine "${name}" while parsing selector ${(0, _selectorParser.stringifySelector)(parsed)}`);
       if (custom && !custom.contentScript) needsMainWorld = true;
-      if (this._builtinEnginesInMainWorld.has(part.name)) needsMainWorld = true;
+      if (this._builtinEnginesInMainWorld.has(name)) needsMainWorld = true;
     }
 
     return {
       parsed,
-      selector,
       world: needsMainWorld ? 'main' : 'utility',
       strict
     };

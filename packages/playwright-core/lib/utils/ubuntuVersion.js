@@ -5,6 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getUbuntuVersion = getUbuntuVersion;
 exports.getUbuntuVersionSync = getUbuntuVersionSync;
+exports.parseOSReleaseText = parseOSReleaseText;
 
 var _fs = _interopRequireDefault(require("fs"));
 
@@ -65,7 +66,7 @@ function getUbuntuVersionSyncInternal() {
   }
 }
 
-function parseUbuntuVersion(osReleaseText) {
+function parseOSReleaseText(osReleaseText) {
   const fields = new Map();
 
   for (const line of osReleaseText.split('\n')) {
@@ -75,10 +76,17 @@ function parseUbuntuVersion(osReleaseText) {
     if (value.startsWith('"') && value.endsWith('"')) value = value.substring(1, value.length - 1);
     if (!name) continue;
     fields.set(name.toLowerCase(), value);
-  } // For Linux mint
+  }
 
+  return fields;
+}
 
-  if (fields.get('distrib_id') && fields.get('distrib_id').toLowerCase() === 'ubuntu') return fields.get('distrib_release') || '';
-  if (!fields.get('name') || fields.get('name').toLowerCase() !== 'ubuntu') return '';
+function parseUbuntuVersion(osReleaseText) {
+  var _fields$get, _fields$get2;
+
+  const fields = parseOSReleaseText(osReleaseText); // For Linux mint
+
+  if (fields.get('distrib_id') && ((_fields$get = fields.get('distrib_id')) === null || _fields$get === void 0 ? void 0 : _fields$get.toLowerCase()) === 'ubuntu') return fields.get('distrib_release') || '';
+  if (!fields.get('name') || ((_fields$get2 = fields.get('name')) === null || _fields$get2 === void 0 ? void 0 : _fields$get2.toLowerCase()) !== 'ubuntu') return '';
   return fields.get('version_id') || '';
 }

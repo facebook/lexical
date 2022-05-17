@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Dialog = void 0;
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var _instrumentation = require("./instrumentation");
 
@@ -40,7 +40,7 @@ class Dialog extends _instrumentation.SdkObject {
     this._onHandle = onHandle;
     this._defaultValue = defaultValue || '';
 
-    this._page._frameManager.dialogDidOpen();
+    this._page._frameManager.dialogDidOpen(this);
   }
 
   type() {
@@ -59,7 +59,7 @@ class Dialog extends _instrumentation.SdkObject {
     (0, _utils.assert)(!this._handled, 'Cannot accept dialog which is already handled!');
     this._handled = true;
 
-    this._page._frameManager.dialogWillClose();
+    this._page._frameManager.dialogWillClose(this);
 
     await this._onHandle(true, promptText);
   }
@@ -68,7 +68,7 @@ class Dialog extends _instrumentation.SdkObject {
     (0, _utils.assert)(!this._handled, 'Cannot dismiss dialog which is already handled!');
     this._handled = true;
 
-    this._page._frameManager.dialogWillClose();
+    this._page._frameManager.dialogWillClose(this);
 
     await this._onHandle(false);
   }

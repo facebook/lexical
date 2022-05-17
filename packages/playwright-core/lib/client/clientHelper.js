@@ -3,16 +3,15 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.deprecate = deprecate;
 exports.envObjectToArray = envObjectToArray;
 exports.evaluationScript = evaluationScript;
+exports.globToRegex = globToRegex;
 exports.parsedURL = parsedURL;
 exports.urlMatches = urlMatches;
-exports.globToRegex = globToRegex;
 
 var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32,14 +31,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const deprecatedHits = new Set();
-
-function deprecate(methodName, message) {
-  if (deprecatedHits.has(methodName)) return;
-  deprecatedHits.add(methodName);
-  console.warn(message);
-}
-
 function envObjectToArray(env) {
   const result = [];
 
@@ -66,7 +57,7 @@ async function evaluationScript(fun, arg, addSourceUrl = true) {
 
   if (fun.path !== undefined) {
     let source = await _fs.default.promises.readFile(fun.path, 'utf8');
-    if (addSourceUrl) source += '//# sourceURL=' + fun.path.replace(/\n/g, '');
+    if (addSourceUrl) source += '\n//# sourceURL=' + fun.path.replace(/\n/g, '');
     return source;
   }
 

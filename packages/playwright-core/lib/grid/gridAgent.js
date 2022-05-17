@@ -5,15 +5,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.launchGridAgent = launchGridAgent;
 
-var _debug = _interopRequireDefault(require("debug"));
-
-var _ws = _interopRequireDefault(require("ws"));
+var _utilsBundle = require("../utilsBundle");
 
 var _child_process = require("child_process");
 
-var _utils = require("../utils/utils");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _userAgent = require("../common/userAgent");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -30,18 +26,34 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-function launchGridAgent(agentId, gridURL) {
-  const log = (0, _debug.default)(`[agent ${agentId}]`);
+function launchGridAgent(agentId, gridURL, runId) {
+  const log = (0, _utilsBundle.debug)(`pw:grid:agent:${agentId}`);
   log('created');
   const params = new URLSearchParams();
-  params.set('pwVersion', (0, _utils.getPlaywrightVersion)(true
+  params.set('pwVersion', (0, _userAgent.getPlaywrightVersion)(true
   /* majorMinorOnly */
   ));
   params.set('agentId', agentId);
-  const ws = new _ws.default(gridURL + `/registerAgent?` + params.toString());
-  ws.on('message', workerId => {
-    log('Worker requested ' + workerId);
-    (0, _child_process.fork)(require.resolve('./gridWorker.js'), [gridURL, agentId, workerId], {
+  if (runId) params.set('runId', runId);
+  const ws = new _utilsBundle.ws(gridURL.replace('http://', 'ws://') + `/registerAgent?` + params.toString());
+  ws.on('message', message => {
+    log('worker requested ' + message);
+    const {
+      workerId,
+      browserAlias
+    } = JSON.parse(message);
+
+    if (!workerId) {
+      log('workerId not specified');
+      return;
+    }
+
+    if (!browserAlias) {
+      log('browserAlias not specified');
+      return;
+    }
+
+    (0, _child_process.fork)(require.resolve('./gridBrowserWorker.js'), [gridURL, agentId, workerId, browserAlias], {
       detached: true
     });
   });

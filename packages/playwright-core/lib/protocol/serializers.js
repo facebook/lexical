@@ -3,12 +3,12 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.serializeError = serializeError;
 exports.parseError = parseError;
 exports.parseSerializedValue = parseSerializedValue;
+exports.serializeError = serializeError;
 exports.serializeValue = serializeValue;
 
-var _errors = require("../utils/errors");
+var _errors = require("../common/errors");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -36,7 +36,7 @@ function serializeError(e) {
   return {
     value: serializeValue(e, value => ({
       fallThrough: value
-    }), new Set())
+    }))
   };
 }
 
@@ -59,6 +59,11 @@ function parseError(error) {
 }
 
 function parseSerializedValue(value, handles) {
+  return innerParseSerializedValue(value, handles, new Map());
+}
+
+function innerParseSerializedValue(value, handles, refs) {
+  if (value.ref !== undefined) return refs.get(value.ref);
   if (value.n !== undefined) return value.n;
   if (value.s !== undefined) return value.s;
   if (value.b !== undefined) return value.b;
@@ -74,15 +79,24 @@ function parseSerializedValue(value, handles) {
 
   if (value.d !== undefined) return new Date(value.d);
   if (value.r !== undefined) return new RegExp(value.r.p, value.r.f);
-  if (value.a !== undefined) return value.a.map(a => parseSerializedValue(a, handles));
+
+  if (value.a !== undefined) {
+    const result = [];
+    refs.set(value.id, result);
+
+    for (const v of value.a) result.push(innerParseSerializedValue(v, handles, refs));
+
+    return result;
+  }
 
   if (value.o !== undefined) {
     const result = {};
+    refs.set(value.id, result);
 
     for (const {
       k,
       v
-    } of value.o) result[k] = parseSerializedValue(v, handles);
+    } of value.o) result[k] = innerParseSerializedValue(v, handles, refs);
 
     return result;
   }
@@ -95,10 +109,16 @@ function parseSerializedValue(value, handles) {
   throw new Error('Unexpected value');
 }
 
-function serializeValue(value, handleSerializer, visited) {
+function serializeValue(value, handleSerializer) {
+  return innerSerializeValue(value, handleSerializer, {
+    lastId: 0,
+    visited: new Map()
+  });
+}
+
+function innerSerializeValue(value, handleSerializer, visitorInfo) {
   const handle = handleSerializer(value);
   if ('fallThrough' in handle) value = handle.fallThrough;else return handle;
-  if (visited.has(value)) throw new Error('Argument is a circular structure');
   if (typeof value === 'symbol') return {
     v: 'undefined'
   };
@@ -133,7 +153,7 @@ function serializeValue(value, handleSerializer, visited) {
   if (isError(value)) {
     const error = value;
 
-    if ('captureStackTrace' in global.Error) {
+    if ('captureStackTrace' in globalThis.Error) {
       // v8
       return {
         s: error.stack || ''
@@ -154,31 +174,37 @@ function serializeValue(value, handleSerializer, visited) {
       f: value.flags
     }
   };
+  const id = visitorInfo.visited.get(value);
+  if (id) return {
+    ref: id
+  };
 
   if (Array.isArray(value)) {
     const a = [];
-    visited.add(value);
+    const id = ++visitorInfo.lastId;
+    visitorInfo.visited.set(value, id);
 
-    for (let i = 0; i < value.length; ++i) a.push(serializeValue(value[i], handleSerializer, visited));
+    for (let i = 0; i < value.length; ++i) a.push(innerSerializeValue(value[i], handleSerializer, visitorInfo));
 
-    visited.delete(value);
     return {
-      a
+      a,
+      id
     };
   }
 
   if (typeof value === 'object') {
     const o = [];
-    visited.add(value);
+    const id = ++visitorInfo.lastId;
+    visitorInfo.visited.set(value, id);
 
     for (const name of Object.keys(value)) o.push({
       k: name,
-      v: serializeValue(value[name], handleSerializer, visited)
+      v: innerSerializeValue(value[name], handleSerializer, visitorInfo)
     });
 
-    visited.delete(value);
     return {
-      o
+      o,
+      id
     };
   }
 

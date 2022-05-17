@@ -190,6 +190,17 @@ declare global {
   }
 }
 
+function canDropImage(event: DragEvent): boolean {
+  const target = event.target;
+  return !!(
+    target &&
+    target instanceof HTMLElement &&
+    !target.closest('code, span.editor-image') &&
+    target.parentElement &&
+    target.parentElement.closest('div.ContentEditable__root')
+  );
+}
+
 function getDragSelection(event: DragEvent): Range {
   let range;
   const domSelection = getSelection();
@@ -203,15 +214,4 @@ function getDragSelection(event: DragEvent): Range {
   }
 
   return range;
-}
-
-function canDropImage(event: DragEvent): boolean {
-  const target = event.target;
-  return !!(
-    target &&
-    target instanceof HTMLElement &&
-    !target.closest('code, span.editor-image') &&
-    target.parentElement &&
-    target.parentElement.closest('div.ContentEditable__root')
-  );
 }

@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import {ListItemNode,ListNode} from '@lexical/list';
+import {ListItemNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 

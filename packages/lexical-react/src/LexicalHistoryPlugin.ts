@@ -8,8 +8,7 @@
 
 import type {HistoryState} from '@lexical/history';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-
+import {useLexicalComposerContext} from './LexicalComposerContext';
 import {useHistory} from './shared/useHistory';
 
 export {createEmptyHistoryState} from '@lexical/history';

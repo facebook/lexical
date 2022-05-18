@@ -8,7 +8,6 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createNodeSelection,
   $getNodeByKey,
@@ -17,6 +16,8 @@ import {
   $setSelection,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 function isNodeSelected(editor: LexicalEditor, key: NodeKey): boolean {
   return editor.getEditorState().read(() => {

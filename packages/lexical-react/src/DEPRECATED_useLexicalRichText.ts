@@ -6,11 +6,10 @@
  *
  */
 
-import type {HistoryState} from '@lexical/react/DEPRECATED_useLexicalHistory';
+import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 import type {EditorState, LexicalEditor} from 'lexical';
 
-import {useLexicalHistory} from '@lexical/react/DEPRECATED_useLexicalHistory';
-
+import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
 import {useRichTextSetup} from './shared/useRichTextSetup';
 
 export function useLexicalRichText(

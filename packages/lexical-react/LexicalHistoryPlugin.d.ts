@@ -13,6 +13,7 @@ import type {
   NodeSelection,
   RangeSelection,
 } from 'lexical';
+
 export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;

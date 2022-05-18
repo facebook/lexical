@@ -8,6 +8,7 @@
 
 import {Class} from 'utility-types';
 import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
+
 type Props = {
   initialConfig: {
     editor__DEPRECATED?: LexicalEditor | null;

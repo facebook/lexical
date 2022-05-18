@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+
 export function useLexicalIsTextContentEmpty(
   editor: LexicalEditor,
   trim?: boolean,

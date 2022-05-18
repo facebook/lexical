@@ -7,6 +7,7 @@
  */
 
 import type {EditorState} from 'lexical';
+
 type InitialEditorStateType = null | string | EditorState | (() => void);
 export function RichTextPlugin(arg0: {
   contentEditable: JSX.Element | null;

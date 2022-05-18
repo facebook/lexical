@@ -26,6 +26,7 @@ declare class DecoratorBlockNode<T> extends DecoratorNode<T> {
   setFormat(format: ElementFormatType): void;
   exportJSON(): SerializedDecoratorBlockNode;
 }
+
 declare function $isDecoratorBlockNode<T>(
   node: LexicalNode,
 ): node is DecoratorBlockNode<T>;

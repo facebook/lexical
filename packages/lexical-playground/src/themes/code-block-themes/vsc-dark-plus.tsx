@@ -9,7 +9,8 @@
 import * as React from 'react';
 
 export default () => (
-  <style>{`
+  <style>
+    {`
   pre[data-highlight-language],
   code[data-highlight-language] {
     color: #d4d4d4;

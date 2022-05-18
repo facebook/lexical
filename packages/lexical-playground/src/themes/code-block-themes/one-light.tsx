@@ -9,7 +9,8 @@
 import * as React from 'react';
 
 export default () => (
-  <style>{`
+  <style>
+    {`
   code[data-highlight-language],
   pre[data-highlight-language] {
     background: hsl(230, 1%, 98%);

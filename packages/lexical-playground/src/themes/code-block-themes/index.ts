@@ -6,7 +6,7 @@
  *
  */
 
-import { lazy } from 'react';
+import {lazy} from 'react';
 
 import Atomonedark from './atom-one-dark';
 

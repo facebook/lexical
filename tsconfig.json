@@ -3,6 +3,7 @@
     "target": "ES2019",
     "lib": ["esnext", "dom", "dom.iterable"],
     "jsx": "react-jsx",
+    "module": "ESNext",
     "moduleResolution": "node",
     "downlevelIteration": true,
     "noEmit": true,

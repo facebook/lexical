@@ -1229,6 +1229,10 @@ button.action-button:disabled {
   width: 150px;
 }
 
+.toolbar select.code-theme {
+  width: 200px;
+}
+
 .toolbar .toolbar-item .text {
   display: flex;
   line-height: 20px;

@@ -58,7 +58,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
 
@@ -66,6 +66,7 @@ import useModal from '../hooks/useModal';
 import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
+import codeBlockThemes from '../themes/code-block-themes';
 import Button from '../ui/Button';
 import ColorPicker from '../ui/ColorPicker';
 import DropDown from '../ui/DropDown';
@@ -794,6 +795,7 @@ export default function ToolbarPlugin(): JSX.Element {
   const [modal, showModal] = useModal();
   const [isRTL, setIsRTL] = useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
+  const [codeTheme, setCodeTheme] = useState<keyof typeof codeBlockThemes>('atom-one-dark');
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -969,12 +971,22 @@ export default function ToolbarPlugin(): JSX.Element {
     },
     [activeEditor, selectedElementKey],
   );
+
+  const onCodeThemeSelect = (e) => {
+    setCodeTheme(e.target.value)
+  }
+
   const insertGifOnClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
   };
 
+  const CodeThemeStyle = codeBlockThemes[codeTheme]
+
   return (
     <div className="toolbar">
+      <Suspense fallback={null}>
+        <CodeThemeStyle />
+      </Suspense>
       <button
         disabled={!canUndo}
         onClick={() => {
@@ -1009,6 +1021,13 @@ export default function ToolbarPlugin(): JSX.Element {
             onChange={onCodeLanguageSelect}
             options={CODE_LANGUAGE_OPTIONS}
             value={codeLanguage}
+          />
+          <i className="chevron-down inside" />
+          <Select
+            className="toolbar-item code-theme"
+            onChange={onCodeThemeSelect}
+            options={Object.keys(codeBlockThemes).map(theme => [theme, theme])}
+            value={codeTheme}
           />
           <i className="chevron-down inside" />
         </>

@@ -97,13 +97,10 @@
   text-decoration: underline;
 }
 .PlaygroundEditorTheme__code {
-  background-color: rgb(240, 242, 245);
-  font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
-  padding: 8px 8px 8px 52px;
-  line-height: 1.53;
-  font-size: 13px;
-  margin: 0;
+  padding: 8px 8px 8px 52px !important;
+  line-height: 1.53 !important;
+  font-size: 13px !important;
   margin-top: 8px;
   margin-bottom: 8px;
   tab-size: 2;
@@ -114,7 +111,6 @@
 .PlaygroundEditorTheme__code:before {
   content: attr(data-gutter);
   position: absolute;
-  background-color: #eee;
   left: 0;
   top: 0;
   border-right: 1px solid #ccc;
@@ -126,13 +122,14 @@
 }
 .PlaygroundEditorTheme__code:after {
   content: attr(data-highlight-language);
-  top: 0;
+  top: 3px;
   right: 3px;
   padding: 3px;
   font-size: 10px;
   text-transform: uppercase;
   position: absolute;
   color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(256, 256, 256, 0.5);
 }
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
@@ -241,30 +238,6 @@
 .PlaygroundEditorTheme__nestedListItem:before,
 .PlaygroundEditorTheme__nestedListItem:after {
   display: none;
-}
-.PlaygroundEditorTheme__tokenComment {
-  color: slategray;
-}
-.PlaygroundEditorTheme__tokenPunctuation {
-  color: #999;
-}
-.PlaygroundEditorTheme__tokenProperty {
-  color: #905;
-}
-.PlaygroundEditorTheme__tokenSelector {
-  color: #690;
-}
-.PlaygroundEditorTheme__tokenOperator {
-  color: #9a6e3a;
-}
-.PlaygroundEditorTheme__tokenAttr {
-  color: #07a;
-}
-.PlaygroundEditorTheme__tokenVariable {
-  color: #e90;
-}
-.PlaygroundEditorTheme__tokenFunction {
-  color: #dd4a68;
 }
 
 .PlaygroundEditorTheme__mark {

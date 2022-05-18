@@ -12,6 +12,7 @@ import {
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
   $isElementNode,
@@ -19,8 +20,6 @@ import {
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import {useEffect} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 function toggleLink(url: null | string) {
   const selection = $getSelection();

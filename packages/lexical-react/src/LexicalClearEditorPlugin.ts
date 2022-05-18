@@ -6,6 +6,7 @@
  *
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
   $getRoot,
@@ -15,13 +16,11 @@ import {
 } from 'lexical';
 import useLayoutEffect from 'shared-ts/useLayoutEffect';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
-
 type Props = Readonly<{
   onClear?: () => void;
 }>;
 
-export function ClearEditorPlugin({onClear}: Props): React$Node {
+export function ClearEditorPlugin({onClear}: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   useLayoutEffect(() => {

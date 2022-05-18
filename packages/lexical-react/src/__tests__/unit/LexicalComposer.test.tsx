@@ -6,12 +6,11 @@
  *
  */
 
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
-import ReactTestUtils from 'react-dom/test-utils';
-
-import {LexicalComposer} from '../../../src/LexicalComposer';
-import {useLexicalComposerContext} from '../../LexicalComposerContext';
+import * as ReactTestUtils from 'react-dom/test-utils';
 
 describe('LexicalNodeHelpers tests', () => {
   let container = null;

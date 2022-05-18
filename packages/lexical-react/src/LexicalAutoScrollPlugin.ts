@@ -6,10 +6,9 @@
  *
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import useLayoutEffect from 'shared-ts/useLayoutEffect';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 type Props = Readonly<{
   scrollRef: {
@@ -17,7 +16,7 @@ type Props = Readonly<{
   };
 }>;
 
-export function AutoScrollPlugin({scrollRef}: Props): React$Node {
+export function AutoScrollPlugin({scrollRef}: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   useLayoutEffect(() => {

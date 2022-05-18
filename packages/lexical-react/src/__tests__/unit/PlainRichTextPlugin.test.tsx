@@ -11,7 +11,11 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {$rootTextContentCurry} from '@lexical/text';
@@ -24,14 +28,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
-import ReactTestUtils from 'react-dom/test-utils';
-
-import {LexicalComposer} from '../../../src/LexicalComposer';
-import {PlainTextPlugin} from '../../../src/LexicalPlainTextPlugin';
-import {RichTextPlugin} from '../../../src/LexicalRichTextPlugin';
-import {useLexicalComposerContext} from '../../LexicalComposerContext';
-import PlainTextPlugin from '../../LexicalPlainTextPlugin';
-import RichTextPlugin from '../../LexicalRichTextPlugin';
+import * as ReactTestUtils from 'react-dom/test-utils';
 
 describe('LexicalNodeHelpers tests', () => {
   let container = null;

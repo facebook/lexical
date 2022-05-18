@@ -39,7 +39,6 @@ import {
   TEXT_MODE_TO_TYPE,
   TEXT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_MODE,
-  ZERO_WIDTH_CHAR,
 } from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {

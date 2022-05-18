@@ -674,7 +674,7 @@ declare export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedLineBreakNode,
   ): LineBreakNode;
-  exportJSON(): SerializedLineBreakNode;
+  exportJSON(): SerializedLexicalNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -764,7 +764,7 @@ declare export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): ElementNode;
-  exportJSON<SerializedNode>(): SerializedElementNode<SerializedNode>;
+  exportJSON(): SerializedElementNode;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
@@ -795,10 +795,10 @@ declare export class ParagraphNode extends ElementNode {
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;
-  static importJSON<SerializedNode>(
-    serializedParagraphNode: SerializedParagraphNode<SerializedNode>,
+  static importJSON(
+    serializedParagraphNode: SerializedParagraphNode,
   ): ParagraphNode;
-  exportJSON<SerializedNode>(): SerializedParagraphNode<SerializedNode>;
+  exportJSON(): SerializedElementNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(
@@ -866,14 +866,14 @@ declare export var VERSION: string;
 
 // Serialization
 
-export type BaseSerializedNode = {
+export type SerializedLexicalNode = {
   type: string,
   version: number,
   ...
 };
 
 export type SerializedTextNode = {
-  ...BaseSerializedNode,
+  ...SerializedLexicalNode,
   detail: number,
   format: number,
   mode: TextModeType,
@@ -882,27 +882,30 @@ export type SerializedTextNode = {
   ...
 };
 
-export type SerializedElementNode<SerializedNode> = {
-  ...BaseSerializedNode,
-  children: Array<SerializedNode>,
+export type SerializedElementNode = {
+  ...SerializedLexicalNode,
+  children: Array<SerializedLexicalNode>,
   direction: 'ltr' | 'rtl' | null,
   format: 'left' | 'center' | 'right' | 'justify',
   indent: number,
   ...
 };
 
-export type SerializedParagraphNode<SerializedNode> = {
-  ...SerializedElementNode<SerializedNode>,
+export type SerializedParagraphNode = {
+  ...SerializedElementNode,
+  type: 'paragraph',
   ...
 };
 
 export type SerializedLineBreakNode = {
-  ...BaseSerializedNode,
+  ...SerializedLexicalNode,
+  type: 'linebreak',
   ...
 };
 
-export type SerializedRootNode<SerializedNode> = {
-  ...SerializedElementNode<SerializedNode>,
+export type SerializedRootNode = {
+  ...SerializedElementNode,
+  type: 'root',
   ...
 };
 

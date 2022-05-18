@@ -14,6 +14,7 @@ import {
   ParagraphNode,
   RangeSelection,
   LexicalCommand,
+  SerializedElementNode,
 } from 'lexical';
 
 export type ListType = 'number' | 'bullet' | 'check';
@@ -40,12 +41,14 @@ export declare class ListItemNode extends ElementNode {
   getChecked(): boolean | void;
   setChecked(boolean): this;
   toggleChecked(): void;
+  static importJSON(serializedNode: SerializedListItemNode): ListItemNode;
 }
 export declare class ListNode extends ElementNode {
   canBeEmpty(): false;
   append(...nodesToAppend: LexicalNode[]): ListNode;
   getTag(): ListNodeTagType;
   getListType(): ListType;
+  static importJSON(serializedNode: SerializedListNode): ListNode;
 }
 export function outdentList(): void;
 export function removeList(editor: LexicalEditor): boolean;
@@ -54,3 +57,18 @@ export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;
 export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;
 export var INSERT_CHECK_LIST_COMMAND: LexicalCommand<void>;
 export var REMOVE_LIST_COMMAND: LexicalCommand<void>;
+
+export interface SerializedListItemNode extends SerializedElementNode {
+  checked: boolean | void;
+  value: number;
+  type: 'listitem';
+  [key: string]: unknown;
+}
+
+export interface SerializedListNode extends SerializedElementNode {
+  listType: ListType;
+  start: number;
+  tag: ListNodeTagType;
+  type: 'list';
+  [key: string]: unknown;
+}

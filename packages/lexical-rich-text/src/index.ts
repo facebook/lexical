@@ -76,7 +76,6 @@ export type InitialEditorStateType = null | string | EditorState | (() => void);
 export interface SerializedHeadingNode
   extends SerializedElementNode {
   tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
-  type: 'heading';
 }
 
 // Convoluted logic to make this work with Flow. Order matters.

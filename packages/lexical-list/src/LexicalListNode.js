@@ -26,11 +26,12 @@ import {$createTextNode, ElementNode} from 'lexical';
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
 
-export type SerializedListNode<SerializedNode> = {
-  ...SerializedElementNode<SerializedNode>,
+export type SerializedListNode = {
+  ...SerializedElementNode,
   listType: ListType,
   start: number,
   tag: ListNodeTagType,
+  type: 'list',
   ...
 };
 
@@ -112,9 +113,7 @@ export class ListNode extends ElementNode {
     };
   }
 
-  static importJSON<SerializedNode>(
-    serializedNode: SerializedListNode<SerializedNode>,
-  ): ListNode {
+  static importJSON(serializedNode: SerializedListNode): ListNode {
     const node = $createListNode(serializedNode.listType, serializedNode.start);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -122,7 +121,7 @@ export class ListNode extends ElementNode {
     return node;
   }
 
-  exportJSON<SerializedNode>(): SerializedListNode<SerializedNode> {
+  exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),
       listType: this.getListType(),

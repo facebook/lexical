@@ -23,7 +23,11 @@ import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
-export type SerializedParagraphNode = SerializedElementNode;
+export type SerializedParagraphNode = {
+  ...SerializedElementNode,
+  type: 'paragraph',
+  ...
+};
 
 export class ParagraphNode extends ElementNode {
   static getType(): string {
@@ -83,10 +87,11 @@ export class ParagraphNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedParagraphNode {
+  exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),
       type: 'paragraph',
+      version: 1,
     };
   }
 

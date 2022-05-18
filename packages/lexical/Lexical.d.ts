@@ -161,8 +161,8 @@ export declare class LexicalEditor {
   parseEditorState(
     maybeStringifiedEditorState: string | ParsedEditorState,
   ): EditorState;
-  unstable_parseEditorState<SerializedNode>(
-    maybeStringifiedEditorState: string | SerializedEditorState<SerializedNode>,
+  unstable_parseEditorState(
+    maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
@@ -295,7 +295,7 @@ export interface EditorState {
   isEmpty(): boolean;
   read<V>(callbackFn: () => V): V;
   toJSON(space?: string | number): JSONEditorState;
-  unstable_toJSON<SerializedNode>(): SerializedEditorState<SerializedNode>;
+  unstable_toJSON(): SerializedEditorState;
   clone(
     selection?: RangeSelection | NodeSelection | GridSelection | null,
   ): EditorState;
@@ -824,7 +824,8 @@ export declare var VERSION: string;
 
 export interface SerializedLexicalNode {
   type: string;
-  version?: number;
+  version: number;
+  [key: string]: unknown;
 }
 
 export interface SerializedTextNode extends SerializedLexicalNode {
@@ -840,12 +841,13 @@ export interface SerializedElementNode extends SerializedLexicalNode {
   direction: 'ltr' | 'rtl' | null;
   format: 'left' | 'center' | 'right' | 'justify';
   indent: number;
+  [key: string]: unknown;
 }
 
 export interface SerializedRootNode extends SerializedElementNode {
   type: 'root';
 }
 
-export interface SerializedEditorState<SerializedNode> {
+export interface SerializedEditorState {
   root: SerializedRootNode;
 }

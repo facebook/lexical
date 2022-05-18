@@ -16,7 +16,11 @@ import type {
 
 import {LexicalNode} from '../LexicalNode';
 
-export type SerializedLineBreakNode = SerializedLexicalNode;
+export type SerializedLineBreakNode = {
+  ...SerializedLexicalNode,
+  type: 'linebreak',
+  ...
+};
 
 export class LineBreakNode extends LexicalNode {
   static getType(): string {
@@ -58,7 +62,7 @@ export class LineBreakNode extends LexicalNode {
     return $createLineBreakNode();
   }
 
-  exportJSON(): SerializedLineBreakNode {
+  exportJSON(): SerializedLexicalNode {
     return {
       type: 'linebreak',
       version: 1,

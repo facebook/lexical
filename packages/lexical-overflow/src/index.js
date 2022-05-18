@@ -7,9 +7,21 @@
  * @flow strict
  */
 
-import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+  SerializedElementNode,
+} from 'lexical';
 
 import {ElementNode} from 'lexical';
+
+export type SerializedOverflowNode = {
+  ...SerializedElementNode,
+  type: 'overflow',
+  ...
+};
 
 export class OverflowNode extends ElementNode {
   static getType(): string {
@@ -20,9 +32,20 @@ export class OverflowNode extends ElementNode {
     return new OverflowNode(node.__key);
   }
 
+  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode {
+    return $createOverflowNode();
+  }
+
   constructor(key?: NodeKey): void {
     super(key);
     this.__type = 'overflow';
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      type: 'overflow',
+    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

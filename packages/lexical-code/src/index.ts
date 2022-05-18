@@ -63,11 +63,14 @@ const DEFAULT_CODE_LANGUAGE = 'javascript';
 
 interface SerializedCodeNode extends SerializedElementNode {
   language: string | null | undefined;
+  type: 'code';
+  [key: string]: unknown;
 }
 
 interface SerializedCodeHighlightNode extends SerializedTextNode {
   highlightType: string | null | undefined;
   type: 'code-highlight';
+  [key: string]: unknown;
 }
 
 const mapToPrismLanguage = (
@@ -161,7 +164,7 @@ export class CodeHighlightNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedCodeHighlightNode {
+  exportJSON(): SerializedTextNode {
     return {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
@@ -309,7 +312,7 @@ export class CodeNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedCodeNode {
+  exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),
       language: this.getLanguage(),

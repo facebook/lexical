@@ -42,9 +42,10 @@ import {
   updateChildrenListItemValue,
 } from './formatList';
 
-export type SerializedListItemNode<SerializedNode> = {
-  ...SerializedElementNode<SerializedNode>,
+export type SerializedListItemNode = {
+  ...SerializedElementNode,
   checked: boolean | void,
+  type: 'listitem',
   value: number,
   ...
 };
@@ -104,9 +105,7 @@ export class ListItemNode extends ElementNode {
     };
   }
 
-  static importJSON<SerializedNode>(
-    serializedNode: SerializedListItemNode<SerializedNode>,
-  ): ListItemNode {
+  static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
     const node = new ListItemNode(serializedNode.value, serializedNode.checked);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -114,7 +113,7 @@ export class ListItemNode extends ElementNode {
     return node;
   }
 
-  exportJSON<SerializedNode>(): SerializedListItemNode<SerializedNode> {
+  exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),

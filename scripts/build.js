@@ -12,12 +12,12 @@ const fs = require('fs-extra');
 const path = require('path');
 const argv = require('minimist')(process.argv.slice(2));
 const babel = require('@rollup/plugin-babel').default;
-const closure = require('./plugins/closure-plugin');
 const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
 const replace = require('@rollup/plugin-replace');
 const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
+const compiler = require('@ampproject/rollup-plugin-closure-compiler');
 
 const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -34,7 +34,6 @@ const closureOptions = {
   apply_input_source_maps: false,
   assume_function_wrapper: true,
   compilation_level: 'SIMPLE',
-  env: 'CUSTOM',
   inject_libraries: false,
   language_in: 'ECMASCRIPT_2019',
   language_out: 'ECMASCRIPT_2019',
@@ -254,7 +253,7 @@ async function build(name, inputFile, outputFile, isProd) {
           isWWW && strictWWWMappings,
         ),
       ),
-      isProd && closure(closureOptions),
+      isProd && compiler(closureOptions),
       {
         renderChunk(source) {
           return `${getComment()}
@@ -270,7 +269,7 @@ ${source}`;
     exports: 'auto',
     externalLiveBindings: false,
     file: outputFile,
-    format: 'cjs',
+    format: 'es', // change between es and cjs
     freeze: false,
     interop: false,
   };
@@ -538,7 +537,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalMark',
-        sourceFileName: 'index.ts',
+        sourceFileName: 'index.js',
       },
     ],
     name: 'Lexical Mark',

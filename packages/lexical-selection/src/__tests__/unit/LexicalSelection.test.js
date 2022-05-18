@@ -1764,4 +1764,55 @@ describe('LexicalSelection tests', () => {
       });
     });
   });
+
+  describe('Node.replace', () => {
+    let text1, text2, text3, paragraph, testEditor;
+
+    beforeEach(async () => {
+      testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+      await testEditor.update(() => {
+        const root = $getRoot();
+        paragraph = $createParagraphNode();
+        text1 = $createTextNode('Hello ');
+        text2 = $createTextNode('awesome');
+        text2.toggleFormat('bold');
+        text3 = $createTextNode(' world');
+        paragraph.append(text1, text2, text3);
+        root.append(paragraph);
+      });
+    });
+
+    [
+      {
+        fn: () => {
+          text2.select(1, 1);
+          text2.replace($createTestDecoratorNode());
+          return {key: text3.__key, offset: 0};
+        },
+        name: 'moves selection to to next text node if replacing with decorator',
+      },
+      {
+        fn: () => {
+          text3.replace($createTestDecoratorNode());
+          text2.select(1, 1);
+          text2.replace($createTestDecoratorNode());
+          return {key: paragraph.__key, offset: 2};
+        },
+        name: 'moves selection to parent if next sibling is not a text node',
+      },
+    ].forEach((testCase) => {
+      test(testCase.name, async () => {
+        await testEditor.update(() => {
+          const {key, offset} = testCase.fn();
+          const selection = $getSelection();
+          expect(selection.anchor.key).toBe(key);
+          expect(selection.anchor.offset).toBe(offset);
+          expect(selection.focus.key).toBe(key);
+          expect(selection.focus.offset).toBe(offset);
+        });
+      });
+    });
+  });
 });

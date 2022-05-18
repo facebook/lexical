@@ -77,6 +77,7 @@ import {
   $updateSelectedTextFromDOM,
   $updateTextNodeFromDOMContent,
   dispatchCommand,
+  doesContainGrapheme,
   getDOMTextNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -531,7 +532,10 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     const selection = $getSelection();
     const data = event.data;
     const possibleTextReplacement =
-      event.inputType === 'insertText' && data != null && data.length > 1;
+      event.inputType === 'insertText' &&
+      data != null &&
+      data.length > 1 &&
+      !doesContainGrapheme(data);
 
     if (
       data != null &&

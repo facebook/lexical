@@ -660,8 +660,6 @@ export function $shouldPreventDefaultAndInsertText(
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
-    // If we detect graphemes, it's safer to insert.
-    doesContainGrapheme(text) ||
     // One last set of heuristics to check against.
     $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
   );

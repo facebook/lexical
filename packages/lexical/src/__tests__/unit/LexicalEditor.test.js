@@ -1017,7 +1017,7 @@ describe('LexicalEditor tests', () => {
       const stringifiedEditorState = JSON.stringify(
         editor.getEditorState().unstable_toJSON(),
       );
-      const parsedEditorStateFromObject = editor.parseEditorState(
+      const parsedEditorStateFromObject = editor.unstable_parseEditorState(
         JSON.parse(stringifiedEditorState),
       );
       parsedEditorStateFromObject.read(() => {

@@ -621,6 +621,12 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 
+// This function is used to determine if Lexical should attempt to override
+// the default browser behavior for insertion of text and use its own internal
+// heuristics. This is an extremely important function, and makes much of Lexical
+// work as intended between different browsers and across word, line and character
+// boundary/formats. It also is important for text replacement, node schemas and
+// composition mechanics.
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   text: string,
@@ -638,8 +644,10 @@ export function $shouldPreventDefaultAndInsertText(
     anchorKey !== focus.key ||
     // If we're working with a non-text node.
     !$isTextNode(anchorNode) ||
-    // If we are replacing a range with a single character.
-    (textLength < 2 && anchor.offset !== focus.offset) ||
+    // If we are replacing a range with a single character, and not composing.
+    (textLength < 2 &&
+      anchor.offset !== focus.offset &&
+      !anchorNode.isComposing()) ||
     // Any non standard text node.
     $isTokenOrInertOrSegmented(anchorNode) ||
     // If the text length is more than a single character and we're either

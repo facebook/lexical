@@ -11,17 +11,13 @@ var _page = require("../../page");
 
 var _eventsHelper = require("../../../utils/eventsHelper");
 
-var _debugLogger = require("../../../utils/debugLogger");
+var _debugLogger = require("../../../common/debugLogger");
 
 var _snapshotterInjected = require("./snapshotterInjected");
 
-var _utils = require("../../../utils/utils");
+var _utils = require("../../../utils");
 
-var mime = _interopRequireWildcard(require("mime"));
-
-function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
-
-function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+var _utilsBundle = require("../../../utilsBundle");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -80,7 +76,7 @@ class Snapshotter {
 
     this._eventListeners = [_eventsHelper.eventsHelper.addEventListener(this._context, _browserContext.BrowserContext.Events.Page, this._onPage.bind(this))];
     const initScript = `(${_snapshotterInjected.frameSnapshotStreamer})("${this._snapshotStreamer}")`;
-    await this._context._doAddInitScript(initScript);
+    await this._context.addInitScript(initScript);
     await this._runInAllFrames(initScript);
   }
 
@@ -131,7 +127,7 @@ class Snapshotter {
       } of data.resourceOverrides) {
         if (typeof content === 'string') {
           const buffer = Buffer.from(content);
-          const sha1 = (0, _utils.calculateSha1)(buffer) + '.' + (mime.getExtension(contentType) || 'dat');
+          const sha1 = (0, _utils.calculateSha1)(buffer) + '.' + (_utilsBundle.mime.getExtension(contentType) || 'dat');
 
           this._delegate.onSnapshotterBlob({
             sha1,

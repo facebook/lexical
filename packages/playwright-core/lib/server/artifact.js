@@ -7,9 +7,9 @@ exports.Artifact = void 0;
 
 var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-var _async = require("../utils/async");
+var _manualPromise = require("../utils/manualPromise");
 
 var _instrumentation = require("./instrumentation");
 
@@ -36,7 +36,7 @@ class Artifact extends _instrumentation.SdkObject {
     this._localPath = void 0;
     this._unaccessibleErrorMessage = void 0;
     this._cancelCallback = void 0;
-    this._finishedPromise = new _async.ManualPromise();
+    this._finishedPromise = new _manualPromise.ManualPromise();
     this._saveCallbacks = [];
     this._finished = false;
     this._deleted = false;

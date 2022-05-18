@@ -42,6 +42,13 @@ class Browser extends _instrumentation.SdkObject {
     this.options = options;
   }
 
+  async newContext(metadata, options) {
+    (0, _browserContext.validateBrowserContextOptions)(options, this.options);
+    const context = await this.doCreateNewContext(options);
+    if (options.storageState) await context.setStorageState(metadata, options.storageState);
+    return context;
+  }
+
   _downloadCreated(page, uuid, url, suggestedFilename) {
     const download = new _download.Download(page, this.options.downloadsPath || '', uuid, url, suggestedFilename);
 
@@ -73,10 +80,10 @@ class Browser extends _instrumentation.SdkObject {
       artifact
     });
 
-    context.emit(_browserContext.BrowserContext.Events.VideoStarted, artifact);
     pageOrError.then(page => {
       if (page instanceof _page.Page) {
         page._video = artifact;
+        page.emitOnContext(_browserContext.BrowserContext.Events.VideoStarted, artifact);
         page.emit(_page.Page.Events.Video, artifact);
       }
     });

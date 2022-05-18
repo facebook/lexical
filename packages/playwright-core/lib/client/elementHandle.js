@@ -3,10 +3,10 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.convertSelectOptionValues = convertSelectOptionValues;
-exports.convertInputFiles = convertInputFiles;
-exports.determineScreenshotType = determineScreenshotType;
 exports.ElementHandle = void 0;
+exports.convertInputFiles = convertInputFiles;
+exports.convertSelectOptionValues = convertSelectOptionValues;
+exports.determineScreenshotType = determineScreenshotType;
 
 var _frame = require("./frame");
 
@@ -14,15 +14,21 @@ var _jsHandle = require("./jsHandle");
 
 var _fs = _interopRequireDefault(require("fs"));
 
-var mime = _interopRequireWildcard(require("mime"));
+var _utilsBundle = require("../utilsBundle");
 
 var _path = _interopRequireDefault(require("path"));
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
+var _fileUtils = require("../utils/fileUtils");
 
-function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+var _writableStream = require("./writableStream");
+
+var _stream = require("stream");
+
+var _util = require("util");
+
+var _debugLogger = require("../common/debugLogger");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -41,6 +47,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const pipelineAsync = (0, _util.promisify)(_stream.pipeline);
+
 class ElementHandle extends _jsHandle.JSHandle {
   static from(handle) {
     return handle._object;
@@ -61,193 +69,149 @@ class ElementHandle extends _jsHandle.JSHandle {
   }
 
   async ownerFrame() {
-    return this._wrapApiCall(async channel => {
-      return _frame.Frame.fromNullable((await channel.ownerFrame()).frame);
-    });
+    return _frame.Frame.fromNullable((await this._elementChannel.ownerFrame()).frame);
   }
 
   async contentFrame() {
-    return this._wrapApiCall(async channel => {
-      return _frame.Frame.fromNullable((await channel.contentFrame()).frame);
-    });
+    return _frame.Frame.fromNullable((await this._elementChannel.contentFrame()).frame);
   }
 
   async getAttribute(name) {
-    return this._wrapApiCall(async channel => {
-      const value = (await channel.getAttribute({
-        name
-      })).value;
-      return value === undefined ? null : value;
-    });
+    const value = (await this._elementChannel.getAttribute({
+      name
+    })).value;
+    return value === undefined ? null : value;
   }
 
   async inputValue() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.inputValue()).value;
-    });
+    return (await this._elementChannel.inputValue()).value;
   }
 
   async textContent() {
-    return this._wrapApiCall(async channel => {
-      const value = (await channel.textContent()).value;
-      return value === undefined ? null : value;
-    });
+    const value = (await this._elementChannel.textContent()).value;
+    return value === undefined ? null : value;
   }
 
   async innerText() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.innerText()).value;
-    });
+    return (await this._elementChannel.innerText()).value;
   }
 
   async innerHTML() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.innerHTML()).value;
-    });
+    return (await this._elementChannel.innerHTML()).value;
   }
 
   async isChecked() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isChecked()).value;
-    });
+    return (await this._elementChannel.isChecked()).value;
   }
 
   async isDisabled() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isDisabled()).value;
-    });
+    return (await this._elementChannel.isDisabled()).value;
   }
 
   async isEditable() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isEditable()).value;
-    });
+    return (await this._elementChannel.isEditable()).value;
   }
 
   async isEnabled() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isEnabled()).value;
-    });
+    return (await this._elementChannel.isEnabled()).value;
   }
 
   async isHidden() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isHidden()).value;
-    });
+    return (await this._elementChannel.isHidden()).value;
   }
 
   async isVisible() {
-    return this._wrapApiCall(async channel => {
-      return (await channel.isVisible()).value;
-    });
+    return (await this._elementChannel.isVisible()).value;
   }
 
   async dispatchEvent(type, eventInit = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.dispatchEvent({
-        type,
-        eventInit: (0, _jsHandle.serializeArgument)(eventInit)
-      });
+    await this._elementChannel.dispatchEvent({
+      type,
+      eventInit: (0, _jsHandle.serializeArgument)(eventInit)
     });
   }
 
   async scrollIntoViewIfNeeded(options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.scrollIntoViewIfNeeded(options);
-    });
+    await this._elementChannel.scrollIntoViewIfNeeded(options);
   }
 
   async hover(options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.hover(options);
-    });
+    await this._elementChannel.hover(options);
   }
 
   async click(options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.click(options);
-    });
+    return await this._elementChannel.click(options);
   }
 
   async dblclick(options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.dblclick(options);
-    });
+    return await this._elementChannel.dblclick(options);
   }
 
   async tap(options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.tap(options);
-    });
+    return await this._elementChannel.tap(options);
   }
 
   async selectOption(values, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.selectOption({ ...convertSelectOptionValues(values),
-        ...options
-      });
-      return result.values;
+    const result = await this._elementChannel.selectOption({ ...convertSelectOptionValues(values),
+      ...options
     });
+    return result.values;
   }
 
   async fill(value, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.fill({
-        value,
-        ...options
-      });
+    return await this._elementChannel.fill({
+      value,
+      ...options
     });
   }
 
   async selectText(options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.selectText(options);
-    });
+    await this._elementChannel.selectText(options);
   }
 
   async setInputFiles(files, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.setInputFiles({
-        files: await convertInputFiles(files),
+    const frame = await this.ownerFrame();
+    if (!frame) throw new Error('Cannot set input files to detached element');
+    const converted = await convertInputFiles(files, frame.page().context());
+
+    if (converted.files) {
+      await this._elementChannel.setInputFiles({
+        files: converted.files,
         ...options
       });
-    });
+    } else {
+      _debugLogger.debugLogger.log('api', 'switching to large files mode');
+
+      await this._elementChannel.setInputFilePaths({ ...converted,
+        ...options
+      });
+    }
   }
 
   async focus() {
-    return this._wrapApiCall(async channel => {
-      await channel.focus();
-    });
+    await this._elementChannel.focus();
   }
 
   async type(text, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.type({
-        text,
-        ...options
-      });
+    await this._elementChannel.type({
+      text,
+      ...options
     });
   }
 
   async press(key, options = {}) {
-    return this._wrapApiCall(async channel => {
-      await channel.press({
-        key,
-        ...options
-      });
+    await this._elementChannel.press({
+      key,
+      ...options
     });
   }
 
   async check(options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.check(options);
-    });
+    return await this._elementChannel.check(options);
   }
 
   async uncheck(options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.uncheck(options);
-    });
+    return await this._elementChannel.uncheck(options);
   }
 
   async setChecked(checked, options) {
@@ -255,87 +219,80 @@ class ElementHandle extends _jsHandle.JSHandle {
   }
 
   async boundingBox() {
-    return this._wrapApiCall(async channel => {
-      const value = (await channel.boundingBox()).value;
-      return value === undefined ? null : value;
-    });
+    const value = (await this._elementChannel.boundingBox()).value;
+    return value === undefined ? null : value;
   }
 
   async screenshot(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const copy = { ...options
-      };
-      if (!copy.type) copy.type = determineScreenshotType(options);
-      const result = await channel.screenshot(copy);
-      const buffer = Buffer.from(result.binary, 'base64');
+    const copy = { ...options,
+      mask: undefined
+    };
+    if (!copy.type) copy.type = determineScreenshotType(options);
 
-      if (options.path) {
-        await (0, _utils.mkdirIfNeeded)(options.path);
-        await _fs.default.promises.writeFile(options.path, buffer);
-      }
+    if (options.mask) {
+      copy.mask = options.mask.map(locator => ({
+        frame: locator._frame._channel,
+        selector: locator._selector
+      }));
+    }
 
-      return buffer;
-    });
+    const result = await this._elementChannel.screenshot(copy);
+    const buffer = Buffer.from(result.binary, 'base64');
+
+    if (options.path) {
+      await (0, _fileUtils.mkdirIfNeeded)(options.path);
+      await _fs.default.promises.writeFile(options.path, buffer);
+    }
+
+    return buffer;
   }
 
   async $(selector) {
-    return this._wrapApiCall(async channel => {
-      return ElementHandle.fromNullable((await channel.querySelector({
-        selector
-      })).element);
-    });
+    return ElementHandle.fromNullable((await this._elementChannel.querySelector({
+      selector
+    })).element);
   }
 
   async $$(selector) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.querySelectorAll({
-        selector
-      });
-      return result.elements.map(h => ElementHandle.from(h));
+    const result = await this._elementChannel.querySelectorAll({
+      selector
     });
+    return result.elements.map(h => ElementHandle.from(h));
   }
 
   async $eval(selector, pageFunction, arg) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evalOnSelector({
-        selector,
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return (0, _jsHandle.parseResult)(result.value);
+    const result = await this._elementChannel.evalOnSelector({
+      selector,
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return (0, _jsHandle.parseResult)(result.value);
   }
 
   async $$eval(selector, pageFunction, arg) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evalOnSelectorAll({
-        selector,
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return (0, _jsHandle.parseResult)(result.value);
+    const result = await this._elementChannel.evalOnSelectorAll({
+      selector,
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return (0, _jsHandle.parseResult)(result.value);
   }
 
   async waitForElementState(state, options = {}) {
-    return this._wrapApiCall(async channel => {
-      return await channel.waitForElementState({
-        state,
-        ...options
-      });
+    return await this._elementChannel.waitForElementState({
+      state,
+      ...options
     });
   }
 
   async waitForSelector(selector, options = {}) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.waitForSelector({
-        selector,
-        ...options
-      });
-      return ElementHandle.fromNullable(result.element);
+    const result = await this._elementChannel.waitForSelector({
+      selector,
+      ...options
     });
+    return ElementHandle.fromNullable(result.element);
   }
 
 }
@@ -362,8 +319,39 @@ function convertSelectOptionValues(values) {
   };
 }
 
-async function convertInputFiles(files) {
-  const items = Array.isArray(files) ? files : [files];
+async function convertInputFiles(files, context) {
+  const items = Array.isArray(files) ? files.slice() : [files];
+  const sizeLimit = 50 * 1024 * 1024;
+  const hasLargeBuffer = items.find(item => typeof item === 'object' && item.buffer && item.buffer.byteLength > sizeLimit);
+  if (hasLargeBuffer) throw new Error('Cannot set buffer larger than 50Mb, please write it to a file and pass its path instead.');
+  const stats = await Promise.all(items.filter(_utils.isString).map(item => _fs.default.promises.stat(item)));
+  const hasLargeFile = !!stats.find(s => s.size > sizeLimit);
+
+  if (hasLargeFile) {
+    if (context._connection.isRemote()) {
+      const streams = await Promise.all(items.map(async item => {
+        (0, _utils.assert)((0, _utils.isString)(item));
+        const {
+          writableStream: stream
+        } = await context._channel.createTempFile({
+          name: _path.default.basename(item)
+        });
+
+        const writable = _writableStream.WritableStream.from(stream);
+
+        await pipelineAsync(_fs.default.createReadStream(item), writable.stream());
+        return stream;
+      }));
+      return {
+        streams
+      };
+    }
+
+    return {
+      localPaths: items.map(f => _path.default.resolve(f))
+    };
+  }
+
   const filePayloads = await Promise.all(items.map(async item => {
     if (typeof item === 'string') {
       return {
@@ -378,12 +366,15 @@ async function convertInputFiles(files) {
       };
     }
   }));
-  return filePayloads;
+  return {
+    files: filePayloads
+  };
 }
 
 function determineScreenshotType(options) {
   if (options.path) {
-    const mimeType = mime.getType(options.path);
+    const mimeType = _utilsBundle.mime.getType(options.path);
+
     if (mimeType === 'image/png') return 'png';else if (mimeType === 'image/jpeg') return 'jpeg';
     throw new Error(`path: unsupported mime type "${mimeType}"`);
   }

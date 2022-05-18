@@ -3,21 +3,14 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createInstrumentation = createInstrumentation;
-exports.internalCallMetadata = internalCallMetadata;
-Object.defineProperty(exports, "CallMetadata", {
-  enumerable: true,
-  get: function () {
-    return _callMetadata.CallMetadata;
-  }
-});
 exports.SdkObject = void 0;
+exports.createInstrumentation = createInstrumentation;
+exports.kTestSdkObjects = void 0;
+exports.serverSideCallMetadata = serverSideCallMetadata;
 
 var _events = require("events");
 
-var _utils = require("../utils/utils");
-
-var _callMetadata = require("../protocol/callMetadata");
+var _utils = require("../utils");
 
 /**
  * Copyright (c) Microsoft Corporation. All rights reserved.
@@ -34,6 +27,9 @@ var _callMetadata = require("../protocol/callMetadata");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const kTestSdkObjects = new WeakSet();
+exports.kTestSdkObjects = kTestSdkObjects;
+
 class SdkObject extends _events.EventEmitter {
   constructor(parent, guidPrefix, guid) {
     super();
@@ -45,6 +41,7 @@ class SdkObject extends _events.EventEmitter {
     this.attribution = { ...parent.attribution
     };
     this.instrumentation = parent.instrumentation;
+    if (process.env._PW_INTERNAL_COUNT_SDK_OBJECTS) kTestSdkObjects.add(this);
   }
 
 }
@@ -52,24 +49,24 @@ class SdkObject extends _events.EventEmitter {
 exports.SdkObject = SdkObject;
 
 function createInstrumentation() {
-  const listeners = [];
+  const listeners = new Map();
   return new Proxy({}, {
     get: (obj, prop) => {
-      if (prop === 'addListener') return listener => listeners.push(listener);
-      if (prop === 'removeListener') return listener => listeners.splice(listeners.indexOf(listener), 1);
+      if (prop === 'addListener') return (listener, context) => listeners.set(listener, context);
+      if (prop === 'removeListener') return listener => listeners.delete(listener);
       if (!prop.startsWith('on')) return obj[prop];
-      return async (...params) => {
-        for (const listener of listeners) {
+      return async (sdkObject, ...params) => {
+        for (const [listener, context] of listeners) {
           var _prop, _ref;
 
-          await ((_prop = (_ref = listener)[prop]) === null || _prop === void 0 ? void 0 : _prop.call(_ref, ...params));
+          if (!context || sdkObject.attribution.context === context) await ((_prop = (_ref = listener)[prop]) === null || _prop === void 0 ? void 0 : _prop.call(_ref, sdkObject, ...params));
         }
       };
     }
   });
 }
 
-function internalCallMetadata() {
+function serverSideCallMetadata() {
   return {
     id: '',
     wallTime: 0,
@@ -79,6 +76,7 @@ function internalCallMetadata() {
     method: '',
     params: {},
     log: [],
-    snapshots: []
+    snapshots: [],
+    isServerSide: true
   };
 }

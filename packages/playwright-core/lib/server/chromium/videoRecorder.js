@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.VideoRecorder = void 0;
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _page = require("../page");
 
@@ -35,7 +35,7 @@ const fps = 25;
 class VideoRecorder {
   static async launch(page, ffmpegPath, options) {
     if (!options.outputFile.endsWith('.webm')) throw new Error('File must have .webm extension');
-    const controller = new _progress.ProgressController((0, _instrumentation.internalCallMetadata)(), page);
+    const controller = new _progress.ProgressController((0, _instrumentation.serverSideCallMetadata)(), page);
     controller.setLogName('browser');
     return await controller.run(async progress => {
       const recorder = new VideoRecorder(page, ffmpegPath, progress);

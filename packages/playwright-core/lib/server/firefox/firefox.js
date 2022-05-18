@@ -17,6 +17,10 @@ var _ffConnection = require("./ffConnection");
 
 var _browserType = require("../browserType");
 
+var _stackTrace = require("../../utils/stackTrace");
+
+var _utils = require("../../utils");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
@@ -49,6 +53,7 @@ class Firefox extends _browserType.BrowserType {
   }
 
   _rewriteStartupError(error) {
+    if (error.message.includes('no DISPLAY environment variable specified')) return (0, _stackTrace.rewriteErrorMessage)(error, '\n' + (0, _utils.wrapInASCIIBox)(_browserType.kNoXServerRunningError, 1));
     return error;
   }
 
@@ -77,10 +82,8 @@ class Firefox extends _browserType.BrowserType {
   _defaultArgs(options, isPersistent, userDataDir) {
     const {
       args = [],
-      devtools,
       headless
     } = options;
-    if (devtools) console.warn('devtools parameter is not supported as a launch argument in Firefox. You can launch the devtools window manually.');
     const userDataDirArg = args.find(arg => arg.startsWith('-profile') || arg.startsWith('--profile'));
     if (userDataDirArg) throw new Error('Pass userDataDir parameter to `browserType.launchPersistentContext(userDataDir, ...)` instead of specifying --profile argument');
     if (args.find(arg => arg.startsWith('-juggler'))) throw new Error('Use the port parameter instead of -juggler argument');

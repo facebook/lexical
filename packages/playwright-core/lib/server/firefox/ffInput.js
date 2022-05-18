@@ -111,13 +111,13 @@ class RawMouseImpl {
     this._client = client;
   }
 
-  async move(x, y, button, buttons, modifiers) {
+  async move(x, y, button, buttons, modifiers, forClick) {
     await this._client.send('Page.dispatchMouseEvent', {
       type: 'mousemove',
       button: 0,
       buttons: toButtonsMask(buttons),
-      x,
-      y,
+      x: Math.floor(x),
+      y: Math.floor(y),
       modifiers: toModifiersMask(modifiers)
     });
   }
@@ -127,8 +127,8 @@ class RawMouseImpl {
       type: 'mousedown',
       button: toButtonNumber(button),
       buttons: toButtonsMask(buttons),
-      x,
-      y,
+      x: Math.floor(x),
+      y: Math.floor(y),
       modifiers: toModifiersMask(modifiers),
       clickCount
     });
@@ -139,8 +139,8 @@ class RawMouseImpl {
       type: 'mouseup',
       button: toButtonNumber(button),
       buttons: toButtonsMask(buttons),
-      x,
-      y,
+      x: Math.floor(x),
+      y: Math.floor(y),
       modifiers: toModifiersMask(modifiers),
       clickCount
     });
@@ -152,8 +152,8 @@ class RawMouseImpl {
     await this._client.send('Page.dispatchWheelEvent', {
       deltaX,
       deltaY,
-      x,
-      y,
+      x: Math.floor(x),
+      y: Math.floor(y),
       deltaZ: 0,
       modifiers: toModifiersMask(modifiers)
     });

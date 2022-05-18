@@ -25,7 +25,7 @@ var _os = _interopRequireDefault(require("os"));
 
 var _path = _interopRequireDefault(require("path"));
 
-var _commander = require("commander");
+var _utilsBundle = require("../utilsBundle");
 
 var _driver = require("./driver");
 
@@ -35,13 +35,17 @@ var playwright = _interopRequireWildcard(require("../.."));
 
 var _child_process = require("child_process");
 
-var _registry = require("../utils/registry");
+var _userAgent = require("../common/userAgent");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
+
+var _spawnAsync = require("../utils/spawnAsync");
 
 var _gridAgent = require("../grid/gridAgent");
 
 var _gridServer = require("../grid/gridServer");
+
+var _server = require("../server");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -51,7 +55,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const packageJSON = require('../../package.json');
 
-_commander.program.version('Version ' + packageJSON.version).name(process.env.PW_CLI_NAME || 'npx playwright');
+_utilsBundle.program.version('Version ' + (process.env.PW_CLI_DISPLAY_VERSION || packageJSON.version)).name(buildBasePlaywrightCLICommand(process.env.PW_LANG_NAME));
+
+_utilsBundle.program.command('mark-docker-image [dockerImageNameTemplate]', {
+  hidden: true
+}).description('mark docker image').allowUnknownOption(true).action(function (dockerImageNameTemplate) {
+  (0, _utils.assert)(dockerImageNameTemplate, 'dockerImageNameTemplate is required');
+  (0, _server.writeDockerVersion)(dockerImageNameTemplate).catch(logErrorAndExit);
+});
 
 commandWithOpenOptions('open [url]', 'open page in browser specified via -b, --browser', []).action(function (url, options) {
   open(options, url, language()).catch(logErrorAndExit);
@@ -68,7 +79,7 @@ Examples:
   $ codegen --target=python
   $ codegen -b webkit https://example.com`);
 
-_commander.program.command('debug <app> [args...]', {
+_utilsBundle.program.command('debug <app> [args...]', {
   hidden: true
 }).description('run command in debug mode: disable timeout, open inspector').allowUnknownOption(true).action(function (app, options) {
   (0, _child_process.spawn)(app, options, {
@@ -84,7 +95,7 @@ Examples:
   $ debug npm run test`);
 
 function suggestedBrowsersToInstall() {
-  return _registry.registry.executables().filter(e => e.installType !== 'none' && e.type !== 'tool').map(e => e.name).join(', ');
+  return _server.registry.executables().filter(e => e.installType !== 'none' && e.type !== 'tool').map(e => e.name).join(', ');
 }
 
 function checkBrowsersToInstall(args) {
@@ -92,7 +103,7 @@ function checkBrowsersToInstall(args) {
   const executables = [];
 
   for (const arg of args) {
-    const executable = _registry.registry.findExecutable(arg);
+    const executable = _server.registry.findExecutable(arg);
 
     if (!executable || executable.installType === 'none') faultyArguments.push(arg);else executables.push(executable);
   }
@@ -105,22 +116,28 @@ function checkBrowsersToInstall(args) {
   return executables;
 }
 
-_commander.program.command('install [browser...]').description('ensure browsers necessary for this version of Playwright are installed').option('--with-deps', 'install system dependencies for browsers').action(async function (args, options) {
+_utilsBundle.program.command('install [browser...]').description('ensure browsers necessary for this version of Playwright are installed').option('--with-deps', 'install system dependencies for browsers').option('--force', 'force reinstall of stable browser channels').action(async function (args, options) {
+  if ((0, _utils.isLikelyNpxGlobal)()) {
+    console.error((0, _utils.wrapInASCIIBox)([`WARNING: It looks like you are running 'npx playwright install' without first`, `installing your project's dependencies.`, ``, `To avoid unexpected behavior, please install your dependencies first, and`, `then run Playwright's install command:`, ``, `    npm install`, `    npx playwright install`, ``, `If your project does not yet depend on Playwright, first install the`, `applicable npm package (most commonly @playwright/test), and`, `then run Playwright's install command to download the browsers:`, ``, `    npm install @playwright/test`, `    npx playwright install`, ``].join('\n'), 1));
+  }
+
   try {
     if (!args.length) {
-      const executables = _registry.registry.defaultExecutables();
+      const executables = _server.registry.defaultExecutables();
 
-      if (options.withDeps) await _registry.registry.installDeps(executables);
-      await _registry.registry.install(executables);
+      if (options.withDeps) await _server.registry.installDeps(executables, false);
+      await _server.registry.install(executables, false
+      /* forceReinstall */
+      );
     } else {
       const installDockerImage = args.some(arg => arg === 'docker-image');
       args = args.filter(arg => arg !== 'docker-image');
 
       if (installDockerImage) {
-        const imageName = `mcr.microsoft.com/playwright:v${(0, _utils.getPlaywrightVersion)()}-focal`;
+        const imageName = `mcr.microsoft.com/playwright:v${(0, _userAgent.getPlaywrightVersion)()}-focal`;
         const {
           code
-        } = await (0, _utils.spawnAsync)('docker', ['pull', imageName], {
+        } = await (0, _spawnAsync.spawnAsync)('docker', ['pull', imageName], {
           stdio: 'inherit'
         });
 
@@ -131,8 +148,10 @@ _commander.program.command('install [browser...]').description('ensure browsers 
       }
 
       const executables = checkBrowsersToInstall(args);
-      if (options.withDeps) await _registry.registry.installDeps(executables);
-      await _registry.registry.install(executables);
+      if (options.withDeps) await _server.registry.installDeps(executables, false);
+      await _server.registry.install(executables, !!options.force
+      /* forceReinstall */
+      );
     }
   } catch (e) {
     console.log(`Failed to install browsers\n${e}`);
@@ -147,9 +166,9 @@ Examples:
   - $ install chrome firefox
     Install custom browsers, supports ${suggestedBrowsersToInstall()}.`);
 
-_commander.program.command('install-deps [browser...]').description('install dependencies necessary to run browsers (will ask for sudo permissions)').action(async function (args) {
+_utilsBundle.program.command('install-deps [browser...]').description('install dependencies necessary to run browsers (will ask for sudo permissions)').option('--dry-run', 'Do not execute installation commands, only print them').action(async function (args, options) {
   try {
-    if (!args.length) await _registry.registry.installDeps(_registry.registry.defaultExecutables());else await _registry.registry.installDeps(checkBrowsersToInstall(args));
+    if (!args.length) await _server.registry.installDeps(_server.registry.defaultExecutables(), !!options.dryRun);else await _server.registry.installDeps(checkBrowsersToInstall(args), !!options.dryRun);
   } catch (e) {
     console.log(`Failed to install browser dependencies\n${e}`);
     process.exit(1);
@@ -204,29 +223,53 @@ Examples:
 
   $ pdf https://example.com example.pdf`);
 
-_commander.program.command('experimental-grid-server', {
+_utilsBundle.program.command('experimental-grid-server', {
   hidden: true
-}).option('--port <port>', 'grid port; defaults to 3333').option('--agent-factory <factory>', 'path to grid agent factory or npm package').option('--auth-token <authToken>', 'optional authentication token').action(function (options) {
-  launchGridServer(options.agentFactory, options.port || 3333, options.authToken);
+}).option('--port <port>', 'grid port; defaults to 3333').option('--address <address>', 'address of the server').option('--agent-factory <factory>', 'path to grid agent factory or npm package').option('--auth-token <authToken>', 'optional authentication token').action(function (options) {
+  launchGridServer(options.agentFactory, options.port || 3333, options.address, options.authToken);
 });
 
-_commander.program.command('experimental-grid-agent', {
+_utilsBundle.program.command('experimental-grid-agent', {
   hidden: true
-}).requiredOption('--agent-id <agentId>', 'agent ID').requiredOption('--grid-url <gridURL>', 'grid URL').action(function (options) {
-  (0, _gridAgent.launchGridAgent)(options.agentId, options.gridUrl);
+}).requiredOption('--agent-id <agentId>', 'agent ID').requiredOption('--grid-url <gridURL>', 'grid URL').option('--run-id <github run_id>', 'Workflow run_id').action(function (options) {
+  (0, _gridAgent.launchGridAgent)(options.agentId, options.gridUrl, options.runId);
 });
 
-_commander.program.command('show-trace [trace]').option('-b, --browser <browserType>', 'browser to use, one of cr, chromium, ff, firefox, wk, webkit', 'chromium').description('Show trace viewer').action(function (trace, options) {
+_utilsBundle.program.command('run-driver', {
+  hidden: true
+}).action(function (options) {
+  (0, _driver.runDriver)();
+});
+
+_utilsBundle.program.command('run-server', {
+  hidden: true
+}).option('--port <port>', 'Server port').option('--path <path>', 'Endpoint Path', '/').option('--max-clients <maxClients>', 'Maximum clients').option('--no-socks-proxy', 'Disable Socks Proxy').action(function (options) {
+  (0, _driver.runServer)(options.port ? +options.port : undefined, options.path, options.maxClients ? +options.maxClients : Infinity, options.socksProxy).catch(logErrorAndExit);
+});
+
+_utilsBundle.program.command('print-api-json', {
+  hidden: true
+}).action(function (options) {
+  (0, _driver.printApiJson)();
+});
+
+_utilsBundle.program.command('launch-server', {
+  hidden: true
+}).requiredOption('--browser <browserName>', 'Browser name, one of "chromium", "firefox" or "webkit"').option('--config <path-to-config-file>', 'JSON file with launchServer options').action(function (options) {
+  (0, _driver.launchBrowserServer)(options.browser, options.config);
+});
+
+_utilsBundle.program.command('show-trace [trace...]').option('-b, --browser <browserType>', 'browser to use, one of cr, chromium, ff, firefox, wk, webkit', 'chromium').description('Show trace viewer').action(function (traces, options) {
   if (options.browser === 'cr') options.browser = 'chromium';
   if (options.browser === 'ff') options.browser = 'firefox';
   if (options.browser === 'wk') options.browser = 'webkit';
-  (0, _traceViewer.showTraceViewer)(trace, options.browser, false, 9322).catch(logErrorAndExit);
+  (0, _traceViewer.showTraceViewer)(traces, options.browser, false, 9322).catch(logErrorAndExit);
 }).addHelpText('afterAll', `
 Examples:
 
   $ show-trace https://example.com/trace.zip`);
 
-if (!process.env.PW_CLI_TARGET_LANG) {
+if (!process.env.PW_LANG_NAME) {
   let playwrightTestPackagePath = null;
 
   try {
@@ -236,12 +279,14 @@ if (!process.env.PW_CLI_TARGET_LANG) {
   } catch {}
 
   if (playwrightTestPackagePath) {
-    require(playwrightTestPackagePath).addTestCommand(_commander.program);
+    require(playwrightTestPackagePath).addTestCommand(_utilsBundle.program);
 
-    require(playwrightTestPackagePath).addShowReportCommand(_commander.program);
+    require(playwrightTestPackagePath).addShowReportCommand(_utilsBundle.program);
+
+    require(playwrightTestPackagePath).addListFilesCommand(_utilsBundle.program);
   } else {
     {
-      const command = _commander.program.command('test').allowUnknownOption(true);
+      const command = _utilsBundle.program.command('test').allowUnknownOption(true);
 
       command.description('Run tests with Playwright Test. Available in @playwright/test package.');
       command.action(async () => {
@@ -251,7 +296,7 @@ if (!process.env.PW_CLI_TARGET_LANG) {
       });
     }
     {
-      const command = _commander.program.command('show-report').allowUnknownOption(true);
+      const command = _utilsBundle.program.command('show-report').allowUnknownOption(true);
 
       command.description('Show Playwright Test HTML report. Available in @playwright/test package.');
       command.action(async () => {
@@ -263,7 +308,7 @@ if (!process.env.PW_CLI_TARGET_LANG) {
   }
 }
 
-if (process.argv[2] === 'run-driver') (0, _driver.runDriver)();else if (process.argv[2] === 'run-server') (0, _driver.runServer)(process.argv[3] ? +process.argv[3] : undefined).catch(logErrorAndExit);else if (process.argv[2] === 'print-api-json') (0, _driver.printApiJson)();else if (process.argv[2] === 'launch-server') (0, _driver.launchBrowserServer)(process.argv[3], process.argv[4]).catch(logErrorAndExit);else _commander.program.parse(process.argv);
+_utilsBundle.program.parse(process.argv);
 
 async function launchContext(options, headless, executablePath) {
   validateOptions(options);
@@ -286,13 +331,13 @@ async function launchContext(options, headless, executablePath) {
     delete contextOptions.isMobile;
   }
 
-  if (contextOptions.isMobile && browserType.name() === 'firefox') contextOptions.isMobile = undefined;
-  contextOptions.acceptDownloads = true; // Proxy
+  if (contextOptions.isMobile && browserType.name() === 'firefox') contextOptions.isMobile = undefined; // Proxy
 
   if (options.proxyServer) {
     launchOptions.proxy = {
       server: options.proxyServer
     };
+    if (options.proxyBypass) launchOptions.proxy.bypass = options.proxyBypass;
   }
 
   const browser = await browserType.launch(launchOptions); // Viewport size
@@ -379,7 +424,6 @@ async function launchContext(options, headless, executablePath) {
   delete launchOptions.headless;
   delete launchOptions.executablePath;
   delete contextOptions.deviceScaleFactor;
-  delete contextOptions.acceptDownloads;
   return {
     browser,
     browserName: browserType.name(),
@@ -524,7 +568,9 @@ function lookupBrowserType(options) {
 
   if (browserType) return browserType;
 
-  _commander.program.help();
+  _utilsBundle.program.help();
+
+  process.exit(1);
 }
 
 function validateOptions(options) {
@@ -548,18 +594,18 @@ function logErrorAndExit(e) {
 }
 
 function language() {
-  return process.env.PW_CLI_TARGET_LANG || 'test';
+  return process.env.PW_LANG_NAME || 'test';
 }
 
 function commandWithOpenOptions(command, description, options) {
-  let result = _commander.program.command(command).description(description);
+  let result = _utilsBundle.program.command(command).description(description);
 
   for (const option of options) result = result.option(option[0], ...option.slice(1));
 
-  return result.option('-b, --browser <browserType>', 'browser to use, one of cr, chromium, ff, firefox, wk, webkit', 'chromium').option('--channel <channel>', 'Chromium distribution channel, "chrome", "chrome-beta", "msedge-dev", etc').option('--color-scheme <scheme>', 'emulate preferred color scheme, "light" or "dark"').option('--device <deviceName>', 'emulate device, for example  "iPhone 11"').option('--geolocation <coordinates>', 'specify geolocation coordinates, for example "37.819722,-122.478611"').option('--ignore-https-errors', 'ignore https errors').option('--load-storage <filename>', 'load context storage state from the file, previously saved with --save-storage').option('--lang <language>', 'specify language / locale, for example "en-GB"').option('--proxy-server <proxy>', 'specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"').option('--save-storage <filename>', 'save context storage state at the end, for later use with --load-storage').option('--save-trace <filename>', 'record a trace for the session and save it to a file').option('--timezone <time zone>', 'time zone to emulate, for example "Europe/Rome"').option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds', '10000').option('--user-agent <ua string>', 'specify user agent string').option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280, 720"');
+  return result.option('-b, --browser <browserType>', 'browser to use, one of cr, chromium, ff, firefox, wk, webkit', 'chromium').option('--channel <channel>', 'Chromium distribution channel, "chrome", "chrome-beta", "msedge-dev", etc').option('--color-scheme <scheme>', 'emulate preferred color scheme, "light" or "dark"').option('--device <deviceName>', 'emulate device, for example  "iPhone 11"').option('--geolocation <coordinates>', 'specify geolocation coordinates, for example "37.819722,-122.478611"').option('--ignore-https-errors', 'ignore https errors').option('--load-storage <filename>', 'load context storage state from the file, previously saved with --save-storage').option('--lang <language>', 'specify language / locale, for example "en-GB"').option('--proxy-server <proxy>', 'specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"').option('--proxy-bypass <bypass>', 'comma-separated domains to bypass proxy, for example ".com,chromium.org,.domain.com"').option('--save-storage <filename>', 'save context storage state at the end, for later use with --load-storage').option('--save-trace <filename>', 'record a trace for the session and save it to a file').option('--timezone <time zone>', 'time zone to emulate, for example "Europe/Rome"').option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds', '10000').option('--user-agent <ua string>', 'specify user agent string').option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280, 720"');
 }
 
-async function launchGridServer(factoryPathOrPackageName, port, authToken) {
+async function launchGridServer(factoryPathOrPackageName, port, address, authToken) {
   if (!factoryPathOrPackageName) factoryPathOrPackageName = _path.default.join('..', 'grid', 'simpleGridFactory');
   let factory;
 
@@ -572,7 +618,23 @@ async function launchGridServer(factoryPathOrPackageName, port, authToken) {
   if (factory && typeof factory === 'object' && 'default' in factory) factory = factory['default'];
   if (!factory || !factory.launch || typeof factory.launch !== 'function') throw new Error('factory does not export `launch` method');
   factory.name = factory.name || factoryPathOrPackageName;
-  const gridServer = new _gridServer.GridServer(factory, authToken);
+  const gridServer = new _gridServer.GridServer(factory, authToken, address);
   await gridServer.start(port);
-  console.log('Grid server is running at ' + gridServer.urlPrefix());
+  console.log('Grid server is running at ' + gridServer.gridURL());
+}
+
+function buildBasePlaywrightCLICommand(cliTargetLang) {
+  switch (cliTargetLang) {
+    case 'python':
+      return `playwright`;
+
+    case 'java':
+      return `mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="...options.."`;
+
+    case 'csharp':
+      return `pwsh bin\\Debug\\netX\\playwright.ps1`;
+
+    default:
+      return `npx playwright`;
+  }
 }

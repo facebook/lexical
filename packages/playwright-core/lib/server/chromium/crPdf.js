@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.CRPDF = void 0;
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _crProtocolHelper = require("./crProtocolHelper");
 

@@ -51,26 +51,22 @@ class Worker extends _channelOwner.ChannelOwner {
 
   async evaluate(pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 2);
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evaluateExpression({
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return (0, _jsHandle.parseResult)(result.value);
+    const result = await this._channel.evaluateExpression({
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return (0, _jsHandle.parseResult)(result.value);
   }
 
   async evaluateHandle(pageFunction, arg) {
     (0, _jsHandle.assertMaxArguments)(arguments.length, 2);
-    return this._wrapApiCall(async channel => {
-      const result = await channel.evaluateExpressionHandle({
-        expression: String(pageFunction),
-        isFunction: typeof pageFunction === 'function',
-        arg: (0, _jsHandle.serializeArgument)(arg)
-      });
-      return _jsHandle.JSHandle.from(result.handle);
+    const result = await this._channel.evaluateExpressionHandle({
+      expression: String(pageFunction),
+      isFunction: typeof pageFunction === 'function',
+      arg: (0, _jsHandle.serializeArgument)(arg)
     });
+    return _jsHandle.JSHandle.from(result.handle);
   }
 
 }

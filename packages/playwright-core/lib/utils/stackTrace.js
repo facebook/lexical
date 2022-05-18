@@ -3,15 +3,17 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.rewriteErrorMessage = rewriteErrorMessage;
+exports.captureRawStack = captureRawStack;
 exports.captureStackTrace = captureStackTrace;
+exports.isInternalFileName = isInternalFileName;
+exports.rewriteErrorMessage = rewriteErrorMessage;
 exports.splitErrorMessage = splitErrorMessage;
 
 var _path = _interopRequireDefault(require("path"));
 
-var _stackUtils = _interopRequireDefault(require("stack-utils"));
+var _utilsBundle = require("../utilsBundle");
 
-var _utils = require("./utils");
+var _ = require("./");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -30,7 +32,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const stackUtils = new _stackUtils.default();
+const stackUtils = new _utilsBundle.StackUtils();
 
 function rewriteErrorMessage(e, newMessage) {
   var _e$stack;
@@ -44,40 +46,47 @@ function rewriteErrorMessage(e, newMessage) {
 
 const CORE_DIR = _path.default.resolve(__dirname, '..', '..');
 
-const CLIENT_LIB = _path.default.join(CORE_DIR, 'lib', 'client');
+const CORE_LIB = _path.default.join(CORE_DIR, 'lib');
 
-const CLIENT_SRC = _path.default.join(CORE_DIR, 'src', 'client');
+const CORE_SRC = _path.default.join(CORE_DIR, 'src');
 
 const TEST_DIR_SRC = _path.default.resolve(CORE_DIR, '..', 'playwright-test');
 
 const TEST_DIR_LIB = _path.default.resolve(CORE_DIR, '..', '@playwright', 'test');
 
-const WS_LIB = _path.default.relative(process.cwd(), _path.default.dirname(require.resolve('ws')));
+const COVERAGE_PATH = _path.default.join(CORE_DIR, '..', '..', 'tests', 'config', 'coverage.js');
 
-function captureStackTrace() {
+function captureRawStack() {
   const stackTraceLimit = Error.stackTraceLimit;
   Error.stackTraceLimit = 30;
   const error = new Error();
   const stack = error.stack;
   Error.stackTraceLimit = stackTraceLimit;
-  const isTesting = (0, _utils.isUnderTest)();
+  return stack;
+}
+
+function isInternalFileName(file, functionName) {
+  // Node 16+ has node:internal.
+  if (file.startsWith('internal') || file.startsWith('node:')) return true; // EventEmitter.emit has 'events.js' file.
+
+  if (file === 'events.js' && functionName !== null && functionName !== void 0 && functionName.endsWith('emit')) return true; // Node 12
+
+  if (file === '_stream_readable.js' || file === '_stream_writable.js') return true;
+  return false;
+}
+
+function captureStackTrace(rawStack) {
+  const stack = rawStack || captureRawStack();
+  const isTesting = (0, _.isUnderTest)();
   let parsedFrames = stack.split('\n').map(line => {
-    var _frame$function;
-
     const frame = stackUtils.parseLine(line);
-    if (!frame || !frame.file) return null; // Node 16+ has node:internal.
+    if (!frame || !frame.file) return null;
+    if (isInternalFileName(frame.file, frame.function)) return null; // Workaround for https://github.com/tapjs/stack-utils/issues/60
 
-    if (frame.file.startsWith('internal') || frame.file.startsWith('node:')) return null; // EventEmitter.emit has 'events.js' file.
-
-    if (frame.file === 'events.js' && (_frame$function = frame.function) !== null && _frame$function !== void 0 && _frame$function.endsWith('.emit')) return null; // Node 12
-
-    if (frame.file === '_stream_readable.js' || frame.file === '_stream_writable.js') return null;
-    if (frame.file.startsWith(WS_LIB)) return null;
-
-    const fileName = _path.default.resolve(process.cwd(), frame.file);
-
-    if (isTesting && fileName.includes(_path.default.join('playwright', 'tests', 'config', 'coverage.js'))) return null;
-    const inClient = fileName.startsWith(CLIENT_LIB) || fileName.startsWith(CLIENT_SRC);
+    let fileName;
+    if (frame.file.startsWith('file://')) fileName = new URL(frame.file).pathname;else fileName = _path.default.resolve(process.cwd(), frame.file);
+    if (isTesting && fileName.includes(COVERAGE_PATH)) return null;
+    const inCore = fileName.startsWith(CORE_LIB) || fileName.startsWith(CORE_SRC);
     const parsed = {
       frame: {
         file: fileName,
@@ -86,35 +95,28 @@ function captureStackTrace() {
         function: frame.function
       },
       frameText: line,
-      inClient
+      inCore
     };
     return parsed;
   }).filter(Boolean);
   let apiName = '';
-  const allFrames = parsedFrames; // expect matchers have the following stack structure:
-  // at Object.__PWTRAP__[expect.toHaveText] (...)
-  // at __EXTERNAL_MATCHER_TRAP__ (...)
-  // at Object.throwingMatcher [as toHaveText] (...)
+  const allFrames = parsedFrames; // Deepest transition between non-client code calling into client code
+  // is the api entry.
 
-  const TRAP = '__PWTRAP__[';
-  const expectIndex = parsedFrames.findIndex(f => f.frameText.includes(TRAP));
-
-  if (expectIndex !== -1) {
-    const text = parsedFrames[expectIndex].frameText;
-    const aliasIndex = text.indexOf(TRAP);
-    apiName = text.substring(aliasIndex + TRAP.length, text.indexOf(']'));
-    parsedFrames = parsedFrames.slice(expectIndex + 3);
-  } else {
-    // Deepest transition between non-client code calling into client code
-    // is the api entry.
-    for (let i = 0; i < parsedFrames.length - 1; i++) {
-      if (parsedFrames[i].inClient && !parsedFrames[i + 1].inClient) {
-        const frame = parsedFrames[i].frame;
-        apiName = frame.function ? frame.function[0].toLowerCase() + frame.function.slice(1) : '';
-        parsedFrames = parsedFrames.slice(i + 1);
-        break;
-      }
+  for (let i = 0; i < parsedFrames.length - 1; i++) {
+    if (parsedFrames[i].inCore && !parsedFrames[i + 1].inCore) {
+      const frame = parsedFrames[i].frame;
+      apiName = normalizeAPIName(frame.function);
+      parsedFrames = parsedFrames.slice(i + 1);
+      break;
     }
+  }
+
+  function normalizeAPIName(name) {
+    if (!name) return '';
+    const match = name.match(/(API|JS|CDP|[A-Z])(.*)/);
+    if (!match) return name;
+    return match[1].toLowerCase() + match[2];
   } // Hide all test runner and library frames in the user stack (event handlers produce them).
 
 

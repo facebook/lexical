@@ -39,7 +39,9 @@ var _electron = require("./electron");
 
 var _stream = require("./stream");
 
-var _debugLogger = require("../utils/debugLogger");
+var _writableStream = require("./writableStream");
+
+var _debugLogger = require("../common/debugLogger");
 
 var _selectors = require("./selectors");
 
@@ -52,6 +54,10 @@ var _events = require("events");
 var _jsonPipe = require("./jsonPipe");
 
 var _fetch = require("./fetch");
+
+var _localUtils = require("./localUtils");
+
+var _tracing = require("./tracing");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -81,11 +87,13 @@ class Root extends _channelOwner.ChannelOwner {
 
 }
 
+class DummyChannelOwner extends _channelOwner.ChannelOwner {}
+
 class Connection extends _events.EventEmitter {
+  // Some connections allow resolving in-process dispatchers.
   constructor() {
     super();
     this._objects = new Map();
-    this._waitingForObject = new Map();
 
     this.onmessage = message => {};
 
@@ -94,6 +102,7 @@ class Connection extends _events.EventEmitter {
     this._rootObject = void 0;
     this._closedErrorMessage = void 0;
     this._isRemote = false;
+    this.toImpl = void 0;
     this._rootObject = new Root(this);
   }
 
@@ -110,26 +119,23 @@ class Connection extends _events.EventEmitter {
   }
 
   pendingProtocolCalls() {
-    return Array.from(this._callbacks.values()).map(callback => callback.stackTrace);
+    return Array.from(this._callbacks.values()).map(callback => callback.stackTrace).filter(Boolean);
   }
 
   getObjectWithKnownName(guid) {
     return this._objects.get(guid);
   }
 
-  async sendMessageToServer(object, method, params, maybeStackTrace) {
+  async sendMessageToServer(object, method, params, stackTrace) {
     if (this._closedErrorMessage) throw new Error(this._closedErrorMessage);
-    const guid = object._guid;
-    const stackTrace = maybeStackTrace || {
-      frameTexts: [],
-      frames: [],
-      apiName: '',
-      allFrames: []
-    };
     const {
-      frames,
-      apiName
-    } = stackTrace;
+      apiName,
+      frames
+    } = stackTrace || {
+      apiName: '',
+      frames: []
+    };
+    const guid = object._guid;
     const id = ++this._lastId;
     const converted = {
       id,
@@ -254,6 +260,10 @@ class Connection extends _events.EventEmitter {
         result = new _android.AndroidDevice(parent, type, guid, initializer);
         break;
 
+      case 'APIRequestContext':
+        result = new _fetch.APIRequestContext(parent, type, guid, initializer);
+        break;
+
       case 'Artifact':
         result = new _artifact.Artifact(parent, type, guid, initializer);
         break;
@@ -298,10 +308,6 @@ class Connection extends _events.EventEmitter {
         result = new _elementHandle.ElementHandle(parent, type, guid, initializer);
         break;
 
-      case 'FetchRequest':
-        result = new _fetch.FetchRequest(parent, type, guid, initializer);
-        break;
-
       case 'Frame':
         result = new _frame.Frame(parent, type, guid, initializer);
         break;
@@ -312,6 +318,10 @@ class Connection extends _events.EventEmitter {
 
       case 'JsonPipe':
         result = new _jsonPipe.JsonPipe(parent, type, guid, initializer);
+        break;
+
+      case 'LocalUtils':
+        result = new _localUtils.LocalUtils(parent, type, guid, initializer);
         break;
 
       case 'Page':
@@ -342,6 +352,14 @@ class Connection extends _events.EventEmitter {
         result = new _selectors.SelectorsOwner(parent, type, guid, initializer);
         break;
 
+      case 'SocksSupport':
+        result = new DummyChannelOwner(parent, type, guid, initializer);
+        break;
+
+      case 'Tracing':
+        result = new _tracing.Tracing(parent, type, guid, initializer);
+        break;
+
       case 'WebSocket':
         result = new _network.WebSocket(parent, type, guid, initializer);
         break;
@@ -350,16 +368,12 @@ class Connection extends _events.EventEmitter {
         result = new _worker.Worker(parent, type, guid, initializer);
         break;
 
+      case 'WritableStream':
+        result = new _writableStream.WritableStream(parent, type, guid, initializer);
+        break;
+
       default:
         throw new Error('Missing type ' + type);
-    }
-
-    const callback = this._waitingForObject.get(guid);
-
-    if (callback) {
-      callback(result);
-
-      this._waitingForObject.delete(guid);
     }
 
     return result;

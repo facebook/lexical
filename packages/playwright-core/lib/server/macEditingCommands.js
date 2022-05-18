@@ -130,6 +130,10 @@ const macEditingCommands = {
   'Shift+Meta+ArrowDown': 'moveToEndOfDocumentAndModifySelection:',
   'Shift+Meta+ArrowLeft': 'moveToLeftEndOfLineAndModifySelection:',
   'Shift+Meta+ArrowRight': 'moveToRightEndOfLineAndModifySelection:',
-  'Meta+KeyA': 'selectAll:'
+  'Meta+KeyA': 'selectAll:',
+  'Meta+KeyC': 'copy:',
+  'Meta+KeyV': 'paste:',
+  'Meta+KeyZ': 'undo:',
+  'Shift+Meta+KeyZ': 'redo:'
 };
 exports.macEditingCommands = macEditingCommands;

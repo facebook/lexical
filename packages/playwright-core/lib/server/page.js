@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.PageBinding = exports.Worker = exports.Page = void 0;
+exports.Worker = exports.PageBinding = exports.Page = void 0;
 
 var frames = _interopRequireWildcard(require("./frames"));
 
@@ -15,7 +15,7 @@ var network = _interopRequireWildcard(require("./network"));
 
 var _screenshotter = require("./screenshotter");
 
-var _timeoutSettings = require("../utils/timeoutSettings");
+var _timeoutSettings = require("../common/timeoutSettings");
 
 var _browserContext = require("./browserContext");
 
@@ -27,13 +27,19 @@ var _fileChooser = require("./fileChooser");
 
 var _progress = require("./progress");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-var _async = require("../utils/async");
+var _manualPromise = require("../utils/manualPromise");
 
-var _debugLogger = require("../utils/debugLogger");
+var _debugLogger = require("../common/debugLogger");
+
+var _comparators = require("../utils/comparators");
 
 var _instrumentation = require("./instrumentation");
+
+var _selectorParser = require("./isomorphic/selectorParser");
+
+var _utilityScriptSerializers = require("./isomorphic/utilityScriptSerializers");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -59,11 +65,11 @@ class Page extends _instrumentation.SdkObject {
   constructor(delegate, browserContext) {
     super(browserContext, 'page');
     this._closedState = 'open';
-    this._closedPromise = new _async.ManualPromise();
+    this._closedPromise = new _manualPromise.ManualPromise();
     this._disconnected = false;
     this._initialized = false;
-    this._disconnectedPromise = new _async.ManualPromise();
-    this._crashedPromise = new _async.ManualPromise();
+    this._disconnectedPromise = new _manualPromise.ManualPromise();
+    this._crashedPromise = new _manualPromise.ManualPromise();
     this._browserContext = void 0;
     this.keyboard = void 0;
     this.mouse = void 0;
@@ -72,7 +78,7 @@ class Page extends _instrumentation.SdkObject {
     this._delegate = void 0;
     this._state = void 0;
     this._pageBindings = new Map();
-    this._evaluateOnNewDocumentSources = [];
+    this.initScripts = [];
     this._screenshotter = void 0;
     this._frameManager = void 0;
     this.accessibility = void 0;
@@ -87,6 +93,7 @@ class Page extends _instrumentation.SdkObject {
     this._video = null;
     this._opener = void 0;
     this._frameThrottler = new FrameThrottler(10, 200);
+    this._isServerSideOnly = false;
     this.attribution.page = this;
     this._delegate = delegate;
     this._browserContext = browserContext;
@@ -111,6 +118,7 @@ class Page extends _instrumentation.SdkObject {
     if (delegate.pdf) this.pdf = delegate.pdf.bind(delegate);
     this.coverage = delegate.coverage ? delegate.coverage() : null;
     this.selectors = browserContext.selectors();
+    this.instrumentation.onPageOpen(this);
   }
 
   async initOpener(opener) {
@@ -129,17 +137,21 @@ class Page extends _instrumentation.SdkObject {
     }
 
     this._initialized = true;
-
-    this._browserContext.emit(_browserContext.BrowserContext.Events.Page, this); // I may happen that page iniatialization finishes after Close event has already been sent,
+    this.emitOnContext(_browserContext.BrowserContext.Events.Page, this); // I may happen that page initialization finishes after Close event has already been sent,
     // in that case we fire another Close event to ensure that each reported Page will have
     // corresponding Close event after it is reported on the context.
-
 
     if (this.isClosed()) this.emit(Page.Events.Close);
   }
 
   initializedOrUndefined() {
     return this._initialized ? this : undefined;
+  }
+
+  emitOnContext(event, ...args) {
+    if (this._isServerSideOnly) return;
+
+    this._browserContext.emit(event, ...args);
   }
 
   async _doSlowMo() {
@@ -149,6 +161,8 @@ class Page extends _instrumentation.SdkObject {
   }
 
   _didClose() {
+    this.instrumentation.onPageClose(this);
+
     this._frameManager.dispose();
 
     this._frameThrottler.setEnabled(false);
@@ -161,6 +175,8 @@ class Page extends _instrumentation.SdkObject {
   }
 
   _didCrash() {
+    this.instrumentation.onPageClose(this);
+
     this._frameManager.dispose();
 
     this._frameThrottler.setEnabled(false);
@@ -171,6 +187,8 @@ class Page extends _instrumentation.SdkObject {
   }
 
   _didDisconnect() {
+    this.instrumentation.onPageClose(this);
+
     this._frameManager.dispose();
 
     this._frameThrottler.setEnabled(false);
@@ -232,6 +250,14 @@ class Page extends _instrumentation.SdkObject {
     this._pageBindings.set(name, binding);
 
     await this._delegate.exposeBinding(binding);
+  }
+
+  async removeExposedBindings() {
+    for (const key of this._pageBindings.keys()) {
+      if (!key.startsWith('__pw')) this._pageBindings.delete(key);
+    }
+
+    await this._delegate.removeExposedBindings();
   }
 
   setExtraHTTPHeaders(headers) {
@@ -335,17 +361,21 @@ class Page extends _instrumentation.SdkObject {
     await this._delegate.bringToFront();
   }
 
-  async _addInitScriptExpression(source) {
-    this._evaluateOnNewDocumentSources.push(source);
+  async addInitScript(source) {
+    this.initScripts.push(source);
+    await this._delegate.addInitScript(source);
+  }
 
-    await this._delegate.evaluateOnNewDocument(source);
+  async removeInitScripts() {
+    this.initScripts.splice(0, this.initScripts.length);
+    await this._delegate.removeInitScripts();
   }
 
   _needsRequestInterception() {
     return !!this._clientRequestInterceptor || !!this._serverRequestInterceptor || !!this._browserContext._requestInterceptor;
   }
 
-  async _setClientRequestInterceptor(handler) {
+  async setClientRequestInterceptor(handler) {
     this._clientRequestInterceptor = handler;
     await this._delegate.updateRequestInterception();
   }
@@ -379,6 +409,101 @@ class Page extends _instrumentation.SdkObject {
     route.continue();
   }
 
+  async expectScreenshot(metadata, options = {}) {
+    const locator = options.locator;
+    const rafrafScreenshot = locator ? async (progress, timeout) => {
+      return await locator.frame.rafrafTimeoutScreenshotElementWithProgress(progress, locator.selector, timeout, options.screenshotOptions || {});
+    } : async (progress, timeout) => {
+      await this.mainFrame().rafrafTimeout(timeout);
+      return await this._screenshotter.screenshotPage(progress, options.screenshotOptions || {});
+    };
+    const comparator = (0, _comparators.getComparator)('image/png');
+    const controller = new _progress.ProgressController(metadata, this);
+    if (!options.expected && options.isNot) return {
+      errorMessage: '"not" matcher requires expected result'
+    };
+
+    try {
+      const format = (0, _screenshotter.validateScreenshotOptions)(options.screenshotOptions || {});
+      if (format !== 'png') throw new Error('Only PNG screenshots are supported');
+    } catch (error) {
+      return {
+        errorMessage: error.message
+      };
+    }
+
+    let intermediateResult = undefined;
+
+    const areEqualScreenshots = (actual, expected, previous) => {
+      const comparatorResult = actual && expected ? comparator(actual, expected, options.comparatorOptions) : undefined;
+      if (comparatorResult !== undefined && !!comparatorResult === !!options.isNot) return true;
+      if (comparatorResult) intermediateResult = {
+        errorMessage: comparatorResult.errorMessage,
+        diff: comparatorResult.diff,
+        actual,
+        previous
+      };
+      return false;
+    };
+
+    const callTimeout = this._timeoutSettings.timeout(options);
+
+    return controller.run(async progress => {
+      let actual;
+      let previous;
+      const pollIntervals = [0, 100, 250, 500];
+      progress.log(`${metadata.apiName}${callTimeout ? ` with timeout ${callTimeout}ms` : ''}`);
+      if (options.expected) progress.log(`  verifying given screenshot expectation`);else progress.log(`  generating new stable screenshot expectation`);
+      let isFirstIteration = true;
+
+      while (true) {
+        var _pollIntervals$shift;
+
+        progress.throwIfAborted();
+        if (this.isClosed()) throw new Error('The page has closed');
+        const screenshotTimeout = (_pollIntervals$shift = pollIntervals.shift()) !== null && _pollIntervals$shift !== void 0 ? _pollIntervals$shift : 1000;
+        if (screenshotTimeout) progress.log(`waiting ${screenshotTimeout}ms before taking screenshot`);
+        previous = actual;
+        actual = await rafrafScreenshot(progress, screenshotTimeout).catch(e => {
+          progress.log(`failed to take screenshot - ` + e.message);
+          return undefined;
+        });
+        if (!actual) continue; // Compare against expectation for the first iteration.
+
+        const expectation = options.expected && isFirstIteration ? options.expected : previous;
+        if (areEqualScreenshots(actual, expectation, previous)) break;
+        if (intermediateResult) progress.log(intermediateResult.errorMessage);
+        isFirstIteration = false;
+      }
+
+      if (!isFirstIteration) progress.log(`captured a stable screenshot`);
+      if (!options.expected) return {
+        actual
+      };
+
+      if (isFirstIteration) {
+        progress.log(`screenshot matched expectation`);
+        return {};
+      }
+
+      if (areEqualScreenshots(actual, options.expected, previous)) {
+        progress.log(`screenshot matched expectation`);
+        return {};
+      }
+
+      throw new Error(intermediateResult.errorMessage);
+    }, callTimeout).catch(e => {
+      // Q: Why not throw upon isSessionClosedError(e) as in other places?
+      // A: We want user to receive a friendly diff between actual and expected/previous.
+      if (js.isJavaScriptErrorInEvaluate(e) || (0, _selectorParser.isInvalidSelectorError)(e)) throw e;
+      return {
+        log: e.message ? [...metadata.log, e.message] : metadata.log,
+        ...intermediateResult,
+        errorMessage: e.message
+      };
+    });
+  }
+
   async screenshot(metadata, options = {}) {
     const controller = new _progress.ProgressController(metadata, this);
     return controller.run(progress => this._screenshotter.screenshotPage(progress, options), this._timeoutSettings.timeout(options));
@@ -402,7 +527,8 @@ class Page extends _instrumentation.SdkObject {
 
   _setIsError(error) {
     this._pageIsError = error;
-    if (!this._frameManager.mainFrame()) this._frameManager.frameAttached('<dummy>', null);
+
+    this._frameManager.createDummyMainFrameIfNeeded();
   }
 
   isClosed() {
@@ -419,20 +545,20 @@ class Page extends _instrumentation.SdkObject {
     const worker = this._workers.get(workerId);
 
     if (!worker) return;
-    worker.emit(Worker.Events.Close, worker);
+    worker.didClose();
 
     this._workers.delete(workerId);
   }
 
   _clearWorkers() {
     for (const [workerId, worker] of this._workers) {
-      worker.emit(Worker.Events.Close, worker);
+      worker.didClose();
 
       this._workers.delete(workerId);
     }
   }
 
-  async _setFileChooserIntercepted(enabled) {
+  async setFileChooserIntercepted(enabled) {
     await this._delegate.setFileChooserIntercepted(enabled);
   }
 
@@ -474,6 +600,14 @@ class Page extends _instrumentation.SdkObject {
   parseSelector(selector, options) {
     const strict = typeof (options === null || options === void 0 ? void 0 : options.strict) === 'boolean' ? options.strict : !!this.context()._options.strictSelectors;
     return this.selectors.parseSelector(selector, strict);
+  }
+
+  async hideHighlight() {
+    await Promise.all(this.frames().map(frame => frame.hideHighlight().catch(() => {})));
+  }
+
+  markAsServerSideOnly() {
+    this._isServerSideOnly = true;
   }
 
 }
@@ -524,6 +658,11 @@ class Worker extends _instrumentation.SdkObject {
     return this._url;
   }
 
+  didClose() {
+    if (this._existingExecutionContext) this._existingExecutionContext.contextDestroyed(new Error('Worker was closed'));
+    this.emit(Worker.Events.Close, this);
+  }
+
   async evaluateExpression(expression, isFunction, arg) {
     return js.evaluateExpression(await this._executionContextPromise, true
     /* returnByValue */
@@ -551,7 +690,7 @@ class PageBinding {
     this.needsHandle = void 0;
     this.name = name;
     this.playwrightFunction = playwrightFunction;
-    this.source = `(${addPageBinding.toString()})(${JSON.stringify(name)}, ${needsHandle})`;
+    this.source = `(${addPageBinding.toString()})(${JSON.stringify(name)}, ${needsHandle}, (${_utilityScriptSerializers.source})())`;
     this.needsHandle = needsHandle;
   }
 
@@ -559,7 +698,7 @@ class PageBinding {
     const {
       name,
       seq,
-      args
+      serializedArgs
     } = JSON.parse(payload);
 
     try {
@@ -578,6 +717,7 @@ class PageBinding {
           context: page._browserContext
         }, handle);
       } else {
+        const args = serializedArgs.map(a => (0, _utilityScriptSerializers.parseEvaluationResultValue)(a));
         result = await binding.playwrightFunction({
           frame: context.frame,
           page,
@@ -631,7 +771,7 @@ class PageBinding {
 
 exports.PageBinding = PageBinding;
 
-function addPageBinding(bindingName, needsHandle) {
+function addPageBinding(bindingName, needsHandle, utilityScriptSerializers) {
   const binding = globalThis[bindingName];
   if (binding.__installed) return;
 
@@ -658,21 +798,28 @@ function addPageBinding(bindingName, needsHandle) {
       resolve,
       reject
     }));
+    let payload;
 
     if (needsHandle) {
       handles.set(seq, args[0]);
-      binding(JSON.stringify({
+      payload = {
         name: bindingName,
         seq
-      }));
+      };
     } else {
-      binding(JSON.stringify({
+      const serializedArgs = args.map(a => utilityScriptSerializers.serializeAsCallArgument(a, v => {
+        return {
+          fallThrough: v
+        };
+      }));
+      payload = {
         name: bindingName,
         seq,
-        args
-      }));
+        serializedArgs
+      };
     }
 
+    binding(JSON.stringify(payload));
     return promise;
   };
 

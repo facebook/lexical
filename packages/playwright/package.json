@@ -1,11 +1,11 @@
 {
   "name": "playwright",
-  "version": "1.16.0-next-alpha-trueadm-fork",
+  "version": "1.23.0-next-alpha-trueadm-fork",
   "description": "A high-level API to automate web browsers",
   "repository": "github:Microsoft/playwright",
   "homepage": "https://playwright.dev",
   "engines": {
-    "node": ">=12"
+    "node": ">=14"
   },
   "author": {
     "name": "Microsoft Corporation"
@@ -16,12 +16,16 @@
       "import": "./index.mjs",
       "require": "./index.js"
     },
-    "./": "./"
+    "./cli": "./cli.js",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "playwright": "./cli.js"
   },
   "scripts": {
     "install": "node install.js"
   },
   "dependencies": {
-    "playwright-core": "1.16.0-next-alpha-trueadm-fork"
+    "playwright-core": "1.23.0-next-alpha-trueadm-fork"
   }
 }

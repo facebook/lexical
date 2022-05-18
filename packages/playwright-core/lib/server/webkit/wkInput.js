@@ -9,7 +9,7 @@ var input = _interopRequireWildcard(require("../input"));
 
 var _macEditingCommands = require("../macEditingCommands");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -44,8 +44,8 @@ function toModifiersMask(modifiers) {
 function toButtonsMask(buttons) {
   let mask = 0;
   if (buttons.has('left')) mask |= 1;
-  if (buttons.has('middle')) mask |= 2;
-  if (buttons.has('right')) mask |= 4;
+  if (buttons.has('right')) mask |= 2;
+  if (buttons.has('middle')) mask |= 4;
   return mask;
 }
 
@@ -139,7 +139,7 @@ class RawMouseImpl {
     this._session = session;
   }
 
-  async move(x, y, button, buttons, modifiers) {
+  async move(x, y, button, buttons, modifiers, forClick) {
     await this._pageProxySession.send('Input.dispatchMouseEvent', {
       type: 'move',
       button,
@@ -175,6 +175,9 @@ class RawMouseImpl {
   }
 
   async wheel(x, y, buttons, modifiers, deltaX, deltaY) {
+    var _this$_page;
+
+    if ((_this$_page = this._page) !== null && _this$_page !== void 0 && _this$_page._browserContext._options.isMobile) throw new Error('Mouse wheel is not supported in mobile WebKit');
     await this._session.send('Page.updateScrollingState'); // Wheel events hit the compositor first, so wait one frame for it to be synced.
 
     await this._page.mainFrame().evaluateExpression(`new Promise(requestAnimationFrame)`, false, false, 'utility');

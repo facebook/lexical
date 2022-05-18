@@ -7,9 +7,9 @@ exports.WKExecutionContext = void 0;
 
 var js = _interopRequireWildcard(require("../javascript"));
 
-var _utilityScriptSerializers = require("../common/utilityScriptSerializers");
+var _utilityScriptSerializers = require("../isomorphic/utilityScriptSerializers");
 
-var _protocolError = require("../common/protocolError");
+var _protocolError = require("../protocolError");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -35,19 +35,8 @@ class WKExecutionContext {
   constructor(session, contextId) {
     this._session = void 0;
     this._contextId = void 0;
-
-    this._contextDestroyedCallback = () => {};
-
-    this._executionContextDestroyedPromise = void 0;
     this._session = session;
     this._contextId = contextId;
-    this._executionContextDestroyedPromise = new Promise((resolve, reject) => {
-      this._contextDestroyedCallback = resolve;
-    });
-  }
-
-  _dispose() {
-    this._contextDestroyedCallback();
   }
 
   async rawEvaluateJSON(expression) {
@@ -94,9 +83,7 @@ class WKExecutionContext {
 
   async evaluateWithArguments(expression, returnByValue, utilityScript, values, objectIds) {
     try {
-      const response = await Promise.race([this._executionContextDestroyedPromise.then(() => {
-        throw new Error(contextDestroyedError);
-      }), this._session.send('Runtime.callFunctionOn', {
+      const response = await this._session.send('Runtime.callFunctionOn', {
         functionDeclaration: expression,
         objectId: utilityScript._objectId,
         arguments: [{
@@ -109,7 +96,7 @@ class WKExecutionContext {
         returnByValue,
         emulateUserGesture: true,
         awaitPromise: true
-      })]);
+      });
       if (response.wasThrown) throw new js.JavaScriptErrorInEvaluate(response.result.description);
       if (returnByValue) return (0, _utilityScriptSerializers.parseEvaluationResultValue)(response.result.value);
       return utilityScript._context.createHandle(response.result);
@@ -147,7 +134,6 @@ class WKExecutionContext {
 }
 
 exports.WKExecutionContext = WKExecutionContext;
-const contextDestroyedError = 'Execution context was destroyed.';
 
 function potentiallyUnserializableValue(remoteObject) {
   const value = remoteObject.value;

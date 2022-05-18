@@ -45,19 +45,15 @@ class CDPSession extends _channelOwner.ChannelOwner {
   }
 
   async send(method, params) {
-    return this._wrapApiCall(async channel => {
-      const result = await channel.send({
-        method,
-        params
-      });
-      return result.result;
+    const result = await this._channel.send({
+      method,
+      params
     });
+    return result.result;
   }
 
   async detach() {
-    return this._wrapApiCall(async channel => {
-      return channel.detach();
-    });
+    return this._channel.detach();
   }
 
 }

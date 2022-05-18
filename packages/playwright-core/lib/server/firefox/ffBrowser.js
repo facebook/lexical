@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.FFBrowserContext = exports.FFBrowser = void 0;
 
-var _errors = require("../../utils/errors");
+var _errors = require("../../common/errors");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _browser = require("../browser");
 
@@ -92,8 +92,7 @@ class FFBrowser extends _browser.Browser {
     return !this._connection._closed;
   }
 
-  async newContext(options) {
-    (0, _browserContext.validateBrowserContextOptions)(options, this.options);
+  async doCreateNewContext(options) {
     if (options.isMobile) throw new Error('options.isMobile is not supported in Firefox');
     const {
       browserContextId
@@ -311,7 +310,7 @@ class FFBrowserContext extends _browserContext.BrowserContext {
     return this._browser._ffPages.get(targetId);
   }
 
-  async _doCookies(urls) {
+  async doGetCookies(urls) {
     const {
       cookies
     } = await this._browser._connection.send('Browser.getCookies', {
@@ -342,7 +341,7 @@ class FFBrowserContext extends _browserContext.BrowserContext {
     });
   }
 
-  async _doGrantPermissions(origin, permissions) {
+  async doGrantPermissions(origin, permissions) {
     const webPermissionToProtocol = new Map([['geolocation', 'geo'], ['persistent-storage', 'persistent-storage'], ['push', 'push'], ['notifications', 'desktop-notification']]);
     const filtered = permissions.map(permission => {
       const protocolPermission = webPermissionToProtocol.get(permission);
@@ -356,7 +355,7 @@ class FFBrowserContext extends _browserContext.BrowserContext {
     });
   }
 
-  async _doClearPermissions() {
+  async doClearPermissions() {
     await this._browser._connection.send('Browser.resetPermissions', {
       browserContextId: this._browserContextId
     });
@@ -389,7 +388,7 @@ class FFBrowserContext extends _browserContext.BrowserContext {
     });
   }
 
-  async _doSetHTTPCredentials(httpCredentials) {
+  async doSetHTTPCredentials(httpCredentials) {
     this._options.httpCredentials = httpCredentials;
     await this._browser._connection.send('Browser.setHTTPCredentials', {
       browserContextId: this._browserContextId,
@@ -397,14 +396,23 @@ class FFBrowserContext extends _browserContext.BrowserContext {
     });
   }
 
-  async _doAddInitScript(source) {
-    await this._browser._connection.send('Browser.addScriptToEvaluateOnNewDocument', {
+  async doAddInitScript(source) {
+    await this._browser._connection.send('Browser.setInitScripts', {
       browserContextId: this._browserContextId,
-      script: source
+      scripts: this.initScripts.map(script => ({
+        script
+      }))
     });
   }
 
-  async _doExposeBinding(binding) {
+  async doRemoveInitScripts() {
+    await this._browser._connection.send('Browser.setInitScripts', {
+      browserContextId: this._browserContextId,
+      scripts: []
+    });
+  }
+
+  async doExposeBinding(binding) {
     await this._browser._connection.send('Browser.addBinding', {
       browserContextId: this._browserContextId,
       name: binding.name,
@@ -412,16 +420,21 @@ class FFBrowserContext extends _browserContext.BrowserContext {
     });
   }
 
-  async _doUpdateRequestInterception() {
+  async doRemoveExposedBindings() {// TODO: implement me.
+    // This is not a critical problem, what ends up happening is
+    // an old binding will be restored upon page reload and will point nowhere.
+  }
+
+  async doUpdateRequestInterception() {
     await this._browser._connection.send('Browser.setRequestInterception', {
       browserContextId: this._browserContextId,
       enabled: !!this._requestInterceptor
     });
   }
 
-  _onClosePersistent() {}
+  onClosePersistent() {}
 
-  async _doClose() {
+  async doClose() {
     (0, _utils.assert)(this._browserContextId);
     await this._browser._connection.send('Browser.removeBrowserContext', {
       browserContextId: this._browserContextId
@@ -430,7 +443,7 @@ class FFBrowserContext extends _browserContext.BrowserContext {
     this._browser._contexts.delete(this._browserContextId);
   }
 
-  async _doCancelDownload(uuid) {
+  async cancelDownload(uuid) {
     await this._browser._connection.send('Browser.cancelDownload', {
       uuid
     });

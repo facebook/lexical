@@ -9,7 +9,7 @@ var _path = _interopRequireDefault(require("path"));
 
 var _page = require("./page");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var _artifact = require("./artifact");
 
@@ -38,7 +38,7 @@ class Download {
     this._suggestedFilename = void 0;
     const unaccessibleErrorMessage = !page._browserContext._options.acceptDownloads ? 'Pass { acceptDownloads: true } when you are creating your browser context.' : undefined;
     this.artifact = new _artifact.Artifact(page, _path.default.join(downloadsPath, uuid), unaccessibleErrorMessage, () => {
-      return this._page._browserContext._doCancelDownload(uuid);
+      return this._page._browserContext.cancelDownload(uuid);
     });
     this._page = page;
     this.url = url;

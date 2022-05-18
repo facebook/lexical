@@ -27,13 +27,19 @@ var _crDevTools = require("./crDevTools");
 
 var _browser = require("../browser");
 
-var _utils = require("../../utils/utils");
+var _netUtils = require("../../common/netUtils");
 
-var _debugLogger = require("../../utils/debugLogger");
+var _userAgent = require("../../common/userAgent");
+
+var _utils = require("../../utils");
+
+var _fileUtils = require("../../utils/fileUtils");
+
+var _debugLogger = require("../../common/debugLogger");
 
 var _progress = require("../progress");
 
-var _timeoutSettings = require("../../utils/timeoutSettings");
+var _timeoutSettings = require("../../common/timeoutSettings");
 
 var _helper = require("../helper");
 
@@ -41,9 +47,9 @@ var _http = _interopRequireDefault(require("http"));
 
 var _https = _interopRequireDefault(require("https"));
 
-var _registry = require("../../utils/registry");
+var _registry = require("../registry");
 
-var _async = require("playwright-core/lib/utils/async");
+var _manualPromise = require("../../utils/manualPromise");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -85,14 +91,17 @@ class Chromium extends _browserType.BrowserType {
   async _connectOverCDPInternal(progress, endpointURL, options, onClose) {
     let headersMap;
     if (options.headers) headersMap = (0, _utils.headersArrayToObject)(options.headers, false);
+    if (!headersMap) headersMap = {
+      'User-Agent': (0, _userAgent.getUserAgent)()
+    };else if (headersMap && !Object.keys(headersMap).some(key => key.toLowerCase() === 'user-agent')) headersMap['User-Agent'] = (0, _userAgent.getUserAgent)();
     const artifactsDir = await _fs.default.promises.mkdtemp(ARTIFACTS_FOLDER);
-    const wsEndpoint = await urlToWSEndpoint(endpointURL);
+    const wsEndpoint = await urlToWSEndpoint(progress, endpointURL);
     progress.throwIfAborted();
     const chromeTransport = await _transport.WebSocketTransport.connect(progress, wsEndpoint, headersMap);
-    const cleanedUp = new _async.ManualPromise();
+    const cleanedUp = new _manualPromise.ManualPromise();
 
     const doCleanup = async () => {
-      await (0, _utils.removeFolders)([artifactsDir]);
+      await (0, _fileUtils.removeFolders)([artifactsDir]);
       await (onClose === null || onClose === void 0 ? void 0 : onClose());
       cleanedUp.resolve();
     };
@@ -118,7 +127,15 @@ class Chromium extends _browserType.BrowserType {
       browserLogsCollector: new _debugLogger.RecentLogsCollector(),
       artifactsDir,
       downloadsPath: artifactsDir,
-      tracesDir: artifactsDir
+      tracesDir: artifactsDir,
+      // On Windows context level proxies only work, if there isn't a global proxy
+      // set. This is currently a bug in the CR/Windows networking stack. By
+      // passing an arbitrary value we disable the check in PW land which warns
+      // users in normal (launch/launchServer) mode since otherwise connectOverCDP
+      // does not work at all with proxies on Windows.
+      proxy: {
+        server: 'per-context'
+      }
     };
     progress.throwIfAborted();
     const browser = await _crBrowser.CRBrowser.connect(chromeTransport, browserOptions);
@@ -145,10 +162,11 @@ class Chromium extends _browserType.BrowserType {
   }
 
   _rewriteStartupError(error) {
-    // These error messages are taken from Chromium source code as of July, 2020:
+    if (error.message.includes('Missing X server')) return (0, _stackTrace.rewriteErrorMessage)(error, '\n' + (0, _utils.wrapInASCIIBox)(_browserType.kNoXServerRunningError, 1)); // These error messages are taken from Chromium source code as of July, 2020:
     // https://github.com/chromium/chromium/blob/70565f67e79f79e17663ad1337dc6e63ee207ce9/content/browser/zygote_host/zygote_host_impl_linux.cc
+
     if (!error.message.includes('crbug.com/357670') && !error.message.includes('No usable sandbox!') && !error.message.includes('crbug.com/638180')) return error;
-    return (0, _stackTrace.rewriteErrorMessage)(error, [`Chromium sandboxing failed!`, `================================`, `To workaround sandboxing issues, do either of the following:`, `  - (preferred): Configure environment to support sandboxing: https://github.com/microsoft/playwright/blob/master/docs/troubleshooting.md`, `  - (alternative): Launch Chromium without sandbox using 'chromiumSandbox: false' option`, `================================`, ``].join('\n'));
+    return (0, _stackTrace.rewriteErrorMessage)(error, [`Chromium sandboxing failed!`, `================================`, `To workaround sandboxing issues, do either of the following:`, `  - (preferred): Configure environment to support sandboxing: https://playwright.dev/docs/troubleshooting`, `  - (alternative): Launch Chromium without sandbox using 'chromiumSandbox: false' option`, `================================`, ``].join('\n'));
   }
 
   _amendEnvironment(env, userDataDir, executable, browserArguments) {
@@ -170,14 +188,28 @@ class Chromium extends _browserType.BrowserType {
     const args = this._innerDefaultArgs(options);
 
     args.push('--remote-debugging-port=0');
-    const desiredCapabilities = {
-      'browserName': 'chrome',
-      'goog:chromeOptions': {
+    const isEdge = options.channel && options.channel.startsWith('msedge');
+    let desiredCapabilities = {
+      'browserName': isEdge ? 'MicrosoftEdge' : 'chrome',
+      [isEdge ? 'ms:edgeOptions' : 'goog:chromeOptions']: {
         args
       }
     };
-    progress.log(`<connecting to selenium> ${hubUrl}`);
-    const response = await (0, _utils.fetchData)({
+
+    try {
+      if (process.env.SELENIUM_REMOTE_CAPABILITIES) {
+        const parsed = JSON.parse(process.env.SELENIUM_REMOTE_CAPABILITIES);
+        desiredCapabilities = { ...desiredCapabilities,
+          ...parsed
+        };
+        progress.log(`<selenium> using additional capabilities "${process.env.SELENIUM_REMOTE_CAPABILITIES}"`);
+      }
+    } catch (e) {
+      progress.log(`<selenium> ignoring additional capabilities "${process.env.SELENIUM_REMOTE_CAPABILITIES}": ${e}`);
+    }
+
+    progress.log(`<selenium> connecting to ${hubUrl}`);
+    const response = await (0, _netUtils.fetchData)({
       url: hubUrl + 'session',
       method: 'POST',
       data: JSON.stringify({
@@ -187,28 +219,18 @@ class Chromium extends _browserType.BrowserType {
         }
       }),
       timeout: progress.timeUntilDeadline()
-    }, async response => {
-      const body = await (0, _utils.streamToString)(response);
-      let message = '';
-
-      try {
-        const json = JSON.parse(body);
-        message = json.value.localizedMessage || json.value.message;
-      } catch (e) {}
-
-      return new Error(`Error connecting to Selenium at ${hubUrl}: ${message}`);
-    });
+    }, seleniumErrorHandler);
     const value = JSON.parse(response).value;
     const sessionId = value.sessionId;
-    progress.log(`<connected to selenium> sessionId=${sessionId}`);
+    progress.log(`<selenium> connected to sessionId=${sessionId}`);
 
     const disconnectFromSelenium = async () => {
-      progress.log(`<disconnecting from selenium> sessionId=${sessionId}`);
-      await (0, _utils.fetchData)({
+      progress.log(`<selenium> disconnecting from sessionId=${sessionId}`);
+      await (0, _netUtils.fetchData)({
         url: hubUrl + 'session/' + sessionId,
         method: 'DELETE'
       }).catch(error => progress.log(`<error disconnecting from selenium>: ${error}`));
-      progress.log(`<disconnected from selenium> sessionId=${sessionId}`);
+      progress.log(`<selenium> disconnected from sessionId=${sessionId}`);
 
       _processLauncher.gracefullyCloseSet.delete(disconnectFromSelenium);
     };
@@ -217,13 +239,46 @@ class Chromium extends _browserType.BrowserType {
 
     try {
       const capabilities = value.capabilities;
-      const maybeChromeOptions = capabilities['goog:chromeOptions'];
-      const chromeOptions = maybeChromeOptions && typeof maybeChromeOptions === 'object' ? maybeChromeOptions : undefined;
-      const debuggerAddress = chromeOptions && typeof chromeOptions.debuggerAddress === 'string' ? chromeOptions.debuggerAddress : undefined;
-      const chromeOptionsURL = typeof maybeChromeOptions === 'string' ? maybeChromeOptions : undefined;
-      let endpointURL = capabilities['se:cdp'] || debuggerAddress || chromeOptionsURL;
-      if (!['ws://', 'wss://', 'http://', 'https://'].some(protocol => endpointURL.startsWith(protocol))) endpointURL = 'http://' + endpointURL;
-      return this._connectOverCDPInternal(progress, endpointURL, {
+      let endpointURL;
+
+      if (capabilities['se:cdp']) {
+        // Selenium 4 - use built-in CDP websocket proxy.
+        progress.log(`<selenium> using selenium v4`);
+        const endpointURLString = addProtocol(capabilities['se:cdp']);
+        endpointURL = new URL(endpointURLString);
+        if (endpointURL.hostname === 'localhost' || endpointURL.hostname === '127.0.0.1') endpointURL.hostname = new URL(hubUrl).hostname;
+        progress.log(`<selenium> retrieved endpoint ${endpointURL.toString()} for sessionId=${sessionId}`);
+      } else {
+        // Selenium 3 - resolve target node IP to use instead of localhost ws url.
+        progress.log(`<selenium> using selenium v3`);
+        const maybeChromeOptions = capabilities['goog:chromeOptions'];
+        const chromeOptions = maybeChromeOptions && typeof maybeChromeOptions === 'object' ? maybeChromeOptions : undefined;
+        const debuggerAddress = chromeOptions && typeof chromeOptions.debuggerAddress === 'string' ? chromeOptions.debuggerAddress : undefined;
+        const chromeOptionsURL = typeof maybeChromeOptions === 'string' ? maybeChromeOptions : undefined; // TODO(dgozman): figure out if we can make ChromeDriver to return 127.0.0.1 instead of localhost.
+
+        const endpointURLString = addProtocol(debuggerAddress || chromeOptionsURL).replace('localhost', '127.0.0.1');
+        progress.log(`<selenium> retrieved endpoint ${endpointURLString} for sessionId=${sessionId}`);
+        endpointURL = new URL(endpointURLString);
+
+        if (endpointURL.hostname === 'localhost' || endpointURL.hostname === '127.0.0.1') {
+          const sessionInfoUrl = new URL(hubUrl).origin + '/grid/api/testsession?session=' + sessionId;
+
+          try {
+            const sessionResponse = await (0, _netUtils.fetchData)({
+              url: sessionInfoUrl,
+              method: 'GET',
+              timeout: progress.timeUntilDeadline()
+            }, seleniumErrorHandler);
+            const proxyId = JSON.parse(sessionResponse).proxyId;
+            endpointURL.hostname = new URL(proxyId).hostname;
+            progress.log(`<selenium> resolved endpoint ip ${endpointURL.toString()} for sessionId=${sessionId}`);
+          } catch (e) {
+            progress.log(`<selenium> unable to resolve endpoint ip for sessionId=${sessionId}, running in standalone?`);
+          }
+        }
+      }
+
+      return await this._connectOverCDPInternal(progress, endpointURL.toString(), {
         slowMo: options.slowMo
       }, disconnectFromSelenium);
     } catch (e) {
@@ -275,6 +330,7 @@ class Chromium extends _browserType.BrowserType {
 
       if (this._playwrightOptions.socksProxyPort) proxyBypassRules.push('<-loopback>');
       if (proxy.bypass) proxyBypassRules.push(...proxy.bypass.split(',').map(t => t.trim()).map(t => t.startsWith('.') ? '*' + t : t));
+      if (!process.env.PLAYWRIGHT_DISABLE_FORCED_CHROMIUM_PROXIED_LOOPBACK && !proxyBypassRules.includes('<-loopback>')) proxyBypassRules.push('<-loopback>');
       if (proxyBypassRules.length > 0) chromeArguments.push(`--proxy-bypass-list=${proxyBypassRules.join(';')}`);
     }
 
@@ -285,11 +341,14 @@ class Chromium extends _browserType.BrowserType {
 }
 
 exports.Chromium = Chromium;
-const DEFAULT_ARGS = ['--disable-background-networking', '--enable-features=NetworkService,NetworkServiceInProcess', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-breakpad', '--disable-client-side-phishing-detection', '--disable-component-extensions-with-background-pages', '--disable-default-apps', '--disable-dev-shm-usage', '--disable-extensions', '--disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter', '--allow-pre-commit-input', '--disable-hang-monitor', '--disable-ipc-flooding-protection', '--disable-popup-blocking', '--disable-prompt-on-repost', '--disable-renderer-backgrounding', '--disable-sync', '--force-color-profile=srgb', '--metrics-recording-only', '--no-first-run', '--enable-automation', '--password-store=basic', '--use-mock-keychain', // See https://chromium-review.googlesource.com/c/chromium/src/+/2436773
-'--no-service-autorun'];
+const DEFAULT_ARGS = ['--disable-field-trial-config', // https://source.chromium.org/chromium/chromium/src/+/main:testing/variations/README.md
+'--disable-background-networking', '--enable-features=NetworkService,NetworkServiceInProcess', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-breakpad', '--disable-client-side-phishing-detection', '--disable-component-extensions-with-background-pages', '--disable-default-apps', '--disable-dev-shm-usage', '--disable-extensions', // AvoidUnnecessaryBeforeUnloadCheckSync - https://github.com/microsoft/playwright/issues/14047
+'--disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync', '--allow-pre-commit-input', '--disable-hang-monitor', '--disable-ipc-flooding-protection', '--disable-popup-blocking', '--disable-prompt-on-repost', '--disable-renderer-backgrounding', '--disable-sync', '--force-color-profile=srgb', '--metrics-recording-only', '--no-first-run', '--enable-automation', '--password-store=basic', '--use-mock-keychain', // See https://chromium-review.googlesource.com/c/chromium/src/+/2436773
+'--no-service-autorun', '--export-tagged-pdf'];
 
-async function urlToWSEndpoint(endpointURL) {
+async function urlToWSEndpoint(progress, endpointURL) {
   if (endpointURL.startsWith('ws')) return endpointURL;
+  progress.log(`<ws preparing> retrieving websocket url from ${endpointURL}`);
   const httpURL = endpointURL.endsWith('/') ? `${endpointURL}json/version/` : `${endpointURL}/json/version/`;
   const request = endpointURL.startsWith('https') ? _https.default : _http.default;
   const json = await new Promise((resolve, reject) => {
@@ -304,4 +363,21 @@ async function urlToWSEndpoint(endpointURL) {
     }).on('error', reject);
   });
   return JSON.parse(json).webSocketDebuggerUrl;
+}
+
+async function seleniumErrorHandler(params, response) {
+  const body = await (0, _utils.streamToString)(response);
+  let message = body;
+
+  try {
+    const json = JSON.parse(body);
+    message = json.value.localizedMessage || json.value.message;
+  } catch (e) {}
+
+  return new Error(`Error connecting to Selenium at ${params.url}: ${message}`);
+}
+
+function addProtocol(url) {
+  if (!['ws://', 'wss://', 'http://', 'https://'].some(protocol => url.startsWith(protocol))) return 'http://' + url;
+  return url;
 }

@@ -44,17 +44,13 @@ class Dialog extends _channelOwner.ChannelOwner {
   }
 
   async accept(promptText) {
-    return this._wrapApiCall(async channel => {
-      await channel.accept({
-        promptText
-      });
+    await this._channel.accept({
+      promptText
     });
   }
 
   async dismiss() {
-    return this._wrapApiCall(async channel => {
-      await channel.dismiss();
-    });
+    await this._channel.dismiss();
   }
 
 }

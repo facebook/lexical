@@ -11,9 +11,9 @@ var js = _interopRequireWildcard(require("../javascript"));
 
 var _stackTrace = require("../../utils/stackTrace");
 
-var _utilityScriptSerializers = require("../common/utilityScriptSerializers");
+var _utilityScriptSerializers = require("../isomorphic/utilityScriptSerializers");
 
-var _protocolError = require("../common/protocolError");
+var _protocolError = require("../protocolError");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 

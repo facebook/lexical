@@ -3,15 +3,11 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.GlobalFetchRequest = exports.BrowserContextFetchRequest = exports.FetchRequest = void 0;
+exports.GlobalAPIRequestContext = exports.BrowserContextAPIRequestContext = exports.APIRequestContext = void 0;
 
 var http = _interopRequireWildcard(require("http"));
 
 var https = _interopRequireWildcard(require("https"));
-
-var _httpsProxyAgent = require("https-proxy-agent");
-
-var _socksProxyAgent = require("socks-proxy-agent");
 
 var _stream = require("stream");
 
@@ -19,11 +15,11 @@ var _url = _interopRequireDefault(require("url"));
 
 var _zlib = _interopRequireDefault(require("zlib"));
 
-var _debugLogger = require("../utils/debugLogger");
+var _timeoutSettings = require("../common/timeoutSettings");
 
-var _timeoutSettings = require("../utils/timeoutSettings");
+var _userAgent = require("../common/userAgent");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var _browserContext = require("./browserContext");
 
@@ -32,6 +28,12 @@ var _cookieStore = require("./cookieStore");
 var _formData = require("./formData");
 
 var _instrumentation = require("./instrumentation");
+
+var _progress = require("./progress");
+
+var _tracing = require("./trace/recorder/tracing");
+
+var _utilsBundle = require("../utilsBundle");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -54,9 +56,9 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class FetchRequest extends _instrumentation.SdkObject {
+class APIRequestContext extends _instrumentation.SdkObject {
   static findResponseBody(guid) {
-    for (const request of FetchRequest.allInstances) {
+    for (const request of APIRequestContext.allInstances) {
       const body = request.fetchResponses.get(guid);
       if (body) return body;
     }
@@ -67,13 +69,20 @@ class FetchRequest extends _instrumentation.SdkObject {
   constructor(parent) {
     super(parent, 'fetchRequest');
     this.fetchResponses = new Map();
-    FetchRequest.allInstances.add(this);
+    this.fetchLog = new Map();
+    APIRequestContext.allInstances.add(this);
   }
 
   _disposeImpl() {
-    FetchRequest.allInstances.delete(this);
+    APIRequestContext.allInstances.delete(this);
     this.fetchResponses.clear();
-    this.emit(FetchRequest.Events.Dispose);
+    this.fetchLog.clear();
+    this.emit(APIRequestContext.Events.Dispose);
+  }
+
+  disposeResponse(fetchUid) {
+    this.fetchResponses.delete(fetchUid);
+    this.fetchLog.delete(fetchUid);
   }
 
   _storeResponseBody(body) {
@@ -82,97 +91,92 @@ class FetchRequest extends _instrumentation.SdkObject {
     return uid;
   }
 
-  async fetch(params) {
-    try {
-      var _params$method;
+  async fetch(params, metadata) {
+    var _params$method;
 
-      const headers = {};
+    const headers = {};
 
-      const defaults = this._defaultOptions();
+    const defaults = this._defaultOptions();
 
-      headers['user-agent'] = defaults.userAgent;
-      headers['accept'] = '*/*';
-      headers['accept-encoding'] = 'gzip,deflate,br';
+    headers['user-agent'] = defaults.userAgent;
+    headers['accept'] = '*/*';
+    headers['accept-encoding'] = 'gzip,deflate,br';
 
-      if (defaults.extraHTTPHeaders) {
-        for (const {
-          name,
-          value
-        } of defaults.extraHTTPHeaders) headers[name.toLowerCase()] = value;
-      }
-
-      if (params.headers) {
-        for (const {
-          name,
-          value
-        } of params.headers) headers[name.toLowerCase()] = value;
-      }
-
-      const method = ((_params$method = params.method) === null || _params$method === void 0 ? void 0 : _params$method.toUpperCase()) || 'GET';
-      const proxy = defaults.proxy;
-      let agent;
-
-      if (proxy) {
-        var _proxyOpts$protocol;
-
-        // TODO: support bypass proxy
-        const proxyOpts = _url.default.parse(proxy.server);
-
-        if ((_proxyOpts$protocol = proxyOpts.protocol) !== null && _proxyOpts$protocol !== void 0 && _proxyOpts$protocol.startsWith('socks')) {
-          agent = new _socksProxyAgent.SocksProxyAgent({
-            host: proxyOpts.hostname,
-            port: proxyOpts.port || undefined
-          });
-        } else {
-          if (proxy.username) proxyOpts.auth = `${proxy.username}:${proxy.password || ''}`;
-          agent = new _httpsProxyAgent.HttpsProxyAgent(proxyOpts);
-        }
-      }
-
-      const timeout = defaults.timeoutSettings.timeout(params);
-      const deadline = timeout && (0, _utils.monotonicTime)() + timeout;
-      const options = {
-        method,
-        headers,
-        agent,
-        maxRedirects: 20,
-        timeout,
-        deadline
-      }; // rejectUnauthorized = undefined is treated as true in node 12.
-
-      if (params.ignoreHTTPSErrors || defaults.ignoreHTTPSErrors) options.rejectUnauthorized = false;
-      const requestUrl = new URL(params.url, defaults.baseURL);
-
-      if (params.params) {
-        for (const {
-          name,
-          value
-        } of params.params) requestUrl.searchParams.set(name, value);
-      }
-
-      let postData;
-      if (['POST', 'PUT', 'PATCH'].includes(method)) postData = serializePostData(params, headers);else if (params.postData || params.jsonData || params.formData || params.multipartData) throw new Error(`Method ${method} does not accept post data`);
-      if (postData) headers['content-length'] = String(postData.byteLength);
-      const fetchResponse = await this._sendRequest(requestUrl, options, postData);
-
-      const fetchUid = this._storeResponseBody(fetchResponse.body);
-
-      if (params.failOnStatusCode && (fetchResponse.status < 200 || fetchResponse.status >= 400)) return {
-        error: `${fetchResponse.status} ${fetchResponse.statusText}`
-      };
-      return {
-        fetchResponse: { ...fetchResponse,
-          fetchUid
-        }
-      };
-    } catch (e) {
-      return {
-        error: String(e)
-      };
+    if (defaults.extraHTTPHeaders) {
+      for (const {
+        name,
+        value
+      } of defaults.extraHTTPHeaders) headers[name.toLowerCase()] = value;
     }
+
+    if (params.headers) {
+      for (const {
+        name,
+        value
+      } of params.headers) headers[name.toLowerCase()] = value;
+    }
+
+    const method = ((_params$method = params.method) === null || _params$method === void 0 ? void 0 : _params$method.toUpperCase()) || 'GET';
+    const proxy = defaults.proxy;
+    let agent;
+
+    if (proxy && proxy.server !== 'per-context') {
+      var _proxyOpts$protocol;
+
+      // TODO: support bypass proxy
+      const proxyOpts = _url.default.parse(proxy.server);
+
+      if ((_proxyOpts$protocol = proxyOpts.protocol) !== null && _proxyOpts$protocol !== void 0 && _proxyOpts$protocol.startsWith('socks')) {
+        agent = new _utilsBundle.SocksProxyAgent({
+          host: proxyOpts.hostname,
+          port: proxyOpts.port || undefined
+        });
+      } else {
+        if (proxy.username) proxyOpts.auth = `${proxy.username}:${proxy.password || ''}`;
+        agent = new _utilsBundle.HttpsProxyAgent(proxyOpts);
+      }
+    }
+
+    const timeout = defaults.timeoutSettings.timeout(params);
+    const deadline = timeout && (0, _utils.monotonicTime)() + timeout;
+    const options = {
+      method,
+      headers,
+      agent,
+      maxRedirects: 20,
+      timeout,
+      deadline
+    }; // rejectUnauthorized = undefined is treated as true in node 12.
+
+    if (params.ignoreHTTPSErrors || defaults.ignoreHTTPSErrors) options.rejectUnauthorized = false;
+    const requestUrl = new URL(params.url, defaults.baseURL);
+
+    if (params.params) {
+      for (const {
+        name,
+        value
+      } of params.params) requestUrl.searchParams.set(name, value);
+    }
+
+    let postData;
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) postData = serializePostData(params, headers);else if (params.postData || params.jsonData || params.formData || params.multipartData) throw new Error(`Method ${method} does not accept post data`);
+    if (postData) headers['content-length'] = String(postData.byteLength);
+    const controller = new _progress.ProgressController(metadata, this);
+    const fetchResponse = await controller.run(progress => {
+      return this._sendRequest(progress, requestUrl, options, postData);
+    });
+
+    const fetchUid = this._storeResponseBody(fetchResponse.body);
+
+    this.fetchLog.set(fetchUid, controller.metadata.log);
+    if (params.failOnStatusCode && (fetchResponse.status < 200 || fetchResponse.status >= 400)) throw new Error(`${fetchResponse.status} ${fetchResponse.statusText}`);
+    return { ...fetchResponse,
+      fetchUid
+    };
   }
 
-  async _updateCookiesFromHeader(responseUrl, setCookie) {
+  _parseSetCookieHeader(responseUrl, setCookie) {
+    if (!setCookie) return [];
     const url = new URL(responseUrl); // https://datatracker.ietf.org/doc/html/rfc6265#section-5.1.4
 
     const defaultPath = '/' + url.pathname.substr(1).split('/').slice(0, -1).join('/');
@@ -190,7 +194,7 @@ class FetchRequest extends _instrumentation.SdkObject {
       cookies.push(cookie);
     }
 
-    if (cookies.length) await this._addCookies(cookies);
+    return cookies;
   }
 
   async _updateRequestCookieHeader(url, options) {
@@ -203,18 +207,49 @@ class FetchRequest extends _instrumentation.SdkObject {
     }
   }
 
-  async _sendRequest(url, options, postData) {
+  async _sendRequest(progress, url, options, postData) {
+    var _cookie;
+
     await this._updateRequestCookieHeader(url, options);
+    const requestCookies = ((_cookie = options.headers['cookie']) === null || _cookie === void 0 ? void 0 : _cookie.split(';').map(p => {
+      const [name, value] = p.split('=').map(v => v.trim());
+      return {
+        name,
+        value
+      };
+    })) || [];
+    const requestEvent = {
+      url,
+      method: options.method,
+      headers: options.headers,
+      cookies: requestCookies,
+      postData
+    };
+    this.emit(APIRequestContext.Events.Request, requestEvent);
     return new Promise((fulfill, reject) => {
       const requestConstructor = (url.protocol === 'https:' ? https : http).request;
       const request = requestConstructor(url, options, async response => {
-        if (_debugLogger.debugLogger.isEnabled('api')) {
-          _debugLogger.debugLogger.log('api', `← ${response.statusCode} ${response.statusMessage}`);
+        const notifyRequestFinished = body => {
+          const requestFinishedEvent = {
+            requestEvent,
+            httpVersion: response.httpVersion,
+            statusCode: response.statusCode || 0,
+            statusMessage: response.statusMessage || '',
+            headers: response.headers,
+            rawHeaders: response.rawHeaders,
+            cookies,
+            body
+          };
+          this.emit(APIRequestContext.Events.RequestFinished, requestFinishedEvent);
+        };
 
-          for (const [name, value] of Object.entries(response.headers)) _debugLogger.debugLogger.log('api', `  ${name}: ${value}`);
-        }
+        progress.log(`← ${response.statusCode} ${response.statusMessage}`);
 
-        if (response.headers['set-cookie']) await this._updateCookiesFromHeader(response.url || url.toString(), response.headers['set-cookie']);
+        for (const [name, value] of Object.entries(response.headers)) progress.log(`  ${name}: ${value}`);
+
+        const cookies = this._parseSetCookieHeader(response.url || url.toString(), response.headers['set-cookie']);
+
+        if (cookies.length) await this._addCookies(cookies);
 
         if (redirectStatus.includes(response.statusCode)) {
           if (!options.maxRedirects) {
@@ -253,7 +288,8 @@ class FetchRequest extends _instrumentation.SdkObject {
 
           if (response.headers.location) {
             const locationURL = new URL(response.headers.location, url);
-            fulfill(this._sendRequest(locationURL, redirectOptions, postData));
+            notifyRequestFinished();
+            fulfill(this._sendRequest(progress, locationURL, redirectOptions, postData));
             request.destroy();
             return;
           }
@@ -264,20 +300,35 @@ class FetchRequest extends _instrumentation.SdkObject {
 
           const credentials = this._defaultOptions().httpCredentials;
 
-          if (auth !== null && auth !== void 0 && auth.trim().startsWith('Basic ') && credentials) {
+          if (auth !== null && auth !== void 0 && auth.trim().startsWith('Basic') && credentials) {
             const {
               username,
               password
             } = credentials;
             const encoded = Buffer.from(`${username || ''}:${password || ''}`).toString('base64');
             options.headers['authorization'] = `Basic ${encoded}`;
-            fulfill(this._sendRequest(url, options, postData));
+            notifyRequestFinished();
+            fulfill(this._sendRequest(progress, url, options, postData));
             request.destroy();
             return;
           }
         }
 
         response.on('aborted', () => reject(new Error('aborted')));
+        const chunks = [];
+
+        const notifyBodyFinished = () => {
+          const body = Buffer.concat(chunks);
+          notifyRequestFinished(body);
+          fulfill({
+            url: response.url || url.toString(),
+            status: response.statusCode || 0,
+            statusText: response.statusMessage || '',
+            headers: toHeadersArray(response.rawHeaders),
+            body
+          });
+        };
+
         let body = response;
         let transform;
         const encoding = response.headers['content-encoding'];
@@ -294,24 +345,17 @@ class FetchRequest extends _instrumentation.SdkObject {
         }
 
         if (transform) {
-          body = (0, _stream.pipeline)(response, transform, e => {
+          // Brotli and deflate decompressors throw if the input stream is empty.
+          const emptyStreamTransform = new SafeEmptyStreamTransform(notifyBodyFinished);
+          body = (0, _stream.pipeline)(response, emptyStreamTransform, transform, e => {
             if (e) reject(new Error(`failed to decompress '${encoding}' encoding: ${e}`));
           });
+        } else {
+          body.on('error', reject);
         }
 
-        const chunks = [];
         body.on('data', chunk => chunks.push(chunk));
-        body.on('end', () => {
-          const body = Buffer.concat(chunks);
-          fulfill({
-            url: response.url || url.toString(),
-            status: response.statusCode || 0,
-            statusText: response.statusMessage || '',
-            headers: toHeadersArray(response.rawHeaders),
-            body
-          });
-        });
-        body.on('error', reject);
+        body.on('end', notifyBodyFinished);
       });
       request.on('error', reject);
 
@@ -320,15 +364,12 @@ class FetchRequest extends _instrumentation.SdkObject {
         request.destroy();
       };
 
-      this.on(FetchRequest.Events.Dispose, disposeListener);
-      request.on('close', () => this.off(FetchRequest.Events.Dispose, disposeListener));
+      this.on(APIRequestContext.Events.Dispose, disposeListener);
+      request.on('close', () => this.off(APIRequestContext.Events.Dispose, disposeListener));
+      progress.log(`→ ${options.method} ${url.toString()}`);
 
-      if (_debugLogger.debugLogger.isEnabled('api')) {
-        _debugLogger.debugLogger.log('api', `→ ${options.method} ${url.toString()}`);
-
-        if (options.headers) {
-          for (const [name, value] of Object.entries(options.headers)) _debugLogger.debugLogger.log('api', `  ${name}: ${value}`);
-        }
+      if (options.headers) {
+        for (const [name, value] of Object.entries(options.headers)) progress.log(`  ${name}: ${value}`);
       }
 
       if (options.deadline) {
@@ -354,13 +395,34 @@ class FetchRequest extends _instrumentation.SdkObject {
 
 }
 
-exports.FetchRequest = FetchRequest;
-FetchRequest.Events = {
-  Dispose: 'dispose'
+exports.APIRequestContext = APIRequestContext;
+APIRequestContext.Events = {
+  Dispose: 'dispose',
+  Request: 'request',
+  RequestFinished: 'requestfinished'
 };
-FetchRequest.allInstances = new Set();
+APIRequestContext.allInstances = new Set();
 
-class BrowserContextFetchRequest extends FetchRequest {
+class SafeEmptyStreamTransform extends _stream.Transform {
+  constructor(onEmptyStreamCallback) {
+    super();
+    this._receivedSomeData = false;
+    this._onEmptyStreamCallback = void 0;
+    this._onEmptyStreamCallback = onEmptyStreamCallback;
+  }
+
+  _transform(chunk, encoding, callback) {
+    this._receivedSomeData = true;
+    callback(null, chunk);
+  }
+
+  _flush(callback) {
+    if (this._receivedSomeData) callback(null);else this._onEmptyStreamCallback();
+  }
+
+}
+
+class BrowserContextAPIRequestContext extends APIRequestContext {
   constructor(context) {
     super(context);
     this._context = void 0;
@@ -368,7 +430,11 @@ class BrowserContextFetchRequest extends FetchRequest {
     context.once(_browserContext.BrowserContext.Events.Close, () => this._disposeImpl());
   }
 
-  dispose() {
+  tracing() {
+    return this._context.tracing;
+  }
+
+  async dispose() {
     this.fetchResponses.clear();
   }
 
@@ -398,14 +464,16 @@ class BrowserContextFetchRequest extends FetchRequest {
 
 }
 
-exports.BrowserContextFetchRequest = BrowserContextFetchRequest;
+exports.BrowserContextAPIRequestContext = BrowserContextAPIRequestContext;
 
-class GlobalFetchRequest extends FetchRequest {
+class GlobalAPIRequestContext extends APIRequestContext {
   constructor(playwright, options) {
     super(playwright);
     this._cookieStore = new _cookieStore.CookieStore();
     this._options = void 0;
     this._origins = void 0;
+    this._tracing = void 0;
+    this.attribution.context = this;
     const timeoutSettings = new _timeoutSettings.TimeoutSettings();
     if (options.timeout !== undefined) timeoutSettings.setDefaultTimeout(options.timeout);
     const proxy = options.proxy;
@@ -424,16 +492,26 @@ class GlobalFetchRequest extends FetchRequest {
 
     this._options = {
       baseURL: options.baseURL,
-      userAgent: options.userAgent || `Playwright/${(0, _utils.getPlaywrightVersion)()}`,
+      userAgent: options.userAgent || (0, _userAgent.getUserAgent)(),
       extraHTTPHeaders: options.extraHTTPHeaders,
       ignoreHTTPSErrors: !!options.ignoreHTTPSErrors,
       httpCredentials: options.httpCredentials,
       proxy,
       timeoutSettings
     };
+    this._tracing = new _tracing.Tracing(this, options.tracesDir);
   }
 
-  dispose() {
+  tracing() {
+    return this._tracing;
+  }
+
+  async dispose() {
+    await this._tracing.flush();
+    await this._tracing.deleteTmpTracesDir();
+
+    this._tracing.dispose();
+
     this._disposeImpl();
   }
 
@@ -458,7 +536,7 @@ class GlobalFetchRequest extends FetchRequest {
 
 }
 
-exports.GlobalFetchRequest = GlobalFetchRequest;
+exports.GlobalAPIRequestContext = GlobalAPIRequestContext;
 
 function toHeadersArray(rawHeaders) {
   const result = [];
@@ -474,7 +552,23 @@ function toHeadersArray(rawHeaders) {
 const redirectStatus = [301, 302, 303, 307, 308];
 
 function parseCookie(header) {
-  const pairs = header.split(';').filter(s => s.trim().length > 0).map(p => p.split('=').map(s => s.trim()));
+  const pairs = header.split(';').filter(s => s.trim().length > 0).map(p => {
+    let key = '';
+    let value = '';
+    const separatorPos = p.indexOf('=');
+
+    if (separatorPos === -1) {
+      // If only a key is specified, the value is left undefined.
+      key = p.trim();
+    } else {
+      // Otherwise we assume that the key is the element before the first `=`
+      key = p.slice(0, separatorPos).trim(); // And the value is the rest of the string.
+
+      value = p.slice(separatorPos + 1).trim();
+    }
+
+    return [key, value];
+  });
   if (!pairs.length) return null;
   const [name, value] = pairs[0];
   const cookie = {
@@ -525,13 +619,24 @@ function parseCookie(header) {
   return cookie;
 }
 
+function isJsonParsable(value) {
+  if (typeof value !== 'string') return false;
+
+  try {
+    JSON.parse(value);
+    return true;
+  } catch (e) {
+    if (e instanceof SyntaxError) return false;else throw e;
+  }
+}
+
 function serializePostData(params, headers) {
   (0, _utils.assert)((params.postData ? 1 : 0) + (params.jsonData ? 1 : 0) + (params.formData ? 1 : 0) + (params.multipartData ? 1 : 0) <= 1, `Only one of 'data', 'form' or 'multipart' can be specified`);
 
-  if (params.jsonData) {
+  if (params.jsonData !== undefined) {
     var _contentType, _headers$_contentType;
 
-    const json = JSON.stringify(params.jsonData);
+    const json = isJsonParsable(params.jsonData) ? params.jsonData : JSON.stringify(params.jsonData);
     (_headers$_contentType = headers[_contentType = 'content-type']) !== null && _headers$_contentType !== void 0 ? _headers$_contentType : headers[_contentType] = 'application/json';
     return Buffer.from(json, 'utf8');
   } else if (params.formData) {
@@ -557,7 +662,7 @@ function serializePostData(params, headers) {
 
     (_headers$_contentType3 = headers[_contentType3 = 'content-type']) !== null && _headers$_contentType3 !== void 0 ? _headers$_contentType3 : headers[_contentType3] = formData.contentTypeHeader();
     return formData.finish();
-  } else if (params.postData) {
+  } else if (params.postData !== undefined) {
     var _contentType4, _headers$_contentType4;
 
     (_headers$_contentType4 = headers[_contentType4 = 'content-type']) !== null && _headers$_contentType4 !== void 0 ? _headers$_contentType4 : headers[_contentType4] = 'application/octet-stream';

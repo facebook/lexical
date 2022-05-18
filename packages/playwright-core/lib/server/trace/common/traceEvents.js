@@ -20,5 +20,6 @@ exports.VERSION = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// Make sure you add _modernize_N_to_N1(event: any) to traceModel.ts.
 const VERSION = 3;
 exports.VERSION = VERSION;

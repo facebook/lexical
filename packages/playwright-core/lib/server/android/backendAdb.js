@@ -5,21 +5,17 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.AdbBackend = void 0;
 
-var _assert = _interopRequireDefault(require("assert"));
-
-var _debug = _interopRequireDefault(require("debug"));
+var _utilsBundle = require("../../utilsBundle");
 
 var net = _interopRequireWildcard(require("net"));
 
 var _events = require("events");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Copyright Microsoft Corporation. All rights reserved.
@@ -37,12 +33,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * limitations under the License.
  */
 class AdbBackend {
-  async devices() {
-    const result = await runCommand('host:devices');
+  async devices(options = {}) {
+    const result = await runCommand('host:devices', options.host, options.port);
     const lines = result.toString().trim().split('\n');
     return lines.map(line => {
       const [serial, status] = line.trim().split('\t');
-      return new AdbDevice(serial, status);
+      return new AdbDevice(serial, status, options.host, options.port);
     });
   }
 
@@ -51,11 +47,15 @@ class AdbBackend {
 exports.AdbBackend = AdbBackend;
 
 class AdbDevice {
-  constructor(serial, status) {
+  constructor(serial, status, host, port) {
     this.serial = void 0;
     this.status = void 0;
+    this.host = void 0;
+    this.port = void 0;
     this.serial = serial;
     this.status = status;
+    this.host = host;
+    this.port = port;
   }
 
   async init() {}
@@ -63,32 +63,33 @@ class AdbDevice {
   async close() {}
 
   runCommand(command) {
-    return runCommand(command, this.serial);
+    return runCommand(command, this.host, this.port, this.serial);
   }
 
   async open(command) {
-    const result = await open(command, this.serial);
+    const result = await open(command, this.host, this.port, this.serial);
     result.becomeSocket();
     return result;
   }
 
 }
 
-async function runCommand(command, serial) {
-  (0, _debug.default)('pw:adb:runCommand')(command, serial);
+async function runCommand(command, host = '127.0.0.1', port = 5037, serial) {
+  (0, _utilsBundle.debug)('pw:adb:runCommand')(command, serial);
   const socket = new BufferedSocketWrapper(command, net.createConnection({
-    port: 5037
+    host,
+    port
   }));
 
   if (serial) {
     await socket.write(encodeMessage(`host:transport:${serial}`));
     const status = await socket.read(4);
-    (0, _assert.default)(status.toString() === 'OKAY', status.toString());
+    (0, _utils.assert)(status.toString() === 'OKAY', status.toString());
   }
 
   await socket.write(encodeMessage(command));
   const status = await socket.read(4);
-  (0, _assert.default)(status.toString() === 'OKAY', status.toString());
+  (0, _utils.assert)(status.toString() === 'OKAY', status.toString());
   let commandOutput;
 
   if (!command.startsWith('shell:')) {
@@ -102,20 +103,21 @@ async function runCommand(command, serial) {
   return commandOutput;
 }
 
-async function open(command, serial) {
+async function open(command, host = '127.0.0.1', port = 5037, serial) {
   const socket = new BufferedSocketWrapper(command, net.createConnection({
-    port: 5037
+    host,
+    port
   }));
 
   if (serial) {
     await socket.write(encodeMessage(`host:transport:${serial}`));
     const status = await socket.read(4);
-    (0, _assert.default)(status.toString() === 'OKAY', status.toString());
+    (0, _utils.assert)(status.toString() === 'OKAY', status.toString());
   }
 
   await socket.write(encodeMessage(command));
   const status = await socket.read(4);
-  (0, _assert.default)(status.toString() === 'OKAY', status.toString());
+  (0, _utils.assert)(status.toString() === 'OKAY', status.toString());
   return socket;
 }
 
@@ -141,7 +143,7 @@ class BufferedSocketWrapper extends _events.EventEmitter {
     this._connectPromise = new Promise(f => this._socket.on('connect', f));
 
     this._socket.on('data', data => {
-      (0, _debug.default)('pw:adb:data')(data.toString());
+      (0, _utilsBundle.debug)('pw:adb:data')(data.toString());
 
       if (this._isSocket) {
         this.emit('data', data);
@@ -163,28 +165,28 @@ class BufferedSocketWrapper extends _events.EventEmitter {
   }
 
   async write(data) {
-    (0, _debug.default)('pw:adb:send')(data.toString().substring(0, 100) + '...');
+    (0, _utilsBundle.debug)('pw:adb:send')(data.toString().substring(0, 100) + '...');
     await this._connectPromise;
     await new Promise(f => this._socket.write(data, f));
   }
 
   close() {
     if (this._isClosed) return;
-    (0, _debug.default)('pw:adb')('Close ' + this._command);
+    (0, _utilsBundle.debug)('pw:adb')('Close ' + this._command);
 
     this._socket.destroy();
   }
 
   async read(length) {
     await this._connectPromise;
-    (0, _assert.default)(!this._isSocket, 'Can not read by length in socket mode');
+    (0, _utils.assert)(!this._isSocket, 'Can not read by length in socket mode');
 
     while (this._buffer.length < length) await new Promise(f => this._notifyReader = f);
 
     const result = this._buffer.slice(0, length);
 
     this._buffer = this._buffer.slice(length);
-    (0, _debug.default)('pw:adb:recv')(result.toString().substring(0, 100) + '...');
+    (0, _utilsBundle.debug)('pw:adb:recv')(result.toString().substring(0, 100) + '...');
     return result;
   }
 
@@ -195,7 +197,7 @@ class BufferedSocketWrapper extends _events.EventEmitter {
   }
 
   becomeSocket() {
-    (0, _assert.default)(!this._buffer.length);
+    (0, _utils.assert)(!this._buffer.length);
     this._isSocket = true;
   }
 

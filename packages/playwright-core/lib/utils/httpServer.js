@@ -11,11 +11,9 @@ var _fs = _interopRequireDefault(require("fs"));
 
 var _path = _interopRequireDefault(require("path"));
 
-var _ws = require("ws");
+var _utilsBundle = require("../utilsBundle");
 
-var mime = _interopRequireWildcard(require("mime"));
-
-var _utils = require("./utils");
+var _ = require("./");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -39,18 +37,19 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
  * limitations under the License.
  */
 class HttpServer {
-  constructor() {
+  constructor(address = '') {
     this._server = void 0;
     this._urlPrefix = void 0;
     this._port = 0;
+    this._started = false;
     this._routes = [];
     this._activeSockets = new Set();
-    this._urlPrefix = '';
+    this._urlPrefix = address;
     this._server = http.createServer(this._onRequest.bind(this));
   }
 
   createWebSocketServer() {
-    return new _ws.Server({
+    return new _utilsBundle.wsServer({
       server: this._server
     });
   }
@@ -74,7 +73,8 @@ class HttpServer {
   }
 
   async start(port) {
-    console.assert(!this._urlPrefix, 'server already started');
+    (0, _.assert)(!this._started, 'server already started');
+    this._started = true;
 
     this._server.on('connection', socket => {
       this._activeSockets.add(socket);
@@ -88,12 +88,15 @@ class HttpServer {
 
     const address = this._server.address();
 
-    if (typeof address === 'string') {
-      this._urlPrefix = address;
-    } else {
-      (0, _utils.assert)(address, 'Could not bind server socket');
-      this._port = address.port;
-      this._urlPrefix = `http://127.0.0.1:${address.port}`;
+    (0, _.assert)(address, 'Could not bind server socket');
+
+    if (!this._urlPrefix) {
+      if (typeof address === 'string') {
+        this._urlPrefix = address;
+      } else {
+        this._port = address.port;
+        this._urlPrefix = `http://127.0.0.1:${address.port}`;
+      }
     }
 
     return this._urlPrefix;
@@ -109,39 +112,79 @@ class HttpServer {
     return this._urlPrefix;
   }
 
-  serveFile(response, absoluteFilePath, headers) {
+  serveFile(request, response, absoluteFilePath, headers) {
     try {
-      const content = _fs.default.readFileSync(absoluteFilePath);
-
-      response.statusCode = 200;
-      const contentType = mime.getType(_path.default.extname(absoluteFilePath)) || 'application/octet-stream';
-      response.setHeader('Content-Type', contentType);
-      response.setHeader('Content-Length', content.byteLength);
-
       for (const [name, value] of Object.entries(headers || {})) response.setHeader(name, value);
 
-      response.end(content);
+      if (request.headers.range) this._serveRangeFile(request, response, absoluteFilePath);else this._serveFile(response, absoluteFilePath);
       return true;
     } catch (e) {
       return false;
     }
   }
 
-  async serveVirtualFile(response, vfs, entry, headers) {
-    try {
-      const content = await vfs.read(entry);
-      response.statusCode = 200;
-      const contentType = mime.getType(_path.default.extname(entry)) || 'application/octet-stream';
-      response.setHeader('Content-Type', contentType);
-      response.setHeader('Content-Length', content.byteLength);
+  _serveFile(response, absoluteFilePath) {
+    const content = _fs.default.readFileSync(absoluteFilePath);
 
-      for (const [name, value] of Object.entries(headers || {})) response.setHeader(name, value);
+    response.statusCode = 200;
+    const contentType = _utilsBundle.mime.getType(_path.default.extname(absoluteFilePath)) || 'application/octet-stream';
+    response.setHeader('Content-Type', contentType);
+    response.setHeader('Content-Length', content.byteLength);
+    response.end(content);
+  }
 
-      response.end(content);
-      return true;
-    } catch (e) {
-      return false;
-    }
+  _serveRangeFile(request, response, absoluteFilePath) {
+    const range = request.headers.range;
+
+    if (!range || !range.startsWith('bytes=') || range.includes(', ') || [...range].filter(char => char === '-').length !== 1) {
+      response.statusCode = 400;
+      return response.end('Bad request');
+    } // Parse the range header: https://datatracker.ietf.org/doc/html/rfc7233#section-2.1
+
+
+    const [startStr, endStr] = range.replace(/bytes=/, '').split('-'); // Both start and end (when passing to fs.createReadStream) and the range header are inclusive and start counting at 0.
+
+    let start;
+    let end;
+
+    const size = _fs.default.statSync(absoluteFilePath).size;
+
+    if (startStr !== '' && endStr === '') {
+      // No end specified: use the whole file
+      start = +startStr;
+      end = size - 1;
+    } else if (startStr === '' && endStr !== '') {
+      // No start specified: calculate start manually
+      start = size - +endStr;
+      end = size - 1;
+    } else {
+      start = +startStr;
+      end = +endStr;
+    } // Handle unavailable range request
+
+
+    if (Number.isNaN(start) || Number.isNaN(end) || start >= size || end >= size || start > end) {
+      // Return the 416 Range Not Satisfiable: https://datatracker.ietf.org/doc/html/rfc7233#section-4.4
+      response.writeHead(416, {
+        'Content-Range': `bytes */${size}`
+      });
+      return response.end();
+    } // Sending Partial Content: https://datatracker.ietf.org/doc/html/rfc7233#section-4.1
+
+
+    response.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${size}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': end - start + 1,
+      'Content-Type': _utilsBundle.mime.getType(_path.default.extname(absoluteFilePath))
+    });
+
+    const readable = _fs.default.createReadStream(absoluteFilePath, {
+      start,
+      end
+    });
+
+    readable.pipe(response);
   }
 
   _onRequest(request, response) {

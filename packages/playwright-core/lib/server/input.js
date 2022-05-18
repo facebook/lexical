@@ -3,9 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Touchscreen = exports.Mouse = exports.Keyboard = exports.keypadLocation = void 0;
+exports.keypadLocation = exports.Touchscreen = exports.Mouse = exports.Keyboard = void 0;
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var keyboardLayout = _interopRequireWildcard(require("./usKeyboardLayout"));
 
@@ -201,7 +201,7 @@ class Mouse {
     for (let i = 1; i <= steps; i++) {
       const middleX = fromX + (x - fromX) * (i / steps);
       const middleY = fromY + (y - fromY) * (i / steps);
-      await this._raw.move(middleX, middleY, this._lastButton, this._buttons, this._keyboard._modifiers());
+      await this._raw.move(middleX, middleY, this._lastButton, this._buttons, this._keyboard._modifiers(), !!options.forClick);
       await this._page._doSlowMo();
     }
   }
@@ -239,7 +239,9 @@ class Mouse {
     } = options;
 
     if (delay) {
-      this.move(x, y);
+      this.move(x, y, {
+        forClick: true
+      });
 
       for (let cc = 1; cc <= clickCount; ++cc) {
         await this.down({ ...options,
@@ -253,7 +255,9 @@ class Mouse {
       }
     } else {
       const promises = [];
-      promises.push(this.move(x, y));
+      promises.push(this.move(x, y, {
+        forClick: true
+      }));
 
       for (let cc = 1; cc <= clickCount; ++cc) {
         promises.push(this.down({ ...options,

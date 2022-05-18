@@ -7,9 +7,9 @@ exports.WKRouteImpl = exports.WKInterceptableRequest = void 0;
 
 var network = _interopRequireWildcard(require("../network"));
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
-var _async = require("../../utils/async");
+var _manualPromise = require("../../utils/manualPromise");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -108,7 +108,7 @@ class WKRouteImpl {
   constructor(session, requestId) {
     this._session = void 0;
     this._requestId = void 0;
-    this._requestInterceptedPromise = new _async.ManualPromise();
+    this._requestInterceptedPromise = new _manualPromise.ManualPromise();
     this._session = session;
     this._requestId = requestId;
   }

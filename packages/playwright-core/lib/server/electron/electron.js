@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Electron = exports.ElectronApplication = void 0;
+exports.ElectronApplication = exports.Electron = void 0;
 
 var _fs = _interopRequireDefault(require("fs"));
 
@@ -19,7 +19,9 @@ var _crExecutionContext = require("../chromium/crExecutionContext");
 
 var js = _interopRequireWildcard(require("../javascript"));
 
-var _timeoutSettings = require("../../utils/timeoutSettings");
+var _timeoutSettings = require("../../common/timeoutSettings");
+
+var _utils = require("../../utils");
 
 var _transport = require("../transport");
 
@@ -35,7 +37,7 @@ var _eventsHelper = require("../../utils/eventsHelper");
 
 var readline = _interopRequireWildcard(require("readline"));
 
-var _debugLogger = require("../../utils/debugLogger");
+var _debugLogger = require("../../common/debugLogger");
 
 var _instrumentation = require("../instrumentation");
 
@@ -63,7 +65,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const ARTIFACTS_FOLDER = _path.default.join(_os.default.tmpdir(), 'playwright-artifacts-');
 
 class ElectronApplication extends _instrumentation.SdkObject {
-  constructor(parent, browser, nodeConnection) {
+  constructor(parent, browser, nodeConnection, process) {
     super(parent, 'electron-app');
     this._browserContext = void 0;
     this._nodeConnection = void 0;
@@ -71,6 +73,8 @@ class ElectronApplication extends _instrumentation.SdkObject {
     this._nodeExecutionContext = void 0;
     this._nodeElectronHandlePromise = void 0;
     this._timeoutSettings = new _timeoutSettings.TimeoutSettings();
+    this._process = void 0;
+    this._process = process;
     this._browserContext = browser._defaultContext;
 
     this._browserContext.on(_browserContext.BrowserContext.Events.Close, () => {
@@ -91,7 +95,18 @@ class ElectronApplication extends _instrumentation.SdkObject {
       });
     });
 
+    this._browserContext.setCustomCloseHandler(async () => {
+      const electronHandle = await this._nodeElectronHandlePromise;
+      await electronHandle.evaluate(({
+        app
+      }) => app.quit());
+    });
+
     this._nodeSession.send('Runtime.enable', {}).catch(e => {});
+  }
+
+  process() {
+    return this._process;
   }
 
   context() {
@@ -99,12 +114,9 @@ class ElectronApplication extends _instrumentation.SdkObject {
   }
 
   async close() {
-    const progressController = new _progress.ProgressController((0, _instrumentation.internalCallMetadata)(), this);
-    const closed = progressController.run(progress => _helper.helper.waitForEvent(progress, this, ElectronApplication.Events.Close).promise, this._timeoutSettings.timeout({}));
-    const electronHandle = await this._nodeElectronHandlePromise;
-    await electronHandle.evaluate(({
-      app
-    }) => app.quit());
+    const progressController = new _progress.ProgressController((0, _instrumentation.serverSideCallMetadata)(), this);
+    const closed = progressController.run(progress => _helper.helper.waitForEvent(progress, this, ElectronApplication.Events.Close).promise);
+    await this._browserContext.close((0, _instrumentation.serverSideCallMetadata)());
 
     this._nodeConnection.close();
 
@@ -142,7 +154,7 @@ class Electron extends _instrumentation.SdkObject {
     const {
       args = []
     } = options;
-    const controller = new _progress.ProgressController((0, _instrumentation.internalCallMetadata)(), this);
+    const controller = new _progress.ProgressController((0, _instrumentation.serverSideCallMetadata)(), this);
     controller.setLogName('browser');
     return controller.run(async progress => {
       let app = undefined;
@@ -155,14 +167,37 @@ class Electron extends _instrumentation.SdkObject {
 
       const artifactsDir = await _fs.default.promises.mkdtemp(ARTIFACTS_FOLDER);
       const browserLogsCollector = new _debugLogger.RecentLogsCollector();
+      const env = options.env ? (0, _processLauncher.envArrayToObject)(options.env) : process.env;
+      let command;
+
+      if (options.executablePath) {
+        command = options.executablePath;
+      } else {
+        try {
+          // By default we fallback to the Electron App executable path.
+          // 'electron/index.js' resolves to the actual Electron App.
+          command = require('electron/index.js');
+        } catch (error) {
+          if ((error === null || error === void 0 ? void 0 : error.code) === 'MODULE_NOT_FOUND') {
+            throw new Error('\n' + (0, _utils.wrapInASCIIBox)(['Electron executablePath not found!', 'Please install it using `npm install -D electron` or set the executablePath to your Electron executable.'].join('\n'), 1));
+          }
+
+          throw error;
+        }
+      } // When debugging Playwright test that runs Electron, NODE_OPTIONS
+      // will make the debugger attach to Electron's Node. But Playwright
+      // also needs to attach to drive the automation. Disable external debugging.
+
+
+      delete env.NODE_OPTIONS;
       const {
         launchedProcess,
         gracefullyClose,
         kill
       } = await (0, _processLauncher.launchProcess)({
-        command: options.executablePath || require('electron/index.js'),
+        command,
         args: electronArguments,
-        env: options.env ? (0, _processLauncher.envArrayToObject)(options.env) : process.env,
+        env,
         log: message => {
           progress.log(message);
           browserLogsCollector.log(message);
@@ -181,7 +216,11 @@ class Electron extends _instrumentation.SdkObject {
       });
       const nodeMatch = await waitForLine(progress, launchedProcess, /^Debugger listening on (ws:\/\/.*)$/);
       const nodeTransport = await _transport.WebSocketTransport.connect(progress, nodeMatch[1]);
-      const nodeConnection = new _crConnection.CRConnection(nodeTransport, _helper.helper.debugProtocolLogger(), browserLogsCollector);
+      const nodeConnection = new _crConnection.CRConnection(nodeTransport, _helper.helper.debugProtocolLogger(), browserLogsCollector); // Immediately release exiting process under debug.
+
+      waitForLine(progress, launchedProcess, /Waiting for the debugger to disconnect\.\.\./).then(() => {
+        nodeTransport.close();
+      }).catch(() => {});
       const chromeMatch = await Promise.race([waitForLine(progress, launchedProcess, /^DevTools listening on (ws:\/\/.*)$/), waitForXserverError]);
       const chromeTransport = await _transport.WebSocketTransport.connect(progress, chromeMatch[1]);
       const browserProcess = {
@@ -190,25 +229,14 @@ class Electron extends _instrumentation.SdkObject {
         close: gracefullyClose,
         kill
       };
+      const contextOptions = { ...options,
+        noDefaultViewport: true
+      };
       const browserOptions = { ...this._playwrightOptions,
         name: 'electron',
         isChromium: true,
         headful: true,
-        persistent: {
-          noDefaultViewport: true,
-          acceptDownloads: options.acceptDownloads,
-          bypassCSP: options.bypassCSP,
-          colorScheme: options.colorScheme,
-          extraHTTPHeaders: options.extraHTTPHeaders,
-          geolocation: options.geolocation,
-          httpCredentials: options.httpCredentials,
-          ignoreHTTPSErrors: options.ignoreHTTPSErrors,
-          locale: options.locale,
-          offline: options.offline,
-          recordHar: options.recordHar,
-          recordVideo: options.recordVideo,
-          timezoneId: options.timezoneId
-        },
+        persistent: contextOptions,
         browserProcess,
         protocolLogger: _helper.helper.debugProtocolLogger(),
         browserLogsCollector,
@@ -216,8 +244,9 @@ class Electron extends _instrumentation.SdkObject {
         downloadsPath: artifactsDir,
         tracesDir: artifactsDir
       };
+      (0, _browserContext.validateBrowserContextOptions)(contextOptions, browserOptions);
       const browser = await _crBrowser.CRBrowser.connect(chromeTransport, browserOptions);
-      app = new ElectronApplication(this, browser, nodeConnection);
+      app = new ElectronApplication(this, browser, nodeConnection, launchedProcess);
       return app;
     }, _timeoutSettings.TimeoutSettings.timeout(options));
   }

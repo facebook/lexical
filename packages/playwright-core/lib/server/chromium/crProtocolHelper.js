@@ -3,16 +3,17 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getExceptionMessage = getExceptionMessage;
-exports.releaseObject = releaseObject;
-exports.readProtocolStream = readProtocolStream;
-exports.toConsoleMessageLocation = toConsoleMessageLocation;
 exports.exceptionToError = exceptionToError;
+exports.getExceptionMessage = getExceptionMessage;
+exports.readProtocolStream = readProtocolStream;
+exports.releaseObject = releaseObject;
+exports.toButtonsMask = toButtonsMask;
+exports.toConsoleMessageLocation = toConsoleMessageLocation;
 exports.toModifiersMask = toModifiersMask;
 
 var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require("../../utils/utils");
+var _fileUtils = require("../../utils/fileUtils");
 
 var _stackTrace = require("../../utils/stackTrace");
 
@@ -60,7 +61,7 @@ async function readProtocolStream(client, handle, path) {
   let fd;
 
   if (path) {
-    await (0, _utils.mkdirIfNeeded)(path);
+    await (0, _fileUtils.mkdirIfNeeded)(path);
     fd = await _fs.default.promises.open(path, 'w');
   }
 
@@ -125,5 +126,13 @@ function toModifiersMask(modifiers) {
   if (modifiers.has('Control')) mask |= 2;
   if (modifiers.has('Meta')) mask |= 4;
   if (modifiers.has('Shift')) mask |= 8;
+  return mask;
+}
+
+function toButtonsMask(buttons) {
+  let mask = 0;
+  if (buttons.has('left')) mask |= 1;
+  if (buttons.has('right')) mask |= 2;
+  if (buttons.has('middle')) mask |= 4;
   return mask;
 }

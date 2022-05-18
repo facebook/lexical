@@ -3,9 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Transport = void 0;
+exports.PipeTransport = exports.IpcTransport = void 0;
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -22,7 +22,7 @@ var _utils = require("../utils/utils");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class Transport {
+class PipeTransport {
   constructor(pipeWrite, pipeRead, closeable, endian = 'le') {
     this._pipeWrite = void 0;
     this._data = Buffer.from([]);
@@ -93,4 +93,30 @@ class Transport {
 
 }
 
-exports.Transport = Transport;
+exports.PipeTransport = PipeTransport;
+
+class IpcTransport {
+  constructor(process) {
+    this._process = void 0;
+    this.onmessage = void 0;
+    this.onclose = void 0;
+    this._process = process;
+
+    this._process.on('message', message => {
+      var _this$onclose, _this$onmessage;
+
+      if (message === '<eof>') (_this$onclose = this.onclose) === null || _this$onclose === void 0 ? void 0 : _this$onclose.call(this);else (_this$onmessage = this.onmessage) === null || _this$onmessage === void 0 ? void 0 : _this$onmessage.call(this, message);
+    });
+  }
+
+  send(message) {
+    this._process.send(message);
+  }
+
+  close() {
+    this._process.send('<eof>');
+  }
+
+}
+
+exports.IpcTransport = IpcTransport;

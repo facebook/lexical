@@ -3,19 +3,19 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.CRSession = exports.CRSessionEvents = exports.CRConnection = exports.kBrowserCloseMessageId = exports.ConnectionEvents = void 0;
+exports.kBrowserCloseMessageId = exports.ConnectionEvents = exports.CRSessionEvents = exports.CRSession = exports.CRConnection = void 0;
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _events = require("events");
 
 var _stackTrace = require("../../utils/stackTrace");
 
-var _debugLogger = require("../../utils/debugLogger");
+var _debugLogger = require("../../common/debugLogger");
 
 var _helper = require("../helper");
 
-var _protocolError = require("../common/protocolError");
+var _protocolError = require("../protocolError");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.
@@ -212,12 +212,15 @@ class CRSession extends _events.EventEmitter {
   }
 
   _onMessage(object) {
+    var _object$error;
+
     if (object.id && this._callbacks.has(object.id)) {
       const callback = this._callbacks.get(object.id);
 
       this._callbacks.delete(object.id);
 
       if (object.error) callback.reject(createProtocolError(callback.error, callback.method, object.error));else callback.resolve(object.result);
+    } else if (object.id && ((_object$error = object.error) === null || _object$error === void 0 ? void 0 : _object$error.code) === -32001) {// Message to a closed session, just ignore it.
     } else {
       (0, _utils.assert)(!object.id);
       Promise.resolve().then(() => {

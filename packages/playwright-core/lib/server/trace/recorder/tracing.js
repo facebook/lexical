@@ -3,16 +3,24 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.shouldCaptureSnapshot = shouldCaptureSnapshot;
 exports.Tracing = void 0;
+exports.shouldCaptureSnapshot = shouldCaptureSnapshot;
 
 var _fs = _interopRequireDefault(require("fs"));
 
+var _os = _interopRequireDefault(require("os"));
+
 var _path = _interopRequireDefault(require("path"));
 
-var _yazl = _interopRequireDefault(require("yazl"));
+var _channels = require("../../../protocol/channels");
 
-var _utils = require("../../../utils/utils");
+var _manualPromise = require("../../../utils/manualPromise");
+
+var _eventsHelper = require("../../../utils/eventsHelper");
+
+var _utils = require("../../../utils");
+
+var _fileUtils = require("../../../utils/fileUtils");
 
 var _artifact = require("../../artifact");
 
@@ -20,19 +28,17 @@ var _browserContext = require("../../browserContext");
 
 var _dom = require("../../dom");
 
-var _eventsHelper = require("../../../utils/eventsHelper");
+var _instrumentation = require("../../instrumentation");
 
 var _page = require("../../page");
 
-var _channels = require("../../../protocol/channels");
-
-var _snapshotter = require("./snapshotter");
-
-var _harTracer = require("../../supplements/har/harTracer");
+var _harTracer = require("../../har/harTracer");
 
 var _traceEvents = require("../common/traceEvents");
 
-var _async = require("../../../utils/async");
+var _snapshotter = require("./snapshotter");
+
+var _zipBundle = require("../../../zipBundle");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -57,24 +63,23 @@ const kScreencastOptions = {
   quality: 90
 };
 
-class Tracing {
-  constructor(context) {
+class Tracing extends _instrumentation.SdkObject {
+  constructor(context, tracesDir) {
+    super(context, 'Tracing');
     this._writeChain = Promise.resolve();
     this._snapshotter = void 0;
     this._harTracer = void 0;
     this._screencastListeners = [];
     this._pendingCalls = new Map();
     this._context = void 0;
-    this._resourcesDir = void 0;
     this._state = void 0;
     this._isStopping = false;
-    this._tracesDir = void 0;
+    this._precreatedTracesDir = void 0;
+    this._tracesTmpDir = void 0;
     this._allResources = new Set();
     this._contextCreatedEvent = void 0;
     this._context = context;
-    this._tracesDir = context._browser.options.tracesDir;
-    this._resourcesDir = _path.default.join(this._tracesDir, 'resources');
-    this._snapshotter = new _snapshotter.Snapshotter(context, this);
+    this._precreatedTracesDir = tracesDir;
     this._harTracer = new _harTracer.HarTracer(context, this, {
       content: 'sha1',
       waitForContentOnStop: false,
@@ -83,12 +88,21 @@ class Tracing {
     this._contextCreatedEvent = {
       version: _traceEvents.VERSION,
       type: 'context-options',
-      browserName: this._context._browser.options.name,
-      options: this._context._options
+      browserName: '',
+      options: {},
+      platform: process.platform,
+      wallTime: 0
     };
+
+    if (context instanceof _browserContext.BrowserContext) {
+      this._snapshotter = new _snapshotter.Snapshotter(context, this);
+      (0, _utils.assert)(tracesDir, 'tracesDir must be specified for BrowserContext');
+      this._contextCreatedEvent.browserName = context._browser.options.name;
+      this._contextCreatedEvent.options = context._options;
+    }
   }
 
-  start(options) {
+  async start(options) {
     if (this._isStopping) throw new Error('Cannot start tracing while stopping');
 
     if (this._state) {
@@ -99,51 +113,63 @@ class Tracing {
     // and conflict.
 
 
-    const traceName = options.name || (0, _utils.createGuid)();
-
-    const traceFile = _path.default.join(this._tracesDir, traceName + '.trace');
-
-    const networkFile = _path.default.join(this._tracesDir, traceName + '.network');
+    const traceName = options.name || (0, _utils.createGuid)(); // Init the state synchrounously.
 
     this._state = {
       options,
       traceName,
-      traceFile,
-      networkFile,
+      traceFile: '',
+      networkFile: '',
+      tracesDir: '',
+      resourcesDir: '',
       filesCount: 0,
-      sha1s: new Set(),
+      traceSha1s: new Set(),
+      networkSha1s: new Set(),
+      sources: new Set(),
       recording: false
     };
-    this._writeChain = _fs.default.promises.mkdir(this._resourcesDir, {
+    const state = this._state;
+    state.tracesDir = await this._createTracesDirIfNeeded();
+    state.resourcesDir = _path.default.join(state.tracesDir, 'resources');
+    state.traceFile = _path.default.join(state.tracesDir, traceName + '.trace');
+    state.networkFile = _path.default.join(state.tracesDir, traceName + '.network');
+    this._writeChain = _fs.default.promises.mkdir(state.resourcesDir, {
       recursive: true
-    }).then(() => _fs.default.promises.writeFile(networkFile, ''));
+    }).then(() => _fs.default.promises.writeFile(state.networkFile, ''));
     if (options.snapshots) this._harTracer.start();
   }
 
   async startChunk(options = {}) {
-    if (this._state && this._state.recording) await this.stopChunk(false, false);
+    var _this$_snapshotter;
+
+    if (this._state && this._state.recording) await this.stopChunk({
+      mode: 'doNotSave'
+    });
     if (!this._state) throw new Error('Must start tracing before starting a new chunk');
     if (this._isStopping) throw new Error('Cannot start a trace chunk while stopping');
     const state = this._state;
     const suffix = state.filesCount ? `-${state.filesCount}` : ``;
     state.filesCount++;
-    state.traceFile = _path.default.join(this._tracesDir, `${state.traceName}${suffix}.trace`);
+    state.traceFile = _path.default.join(state.tracesDir, `${state.traceName}${suffix}.trace`);
     state.recording = true;
 
     this._appendTraceOperation(async () => {
-      await (0, _utils.mkdirIfNeeded)(state.traceFile);
+      await (0, _fileUtils.mkdirIfNeeded)(state.traceFile);
       await _fs.default.promises.appendFile(state.traceFile, JSON.stringify({ ...this._contextCreatedEvent,
-        title: options.title
+        title: options.title,
+        wallTime: Date.now()
       }) + '\n');
     });
 
-    this._context.instrumentation.addListener(this);
+    this._context.instrumentation.addListener(this, this._context);
 
     if (state.options.screenshots) this._startScreencast();
-    if (state.options.snapshots) await this._snapshotter.start();
+    if (state.options.snapshots) await ((_this$_snapshotter = this._snapshotter) === null || _this$_snapshotter === void 0 ? void 0 : _this$_snapshotter.start());
   }
 
   _startScreencast() {
+    if (!(this._context instanceof _browserContext.BrowserContext)) return;
+
     for (const page of this._context.pages()) this._startScreencastInPage(page);
 
     this._screencastListeners.push(_eventsHelper.eventsHelper.addEventListener(this._context, _browserContext.BrowserContext.Events.Page, this._startScreencastInPage.bind(this)));
@@ -151,6 +177,8 @@ class Tracing {
 
   _stopScreencast() {
     _eventsHelper.eventsHelper.removeEventListeners(this._screencastListeners);
+
+    if (!(this._context instanceof _browserContext.BrowserContext)) return;
 
     for (const page of this._context.pages()) page.setScreencastOptions(null);
   }
@@ -166,15 +194,50 @@ class Tracing {
     this._state = undefined;
   }
 
-  async dispose() {
-    this._snapshotter.dispose();
+  async deleteTmpTracesDir() {
+    if (this._tracesTmpDir) await (0, _fileUtils.removeFolders)([this._tracesTmpDir]);
+  }
 
+  async _createTracesDirIfNeeded() {
+    if (this._precreatedTracesDir) return this._precreatedTracesDir;
+    this._tracesTmpDir = await _fs.default.promises.mkdtemp(_path.default.join(_os.default.tmpdir(), 'playwright-tracing-'));
+    return this._tracesTmpDir;
+  }
+
+  async flush() {
+    var _this$_snapshotter2;
+
+    (_this$_snapshotter2 = this._snapshotter) === null || _this$_snapshotter2 === void 0 ? void 0 : _this$_snapshotter2.dispose();
     await this._writeChain;
   }
 
-  async stopChunk(save, skipCompress) {
+  async dispose() {
+    var _this$_snapshotter3;
+
+    (_this$_snapshotter3 = this._snapshotter) === null || _this$_snapshotter3 === void 0 ? void 0 : _this$_snapshotter3.dispose();
+    this.emit(Tracing.Events.Dispose);
+  }
+
+  async stopChunk(params) {
+    var _this$_state, _this$_snapshotter4;
+
     if (this._isStopping) throw new Error(`Tracing is already stopping`);
     this._isStopping = true;
+
+    if (!this._state || !this._state.recording) {
+      this._isStopping = false;
+      if (params.mode !== 'doNotSave') throw new Error(`Must start tracing before stopping`);
+      return {
+        artifact: null,
+        sourceEntries: []
+      };
+    }
+
+    const state = this._state;
+
+    this._context.instrumentation.removeListener(this);
+
+    if ((_this$_state = this._state) !== null && _this$_state !== void 0 && _this$_state.options.screenshots) this._stopScreencast();
 
     for (const {
       sdkObject,
@@ -201,29 +264,13 @@ class Tracing {
       await this.onAfterCall(sdkObject, callMetadata);
     }
 
-    if (!this._state || !this._state.recording) {
-      this._isStopping = false;
-      if (save) throw new Error(`Must start tracing before stopping`);
-      return {
-        artifact: null,
-        entries: []
-      };
-    }
-
-    const state = this._state;
-
-    this._context.instrumentation.removeListener(this);
-
-    if (state.options.screenshots) this._stopScreencast();
-    if (state.options.snapshots) await this._snapshotter.stop(); // Chain the export operation against write operations,
+    if (state.options.snapshots) await ((_this$_snapshotter4 = this._snapshotter) === null || _this$_snapshotter4 === void 0 ? void 0 : _this$_snapshotter4.stop()); // Chain the export operation against write operations,
     // so that neither trace files nor sha1s change during the export.
 
     return (await this._appendTraceOperation(async () => {
-      this._isStopping = false;
-      state.recording = false;
-      if (!save) return {
+      if (params.mode === 'doNotSave') return {
         artifact: null,
-        entries: []
+        sourceEntries: undefined
       }; // Har files a live, make a snapshot before returning the resulting entries.
 
       const networkFile = _path.default.join(state.networkFile, '..', (0, _utils.createGuid)());
@@ -239,25 +286,50 @@ class Tracing {
         value: networkFile
       });
 
-      for (const sha1 of state.sha1s) entries.push({
+      for (const sha1 of new Set([...state.traceSha1s, ...state.networkSha1s])) entries.push({
         name: _path.default.join('resources', sha1),
-        value: _path.default.join(this._resourcesDir, sha1)
+        value: _path.default.join(state.resourcesDir, sha1)
       });
 
-      const zipArtifact = skipCompress ? null : await this._exportZip(entries, state).catch(() => null);
+      let sourceEntries;
+
+      if (state.sources.size) {
+        sourceEntries = [];
+
+        for (const value of state.sources) {
+          const entry = {
+            name: 'resources/src@' + (0, _utils.calculateSha1)(value) + '.txt',
+            value
+          };
+
+          if (params.mode === 'compressTraceAndSources') {
+            if (_fs.default.existsSync(entry.value)) entries.push(entry);
+          } else {
+            sourceEntries.push(entry);
+          }
+        }
+      }
+
+      const artifact = await this._exportZip(entries, state).catch(() => null);
       return {
-        artifact: zipArtifact,
-        entries
+        artifact,
+        sourceEntries
       };
+    }).finally(() => {
+      // Only reset trace sha1s, network resources are preserved between chunks.
+      state.traceSha1s = new Set();
+      state.sources = new Set();
+      this._isStopping = false;
+      state.recording = false;
     })) || {
       artifact: null,
-      entries: []
+      sourceEntries: undefined
     };
   }
 
   async _exportZip(entries, state) {
-    const zipFile = new _yazl.default.ZipFile();
-    const result = new _async.ManualPromise();
+    const zipFile = new _zipBundle.yazl.ZipFile();
+    const result = new _manualPromise.ManualPromise();
     zipFile.on('error', error => result.reject(error));
 
     for (const entry of entries) zipFile.addFile(entry.value, entry.name);
@@ -273,6 +345,7 @@ class Tracing {
   }
 
   async _captureSnapshot(name, sdkObject, metadata, element) {
+    if (!this._snapshotter) return;
     if (!sdkObject.attribution.page) return;
     if (!this._snapshotter.started()) return;
     if (!shouldCaptureSnapshot(metadata)) return;
@@ -288,7 +361,7 @@ class Tracing {
   }
 
   async onBeforeCall(sdkObject, metadata) {
-    var _sdkObject$attributio;
+    var _sdkObject$attributio, _this$_state2;
 
     (_sdkObject$attributio = sdkObject.attribution.page) === null || _sdkObject$attributio === void 0 ? void 0 : _sdkObject$attributio.temporarlyDisableTracingScreencastThrottling(); // Set afterSnapshot name for all the actions that operate selectors.
     // Elements resolved from selectors will be marked on the snapshot.
@@ -302,6 +375,10 @@ class Tracing {
       metadata,
       beforeSnapshot
     });
+
+    if ((_this$_state2 = this._state) !== null && _this$_state2 !== void 0 && _this$_state2.options.sources) {
+      for (const frame of metadata.stack || []) this._state.sources.add(frame.file);
+    }
 
     await beforeSnapshot;
   }
@@ -363,7 +440,7 @@ class Tracing {
     };
 
     this._appendTraceOperation(async () => {
-      visitSha1s(event, this._state.sha1s);
+      visitSha1s(event, this._state.networkSha1s);
       await _fs.default.promises.appendFile(this._state.networkFile, JSON.stringify(event) + '\n');
     });
   }
@@ -386,10 +463,9 @@ class Tracing {
   _startScreencastInPage(page) {
     page.setScreencastOptions(kScreencastOptions);
     const prefix = page.guid;
-    let frameSeq = 0;
 
     this._screencastListeners.push(_eventsHelper.eventsHelper.addEventListener(page, _page.Page.Events.ScreencastFrame, params => {
-      const suffix = String(++frameSeq).padStart(10, '0');
+      const suffix = params.timestamp || Date.now();
       const sha1 = `${prefix}-${suffix}.jpeg`;
       const event = {
         type: 'screencast-frame',
@@ -408,7 +484,7 @@ class Tracing {
 
   _appendTraceEvent(event) {
     this._appendTraceOperation(async () => {
-      visitSha1s(event, this._state.sha1s);
+      visitSha1s(event, this._state.traceSha1s);
       await _fs.default.promises.appendFile(this._state.traceFile, JSON.stringify(event) + '\n');
     });
   }
@@ -418,9 +494,9 @@ class Tracing {
 
     this._allResources.add(sha1);
 
-    this._appendTraceOperation(async () => {
-      const resourcePath = _path.default.join(this._resourcesDir, sha1);
+    const resourcePath = _path.default.join(this._state.resourcesDir, sha1);
 
+    this._appendTraceOperation(async () => {
       try {
         // Perhaps we've already written this resource?
         await _fs.default.promises.access(resourcePath);
@@ -437,7 +513,9 @@ class Tracing {
     let error;
     let result;
     this._writeChain = this._writeChain.then(async () => {
-      if (!this._context._browser.isConnected()) return;
+      // This check is here because closing the browser removes the tracesDir and tracing
+      // dies trying to archive.
+      if (this._context instanceof _browserContext.BrowserContext && !this._context._browser.isConnected()) return;
 
       try {
         result = await cb();
@@ -453,6 +531,9 @@ class Tracing {
 }
 
 exports.Tracing = Tracing;
+Tracing.Events = {
+  Dispose: 'dispose'
+};
 
 function visitSha1s(object, sha1s) {
   if (Array.isArray(object)) {

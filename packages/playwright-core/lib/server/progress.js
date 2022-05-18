@@ -5,11 +5,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ProgressController = void 0;
 
-var _errors = require("../utils/errors");
+var _errors = require("../common/errors");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-var _async = require("../utils/async");
+var _manualPromise = require("../utils/manualPromise");
 
 /**
  * Copyright (c) Microsoft Corporation.
@@ -29,7 +29,7 @@ var _async = require("../utils/async");
 class ProgressController {
   // Cleanups to be run only in the case of abort.
   constructor(metadata, sdkObject) {
-    this._forceAbortPromise = new _async.ManualPromise();
+    this._forceAbortPromise = new _manualPromise.ManualPromise();
     this._cleanups = [];
     this._logName = 'api';
     this._state = 'before';
@@ -74,7 +74,7 @@ class ProgressController {
           const message = entry.message;
           if (this._state === 'running') this.metadata.log.push(message); // Note: we might be sending logs after progress has finished, for example browser logs.
 
-          this.instrumentation.onCallLog(this._logName, message, this.sdkObject, this.metadata);
+          this.instrumentation.onCallLog(this.sdkObject, this.metadata, this._logName, message);
         }
 
         if ('intermediateResult' in entry) this._lastIntermediateResult = entry.intermediateResult;

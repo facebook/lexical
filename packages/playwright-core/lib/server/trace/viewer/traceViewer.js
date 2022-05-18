@@ -7,13 +7,15 @@ exports.showTraceViewer = showTraceViewer;
 
 var _path = _interopRequireDefault(require("path"));
 
+var _fs = _interopRequireDefault(require("fs"));
+
 var consoleApiSource = _interopRequireWildcard(require("../../../generated/consoleApiSource"));
 
 var _httpServer = require("../../../utils/httpServer");
 
-var _registry = require("../../../utils/registry");
+var _registry = require("../../registry");
 
-var _utils = require("../../../utils/utils");
+var _utils = require("../../../utils");
 
 var _crApp = require("../../chromium/crApp");
 
@@ -44,7 +46,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-async function showTraceViewer(traceUrl, browserName, headless = false, port) {
+async function showTraceViewer(traceUrls, browserName, headless = false, port) {
+  for (const traceUrl of traceUrls) {
+    if (!traceUrl.startsWith('http://') && !traceUrl.startsWith('https://') && !_fs.default.existsSync(traceUrl)) {
+      // eslint-disable-next-line no-console
+      console.error(`Trace file ${traceUrl} does not exist!`);
+      process.exit(1);
+    }
+  }
+
   const server = new _httpServer.HttpServer();
   server.routePrefix('/trace', (request, response) => {
     const url = new URL('http://localhost' + request.url);
@@ -52,7 +62,7 @@ async function showTraceViewer(traceUrl, browserName, headless = false, port) {
 
     if (relativePath.startsWith('/file')) {
       try {
-        return server.serveFile(response, url.searchParams.get('path'));
+        return server.serveFile(request, response, url.searchParams.get('path'));
       } catch (e) {
         return false;
       }
@@ -60,29 +70,31 @@ async function showTraceViewer(traceUrl, browserName, headless = false, port) {
 
     const absolutePath = _path.default.join(__dirname, '..', '..', '..', 'webpack', 'traceViewer', ...relativePath.split('/'));
 
-    return server.serveFile(response, absolutePath);
+    return server.serveFile(request, response, absolutePath);
   });
   const urlPrefix = await server.start(port);
   const traceViewerPlaywright = (0, _playwright.createPlaywright)('javascript', true);
   const traceViewerBrowser = (0, _utils.isUnderTest)() ? 'chromium' : browserName;
-  const args = traceViewerBrowser === 'chromium' ? ['--app=data:text/html,', '--window-size=1280,800'] : [];
+  const args = traceViewerBrowser === 'chromium' ? ['--app=data:text/html,', '--window-size=1280,800', '--test-type='] : [];
   if ((0, _utils.isUnderTest)()) args.push(`--remote-debugging-port=0`);
-  const context = await traceViewerPlaywright[traceViewerBrowser].launchPersistentContext((0, _instrumentation.internalCallMetadata)(), '', {
+  const context = await traceViewerPlaywright[traceViewerBrowser].launchPersistentContext((0, _instrumentation.serverSideCallMetadata)(), '', {
     // TODO: store language in the trace.
     channel: (0, _registry.findChromiumChannel)(traceViewerPlaywright.options.sdkLanguage),
     args,
     noDefaultViewport: true,
+    ignoreDefaultArgs: ['--enable-automation'],
     headless,
     useWebSocket: (0, _utils.isUnderTest)()
   });
-  const controller = new _progress.ProgressController((0, _instrumentation.internalCallMetadata)(), context._browser);
+  const controller = new _progress.ProgressController((0, _instrumentation.serverSideCallMetadata)(), context._browser);
   await controller.run(async progress => {
     await context._browser._defaultContext._loadDefaultContextAsIs(progress);
   });
   await context.extendInjectedScript(consoleApiSource.source);
   const [page] = context.pages();
   if (traceViewerBrowser === 'chromium') await (0, _crApp.installAppIcon)(page);
-  if ((0, _utils.isUnderTest)()) page.on('close', () => context.close((0, _instrumentation.internalCallMetadata)()).catch(() => {}));else page.on('close', () => process.exit());
-  await page.mainFrame().goto((0, _instrumentation.internalCallMetadata)(), urlPrefix + `/trace/index.html${traceUrl ? '?trace=' + traceUrl : ''}`);
+  if ((0, _utils.isUnderTest)()) page.on('close', () => context.close((0, _instrumentation.serverSideCallMetadata)()).catch(() => {}));else page.on('close', () => process.exit());
+  const searchQuery = traceUrls.length ? '?' + traceUrls.map(t => `trace=${t}`).join('&') : '';
+  await page.mainFrame().goto((0, _instrumentation.serverSideCallMetadata)(), urlPrefix + `/trace/index.html${searchQuery}`);
   return context;
 }

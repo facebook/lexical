@@ -3,19 +3,19 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.FFSession = exports.FFSessionEvents = exports.FFConnection = exports.kBrowserCloseMessageId = exports.ConnectionEvents = void 0;
+exports.kBrowserCloseMessageId = exports.FFSessionEvents = exports.FFSession = exports.FFConnection = exports.ConnectionEvents = void 0;
 
 var _events = require("events");
 
-var _utils = require("../../utils/utils");
+var _utils = require("../../utils");
 
 var _stackTrace = require("../../utils/stackTrace");
 
-var _debugLogger = require("../../utils/debugLogger");
+var _debugLogger = require("../../common/debugLogger");
 
 var _helper = require("../helper");
 
-var _protocolError = require("../common/protocolError");
+var _protocolError = require("../protocolError");
 
 /**
  * Copyright 2017 Google Inc. All rights reserved.

@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-Object.defineProperty(exports, '__esModule', {
-  value: true,
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 exports.getAccessibilityTree = getAccessibilityTree;
 
@@ -23,44 +23,44 @@ exports.getAccessibilityTree = getAccessibilityTree;
  */
 async function getAccessibilityTree(session, needle) {
   const objectId = needle ? needle._objectId : undefined;
-  const {tree} = await session.send('Accessibility.getFullAXTree', {
-    objectId,
+  const {
+    tree
+  } = await session.send('Accessibility.getFullAXTree', {
+    objectId
   });
   const axNode = new FFAXNode(tree);
   return {
     tree: axNode,
-    needle: needle ? axNode._findNeedle() : null,
+    needle: needle ? axNode._findNeedle() : null
   };
 }
 
-const FFRoleToARIARole = new Map(
-  Object.entries({
-    pushbutton: 'button',
-    checkbutton: 'checkbox',
-    editcombobox: 'combobox',
-    'content deletion': 'deletion',
-    footnote: 'doc-footnote',
-    'non-native document': 'document',
-    grouping: 'group',
-    graphic: 'img',
-    'content insertion': 'insertion',
-    animation: 'marquee',
-    'flat equation': 'math',
-    menupopup: 'menu',
-    'check menu item': 'menuitemcheckbox',
-    'radio menu item': 'menuitemradio',
-    'listbox option': 'option',
-    radiobutton: 'radio',
-    statusbar: 'status',
-    pagetab: 'tab',
-    pagetablist: 'tablist',
-    propertypage: 'tabpanel',
-    entry: 'textbox',
-    lexical: 'tree',
-    'tree table': 'treegrid',
-    lexicalitem: 'treeitem',
-  }),
-);
+const FFRoleToARIARole = new Map(Object.entries({
+  'pushbutton': 'button',
+  'checkbutton': 'checkbox',
+  'editcombobox': 'combobox',
+  'content deletion': 'deletion',
+  'footnote': 'doc-footnote',
+  'non-native document': 'document',
+  'grouping': 'group',
+  'graphic': 'img',
+  'content insertion': 'insertion',
+  'animation': 'marquee',
+  'flat equation': 'math',
+  'menupopup': 'menu',
+  'check menu item': 'menuitemcheckbox',
+  'radio menu item': 'menuitemradio',
+  'listbox option': 'option',
+  'radiobutton': 'radio',
+  'statusbar': 'status',
+  'pagetab': 'tab',
+  'pagetablist': 'tablist',
+  'propertypage': 'tabpanel',
+  'entry': 'textbox',
+  'outline': 'tree',
+  'tree table': 'treegrid',
+  'outlineitem': 'treeitem'
+}));
 
 class FFAXNode {
   constructor(payload) {
@@ -74,10 +74,9 @@ class FFAXNode {
     this._role = void 0;
     this._cachedHasFocusableChild = void 0;
     this._payload = payload;
-    this._children = (payload.children || []).map((x) => new FFAXNode(x));
+    this._children = (payload.children || []).map(x => new FFAXNode(x));
     this._editable = !!payload.editable;
-    this._richlyEditable =
-      this._editable && payload.tag !== 'textarea' && payload.tag !== 'input';
+    this._richlyEditable = this._editable && payload.tag !== 'textarea' && payload.tag !== 'input';
     this._focusable = !!payload.focusable;
     this._expanded = !!payload.expanded;
     this._name = this._payload.name;
@@ -149,6 +148,7 @@ class FFAXNode {
         break;
     } // Here and below: Android heuristics
 
+
     if (this._hasFocusableChild()) return false;
     if (this._focusable && this._role !== 'document' && this._name) return true;
     if (this._role === 'heading' && this._name) return true;
@@ -200,32 +200,16 @@ class FFAXNode {
   serialize() {
     const node = {
       role: FFRoleToARIARole.get(this._role) || this._role,
-      name: this._name || '',
+      name: this._name || ''
     };
-    const userStringProperties = [
-      'name',
-      'description',
-      'roledescription',
-      'valuetext',
-      'keyshortcuts',
-    ];
+    const userStringProperties = ['name', 'description', 'roledescription', 'valuetext', 'keyshortcuts'];
 
     for (const userStringProperty of userStringProperties) {
       if (!(userStringProperty in this._payload)) continue;
       node[userStringProperty] = this._payload[userStringProperty];
     }
 
-    const booleanProperties = [
-      'disabled',
-      'expanded',
-      'focused',
-      'modal',
-      'multiline',
-      'multiselectable',
-      'readonly',
-      'required',
-      'selected',
-    ];
+    const booleanProperties = ['disabled', 'expanded', 'focused', 'modal', 'multiline', 'multiselectable', 'readonly', 'required', 'selected'];
 
     for (const booleanProperty of booleanProperties) {
       if (this._role === 'document' && booleanProperty === 'focused') continue; // document focusing is strange
@@ -242,12 +226,7 @@ class FFAXNode {
       node[numericalProperty] = this._payload[numericalProperty];
     }
 
-    const tokenProperties = [
-      'autocomplete',
-      'haspopup',
-      'invalid',
-      'orientation',
-    ];
+    const tokenProperties = ['autocomplete', 'haspopup', 'invalid', 'orientation'];
 
     for (const tokenProperty of tokenProperties) {
       const value = this._payload[tokenProperty];
@@ -257,15 +236,9 @@ class FFAXNode {
 
     const axNode = node;
     axNode.valueString = this._payload.value;
-    if ('checked' in this._payload)
-      axNode.checked =
-        this._payload.checked === true
-          ? 'checked'
-          : this._payload.checked === 'mixed'
-          ? 'mixed'
-          : 'unchecked';
-    if ('pressed' in this._payload)
-      axNode.pressed = this._payload.pressed === true ? 'pressed' : 'released';
+    if ('checked' in this._payload) axNode.checked = this._payload.checked === true ? 'checked' : this._payload.checked === 'mixed' ? 'mixed' : 'unchecked';
+    if ('pressed' in this._payload) axNode.pressed = this._payload.pressed === true ? 'pressed' : 'released';
     return axNode;
   }
+
 }

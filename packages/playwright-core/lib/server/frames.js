@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Frame = exports.FrameManager = void 0;
+exports.FrameManager = exports.Frame = void 0;
 
 var dom = _interopRequireWildcard(require("./dom"));
 
@@ -23,15 +23,17 @@ var _browserContext = require("./browserContext");
 
 var _progress = require("./progress");
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
-var _async = require("../utils/async");
+var _manualPromise = require("../utils/manualPromise");
 
-var _debugLogger = require("../utils/debugLogger");
+var _debugLogger = require("../common/debugLogger");
 
 var _instrumentation = require("./instrumentation");
 
-var _protocolError = require("./common/protocolError");
+var _protocolError = require("./protocolError");
+
+var _selectorParser = require("./isomorphic/selectorParser");
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
@@ -53,6 +55,8 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const kDummyFrameId = '<dummy>';
+
 class FrameManager {
   constructor(page) {
     this._page = void 0;
@@ -61,9 +65,13 @@ class FrameManager {
     this._consoleMessageTags = new Map();
     this._signalBarriers = new Set();
     this._webSockets = new Map();
-    this._dialogCounter = 0;
+    this._openedDialogs = new Set();
     this._page = page;
     this._mainFrame = undefined;
+  }
+
+  createDummyMainFrameIfNeeded() {
+    if (!this._mainFrame) this.frameAttached(kDummyFrameId, null);
   }
 
   dispose() {
@@ -284,7 +292,7 @@ class FrameManager {
       return;
     }
 
-    this._page._browserContext.emit(_browserContext.BrowserContext.Events.Request, request);
+    this._page.emitOnContext(_browserContext.BrowserContext.Events.Request, request);
 
     if (route) this._page._requestStarted(request, route);
   }
@@ -292,7 +300,7 @@ class FrameManager {
   requestReceivedResponse(response) {
     if (response.request()._isFavicon) return;
 
-    this._page._browserContext.emit(_browserContext.BrowserContext.Events.Response, response);
+    this._page.emitOnContext(_browserContext.BrowserContext.Events.Response, response);
   }
 
   reportRequestFinished(request, response) {
@@ -300,7 +308,7 @@ class FrameManager {
 
     if (request._isFavicon) return;
 
-    this._page._browserContext.emit(_browserContext.BrowserContext.Events.RequestFinished, {
+    this._page.emitOnContext(_browserContext.BrowserContext.Events.RequestFinished, {
       request,
       response
     });
@@ -319,18 +327,18 @@ class FrameManager {
 
     if (request._isFavicon) return;
 
-    this._page._browserContext.emit(_browserContext.BrowserContext.Events.RequestFailed, request);
+    this._page.emitOnContext(_browserContext.BrowserContext.Events.RequestFailed, request);
   }
 
-  dialogDidOpen() {
+  dialogDidOpen(dialog) {
     // Any ongoing evaluations will be stalled until the dialog is closed.
     for (const frame of this._frames.values()) frame._invalidateNonStallingEvaluations('JavaScript dialog interrupted evaluation');
 
-    this._dialogCounter++;
+    this._openedDialogs.add(dialog);
   }
 
-  dialogWillClose() {
-    this._dialogCounter--;
+  dialogWillClose(dialog) {
+    this._openedDialogs.delete(dialog);
   }
 
   removeChildFramesRecursively(frame) {
@@ -396,7 +404,7 @@ class FrameManager {
   onWebSocketRequest(requestId) {
     const ws = this._webSockets.get(requestId);
 
-    if (ws) this._page.emit(_page.Page.Events.WebSocket, ws);
+    if (ws && ws.markAsNotified()) this._page.emit(_page.Page.Events.WebSocket, ws);
   }
 
   onWebSocketResponse(requestId, status, statusText) {
@@ -458,7 +466,7 @@ class Frame extends _instrumentation.SdkObject {
 
     this._detachedCallback = () => {};
 
-    this._nonStallingEvaluations = new Set();
+    this._raceAgainstEvaluationStallingEventsPromises = new Set();
     this.attribution.frame = this;
     this._id = id;
     this._page = page;
@@ -470,15 +478,13 @@ class Frame extends _instrumentation.SdkObject {
     this._detachedPromise = new Promise(x => this._detachedCallback = x);
 
     this._contextData.set('main', {
-      contextPromise: new Promise(() => {}),
-      contextResolveCallback: () => {},
+      contextPromise: new _manualPromise.ManualPromise(),
       context: null,
       rerunnableTasks: new Set()
     });
 
     this._contextData.set('utility', {
-      contextPromise: new Promise(() => {}),
-      contextResolveCallback: () => {},
+      contextPromise: new _manualPromise.ManualPromise(),
       context: null,
       rerunnableTasks: new Set()
     });
@@ -492,6 +498,12 @@ class Frame extends _instrumentation.SdkObject {
     this._firedLifecycleEvents.add('commit');
 
     this._subtreeLifecycleEvents.add('commit');
+
+    if (id !== kDummyFrameId) this._startNetworkIdleTimer();
+  }
+
+  isDetached() {
+    return this._detached;
   }
 
   _onLifecycleEvent(event) {
@@ -529,51 +541,43 @@ class Frame extends _instrumentation.SdkObject {
   }
 
   _invalidateNonStallingEvaluations(message) {
-    if (!this._nonStallingEvaluations) return;
+    if (!this._raceAgainstEvaluationStallingEventsPromises.size) return;
     const error = new Error(message);
 
-    for (const callback of this._nonStallingEvaluations) callback(error);
+    for (const promise of this._raceAgainstEvaluationStallingEventsPromises) promise.reject(error);
   }
 
-  async nonStallingRawEvaluateInExistingMainContext(expression) {
+  async raceAgainstEvaluationStallingEvents(cb) {
     if (this._pendingDocument) throw new Error('Frame is currently attempting a navigation');
-    if (this._page._frameManager._dialogCounter) throw new Error('Open JavaScript dialog prevents evaluation');
+    if (this._page._frameManager._openedDialogs.size) throw new Error('Open JavaScript dialog prevents evaluation');
+    const promise = new _manualPromise.ManualPromise();
 
-    const context = this._existingMainContext();
-
-    if (!context) throw new Error('Frame does not yet have a main execution context');
-
-    let callback = () => {};
-
-    const frameInvalidated = new Promise((f, r) => callback = r);
-
-    this._nonStallingEvaluations.add(callback);
+    this._raceAgainstEvaluationStallingEventsPromises.add(promise);
 
     try {
-      return await Promise.race([context.rawEvaluateJSON(expression), frameInvalidated]);
+      return await Promise.race([cb(), promise]);
     } finally {
-      this._nonStallingEvaluations.delete(callback);
+      this._raceAgainstEvaluationStallingEventsPromises.delete(promise);
     }
   }
 
-  async nonStallingEvaluateInExistingContext(expression, isFunction, world) {
-    var _this$_contextData$ge;
+  nonStallingRawEvaluateInExistingMainContext(expression) {
+    return this.raceAgainstEvaluationStallingEvents(() => {
+      const context = this._existingMainContext();
 
-    if (this._pendingDocument) throw new Error('Frame is currently attempting a navigation');
-    const context = (_this$_contextData$ge = this._contextData.get(world)) === null || _this$_contextData$ge === void 0 ? void 0 : _this$_contextData$ge.context;
-    if (!context) throw new Error('Frame does not yet have the execution context');
+      if (!context) throw new Error('Frame does not yet have a main execution context');
+      return context.rawEvaluateJSON(expression);
+    });
+  }
 
-    let callback = () => {};
+  nonStallingEvaluateInExistingContext(expression, isFunction, world) {
+    return this.raceAgainstEvaluationStallingEvents(() => {
+      var _this$_contextData$ge;
 
-    const frameInvalidated = new Promise((f, r) => callback = r);
-
-    this._nonStallingEvaluations.add(callback);
-
-    try {
-      return await Promise.race([context.evaluateExpression(expression, isFunction), frameInvalidated]);
-    } finally {
-      this._nonStallingEvaluations.delete(callback);
-    }
+      const context = (_this$_contextData$ge = this._contextData.get(world)) === null || _this$_contextData$ge === void 0 ? void 0 : _this$_contextData$ge.context;
+      if (!context) throw new Error('Frame does not yet have the execution context');
+      return context.evaluateExpression(expression, isFunction);
+    });
   }
 
   _recalculateLifecycle() {
@@ -696,8 +700,10 @@ class Frame extends _instrumentation.SdkObject {
   }
 
   _context(world) {
-    if (this._detached) throw new Error(`Execution Context is not available in detached frame "${this.url()}" (are you trying to evaluate?)`);
-    return this._contextData.get(world).contextPromise;
+    return this._contextData.get(world).contextPromise.then(contextOrError => {
+      if (contextOrError instanceof js.ExecutionContext) return contextOrError;
+      throw contextOrError;
+    });
   }
 
   _mainContext() {
@@ -738,10 +744,12 @@ class Frame extends _instrumentation.SdkObject {
   async querySelector(selector, options) {
     _debugLogger.debugLogger.log('api', `    finding element using the selector "${selector}"`);
 
-    return this._page.selectors.query(this, selector, options);
+    const result = await this.resolveFrameForSelectorNoWait(selector, options);
+    if (!result) return null;
+    return this._page.selectors.query(result.frame, result.info);
   }
 
-  async waitForSelector(metadata, selector, options = {}) {
+  async waitForSelector(metadata, selector, options, scope) {
     const controller = new _progress.ProgressController(metadata, this);
     if (options.visibility) throw new Error('options.visibility is not supported, did you mean options.state?');
     if (options.waitFor && options.waitFor !== 'visible') throw new Error('options.waitFor is not supported, did you mean options.state?');
@@ -749,15 +757,18 @@ class Frame extends _instrumentation.SdkObject {
       state = 'visible'
     } = options;
     if (!['attached', 'detached', 'visible', 'hidden'].includes(state)) throw new Error(`state: expected one of (attached|detached|visible|hidden)`);
-
-    const info = this._page.parseSelector(selector, options);
-
-    const task = dom.waitForSelectorTask(info, state, options.omitReturnValue);
     return controller.run(async progress => {
       progress.log(`waiting for selector "${selector}"${state === 'attached' ? '' : ' to be ' + state}`);
-
-      while (progress.isRunning()) {
-        const result = await this._scheduleRerunnableHandleTask(progress, info.world, task);
+      return this.retryWithProgress(progress, selector, options, async (selectorInFrame, continuePolling) => {
+        // Be careful, |this| can be different from |frame|.
+        // We did not pass omitAttached, so it is non-null.
+        const {
+          frame,
+          info
+        } = selectorInFrame;
+        const actualScope = this === frame ? scope : undefined;
+        const task = dom.waitForSelectorTask(info, state, options.omitReturnValue, actualScope);
+        const result = actualScope ? await frame._runWaitForSelectorTaskOnce(progress, (0, _selectorParser.stringifySelector)(info.parsed), info.world, task) : await frame._scheduleRerunnableHandleTask(progress, info.world, task);
 
         if (!result.asElement()) {
           result.dispose();
@@ -765,19 +776,14 @@ class Frame extends _instrumentation.SdkObject {
         }
 
         if (options.__testHookBeforeAdoptNode) await options.__testHookBeforeAdoptNode();
+        const handle = result.asElement();
 
         try {
-          const handle = result.asElement();
-          const adopted = await handle._adoptTo(await this._mainContext());
-          return adopted;
+          return await handle._adoptTo(await frame._mainContext());
         } catch (e) {
-          // Navigated while trying to adopt the node.
-          if (js.isJavaScriptErrorInEvaluate(e)) throw e;
-          result.dispose();
+          return continuePolling;
         }
-      }
-
-      return null;
+      }, scope);
     }, this._page._timeoutSettings.timeout(options));
   }
 
@@ -795,9 +801,10 @@ class Frame extends _instrumentation.SdkObject {
   }
 
   async evalOnSelectorAndWaitForSignals(selector, strict, expression, isFunction, arg) {
-    const handle = await this.querySelector(selector, {
+    const pair = await this.resolveFrameForSelectorNoWait(selector, {
       strict
     });
+    const handle = pair ? await this._page.selectors.query(pair.frame, pair.info) : null;
     if (!handle) throw new Error(`Error: failed to find element matching selector "${selector}"`);
     const result = await handle.evaluateExpressionAndWaitForSignals(expression, isFunction, true, arg);
     handle.dispose();
@@ -805,16 +812,38 @@ class Frame extends _instrumentation.SdkObject {
   }
 
   async evalOnSelectorAllAndWaitForSignals(selector, expression, isFunction, arg) {
-    const arrayHandle = await this._page.selectors._queryArray(this, selector);
+    const pair = await this.resolveFrameForSelectorNoWait(selector, {});
+    if (!pair) throw new Error(`Error: failed to find frame for selector "${selector}"`);
+    const arrayHandle = await this._page.selectors._queryArrayInMainWorld(pair.frame, pair.info);
     const result = await arrayHandle.evaluateExpressionAndWaitForSignals(expression, isFunction, true, arg);
     arrayHandle.dispose();
     return result;
   }
 
+  async maskSelectors(selectors) {
+    const context = await this._utilityContext();
+    const injectedScript = await context.injectedScript();
+    await injectedScript.evaluate((injected, {
+      parsed
+    }) => {
+      injected.maskSelectors(parsed);
+    }, {
+      parsed: selectors
+    });
+  }
+
   async querySelectorAll(selector) {
-    return this._page.selectors._queryAll(this, selector, undefined, true
+    const pair = await this.resolveFrameForSelectorNoWait(selector, {});
+    if (!pair) return [];
+    return this._page.selectors._queryAll(pair.frame, pair.info, undefined, true
     /* adoptToMain */
     );
+  }
+
+  async queryCount(selector) {
+    const pair = await this.resolveFrameForSelectorNoWait(selector);
+    if (!pair) throw new Error(`Error: failed to find frame for selector "${selector}"`);
+    return await this._page.selectors._queryCount(pair.frame, pair.info);
   }
 
   async content() {
@@ -995,33 +1024,86 @@ class Frame extends _instrumentation.SdkObject {
     return result;
   }
 
-  async _retryWithProgressIfNotConnected(progress, selector, strict, action) {
-    const info = this._page.parseSelector(selector, {
-      strict
-    });
+  async retryWithProgress(progress, selector, options, action, scope) {
+    const continuePolling = Symbol('continuePolling');
 
     while (progress.isRunning()) {
-      progress.log(`waiting for selector "${selector}"`);
-      const task = dom.waitForSelectorTask(info, 'attached');
-      const handle = await this._scheduleRerunnableHandleTask(progress, info.world, task);
-      const element = handle.asElement();
-      progress.cleanupWhenAborted(() => {
-        // Do not await here to avoid being blocked, either by stalled
-        // page (e.g. alert) or unresolved navigation in Chromium.
-        element.dispose();
-      });
-      const result = await action(element);
-      element.dispose();
+      let selectorInFrame;
 
-      if (result === 'error:notconnected') {
-        progress.log('element was detached from the DOM, retrying');
-        continue;
+      if (options.omitAttached) {
+        selectorInFrame = await this.resolveFrameForSelectorNoWait(selector, options, scope);
+      } else {
+        selectorInFrame = await this._resolveFrameForSelector(progress, selector, options, scope);
+
+        if (!selectorInFrame) {
+          // Missing content frame.
+          await new Promise(f => setTimeout(f, 100));
+          continue;
+        }
       }
 
-      return result;
+      try {
+        const result = await action(selectorInFrame, continuePolling);
+        if (result === continuePolling) continue;
+        return result;
+      } catch (e) {
+        var _selectorInFrame;
+
+        // Always fail on JavaScript errors or when the main connection is closed.
+        if (js.isJavaScriptErrorInEvaluate(e) || (0, _protocolError.isSessionClosedError)(e)) throw e; // Certain error opt-out of the retries, throw.
+
+        if (dom.isNonRecoverableDOMError(e)) throw e; // If the call is made on the detached frame - throw.
+
+        if (this.isDetached()) throw e; // If there is scope, and scope is within the frame we use to select, assume context is destroyed and
+        // operation is not recoverable.
+
+        if (scope && scope._context.frame === ((_selectorInFrame = selectorInFrame) === null || _selectorInFrame === void 0 ? void 0 : _selectorInFrame.frame)) throw e; // Retry upon all other errors.
+
+        continue;
+      }
     }
 
+    progress.throwIfAborted();
     return undefined;
+  }
+
+  async _retryWithProgressIfNotConnected(progress, selector, strict, action) {
+    return this.retryWithProgress(progress, selector, {
+      strict
+    }, async (selectorInFrame, continuePolling) => {
+      // We did not pass omitAttached, so selectorInFrame is not null.
+      const {
+        frame,
+        info
+      } = selectorInFrame; // Be careful, |this| can be different from |frame|.
+
+      const task = dom.waitForSelectorTask(info, 'attached');
+      progress.log(`waiting for selector "${selector}"`);
+      const handle = await frame._scheduleRerunnableHandleTask(progress, info.world, task);
+      const element = handle.asElement();
+
+      try {
+        const result = await action(element);
+
+        if (result === 'error:notconnected') {
+          progress.log('element was detached from the DOM, retrying');
+          return continuePolling;
+        }
+
+        return result;
+      } finally {
+        element === null || element === void 0 ? void 0 : element.dispose();
+      }
+    });
+  }
+
+  async rafrafTimeoutScreenshotElementWithProgress(progress, selector, timeout, options) {
+    return await this._retryWithProgressIfNotConnected(progress, selector, true
+    /* strict */
+    , async handle => {
+      await handle._frame.rafrafTimeout(timeout);
+      return await this._page._screenshotter.screenshotElement(progress, handle, options);
+    });
   }
 
   async click(metadata, selector, options) {
@@ -1079,7 +1161,7 @@ class Frame extends _instrumentation.SdkObject {
   async focus(metadata, selector, options = {}) {
     const controller = new _progress.ProgressController(metadata, this);
     await controller.run(async progress => {
-      dom.assertDone(await this._retryWithProgressIfNotConnected(progress, selector, undefined, handle => handle._focus(progress)));
+      dom.assertDone(await this._retryWithProgressIfNotConnected(progress, selector, options.strict, handle => handle._focus(progress)));
       await this._page._doSlowMo();
     }, this._page._timeoutSettings.timeout(options));
   }
@@ -1106,10 +1188,35 @@ class Frame extends _instrumentation.SdkObject {
   }
 
   async inputValue(metadata, selector, options = {}) {
-    return this._scheduleRerunnableTask(metadata, selector, (progress, element) => {
-      if (element.nodeName !== 'INPUT' && element.nodeName !== 'TEXTAREA' && element.nodeName !== 'SELECT') throw progress.injectedScript.createStacklessError('Node is not an <input>, <textarea> or <select> element');
+    return this._scheduleRerunnableTask(metadata, selector, (progress, node) => {
+      const element = progress.injectedScript.retarget(node, 'follow-label');
+      if (!element || element.nodeName !== 'INPUT' && element.nodeName !== 'TEXTAREA' && element.nodeName !== 'SELECT') throw progress.injectedScript.createStacklessError('Node is not an <input>, <textarea> or <select> element');
       return element.value;
     }, undefined, options);
+  }
+
+  async highlight(selector) {
+    const pair = await this.resolveFrameForSelectorNoWait(selector);
+    if (!pair) return;
+    const context = await pair.frame._utilityContext();
+    const injectedScript = await context.injectedScript();
+    return await injectedScript.evaluate((injected, {
+      parsed
+    }) => {
+      return injected.highlight(parsed);
+    }, {
+      parsed: pair.info.parsed
+    });
+  }
+
+  async hideHighlight() {
+    return this.raceAgainstEvaluationStallingEvents(async () => {
+      const context = await this._utilityContext();
+      const injectedScript = await context.injectedScript();
+      return await injectedScript.evaluate(injected => {
+        return injected.hideHighlight();
+      });
+    });
   }
 
   async _elementState(metadata, selector, state, options = {}) {
@@ -1126,7 +1233,9 @@ class Frame extends _instrumentation.SdkObject {
     const controller = new _progress.ProgressController(metadata, this);
     return controller.run(async progress => {
       progress.log(`  checking visibility of "${selector}"`);
-      const element = await this.querySelector(selector, options);
+      const pair = await this.resolveFrameForSelectorNoWait(selector, options);
+      if (!pair) return false;
+      const element = await this._page.selectors.query(pair.frame, pair.info);
       return element ? await element.isVisible() : false;
     }, this._page._timeoutSettings.timeout({}));
   }
@@ -1165,10 +1274,10 @@ class Frame extends _instrumentation.SdkObject {
     }, this._page._timeoutSettings.timeout(options));
   }
 
-  async setInputFiles(metadata, selector, files, options = {}) {
+  async setInputFiles(metadata, selector, items, options = {}) {
     const controller = new _progress.ProgressController(metadata, this);
     return controller.run(async progress => {
-      return dom.assertDone(await this._retryWithProgressIfNotConnected(progress, selector, options.strict, handle => handle._setInputFiles(progress, files, options)));
+      return dom.assertDone(await this._retryWithProgressIfNotConnected(progress, selector, options.strict, handle => handle._setInputFiles(progress, items, options)));
     }, this._page._timeoutSettings.timeout(options));
   }
 
@@ -1211,52 +1320,61 @@ class Frame extends _instrumentation.SdkObject {
     const controller = new _progress.ProgressController(metadata, this);
     const isArray = options.expression === 'to.have.count' || options.expression.endsWith('.array');
     const mainWorld = options.expression === 'to.have.property';
-    return await this._scheduleRerunnableTaskWithController(controller, selector, (progress, element, options, elements) => {
-      let result;
 
-      if (options.isArray) {
-        result = progress.injectedScript.expectArray(elements, options);
-      } else {
-        if (!element) {
-          // expect(locator).toBeHidden() passes when there is no element.
-          if (!options.isNot && options.expression === 'to.be.hidden') return {
-            matches: true
-          }; // expect(locator).not.toBeVisible() passes when there is no element.
+    const timeout = this._page._timeoutSettings.timeout(options); // List all combinations that are satisfied with the detached node(s).
 
-          if (options.isNot && options.expression === 'to.be.visible') return {
-            matches: false
-          }; // When none of the above applies, keep waiting for the element.
 
-          return progress.continuePolling;
+    let omitAttached = false;
+    if (!options.isNot && options.expression === 'to.be.hidden') omitAttached = true;else if (options.isNot && options.expression === 'to.be.visible') omitAttached = true;else if (!options.isNot && options.expression === 'to.have.count' && options.expectedNumber === 0) omitAttached = true;else if (options.isNot && options.expression === 'to.have.count' && options.expectedNumber !== 0) omitAttached = true;else if (!options.isNot && options.expression.endsWith('.array') && options.expectedText.length === 0) omitAttached = true;else if (options.isNot && options.expression.endsWith('.array') && options.expectedText.length > 0) omitAttached = true;
+    return controller.run(async outerProgress => {
+      outerProgress.log(`${metadata.apiName}${timeout ? ` with timeout ${timeout}ms` : ''}`);
+      return await this._scheduleRerunnableTaskWithProgress(outerProgress, selector, (progress, element, options, elements) => {
+        let result;
+
+        if (options.isArray) {
+          result = progress.injectedScript.expectArray(elements, options);
+        } else {
+          if (!element) {
+            // expect(locator).toBeHidden() passes when there is no element.
+            if (!options.isNot && options.expression === 'to.be.hidden') return {
+              matches: true
+            }; // expect(locator).not.toBeVisible() passes when there is no element.
+
+            if (options.isNot && options.expression === 'to.be.visible') return {
+              matches: false
+            }; // When none of the above applies, keep waiting for the element.
+
+            return progress.continuePolling;
+          }
+
+          result = progress.injectedScript.expectSingleElement(progress, element, options);
         }
 
-        result = progress.injectedScript.expectSingleElement(progress, element, options);
-      }
-
-      if (result.matches === options.isNot) {
-        // Keep waiting in these cases:
-        // expect(locator).conditionThatDoesNotMatch
-        // expect(locator).not.conditionThatDoesMatch
-        progress.setIntermediateResult(result.received);
-        if (!Array.isArray(result.received)) progress.log(`  unexpected value "${result.received}"`);
-        return progress.continuePolling;
-      } // Reached the expected state!
+        if (result.matches === options.isNot) {
+          // Keep waiting in these cases:
+          // expect(locator).conditionThatDoesNotMatch
+          // expect(locator).not.conditionThatDoesMatch
+          progress.setIntermediateResult(result.received);
+          if (!Array.isArray(result.received)) progress.log(`  unexpected value "${result.received}"`);
+          return progress.continuePolling;
+        } // Reached the expected state!
 
 
-      return result;
-    }, { ...options,
-      isArray
-    }, {
-      strict: true,
-      querySelectorAll: isArray,
-      mainWorld,
-      omitAttached: true,
-      logScale: true,
-      ...options
-    }).catch(e => {
-      if (js.isJavaScriptErrorInEvaluate(e)) throw e; // Q: Why not throw upon isSessionClosedError(e) as in other places?
+        return result;
+      }, { ...options,
+        isArray
+      }, {
+        strict: true,
+        querySelectorAll: isArray,
+        mainWorld,
+        omitAttached,
+        logScale: true,
+        ...options
+      });
+    }, timeout).catch(e => {
+      // Q: Why not throw upon isSessionClosedError(e) as in other places?
       // A: We want user to receive a friendly message containing the last intermediate result.
-
+      if (js.isJavaScriptErrorInEvaluate(e) || (0, _selectorParser.isInvalidSelectorError)(e)) throw e;
       return {
         received: controller.lastIntermediateResult(),
         matches: options.isNot,
@@ -1310,7 +1428,7 @@ class Frame extends _instrumentation.SdkObject {
         return result;
       return JSON.stringify(result);
     }`;
-    const handle = await this._waitForFunctionExpression((0, _instrumentation.internalCallMetadata)(), expression, true, undefined, {
+    const handle = await this._waitForFunctionExpression((0, _instrumentation.serverSideCallMetadata)(), expression, true, undefined, {
       timeout: progress.timeUntilDeadline()
     }, 'utility');
     return JSON.parse(handle.rawValue());
@@ -1321,6 +1439,17 @@ class Frame extends _instrumentation.SdkObject {
     return context.evaluate(() => document.title);
   }
 
+  async rafrafTimeout(timeout) {
+    if (timeout === 0) return;
+    const context = await this._utilityContext();
+    await Promise.all([// wait for double raf
+    context.evaluate(() => new Promise(x => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(x);
+      });
+    })), new Promise(fulfill => setTimeout(fulfill, timeout))]);
+  }
+
   _onDetached() {
     this._stopNetworkIdleTimer();
 
@@ -1328,8 +1457,13 @@ class Frame extends _instrumentation.SdkObject {
 
     this._detachedCallback();
 
+    const error = new Error('Frame was detached');
+
     for (const data of this._contextData.values()) {
-      for (const rerunnableTask of data.rerunnableTasks) rerunnableTask.terminate(new Error('waitForFunction failed: frame got detached.'));
+      if (data.context) data.context.contextDestroyed(error);
+      data.contextPromise.resolve(error);
+
+      for (const rerunnableTask of data.rerunnableTasks) rerunnableTask.terminate(error);
     }
 
     if (this._parentFrame) this._parentFrame._childFrames.delete(this);
@@ -1338,18 +1472,44 @@ class Frame extends _instrumentation.SdkObject {
 
   async _scheduleRerunnableTask(metadata, selector, body, taskData, options = {}) {
     const controller = new _progress.ProgressController(metadata, this);
-    return this._scheduleRerunnableTaskWithController(controller, selector, body, taskData, options);
+    return controller.run(async progress => {
+      return await this._scheduleRerunnableTaskWithProgress(progress, selector, body, taskData, options);
+    }, this._page._timeoutSettings.timeout(options));
   }
 
-  async _scheduleRerunnableTaskWithController(controller, selector, body, taskData, options = {}) {
-    const info = this._page.parseSelector(selector, options);
-
+  async _scheduleRerunnableTaskWithProgress(progress, selector, body, taskData, options = {}) {
     const callbackText = body.toString();
-
-    const data = this._contextData.get(options.mainWorld ? 'main' : info.world);
-
-    return controller.run(async progress => {
+    return this.retryWithProgress(progress, selector, options, async selectorInFrame => {
+      // Be careful, |this| can be different from |frame|.
       progress.log(`waiting for selector "${selector}"`);
+      const {
+        frame,
+        info
+      } = selectorInFrame || {
+        frame: this,
+        info: {
+          parsed: {
+            parts: [{
+              name: 'control',
+              body: 'return-empty',
+              source: 'control=return-empty'
+            }]
+          },
+          world: 'utility',
+          strict: !!options.strict
+        }
+      };
+      return await frame._scheduleRerunnableTaskInFrame(progress, info, callbackText, taskData, options);
+    });
+  }
+
+  async _scheduleRerunnableTaskInFrame(progress, info, callbackText, taskData, options) {
+    progress.throwIfAborted();
+
+    const data = this._contextData.get(options.mainWorld ? 'main' : info.world); // This potentially runs in a sub-frame.
+
+
+    {
       const rerunnableTask = new RerunnableTask(data, progress, injectedScript => {
         return injectedScript.evaluateHandle((injected, {
           info,
@@ -1407,7 +1567,7 @@ class Frame extends _instrumentation.SdkObject {
       if (this._detached) rerunnableTask.terminate(new Error('Frame got detached.'));
       if (data.context) rerunnableTask.rerun(data.context);
       return await rerunnableTask.promise;
-    }, this._page._timeoutSettings.timeout(options));
+    }
   }
 
   _scheduleRerunnableHandleTask(progress, world, task) {
@@ -1427,13 +1587,11 @@ class Frame extends _instrumentation.SdkObject {
     data.context = context;
 
     if (context) {
-      data.contextResolveCallback.call(null, context);
+      data.contextPromise.resolve(context);
 
       for (const rerunnableTask of data.rerunnableTasks) rerunnableTask.rerun(context);
     } else {
-      data.contextPromise = new Promise(fulfill => {
-        data.contextResolveCallback = fulfill;
-      });
+      data.contextPromise = new _manualPromise.ManualPromise();
     }
   }
 
@@ -1443,12 +1601,21 @@ class Frame extends _instrumentation.SdkObject {
     // We can use either.
 
 
-    if (data.context) this._setContext(world, null);
+    if (data.context) {
+      data.context.contextDestroyed(new Error('Execution context was destroyed, most likely because of a navigation'));
+
+      this._setContext(world, null);
+    }
 
     this._setContext(world, context);
   }
 
   _contextDestroyed(context) {
+    // Sometimes we get this after detach, in which case we should not reset
+    // our already destroyed contexts to something that will never resolve.
+    if (this._detached) return;
+    context.contextDestroyed(new Error('Execution context was destroyed, most likely because of a navigation'));
+
     for (const [world, data] of this._contextData) {
       if (data.context === context) this._setContext(world, null);
     }
@@ -1482,6 +1649,72 @@ class Frame extends _instrumentation.SdkObject {
     });
   }
 
+  async _resolveFrameForSelector(progress, selector, options, scope) {
+    const elementPath = [];
+    progress.cleanupWhenAborted(() => {
+      // Do not await here to avoid being blocked, either by stalled
+      // page (e.g. alert) or unresolved navigation in Chromium.
+      for (const element of elementPath) element.dispose();
+    });
+    let frame = this;
+    const frameChunks = (0, _selectorParser.splitSelectorByFrame)(selector);
+
+    for (let i = 0; i < frameChunks.length - 1 && progress.isRunning(); ++i) {
+      const info = this._page.parseSelector(frameChunks[i], options);
+
+      const task = dom.waitForSelectorTask(info, 'attached', false, i === 0 ? scope : undefined);
+      progress.log(`  waiting for frame "${(0, _selectorParser.stringifySelector)(frameChunks[i])}"`);
+      const handle = i === 0 && scope ? await frame._runWaitForSelectorTaskOnce(progress, (0, _selectorParser.stringifySelector)(info.parsed), info.world, task) : await frame._scheduleRerunnableHandleTask(progress, info.world, task);
+      const element = handle.asElement();
+      const isIframe = await element.isIframeElement();
+      if (isIframe === 'error:notconnected') return null; // retry
+
+      if (!isIframe) throw new Error(`Selector "${(0, _selectorParser.stringifySelector)(info.parsed)}" resolved to ${element.preview()}, <iframe> was expected`);
+      frame = await element.contentFrame();
+      element.dispose();
+      if (!frame) return null; // retry
+    }
+
+    return {
+      frame,
+      info: this._page.parseSelector(frameChunks[frameChunks.length - 1], options)
+    };
+  }
+
+  async resolveFrameForSelectorNoWait(selector, options = {}, scope) {
+    let frame = this;
+    const frameChunks = (0, _selectorParser.splitSelectorByFrame)(selector);
+
+    for (let i = 0; i < frameChunks.length - 1; ++i) {
+      const info = this._page.parseSelector(frameChunks[i], options);
+
+      const element = await this._page.selectors.query(frame, info, i === 0 ? scope : undefined);
+      if (!element) return null;
+      frame = await element.contentFrame();
+      element.dispose();
+      if (!frame) throw new Error(`Selector "${(0, _selectorParser.stringifySelector)(info.parsed)}" resolved to ${element.preview()}, <iframe> was expected`);
+    }
+
+    return {
+      frame,
+      info: this._page.parseSelector(frameChunks[frameChunks.length - 1], options)
+    };
+  }
+
+  async _runWaitForSelectorTaskOnce(progress, selector, world, task) {
+    const context = await this._context(world);
+    const injected = await context.injectedScript();
+
+    try {
+      const pollHandler = new dom.InjectedScriptPollHandler(progress, await task(injected));
+      const result = await pollHandler.finishHandle();
+      progress.cleanupWhenAborted(() => result.dispose());
+      return result;
+    } catch (e) {
+      throw new Error(`Error: frame navigated while waiting for selector "${selector}"`);
+    }
+  }
+
 }
 
 exports.Frame = Frame;
@@ -1502,7 +1735,7 @@ class RerunnableTask {
     this._task = task;
     this._progress = progress;
     this._returnByValue = returnByValue;
-    if (returnByValue) this.promise = new _async.ManualPromise();else this.handlePromise = new _async.ManualPromise();
+    if (returnByValue) this.promise = new _manualPromise.ManualPromise();else this.handlePromise = new _manualPromise.ManualPromise();
     this._contextData = data;
 
     this._contextData.rerunnableTasks.add(this);
@@ -1536,7 +1769,10 @@ class RerunnableTask {
         this._contextData.rerunnableTasks.delete(this);
 
         this._reject(e);
-      } // We will try again in the new execution context.
+      } // Unlike other places, we don't check frame for being detached since the whole scope of this
+      // evaluation is within the frame's execution context. So we only let JavaScript errors and
+      // session termination errors go through.
+      // We will try again in the new execution context.
 
     }
   }
@@ -1547,7 +1783,7 @@ class SignalBarrier {
   constructor(progress) {
     this._progress = void 0;
     this._protectCount = 0;
-    this._promise = new _async.ManualPromise();
+    this._promise = new _manualPromise.ManualPromise();
     this._progress = progress;
     this.retain();
   }

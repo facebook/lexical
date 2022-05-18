@@ -3,30 +3,43 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Locator = void 0;
+exports.Locator = exports.FrameLocator = void 0;
 
 var util = _interopRequireWildcard(require("util"));
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var _elementHandle = require("./elementHandle");
 
 var _jsHandle = require("./jsHandle");
 
-let _custom;
+var _stringUtils = require("../utils/isomorphic/stringUtils");
+
+let _util$inspect$custom;
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-_custom = util.inspect.custom;
+_util$inspect$custom = util.inspect.custom;
 
 class Locator {
-  constructor(frame, selector) {
+  constructor(frame, selector, options) {
     this._frame = void 0;
     this._selector = void 0;
     this._frame = frame;
     this._selector = selector;
+
+    if (options !== null && options !== void 0 && options.hasText) {
+      const text = options.hasText;
+      if ((0, _utils.isRegExp)(text)) this._selector += ` >> :scope:text-matches(${(0, _stringUtils.escapeWithQuotes)(text.source, '"')}, "${text.flags}")`;else this._selector += ` >> :scope:has-text(${(0, _stringUtils.escapeWithQuotes)(text, '"')})`;
+    }
+
+    if (options !== null && options !== void 0 && options.has) {
+      const locator = options.has;
+      if (locator._frame !== frame) throw new Error(`Inner "has" locator must belong to the same frame.`);
+      this._selector += ` >> has=` + JSON.stringify(locator._selector);
+    }
   }
 
   async _withElement(task, timeout) {
@@ -34,8 +47,8 @@ class Locator {
       timeout
     });
     const deadline = timeout ? (0, _utils.monotonicTime)() + timeout : 0;
-    return this._frame._wrapApiCall(async channel => {
-      const result = await channel.waitForSelector({
+    return this._frame._wrapApiCall(async () => {
+      const result = await this._frame._channel.waitForSelector({
         selector: this._selector,
         strict: true,
         state: 'attached',
@@ -52,6 +65,10 @@ class Locator {
         await handle.dispose();
       }
     });
+  }
+
+  page() {
+    return this._frame.page();
   }
 
   async boundingBox(options) {
@@ -86,6 +103,13 @@ class Locator {
     });
   }
 
+  async dragTo(target, options = {}) {
+    return this._frame.dragAndDrop(this._selector, target._selector, {
+      strict: true,
+      ...options
+    });
+  }
+
   async evaluate(pageFunction, arg, options) {
     return this._withElement(h => h.evaluate(pageFunction, arg), options === null || options === void 0 ? void 0 : options.timeout);
   }
@@ -105,8 +129,25 @@ class Locator {
     });
   }
 
-  locator(selector) {
-    return new Locator(this._frame, this._selector + ' >> ' + selector);
+  async _highlight() {
+    // VS Code extension uses this one, keep it for now.
+    return this._frame._highlight(this._selector);
+  }
+
+  async highlight() {
+    return this._frame._highlight(this._selector);
+  }
+
+  locator(selector, options) {
+    return new Locator(this._frame, this._selector + ' >> ' + selector, options);
+  }
+
+  frameLocator(selector) {
+    return new FrameLocator(this._frame, this._selector + ' >> ' + selector);
+  }
+
+  filter(options) {
+    return new Locator(this._frame, this._selector, options);
   }
 
   async elementHandle(options) {
@@ -141,7 +182,7 @@ class Locator {
   }
 
   async count() {
-    return this.evaluateAll(ee => ee.length);
+    return this._frame._queryCount(this._selector);
   }
 
   async getAttribute(name, options) {
@@ -301,18 +342,16 @@ class Locator {
   }
 
   async waitFor(options) {
-    return this._frame._wrapApiCall(async channel => {
-      await channel.waitForSelector({
-        selector: this._selector,
-        strict: true,
-        omitReturnValue: true,
-        ...options
-      });
+    await this._frame._channel.waitForSelector({
+      selector: this._selector,
+      strict: true,
+      omitReturnValue: true,
+      ...options
     });
   }
 
-  async _expect(expression, options) {
-    return this._frame._wrapApiCall(async channel => {
+  async _expect(customStackTrace, expression, options) {
+    return this._frame._wrapApiCall(async () => {
       const params = {
         selector: this._selector,
         expression,
@@ -320,13 +359,15 @@ class Locator {
         isNot: !!options.isNot
       };
       if (options.expectedValue) params.expectedValue = (0, _jsHandle.serializeArgument)(options.expectedValue);
-      const result = await channel.expect(params);
+      const result = await this._frame._channel.expect(params);
       if (result.received !== undefined) result.received = (0, _jsHandle.parseResult)(result.received);
       return result;
-    });
+    }, false
+    /* isInternal */
+    , customStackTrace);
   }
 
-  [_custom]() {
+  [_util$inspect$custom]() {
     return this.toString();
   }
 
@@ -337,3 +378,35 @@ class Locator {
 }
 
 exports.Locator = Locator;
+
+class FrameLocator {
+  constructor(frame, selector) {
+    this._frame = void 0;
+    this._frameSelector = void 0;
+    this._frame = frame;
+    this._frameSelector = selector;
+  }
+
+  locator(selector, options) {
+    return new Locator(this._frame, this._frameSelector + ' >> control=enter-frame >> ' + selector, options);
+  }
+
+  frameLocator(selector) {
+    return new FrameLocator(this._frame, this._frameSelector + ' >> control=enter-frame >> ' + selector);
+  }
+
+  first() {
+    return new FrameLocator(this._frame, this._frameSelector + ' >> nth=0');
+  }
+
+  last() {
+    return new FrameLocator(this._frame, this._frameSelector + ` >> nth=-1`);
+  }
+
+  nth(index) {
+    return new FrameLocator(this._frame, this._frameSelector + ` >> nth=${index}`);
+  }
+
+}
+
+exports.FrameLocator = FrameLocator;

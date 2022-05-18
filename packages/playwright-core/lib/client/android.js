@@ -3,11 +3,11 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.AndroidWebView = exports.AndroidInput = exports.AndroidSocket = exports.AndroidDevice = exports.Android = void 0;
+exports.AndroidWebView = exports.AndroidSocket = exports.AndroidInput = exports.AndroidDevice = exports.Android = void 0;
 
 var _fs = _interopRequireDefault(require("fs"));
 
-var _utils = require("../utils/utils");
+var _utils = require("../utils");
 
 var _events = require("./events");
 
@@ -15,7 +15,7 @@ var _browserContext = require("./browserContext");
 
 var _channelOwner = require("./channelOwner");
 
-var _timeoutSettings = require("../utils/timeoutSettings");
+var _timeoutSettings = require("../common/timeoutSettings");
 
 var _waiter = require("./waiter");
 
@@ -57,13 +57,11 @@ class Android extends _channelOwner.ChannelOwner {
     });
   }
 
-  async devices() {
-    return this._wrapApiCall(async channel => {
-      const {
-        devices
-      } = await channel.devices();
-      return devices.map(d => AndroidDevice.from(d));
-    });
+  async devices(options = {}) {
+    const {
+      devices
+    } = await this._channel.devices(options);
+    return devices.map(d => AndroidDevice.from(d));
   }
 
 }
@@ -88,22 +86,22 @@ class AndroidDevice extends _channelOwner.ChannelOwner {
     }) => this._onWebViewAdded(webView));
 
     this._channel.on('webViewRemoved', ({
-      pid
-    }) => this._onWebViewRemoved(pid));
+      socketName
+    }) => this._onWebViewRemoved(socketName));
   }
 
   _onWebViewAdded(webView) {
     const view = new AndroidWebView(this, webView);
 
-    this._webViews.set(webView.pid, view);
+    this._webViews.set(webView.socketName, view);
 
     this.emit(_events.Events.AndroidDevice.WebView, view);
   }
 
-  _onWebViewRemoved(pid) {
-    const view = this._webViews.get(pid);
+  _onWebViewRemoved(socketName) {
+    const view = this._webViews.get(socketName);
 
-    this._webViews.delete(pid);
+    this._webViews.delete(socketName);
 
     if (view) view.emit(_events.Events.AndroidWebView.Close);
   }
@@ -129,29 +127,31 @@ class AndroidDevice extends _channelOwner.ChannelOwner {
   }
 
   async webView(selector, options) {
-    const webView = [...this._webViews.values()].find(v => v.pkg() === selector.pkg);
+    const predicate = v => {
+      if (selector.pkg) return v.pkg() === selector.pkg;
+      if (selector.socketName) return v._socketName() === selector.socketName;
+      return false;
+    };
+
+    const webView = [...this._webViews.values()].find(predicate);
     if (webView) return webView;
     return this.waitForEvent('webview', { ...options,
-      predicate: view => view.pkg() === selector.pkg
+      predicate
     });
   }
 
   async wait(selector, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.wait({
-        selector: toSelectorChannel(selector),
-        ...options
-      });
+    await this._channel.wait({
+      selector: toSelectorChannel(selector),
+      ...options
     });
   }
 
   async fill(selector, text, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.fill({
-        selector: toSelectorChannel(selector),
-        text,
-        ...options
-      });
+    await this._channel.fill({
+      selector: toSelectorChannel(selector),
+      text,
+      ...options
     });
   }
 
@@ -161,168 +161,136 @@ class AndroidDevice extends _channelOwner.ChannelOwner {
   }
 
   async tap(selector, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.tap({
-        selector: toSelectorChannel(selector),
-        ...options
-      });
+    await this._channel.tap({
+      selector: toSelectorChannel(selector),
+      ...options
     });
   }
 
   async drag(selector, dest, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.drag({
-        selector: toSelectorChannel(selector),
-        dest,
-        ...options
-      });
+    await this._channel.drag({
+      selector: toSelectorChannel(selector),
+      dest,
+      ...options
     });
   }
 
   async fling(selector, direction, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.fling({
-        selector: toSelectorChannel(selector),
-        direction,
-        ...options
-      });
+    await this._channel.fling({
+      selector: toSelectorChannel(selector),
+      direction,
+      ...options
     });
   }
 
   async longTap(selector, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.longTap({
-        selector: toSelectorChannel(selector),
-        ...options
-      });
+    await this._channel.longTap({
+      selector: toSelectorChannel(selector),
+      ...options
     });
   }
 
   async pinchClose(selector, percent, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.pinchClose({
-        selector: toSelectorChannel(selector),
-        percent,
-        ...options
-      });
+    await this._channel.pinchClose({
+      selector: toSelectorChannel(selector),
+      percent,
+      ...options
     });
   }
 
   async pinchOpen(selector, percent, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.pinchOpen({
-        selector: toSelectorChannel(selector),
-        percent,
-        ...options
-      });
+    await this._channel.pinchOpen({
+      selector: toSelectorChannel(selector),
+      percent,
+      ...options
     });
   }
 
   async scroll(selector, direction, percent, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.scroll({
-        selector: toSelectorChannel(selector),
-        direction,
-        percent,
-        ...options
-      });
+    await this._channel.scroll({
+      selector: toSelectorChannel(selector),
+      direction,
+      percent,
+      ...options
     });
   }
 
   async swipe(selector, direction, percent, options) {
-    await this._wrapApiCall(async channel => {
-      await channel.swipe({
-        selector: toSelectorChannel(selector),
-        direction,
-        percent,
-        ...options
-      });
+    await this._channel.swipe({
+      selector: toSelectorChannel(selector),
+      direction,
+      percent,
+      ...options
     });
   }
 
   async info(selector) {
-    return await this._wrapApiCall(async channel => {
-      return (await channel.info({
-        selector: toSelectorChannel(selector)
-      })).info;
-    });
+    return (await this._channel.info({
+      selector: toSelectorChannel(selector)
+    })).info;
   }
 
   async screenshot(options = {}) {
-    return await this._wrapApiCall(async channel => {
-      const {
-        binary
-      } = await channel.screenshot();
-      const buffer = Buffer.from(binary, 'base64');
-      if (options.path) await _fs.default.promises.writeFile(options.path, buffer);
-      return buffer;
-    });
+    const {
+      binary
+    } = await this._channel.screenshot();
+    const buffer = Buffer.from(binary, 'base64');
+    if (options.path) await _fs.default.promises.writeFile(options.path, buffer);
+    return buffer;
   }
 
   async close() {
-    return this._wrapApiCall(async channel => {
-      await channel.close();
-      this.emit(_events.Events.AndroidDevice.Close);
-    });
+    await this._channel.close();
+    this.emit(_events.Events.AndroidDevice.Close);
   }
 
   async shell(command) {
-    return this._wrapApiCall(async channel => {
-      const {
-        result
-      } = await channel.shell({
-        command
-      });
-      return Buffer.from(result, 'base64');
+    const {
+      result
+    } = await this._channel.shell({
+      command
     });
+    return Buffer.from(result, 'base64');
   }
 
   async open(command) {
-    return this._wrapApiCall(async channel => {
-      return AndroidSocket.from((await channel.open({
-        command
-      })).socket);
-    });
+    return AndroidSocket.from((await this._channel.open({
+      command
+    })).socket);
   }
 
   async installApk(file, options) {
-    return this._wrapApiCall(async channel => {
-      await channel.installApk({
-        file: await loadFile(file),
-        args: options && options.args
-      });
+    await this._channel.installApk({
+      file: await loadFile(file),
+      args: options && options.args
     });
   }
 
   async push(file, path, options) {
-    return this._wrapApiCall(async channel => {
-      await channel.push({
-        file: await loadFile(file),
-        path,
-        mode: options ? options.mode : undefined
-      });
+    await this._channel.push({
+      file: await loadFile(file),
+      path,
+      mode: options ? options.mode : undefined
     });
   }
 
   async launchBrowser(options = {}) {
-    return this._wrapApiCall(async channel => {
-      const contextOptions = await (0, _browserContext.prepareBrowserContextParams)(options);
-      const {
-        context
-      } = await channel.launchBrowser(contextOptions);
-      return _browserContext.BrowserContext.from(context);
-    });
+    const contextOptions = await (0, _browserContext.prepareBrowserContextParams)(options);
+    const {
+      context
+    } = await this._channel.launchBrowser(contextOptions);
+    return _browserContext.BrowserContext.from(context);
   }
 
   async waitForEvent(event, optionsOrPredicate = {}) {
-    return this._wrapApiCall(async channel => {
+    return this._wrapApiCall(async () => {
       const timeout = this._timeoutSettings.timeout(typeof optionsOrPredicate === 'function' ? {} : optionsOrPredicate);
 
       const predicate = typeof optionsOrPredicate === 'function' ? optionsOrPredicate : optionsOrPredicate.predicate;
 
-      const waiter = _waiter.Waiter.createForEvent(channel, event);
+      const waiter = _waiter.Waiter.createForEvent(this, event);
 
-      waiter.rejectOnTimeout(timeout, `Timeout while waiting for event "${event}"`);
+      waiter.rejectOnTimeout(timeout, `Timeout ${timeout}ms exceeded while waiting for event "${event}"`);
       if (event !== _events.Events.AndroidDevice.Close) waiter.rejectOnEvent(this, _events.Events.AndroidDevice.Close, new Error('Device closed'));
       const result = await waiter.waitForEvent(this, event, predicate);
       waiter.dispose();
@@ -350,17 +318,13 @@ class AndroidSocket extends _channelOwner.ChannelOwner {
   }
 
   async write(data) {
-    return this._wrapApiCall(async channel => {
-      await channel.write({
-        data: data.toString('base64')
-      });
+    await this._channel.write({
+      data: data.toString('base64')
     });
   }
 
   async close() {
-    return this._wrapApiCall(async channel => {
-      await channel.close();
-    });
+    await this._channel.close();
   }
 
 }
@@ -381,45 +345,35 @@ class AndroidInput {
   }
 
   async type(text) {
-    return this._device._wrapApiCall(async channel => {
-      await channel.inputType({
-        text
-      });
+    await this._device._channel.inputType({
+      text
     });
   }
 
   async press(key) {
-    return this._device._wrapApiCall(async channel => {
-      await channel.inputPress({
-        key
-      });
+    await this._device._channel.inputPress({
+      key
     });
   }
 
   async tap(point) {
-    return this._device._wrapApiCall(async channel => {
-      await channel.inputTap({
-        point
-      });
+    await this._device._channel.inputTap({
+      point
     });
   }
 
   async swipe(from, segments, steps) {
-    return this._device._wrapApiCall(async channel => {
-      await channel.inputSwipe({
-        segments,
-        steps
-      });
+    await this._device._channel.inputSwipe({
+      segments,
+      steps
     });
   }
 
   async drag(from, to, steps) {
-    return this._device._wrapApiCall(async channel => {
-      await channel.inputDrag({
-        from,
-        to,
-        steps
-      });
+    await this._device._channel.inputDrag({
+      from,
+      to,
+      steps
     });
   }
 
@@ -450,7 +404,7 @@ function toSelectorChannel(selector) {
 
   const toRegex = value => {
     if (value === undefined) return undefined;
-    if (value instanceof RegExp) return value.source;
+    if ((0, _utils.isRegExp)(value)) return value.source;
     return '^' + value.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d') + '$';
   };
 
@@ -498,20 +452,22 @@ class AndroidWebView extends _events2.EventEmitter {
     return this._data.pkg;
   }
 
+  _socketName() {
+    return this._data.socketName;
+  }
+
   async page() {
     if (!this._pagePromise) this._pagePromise = this._fetchPage();
     return this._pagePromise;
   }
 
   async _fetchPage() {
-    return this._device._wrapApiCall(async channel => {
-      const {
-        context
-      } = await channel.connectToWebView({
-        pid: this._data.pid
-      });
-      return _browserContext.BrowserContext.from(context).pages()[0];
+    const {
+      context
+    } = await this._device._channel.connectToWebView({
+      socketName: this._data.socketName
     });
+    return _browserContext.BrowserContext.from(context).pages()[0];
   }
 
 }

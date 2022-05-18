@@ -11,7 +11,6 @@ import {
   $isOverflowNode,
   OverflowNode,
 } from '@lexical/overflow';
-import {mergePrevious} from '@lexical/react/DEPRECATED_useLexicalCharacterLimit';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -24,6 +23,8 @@ import {
   ParagraphNode,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+
+import {mergePrevious} from '../../shared/useCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(

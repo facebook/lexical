@@ -6,7 +6,14 @@
  *
  */
 
-import {expect, focusEditor, initialize, test} from '../utils/index.mjs';
+import {
+  click,
+  evaluate,
+  expect,
+  focusEditor,
+  initialize,
+  test,
+} from '../utils/index.mjs';
 
 test.describe('Focus', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
@@ -20,5 +27,41 @@ test.describe('Focus', () => {
     });
 
     expect(isEditorFocused).toBe(false);
+  });
+
+  test(`selection remains internally when clicking outside the editor`, async ({
+    page,
+    isCollab,
+  }) => {
+    test.skip(isCollab);
+    const getInternalSelection = async () =>
+      await evaluate(page, () => {
+        return document
+          .querySelector(`div[contenteditable="true"]`)
+          .__lexicalEditor.getEditorState()._selection;
+      });
+    await focusEditor(page);
+    await page.keyboard.type('Hello world');
+    expect(await getInternalSelection()).toEqual(
+      expect.objectContaining({
+        anchor: expect.objectContaining({
+          offset: 11,
+        }),
+        focus: expect.objectContaining({
+          offset: 11,
+        }),
+      }),
+    );
+    await click(page, '.tree-view-output');
+    expect(await getInternalSelection()).toEqual(
+      expect.objectContaining({
+        anchor: expect.objectContaining({
+          offset: 11,
+        }),
+        focus: expect.objectContaining({
+          offset: 11,
+        }),
+      }),
+    );
   });
 });

@@ -6,9 +6,10 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getSelection, $isRangeSelection} from 'lexical';
 import useLayoutEffect from 'shared-ts/useLayoutEffect';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 type Props = Readonly<{
   scrollRef: {

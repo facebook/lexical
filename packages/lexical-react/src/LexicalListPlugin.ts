@@ -7,9 +7,9 @@
  */
 
 import {ListItemNode, ListNode} from '@lexical/list';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
+import {useLexicalComposerContext} from './LexicalComposerContext';
 import {useList} from './shared/useList';
 
 export function ListPlugin(): null {

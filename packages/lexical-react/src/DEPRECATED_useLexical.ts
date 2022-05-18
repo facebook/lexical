@@ -13,10 +13,11 @@ import type {
   LexicalNode,
 } from 'lexical';
 
-import {useLexicalEditor} from '@lexical/react/DEPRECATED_useLexicalEditor';
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
 import {Class} from 'utility-types';
+
+import {useLexicalEditor} from './DEPRECATED_useLexicalEditor';
 
 export function useLexical(editorConfig: {
   disableEvents?: boolean;

@@ -10,7 +10,7 @@
 import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 // $FlowFixMe: Flow doesn't like this for some reason
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -27,6 +27,14 @@ export function useDecorators(editor: LexicalEditor): Array<React.Node> {
       });
     });
   }, [editor]);
+
+  useEffect(() => {
+    // If the content editable mounts before the subscription is added, then
+    // nothing will be rendered on initial pass. We can get around that by
+    // ensuring that we set the value.
+    setDecorators(editor.getDecorators());
+  }, [editor]);
+
   // Return decorators defined as React Portals
   return useMemo(() => {
     const decoratedPortals = [];

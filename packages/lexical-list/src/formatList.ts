@@ -477,7 +477,7 @@ export function $handleListInsertParagraph(): boolean {
 
   const nextSiblings = anchor.getNextSiblings();
 
-  if (nextSiblings.length > 0 && $isListNode(parent)) {
+  if (nextSiblings.length > 0) {
     const newList = $createListNode(parent.getListType());
 
     if ($isParagraphNode(replacementNode)) {

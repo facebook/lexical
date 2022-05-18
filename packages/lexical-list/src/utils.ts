@@ -151,7 +151,7 @@ export function $removeHighestEmptyListParent(
     emptyListPtr.getNextSibling() == null &&
     emptyListPtr.getPreviousSibling() == null
   ) {
-    const parent = emptyListPtr.getParent();
+    const parent = emptyListPtr.getParent<ListItemNode | ListNode>();
 
     if (
       parent == null ||
@@ -160,7 +160,7 @@ export function $removeHighestEmptyListParent(
       break;
     }
 
-    emptyListPtr = parent as ListItemNode | ListNode;
+    emptyListPtr = parent;
   }
 
   emptyListPtr.remove();

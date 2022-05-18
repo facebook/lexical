@@ -42,7 +42,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/list',
-    replacement: path.resolve('../lexical-list/src/index.js'),
+    replacement: path.resolve('../lexical-list/src/index.ts'),
   },
   {
     find: '@lexical/file',

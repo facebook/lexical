@@ -35,8 +35,10 @@ module.exports = {
           '<rootDir>/packages/lexical-headless/src/index.ts',
         '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.ts',
         '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.ts',
-        '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
+        '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.ts',
         '^@lexical/mark$': '<rootDir>/packages/lexical-mark/src/index.ts',
+        '^@lexical/markdown$':
+          '<rootDir>/packages/lexical-markdown/src/index.ts',
         '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.ts',
         '^@lexical/overflow$':
           '<rootDir>/packages/lexical-overflow/src/index.ts',

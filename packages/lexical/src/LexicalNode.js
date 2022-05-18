@@ -281,7 +281,7 @@ export class LexicalNode {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if ($isRootNode(parent) && $isElementNode(node)) {
+      if ($isRootNode(parent)) {
         // $FlowFixMe
         return node;
       }

@@ -4,12 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
-import type {ListNode} from './';
-import type {ListType} from './LexicalListNode';
-import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+} from 'lexical';
 
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
@@ -21,7 +24,7 @@ import {
   $isRangeSelection,
   $isRootNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
+import invariant from 'shared-ts/invariant';
 
 import {
   $createListItemNode,
@@ -29,7 +32,9 @@ import {
   $isListItemNode,
   $isListNode,
   ListItemNode,
+  ListNode,
 } from './';
+import {ListType} from './LexicalListNode';
 import {
   $getAllListItems,
   $getTopListNode,
@@ -40,9 +45,9 @@ import {
 } from './utils';
 
 function $isSelectingEmptyListItem(
-  anchorNode: LexicalNode,
+  anchorNode: ListItemNode | LexicalNode,
   nodes: Array<LexicalNode>,
-): boolean %checks {
+): boolean {
   return (
     $isListItemNode(anchorNode) &&
     (nodes.length === 0 ||
@@ -56,6 +61,7 @@ function $getListItemValue(listItem: ListItemNode): number {
   const list = listItem.getParent();
 
   let value = 1;
+
   if (list != null) {
     if (!$isListNode(list)) {
       invariant(
@@ -70,6 +76,7 @@ function $getListItemValue(listItem: ListItemNode): number {
   const siblings = listItem.getPreviousSiblings();
   for (let i = 0; i < siblings.length; i++) {
     const sibling = siblings[i];
+
     if ($isListItemNode(sibling) && !$isListNode(sibling.getFirstChild())) {
       value++;
     }
@@ -80,13 +87,16 @@ function $getListItemValue(listItem: ListItemNode): number {
 export function insertList(editor: LexicalEditor, listType: ListType): void {
   editor.update(() => {
     const selection = $getSelection();
+
     if ($isRangeSelection(selection)) {
       const nodes = selection.getNodes();
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
+
       if ($isSelectingEmptyListItem(anchorNode, nodes)) {
         const list = $createListNode(listType);
+
         if ($isRootNode(anchorNodeParent)) {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
@@ -96,11 +106,13 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           append(list, parent.getChildren());
           parent.replace(list);
         }
+
         return;
       } else {
         const handled = new Set();
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
+
           if (
             $isElementNode(node) &&
             node.isEmpty() &&
@@ -109,10 +121,12 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
             createListOrMerge(node, listType);
             continue;
           }
+
           if ($isLeafNode(node)) {
             let parent = node.getParent();
             while (parent != null) {
               const parentKey = parent.getKey();
+
               if ($isListNode(parent)) {
                 if (!handled.has(parentKey)) {
                   const newListNode = $createListNode(listType);
@@ -121,14 +135,17 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
                   updateChildrenListItemValue(newListNode);
                   handled.add(parentKey);
                 }
+
                 break;
               } else {
                 const nextParent = parent.getParent();
+
                 if ($isRootNode(nextParent) && !handled.has(parentKey)) {
                   handled.add(parentKey);
                   createListOrMerge(parent, listType);
                   break;
                 }
+
                 parent = nextParent;
               }
             }
@@ -147,10 +164,12 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   if ($isListNode(node)) {
     return node;
   }
+
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
   append(listItem, node.getChildren());
+
   if (
     $isListNode(previousSibling) &&
     listType === previousSibling.getListType()
@@ -158,6 +177,7 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
     previousSibling.append(listItem);
     node.remove();
     // if the same type of list is on both sides, merge them.
+
     if ($isListNode(nextSibling) && listType === nextSibling.getListType()) {
       append(previousSibling, nextSibling.getChildren());
       nextSibling.remove();
@@ -182,35 +202,46 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
+
     if ($isRangeSelection(selection)) {
-      const listNodes = new Set();
+      const listNodes = new Set<ListNode>();
       const nodes = selection.getNodes();
       const anchorNode = selection.anchor.getNode();
+
       if ($isSelectingEmptyListItem(anchorNode, nodes)) {
         listNodes.add($getTopListNode(anchorNode));
       } else {
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
+
           if ($isLeafNode(node)) {
             const listItemNode = $getNearestNodeOfType(node, ListItemNode);
+
             if (listItemNode != null) {
               listNodes.add($getTopListNode(listItemNode));
             }
           }
         }
       }
+
       listNodes.forEach((listNode) => {
-        let insertionPoint = listNode;
+        let insertionPoint: ListNode | ParagraphNode = listNode;
+
         const listItems = $getAllListItems(listNode);
+
         listItems.forEach((listItemNode) => {
           if (listItemNode != null) {
             const paragraph = $createParagraphNode();
+
             append(paragraph, listItemNode.getChildren());
+
             insertionPoint.insertAfter(paragraph);
             insertionPoint = paragraph;
+
             listItemNode.remove();
           }
         });
+
         listNode.remove();
       });
     }
@@ -225,6 +256,7 @@ export function updateChildrenListItemValue(
   (children || list.getChildren()).forEach((child: ListItemNode) => {
     const prevValue = child.getValue();
     const nextValue = $getListItemValue(child);
+
     if (prevValue !== nextValue) {
       child.setValue(nextValue);
     }
@@ -233,21 +265,25 @@ export function updateChildrenListItemValue(
 
 export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
-  const removed = new Set();
+  const removed = new Set<NodeKey>();
 
-  listItemNodes.forEach((listItemNode) => {
+  listItemNodes.forEach((listItemNode: ListItemNode) => {
     if (isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
       return;
     }
+
     const parent = listItemNode.getParent();
-    const nextSibling = listItemNode.getNextSibling();
-    const previousSibling = listItemNode.getPreviousSibling();
+    const nextSibling = listItemNode.getNextSibling<ListItemNode>();
+    const previousSibling = listItemNode.getPreviousSibling<ListItemNode>();
     // if there are nested lists on either side, merge them all together.
+
     if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
+
       if ($isListNode(innerList)) {
         innerList.append(listItemNode);
         const nextInnerList = nextSibling.getFirstChild();
+
         if ($isListNode(nextInnerList)) {
           const children = nextInnerList.getChildren();
           append(innerList, children);
@@ -259,8 +295,10 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
     } else if (isNestedListNode(nextSibling)) {
       // if the ListItemNode is next to a nested ListNode, merge them
       const innerList = nextSibling.getFirstChild();
+
       if ($isListNode(innerList)) {
         const firstChild = innerList.getFirstChild();
+
         if (firstChild !== null) {
           firstChild.insertBefore(listItemNode);
         }
@@ -268,17 +306,20 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
       }
     } else if (isNestedListNode(previousSibling)) {
       const innerList = previousSibling.getFirstChild();
+
       if ($isListNode(innerList)) {
         innerList.append(listItemNode);
         updateChildrenListItemValue(innerList);
       }
     } else {
       // otherwise, we need to create a new nested ListNode
+
       if ($isListNode(parent)) {
         const newListItem = $createListItemNode();
         const newList = $createListNode(parent.getListType());
         newListItem.append(newList);
         newList.append(listItemNode);
+
         if (previousSibling) {
           previousSibling.insertAfter(newListItem);
         } else if (nextSibling) {
@@ -288,6 +329,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
         }
       }
     }
+
     if ($isListNode(parent)) {
       updateChildrenListItemValue(parent);
     }
@@ -306,6 +348,7 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
       ? grandparentListItem.getParent()
       : undefined;
     // If it doesn't have these ancestors, it's not indented.
+
     if (
       $isListNode(greatGrandparentList) &&
       $isListItemNode(grandparentListItem) &&
@@ -315,8 +358,10 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
       // great grandparent list before the grandparent
       const firstChild = parentList ? parentList.getFirstChild() : undefined;
       const lastChild = parentList ? parentList.getLastChild() : undefined;
+
       if (listItemNode.is(firstChild)) {
         grandparentListItem.insertBefore(listItemNode);
+
         if (parentList.isEmpty()) {
           grandparentListItem.remove();
         }
@@ -324,6 +369,7 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
         // great grandparent list after the grandparent.
       } else if (listItemNode.is(lastChild)) {
         grandparentListItem.insertAfter(listItemNode);
+
         if (parentList.isEmpty()) {
           grandparentListItem.remove();
         }
@@ -354,24 +400,29 @@ export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
 
 function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): void {
   const selection = $getSelection();
+
   if (!$isRangeSelection(selection)) {
     return;
   }
   const selectedNodes = selection.getNodes();
   let listItemNodes = [];
+
   if (selectedNodes.length === 0) {
     selectedNodes.push(selection.anchor.getNode());
   }
+
   if (selectedNodes.length === 1) {
     // Only 1 node selected. Selection may not contain the ListNodeItem so we traverse the tree to
     // find whether this is part of a ListItemNode
     const nearestListItemNode = findNearestListItemNode(selectedNodes[0]);
+
     if (nearestListItemNode !== null) {
       listItemNodes = [nearestListItemNode];
     }
   } else {
     listItemNodes = getUniqueListItemNodes(selectedNodes);
   }
+
   if (listItemNodes.length > 0) {
     if (direction === 'indent') {
       $handleIndent(listItemNodes);
@@ -391,16 +442,19 @@ export function outdentList(): void {
 
 export function $handleListInsertParagraph(): boolean {
   const selection = $getSelection();
+
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
     return false;
   }
   // Only run this code on empty list items
   const anchor = selection.anchor.getNode();
+
   if (!$isListItemNode(anchor) || anchor.getTextContent() !== '') {
     return false;
   }
   const topListNode = $getTopListNode(anchor);
   const parent = anchor.getParent();
+
   invariant(
     $isListNode(parent),
     'A ListItemNode must have a ListNode for a parent.',
@@ -409,6 +463,7 @@ export function $handleListInsertParagraph(): boolean {
   const grandparent = parent.getParent();
 
   let replacementNode;
+
   if ($isRootNode(grandparent)) {
     replacementNode = $createParagraphNode();
     topListNode.insertAfter(replacementNode);
@@ -421,8 +476,10 @@ export function $handleListInsertParagraph(): boolean {
   replacementNode.select();
 
   const nextSiblings = anchor.getNextSiblings();
-  if (nextSiblings.length > 0) {
+
+  if (nextSiblings.length > 0 && $isListNode(parent)) {
     const newList = $createListNode(parent.getListType());
+
     if ($isParagraphNode(replacementNode)) {
       replacementNode.insertAfter(newList);
     } else {

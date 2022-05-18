@@ -45,7 +45,7 @@ For React it could be something following:
 
 ```jsx
 const initialEditorState = await loadContent();
-const editorStateRef = useRef();
+const editorStateRef = useRef<EditorState | null>(null);
 
 <LexicalComposer ...>
   <LexicalRichTextPlugin initialEditorState={initialEditorState} />

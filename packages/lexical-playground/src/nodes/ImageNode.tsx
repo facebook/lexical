@@ -56,6 +56,17 @@ import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
 import Placeholder from '../ui/Placeholder';
 
+export interface ImagePayload {
+  altText: string;
+  caption?: LexicalEditor;
+  height?: number;
+  key?: NodeKey;
+  maxWidth?: number;
+  showCaption?: boolean;
+  src: string;
+  width?: number;
+}
+
 const imageCache = new Set();
 
 function useSuspenseImage(src: string) {
@@ -100,6 +111,7 @@ function LazyImage({
         maxWidth,
         width,
       }}
+      draggable="false"
     />
   );
 }
@@ -230,18 +242,23 @@ function ImageComponent({
     settings: {showNestedEditorTreeView},
   } = useSettings();
 
+  const draggable = isSelected && $isNodeSelection(selection);
+  const isFocused = $isNodeSelection(selection) && (isSelected || isResizing);
+
   return (
     <Suspense fallback={null}>
       <>
-        <LazyImage
-          className={isSelected || isResizing ? 'focused' : null}
-          src={src}
-          altText={altText}
-          imageRef={ref}
-          width={width}
-          height={height}
-          maxWidth={maxWidth}
-        />
+        <div draggable={draggable}>
+          <LazyImage
+            className={isFocused ? 'focused' : null}
+            src={src}
+            altText={altText}
+            imageRef={ref}
+            width={width}
+            height={height}
+            maxWidth={maxWidth}
+          />
+        </div>
         {showCaption && (
           <div className="image-caption-container">
             <LexicalNestedComposer initialEditor={caption}>
@@ -277,19 +294,17 @@ function ImageComponent({
             </LexicalNestedComposer>
           </div>
         )}
-        {resizable &&
-          $isNodeSelection(selection) &&
-          (isSelected || isResizing) && (
-            <ImageResizer
-              showCaption={showCaption}
-              setShowCaption={setShowCaption}
-              editor={editor}
-              imageRef={ref}
-              maxWidth={maxWidth}
-              onResizeStart={onResizeStart}
-              onResizeEnd={onResizeEnd}
-            />
-          )}
+        {resizable && isFocused && (
+          <ImageResizer
+            showCaption={showCaption}
+            setShowCaption={setShowCaption}
+            editor={editor}
+            imageRef={ref}
+            maxWidth={maxWidth}
+            onResizeStart={onResizeStart}
+            onResizeEnd={onResizeEnd}
+          />
+        )}
       </>
     </Suspense>
   );
@@ -403,12 +418,26 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 }
 
-export function $createImageNode(
-  src: string,
-  altText: string,
-  maxWidth: number,
-): ImageNode {
-  return new ImageNode(src, altText, maxWidth);
+export function $createImageNode({
+  altText,
+  height,
+  maxWidth = 500,
+  src,
+  width,
+  showCaption,
+  caption,
+  key,
+}: ImagePayload): ImageNode {
+  return new ImageNode(
+    src,
+    altText,
+    maxWidth,
+    width,
+    height,
+    showCaption,
+    caption,
+    key,
+  );
 }
 
 export function $isImageNode(

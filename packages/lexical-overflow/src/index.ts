@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+
  */
 
 import type {
@@ -37,7 +37,7 @@ export class OverflowNode extends ElementNode {
     return $createOverflowNode();
   }
 
-  constructor(key?: NodeKey): void {
+  constructor(key?: NodeKey) {
     super(key);
     this.__type = 'overflow';
   }
@@ -76,6 +76,8 @@ export function $createOverflowNode(): OverflowNode {
   return new OverflowNode();
 }
 
-export function $isOverflowNode(node: ?LexicalNode): boolean %checks {
+export function $isOverflowNode(
+  node: LexicalNode | null | undefined,
+): node is OverflowNode {
   return node instanceof OverflowNode;
 }

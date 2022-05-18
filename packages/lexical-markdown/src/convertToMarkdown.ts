@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ *
  */
 
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
@@ -23,6 +23,7 @@ export function $convertToMarkdownString(): string {
 
   for (const child of children) {
     const result = exportTopLevelElementOrDecorator(child);
+
     if (result != null) {
       output.push(result);
     }
@@ -33,9 +34,11 @@ export function $convertToMarkdownString(): string {
 
 function exportTopLevelElementOrDecorator(node: LexicalNode): string | null {
   const elementTransformers = getAllMarkdownCriteriaForParagraphs();
+
   for (const transformer of elementTransformers) {
     if (transformer.export != null) {
       const result = transformer.export(node, (_node) => exportChildren(_node));
+
       if (result != null) {
         return result;
       }
@@ -48,6 +51,7 @@ function exportTopLevelElementOrDecorator(node: LexicalNode): string | null {
 function exportChildren(node: ElementNode): string {
   const output = [];
   const children = node.getChildren();
+
   for (const child of children) {
     if ($isLineBreakNode(child)) {
       output.push('\n');
@@ -56,6 +60,7 @@ function exportChildren(node: ElementNode): string {
     } else if ($isLinkNode(child)) {
       const linkContent = `[${child.getTextContent()}](${child.getURL()})`;
       const firstChild = child.getFirstChild();
+
       // Add text styles only if link has single text node inside. If it's more
       // then one we either ignore it and have single <a> to cover whole link,
       // or process them, but then have link cut into multiple <a>.
@@ -81,12 +86,14 @@ function exportTextNode(
   let output = textContent;
   const applied = new Set();
   const textTransformers = getAllMarkdownCriteriaForTextNodes();
+
   for (const transformer of textTransformers) {
     const {
       exportFormat: format,
       exportTag: tag,
       exportTagClose: tagClose = tag,
     } = transformer;
+
     if (
       format != null &&
       tag != null &&
@@ -96,20 +103,22 @@ function exportTextNode(
     ) {
       // Multiple tags might be used for the same format (*, _)
       applied.add(format);
-
       // Prevent adding extra wrapping tags if it's already
       // added by a previous sibling (or will be closed by the next one)
       const previousNode = getTextSibling(node, true);
+
       if (!hasFormat(previousNode, format)) {
         output = tag + output;
       }
 
       const nextNode = getTextSibling(node, false);
+
       if (!hasFormat(nextNode, format)) {
         output += tagClose;
       }
     }
   }
+
   return output;
 }
 
@@ -119,6 +128,7 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
 
   if (!sibling) {
     const parent = node.getParentOrThrow();
+
     if (parent.isInline()) {
       sibling = backward
         ? parent.getPreviousSibling()
@@ -131,6 +141,7 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
       if (!sibling.isInline()) {
         break;
       }
+
       const descendant = backward
         ? sibling.getLastDescendant()
         : sibling.getFirstDescendant();

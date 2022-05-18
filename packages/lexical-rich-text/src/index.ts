@@ -200,7 +200,6 @@ export class HeadingNode extends ElementNode {
     const theme = config.theme;
     const classNames = theme.heading;
     if (classNames !== undefined) {
-      // $FlowFixMe: intentional cast
       const className = classNames[tag];
       addClassNamesToElement(element, className);
     }

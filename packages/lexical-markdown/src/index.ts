@@ -4,15 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ *
  */
 
-import type {
+import {
   ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '../flow/LexicalMarkdown';
+} from '@lexical/markdown';
 
 import {createMarkdownExport} from './v2/MarkdownExport';
 import {createMarkdownImport} from './v2/MarkdownImport';
@@ -68,14 +68,14 @@ const TRANSFORMERS: Array<Transformer> = [
 
 function $convertFromMarkdownString(
   markdown: string,
-  transformers?: Array<Transformer> = TRANSFORMERS,
+  transformers: Array<Transformer> = TRANSFORMERS,
 ): void {
   const importMarkdown = createMarkdownImport(transformers);
   return importMarkdown(markdown);
 }
 
 function $convertToMarkdownString(
-  transformers?: Array<Transformer> = TRANSFORMERS,
+  transformers: Array<Transformer> = TRANSFORMERS,
 ): string {
   const exportMarkdown = createMarkdownExport(transformers);
   return exportMarkdown();

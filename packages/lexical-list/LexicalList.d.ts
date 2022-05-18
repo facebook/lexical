@@ -49,6 +49,7 @@ export declare class ListNode extends ElementNode {
   canBeEmpty(): false;
   append(...nodesToAppend: LexicalNode[]): ListNode;
   getTag(): ListNodeTagType;
+  getStart(): number;
   getListType(): ListType;
   static importJSON(serializedNode: SerializedListNode): ListNode;
   exportJSON(): SerializedListNode;

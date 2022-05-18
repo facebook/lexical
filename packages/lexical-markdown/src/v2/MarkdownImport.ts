@@ -4,16 +4,16 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ *
  */
 
+import type {CodeNode} from '@lexical/code';
 import type {
   ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '../../flow/LexicalMarkdown';
-import type {CodeNode} from '@lexical/code';
+} from '@lexical/markdown';
 import type {RootNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
@@ -22,11 +22,10 @@ import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
-
-type TextFormatTransformersIndex = $ReadOnly<{
-  fullMatchRegExpByTag: $ReadOnly<{[string]: RegExp}>,
-  openTagsRegExp: RegExp,
-  transformersByTag: $ReadOnly<{[string]: TextFormatTransformer}>,
+type TextFormatTransformersIndex = Readonly<{
+  fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
+  openTagsRegExp: RegExp;
+  transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
 export function createMarkdownImport(
@@ -36,6 +35,7 @@ export function createMarkdownImport(
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
+
   return (markdownString: string) => {
     const lines = markdownString.split('\n');
     const linesLength = lines.length;
@@ -44,12 +44,12 @@ export function createMarkdownImport(
 
     for (let i = 0; i < linesLength; i++) {
       const lineText = lines[i];
-
       // Codeblocks are processed first as anything inside such block
       // is ignored for further processing
       // TODO:
       // Abstract it to be dynamic as other transformers (add multiline match option)
       const [codeBlockNode, shiftedIndex] = importCodeBlock(lines, i, root);
+
       if (codeBlockNode != null) {
         i = shiftedIndex;
         continue;
@@ -82,6 +82,7 @@ function importBlocks(
 
   for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
+
     if (match) {
       textNode.setTextContent(lineText.slice(match[0].length));
       replace(elementNode, [textNode], match, true);
@@ -106,8 +107,10 @@ function importCodeBlock(
   if (openMatch) {
     let endLineIndex = startLineIndex;
     const linesLength = lines.length;
+
     while (++endLineIndex < linesLength) {
       const closeMatch = lines[endLineIndex].match(CODE_BLOCK_REG_EXP);
+
       if (closeMatch) {
         const codeBlockNode = $createCodeNode(openMatch[1]);
         const textNode = $createTextNode(
@@ -146,6 +149,7 @@ function importTextFormatTransformers(
   }
 
   let currentNode, remainderNode;
+
   // If matching full content there's no need to run splitText and can reuse existing textNode
   // to update its content and apply format. E.g. for **_Hello_** string after applying bold
   // format (**) it will reuse the same text node to apply italic (_)
@@ -154,15 +158,17 @@ function importTextFormatTransformers(
   } else {
     const startIndex = match.index;
     const endIndex = startIndex + match[0].length;
+
     if (startIndex === 0) {
       [currentNode, remainderNode] = textNode.splitText(endIndex);
     } else {
       [, currentNode, remainderNode] = textNode.splitText(startIndex, endIndex);
     }
   }
-  currentNode.setTextContent(match[2]);
 
+  currentNode.setTextContent(match[2]);
   const transformer = textFormatTransformersIndex.transformersByTag[match[1]];
+
   if (transformer) {
     for (const format of transformer.format) {
       if (!currentNode.hasFormat(format)) {
@@ -199,6 +205,7 @@ function importTextMatchTransformers(
   mainLoop: while (textNode) {
     for (const transformer of textMatchTransformers) {
       const match = textNode.getTextContent().match(transformer.importRegExp);
+
       if (!match) {
         continue;
       }
@@ -206,6 +213,7 @@ function importTextMatchTransformers(
       const startIndex = match.index;
       const endIndex = startIndex + match[0].length;
       let replaceNode;
+
       if (startIndex === 0) {
         [replaceNode, textNode] = textNode.splitText(endIndex);
       } else {
@@ -215,6 +223,7 @@ function importTextMatchTransformers(
       transformer.replace(replaceNode, match);
       continue mainLoop;
     }
+
     break;
   }
 }
@@ -223,8 +232,9 @@ function importTextMatchTransformers(
 function findOutermostMatch(
   textContent: string,
   textTransformersIndex: TextFormatTransformersIndex,
-): RegExp$matchResult | null {
+): RegExpMatchArray | null {
   const openTagsMatch = textContent.match(textTransformersIndex.openTagsRegExp);
+
   if (openTagsMatch == null) {
     return null;
   }
@@ -269,6 +279,7 @@ function createTextFormatTransformersIndex(
   const transformersByTag = {};
   const fullMatchRegExpByTag = {};
   const openTagsRegExp = [];
+
   for (const transformer of textTransformers) {
     const {tag} = transformer;
     transformersByTag[tag] = transformer;

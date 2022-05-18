@@ -4,15 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+
  */
 
+import type {ListNode, ListType} from '@lexical/list';
 import type {
   ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
-} from '../../flow/LexicalMarkdown';
-import type {ListNode, ListType} from '@lexical/list';
+} from '@lexical/markdown';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {ElementNode, LexicalNode} from 'lexical';
 
@@ -116,8 +116,7 @@ export const HEADING: ElementTransformer = {
   },
   regExp: /^(#{1,6})\s/,
   replace: replaceWithBlock((match) => {
-    // $FlowFixMe[incompatible-cast]
-    const tag = ('h' + match[1].length: HeadingTagType);
+    const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
   }),
   type: 'element',

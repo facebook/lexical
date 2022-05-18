@@ -34,12 +34,12 @@ module.exports = {
         '^@lexical/headless$':
           '<rootDir>/packages/lexical-headless/src/index.ts',
         '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.ts',
-        '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.js',
+        '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.ts',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
         '^@lexical/mark$': '<rootDir>/packages/lexical-mark/src/index.ts',
-        '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.js',
+        '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.ts',
         '^@lexical/overflow$':
-          '<rootDir>/packages/lexical-overflow/src/index.js',
+          '<rootDir>/packages/lexical-overflow/src/index.ts',
         '^@lexical/plain-text$':
           '<rootDir>/packages/lexical-plain-text/src/index.ts',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':

@@ -322,7 +322,7 @@ export class LexicalNode {
     return parents;
   }
 
-  getPreviousSibling(): LexicalNode | null {
+  getPreviousSibling<T: LexicalNode>(): T | null {
     const parent = this.getParent();
     if (parent === null) {
       return null;
@@ -332,10 +332,10 @@ export class LexicalNode {
     if (index <= 0) {
       return null;
     }
-    return $getNodeByKey<LexicalNode>(children[index - 1]);
+    return $getNodeByKey<T>(children[index - 1]);
   }
 
-  getPreviousSiblings(): Array<LexicalNode> {
+  getPreviousSiblings<T: LexicalNode>(): Array<T> {
     const parent = this.getParent();
     if (parent === null) {
       return [];
@@ -344,10 +344,10 @@ export class LexicalNode {
     const index = children.indexOf(this.__key);
     return children
       .slice(0, index)
-      .map((childKey) => $getNodeByKeyOrThrow<LexicalNode>(childKey));
+      .map((childKey) => $getNodeByKeyOrThrow<T>(childKey));
   }
 
-  getNextSibling(): LexicalNode | null {
+  getNextSibling<T: LexicalNode>(): T | null {
     const parent = this.getParent();
     if (parent === null) {
       return null;
@@ -358,10 +358,10 @@ export class LexicalNode {
     if (index >= childrenLength - 1) {
       return null;
     }
-    return $getNodeByKey<LexicalNode>(children[index + 1]);
+    return $getNodeByKey<T>(children[index + 1]);
   }
 
-  getNextSiblings(): Array<LexicalNode> {
+  getNextSiblings<T: LexicalNode>(): Array<T> {
     const parent = this.getParent();
     if (parent === null) {
       return [];
@@ -370,7 +370,7 @@ export class LexicalNode {
     const index = children.indexOf(this.__key);
     return children
       .slice(index + 1)
-      .map((childKey) => $getNodeByKeyOrThrow<LexicalNode>(childKey));
+      .map((childKey) => $getNodeByKeyOrThrow<T>(childKey));
   }
 
   getCommonAncestor<T: ElementNode>(node: LexicalNode): T | null {

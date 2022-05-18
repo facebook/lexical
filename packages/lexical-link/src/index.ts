@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+
  */
 
 import type {
@@ -41,7 +41,7 @@ export class LinkNode extends ElementNode {
     return new LinkNode(node.__url, node.__key);
   }
 
-  constructor(url: string, key?: NodeKey): void {
+  constructor(url: string, key?: NodeKey) {
     super(key);
     this.__url = url;
   }
@@ -54,13 +54,10 @@ export class LinkNode extends ElementNode {
   }
 
   updateDOM(
-    // $FlowFixMe: not sure how to fix this
     prevNode: LinkNode,
-    dom: HTMLElement,
+    anchor: HTMLAnchorElement,
     config: EditorConfig,
   ): boolean {
-    // $FlowFixMe: not sure how to fix this
-    const anchor: HTMLAnchorElement = dom;
     const url = this.__url;
     if (url !== prevNode.__url) {
       anchor.href = url;
@@ -94,11 +91,11 @@ export class LinkNode extends ElementNode {
   }
 
   getURL(): string {
-    return this.getLatest().__url;
+    return this.getLatest<LinkNode>().__url;
   }
 
   setURL(url: string): void {
-    const writable = this.getWritable();
+    const writable = this.getWritable<LinkNode>();
     writable.__url = url;
   }
 
@@ -141,7 +138,9 @@ export function $createLinkNode(url: string): LinkNode {
   return new LinkNode(url);
 }
 
-export function $isLinkNode(node: ?LexicalNode): boolean %checks {
+export function $isLinkNode(
+  node: LexicalNode | null | undefined,
+): node is LinkNode {
   return node instanceof LinkNode;
 }
 
@@ -159,7 +158,6 @@ export class AutoLinkNode extends LinkNode {
     return 'autolink';
   }
 
-  // $FlowFixMe[incompatible-extend]
   static clone(node: AutoLinkNode): AutoLinkNode {
     return new AutoLinkNode(node.__url, node.__key);
   }
@@ -201,7 +199,9 @@ export function $createAutoLinkNode(url: string): AutoLinkNode {
   return new AutoLinkNode(url);
 }
 
-export function $isAutoLinkNode(node: ?LexicalNode): boolean %checks {
+export function $isAutoLinkNode(
+  node: LexicalNode | null | undefined,
+): node is AutoLinkNode {
   return node instanceof AutoLinkNode;
 }
 

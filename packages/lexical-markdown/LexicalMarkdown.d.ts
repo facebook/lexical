@@ -37,6 +37,7 @@ export type ElementTransformer = {
 export type TextFormatTransformer = {
   format: Array<TextFormatType>;
   tag: string;
+  intraword?: boolean;
   type: 'text-format';
 };
 

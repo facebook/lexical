@@ -7,6 +7,4 @@
  *
  */
 
-'use strict';
-
-module.exports = require('./dist/LexicalMarkdown.js');
+module.exports = require('./dist/LexicalOffset.js');

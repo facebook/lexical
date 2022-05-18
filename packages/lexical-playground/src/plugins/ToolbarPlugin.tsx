@@ -795,7 +795,8 @@ export default function ToolbarPlugin(): JSX.Element {
   const [modal, showModal] = useModal();
   const [isRTL, setIsRTL] = useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
-  const [codeTheme, setCodeTheme] = useState<keyof typeof codeBlockThemes>('atom-one-dark');
+  const [codeTheme, setCodeTheme] =
+    useState<keyof typeof codeBlockThemes>('atom-one-dark');
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -973,14 +974,14 @@ export default function ToolbarPlugin(): JSX.Element {
   );
 
   const onCodeThemeSelect = (e) => {
-    setCodeTheme(e.target.value)
-  }
+    setCodeTheme(e.target.value);
+  };
 
   const insertGifOnClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
   };
 
-  const CodeThemeStyle = codeBlockThemes[codeTheme]
+  const CodeThemeStyle = codeBlockThemes[codeTheme];
 
   return (
     <div className="toolbar">
@@ -1026,7 +1027,10 @@ export default function ToolbarPlugin(): JSX.Element {
           <Select
             className="toolbar-item code-theme"
             onChange={onCodeThemeSelect}
-            options={Object.keys(codeBlockThemes).map(theme => [theme, theme])}
+            options={Object.keys(codeBlockThemes).map((theme) => [
+              theme,
+              theme,
+            ])}
             value={codeTheme}
           />
           <i className="chevron-down inside" />

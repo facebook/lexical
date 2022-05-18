@@ -54,7 +54,7 @@ Leaf type of node that contains text. It also includes few text-specific propert
 ### [`DecoratorNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalDecoratorNode.js)
 
 Wrapper node to insert arbitrary view (component) inside the editor. Decorator node rendering is framework-agnostic and with
-can output components from React, vanila js or other frameworks.
+can output components from React, vanilla js or other frameworks.
 
 ## Node Properties
 
@@ -68,7 +68,7 @@ and their access should be avoided directly. We opted for `__` instead of `_` be
 mangles and minifies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
 to be extended outside of your build.
 
-If you are adding a property that you expect to be modifiable or accessable, then you should always create a set of `get*()`
+If you are adding a property that you expect to be modifiable or accessible, then you should always create a set of `get*()`
 and `set*()` methods on your node for this property. Inside these methods, you'll need to invoke some very important methods
 that ensure consistency with Lexical's internal immutable system. These methods are `getWritable()` and `getLatest()`.
 
@@ -105,7 +105,7 @@ Lexical uses the type to be able to reconstruct a node back with its associated 
 during deserialization (important for copy + paste!). Lexical uses cloning to ensure consistency
 between creation of new `EditorState` snapshots.
 
-Expanding on the exmaple above with these methods:
+Expanding on the example above with these methods:
 
 ```js
 class MyCustomNode extends SomeOtherNode {
@@ -145,7 +145,7 @@ class MyCustomNode extends SomeOtherNode {
 
 As mentioned above, Lexical exposes three base nodes that can be extended.
 
-> Did you know? Nodes such as `ElementNode` are already extended in the core by Lexical, such as `PargraphNode` and `RootNode`!
+> Did you know? Nodes such as `ElementNode` are already extended in the core by Lexical, such as `ParagraphNode` and `RootNode`!
 
 ### Extending `ElementNode`
 

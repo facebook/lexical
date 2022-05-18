@@ -9,6 +9,7 @@
 import type {InsertTableCommandPayload, TableSelection} from '@lexical/table';
 import type {ElementNode, NodeKey} from 'lexical';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTableNodeWithDimensions,
   applyTableHandlers,

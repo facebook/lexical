@@ -30,10 +30,6 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect, useRef} from 'react';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
-import {$isDecoratorBlockNode} from './LexicalDecoratorBlockNode';
-import useLexicalNodeSelection from './useLexicalNodeSelection';
-
 type Props = Readonly<{
   children: JSX.Element;
   format: ElementFormatType | null | undefined;

@@ -8,9 +8,9 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import useDecorators from './shared/useDecorators';
+import {useDecorators} from './shared/useDecorators';
 
-export default function useLexicalDecorators(
+export function useLexicalDecorators(
   editor: LexicalEditor,
 ): Array<JSX.Element> {
   return useDecorators(editor);

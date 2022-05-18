@@ -10,13 +10,12 @@ import type {ElementTransformer, Transformer} from '@lexical/markdown';
 import type {LexicalNode} from 'lexical';
 
 import {registerMarkdownShortcuts, TRANSFORMERS} from '@lexical/markdown';
-import {useEffect} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
-} from './LexicalHorizontalRuleNode';
+} from '@lexical/react/LexicalHorizontalRuleNode';
+import {useEffect} from 'react';
 
 const HR: ElementTransformer = {
   export: (node: LexicalNode) => {

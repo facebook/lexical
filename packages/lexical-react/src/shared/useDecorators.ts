@@ -13,9 +13,9 @@ import {useEffect, useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared-ts/useLayoutEffect';
 
-export function useDecorators(editor: LexicalEditor): Array<React.Node> {
-  const [decorators, setDecorators] = useState<{[string]: React.Node}>(() =>
-    editor.getDecorators<React.Node>(),
+export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
+  const [decorators, setDecorators] = useState<Record<string, JSX.Element>>(
+    () => editor.getDecorators<JSX.Element>(),
   );
 
   // Subscribe to changes

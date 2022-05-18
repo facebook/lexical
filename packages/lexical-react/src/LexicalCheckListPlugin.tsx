@@ -15,6 +15,7 @@ import {
   INSERT_CHECK_LIST_COMMAND,
   insertList,
 } from '@lexical/list';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,

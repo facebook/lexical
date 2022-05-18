@@ -6,18 +6,17 @@
  *
  */
 
-import type {LexicalComposerContextType} from './LexicalComposerContext';
+import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
 import type {EditorThemeClasses, LexicalEditor} from 'lexical';
 
-import * as React from 'react';
-import {useContext, useMemo} from 'react';
-import invariant from 'shared-ts/invariant';
-
-import {useCollaborationContext} from './LexicalCollaborationPlugin';
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
-} from './LexicalComposerContext';
+} from '@lexical/react/LexicalComposerContext';
+import * as React from 'react';
+import {useContext, useMemo} from 'react';
+import invariant from 'shared-ts/invariant';
 
 export function LexicalNestedComposer({
   initialEditor,

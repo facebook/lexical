@@ -25,17 +25,7 @@ import {$isTextNode} from './LexicalTextNode';
 
 export type SerializedParagraphNode = SerializedElementNode;
 
-export type SerializedParagraphNodeV1 = {
-  ...SerializedParagraphNode,
-};
-
-export type SerializedParagraphNodeV2 = {
-  ...SerializedParagraphNodeV1,
-  coolProp: string,
-};
-
 export class ParagraphNode extends ElementNode {
-  __coolProp: string;
   static getType(): string {
     return 'paragraph';
   }

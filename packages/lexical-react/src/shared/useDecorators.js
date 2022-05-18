@@ -34,7 +34,7 @@ export function useDecorators(editor: LexicalEditor): Array<React.Node> {
     // ensuring that we set the value.
     setDecorators(editor.getDecorators());
   }, [editor]);
-  
+
   // Return decorators defined as React Portals
   return useMemo(() => {
     const decoratedPortals = [];

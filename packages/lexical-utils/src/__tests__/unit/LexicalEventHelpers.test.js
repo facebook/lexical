@@ -355,7 +355,7 @@ describe('LexicalEventHelpers', () => {
               `<b style="font-weight:normal;" id="docs-internal-guid-9db03964-7fff-c26c-8b1e-9484fb3b54a4"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:line-through;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Get schwifty!</span></b>`,
             ),
           ],
-          name: 'should produce the correct editor state from italic text',
+          name: 'should produce the correct editor state from strikethrough text',
         },
       ];
       suite.forEach((testUnit, i) => {

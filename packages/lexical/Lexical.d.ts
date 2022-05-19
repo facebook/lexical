@@ -7,7 +7,7 @@
  */
 
 import {Class, $ReadOnly} from 'utility-types';
-import {Spread} from 'libdef/globals';
+import {Spread} from 'globals';
 
 /**
  * LexicalCommands

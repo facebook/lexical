@@ -16,6 +16,7 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
+import {Spread} from 'globals';
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_HIGH,
@@ -23,7 +24,6 @@ import {
   KEY_ESCAPE_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {Spread} from 'libdef/globals';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 

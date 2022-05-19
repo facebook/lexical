@@ -7,7 +7,7 @@
  */
 
 import {ListNodeTagType} from './src/LexicalListNode';
-import {Spread} from 'libdef/globals';
+import {Spread} from 'globals';
 import {
   ElementNode,
   LexicalNode,

@@ -34,6 +34,7 @@ import {
   addClassNamesToElement,
   mergeRegister,
 } from '@lexical/utils';
+import {Spread} from 'globals';
 import {
   $createParagraphNode,
   $getRoot,
@@ -69,7 +70,6 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {Spread} from 'libdef/globals';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);

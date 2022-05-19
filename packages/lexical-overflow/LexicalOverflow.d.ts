@@ -13,7 +13,7 @@ import type {
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
-import {Spread} from 'libdef/globals';
+import {Spread} from 'globals';
 import {ElementNode} from 'lexical';
 export declare class OverflowNode extends ElementNode {
   static getType(): string;

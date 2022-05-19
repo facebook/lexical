@@ -21,7 +21,7 @@ import type {
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
 
-import invariant from '../../shared/src/invariant';
+import invariant from 'shared/invariant';
 
 export type SerializedLinkNode = {
   ...SerializedElementNode,

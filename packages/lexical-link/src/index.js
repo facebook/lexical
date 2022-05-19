@@ -20,13 +20,13 @@ import type {
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
-
 import invariant from 'shared/invariant';
 
 export type SerializedLinkNode = {
   ...SerializedElementNode,
   type: 'link',
   url: string,
+  version: 1,
   ...
 };
 
@@ -148,6 +148,7 @@ export function $isLinkNode(node: ?LexicalNode): boolean %checks {
 export type SerializedAutoLinkNode = {
   ...SerializedLinkNode,
   type: 'autolink',
+  version: 1,
   ...
 };
 

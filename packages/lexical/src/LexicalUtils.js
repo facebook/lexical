@@ -621,10 +621,15 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 
+// This function is used to determine if Lexical should attempt to override
+// the default browser behavior for insertion of text and use its own internal
+// heuristics. This is an extremely important function, and makes much of Lexical
+// work as intended between different browsers and across word, line and character
+// boundary/formats. It also is important for text replacement, node schemas and
+// composition mechanics.
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   text: string,
-  isBeforeInput: boolean,
 ): boolean {
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -633,17 +638,22 @@ export function $shouldPreventDefaultAndInsertText(
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = getActiveEditor().getElementByKey(anchorKey);
+  const textLength = text.length;
 
   return (
     anchorKey !== focus.key ||
     // If we're working with a non-text node.
     !$isTextNode(anchorNode) ||
-    // If we're working with a range that is not during composition.
-    (anchor.offset !== focus.offset && !anchorNode.isComposing()) ||
+    // If we are replacing a range with a single character, and not composing.
+    (textLength < 2 &&
+      anchor.offset !== focus.offset &&
+      !anchorNode.isComposing()) ||
+    // Any non standard text node.
+    $isTokenOrInertOrSegmented(anchorNode) ||
     // If the text length is more than a single character and we're either
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).
-    ((isBeforeInput || anchorNode.isDirty()) && text.length > 1) ||
+    (anchorNode.isDirty() && textLength > 1) ||
     // If the DOM selection element is not the same as the backing node
     (backingAnchorElement !== null &&
       !anchorNode.isComposing() &&

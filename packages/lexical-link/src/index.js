@@ -15,10 +15,20 @@ import type {
   LexicalNode,
   NodeKey,
   RangeSelection,
+  SerializedElementNode,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
+import invariant from 'shared/invariant';
+
+export type SerializedLinkNode = {
+  ...SerializedElementNode,
+  type: 'link',
+  url: string,
+  version: 1,
+  ...
+};
 
 export class LinkNode extends ElementNode {
   __url: string;
@@ -64,6 +74,22 @@ export class LinkNode extends ElementNode {
         conversion: convertAnchorElement,
         priority: 1,
       }),
+    };
+  }
+
+  static importJSON(serializedNode: SerializedLinkNode): LinkNode {
+    const node = $createLinkNode(serializedNode.url);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      type: 'link',
+      url: this.getURL(),
     };
   }
 
@@ -119,6 +145,13 @@ export function $isLinkNode(node: ?LexicalNode): boolean %checks {
   return node instanceof LinkNode;
 }
 
+export type SerializedAutoLinkNode = {
+  ...SerializedLinkNode,
+  type: 'autolink',
+  version: 1,
+  ...
+};
+
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
 export class AutoLinkNode extends LinkNode {
@@ -129,6 +162,28 @@ export class AutoLinkNode extends LinkNode {
   // $FlowFixMe[incompatible-extend]
   static clone(node: AutoLinkNode): AutoLinkNode {
     return new AutoLinkNode(node.__url, node.__key);
+  }
+
+  static importJSON(
+    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
+  ): AutoLinkNode {
+    invariant(
+      serializedNode.type !== 'autolink',
+      'Incorrect node type received in importJSON for %s',
+      this.getType(),
+    );
+    const node = $createAutoLinkNode(serializedNode.url);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      type: 'autolink',
+    };
   }
 
   insertNewAfter(selection: RangeSelection): null | ElementNode {

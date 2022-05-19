@@ -6,7 +6,12 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+} from 'lexical';
 import {TextNode} from 'lexical';
 
 export declare class HashtagNode extends TextNode {
@@ -16,6 +21,7 @@ export declare class HashtagNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement;
   canInsertTextBefore(): boolean;
   isTextEntity(): true;
+  static importJSON(serializedNode: SerializedTextNode): HashtagNode;
 }
 export function $createHashtagNode(text?: string): TextNode;
 export function $isHashtagNode(

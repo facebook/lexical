@@ -7,15 +7,28 @@
  * @flow strict
  */
 
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {LexicalNode, NodeKey, SerializedElementNode} from 'lexical';
 
 import {ElementNode} from './LexicalElementNode';
+
+export type SerializedGridCellNode = {
+  ...SerializedElementNode,
+  colSpan: number,
+  ...
+};
 
 export class GridCellNode extends ElementNode {
   __colSpan: number;
 
   constructor(colSpan: number, key?: NodeKey) {
     super(key);
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      colSpan: this.__colSpan,
+    };
   }
 }
 

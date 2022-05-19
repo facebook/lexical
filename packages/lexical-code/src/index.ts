@@ -18,6 +18,8 @@ import type {
   NodeKey,
   ParagraphNode,
   RangeSelection,
+  SerializedElementNode,
+  SerializedTextNode,
 } from 'lexical';
 
 import * as Prism from 'prismjs';
@@ -39,6 +41,7 @@ import {
   mergeRegister,
   removeClassNamesFromElement,
 } from '@lexical/utils';
+import {Spread} from 'globals';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -58,6 +61,24 @@ import {
 } from 'lexical';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
+
+type SerializedCodeNode = Spread<
+  {
+    language: string | null | undefined;
+    type: 'code';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
+type SerializedCodeHighlightNode = Spread<
+  {
+    highlightType: string | null | undefined;
+    type: 'code-highlight';
+    version: 1;
+  },
+  SerializedTextNode
+>;
 
 const mapToPrismLanguage = (
   language: string | null | undefined,
@@ -99,6 +120,11 @@ export class CodeHighlightNode extends TextNode {
     );
   }
 
+  getHighlightType(): string | null | undefined {
+    const self = this.getLatest<CodeHighlightNode>();
+    return self.__highlightType;
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
     const className = getHighlightThemeClass(
@@ -132,6 +158,25 @@ export class CodeHighlightNode extends TextNode {
       }
     }
     return update;
+  }
+
+  static importJSON(
+    serializedNode: SerializedCodeHighlightNode,
+  ): CodeHighlightNode {
+    const node = $createCodeHighlightNode(serializedNode.highlightType);
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
+    return node;
+  }
+
+  exportJSON(): SerializedCodeHighlightNode {
+    return {
+      ...super.exportJSON(),
+      highlightType: this.getHighlightType(),
+      type: 'code-highlight',
+    };
   }
 
   // Prevent formatting (bold, underline, etc)
@@ -263,6 +308,22 @@ export class CodeNode extends ElementNode {
         }
         return null;
       },
+    };
+  }
+
+  static importJSON(serializedNode: SerializedCodeNode): CodeNode {
+    const node = $createCodeNode(serializedNode.language);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedCodeNode {
+    return {
+      ...super.exportJSON(),
+      language: this.getLanguage(),
+      type: 'code',
     };
   }
 

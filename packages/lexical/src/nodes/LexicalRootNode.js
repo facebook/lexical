@@ -9,13 +9,20 @@
 
 import type {LexicalNode} from '../LexicalNode';
 import type {ParsedElementNode} from '../LexicalParsing';
+import type {SerializedElementNode} from './LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
+import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
+
+export type SerializedRootNode = {
+  ...SerializedElementNode,
+  ...
+};
 
 export class RootNode extends ElementNode {
   __cachedText: null | string;
@@ -93,6 +100,26 @@ export class RootNode extends ElementNode {
     return super.append(...nodesToAppend);
   }
 
+  static importJSON(serializedNode: SerializedRootNode): RootNode {
+    // We don't create a root, and instead use the existing root.
+    const node = $getRoot();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedRootNode {
+    return {
+      children: [],
+      direction: this.getDirection(),
+      format: this.getFormatType(),
+      indent: this.getIndent(),
+      type: 'root',
+      version: 1,
+    };
+  }
+  // TODO: Deprecated
   toJSON(): ParsedElementNode {
     return {
       __children: this.__children,

@@ -13,19 +13,19 @@ const traverse = require('@babel/traverse').default;
 const evalToString = require('./evalToString');
 const invertObject = require('./invertObject');
 
+const plugins = [
+  'classProperties',
+  'jsx',
+  'trailingFunctionCommas',
+  'objectRestSpread',
+];
+
 const babylonOptions = {
   // As a parser, babylon has its own options and we can't directly
   // import/require a babel preset. It should be kept **the same** as
   // the `babel-plugin-syntax-*` ones specified in
   // https://github.com/facebook/fbjs/blob/master/packages/babel-preset-fbjs/configure.js
-  plugins: [
-    'classProperties',
-    'flow',
-    'jsx',
-    'trailingFunctionCommas',
-    'objectRestSpread',
-  ],
-
+  plugins,
   sourceType: 'module',
 };
 
@@ -99,7 +99,13 @@ module.exports = function (opts) {
     );
   }
 
-  return function extractErrors(source) {
+  return function extractErrors(source, isTypeScript) {
+    if (isTypeScript) {
+      babylonOptions.plugins = [...plugins, 'typescript'];
+    } else {
+      babylonOptions.plugins = [...plugins, 'flow'];
+    }
+
     transform(source);
     flush();
   };

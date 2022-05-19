@@ -12,19 +12,24 @@ import type {
   LexicalCommand,
   LexicalEditor,
   MutatedNodes,
+  RegisteredNodes,
   Transform,
 } from './LexicalEditor';
-import type {ParsedEditorState} from './LexicalEditorState';
+import type {
+  ParsedEditorState,
+  SerializedEditorState,
+} from './LexicalEditorState';
 import type {LexicalNode} from './LexicalNode';
 import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
 import invariant from 'shared/invariant';
 
-import {$isTextNode} from '.';
+import {$isElementNode, $isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {resetEditor} from './LexicalEditor';
 import {
   cloneEditorState,
+  createEmptyEditorState,
   EditorState,
   editorStateHasDirtySelection,
 } from './LexicalEditorState';
@@ -242,6 +247,7 @@ function $applyAllTransforms(
   editor._dirtyElements = dirtyElements;
 }
 
+// TODO: once unstable_parseEditorState is stable, swap that for this.
 export function parseEditorState(
   parsedEditorState: ParsedEditorState,
   editor: LexicalEditor,
@@ -276,6 +282,77 @@ export function parseEditorState(
   editorState._selection = internalCreateSelectionFromParse(
     nodeParserState.remappedSelection || nodeParserState.originalSelection,
   );
+  return editorState;
+}
+
+type InternalSerializedNode = {
+  children?: Array<InternalSerializedNode>,
+  type: string,
+  version: number,
+};
+
+function parseSerializedNode<SerializedNode: InternalSerializedNode>(
+  serializedNode: SerializedNode,
+  registeredNodes: RegisteredNodes,
+): LexicalNode {
+  const type = serializedNode.type;
+  const registeredNode = registeredNodes.get(type);
+  if (registeredNode === undefined) {
+    invariant(false, 'parseEditorState: type "%s" + not found', type);
+  }
+  const nodeClass = registeredNode.klass;
+  if (serializedNode.type !== nodeClass.getType()) {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .importJSON().',
+      nodeClass.name,
+    );
+  }
+  const node = nodeClass.importJSON(serializedNode);
+  const children = serializedNode.children;
+  if ($isElementNode(node) && Array.isArray(children)) {
+    for (let i = 0; i < children.length; i++) {
+      const serializedJSONChildNode = children[i];
+      const childNode = parseSerializedNode(
+        serializedJSONChildNode,
+        registeredNodes,
+      );
+      node.append(childNode);
+    }
+  }
+  return node;
+}
+
+export function unstable_parseEditorState(
+  serializedEditorState: SerializedEditorState,
+  editor: LexicalEditor,
+  updateFn: void | (() => void),
+): EditorState {
+  const editorState = createEmptyEditorState();
+  const previousActiveEditorState = activeEditorState;
+  const previousReadOnlyMode = isReadOnlyMode;
+  const previousActiveEditor = activeEditor;
+  activeEditorState = editorState;
+  isReadOnlyMode = false;
+  activeEditor = editor;
+  try {
+    const registeredNodes = editor._nodes;
+    // $FlowFixMe: intentional cast to our internal type
+    const serializedNode: InternalSerializedNode = serializedEditorState.root;
+    parseSerializedNode(serializedNode, registeredNodes);
+    if (updateFn) {
+      updateFn();
+    }
+    // Make the editorState immutable
+    editorState._readOnly = true;
+    if (__DEV__) {
+      handleDEVOnlyPendingUpdateGuarantees(editorState);
+    }
+  } finally {
+    activeEditorState = previousActiveEditorState;
+    isReadOnlyMode = previousReadOnlyMode;
+    activeEditor = previousActiveEditor;
+  }
   return editorState;
 }
 

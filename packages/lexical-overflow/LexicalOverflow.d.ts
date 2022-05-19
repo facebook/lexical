@@ -6,7 +6,14 @@
  *
  * @flow strict
  */
-import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+  SerializedElementNode,
+} from 'lexical';
+import {Spread} from 'globals';
 import {ElementNode} from 'lexical';
 export declare class OverflowNode extends ElementNode {
   static getType(): string;
@@ -16,6 +23,16 @@ export declare class OverflowNode extends ElementNode {
   updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   excludeFromCopy(): boolean;
+  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode;
+  exportJSON(): SerializedElementNode;
 }
+
 export function $createOverflowNode(): OverflowNode;
 export function $isOverflowNode(node: LexicalNode | null): node is OverflowNode;
+
+export type SerializedOverflowNode = Spread<
+  {
+    type: 'overflow';
+  },
+  SerializedElementNode
+>;

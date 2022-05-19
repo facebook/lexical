@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedLexicalNode,
 } from 'lexical';
 
 import './ImageNode.css';
@@ -29,6 +30,7 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
+import {Spread} from 'globals';
 import {
   $getNodeByKey,
   $getSelection,
@@ -310,6 +312,21 @@ function ImageComponent({
   );
 }
 
+export type SerializedImageNode = Spread<
+  {
+    altText: string;
+    caption: LexicalEditor;
+    height?: number;
+    maxWidth: number;
+    showCaption: boolean;
+    src: string;
+    width?: number;
+    type: 'image';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
+
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
   __altText: string;
@@ -334,6 +351,20 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       node.__caption,
       node.__key,
     );
+  }
+
+  static importJSON(serializedNode: SerializedImageNode): ImageNode {
+    const {altText, height, width, maxWidth, caption, src, showCaption} =
+      serializedNode;
+    return $createImageNode({
+      altText,
+      caption,
+      height,
+      maxWidth,
+      showCaption,
+      src,
+      width,
+    });
   }
 
   constructor(
@@ -361,6 +392,20 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     element.setAttribute('src', this.__src);
     element.setAttribute('alt', this.__altText);
     return {element};
+  }
+
+  exportJSON(): SerializedImageNode {
+    return {
+      altText: this.getAltText(),
+      caption: this.__caption,
+      height: this.__height === 'inherit' ? 0 : this.__height,
+      maxWidth: this.__maxWidth,
+      showCaption: this.__showCaption,
+      src: this.getSrc(),
+      type: 'image',
+      version: 1,
+      width: this.__width === 'inherit' ? 0 : this.__width,
+    };
   }
 
   setWidthAndHeight(

@@ -7,9 +7,20 @@
  * @flow strict
  */
 
-import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
+import type {
+  ElementFormatType,
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
+
+export type SerializedDecoratorBlockNode = {
+  ...SerializedLexicalNode,
+  format: ElementFormatType,
+  ...
+};
 
 export class DecoratorBlockNode extends DecoratorNode<React$Node> {
   __format: ?ElementFormatType;
@@ -17,6 +28,14 @@ export class DecoratorBlockNode extends DecoratorNode<React$Node> {
   constructor(format?: ?ElementFormatType, key?: NodeKey) {
     super(key);
     this.__format = format;
+  }
+
+  exportJSON(): SerializedDecoratorBlockNode {
+    return {
+      format: this.__format || '',
+      type: 'decorator-block',
+      version: 1,
+    };
   }
 
   createDOM(): HTMLElement {

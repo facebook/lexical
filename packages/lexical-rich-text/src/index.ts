@@ -16,6 +16,7 @@ import type {
   LexicalNode,
   NodeKey,
   ParagraphNode,
+  SerializedElementNode,
   TextFormatType,
 } from 'lexical';
 
@@ -33,6 +34,7 @@ import {
   addClassNamesToElement,
   mergeRegister,
 } from '@lexical/utils';
+import {Spread} from 'globals';
 import {
   $createParagraphNode,
   $getRoot,
@@ -72,6 +74,23 @@ import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
+export type SerializedHeadingNode = Spread<
+  {
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    type: 'heading';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
+export type SerializedQuoteNode = Spread<
+  {
+    type: 'quote';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
 // Convoluted logic to make this work with Flow. Order matters.
 const options = {tag: 'history-merge'};
 const setEditorOptions: {
@@ -105,6 +124,21 @@ export class QuoteNode extends ElementNode {
   }
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
+    const node = $createQuoteNode();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      type: 'quote',
+    };
   }
 
   // Mutation
@@ -199,6 +233,23 @@ export class HeadingNode extends ElementNode {
         conversion: convertHeadingElement,
         priority: 0,
       }),
+    };
+  }
+
+  static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
+    const node = $createHeadingNode(serializedNode.tag);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedHeadingNode {
+    return {
+      ...super.exportJSON(),
+      tag: this.__tag,
+      type: 'heading',
+      version: 1,
     };
   }
 

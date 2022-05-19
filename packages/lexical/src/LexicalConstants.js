@@ -85,9 +85,23 @@ export const ELEMENT_TYPE_TO_FORMAT: {[ElementFormatType]: number} = {
   right: IS_ALIGN_RIGHT,
 };
 
+export const ELEMENT_FORMAT_TO_TYPE: {[number]: ElementFormatType} = {
+  [IS_ALIGN_CENTER]: 'center',
+  [IS_ALIGN_JUSTIFY]: 'justify',
+  [IS_ALIGN_LEFT]: 'left',
+  [IS_ALIGN_RIGHT]: 'right',
+};
+
 export const TEXT_MODE_TO_TYPE: {[TextModeType]: 0 | 1 | 2 | 3} = {
   inert: IS_INERT,
   normal: IS_NORMAL,
   segmented: IS_SEGMENTED,
   token: IS_TOKEN,
+};
+
+export const TEXT_TYPE_TO_MODE: {[number]: TextModeType} = {
+  [IS_INERT]: 'inert',
+  [IS_NORMAL]: 'normal',
+  [IS_SEGMENTED]: 'segmented',
+  [IS_TOKEN]: 'token',
 };

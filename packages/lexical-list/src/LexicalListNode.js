@@ -14,6 +14,7 @@ import type {
   EditorThemeClasses,
   LexicalNode,
   NodeKey,
+  SerializedElementNode,
 } from 'lexical';
 
 import {
@@ -24,6 +25,16 @@ import {$createTextNode, ElementNode} from 'lexical';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
+
+export type SerializedListNode = {
+  ...SerializedElementNode,
+  listType: ListType,
+  start: number,
+  tag: ListNodeTagType,
+  type: 'list',
+  version: 1,
+  ...
+};
 
 export type ListType = 'number' | 'bullet' | 'check';
 
@@ -100,6 +111,24 @@ export class ListNode extends ElementNode {
         conversion: convertListNode,
         priority: 0,
       }),
+    };
+  }
+
+  static importJSON(serializedNode: SerializedListNode): ListNode {
+    const node = $createListNode(serializedNode.listType, serializedNode.start);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      listType: this.getListType(),
+      start: this.getStart(),
+      tag: this.getTag(),
+      type: 'list',
     };
   }
 

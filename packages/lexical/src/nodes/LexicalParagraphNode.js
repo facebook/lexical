@@ -17,10 +17,18 @@ import type {
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
+import type {SerializedElementNode} from './LexicalElementNode';
 
 import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
+
+export type SerializedParagraphNode = {
+  ...SerializedElementNode,
+  type: 'paragraph',
+  version: 1,
+  ...
+};
 
 export class ParagraphNode extends ElementNode {
   static getType(): string {
@@ -69,6 +77,22 @@ export class ParagraphNode extends ElementNode {
 
     return {
       element,
+    };
+  }
+
+  static importJSON(serializedNode: SerializedParagraphNode): ParagraphNode {
+    const node = $createParagraphNode();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      type: 'paragraph',
+      version: 1,
     };
   }
 

@@ -13,10 +13,19 @@ import type {
   EditorConfig,
   LexicalNode,
   NodeKey,
+  SerializedElementNode,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {GridRowNode} from 'lexical';
+
+export type SerializedTableRowNode = {
+  ...SerializedElementNode,
+  height: number,
+  type: 'tablerow',
+  version: 1,
+  ...
+};
 
 export class TableRowNode extends GridRowNode {
   __height: ?number;
@@ -38,9 +47,21 @@ export class TableRowNode extends GridRowNode {
     };
   }
 
+  static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
+    return $createTableRowNode(serializedNode.height);
+  }
+
   constructor(height?: ?number, key?: NodeKey): void {
     super(key);
     this.__height = height;
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      type: 'tablerow',
+      version: 1,
+    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

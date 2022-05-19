@@ -43,6 +43,12 @@ import {
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
+export type SerializedLexicalNode = {
+  type: string,
+  version: number,
+  ...
+};
+
 export function removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
@@ -598,6 +604,22 @@ export class LexicalNode {
 
   static importDOM(): DOMConversionMap | null {
     return null;
+  }
+
+  // $FlowFixMe: Intentional work around for Flow
+  exportJSON(): Object {
+    invariant(false, 'exportJSON: base method not extended');
+  }
+
+  static importJSON(
+    // $FlowFixMe: Intentional work around for Flow
+    serializedNode: Object,
+  ): LexicalNode {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .importJSON().',
+      this.name,
+    );
   }
 
   // Setters and mutators

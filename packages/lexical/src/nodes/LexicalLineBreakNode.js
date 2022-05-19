@@ -11,9 +11,16 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
+  SerializedLexicalNode,
 } from '../LexicalNode';
 
 import {LexicalNode} from '../LexicalNode';
+
+export type SerializedLineBreakNode = {
+  ...SerializedLexicalNode,
+  type: 'linebreak',
+  ...
+};
 
 export class LineBreakNode extends LexicalNode {
   static getType(): string {
@@ -46,6 +53,19 @@ export class LineBreakNode extends LexicalNode {
         conversion: convertLineBreakElement,
         priority: 0,
       }),
+    };
+  }
+
+  static importJSON(
+    serializedLineBreakNode: SerializedLineBreakNode,
+  ): LineBreakNode {
+    return $createLineBreakNode();
+  }
+
+  exportJSON(): SerializedLexicalNode {
+    return {
+      type: 'linebreak',
+      version: 1,
     };
   }
 }

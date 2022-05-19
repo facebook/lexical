@@ -7,6 +7,7 @@
  */
 
 import {Class, $ReadOnly} from 'utility-types';
+import {Spread} from 'globals';
 
 /**
  * LexicalCommands
@@ -161,6 +162,10 @@ export declare class LexicalEditor {
   parseEditorState(
     maybeStringifiedEditorState: string | ParsedEditorState,
   ): EditorState;
+  unstable_parseEditorState(
+    maybeStringifiedEditorState: string | SerializedEditorState,
+    updateFn?: () => void,
+  ): EditorState;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
   blur(): void;
@@ -291,6 +296,7 @@ export interface EditorState {
   isEmpty(): boolean;
   read<V>(callbackFn: () => V): V;
   toJSON(space?: string | number): JSONEditorState;
+  unstable_toJSON(): SerializedEditorState;
   clone(
     selection?: RangeSelection | NodeSelection | GridSelection | null,
   ): EditorState;
@@ -605,7 +611,10 @@ export declare class TextNode extends LexicalNode {
   toggleFormat(type: TextFormatType): TextNode;
   toggleDirectionless(): TextNode;
   toggleUnmergeable(): TextNode;
-  setMode(type: TextModeType): TextNode;
+  setMode(type: TextModeType): this;
+  setDetail(detail: number): TextNode;
+  getDetail(): number;
+  getMode(): TextModeType;
   setTextContent(text: string): TextNode;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   spliceText(
@@ -619,6 +628,8 @@ export declare class TextNode extends LexicalNode {
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
+  static importJSON(serializedTextNode: SerializedTextNode): TextNode;
+  exportJSON(): SerializedTextNode;
 }
 export function $createTextNode(text?: string): TextNode;
 export function $isTextNode(
@@ -635,6 +646,10 @@ export declare class LineBreakNode extends LexicalNode {
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
+  static importJSON(
+    serializedLineBreakNode: SerializedLexicalNode,
+  ): LineBreakNode;
+  exportJSON(): SerializedLexicalNode;
 }
 export function $createLineBreakNode(): LineBreakNode;
 export function $isLineBreakNode(
@@ -658,6 +673,8 @@ export declare class RootNode extends ElementNode {
   updateDOM(prevNode: RootNode, dom: HTMLElement): false;
   append(...nodesToAppend: Array<LexicalNode>): ElementNode;
   canBeEmpty(): false;
+  static importJSON(serializedRootNode: SerializedRootNode): RootNode;
+  exportJSON(): SerializedElementNode;
 }
 export function $isRootNode(
   node: LexicalNode | null | undefined,
@@ -674,6 +691,7 @@ export declare class ElementNode extends LexicalNode {
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey);
   getFormat(): number;
+  getFormatType(): 'left' | 'center' | 'right' | 'justify';
   getIndent(): number;
   getChildren<T extends Array<LexicalNode>>(): T;
   getChildrenKeys(): Array<NodeKey>;
@@ -722,6 +740,7 @@ export declare class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): ElementNode;
+  exportJSON(): SerializedElementNode;
 }
 export function $isElementNode(
   node: LexicalNode | null | undefined,
@@ -751,6 +770,10 @@ export declare class ParagraphNode extends ElementNode {
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;
+  static importJSON(
+    serializedParagraphNode: SerializedElementNode,
+  ): ParagraphNode;
+  exportJSON(): SerializedElementNode;
 }
 export function $createParagraphNode(): ParagraphNode;
 export function $isParagraphNode(
@@ -797,3 +820,49 @@ export function $getDecoratorNode(
  * LexicalVersion
  */
 export declare var VERSION: string;
+
+// Serialization
+
+export type SerializedLexicalNode = {
+  type: string;
+  version: number;
+};
+
+export type SerializedTextNode = Spread<
+  {
+    detail: number;
+    format: number;
+    mode: TextModeType;
+    style: string;
+    text: string;
+  },
+  SerializedLexicalNode
+>;
+
+export type SerializedElementNode = Spread<
+  {
+    children: Array<SerializedLexicalNode>;
+    direction: 'ltr' | 'rtl' | null;
+    format: 'left' | 'center' | 'right' | 'justify';
+    indent: number;
+  },
+  SerializedLexicalNode
+>;
+
+export type SerializedRootNode = Spread<
+  {
+    type: 'root';
+  },
+  SerializedElementNode
+>;
+
+export type SerializedGridCellNode = Spread<
+  {
+    colSpan: number;
+  },
+  SerializedElementNode
+>;
+
+export interface SerializedEditorState {
+  root: SerializedRootNode;
+}

@@ -337,6 +337,26 @@ describe('LexicalEventHelpers', () => {
           ],
           name: 'should produce the correct editor state from bold text',
         },
+        {
+          expectedHTML:
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><em class="editor-text-italic" data-lexical-text="true">Get schwifty!</em></p></div>',
+          inputs: [
+            pasteHTML(
+              `<b style="font-weight:normal;" id="docs-internal-guid-9db03964-7fff-c26c-8b1e-9484fb3b54a4"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-style:italic;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Get schwifty!</span></b>`,
+            ),
+          ],
+          name: 'should produce the correct editor state from italic text',
+        },
+        {
+          expectedHTML:
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><del class="editor-text-strikethrough" data-lexical-text="true">Get schwifty!</del></p></div>',
+          inputs: [
+            pasteHTML(
+              `<b style="font-weight:normal;" id="docs-internal-guid-9db03964-7fff-c26c-8b1e-9484fb3b54a4"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:line-through;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Get schwifty!</span></b>`,
+            ),
+          ],
+          name: 'should produce the correct editor state from italic text',
+        },
       ];
       suite.forEach((testUnit, i) => {
         const name = testUnit.name || 'Test case';

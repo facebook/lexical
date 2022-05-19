@@ -769,10 +769,21 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const span: HTMLSpanElement = domNode;
   // Google Docs uses span tags + font-weight for bold text
   const hasBoldFontWeight = span.style.fontWeight === '700';
+  // Google Docs uses span tags + text-decoration for strikethrough text
+  const hasLinethroughTextDecoration = span.style.textDecoration === 'line-through';
+  // Google Docs uses span tags + text-decoration for italic text
+  const hasItalicFontStyle = span.style.fontStyle === 'italic';
+  
   return {
     forChild: (lexicalNode) => {
       if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
         lexicalNode.toggleFormat('bold');
+      }
+      if ($isTextNode(lexicalNode) && hasLinethroughTextDecoration) {
+        lexicalNode.toggleFormat('strikethrough');
+      }
+      if ($isTextNode(lexicalNode) && hasItalicFontStyle) {
+        lexicalNode.toggleFormat('italic');
       }
 
       return lexicalNode;

@@ -18,8 +18,8 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
-import {Spread} from 'global';
 import {ElementNode, TextNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 declare class CodeNode extends ElementNode {
   static getType(): string;

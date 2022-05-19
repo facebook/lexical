@@ -24,13 +24,13 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
-import {Spread} from 'global';
 import {
   $getNodeByKey,
   $setSelection,
   createEditor,
   DecoratorNode,
 } from 'lexical';
+import {Spread} from 'libdef/globals';
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';

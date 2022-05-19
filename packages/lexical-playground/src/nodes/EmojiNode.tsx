@@ -13,8 +13,8 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
-import {Spread} from 'global';
 import {TextNode} from 'lexical';
+import {Spread} from 'libdef/globals';
 
 export type SerializedEmojiNode = Spread<
   {

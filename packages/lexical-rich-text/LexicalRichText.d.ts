@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {Spread} from 'global';
+
 import type {
   DOMConversionMap,
   EditorConfig,
@@ -17,6 +17,8 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 import {ElementNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
+
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 export declare class QuoteNode extends ElementNode {

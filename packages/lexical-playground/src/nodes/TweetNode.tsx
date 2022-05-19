@@ -13,7 +13,7 @@ import {
   DecoratorBlockNode,
   SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
-import {Spread} from 'global';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -46,6 +46,7 @@ function TweetComponent({
 
   const createTweet = useCallback(async () => {
     try {
+      // @ts-expect-error Twitter is attached to the window.
       await window.twttr.widgets.createTweet(tweetID, containerRef.current);
 
       setIsLoading(false);

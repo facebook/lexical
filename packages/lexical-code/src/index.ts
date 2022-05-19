@@ -41,7 +41,7 @@ import {
   mergeRegister,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {Spread} from 'global';
+import {Spread} from 'libdef/globals';
 import {
   $createLineBreakNode,
   $createParagraphNode,

@@ -6,9 +6,14 @@
  *
  */
 
-import type {EditorConfig} from 'lexical';
+import type {EditorConfig, SerializedTextNode} from 'lexical';
 
 import {TextNode} from 'lexical';
+
+export type SerializedTypeaheadNode = SerializedTextNode & {
+  type: 'typeahead',
+  version: 1,
+}
 
 export class TypeaheadNode extends TextNode {
   static clone(node: TypeaheadNode): TypeaheadNode {
@@ -17,6 +22,23 @@ export class TypeaheadNode extends TextNode {
 
   static getType(): 'typeahead' {
     return 'typeahead';
+  }
+
+  static importJSON(serializedNode: SerializedTypeaheadNode): TypeaheadNode {
+    const node = $createTypeaheadNode(serializedNode.text);
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
+    return node;
+  }
+
+  exportJSON(): SerializedTextNode {
+    return {
+      ...super.exportJSON(),
+      type: 'typeahead',
+      version: 1
+    }
   }
 
   createDOM(config: EditorConfig): HTMLElement {

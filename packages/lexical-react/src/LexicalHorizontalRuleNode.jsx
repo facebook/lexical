@@ -13,14 +13,16 @@ import type {
   DOMExportOutput,
   LexicalCommand,
   LexicalNode,
+  SerializedLexicalNode,
 } from 'lexical';
 
 import {createCommand, DecoratorNode} from 'lexical';
 import * as React from 'react';
 
-export interface SerializedHorizontalRuleNode {
-  type: 'horizontalrule';
-}
+export type SerializedHorizontalRuleNode = SerializedLexicalNode & {
+  type: 'horizontalrule',
+  version: 1,
+};
 
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   createCommand();
@@ -57,9 +59,10 @@ export class HorizontalRuleNode extends DecoratorNode<React$Node> {
     return $createHorizontalRuleNode();
   }
 
-  exportJSON(): SerializedHorizontalRuleNode {
+  exportJSON(): SerializedLexicalNode {
     return {
       type: 'horizontalrule',
+      version: 1,
     };
   }
 

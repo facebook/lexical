@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedLexicalNode
 } from 'lexical';
 
 import './ImageNode.css';
@@ -310,6 +311,17 @@ function ImageComponent({
   );
 }
 
+export type SerializedImageNode = SerializedLexicalNode & {
+  altText: string;
+  caption: LexicalEditor;
+  height: number;
+  maxWidth: number;
+  showCaption: boolean;
+  src: string;
+  width: number;
+  type: 'image'
+}
+
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
   __altText: string;
@@ -334,6 +346,19 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       node.__caption,
       node.__key,
     );
+  }
+
+  static importJSON(serializedNode: SerializedImageNode): ImageNode {
+    const { altText, height, width, maxWidth, caption, src, showCaption } = serializedNode;
+    return $createImageNode({
+      altText,
+      caption,
+      height,
+      maxWidth,
+      showCaption,
+      src,
+      width,
+    });
   }
 
   constructor(
@@ -361,6 +386,20 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     element.setAttribute('src', this.__src);
     element.setAttribute('alt', this.__altText);
     return {element};
+  }
+
+  exportJSON(): SerializedLexicalNode {
+    return {
+      altText: this.getAltText(),
+      caption: this.__caption,
+      height: this.__height,
+      maxWidth: this.__maxWidth,
+      showCaption: this.__showCaption,
+      src: this.getSrc(),
+      type: 'image',
+      version: 1,
+      width: this.__width,
+    }
   }
 
   setWidthAndHeight(

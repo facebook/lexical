@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {LexicalNode, NodeKey, SerializedLexicalNode} from 'lexical';
 
 import './PollNode.css';
 
@@ -189,6 +189,13 @@ function PollComponent({
   );
 }
 
+export type SerializedPollNode = SerializedLexicalNode & {
+  question: string,
+  options: Options,
+  type: 'poll',
+  version: 1,
+}
+
 export class PollNode extends DecoratorNode<JSX.Element> {
   __question: string;
   __options: Options;
@@ -201,10 +208,25 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return new PollNode(node.__question, node.__options, node.__key);
   }
 
+  static importJSON(serializedNode: SerializedPollNode): PollNode {
+    const node = $createPollNode(serializedNode.question);
+    serializedNode.options.forEach(node.addOption);
+    return node;
+  }
+
   constructor(question: string, options?: Options, key?: NodeKey) {
     super(key);
     this.__question = question;
     this.__options = options || [createPollOption(), createPollOption()];
+  }
+
+  exportJSON(): SerializedLexicalNode {
+    return {
+      options: this.__options,
+      question: this.__question,
+      type: 'poll',
+      version: 1
+    }
   }
 
   addOption(option: Option): void {

@@ -17,6 +17,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedElementNode,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
@@ -26,6 +27,13 @@ import invariant from 'shared/invariant';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {getTableGrid} from './LexicalTableSelectionHelpers';
+
+export type SerializedTableNode = {
+  ...SerializedElementNode,
+  type: 'table',
+  version: 1,
+  ...
+};
 
 export class TableNode extends GridNode {
   __grid: ?Grid;
@@ -47,8 +55,20 @@ export class TableNode extends GridNode {
     };
   }
 
+  static importJSON(serializedNode: SerializedTableNode): TableNode {
+    return $createTableNode();
+  }
+
   constructor(key?: NodeKey): void {
     super(key);
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      type: 'table',
+      version: 1,
+    };
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {

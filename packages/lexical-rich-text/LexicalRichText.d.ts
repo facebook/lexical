@@ -25,6 +25,7 @@ export declare class QuoteNode extends ElementNode {
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
+  importJSON(serializedNode: SerializedQuoteNode): QuoteNode;
 }
 export function $createQuoteNode(): QuoteNode;
 export function $isQuoteNode(
@@ -42,6 +43,7 @@ export declare class HeadingNode extends ElementNode {
   static importDOM(): DOMConversionMap | null;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
+  importJSON(serializedNode: SerializedHeadingNode): QuoteNode;
 }
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode;
 export function $isHeadingNode(

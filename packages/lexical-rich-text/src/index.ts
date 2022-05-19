@@ -73,9 +73,16 @@ import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
-export interface SerializedHeadingNode
-  extends SerializedElementNode {
+export type SerializedHeadingNode = SerializedElementNode & {
   tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+  type: 'heading';
+  version: 1;
+  [key: string]: unknown
+}
+
+export type SerializedQuoteNode = SerializedElementNode & {
+  type: 'quote';
+  version: 1;
 }
 
 // Convoluted logic to make this work with Flow. Order matters.
@@ -240,6 +247,7 @@ export class HeadingNode extends ElementNode {
       ...super.exportJSON(),
       tag: this.__tag,
       type: 'heading',
+      version: 1
     };
   }
 

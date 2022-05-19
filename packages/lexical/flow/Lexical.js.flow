@@ -707,7 +707,7 @@ declare export function $isRootNode(
 /**
  * LexicalElementNode
  */
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
+export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 declare export class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
   __format: number;
@@ -715,7 +715,7 @@ declare export class ElementNode extends LexicalNode {
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey): void;
   getFormat(): number;
-  getFormatType(): 'left' | 'center' | 'right' | 'justify';
+  getFormatType(): ElementFormatType;
   getIndent(): number;
   getChildren<T: Array<LexicalNode>>(): T;
   getChildrenKeys(): Array<NodeKey>;
@@ -886,7 +886,7 @@ export type SerializedElementNode = {
   ...SerializedLexicalNode,
   children: Array<SerializedLexicalNode>,
   direction: 'ltr' | 'rtl' | null,
-  format: 'left' | 'center' | 'right' | 'justify',
+  format: ElementFormatType,
   indent: number,
   ...
 };
@@ -906,6 +906,12 @@ export type SerializedLineBreakNode = {
 export type SerializedRootNode = {
   ...SerializedElementNode,
   type: 'root',
+  ...
+};
+
+export type SerializedGridCellNode = {
+  ...SerializedElementNode,
+  colSpan: number,
   ...
 };
 

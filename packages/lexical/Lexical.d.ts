@@ -848,6 +848,10 @@ export interface SerializedRootNode extends SerializedElementNode {
   type: 'root';
 }
 
+export interface SerializedGridCellNode extends SerializedElementNode {
+  colSpan: number;
+}
+
 export interface SerializedEditorState {
   root: SerializedRootNode;
 }

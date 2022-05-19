@@ -64,6 +64,7 @@ export type SerializedTextNode = {
   mode: TextModeType,
   style: string,
   text: string,
+  ...
 };
 
 export type TextFormatType =

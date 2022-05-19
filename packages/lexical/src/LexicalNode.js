@@ -46,6 +46,7 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   type: string,
   version: number,
+  ...
 };
 
 export function removeNode(

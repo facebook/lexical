@@ -6,7 +6,7 @@
  *
  */
 
-import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey, SerializedLexicalNode} from 'lexical';
 
 import './StickyNode.css';
 
@@ -266,10 +266,21 @@ function StickyComponent({
   );
 }
 
+type StickyNoteColor = 'pink' | 'yellow';
+
+export type SerializedStickyNode = SerializedLexicalNode & {
+  xOffset: number,
+  yOffset: number,
+  color: StickyNoteColor,
+  caption: LexicalEditor,
+  type: 'sticky',
+  version: 1,
+}
+
 export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
   __y: number;
-  __color: 'pink' | 'yellow';
+  __color: StickyNoteColor;
   __caption: LexicalEditor;
 
   static getType(): string {
@@ -285,6 +296,14 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__key,
     );
   }
+  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
+    return new StickyNode(
+      serializedNode.xOffset,
+      serializedNode.yOffset,
+      serializedNode.color,
+      serializedNode.caption
+    );
+  }
 
   constructor(
     x: number,
@@ -298,6 +317,17 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__y = y;
     this.__caption = caption || createEditor();
     this.__color = color;
+  }
+
+  exportJSON(): SerializedLexicalNode {
+    return {
+      caption: this.__caption,
+      color: this.__color,
+      type: 'sticky',
+      version: 1,
+      xOffset: this.__x,
+      yOffset: this.__y,
+    }
   }
 
   createDOM(config: EditorConfig): HTMLElement {

@@ -15,6 +15,8 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedElementNode,
+  SerializedGridCellNode,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
@@ -33,6 +35,14 @@ export const TableCellHeaderStates = {
 };
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
+
+export type SerializedTableCellNode = {
+  ...SerializedGridCellNode,
+  headerState: TableCellHeaderState,
+  type: 'tablecell',
+  width: number,
+  ...
+};
 
 export class TableCellNode extends GridCellNode {
   __headerState: TableCellHeaderState;
@@ -62,6 +72,14 @@ export class TableCellNode extends GridCellNode {
         priority: 0,
       }),
     };
+  }
+
+  static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
+    return $createTableCellNode(
+      serializedNode.headerState,
+      serializedNode.colSpan,
+      serializedNode.width,
+    );
   }
 
   constructor(
@@ -112,6 +130,15 @@ export class TableCellNode extends GridCellNode {
 
     return {
       element,
+    };
+  }
+
+  exportJSON(): SerializedElementNode {
+    return {
+      ...super.exportJSON(),
+      headerState: this.__headerState,
+      width: this.getWidth(),
+      type: 'tablecell',
     };
   }
 

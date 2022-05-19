@@ -15,8 +15,9 @@ import type {
 
 import {TextNode} from 'lexical';
 
-interface SerializedEmojiNode extends SerializedTextNode {
+export type SerializedEmojiNode = SerializedTextNode & {
   className: string;
+  type: 'emoji'
 }
 
 export class EmojiNode extends TextNode {
@@ -69,7 +70,7 @@ export class EmojiNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedEmojiNode {
+  exportJSON(): SerializedTextNode {
     return {
       ...super.exportJSON(),
       className: this.getClassName(),

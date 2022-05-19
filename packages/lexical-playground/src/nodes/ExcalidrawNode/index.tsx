@@ -7,7 +7,7 @@
  */
 
 import type {ExcalidrawElementFragment} from './ExcalidrawModal';
-import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey, SerializedLexicalNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -193,6 +193,12 @@ function ExcalidrawComponent({
   );
 }
 
+export type SerializedExcalidrawNode = SerializedLexicalNode & {
+  data: string,
+  type: 'excalidraw',
+  version: 1,
+}
+
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
 
@@ -202,6 +208,18 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   static clone(node: ExcalidrawNode): ExcalidrawNode {
     return new ExcalidrawNode(node.__data, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
+    return new ExcalidrawNode(serializedNode.data);
+  }
+
+  exportJSON(): SerializedLexicalNode {
+    return {
+      data: this.__data,
+      type: 'excalidraw',
+      version: 1
+    }
   }
 
   constructor(data = '[]', key?: NodeKey) {

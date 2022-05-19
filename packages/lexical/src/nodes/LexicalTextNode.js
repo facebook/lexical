@@ -771,7 +771,7 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const hasBoldFontWeight = span.style.fontWeight === '700';
   // Google Docs uses span tags + text-decoration for strikethrough text
   const hasLinethroughTextDecoration = span.style.textDecoration === 'line-through';
-  // Google Docs uses span tags + text-decoration for italic text
+  // Google Docs uses span tags + font-style for italic text
   const hasItalicFontStyle = span.style.fontStyle === 'italic';
   
   return {

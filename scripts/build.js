@@ -191,7 +191,7 @@ async function build(name, inputFile, outputFile, isProd) {
       {
         transform(source) {
           // eslint-disable-next-line no-unused-expressions
-          extractCodes && findAndRecordErrorCodes(source);
+          extractCodes && findAndRecordErrorCodes(source, isTypeScript);
           return source;
         },
       },

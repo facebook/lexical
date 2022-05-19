@@ -16,6 +16,7 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
+import { Spread } from 'global';
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_HIGH,
@@ -115,11 +116,11 @@ function EquationComponent({
   );
 }
 
-export type SerializedEquationNode = SerializedLexicalNode & {
+export type SerializedEquationNode = Spread<{
   type: 'equation'
   equation: string,
   inline: boolean
-}
+}, SerializedLexicalNode>
 
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
@@ -148,7 +149,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return node;
   }
 
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(): SerializedEquationNode {
     return {
       equation: this.getEquation(),
       inline: this.__inline,

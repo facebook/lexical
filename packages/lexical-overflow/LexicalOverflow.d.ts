@@ -13,6 +13,7 @@ import type {
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
+import {Spread} from 'global';
 import {ElementNode} from 'lexical';
 export declare class OverflowNode extends ElementNode {
   static getType(): string;
@@ -23,11 +24,15 @@ export declare class OverflowNode extends ElementNode {
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   excludeFromCopy(): boolean;
   static importJSON(serializedNode: SerializedOverflowNode): OverflowNode;
+  exportJSON(): SerializedElementNode;
 }
+
 export function $createOverflowNode(): OverflowNode;
 export function $isOverflowNode(node: LexicalNode | null): node is OverflowNode;
 
-interface SerializedOverflowNode extends SerializedElementNode {
-  type: 'overflow';
-  [key: string]: unknown;
-}
+export type SerializedOverflowNode = Spread<
+  {
+    type: 'overflow';
+  },
+  SerializedElementNode
+>;

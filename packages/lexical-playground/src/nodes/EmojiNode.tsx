@@ -13,12 +13,14 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
+import { Spread } from 'global';
 import {TextNode} from 'lexical';
 
-export type SerializedEmojiNode = SerializedTextNode & {
+
+export type SerializedEmojiNode = Spread<{
   className: string;
   type: 'emoji'
-}
+}, SerializedTextNode>
 
 export class EmojiNode extends TextNode {
   __className: string;
@@ -70,7 +72,7 @@ export class EmojiNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedTextNode {
+  exportJSON(): SerializedEmojiNode {
     return {
       ...super.exportJSON(),
       className: this.getClassName(),

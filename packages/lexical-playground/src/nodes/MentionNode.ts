@@ -8,13 +8,14 @@
 
 import type {EditorConfig, LexicalNode, NodeKey, SerializedTextNode} from 'lexical';
 
+import { Spread } from 'global';
 import {TextNode} from 'lexical';
 
-export type SerializedMentionNode = SerializedTextNode & {
+export type SerializedMentionNode = Spread<{
   mentionName: string,
   type: 'mention',
   version: 1
-}
+}, SerializedTextNode>
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
@@ -42,9 +43,10 @@ export class MentionNode extends TextNode {
     this.__mention = mentionName;
   }
 
-  exportJSON(): SerializedTextNode {
+  exportJSON(): SerializedMentionNode {
     return {
       ...super.exportJSON(),
+      mentionName: this.__mention,
       type: 'mention',
       version: 1
     }

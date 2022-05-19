@@ -7,6 +7,7 @@
  */
 
 import {ListNodeTagType} from './src/LexicalListNode';
+import {Spread} from 'global';
 import {
   ElementNode,
   LexicalNode,
@@ -42,6 +43,7 @@ export declare class ListItemNode extends ElementNode {
   setChecked(boolean): this;
   toggleChecked(): void;
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode;
+  exportJSON(): SerializedListItemNode;
 }
 export declare class ListNode extends ElementNode {
   canBeEmpty(): false;
@@ -49,7 +51,9 @@ export declare class ListNode extends ElementNode {
   getTag(): ListNodeTagType;
   getListType(): ListType;
   static importJSON(serializedNode: SerializedListNode): ListNode;
+  exportJSON(): SerializedListNode;
 }
+
 export function outdentList(): void;
 export function removeList(editor: LexicalEditor): boolean;
 
@@ -58,17 +62,21 @@ export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;
 export var INSERT_CHECK_LIST_COMMAND: LexicalCommand<void>;
 export var REMOVE_LIST_COMMAND: LexicalCommand<void>;
 
-export interface SerializedListItemNode extends SerializedElementNode {
-  checked: boolean | void;
-  value: number;
-  type: 'listitem';
-  [key: string]: unknown;
-}
+export type SerializedListItemNode = Spread<
+  {
+    checked: boolean | void;
+    value: number;
+    type: 'listitem';
+  },
+  SerializedElementNode
+>;
 
-export interface SerializedListNode extends SerializedElementNode {
-  listType: ListType;
-  start: number;
-  tag: ListNodeTagType;
-  type: 'list';
-  [key: string]: unknown;
-}
+export type SerializedListNode = Spread<
+  {
+    listType: ListType;
+    start: number;
+    tag: ListNodeTagType;
+    type: 'list';
+  },
+  SerializedElementNode
+>;

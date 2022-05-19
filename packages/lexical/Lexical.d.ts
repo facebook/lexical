@@ -7,6 +7,7 @@
  */
 
 import {Class, $ReadOnly} from 'utility-types';
+import {Spread} from 'global';
 
 /**
  * LexicalCommands
@@ -739,7 +740,7 @@ export declare class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): ElementNode;
-  exportJSON<SerializedNode>(): SerializedElementNode;
+  exportJSON(): SerializedElementNode;
 }
 export function $isElementNode(
   node: LexicalNode | null | undefined,
@@ -822,35 +823,45 @@ export declare var VERSION: string;
 
 // Serialization
 
-export interface SerializedLexicalNode {
+export type SerializedLexicalNode = {
   type: string;
   version: number;
-  [key: string]: unknown;
-}
+};
 
-export interface SerializedTextNode extends SerializedLexicalNode {
-  detail: number;
-  format: number;
-  mode: TextModeType;
-  style: string;
-  text: string;
-}
+export type SerializedTextNode = Spread<
+  {
+    detail: number;
+    format: number;
+    mode: TextModeType;
+    style: string;
+    text: string;
+  },
+  SerializedLexicalNode
+>;
 
-export interface SerializedElementNode extends SerializedLexicalNode {
-  children: Array<SerializedLexicalNode>;
-  direction: 'ltr' | 'rtl' | null;
-  format: 'left' | 'center' | 'right' | 'justify';
-  indent: number;
-  [key: string]: unknown;
-}
+export type SerializedElementNode = Spread<
+  {
+    children: Array<SerializedLexicalNode>;
+    direction: 'ltr' | 'rtl' | null;
+    format: 'left' | 'center' | 'right' | 'justify';
+    indent: number;
+  },
+  SerializedLexicalNode
+>;
 
-export interface SerializedRootNode extends SerializedElementNode {
-  type: 'root';
-}
+export type SerializedRootNode = Spread<
+  {
+    type: 'root';
+  },
+  SerializedElementNode
+>;
 
-export interface SerializedGridCellNode extends SerializedElementNode {
-  colSpan: number;
-}
+export type SerializedGridCellNode = Spread<
+  {
+    colSpan: number;
+  },
+  SerializedElementNode
+>;
 
 export interface SerializedEditorState {
   root: SerializedRootNode;

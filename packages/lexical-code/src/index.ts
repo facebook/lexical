@@ -41,6 +41,7 @@ import {
   mergeRegister,
   removeClassNamesFromElement,
 } from '@lexical/utils';
+import { Spread } from 'global';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -61,17 +62,17 @@ import {
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
-interface SerializedCodeNode extends SerializedElementNode {
+type SerializedCodeNode = Spread<{
   language: string | null | undefined;
   type: 'code';
-  [key: string]: unknown;
-}
+  version: 1;
+}, SerializedElementNode>
 
-interface SerializedCodeHighlightNode extends SerializedTextNode {
+type SerializedCodeHighlightNode = Spread<{
   highlightType: string | null | undefined;
   type: 'code-highlight';
-  [key: string]: unknown;
-}
+  version: 1;
+}, SerializedTextNode>
 
 const mapToPrismLanguage = (
   language: string | null | undefined,
@@ -164,7 +165,7 @@ export class CodeHighlightNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedTextNode {
+  exportJSON(): SerializedCodeHighlightNode {
     return {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
@@ -312,7 +313,7 @@ export class CodeNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedCodeNode {
     return {
       ...super.exportJSON(),
       language: this.getLanguage(),

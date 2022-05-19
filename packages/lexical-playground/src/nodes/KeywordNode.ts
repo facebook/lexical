@@ -8,12 +8,13 @@
 
 import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
 
+import { Spread } from 'global';
 import {TextNode} from 'lexical';
 
-export type SerializedKeywordNode = SerializedTextNode & {
+export type SerializedKeywordNode = Spread<{
   type: 'keyword',
   version: 1
-}
+}, SerializedTextNode>
 
 export class KeywordNode extends TextNode {
   static getType(): string {
@@ -33,7 +34,7 @@ export class KeywordNode extends TextNode {
     return node;
   }
 
-  exportJSON(): SerializedTextNode {
+  exportJSON(): SerializedKeywordNode {
     return {
       ...super.exportJSON(),
       type: 'keyword',

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {Spread} from 'global';
 import type {
   DOMConversionMap,
   EditorConfig,
@@ -13,6 +14,7 @@ import type {
   NodeKey,
   ParagraphNode,
   LexicalEditor,
+  SerializedElementNode,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 export type InitialEditorStateType = null | string | EditorState | (() => void);
@@ -45,6 +47,7 @@ export declare class HeadingNode extends ElementNode {
   collapseAtStart(): true;
   importJSON(serializedNode: SerializedHeadingNode): QuoteNode;
 }
+
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode;
 export function $isHeadingNode(
   node: LexicalNode | null | undefined,
@@ -53,3 +56,20 @@ export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): () => void;
+
+export type SerializedHeadingNode = Spread<
+  {
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    type: 'heading';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
+export type SerializedQuoteNode = Spread<
+  {
+    type: 'quote';
+    version: 1;
+  },
+  SerializedElementNode
+>;

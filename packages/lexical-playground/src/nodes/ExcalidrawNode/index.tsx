@@ -12,6 +12,7 @@ import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey, SerializedLexica
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
+import { Spread } from 'global';
 import {
   $getNodeByKey,
   $getSelection,
@@ -193,11 +194,11 @@ function ExcalidrawComponent({
   );
 }
 
-export type SerializedExcalidrawNode = SerializedLexicalNode & {
+export type SerializedExcalidrawNode = Spread<{
   data: string,
   type: 'excalidraw',
   version: 1,
-}
+}, SerializedLexicalNode>;
 
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
@@ -214,7 +215,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return new ExcalidrawNode(serializedNode.data);
   }
 
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(): SerializedExcalidrawNode {
     return {
       data: this.__data,
       type: 'excalidraw',

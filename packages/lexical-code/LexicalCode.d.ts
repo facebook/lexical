@@ -18,6 +18,7 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
+import {Spread} from 'global';
 import {ElementNode, TextNode} from 'lexical';
 
 declare class CodeNode extends ElementNode {
@@ -79,14 +80,20 @@ declare function $isCodeHighlightNode(
 
 declare function registerCodeHighlighting(editor: LexicalEditor): () => void;
 
-interface SerializedCodeNode extends SerializedElementNode {
-  language: string | null | undefined;
-  type: 'code';
-  [key: string]: unknown;
-}
+type SerializedCodeNode = Spread<
+  {
+    language: string | null | undefined;
+    type: 'code';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
-interface SerializedCodeHighlightNode extends SerializedTextNode {
-  highlightType: string | null | undefined;
-  type: 'code-highlight';
-  [key: string]: unknown;
-}
+type SerializedCodeHighlightNode = Spread<
+  {
+    highlightType: string | null | undefined;
+    type: 'code-highlight';
+    version: 1;
+  },
+  SerializedTextNode
+>;

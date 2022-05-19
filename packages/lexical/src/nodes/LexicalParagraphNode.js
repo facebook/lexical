@@ -26,6 +26,7 @@ import {$isTextNode} from './LexicalTextNode';
 export type SerializedParagraphNode = {
   ...SerializedElementNode,
   type: 'paragraph',
+  version: 1,
   ...
 };
 

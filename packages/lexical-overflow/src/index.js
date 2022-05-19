@@ -20,6 +20,7 @@ import {ElementNode} from 'lexical';
 export type SerializedOverflowNode = {
   ...SerializedElementNode,
   type: 'overflow',
+  version: 1,
   ...
 };
 

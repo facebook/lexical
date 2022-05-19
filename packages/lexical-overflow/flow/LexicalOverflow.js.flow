@@ -32,5 +32,6 @@ declare export function $isOverflowNode(
 export type SerializedOverflowNode = {
   ...SerializedElementNode,
   type: 'overflow',
+  version: 1,
   ...
 };

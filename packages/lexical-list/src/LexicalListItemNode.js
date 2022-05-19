@@ -47,6 +47,7 @@ export type SerializedListItemNode = {
   checked: boolean | void,
   type: 'listitem',
   value: number,
+  version: 1,
   ...
 };
 

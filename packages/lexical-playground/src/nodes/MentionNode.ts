@@ -6,16 +6,24 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, NodeKey, SerializedTextNode} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+} from 'lexical';
 
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {TextNode} from 'lexical';
 
-export type SerializedMentionNode = Spread<{
-  mentionName: string,
-  type: 'mention',
-  version: 1
-}, SerializedTextNode>
+export type SerializedMentionNode = Spread<
+  {
+    mentionName: string;
+    type: 'mention';
+    version: 1;
+  },
+  SerializedTextNode
+>;
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
@@ -48,8 +56,8 @@ export class MentionNode extends TextNode {
       ...super.exportJSON(),
       mentionName: this.__mention,
       type: 'mention',
-      version: 1
-    }
+      version: 1,
+    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

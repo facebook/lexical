@@ -34,7 +34,7 @@ import {
   addClassNamesToElement,
   mergeRegister,
 } from '@lexical/utils';
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {
   $createParagraphNode,
   $getRoot,
@@ -74,16 +74,22 @@ import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
-export type SerializedHeadingNode = Spread<{
-  tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
-  type: 'heading';
-  version: 1
-}, SerializedElementNode>
+export type SerializedHeadingNode = Spread<
+  {
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    type: 'heading';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
-export type SerializedQuoteNode = Spread<{
-  type: 'quote';
-  version: 1;
-}, SerializedElementNode>
+export type SerializedQuoteNode = Spread<
+  {
+    type: 'quote';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 // Convoluted logic to make this work with Flow. Order matters.
 const options = {tag: 'history-merge'};
@@ -120,9 +126,7 @@ export class QuoteNode extends ElementNode {
     return false;
   }
 
-  static importJSON(
-    serializedNode: SerializedQuoteNode,
-  ): QuoteNode {
+  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
     const node = $createQuoteNode();
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -232,9 +236,7 @@ export class HeadingNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    serializedNode: SerializedHeadingNode,
-  ): HeadingNode {
+  static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
     const node = $createHeadingNode(serializedNode.tag);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -247,7 +249,7 @@ export class HeadingNode extends ElementNode {
       ...super.exportJSON(),
       tag: this.__tag,
       type: 'heading',
-      version: 1
+      version: 1,
     };
   }
 

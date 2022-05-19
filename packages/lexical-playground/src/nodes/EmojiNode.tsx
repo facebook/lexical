@@ -13,14 +13,16 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {TextNode} from 'lexical';
 
-
-export type SerializedEmojiNode = Spread<{
-  className: string;
-  type: 'emoji'
-}, SerializedTextNode>
+export type SerializedEmojiNode = Spread<
+  {
+    className: string;
+    type: 'emoji';
+  },
+  SerializedTextNode
+>;
 
 export class EmojiNode extends TextNode {
   __className: string;

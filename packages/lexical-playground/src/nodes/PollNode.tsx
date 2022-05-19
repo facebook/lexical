@@ -12,7 +12,7 @@ import './PollNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {$getNodeByKey, DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {useMemo, useRef} from 'react';
@@ -190,12 +190,15 @@ function PollComponent({
   );
 }
 
-export type SerializedPollNode = Spread<{
-  question: string,
-  options: Options,
-  type: 'poll',
-  version: 1,
-}, SerializedLexicalNode>
+export type SerializedPollNode = Spread<
+  {
+    question: string;
+    options: Options;
+    type: 'poll';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
 
 export class PollNode extends DecoratorNode<JSX.Element> {
   __question: string;
@@ -226,8 +229,8 @@ export class PollNode extends DecoratorNode<JSX.Element> {
       options: this.__options,
       question: this.__question,
       type: 'poll',
-      version: 1
-    }
+      version: 1,
+    };
   }
 
   addOption(option: Option): void {

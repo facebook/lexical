@@ -8,13 +8,16 @@
 
 import type {EditorConfig, SerializedTextNode} from 'lexical';
 
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {TextNode} from 'lexical';
 
-export type SerializedTypeaheadNode = Spread<{
-  type: 'typeahead',
-  version: 1,
-}, SerializedTextNode>
+export type SerializedTypeaheadNode = Spread<
+  {
+    type: 'typeahead';
+    version: 1;
+  },
+  SerializedTextNode
+>;
 
 export class TypeaheadNode extends TextNode {
   static clone(node: TypeaheadNode): TypeaheadNode {
@@ -38,8 +41,8 @@ export class TypeaheadNode extends TextNode {
     return {
       ...super.exportJSON(),
       type: 'typeahead',
-      version: 1
-    }
+      version: 1,
+    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

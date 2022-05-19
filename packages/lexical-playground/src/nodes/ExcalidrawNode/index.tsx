@@ -7,12 +7,18 @@
  */
 
 import type {ExcalidrawElementFragment} from './ExcalidrawModal';
-import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey, SerializedLexicalNode} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {
   $getNodeByKey,
   $getSelection,
@@ -194,11 +200,14 @@ function ExcalidrawComponent({
   );
 }
 
-export type SerializedExcalidrawNode = Spread<{
-  data: string,
-  type: 'excalidraw',
-  version: 1,
-}, SerializedLexicalNode>;
+export type SerializedExcalidrawNode = Spread<
+  {
+    data: string;
+    type: 'excalidraw';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
 
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
@@ -219,8 +228,8 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return {
       data: this.__data,
       type: 'excalidraw',
-      version: 1
-    }
+      version: 1,
+    };
   }
 
   constructor(data = '[]', key?: NodeKey) {

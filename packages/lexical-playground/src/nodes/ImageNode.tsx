@@ -12,7 +12,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode
+  SerializedLexicalNode,
 } from 'lexical';
 
 import './ImageNode.css';
@@ -30,7 +30,7 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {
   $getNodeByKey,
   $getSelection,
@@ -312,17 +312,20 @@ function ImageComponent({
   );
 }
 
-export type SerializedImageNode = Spread<{
-  altText: string;
-  caption: LexicalEditor;
-  height?: number;
-  maxWidth: number;
-  showCaption: boolean;
-  src: string;
-  width?: number;
-  type: 'image'
-  version: 1
-}, SerializedLexicalNode>
+export type SerializedImageNode = Spread<
+  {
+    altText: string;
+    caption: LexicalEditor;
+    height?: number;
+    maxWidth: number;
+    showCaption: boolean;
+    src: string;
+    width?: number;
+    type: 'image';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
 
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
@@ -351,7 +354,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
-    const { altText, height, width, maxWidth, caption, src, showCaption } = serializedNode;
+    const {altText, height, width, maxWidth, caption, src, showCaption} =
+      serializedNode;
     return $createImageNode({
       altText,
       caption,
@@ -401,7 +405,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       type: 'image',
       version: 1,
       width: this.__width === 'inherit' ? 0 : this.__width,
-    }
+    };
   }
 
   setWidthAndHeight(

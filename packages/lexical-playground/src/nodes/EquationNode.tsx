@@ -11,12 +11,12 @@ import type {
   EditorConfig,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode
+  SerializedLexicalNode,
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_HIGH,
@@ -116,12 +116,14 @@ function EquationComponent({
   );
 }
 
-export type SerializedEquationNode = Spread<{
-  type: 'equation'
-  equation: string,
-  inline: boolean
-}, SerializedLexicalNode>
-
+export type SerializedEquationNode = Spread<
+  {
+    type: 'equation';
+    equation: string;
+    inline: boolean;
+  },
+  SerializedLexicalNode
+>;
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
@@ -154,7 +156,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
       equation: this.getEquation(),
       inline: this.__inline,
       type: 'emoji',
-      version: 1
+      version: 1,
     };
   }
 

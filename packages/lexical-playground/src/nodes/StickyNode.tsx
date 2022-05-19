@@ -6,7 +6,13 @@
  *
  */
 
-import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey, SerializedLexicalNode} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical';
 
 import './StickyNode.css';
 
@@ -18,7 +24,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
-import { Spread } from 'global';
+import {Spread} from 'global';
 import {
   $getNodeByKey,
   $setSelection,
@@ -269,14 +275,17 @@ function StickyComponent({
 
 type StickyNoteColor = 'pink' | 'yellow';
 
-export type SerializedStickyNode = Spread<{
-  xOffset: number,
-  yOffset: number,
-  color: StickyNoteColor,
-  caption: LexicalEditor,
-  type: 'sticky',
-  version: 1,
-}, SerializedLexicalNode>
+export type SerializedStickyNode = Spread<
+  {
+    xOffset: number;
+    yOffset: number;
+    color: StickyNoteColor;
+    caption: LexicalEditor;
+    type: 'sticky';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
 
 export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
@@ -302,7 +311,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       serializedNode.xOffset,
       serializedNode.yOffset,
       serializedNode.color,
-      serializedNode.caption
+      serializedNode.caption,
     );
   }
 
@@ -328,7 +337,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       version: 1,
       xOffset: this.__x,
       yOffset: this.__y,
-    }
+    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

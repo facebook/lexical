@@ -58,6 +58,25 @@ describe('LexicalRootNode tests', () => {
       });
     });
 
+    test('RootNode.exportJSON() should return and object conforming to the expected schema', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const node = $createRootNode();
+        // If you broke this test, you changed the public interface of a
+        // serialized Lexical Core Node. Please ensure the correct adapter
+        // logic is in place in the corresponding importJSON method
+        // to accomodate these changes.
+        expect(node.exportJSON()).toStrictEqual({
+          children: [],
+          direction: null,
+          format: '',
+          indent: 0,
+          type: 'root',
+          version: 1,
+        });
+      });
+    });
+
     test('RootNode.clone()', async () => {
       const rootNodeClone = rootNode.constructor.clone();
       expect(rootNodeClone).not.toBe(rootNode);

@@ -108,6 +108,27 @@ describe('LexicalTextNode tests', () => {
     });
   }
 
+  describe('exportJSON()', () => {
+    test('should return and object conforming to the expected schema', async () => {
+      await update(() => {
+        const node = $createTextNode();
+        // If you broke this test, you changed the public interface of a
+        // serialized Lexical Core Node. Please ensure the correct adapter
+        // logic is in place in the corresponding importJSON  method
+        // to accomodate these changes.
+        expect(node.exportJSON()).toStrictEqual({
+          detail: 0,
+          format: 0,
+          mode: 'normal',
+          style: '',
+          text: '',
+          type: 'text',
+          version: 1,
+        });
+      });
+    });
+  });
+
   describe('root.getTextContent()', () => {
     test('writable nodes', async () => {
       let nodeKey;

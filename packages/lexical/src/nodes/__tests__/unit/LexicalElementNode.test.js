@@ -82,6 +82,26 @@ describe('LexicalElementNode tests', () => {
     });
   }
 
+  describe('exportJSON()', () => {
+    test('should return and object conforming to the expected schema', async () => {
+      await update(() => {
+        const node = $createTestElementNode();
+        // If you broke this test, you changed the public interface of a
+        // serialized Lexical Core Node. Please ensure the correct adapter
+        // logic is in place in the corresponding importJSON  method
+        // to accomodate these changes.
+        expect(node.exportJSON()).toStrictEqual({
+          children: [],
+          direction: null,
+          format: '',
+          indent: 0,
+          type: 'element',
+          version: 1,
+        });
+      });
+    });
+  });
+
   describe('getChildren()', () => {
     test('no children', async () => {
       await update(() => {

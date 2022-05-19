@@ -13,7 +13,7 @@ import {
   ParagraphNode,
 } from 'lexical';
 
-import {initializeUnitTest} from '../../__tests__/utils';
+import {initializeUnitTest} from '../../../__tests__/utils';
 
 const editorConfig = Object.freeze({
   theme: {
@@ -35,6 +35,25 @@ describe('LexicalParagraphNode tests', () => {
         expect(paragraphNode.getTextContent()).toBe('');
       });
       expect(() => new ParagraphNode()).toThrow();
+    });
+
+    test('ParagraphNode.exportJSON() should return and object conforming to the expected schema', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const node = $createParagraphNode();
+        // If you broke this test, you changed the public interface of a
+        // serialized Lexical Core Node. Please ensure the correct adapter
+        // logic is in place in the corresponding importJSON  method
+        // to accomodate these changes.
+        expect(node.exportJSON()).toStrictEqual({
+          children: [],
+          direction: null,
+          format: '',
+          indent: 0,
+          type: 'paragraph',
+          version: 1,
+        });
+      });
     });
 
     test('ParagraphNode.createDOM()', async () => {

@@ -2256,6 +2256,13 @@ function internalCreateRangeSelection(
     focusDOM = domSelection.focusNode;
     anchorOffset = domSelection.anchorOffset;
     focusOffset = domSelection.focusOffset;
+    if (
+      isSelectionChange &&
+      $isRangeSelection(lastSelection) &&
+      !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+    ) {
+      return lastSelection.clone();
+    }
   } else {
     return lastSelection.clone();
   }

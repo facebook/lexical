@@ -22,10 +22,10 @@ export function useCanShowPlaceholder(editor: LexicalEditor): boolean {
 
   useLayoutEffect(() => {
     const isComposing = editor.isComposing();
-      const currentCanShowPlaceholder = editorState.getEditorState().read(
-        $canShowPlaceholderCurry(isComposing),
-      );
-      setCanShowPlaceholder(currentCanShowPlaceholder);
+    const currentCanShowPlaceholder = editorState.getEditorState().read(
+      $canShowPlaceholderCurry(isComposing),
+    );
+    setCanShowPlaceholder(currentCanShowPlaceholder);
     return editor.registerUpdateListener(({editorState}) => {
       const isComposing = editor.isComposing();
       const currentCanShowPlaceholder = editorState.read(

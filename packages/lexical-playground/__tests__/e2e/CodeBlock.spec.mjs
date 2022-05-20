@@ -870,7 +870,9 @@ test.describe('CodeBlock', () => {
       dir="ltr"
       data-gutter="123"
       data-highlight-language="javascript">
-      <span class="PlaygroundEditorTheme__token_keyword" data-lexical-text="true">
+      <span
+        class="PlaygroundEditorTheme__token_keyword"
+        data-lexical-text="true">
         function
       </span>
       <span data-lexical-text="true"></span>
@@ -897,7 +899,9 @@ test.describe('CodeBlock', () => {
       </span>
       <br />
       <span data-lexical-text="true"></span>
-      <span class="PlaygroundEditorTheme__token_keyword" data-lexical-text="true">
+      <span
+        class="PlaygroundEditorTheme__token_keyword"
+        data-lexical-text="true">
         return
       </span>
       <span data-lexical-text="true"></span>
@@ -906,7 +910,9 @@ test.describe('CodeBlock', () => {
         data-lexical-text="true">
         [
       </span>
-      <span class="PlaygroundEditorTheme__token_keyword" data-lexical-text="true">
+      <span
+        class="PlaygroundEditorTheme__token_keyword"
+        data-lexical-text="true">
         null
       </span>
       <span
@@ -915,7 +921,9 @@ test.describe('CodeBlock', () => {
         ,
       </span>
       <span data-lexical-text="true"></span>
-      <span class="PlaygroundEditorTheme__token_keyword" data-lexical-text="true">
+      <span
+        class="PlaygroundEditorTheme__token_keyword"
+        data-lexical-text="true">
         undefined
       </span>
       <span

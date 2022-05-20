@@ -588,13 +588,13 @@ test.describe('Markdown', () => {
           <span data-lexical-text="true">Hello</span>
           <br />
           <span
-            class="PlaygroundEditorTheme__tokenPunctuation"
+            class="PlaygroundEditorTheme__token_punctuation"
             data-lexical-text="true">
             *
           </span>
           <span data-lexical-text="true">world</span>
           <span
-            class="PlaygroundEditorTheme__tokenPunctuation"
+            class="PlaygroundEditorTheme__token_punctuation"
             data-lexical-text="true">
             *
           </span>
@@ -1032,56 +1032,56 @@ const IMPORTED_MARKDOWN_HTML = html`
     dir="ltr"
     data-highlight-language="javascript"
     data-gutter="123">
-    <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_comment" data-lexical-text="true">
       // Some comments
     </span>
     <br />
-    <span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_number" data-lexical-text="true">
       1
     </span>
     <span data-lexical-text="true"></span>
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       +
     </span>
     <span data-lexical-text="true"></span>
-    <span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_number" data-lexical-text="true">
       1
     </span>
     <span data-lexical-text="true"></span>
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       =
     </span>
     <span data-lexical-text="true"></span>
-    <span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_number" data-lexical-text="true">
       2
     </span>
     <span
-      class="PlaygroundEditorTheme__tokenPunctuation"
+      class="PlaygroundEditorTheme__token_punctuation"
       data-lexical-text="true">
       ;
     </span>
     <br />
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       **
     </span>
     <span data-lexical-text="true">_</span>
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       ~
     </span>
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       ~
     </span>
-    <span class="PlaygroundEditorTheme__tokenProperty" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_number" data-lexical-text="true">
       1
     </span>
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       ~
     </span>
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       ~
     </span>
     <span data-lexical-text="true">_</span>
-    <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+    <span class="PlaygroundEditorTheme__token_entity" data-lexical-text="true">
       **
     </span>
   </code>

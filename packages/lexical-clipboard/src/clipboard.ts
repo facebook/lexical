@@ -345,7 +345,7 @@ export function $insertDataTransferForRichText(
   const textHtmlMimeType = 'text/html';
   const htmlString = dataTransfer
     .getData(textHtmlMimeType)
-    .replace(/ {2}|\r\n|\n|\r/gm, '');
+    .replace(/>\n+</g, '><');
 
   if (htmlString) {
     const parser = new DOMParser();

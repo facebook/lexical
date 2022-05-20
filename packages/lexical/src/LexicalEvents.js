@@ -13,6 +13,7 @@ import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_FIREFOX,
@@ -561,7 +562,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         isFirefoxEndingComposition = false;
       }
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
-      if (possibleTextReplacement) {
+      if (possibleTextReplacement && CAN_USE_DOM) {
         // If the DOM selection offset is higher than the existing
         // offset, then restore the offset as it's likely correct
         // in the case of text replacements.

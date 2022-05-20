@@ -12,6 +12,7 @@
 export default function invariant(
   cond?: boolean,
   message?: string,
+  type?: string,
 ): asserts cond {
   if (cond) {
     return;

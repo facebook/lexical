@@ -26,6 +26,7 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
+import {Spread} from 'globals';
 import {
   $createParagraphNode,
   $isElementNode,
@@ -42,15 +43,15 @@ import {
   updateChildrenListItemValue,
 } from './formatList';
 
-export type SerializedListItemNode = {
-  ...SerializedElementNode,
-  checked: boolean | void,
-  type: 'listitem',
-  value: number,
-  version: 1,
-  ...
-};
-
+export type SerializedListItemNode = Spread<
+  {
+    checked: boolean | void;
+    type: 'listitem';
+    value: number;
+    version: 1;
+  },
+  SerializedElementNode
+>;
 export class ListItemNode extends ElementNode {
   __value: number;
   __checked: boolean;
@@ -325,7 +326,7 @@ export class ListItemNode extends ElementNode {
     // If we don't have a parent, we are likely serializing
     const parent = this.getParent();
     if (parent === null) {
-      return this.getLatest().__indent;
+      return this.getLatest<ListItemNode>().__indent;
     }
     // ListItemNode should always have a ListNode for a parent.
     let listNodeParent = parent.getParentOrThrow();

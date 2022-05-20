@@ -19,16 +19,18 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
+import {Spread} from 'globals';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
-import invariant from 'shared/invariant';
+import invariant from 'shared-ts/invariant';
 
-export type SerializedLinkNode = {
-  ...SerializedElementNode,
-  type: 'link',
-  url: string,
-  version: 1,
-  ...
-};
+export type SerializedLinkNode = Spread<
+  {
+    type: 'link';
+    url: string;
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 export class LinkNode extends ElementNode {
   __url: string;
@@ -144,12 +146,13 @@ export function $isLinkNode(
   return node instanceof LinkNode;
 }
 
-export type SerializedAutoLinkNode = {
-  ...SerializedLinkNode,
-  type: 'autolink',
-  version: 1,
-  ...
-};
+export type SerializedAutoLinkNode = Spread<
+  {
+    type: 'autolink';
+    version: 1;
+  },
+  SerializedLinkNode
+>;
 
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link

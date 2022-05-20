@@ -22,20 +22,22 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
+import {Spread} from 'globals';
 import {$createTextNode, ElementNode} from 'lexical';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
 
-export type SerializedListNode = {
-  ...SerializedElementNode,
-  listType: ListType,
-  start: number,
-  tag: ListNodeTagType,
-  type: 'list',
-  version: 1,
-  ...
-};
+export type SerializedListNode = Spread<
+  {
+    listType: ListType;
+    start: number;
+    tag: ListNodeTagType;
+    type: 'list';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 export type ListType = 'number' | 'bullet' | 'check';
 

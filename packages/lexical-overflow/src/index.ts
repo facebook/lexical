@@ -15,14 +15,16 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
+import {Spread} from 'globals';
 import {ElementNode} from 'lexical';
 
-export type SerializedOverflowNode = {
-  ...SerializedElementNode,
-  type: 'overflow',
-  version: 1,
-  ...
-};
+export type SerializedOverflowNode = Spread<
+  {
+    type: 'overflow';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 export class OverflowNode extends ElementNode {
   static getType(): string {

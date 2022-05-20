@@ -42,7 +42,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/list',
-    replacement: path.resolve('../lexical-list/src/index.js'),
+    replacement: path.resolve('../lexical-list/src/index.ts'),
   },
   {
     find: '@lexical/file',
@@ -54,7 +54,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/offset',
-    replacement: path.resolve('../lexical-offset/src/index.js'),
+    replacement: path.resolve('../lexical-offset/src/index.ts'),
   },
   {
     find: '@lexical/utils',
@@ -78,15 +78,15 @@ const moduleResolution = [
   },
   {
     find: '@lexical/link',
-    replacement: path.resolve('../lexical-link/src/index.js'),
+    replacement: path.resolve('../lexical-link/src/index.ts'),
   },
   {
     find: '@lexical/overflow',
-    replacement: path.resolve('../lexical-overflow/src/index.js'),
+    replacement: path.resolve('../lexical-overflow/src/index.ts'),
   },
   {
     find: '@lexical/markdown',
-    replacement: path.resolve('../lexical-markdown/src/index.js'),
+    replacement: path.resolve('../lexical-markdown/src/index.ts'),
   },
   {
     find: '@lexical/mark',

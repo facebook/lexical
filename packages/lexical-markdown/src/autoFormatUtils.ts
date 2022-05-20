@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ *
  */
 
 import type {
@@ -45,12 +45,17 @@ function getTextNodeForAutoFormatting(
   if (!$isRangeSelection(selection)) {
     return null;
   }
+
   const node = selection.anchor.getNode();
 
   if (!$isTextNode(node)) {
     return null;
   }
-  return {node, offset: selection.anchor.offset};
+
+  return {
+    node,
+    offset: selection.anchor.offset,
+  };
 }
 
 export function updateAutoFormatting<T>(
@@ -62,7 +67,6 @@ export function updateAutoFormatting<T>(
     () => {
       const elementNode =
         getTextNodeWithOffsetOrThrow(scanningContext).node.getParentOrThrow();
-
       transformTextNodeForMarkdownCriteria(
         scanningContext,
         elementNode,
@@ -80,8 +84,8 @@ function getCriteriaWithPatternMatchResults(
   scanningContext: ScanningContext,
 ): MarkdownCriteriaWithPatternMatchResults {
   const currentTriggerState = scanningContext.triggerState;
-
   const count = markdownCriteriaArray.length;
+
   for (let i = 0; i < count; i++) {
     const markdownCriteria = markdownCriteriaArray[i];
 
@@ -96,6 +100,7 @@ function getCriteriaWithPatternMatchResults(
         scanningContext,
         getParentElementNodeOrThrow(scanningContext),
       );
+
       if (patternMatchResults != null) {
         return {
           markdownCriteria,
@@ -104,7 +109,11 @@ function getCriteriaWithPatternMatchResults(
       }
     }
   }
-  return {markdownCriteria: null, patternMatchResults: null};
+
+  return {
+    markdownCriteria: null,
+    patternMatchResults: null,
+  };
 }
 
 function findScanningContextWithValidMatch(
@@ -126,7 +135,6 @@ function findScanningContextWithValidMatch(
       textNodeWithOffset,
       currentTriggerState,
     );
-
     const criteriaWithPatternMatchResults = getCriteriaWithPatternMatchResults(
       // Do not apply paragraph node changes like blockQuote or H1 to listNodes. Also, do not attempt to transform a list into a list using * or -.
       currentTriggerState.isParentAListItemNode === false
@@ -141,6 +149,7 @@ function findScanningContextWithValidMatch(
     ) {
       return;
     }
+
     scanningContext = initialScanningContext;
     // Lazy fill-in the particular format criteria and any matching result information.
     scanningContext.markdownCriteria =
@@ -155,19 +164,17 @@ export function getTriggerState(
   editorState: EditorState,
 ): null | AutoFormatTriggerState {
   let criteria: null | AutoFormatTriggerState = null;
-
   editorState.read(() => {
     const selection = $getSelection();
+
     if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
       return;
     }
+
     const node = selection.anchor.getNode();
     const parentNode = node.getParent();
-
     const isParentAListItemNode = $isListItemNode(parentNode);
-
     const hasParentNode = parentNode !== null;
-
     criteria = {
       anchorOffset: selection.anchor.offset,
       hasParentNode,
@@ -179,10 +186,8 @@ export function getTriggerState(
       textContent: node.getTextContent(),
     };
   });
-
   return criteria;
 }
-
 export function findScanningContext(
   editor: LexicalEditor,
   currentTriggerState: null | AutoFormatTriggerState,
@@ -194,6 +199,7 @@ export function findScanningContext(
 
   const triggerArray = getAllTriggers();
   const triggerCount = triggers.length;
+
   for (let ti = 0; ti < triggerCount; ti++) {
     const triggerString = triggerArray[ti].triggerString;
     // The below checks needs to execute relativey quickly, so perform the light-weight ones first.

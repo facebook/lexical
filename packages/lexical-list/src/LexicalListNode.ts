@@ -12,6 +12,7 @@ import type {
   DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
@@ -21,20 +22,22 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
+import {Spread} from 'globals';
 import {$createTextNode, ElementNode} from 'lexical';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
 
-export type SerializedListNode = {
-  ...SerializedElementNode,
-  listType: ListType,
-  start: number,
-  tag: ListNodeTagType,
-  type: 'list',
-  version: 1,
-  ...
-};
+export type SerializedListNode = Spread<
+  {
+    listType: ListType;
+    start: number;
+    tag: ListNodeTagType;
+    type: 'list';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 export type ListType = 'number' | 'bullet' | 'check';
 
@@ -51,10 +54,11 @@ export class ListNode extends ElementNode {
 
   static clone(node: ListNode): ListNode {
     const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
+
     return new ListNode(listType, node.__start, node.__key);
   }
 
-  constructor(listType: ListType, start: number, key?: NodeKey): void {
+  constructor(listType: ListType, start: number, key?: NodeKey) {
     super(key);
     // $FlowFixMe added for backward compatibility to map tags to list type
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
@@ -77,15 +81,17 @@ export class ListNode extends ElementNode {
 
   // View
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig, _editor?: LexicalEditor): HTMLElement {
     const tag = this.__tag;
     const dom = document.createElement(tag);
+
     if (this.__start !== 1) {
       dom.setAttribute('start', String(this.__start));
     }
-    // $FlowFixMe internal field
+    // @ts-expect-error Internal field.
     dom.__lexicalListType = this.__listType;
     setListThemeClassNames(dom, config.theme, this);
+
     return dom;
   }
 
@@ -97,7 +103,9 @@ export class ListNode extends ElementNode {
     if (prevNode.__tag !== this.__tag) {
       return true;
     }
+
     setListThemeClassNames(dom, config.theme, this);
+
     return false;
   }
 
@@ -143,10 +151,12 @@ export class ListNode extends ElementNode {
   append(...nodesToAppend: LexicalNode[]): ListNode {
     for (let i = 0; i < nodesToAppend.length; i++) {
       const currentNode = nodesToAppend[i];
+
       if ($isListItemNode(currentNode)) {
         super.append(currentNode);
       } else {
         const listItemNode = $createListItemNode();
+
         if ($isListNode(currentNode)) {
           listItemNode.append(currentNode);
         } else {
@@ -156,6 +166,7 @@ export class ListNode extends ElementNode {
         super.append(listItemNode);
       }
     }
+
     return this;
   }
   extractWithChild(child: LexicalNode): boolean {
@@ -171,6 +182,7 @@ function setListThemeClassNames(
   const classesToAdd = [];
   const classesToRemove = [];
   const listTheme = editorThemeClasses.list;
+
   if (listTheme !== undefined) {
     const listLevelsClassNames = listTheme[node.__tag + 'Depth'] || [];
     const listDepth = $getListDepth(node) - 1;
@@ -179,6 +191,7 @@ function setListThemeClassNames(
     const listClassName = listTheme[node.__tag];
     let nestedListClassName;
     const nestedListTheme = listTheme.nested;
+
     if (nestedListTheme !== undefined && nestedListTheme.list) {
       nestedListClassName = nestedListTheme.list;
     }
@@ -199,6 +212,7 @@ function setListThemeClassNames(
 
     if (nestedListClassName !== undefined) {
       const nestedListItemClasses = nestedListClassName.split(' ');
+
       if (listDepth > 1) {
         classesToAdd.push(...nestedListItemClasses);
       } else {
@@ -210,6 +224,7 @@ function setListThemeClassNames(
   if (classesToRemove.length > 0) {
     removeClassNamesFromElement(dom, ...classesToRemove);
   }
+
   if (classesToAdd.length > 0) {
     addClassNamesToElement(dom, ...classesToAdd);
   }
@@ -218,26 +233,27 @@ function setListThemeClassNames(
 function convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
+
   if (nodeName === 'ol') {
     node = $createListNode('number');
   } else if (nodeName === 'ul') {
     node = $createListNode('bullet');
   }
+
   return {node};
 }
 
-const TAG_TO_LIST_TYPE: $ReadOnly<{[ListNodeTagType]: ListType}> = {
+const TAG_TO_LIST_TYPE: Readonly<Record<ListNodeTagType, ListType>> = {
   ol: 'number',
   ul: 'bullet',
 };
 
-export function $createListNode(
-  listType: ListType,
-  start?: number = 1,
-): ListNode {
+export function $createListNode(listType: ListType, start = 1): ListNode {
   return new ListNode(listType, start);
 }
 
-export function $isListNode(node: ?LexicalNode): boolean %checks {
+export function $isListNode(
+  node: LexicalNode | null | undefined,
+): node is ListNode {
   return node instanceof ListNode;
 }

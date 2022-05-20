@@ -4,10 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ *
  */
 
-import type {TextNode} from '../../lexical/flow/Lexical';
 import type {ScanningContext} from './utils';
 import type {
   DecoratorNode,
@@ -16,6 +15,7 @@ import type {
   LexicalNode,
   ParagraphNode,
   RootNode,
+  TextNode,
 } from 'lexical';
 
 import {
@@ -47,9 +47,11 @@ export function convertStringToLexical(
   if (!text.length) {
     return null;
   }
+
   const nodes = [];
   const splitLines = text.split('\n');
   const splitLinesCount = splitLines.length;
+
   for (let i = 0; i < splitLinesCount; i++) {
     if (splitLines[i].length > 0) {
       nodes.push($createParagraphNode().append($createTextNode(splitLines[i])));
@@ -57,22 +59,22 @@ export function convertStringToLexical(
       nodes.push($createParagraphNode());
     }
   }
+
   if (nodes.length) {
     const root = $getRoot();
     root.clear();
     root.append(...nodes);
     return root;
   }
+
   return null;
 }
-
 export function convertMarkdownForElementNodes<T>(
   editor: LexicalEditor,
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ) {
   // Please see the declaration of ScanningContext for a detailed explanation.
   const scanningContext = getInitialScanningContext(editor, false, null, null);
-
   const root = $getRoot();
   let done = false;
   let startIndex = 0;
@@ -93,6 +95,7 @@ export function convertMarkdownForElementNodes<T>(
           createHorizontalRuleNode,
         );
       }
+
       // Reset the scanning information that relates to the particular element node.
       resetScanningContext(scanningContext);
 
@@ -103,8 +106,9 @@ export function convertMarkdownForElementNodes<T>(
         break;
       }
     }
-  } // while
+  }
 
+  // while
   done = false;
   startIndex = 0;
 
@@ -124,6 +128,7 @@ export function convertMarkdownForElementNodes<T>(
           createHorizontalRuleNode,
         );
       }
+
       // Reset the scanning information that relates to the particular element node.
       resetScanningContext(scanningContext);
     }
@@ -140,7 +145,7 @@ function convertParagraphLevelMarkdown<T>(
   // Handle paragraph nodes below.
   if ($isParagraphNode(elementNode)) {
     const paragraphNode: ParagraphNode = elementNode;
-    const firstChild = paragraphNode.getFirstChild();
+    const firstChild = paragraphNode.getFirstChild<TextNode>();
     const firstChildIsTextNode = $isTextNode(firstChild);
 
     // Handle conversion to code block.
@@ -155,6 +160,7 @@ function convertParagraphLevelMarkdown<T>(
           scanningContext,
           textContent,
         );
+
         if (patternMatchResults != null) {
           // Toggle transform to or from code block.
           scanningContext.patternMatchResults = patternMatchResults;
@@ -162,7 +168,6 @@ function convertParagraphLevelMarkdown<T>(
       }
 
       scanningContext.markdownCriteria = getCodeBlockCriteria();
-
       // Perform text transformation here.
       transformTextNodeForMarkdownCriteria(
         scanningContext,
@@ -175,7 +180,6 @@ function convertParagraphLevelMarkdown<T>(
     if (elementNode.getChildren().length) {
       const allCriteria = getAllMarkdownCriteriaForParagraphs();
       const count = allCriteria.length;
-
       scanningContext.joinedText = paragraphNode.getTextContent();
       invariant(
         firstChild != null && firstChildIsTextNode,
@@ -188,14 +192,17 @@ function convertParagraphLevelMarkdown<T>(
 
       for (let i = 0; i < count; i++) {
         const criteria = allCriteria[i];
+
         if (criteria.requiresParagraphStart === false) {
           return;
         }
+
         const patternMatchResults = getPatternMatchResultsForCriteria(
           criteria,
           scanningContext,
           getParentElementNodeOrThrow(scanningContext),
         );
+
         if (patternMatchResults != null) {
           scanningContext.markdownCriteria = criteria;
           scanningContext.patternMatchResults = patternMatchResults;
@@ -218,6 +225,7 @@ function convertTextLevelMarkdown<T>(
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ) {
   const firstChild = elementNode.getFirstChild();
+
   if ($isTextNode(firstChild)) {
     // This function will convert all text nodes within the elementNode.
     convertMarkdownForTextCriteria(
@@ -235,6 +243,7 @@ function convertTextLevelMarkdown<T>(
 
   for (let i = 0; i < countOfChildren; i++) {
     const node = children[i];
+
     if ($isElementNode(node)) {
       // Recurse down until we find a text node.
       convertTextLevelMarkdown(scanningContext, node, createHorizontalRuleNode);
@@ -248,26 +257,28 @@ function convertMarkdownForTextCriteria<T>(
   createHorizontalRuleNode: null | (() => DecoratorNode<T>),
 ) {
   resetScanningContext(scanningContext);
-
   // Cycle through all the criteria and convert all text patterns in the parent element.
   const allCriteria = getAllMarkdownCriteriaForTextNodes();
   const count = allCriteria.length;
-
   let textContent = elementNode.getTextContent();
   let done = textContent.length === 0;
   let startIndex = 0;
+
   while (!done) {
     done = true;
+
     for (let i = startIndex; i < count; i++) {
       const criteria = allCriteria[i];
 
       if (scanningContext.textNodeWithOffset == null) {
         // Need to search through the very last text node in the element.
         const lastTextNode = getLastTextNodeInElementNode(elementNode);
+
         if (lastTextNode == null) {
           // If we have no more text nodes, then there's nothing to search and transform.
           return;
         }
+
         scanningContext.textNodeWithOffset = {
           node: lastTextNode,
           offset: lastTextNode.getTextContent().length,
@@ -283,17 +294,15 @@ function convertMarkdownForTextCriteria<T>(
       if (patternMatchResults != null) {
         scanningContext.markdownCriteria = criteria;
         scanningContext.patternMatchResults = patternMatchResults;
-
         // Perform text transformation here.
         transformTextNodeForMarkdownCriteria(
           scanningContext,
           elementNode,
           createHorizontalRuleNode,
         );
-
         resetScanningContext(scanningContext);
-
         const currentTextContent = elementNode.getTextContent();
+
         if (currentTextContent.length === 0) {
           // Nothing left to convert.
           return;
@@ -317,12 +326,14 @@ function convertMarkdownForTextCriteria<T>(
 function getLastTextNodeInElementNode(
   elementNode: ElementNode,
 ): null | TextNode {
-  const children: Array<LexicalNode> = elementNode.getChildren();
+  const children = elementNode.getChildren<Array<TextNode>>();
   const countOfChildren = children.length;
+
   for (let i = countOfChildren - 1; i >= 0; i--) {
     if ($isTextNode(children[i])) {
       return children[i];
     }
   }
+
   return null;
 }

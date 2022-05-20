@@ -13,7 +13,6 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   GridSelection,
-  LexicalEditor,
   LexicalNode,
   NodeKey,
   NodeSelection,
@@ -70,7 +69,7 @@ export class ListItemNode extends ElementNode {
     this.__checked = checked;
   }
 
-  createDOM(config: EditorConfig, _editor?: LexicalEditor): HTMLElement {
+  createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
     const parent = this.getParent();
 

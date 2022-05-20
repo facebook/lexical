@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@lexical/utils": "0.2.9",
-    "@lexical/selection": "0.2.9"
+    "@lexical/selection": "0.2.9",
+    "@lexical/headless": "0.2.9"
   },
   "repository": {
     "type": "git",

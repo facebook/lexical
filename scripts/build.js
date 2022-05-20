@@ -104,6 +104,7 @@ const externals = [
   '@lexical/file',
   '@lexical/clipboard',
   '@lexical/hashtag',
+  '@lexical/headless',
   '@lexical/history',
   '@lexical/selection',
   '@lexical/text',

@@ -28,6 +28,7 @@ module.name_mapper='^@lexical/selection' -> '<PROJECT_ROOT>/packages/lexical-sel
 module.name_mapper='^@lexical/text' -> '<PROJECT_ROOT>/packages/lexical-text/flow/LexicalText.js.flow'
 module.name_mapper='^@lexical/offset' -> '<PROJECT_ROOT>/packages/lexical-offset/flow/LexicalOffset.js.flow'
 module.name_mapper='^@lexical/history' -> '<PROJECT_ROOT>/packages/lexical-history/flow/LexicalHistory.js.flow'
+module.name_mapper='^@lexical/headless' -> '<PROJECT_ROOT>/packages/lexical-headless/flow/LexicalHeadless.js.flow'
 module.name_mapper='^@lexical/utils' -> '<PROJECT_ROOT>/packages/lexical-utils/flow/LexicalUtils.js.flow'
 module.name_mapper='^@lexical/code' -> '<PROJECT_ROOT>/packages/lexical-code/flow/LexicalCode.js.flow'
 module.name_mapper='^@lexical/plain-text' -> '<PROJECT_ROOT>/packages/lexical-plain-text/flow/LexicalPlainText.js.flow'

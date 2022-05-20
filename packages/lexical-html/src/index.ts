@@ -7,23 +7,20 @@
  */
 
 import type {
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
   EditorState,
   EditorThemeClasses,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
   RangeSelection,
+  NodeSelection,
+  GridSelection,
+  DOMChildConversion,
+  DOMConversionFn,
+  DOMConversion,
 } from 'lexical';
 
-import {
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
-import {$getRoot, $isElementNode, $isTextNode, createEditor} from 'lexical';
+import {$cloneWithProperties, $splitTextNode} from '@lexical/selection';
+import {createEditor, $getRoot, $isElementNode, $isTextNode} from 'lexical';
 import {Class} from 'utility-types';
 
 export function createHeadlessEditor(editorConfig?: {
@@ -69,7 +66,7 @@ export function $appendNodesToHTML(
   let clone = $cloneWithProperties<LexicalNode>(currentNode);
   clone =
     $isTextNode(clone) && selection != null
-      ? $sliceSelectedTextNodeContent(selection, clone)
+      ? $splitTextNode(selection, clone)
       : clone;
   const children = $isElementNode(clone) ? clone.getChildren() : [];
   const {element, after} = clone.exportDOM(editor);

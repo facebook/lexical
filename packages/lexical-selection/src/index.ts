@@ -1014,3 +1014,47 @@ export function trimTextContentFromAnchor(
     }
   }
 }
+
+export function $sliceSelectedTextNodeContent(
+  selection: RangeSelection | GridSelection | NodeSelection,
+  textNode: TextNode,
+): LexicalNode {
+  if (
+    textNode.isSelected() &&
+    !textNode.isSegmented() &&
+    !textNode.isToken() &&
+    ($isRangeSelection(selection) || $isGridSelection(selection))
+  ) {
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    const isAnchor = textNode.is(anchorNode);
+    const isFocus = textNode.is(focusNode);
+
+    if (isAnchor || isFocus) {
+      const isBackward = selection.isBackward();
+      const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
+      const isSame = anchorNode.is(focusNode);
+      const isFirst = textNode.is(isBackward ? focusNode : anchorNode);
+      const isLast = textNode.is(isBackward ? anchorNode : focusNode);
+      let startOffset = 0;
+      let endOffset = undefined;
+
+      if (isSame) {
+        startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+        endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+      } else if (isFirst) {
+        const offset = isBackward ? focusOffset : anchorOffset;
+        startOffset = offset;
+        endOffset = undefined;
+      } else if (isLast) {
+        const offset = isBackward ? anchorOffset : focusOffset;
+        startOffset = 0;
+        endOffset = offset;
+      }
+
+      textNode.__text = textNode.__text.slice(startOffset, endOffset);
+      return textNode;
+    }
+  }
+  return textNode;
+}

@@ -1142,7 +1142,7 @@ export default function ToolbarPlugin(): JSX.Element {
               <i className="icon strikethrough" />
               <span className="text">Strikethrough</span>
             </DropDownItem>
-            <button
+            <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
               }}
@@ -1153,8 +1153,8 @@ export default function ToolbarPlugin(): JSX.Element {
               aria-label="Format text with a subscript">
               <i className="icon subscript" />
               <span className="text">Subscript</span>
-            </button>
-            <button
+            </DropDownItem>
+            <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(
                   FORMAT_TEXT_COMMAND,
@@ -1168,7 +1168,7 @@ export default function ToolbarPlugin(): JSX.Element {
               aria-label="Format text with a superscript">
               <i className="icon superscript" />
               <span className="text">Superscript</span>
-            </button>
+            </DropDownItem>
           </DropDown>
           <Divider />
           <DropDown

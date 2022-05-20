@@ -40,7 +40,7 @@ export class RootNode extends ElementNode {
     this.__cachedText = null;
   }
 
-  getTopLevelElementOrThrow(): RootNode {
+  getTopLevelElementOrThrow() {
     invariant(
       false,
       'getTopLevelElementOrThrow: root nodes are not top level elements',

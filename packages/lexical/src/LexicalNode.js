@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {RootNode} from '../flow/Lexical';
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
 
@@ -260,15 +261,15 @@ export class LexicalNode {
     return children.indexOf(this.__key);
   }
 
-  getParent(): ElementNode | null {
+  getParent<T: ElementNode>(): T | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
       return null;
     }
-    return $getNodeByKey<ElementNode>(parent);
+    return $getNodeByKey<T>(parent);
   }
 
-  getParentOrThrow(): ElementNode {
+  getParentOrThrow<T: ElementNode>(): T {
     const parent = this.getParent();
     if (parent === null) {
       invariant(false, 'Expected node %s to have a parent.', this.__key);
@@ -276,11 +277,12 @@ export class LexicalNode {
     return parent;
   }
 
-  getTopLevelElement(): null | ElementNode {
+  getTopLevelElement<T: RootNode>(): T | null {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
       if ($isRootNode(parent) && $isElementNode(node)) {
+        // $FlowFixMe
         return node;
       }
       node = parent;
@@ -288,7 +290,7 @@ export class LexicalNode {
     return null;
   }
 
-  getTopLevelElementOrThrow(): ElementNode {
+  getTopLevelElementOrThrow<T: RootNode>(): T {
     const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(
@@ -300,7 +302,7 @@ export class LexicalNode {
     return parent;
   }
 
-  getParents(): Array<ElementNode> {
+  getParents<T: ElementNode>(): Array<T> {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -371,10 +373,11 @@ export class LexicalNode {
       .map((childKey) => $getNodeByKeyOrThrow<LexicalNode>(childKey));
   }
 
-  getCommonAncestor(node: LexicalNode): ElementNode | null {
-    const a = this.getParents();
+  getCommonAncestor<T: ElementNode>(node: LexicalNode): T | null {
+    const a = this.getParents<T>();
     const b = node.getParents();
     if ($isElementNode(this)) {
+      // $FlowFixMe
       a.unshift(this);
     }
     if ($isElementNode(node)) {
@@ -387,7 +390,7 @@ export class LexicalNode {
     }
     const bSet = new Set(b);
     for (let i = 0; i < aLength; i++) {
-      const ancestor = a[i];
+      const ancestor = (a[i]: T);
       if (bSet.has(ancestor)) {
         return ancestor;
       }

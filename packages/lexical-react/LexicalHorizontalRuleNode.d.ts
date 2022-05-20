@@ -8,6 +8,7 @@
 
 import type {LexicalNode, LexicalCommand} from 'lexical';
 import {DecoratorNode} from 'lexical';
+
 export declare class HorizontalRuleNode extends DecoratorNode<JSX.Element | null> {
   static getType(): string;
   static clone(node: HorizontalRuleNode): HorizontalRuleNode;
@@ -21,5 +22,4 @@ export function $createHorizontalRuleNode(): HorizontalRuleNode;
 export function $isHorizontalRuleNode(
   node: LexicalNode | null | undefined,
 ): node is HorizontalRuleNode;
-
 export var INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void>;

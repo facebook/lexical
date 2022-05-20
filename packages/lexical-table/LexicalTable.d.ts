@@ -229,7 +229,9 @@ export declare class TableSelection {
   clearText(): void;
 }
 
-export var INSERT_TABLE_COMMAND: LexicalCommand<{
-  rows: string;
+export type InsertTableCommandPayload = Readonly<{
   columns: string;
+  rows: string;
 }>;
+
+export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;

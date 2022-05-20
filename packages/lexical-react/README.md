@@ -16,11 +16,11 @@ Below is an example of a basic plain text editor using `lexical` and `@lexical/r
 import {$getRoot, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 
-import LexicalComposer from '@lexical/react/LexicalComposer';
-import LexicalPlainTextPlugin from '@lexical/react/LexicalPlainTextPlugin';
-import LexicalContentEditable from '@lexical/react/LexicalContentEditable';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {LexicalPlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {LexicalContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import LexicalOnChangePlugin from '@lexical/react/LexicalOnChangePlugin';
+import {LexicalOnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 const theme = {
@@ -47,7 +47,9 @@ function onChange(editorState) {
 function MyCustomAutoFocusPlugin() {
   const [editor] = useLexicalComposerContext();
 
-  useEffect(() => {
+  
+
+useEffect(() => {
     // Focus the editor when the effect fires!
     editor.focus();
   }, [editor]);
@@ -68,7 +70,9 @@ function Editor() {
     onError,
   };
 
-  return (
+  
+
+return (
     <LexicalComposer initialConfig={initialConfig}>
       <LexicalPlainTextPlugin
         contentEditable={<LexicalContentEditable />}

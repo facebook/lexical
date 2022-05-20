@@ -12,6 +12,7 @@ export type DFSNode = Readonly<{
   depth: number;
   node: LexicalNode;
 }>;
+
 declare function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
@@ -43,7 +44,6 @@ declare function mergeRegister(...func: Array<Func>): () => void;
 declare function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
-
 declare function registerNestedElementResolver<N>(
   editor: LexicalEditor,
   targetNode: Class<N>,

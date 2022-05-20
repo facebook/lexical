@@ -7,6 +7,7 @@
  */
 
 import type {LexicalEditor} from 'lexical';
+
 export function TreeView(props: {
   timeTravelPanelClassName: string;
   timeTravelPanelSliderClassName: string;

@@ -9,7 +9,7 @@ module.exports = {
   collectCoverageFrom: [
     '<rootDir>/packages/lexical/src/core/**/*.js',
     '<rootDir>/packages/lexical/src/extensions/**/*.js',
-    '<rootDir>/packages/lexical-react/src/**/*.js',
+    '<rootDir>/packages/lexical-react/src/**/*.ts',
   ],
   coverageReporters: ['json', 'text'],
   projects: [
@@ -43,33 +43,33 @@ module.exports = {
         '^@lexical/plain-text$':
           '<rootDir>/packages/lexical-plain-text/src/index.ts',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
-          '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
+          '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.ts',
         '^@lexical/react/LexicalAutoLinkPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.ts',
         '^@lexical/react/LexicalAutoScrollPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.ts',
         '^@lexical/react/LexicalCheckListPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalCheckListPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalCheckListPlugin.ts',
         '^@lexical/react/LexicalCollaborationPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.ts',
         '^@lexical/react/LexicalComposerContext$':
-          '<rootDir>/packages/lexical-react/src/LexicalComposerContext.js',
+          '<rootDir>/packages/lexical-react/src/LexicalComposerContext.ts',
         '^@lexical/react/LexicalContentEditable$':
-          '<rootDir>/packages/lexical-react/src/LexicalContentEditable.jsx',
+          '<rootDir>/packages/lexical-react/src/LexicalContentEditable.tsx',
         '^@lexical/react/LexicalLinkPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.ts',
         '^@lexical/react/LexicalListPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalListPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalListPlugin.ts',
         '^@lexical/react/LexicalPlainTextPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.ts',
         '^@lexical/react/LexicalTablePlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.ts',
         '^@lexical/react/useLexicalCanShowPlaceholder$':
-          '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.js',
+          '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.ts',
         '^@lexical/react/useLexicalDecorators$':
-          '<rootDir>/packages/lexical-react/src/useLexicalDecorators.js',
+          '<rootDir>/packages/lexical-react/src/useLexicalDecorators.ts',
         '^@lexical/react/useLexicalEditor$':
-          '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
+          '<rootDir>/packages/lexical-react/src/useLexicalEditor.ts',
         '^@lexical/rich-text$':
           '<rootDir>/packages/lexical-rich-text/src/index.ts',
         '^@lexical/selection$':
@@ -105,7 +105,7 @@ module.exports = {
       },
       preset: 'ts-jest',
       testEnvironment: 'jsdom',
-      testMatch: ['**/__tests__/unit/**/*.test{.ts,.js}'],
+      testMatch: ['**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
       transform: {
         '^.+\\.jsx?$': 'babel-jest',
         '^.+\\.tsx$': 'ts-jest',

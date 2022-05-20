@@ -8,6 +8,7 @@
 
 import {WebsocketProvider} from 'y-websocket';
 import type {Doc, RelativePosition} from 'yjs';
+
 export type UserState = {
   anchorPos: null | RelativePosition;
   focusPos: null | RelativePosition;

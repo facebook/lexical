@@ -8,6 +8,7 @@
 
 import {Class} from 'utility-types';
 import type {TextNode} from 'lexical';
+
 export type EntityMatch = {
   end: number;
   start: number;

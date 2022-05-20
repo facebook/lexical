@@ -27,7 +27,7 @@ export function DropDownItem({
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   title?: string;
 }) {
-  const ref = useRef<HTMLButtonElement>();
+  const ref = useRef<HTMLButtonElement>(null);
 
   const dropDownContext = React.useContext(DropDownContext);
 
@@ -38,7 +38,7 @@ export function DropDownItem({
   const {registerItem} = dropDownContext;
 
   useEffect(() => {
-    if (ref) {
+    if (ref && ref.current) {
       registerItem(ref);
     }
   }, [ref, registerItem]);
@@ -59,11 +59,9 @@ function DropDownItems({
   dropDownRef: React.Ref<HTMLDivElement>;
   onClose: () => void;
 }) {
-  const [items, setItems] = useState<
-    React.RefObject<HTMLButtonElement>[] | null
-  >(null);
+  const [items, setItems] = useState<React.RefObject<HTMLButtonElement>[]>();
   const [highlightedItem, setHighlightedItem] =
-    useState<React.RefObject<HTMLButtonElement>>(null);
+    useState<React.RefObject<HTMLButtonElement>>();
 
   const registerItem = useCallback(
     (itemRef: React.RefObject<HTMLButtonElement>) => {
@@ -72,7 +70,7 @@ function DropDownItems({
     [setItems],
   );
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!items) return;
 
     const key = event.key;
@@ -85,11 +83,15 @@ function DropDownItems({
       onClose();
     } else if (key === 'ArrowUp') {
       setHighlightedItem((prev) => {
+        if (!prev) return items[0];
         const index = items.indexOf(prev) - 1;
         return items[index === -1 ? items.length - 1 : index];
       });
     } else if (key === 'ArrowDown') {
-      setHighlightedItem((prev) => items[items.indexOf(prev) + 1]);
+      setHighlightedItem((prev) => {
+        if (!prev) return items[0];
+        return items[items.indexOf(prev) + 1];
+      });
     }
   };
 
@@ -105,8 +107,9 @@ function DropDownItems({
       setHighlightedItem(items[0]);
     }
 
-    // $FlowFixMe: I am not sure why this is wrong
-    highlightedItem?.current?.focus();
+    if (highlightedItem && highlightedItem.current) {
+      highlightedItem.current.focus();
+    }
   }, [items, highlightedItem]);
 
   return (
@@ -133,13 +136,15 @@ export default function DropDown({
   children: JSX.Element | string | (JSX.Element | string)[];
   stopCloseOnClickSelf?: boolean;
 }): JSX.Element {
-  const dropDownRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const dropDownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [showDropDown, setShowDropDown] = useState(false);
 
   const handleClose = () => {
     setShowDropDown(false);
-    buttonRef?.current?.focus();
+    if (buttonRef && buttonRef.current) {
+      buttonRef.current.focus();
+    }
   };
 
   useEffect(() => {
@@ -163,7 +168,11 @@ export default function DropDown({
       const handle = (event: MouseEvent) => {
         const target = event.target;
         if (stopCloseOnClickSelf) {
-          if (dropDownRef.current.contains(target as Node)) return;
+          if (
+            dropDownRef.current &&
+            dropDownRef.current.contains(target as Node)
+          )
+            return;
         }
         if (!button.contains(target as Node)) {
           setShowDropDown(false);

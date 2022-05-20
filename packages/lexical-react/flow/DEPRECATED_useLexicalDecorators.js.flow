@@ -1,0 +1,14 @@
+/**
+ * (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+ *
+ * @flow strict
+ * @format
+ */
+
+import type {LexicalEditor} from 'lexical';
+
+import * as React from 'react';
+
+declare export function useLexicalDecorators(
+  editor: LexicalEditor,
+): Array<React.Node>;

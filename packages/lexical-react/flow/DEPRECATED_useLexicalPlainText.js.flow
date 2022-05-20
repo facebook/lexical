@@ -1,0 +1,15 @@
+/**
+ * (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+ *
+ * @flow strict
+ * @format
+ */
+
+import type {HistoryState} from '@lexical/react/DEPRECATED_useLexicalHistory';
+import type {EditorState, LexicalEditor} from 'lexical';
+
+declare export function useLexicalPlainText(
+  editor: LexicalEditor,
+  externalHistoryState?: HistoryState,
+  initialEditorState?: null | string | EditorState | (() => void),
+): void;

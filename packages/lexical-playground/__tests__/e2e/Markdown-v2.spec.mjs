@@ -766,6 +766,7 @@ const IMPORTED_MARKDOWN = `# Markdown Import
 This is *italic*, _italic_, **bold**, __bold__, ~~strikethrough~~ text
 This is *__~~bold italic strikethrough~~__* text, ___~~this one too~~___
 It ~~___works [with links](https://lexical.io)___~~ too
+Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too)
 *Nested **stars tags** are handled too*
 ### Headings
 # h1 Heading
@@ -866,6 +867,17 @@ const IMPORTED_MARKDOWN_HTML = html`
       </strong>
     </a>
     <span data-lexical-text="true">too</span>
+  </p>
+  <p
+    class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+    dir="ltr">
+    <span data-lexical-text="true">Links</span>
+    <a
+      href="https://lexical.io/tag_here_and__here__and___here___too"
+      class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+      dir="ltr">
+      <span data-lexical-text="true">with underscores</span>
+    </a>
   </p>
   <p
     class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"

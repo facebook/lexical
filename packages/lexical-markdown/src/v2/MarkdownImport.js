@@ -19,7 +19,7 @@ import type {RootNode, TextNode} from 'lexical';
 import {$createCodeNode} from '@lexical/code';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
-import {transformersByType} from './utils';
+import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
 
@@ -232,15 +232,31 @@ function findOutermostMatch(
   for (const match of openTagsMatch) {
     // Open tags reg exp might capture leading space so removing it
     // before using match to find transformer
-    const fullMatchRegExp =
-      textTransformersIndex.fullMatchRegExpByTag[match.replace(/^\s/, '')];
+    const tag = match.replace(/^\s/, '');
+    const fullMatchRegExp = textTransformersIndex.fullMatchRegExpByTag[tag];
     if (fullMatchRegExp == null) {
       continue;
     }
 
     const fullMatch = textContent.match(fullMatchRegExp);
-    if (fullMatch != null) {
-      return fullMatch;
+    const transformer = textTransformersIndex.transformersByTag[tag];
+    if (fullMatch != null && transformer != null) {
+      if (transformer.intraword !== false) {
+        return fullMatch;
+      }
+
+      // For non-intraword transformers checking if it's within a word
+      // or surrounded with space/punctuation/newline
+      const {index} = fullMatch;
+      const beforeChar = textContent[index - 1];
+      const afterChar = textContent[index + fullMatch[0].length];
+
+      if (
+        (!beforeChar || PUNCTUATION_OR_SPACE.test(beforeChar)) &&
+        (!afterChar || PUNCTUATION_OR_SPACE.test(afterChar))
+      ) {
+        return fullMatch;
+      }
     }
   }
 

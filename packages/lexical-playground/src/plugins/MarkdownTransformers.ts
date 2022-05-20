@@ -31,6 +31,7 @@ import {
   $isTableRowNode,
   TableCellHeaderStates,
   TableCellNode,
+  TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -106,23 +107,21 @@ export const EQUATION: TextMatchTransformer = {
   type: 'text-match',
 };
 
-export const TWEET: TextMatchTransformer = {
-  export: (node, exportChildren, exportFormat) => {
+export const TWEET: ElementTransformer = {
+  export: (node) => {
     if (!$isTweetNode(node)) {
       return null;
     }
 
     return `<tweet id="${node.getId()}" />`;
   },
-  importRegExp: /<tweet id="([^"]+?)"\s?\/>/,
-  regExp: /<tweet id="([^"]+?)"\s?\/>$/,
-  replace: (textNode, match) => {
+  regExp: /<tweet id="([^"]+?)"\s?\/>\s?$/,
+  replace: (textNode, _1, match) => {
     const [, id] = match;
     const tweetNode = $createTweetNode(id);
     textNode.replace(tweetNode);
   },
-  trigger: '>',
-  type: 'text-match',
+  type: 'element',
 };
 
 // Very primitive table setup
@@ -207,11 +206,26 @@ export const TABLE: ElementTransformer = {
       }
     }
 
-    parentNode.replace(table);
+    const previousSibling = parentNode.getPreviousSibling();
+    if (
+      $isTableNode(previousSibling) &&
+      getTableColumnsSize(previousSibling) === maxCells
+    ) {
+      previousSibling.append(...table.getChildren());
+      parentNode.remove();
+    } else {
+      parentNode.replace(table);
+    }
+
     table.selectEnd();
   },
   type: 'element',
 };
+
+function getTableColumnsSize(table: TableNode) {
+  const row = table.getFirstChild();
+  return $isTableRowNode(row) ? row.getChildrenSize() : 0;
+}
 
 const createTableCell = (
   textContent: string | null | undefined,

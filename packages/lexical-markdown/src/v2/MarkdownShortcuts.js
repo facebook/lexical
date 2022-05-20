@@ -27,9 +27,7 @@ import {
 } from 'lexical';
 
 import {TRANSFORMERS} from '..';
-import {indexBy, transformersByType} from './utils';
-
-const PUNCTUATION_OR_SPACE = /[!-/:-@[-`{-~\s]/;
+import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(
   parentNode: ElementNode,

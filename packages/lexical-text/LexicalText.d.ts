@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import type {ElementNode, LexicalEditor, RootNode, TextNode} from 'lexical';
 import {Class} from 'utility-types';
+
 export type TextNodeWithOffset = {
   node: TextNode;
   offset: number;

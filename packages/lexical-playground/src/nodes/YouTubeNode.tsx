@@ -13,7 +13,7 @@ import {
   DecoratorBlockNode,
   SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
-import {Spread} from 'libdefs/globals';
+import {Spread} from 'globals';
 import * as React from 'react';
 
 type YouTubeComponentProps = Readonly<{

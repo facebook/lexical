@@ -483,7 +483,6 @@ export declare class RangeSelection {
     focusOffset: number,
   ): void;
   getTextContent(): string;
-  // $FlowFixMe DOM API
   applyDOMRange(range: StaticRange): void;
   clone(): RangeSelection;
   toggleFormat(format: TextFormatType): void;
@@ -693,6 +692,7 @@ export declare class ElementNode extends LexicalNode {
   getFormat(): number;
   getFormatType(): 'left' | 'center' | 'right' | 'justify';
   getIndent(): number;
+  getChildren<T extends LexicalNode>(): Array<T>;
   getChildren<T extends Array<LexicalNode>>(): T;
   getChildrenKeys(): Array<NodeKey>;
   getChildrenSize(): number;

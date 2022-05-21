@@ -6,7 +6,9 @@
  *
  * @flow strict
  */
+
 import type {LexicalEditor, LexicalNode, ElementNode} from 'lexical';
+
 export type DFSNode = $ReadOnly<{
   depth: number,
   node: LexicalNode,
@@ -28,7 +30,9 @@ declare export function $getNearestNodeOfType<T: LexicalNode>(
   node: LexicalNode,
   klass: Class<T>,
 ): T | null;
+
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
+
 export type DOMNodeToLexicalConversionMap = {
   [string]: DOMNodeToLexicalConversion,
 };

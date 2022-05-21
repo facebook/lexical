@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
+
 import type {Grid} from './LexicalTableSelection';
 import type {LexicalNode} from 'lexical';
 
@@ -29,7 +29,7 @@ import {
 export function $createTableNodeWithDimensions(
   rowCount: number,
   columnCount: number,
-  includeHeaders?: boolean = true,
+  includeHeaders = true,
 ): TableNode {
   const tableNode = $createTableNode();
 
@@ -45,11 +45,12 @@ export function $createTableNodeWithDimensions(
       }
 
       const tableCellNode = $createTableCellNode(headerState);
-
       const paragraphNode = $createParagraphNode();
+
       paragraphNode.append($createTextNode());
 
       tableCellNode.append(paragraphNode);
+
       tableRowNode.append(tableCellNode);
     }
 
@@ -99,9 +100,7 @@ export function $getTableRowIndexFromTableCellNode(
   tableCellNode: TableCellNode,
 ): number {
   const tableRowNode = $getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
-
   const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableRowNode);
-
   return tableNode.getChildren().findIndex((n) => n.is(tableRowNode));
 }
 
@@ -109,15 +108,14 @@ export function $getTableColumnIndexFromTableCellNode(
   tableCellNode: TableCellNode,
 ): number {
   const tableRowNode = $getTableRowNodeFromTableCellNodeOrThrow(tableCellNode);
-
   return tableRowNode.getChildren().findIndex((n) => n.is(tableCellNode));
 }
 
 export type TableCellSiblings = {
-  above: ?TableCellNode,
-  below: ?TableCellNode,
-  left: ?TableCellNode,
-  right: ?TableCellNode,
+  above: TableCellNode | null | undefined;
+  below: TableCellNode | null | undefined;
+  left: TableCellNode | null | undefined;
+  right: TableCellNode | null | undefined;
 };
 
 export function $getTableCellSiblingsFromTableCellNode(
@@ -125,9 +123,7 @@ export function $getTableCellSiblingsFromTableCellNode(
   grid: Grid,
 ): TableCellSiblings {
   const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
   const {x, y} = tableNode.getCordsFromCellNode(tableCellNode, grid);
-
   return {
     above: tableNode.getCellNodeFromCords(x, y - 1, grid),
     below: tableNode.getCellNodeFromCords(x, y + 1, grid),
@@ -147,16 +143,14 @@ export function $removeTableRowAtIndex(
   }
 
   const targetRowNode = tableRows[indexToDelete];
-
   targetRowNode.remove();
-
   return tableNode;
 }
 
 export function $insertTableRow(
   tableNode: TableNode,
   targetIndex: number,
-  shouldInsertAfter: boolean = true,
+  shouldInsertAfter = true,
   rowCount: number,
   grid: Grid,
 ): TableNode {
@@ -170,9 +164,8 @@ export function $insertTableRow(
 
   if ($isTableRowNode(targetRowNode)) {
     for (let r = 0; r < rowCount; r++) {
-      const tableRowCells = targetRowNode.getChildren();
+      const tableRowCells = targetRowNode.getChildren<TableCellNode>();
       const tableColumnCount = tableRowCells.length;
-
       const newTableRowNode = $createTableRowNode();
 
       for (let c = 0; c < tableColumnCount; c++) {
@@ -187,11 +180,7 @@ export function $insertTableRow(
           tableCellFromTargetRow,
           grid,
         );
-
         let headerState = TableCellHeaderStates.NO_STATUS;
-
-        const width =
-          (above && above.getWidth()) || (below && below.getWidth()) || null;
 
         if (
           (above && above.hasHeaderState(TableCellHeaderStates.COLUMN)) ||
@@ -200,9 +189,10 @@ export function $insertTableRow(
           headerState |= TableCellHeaderStates.COLUMN;
         }
 
-        const tableCellNode = $createTableCellNode(headerState, 1, width);
+        const tableCellNode = $createTableCellNode(headerState);
 
         tableCellNode.append($createParagraphNode());
+
         newTableRowNode.append(tableCellNode);
       }
 
@@ -222,13 +212,14 @@ export function $insertTableRow(
 export function $insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
-  shouldInsertAfter?: boolean = true,
+  shouldInsertAfter = true,
   columnCount: number,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
   for (let r = 0; r < tableRows.length; r++) {
     const currentTableRowNode = tableRows[r];
+
     if ($isTableRowNode(currentTableRowNode)) {
       for (let c = 0; c < columnCount; c++) {
         let headerState = TableCellHeaderStates.NO_STATUS;

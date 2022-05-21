@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
@@ -23,21 +22,13 @@ import {
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {TestComposer} from 'lexical/src/__tests__/utils';
-import React from 'react';
+import * as React from 'react';
 import {createRoot} from 'react-dom/client';
-import ReactTestUtils from 'react-dom/test-utils';
-
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-global.IS_REACT_ACT_ENVIRONMENT = true;
+import * as ReactTestUtils from 'react-dom/test-utils';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
-
-  return {
-    ...originalModule,
-    IS_FIREFOX: true,
-  };
+  return {...originalModule, IS_FIREFOX: true};
 });
 
 describe('LexicalEventHelpers', () => {
@@ -58,8 +49,10 @@ describe('LexicalEventHelpers', () => {
 
   async function init() {
     function TestBase() {
-      function TestPlugin() {
+      function TestPlugin(): JSX.Element {
         [editor] = useLexicalComposerContext();
+
+        return null;
       }
 
       return (
@@ -116,6 +109,7 @@ describe('LexicalEventHelpers', () => {
               // eslint-disable-next-line jsx-a11y/aria-role
               <ContentEditable role={null} spellCheck={null} />
             }
+            placeholder=""
           />
           <TestPlugin />
         </TestComposer>
@@ -125,8 +119,11 @@ describe('LexicalEventHelpers', () => {
     ReactTestUtils.act(() => {
       createRoot(container).render(<TestBase />);
     });
+
     editor.getRootElement().focus();
+
     await Promise.resolve().then();
+
     // Focus first element
     setNativeSelectionWithPaths(editor.getRootElement(), [0, 0], 0, [0, 0], 0);
   }
@@ -135,6 +132,7 @@ describe('LexicalEventHelpers', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(fn);
     });
+
     return Promise.resolve().then();
   }
 
@@ -306,15 +304,19 @@ describe('LexicalEventHelpers', () => {
           name: 'should preserve multiple types of formatting on deeply nested text nodes and top level text nodes',
         },
       ];
+
       suite.forEach((testUnit, i) => {
         const name = testUnit.name || 'Test case';
+
         test(name + ` (#${i + 1})`, async () => {
           await applySelectionInputs(testUnit.inputs, update, editor);
+
           // Validate HTML matches
           expect(container.innerHTML).toBe(testUnit.expectedHTML);
         });
       });
     });
+
     describe('Google Docs', () => {
       const suite = [
         {
@@ -358,10 +360,13 @@ describe('LexicalEventHelpers', () => {
           name: 'should produce the correct editor state from strikethrough text',
         },
       ];
+
       suite.forEach((testUnit, i) => {
         const name = testUnit.name || 'Test case';
+
         test(name + ` (#${i + 1})`, async () => {
           await applySelectionInputs(testUnit.inputs, update, editor);
+
           // Validate HTML matches
           expect(container.innerHTML).toBe(testUnit.expectedHTML);
         });

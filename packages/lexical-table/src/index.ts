@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {LexicalCommand} from 'lexical';
@@ -75,9 +74,9 @@ export {
   TableSelection,
 };
 
-export type InsertTableCommandPayload = $ReadOnly<{
-  columns: string,
-  rows: string,
+export type InsertTableCommandPayload = Readonly<{
+  columns: string;
+  rows: string;
 }>;
 
 export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =

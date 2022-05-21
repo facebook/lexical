@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
 import type {
@@ -64,6 +63,7 @@ declare function $createTableCellNode(
   colSpan?: number,
   width?: number | null | undefined,
 ): TableCellNode;
+
 export declare function $isTableCellNode(
   node?: LexicalNode,
 ): node is TableCellNode;
@@ -206,6 +206,7 @@ declare function $deleteTableColumn(
 /**
  * LexicalTableSelection.js
  */
+
 export declare class TableSelection {
   currentX: number;
   currentY: number;

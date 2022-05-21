@@ -9,11 +9,8 @@
 import {$createTableNode} from '@lexical/table';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-global.IS_REACT_ACT_ENVIRONMENT = true;
-
 const editorConfig = Object.freeze({
+  namespace: '',
   theme: {
     TableCellHeaderStates: 'test-table-row-class',
     table: 'test-table-class',
@@ -25,18 +22,23 @@ describe('LexicalTableNode tests', () => {
   initializeUnitTest((testEnv) => {
     test('TableNode.constructor', async () => {
       const {editor} = testEnv;
+
       await editor.update(() => {
         const tableNode = $createTableNode();
+
         expect(tableNode).not.toBe(null);
       });
+
       expect(() => $createTableNode()).toThrow();
     });
 
     test('TableNode.createDOM()', async () => {
       const {editor} = testEnv;
+
       await editor.update(() => {
         const tableNode = $createTableNode();
-        expect(tableNode.createDOM(editorConfig, editor).outerHTML).toBe(
+
+        expect(tableNode.createDOM(editorConfig).outerHTML).toBe(
           `<table class="${editorConfig.theme.table}"></table>`,
         );
       });

@@ -10,6 +10,7 @@ Clones the Lexical nodes in the selection, returning a map of Key -> LexicalNode
 of all direct children of the RootNode. Useful for insertion/transfer operations, such as copy and paste.
 
 ```ts
+
 export function $cloneContents(
   selection: RangeSelection | NodeSelection | GridSelection,
 ): {
@@ -23,6 +24,7 @@ export function $cloneContents(
 Given a CSS string, returns an object from the style cache.
 
 ```ts
+
 export function getStyleObjectFromCSS(css: string): {
   [key: string]: string;
 } | null;
@@ -34,6 +36,7 @@ Applies the provided styles to the TextNodes in the provided Selection. Key name
 the valid CSS properties (i.e., kebab-case).
 
 ```ts
+
 export function $patchStyleText(
   selection: RangeSelection | GridSelection,
   patch: {
@@ -47,6 +50,7 @@ export function $patchStyleText(
 Given a selection and a valid CSS property name, returns the current value of that property for TextNodes in the Selection, if set. If not set, it returns the defaultValue. If all TextNodes do not have the same value, it returns an empty string.
 
 ```ts
+
 export function $getSelectionStyleValueForProperty(
   selection: RangeSelection,
   styleProperty: string,
@@ -59,6 +63,7 @@ export function $getSelectionStyleValueForProperty(
 Moves the selection according to the arguments.
 
 ```ts
+
 export function $moveCaretSelection(
   selection: RangeSelection,
   isHoldingShift: boolean,
@@ -72,6 +77,7 @@ export function $moveCaretSelection(
 Returns true if the parent of the Selection anchor node is in Right-To-Left mode, false if not.
 
 ```ts
+
 export function $isParentElementRTL(selection: RangeSelection): boolean;
 ```
 
@@ -80,6 +86,7 @@ export function $isParentElementRTL(selection: RangeSelection): boolean;
 Wraps $moveCaretSelection, using character granularity and accounting for RTL mode.
 
 ```ts
+
 export function $moveCharacter(
   selection: RangeSelection,
   isHoldingShift: boolean,
@@ -92,6 +99,7 @@ export function $moveCharacter(
 Expands the current Selection to cover all of the content in the editor.
 
 ```ts
+
 export function $selectAll(selection: RangeSelection): void;
 ```
 
@@ -100,6 +108,7 @@ export function $selectAll(selection: RangeSelection): void;
 Attempts to wrap all leaf nodes in the Selection in ElementNodes returned from createElement. If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement. It attempts to append the resulting sub-tree to the nearest safe insertion target.
 
 ```ts
+
 export function $wrapLeafNodesInElements(
   selection: RangeSelection,
   createElement: () => ElementNode,
@@ -112,6 +121,7 @@ export function $wrapLeafNodesInElements(
 Returns true if the provided point offset is in the last possible position.
 
 ```ts
+
 export function $isAtNodeEnd(point: Point): boolean;
 ```
 
@@ -120,6 +130,7 @@ export function $isAtNodeEnd(point: Point): boolean;
 Returns true if default character selection should be overridden, false if not. Used with DecoratorNodes
 
 ```ts
+
 export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,

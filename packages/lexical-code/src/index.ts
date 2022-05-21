@@ -41,7 +41,7 @@ import {
   mergeRegister,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {Spread} from 'globals';
+
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -59,6 +59,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
+import {Spread} from 'libdefs/global';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 

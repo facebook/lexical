@@ -25,7 +25,6 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {Spread} from 'globals';
 import {
   $createParagraphNode,
   $isElementNode,
@@ -33,6 +32,7 @@ import {
   $isRangeSelection,
   ElementNode,
 } from 'lexical';
+import {Spread} from 'libdefs/global';
 import invariant from 'shared-ts/invariant';
 
 import {$createListNode, $isListNode} from './';
@@ -44,7 +44,7 @@ import {
 
 export type SerializedListItemNode = Spread<
   {
-    checked: boolean | void;
+    checked: boolean;
     type: 'listitem';
     value: number;
     version: 1;
@@ -119,7 +119,7 @@ export class ListItemNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedListItemNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),

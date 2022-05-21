@@ -80,7 +80,7 @@ describe('LexicalLinkNode tests', () => {
     test('LinkNode.createDOM()', async () => {
       const {editor} = testEnv;
 
-      await editor.update(() => {
+      editor.update(() => {
         const linkNode = new LinkNode('https://example.com/foo');
 
         expect(linkNode.createDOM(editorConfig).outerHTML).toBe(

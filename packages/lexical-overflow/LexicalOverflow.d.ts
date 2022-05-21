@@ -14,8 +14,8 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {Spread} from 'globals';
 import {ElementNode} from 'lexical';
+import {Spread} from 'libdefs/global';
 
 export declare class OverflowNode extends ElementNode {
   static getType(): string;

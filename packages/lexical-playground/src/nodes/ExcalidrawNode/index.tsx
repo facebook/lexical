@@ -18,7 +18,7 @@ import type {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
-import {Spread} from 'globals';
+
 import {
   $getNodeByKey,
   $getSelection,

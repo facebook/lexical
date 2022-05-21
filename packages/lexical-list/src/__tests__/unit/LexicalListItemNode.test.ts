@@ -18,6 +18,7 @@ import {
 
 const editorConfig = Object.freeze({
   namespace: '',
+
   theme: {
     list: {
       listitem: 'my-listItem-item-class',
@@ -127,6 +128,7 @@ describe('LexicalListItemNode tests', () => {
       let listItemNode1;
       let listItemNode2;
       let listItemNode3;
+
       beforeEach(async () => {
         const {editor} = testEnv;
 
@@ -241,6 +243,7 @@ describe('LexicalListItemNode tests', () => {
       let listItemNode1;
       let listItemNode2;
       let listItemNode3;
+
       beforeEach(async () => {
         const {editor} = testEnv;
 
@@ -351,6 +354,7 @@ describe('LexicalListItemNode tests', () => {
       let listNode;
       let listItemNode1;
       let listItemNode2;
+
       beforeEach(async () => {
         const {editor} = testEnv;
 

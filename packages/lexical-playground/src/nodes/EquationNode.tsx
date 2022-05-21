@@ -16,7 +16,7 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {Spread} from 'globals';
+
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_HIGH,

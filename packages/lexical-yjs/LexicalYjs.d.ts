@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import type {
   Doc,
   RelativePosition,
@@ -234,19 +235,23 @@ export declare class CollabElementNode {
   ): number;
   destroy(binding: Binding): void;
 }
+
 export function createUndoManager(binding: Binding, root: XmlText): UndoManager;
+
 export function initLocalState(
   provider: Provider,
   name: string,
   color: string,
   focusing: boolean,
 ): void;
+
 export function setLocalStateFocus(
   provider: Provider,
   name: string,
   color: string,
   focusing: boolean,
 ): void;
+
 export function createBinding(
   editor: LexicalEditor,
   provider: Provider,
@@ -254,7 +259,9 @@ export function createBinding(
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
 ): Binding;
+
 export function syncCursorPositions(binding: Binding, provider: Provider): void;
+
 export function syncLexicalUpdateToYjs(
   binding: Binding,
   provider: Provider,
@@ -265,6 +272,7 @@ export function syncLexicalUpdateToYjs(
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void;
+
 export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,

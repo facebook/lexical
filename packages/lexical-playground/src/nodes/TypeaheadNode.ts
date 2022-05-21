@@ -8,8 +8,8 @@
 
 import type {EditorConfig, SerializedTextNode} from 'lexical';
 
-import {Spread} from 'globals';
 import {TextNode} from 'lexical';
+import {Spread} from 'libdefs/global';
 
 export type SerializedTypeaheadNode = Spread<
   {

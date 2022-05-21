@@ -15,8 +15,8 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {Spread} from 'globals';
 import {ElementNode} from 'lexical';
+import {Spread} from 'libdefs/global';
 
 export type SerializedOverflowNode = Spread<
   {

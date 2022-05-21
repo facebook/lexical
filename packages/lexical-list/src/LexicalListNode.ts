@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ *
  */
 
 import type {
@@ -22,8 +22,8 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {Spread} from 'globals';
 import {$createTextNode, ElementNode} from 'lexical';
+import {Spread} from 'libdefs/global';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
@@ -129,7 +129,7 @@ export class ListNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedListNode {
     return {
       ...super.exportJSON(),
       listType: this.getListType(),

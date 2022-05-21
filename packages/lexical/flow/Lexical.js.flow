@@ -241,6 +241,11 @@ export type EditorConfig = {
   namespace: string,
   theme: EditorThemeClasses,
   disableEvents?: boolean,
+  editorState?: EditorState,
+  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+  onError: ErrorHandler,
+  parentEditor?: LexicalEditor,
+  readOnly?: boolean,
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;
@@ -382,8 +387,8 @@ declare export class LexicalNode {
   replace<N: LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
   insertBefore(nodeToInsert: LexicalNode): LexicalNode;
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection;
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection;
+  selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
+  selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;

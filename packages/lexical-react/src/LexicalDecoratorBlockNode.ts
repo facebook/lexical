@@ -13,8 +13,8 @@ import type {
   SerializedLexicalNode,
 } from 'lexical';
 
-import {Spread} from 'globals';
 import {DecoratorNode} from 'lexical';
+import {Spread} from 'libdefs/global';
 
 export type SerializedDecoratorBlockNode = Spread<
   {

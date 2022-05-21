@@ -7,7 +7,7 @@
  */
 
 import {ListNodeTagType} from './src/LexicalListNode';
-import {Spread} from 'globals';
+
 import {
   ElementNode,
   LexicalNode,
@@ -17,6 +17,7 @@ import {
   LexicalCommand,
   SerializedElementNode,
 } from 'lexical';
+import {Spread} from 'libdefs/global';
 
 export type ListType = 'number' | 'bullet' | 'check';
 export function $createListItemNode(checked?: boolean | void): ListItemNode;

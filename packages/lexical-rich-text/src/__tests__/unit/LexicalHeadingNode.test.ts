@@ -16,6 +16,7 @@ import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   namespace: '',
+
   theme: {
     heading: {
       h1: 'my-h1-class',

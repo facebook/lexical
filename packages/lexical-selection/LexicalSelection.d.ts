@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import type {
   ElementNode,
   GridSelection,
@@ -15,6 +16,7 @@ import type {
   Point,
   RangeSelection,
 } from 'lexical';
+
 export function $cloneContents<T extends LexicalNode>(
   selection: RangeSelection | NodeSelection | GridSelection,
 ): {

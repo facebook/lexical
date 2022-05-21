@@ -6,8 +6,8 @@
  *
  */
 
+import {Spread} from 'libdefs/global';
 import {Class} from 'utility-types';
-import {Spread} from 'globals';
 
 /**
  * LexicalCommands
@@ -172,6 +172,7 @@ export declare class LexicalEditor {
   blur(): void;
   isReadOnly(): boolean;
   setReadOnly(readOnly: boolean): void;
+  toJSON(): void;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void;
@@ -240,11 +241,13 @@ export type EditorThemeClasses = {
         | Record<string, EditorThemeClassName>
       >;
 };
+
 export type EditorConfig = {
   namespace: string;
   theme: EditorThemeClasses;
   disableEvents?: boolean;
 };
+
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;
 export const COMMAND_PRIORITY_LOW = 1;
@@ -252,6 +255,7 @@ export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 export type IntentionallyMarkedAsDirtyElement = boolean;
+
 export function createEditor(editorConfig?: {
   namespace?: string;
   editorState?: EditorState;
@@ -337,8 +341,10 @@ export declare class LexicalNode {
   __type: string;
   __key: NodeKey;
   __parent: null | NodeKey;
+  static getType: () => string;
   getType(): string;
   clone(data: any): LexicalNode;
+  exportJSON(): void;
   importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey);
   getType(): string;
@@ -371,13 +377,13 @@ export declare class LexicalNode {
   ): number;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
-  updateDOM(prevNode: any, dom: HTMLElement, config: EditorConfig): boolean;
+  updateDOM(prevNode: unknown, dom: HTMLElement, config: EditorConfig): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
   insertBefore(nodeToInsert: LexicalNode): LexicalNode;
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection;
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection;
+  selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
+  selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
@@ -391,6 +397,7 @@ export type ParsedNode = {
   __parent: null | NodeKey;
 };
 export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
+
 export function $createNodeFromParse(
   parsedNode: ParsedNode,
   parsedNodeMap: ParsedNodeMap,
@@ -445,6 +452,7 @@ export declare class GridSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
 }
+
 export function $isGridSelection(
   x: unknown | null | undefined,
 ): x is GridSelection;
@@ -464,6 +472,7 @@ export declare class NodeSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
 }
+
 export function $isNodeSelection(
   x: unknown | null | undefined,
 ): x is NodeSelection;
@@ -544,16 +553,21 @@ declare class _Point {
 }
 
 export function $createRangeSelection(): RangeSelection;
+
 export function $createNodeSelection(): NodeSelection;
+
 export function $createGridSelection(): GridSelection;
+
 export function $isRangeSelection(
   x: unknown | null | undefined,
 ): x is RangeSelection;
+
 export function $getSelection():
   | null
   | RangeSelection
   | NodeSelection
   | GridSelection;
+
 export function $getPreviousSelection():
   | null
   | RangeSelection
@@ -629,7 +643,9 @@ export declare class TextNode extends LexicalNode {
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
   exportJSON(): SerializedTextNode;
 }
+
 export function $createTextNode(text?: string): TextNode;
+
 export function $isTextNode(
   node: TextNode | LexicalNode | null | undefined,
 ): node is TextNode;
@@ -649,7 +665,9 @@ export declare class LineBreakNode extends LexicalNode {
   ): LineBreakNode;
   exportJSON(): SerializedLexicalNode;
 }
+
 export function $createLineBreakNode(): LineBreakNode;
+
 export function $isLineBreakNode(
   node: LexicalNode | null | undefined,
 ): node is LineBreakNode;
@@ -674,6 +692,7 @@ export declare class RootNode extends ElementNode {
   static importJSON(serializedRootNode: SerializedRootNode): RootNode;
   exportJSON(): SerializedElementNode;
 }
+
 export function $isRootNode(
   node: LexicalNode | null | undefined,
 ): node is RootNode;
@@ -681,7 +700,7 @@ export function $isRootNode(
 /**
  * LexicalElementNode
  */
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
+export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 export declare class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
   __format: number;
@@ -689,7 +708,7 @@ export declare class ElementNode extends LexicalNode {
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey);
   getFormat(): number;
-  getFormatType(): 'left' | 'center' | 'right' | 'justify';
+  getFormatType(): ElementFormatType;
   getIndent(): number;
   getChildren<T extends LexicalNode>(): Array<T>;
   getChildren<T extends Array<LexicalNode>>(): T;
@@ -741,6 +760,7 @@ export declare class ElementNode extends LexicalNode {
   ): ElementNode;
   exportJSON(): SerializedElementNode;
 }
+
 export function $isElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode;
@@ -754,6 +774,7 @@ export declare class DecoratorNode<X> extends LexicalNode {
   isIsolated(): boolean;
   isTopLevel(): boolean;
 }
+
 export function $isDecoratorNode(
   node: LexicalNode | null | undefined,
 ): node is DecoratorNode<unknown>;
@@ -774,15 +795,19 @@ export declare class ParagraphNode extends ElementNode {
   ): ParagraphNode;
   exportJSON(): SerializedElementNode;
 }
+
 export function $createParagraphNode(): ParagraphNode;
+
 export function $isParagraphNode(
   node: LexicalNode | null | undefined,
 ): node is ParagraphNode;
 export declare class GridNode extends ElementNode {}
+
 export function $isGridNode(
   node: LexicalNode | null | undefined,
 ): node is GridNode;
 export declare class GridRowNode extends ElementNode {}
+
 export function $isGridRowNode(
   node: LexicalNode | null | undefined,
 ): node is GridRowNode;
@@ -790,6 +815,7 @@ export declare class GridCellNode extends ElementNode {
   __colSpan: number;
   constructor(colSpan: number, key?: NodeKey);
 }
+
 export function $isGridCellNode(
   node: LexicalNode | null | undefined,
 ): node is GridCellNode;
@@ -797,19 +823,27 @@ export function $isGridCellNode(
 /**
  * LexicalUtils
  */
+
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
+
 export function $getNodeByKey<N extends LexicalNode>(key: NodeKey): N | null;
+
 export function $getRoot(): RootNode;
+
 export function $isLeafNode(
   node: LexicalNode | null | undefined,
 ): node is TextNode | LineBreakNode | DecoratorNode<unknown>;
+
 export function $setCompositionKey(compositionKey: null | NodeKey): void;
+
 export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void;
+
 export function $nodesOfType<T extends LexicalNode>(klass: Class<T>): Array<T>;
+
 export function $getDecoratorNode(
   focus: Point,
   isBackward: boolean,
@@ -844,7 +878,7 @@ export type SerializedElementNode = Spread<
   {
     children: Array<SerializedLexicalNode>;
     direction: 'ltr' | 'rtl' | null;
-    format: 'left' | 'center' | 'right' | 'justify';
+    format: ElementFormatType;
     indent: number;
   },
   SerializedLexicalNode

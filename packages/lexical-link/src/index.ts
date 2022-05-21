@@ -19,8 +19,8 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
+import {Spread} from 'libdefs/global';
 import invariant from 'shared-ts/invariant';
 
 export type SerializedLinkNode = Spread<
@@ -84,7 +84,7 @@ export class LinkNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedLinkNode {
     return {
       ...super.exportJSON(),
       type: 'link',
@@ -180,7 +180,7 @@ export class AutoLinkNode extends LinkNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
       type: 'autolink',

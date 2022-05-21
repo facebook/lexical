@@ -12,6 +12,7 @@ import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
   namespace: '',
+
   theme: {
     quote: 'my-quote-class',
   },

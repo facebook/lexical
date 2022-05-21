@@ -295,10 +295,6 @@ describe('LexicalSelectionHelpers tests', () => {
           return;
         }
 
-        if ($isNodeSelection(selection)) {
-          return;
-        }
-
         expect(selection.anchor).toEqual(
           expect.objectContaining({
             key: 'a',

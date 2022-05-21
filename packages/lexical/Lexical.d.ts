@@ -91,7 +91,6 @@ type Listeners = {
   update: Set<UpdateListener>;
 };
 type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
-// $FlowFixMe[unclear-type]
 type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
@@ -593,9 +592,7 @@ export declare class TextNode extends LexicalNode {
   isSimpleText(): boolean;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
-  // $FlowFixMe
   createDOM(config: EditorConfig): HTMLElement;
-  // $FlowFixMe
   updateDOM(
     prevNode: TextNode,
     dom: HTMLElement,

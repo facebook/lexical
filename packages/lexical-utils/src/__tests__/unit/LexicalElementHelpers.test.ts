@@ -18,6 +18,7 @@ describe('LexicalElementHelpers tests', () => {
       addClassNamesToElement(element, 'test-class');
 
       expect(element.className).toEqual('test-class');
+
       removeClassNamesFromElement(element, 'test-class');
 
       expect(element.className).toEqual('');
@@ -35,6 +36,7 @@ describe('LexicalElementHelpers tests', () => {
       addClassNamesToElement(element, 'a', 'b', 'c');
 
       expect(element.className).toEqual('a b c');
+
       removeClassNamesFromElement(element, 'a', 'b', 'c');
 
       expect(element.className).toEqual('');
@@ -45,6 +47,7 @@ describe('LexicalElementHelpers tests', () => {
       addClassNamesToElement(element, 'a b c');
 
       expect(element.className).toEqual('a b c');
+
       removeClassNamesFromElement(element, 'a b c');
 
       expect(element.className).toEqual('');

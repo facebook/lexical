@@ -22,7 +22,6 @@ import type {
 import {addClassNamesToElement} from '@lexical/utils';
 import {Spread} from 'globals';
 import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
@@ -126,8 +125,6 @@ export class TableNode extends GridNode {
     tableCellNode: TableCellNode,
     grid: Grid,
   ): {x: number; y: number} {
-    invariant(grid, 'Grid not found.');
-
     const {rows, cells} = grid;
 
     for (let y = 0; y < rows; y++) {
@@ -151,8 +148,6 @@ export class TableNode extends GridNode {
   }
 
   getCellFromCords(x: number, y: number, grid: Grid): Cell | null {
-    invariant(grid, 'Grid not found.');
-
     const {cells} = grid;
 
     const row = cells[y];

@@ -26,9 +26,9 @@ import {
   $setSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import getDOMSelection from 'shared/getDOMSelection';
-import invariant from 'shared/invariant';
+import {CAN_USE_DOM} from 'shared-ts/canUseDOM';
+import getDOMSelection from 'shared-ts/getDOMSelection';
+import invariant from 'shared-ts/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
@@ -198,9 +198,12 @@ export class TableSelection {
       this.anchorCell = null;
       this.focusCell = null;
       this.hasHijackedSelectionStyles = false;
+
       $updateDOMForSelection(grid, null);
       $setSelection(null);
+
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+
       this.enableHighlightStyle();
     });
   }
@@ -296,15 +299,20 @@ export class TableSelection {
           $isTableCellNode(focusTableCellNode)
         ) {
           const focusNodeKey = focusTableCellNode.getKey();
+
           this.gridSelection = $createGridSelection();
+
           this.focusCellNodeKey = focusNodeKey;
           this.gridSelection.set(
-            this.tableNodeKey, // $FlowFixMe This is not null, as you can see in the statement above.
+            this.tableNodeKey,
             this.anchorCellNodeKey,
             this.focusCellNodeKey,
           );
+
           $setSelection(this.gridSelection);
+
           this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+
           $updateDOMForSelection(this.grid, this.gridSelection);
         }
       }
@@ -336,10 +344,11 @@ export class TableSelection {
         invariant(false, 'Expected grid selection');
       }
 
-      // This is to make Flow play ball.
       const formatSelection = $createRangeSelection();
+
       const anchor = formatSelection.anchor;
       const focus = formatSelection.focus;
+
       selection.getNodes().forEach((cellNode) => {
         if ($isTableCellNode(cellNode) && cellNode.getTextContentSize() !== 0) {
           anchor.set(cellNode.getKey(), 0, 'element');
@@ -347,7 +356,9 @@ export class TableSelection {
           formatSelection.formatText(type);
         }
       });
+
       $setSelection(selection);
+
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     });
   }
@@ -389,8 +400,11 @@ export class TableSelection {
           });
         }
       });
+
       $updateDOMForSelection(this.grid, null);
+
       $setSelection(null);
+
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     });
   }

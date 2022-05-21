@@ -30,8 +30,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
-import {__DEV__} from 'libdefs/globals';
-import invariant from 'shared/invariant';
+import invariant from 'shared-ts/invariant';
 
 const cssToStyles: Map<string, Record<string, string>> = new Map();
 
@@ -151,6 +150,7 @@ export function $cloneContents(
 } {
   const clone = $cloneContentsImpl(selection);
 
+  // @ts-ignore
   if (__DEV__) {
     const nodeMap = clone.nodeMap;
 

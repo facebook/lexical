@@ -17,7 +17,6 @@ import type {
   TextFormatType,
   LexicalCommand,
 } from 'lexical';
-import {$Values} from 'utility-types';
 
 export enum TableCellHeaderStates {
   NO_STATUS = 0,
@@ -29,7 +28,6 @@ export enum TableCellHeaderStates {
 /**
  * LexicalTableCellNode
  */
-
 export declare class TableCellNode extends ElementNode {
   static getType(): string;
   static clone(node: TableCellNode): TableCellNode;
@@ -63,7 +61,6 @@ declare function $createTableCellNode(
   colSpan?: number,
   width?: number | null | undefined,
 ): TableCellNode;
-
 export declare function $isTableCellNode(
   node?: LexicalNode,
 ): node is TableCellNode;
@@ -71,7 +68,6 @@ export declare function $isTableCellNode(
 /**
  * LexicalTableNode
  */
-
 export declare class TableNode extends ElementNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
@@ -115,16 +111,13 @@ declare function $isTableRowNode(node?: LexicalNode): node is TableRowNode;
 /**
  * LexicalTableSelectionHelpers
  */
-
 export type Cell = {
   elem: HTMLElement;
   highlighted: boolean;
   x: number;
   y: number;
 };
-
 export type Cells = Array<Array<Cell>>;
-
 export type Grid = {
   cells: Cells;
   columns: number;
@@ -206,7 +199,6 @@ declare function $deleteTableColumn(
 /**
  * LexicalTableSelection.js
  */
-
 export declare class TableSelection {
   currentX: number;
   currentY: number;
@@ -229,10 +221,8 @@ export declare class TableSelection {
   formatCells(type: TextFormatType): void;
   clearText(): void;
 }
-
 export type InsertTableCommandPayload = Readonly<{
   columns: string;
   rows: string;
 }>;
-
 export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;

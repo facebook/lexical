@@ -85,7 +85,6 @@ export function applyTableHandlers(
         return;
       }
 
-      // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target as Node);
 
       if (cell !== null) {
@@ -113,7 +112,6 @@ export function applyTableHandlers(
     }
 
     if (isMouseDown) {
-      // $FlowFixMe: event.target is always a Node on the DOM
       const cell = getCellFromTarget(event.target as Node);
 
       if (cell !== null) {

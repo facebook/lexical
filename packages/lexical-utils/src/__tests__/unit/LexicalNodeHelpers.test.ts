@@ -134,13 +134,10 @@ describe('LexicalNodeHelpers tests', () => {
         const secondToLast = expectedNodes[expectedNodes.length - 2];
 
         expect($dfs(first.node, last.node)).toEqual(expectedNodes);
-
         expect($dfs(second.node, secondToLast.node)).toEqual(
           expectedNodes.slice(1, expectedNodes.length - 1),
         );
-
         expect($dfs()).toEqual(expectedNodes);
-
         expect($dfs($getRoot())).toEqual(expectedNodes);
       });
     });

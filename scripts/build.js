@@ -345,7 +345,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalTable',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Table',
@@ -400,7 +400,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalSelection',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Selection',
@@ -411,7 +411,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalText',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Text',
@@ -433,7 +433,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalUtils',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Utils',

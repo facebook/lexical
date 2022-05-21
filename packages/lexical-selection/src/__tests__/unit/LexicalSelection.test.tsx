@@ -34,7 +34,7 @@ import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {
   applySelectionInputs,
-  convertToInertNode,
+  convertToImmutableNode,
   convertToSegmentedNode,
   deleteBackward,
   deleteWordBackward,
@@ -44,7 +44,7 @@ import {
   formatStrikeThrough,
   formatUnderline,
   getNodeFromPath,
-  insertInertNode,
+  insertImmutableNode,
   insertSegmentedNode,
   insertText,
   moveBackward,
@@ -167,13 +167,10 @@ describe('LexicalSelection tests', () => {
     expect(actualSelection.anchorNode).toBe(
       getNodeFromPath(expectedSelection.anchorPath, rootElement),
     );
-
     expect(actualSelection.anchorOffset).toBe(expectedSelection.anchorOffset);
-
     expect(actualSelection.focusNode).toBe(
       getNodeFromPath(expectedSelection.focusPath, rootElement),
     );
-
     expect(actualSelection.focusOffset).toBe(expectedSelection.focusOffset);
   }
 
@@ -383,7 +380,7 @@ describe('LexicalSelection tests', () => {
         focusOffset: 16,
         focusPath: [0, 0, 0],
       },
-      inputs: [insertInertNode('Dominic Gannaway')],
+      inputs: [insertImmutableNode('Dominic Gannaway')],
       name: 'Creation of an immutable node',
     },
     {
@@ -400,7 +397,7 @@ describe('LexicalSelection tests', () => {
       inputs: [
         insertText('Dominic Gannaway'),
         moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
-        convertToInertNode(),
+        convertToImmutableNode(),
       ],
       name: 'Convert text to an immutable node',
     },
@@ -435,7 +432,8 @@ describe('LexicalSelection tests', () => {
         convertToSegmentedNode(),
       ],
       name: 'Convert text to a segmented node',
-    }, // Tests need fixing:
+    },
+    // Tests need fixing:
     // ...GRAPHEME_SCENARIOS.flatMap(({description, grapheme}) => [
     //   {
     //     name: `Delete backward eliminates entire ${description} (${grapheme})`,
@@ -909,7 +907,7 @@ describe('LexicalSelection tests', () => {
         },
         inputs: [
           insertText('Hello '),
-          insertInertNode('Bob'),
+          insertImmutableNode('Bob'),
           moveBackward(1),
           moveBackward(1),
           moveEnd(),
@@ -960,12 +958,13 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
 
         const paragraph = root.getFirstChild<ParagraphNode>();
+
         const elementNode = $createTestElementNode();
         const text = $createTextNode();
 
         paragraph.append(elementNode);
-
         elementNode.append(text);
+
         const selectedNodes = $getSelection().getNodes();
 
         expect(selectedNodes.length).toBe(1);
@@ -1054,7 +1053,8 @@ describe('LexicalSelection tests', () => {
         },
         focusOffset: 1,
         name: 'replace - Collapsed selection on end; replace beginning',
-      }, // All selected; add/remove/replace on beginning
+      },
+      // All selected; add/remove/replace on beginning
       {
         anchorOffset: 0,
         fn: (paragraph, text) => {
@@ -1116,7 +1116,8 @@ describe('LexicalSelection tests', () => {
         },
         focusOffset: 1,
         name: 'replace - All selected; replace on beginning',
-      }, // Selection beginning; add/remove/replace on end
+      },
+      // Selection beginning; add/remove/replace on end
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
@@ -1208,7 +1209,8 @@ describe('LexicalSelection tests', () => {
         },
         focusOffset: 1,
         name: 'replace - Selection beginning; replace on end',
-      }, // All selected; add/remove/replace in end offset [1, 2] -> [1, N, 2]
+      },
+      // All selected; add/remove/replace in end offset [1, 2] -> [1, N, 2]
       {
         anchorOffset: 0,
         fn: (paragraph, text) => {
@@ -1302,7 +1304,8 @@ describe('LexicalSelection tests', () => {
         },
         focusOffset: 2,
         name: 'replace - All selected; replace in end offset',
-      }, // All selected; add/remove/replace in middle [1, 2, 3] -> [1, 2, N, 3]
+      },
+      // All selected; add/remove/replace in middle [1, 2, 3] -> [1, 2, N, 3]
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
@@ -1405,7 +1408,8 @@ describe('LexicalSelection tests', () => {
         },
         focusOffset: 2,
         name: 'replace - All selected; replace in middle',
-      }, // Edge cases
+      },
+      // Edge cases
       {
         anchorOffset: 3,
         fn: (paragraph, originalText1) => {

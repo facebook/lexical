@@ -75,10 +75,10 @@ module.exports = {
         '^@lexical/rich-text$':
           '<rootDir>/packages/lexical-rich-text/src/index.ts',
         '^@lexical/selection$':
-          '<rootDir>/packages/lexical-selection/src/index.js',
-        '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
-        '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.js',
-        '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.js',
+          '<rootDir>/packages/lexical-selection/src/index.ts',
+        '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.ts',
+        '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.ts',
+        '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.ts',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
         '^lexical$': '<rootDir>/packages/lexical/src/index.js',
         '^shared-ts/canUseDOM$':

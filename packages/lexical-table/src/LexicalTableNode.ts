@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
@@ -21,22 +20,23 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
+import {Spread} from 'globals';
 import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
-import {$isTableRowNode} from './LexicalTableRowNode';
+import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTableGrid} from './LexicalTableSelectionHelpers';
 
-export type SerializedTableNode = {
-  ...SerializedElementNode,
-  type: 'table',
-  version: 1,
-  ...
-};
+export type SerializedTableNode = Spread<
+  {
+    type: 'table';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 export class TableNode extends GridNode {
-  __grid: ?Grid;
+  __grid: Grid;
 
   static getType(): 'table' {
     return 'table';
@@ -59,7 +59,7 @@ export class TableNode extends GridNode {
     return $createTableNode();
   }
 
-  constructor(key?: NodeKey): void {
+  constructor(key?: NodeKey) {
     super(key);
   }
 
@@ -88,22 +88,26 @@ export class TableNode extends GridNode {
       ...super.exportDOM(editor),
       after: (tableElement) => {
         if (tableElement) {
-          const newElement = tableElement.cloneNode();
+          const newElement = tableElement.cloneNode() as ParentNode;
           const colGroup = document.createElement('colgroup');
           const tBody = document.createElement('tbody');
           tBody.append(...tableElement.children);
-          const firstRow = this.getFirstChildOrThrow();
+          const firstRow = this.getFirstChildOrThrow<TableRowNode>();
+
           if (!$isTableRowNode(firstRow)) {
             throw new Error('Expected to find row node.');
           }
+
           const colCount = firstRow.getChildrenSize();
+
           for (let i = 0; i < colCount; i++) {
             const col = document.createElement('col');
             colGroup.append(col);
           }
-          //$FlowFixMe This function does exist and is supported by major browsers.
+
           newElement.replaceChildren(colGroup, tBody);
-          return newElement;
+
+          return newElement as HTMLElement;
         }
       },
     };
@@ -120,13 +124,12 @@ export class TableNode extends GridNode {
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
     grid: Grid,
-  ): {x: number, y: number} {
-    invariant(grid, 'Grid not found.');
-
+  ): {x: number; y: number} {
     const {rows, cells} = grid;
 
     for (let y = 0; y < rows; y++) {
       const row = cells[y];
+
       if (row == null) {
         throw new Error(`Row not found at y:${y}`);
       }
@@ -144,9 +147,7 @@ export class TableNode extends GridNode {
     throw new Error('Cell not found in table.');
   }
 
-  getCellFromCords(x: number, y: number, grid: Grid): ?Cell {
-    invariant(grid, 'Grid not found.');
-
+  getCellFromCords(x: number, y: number, grid: Grid): Cell | null {
     const {cells} = grid;
 
     const row = cells[y];
@@ -174,7 +175,7 @@ export class TableNode extends GridNode {
     return cell;
   }
 
-  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode {
+  getCellNodeFromCords(x: number, y: number, grid: Grid): TableCellNode | null {
     const cell = this.getCellFromCords(x, y, grid);
 
     if (cell == null) {
@@ -230,6 +231,8 @@ export function $createTableNode(): TableNode {
   return new TableNode();
 }
 
-export function $isTableNode(node: ?LexicalNode): boolean %checks {
+export function $isTableNode(
+  node: LexicalNode | null | undefined,
+): node is TableNode {
   return node instanceof TableNode;
 }

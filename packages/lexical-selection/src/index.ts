@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {
@@ -31,15 +30,17 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
-import invariant from 'shared/invariant';
+import invariant from 'shared-ts/invariant';
 
-const cssToStyles: Map<string, {[string]: string}> = new Map();
+const cssToStyles: Map<string, Record<string, string>> = new Map();
 
-export function $cloneWithProperties<T: LexicalNode>(node: T): T {
-  const latest = node.getLatest();
+export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
+  const latest = node.getLatest<T>();
   const constructor = latest.constructor;
-  const clone = constructor.clone(latest);
+  // @ts-expect-error
+  const clone: T = constructor.clone(latest);
   clone.__parent = latest.__parent;
+
   if ($isElementNode(latest) && $isElementNode(clone)) {
     clone.__children = Array.from(latest.__children);
     clone.__format = latest.__format;
@@ -51,7 +52,7 @@ export function $cloneWithProperties<T: LexicalNode>(node: T): T {
     clone.__mode = latest.__mode;
     clone.__detail = latest.__detail;
   }
-  // $FlowFixMe
+
   return clone;
 }
 
@@ -61,9 +62,11 @@ function $getIndexFromPossibleClone(
   nodeMap: Map<NodeKey, LexicalNode>,
 ): number {
   const parentClone = nodeMap.get(parent.getKey());
+
   if ($isElementNode(parentClone)) {
     return parentClone.__children.indexOf(node.getKey());
   }
+
   return node.getIndexWithinParent();
 }
 
@@ -71,35 +74,42 @@ function $getParentAvoidingExcludedElements(
   node: LexicalNode,
 ): ElementNode | null {
   let parent = node.getParent();
+
   while (parent !== null && parent.excludeFromCopy('clone')) {
     parent = parent.getParent();
   }
+
   return parent;
 }
 
 function $copyLeafNodeBranchToRoot(
   leaf: LexicalNode,
-  startingOffset: void | number,
-  endingOffset: void | number,
+  startingOffset: number,
+  endingOffset: number,
   isLeftSide: boolean,
   range: Array<NodeKey>,
   nodeMap: Map<NodeKey, LexicalNode>,
 ): void {
   let node = leaf;
   let offset = startingOffset;
+
   while (node !== null) {
     const parent = $getParentAvoidingExcludedElements(node);
+
     if (parent === null) {
       break;
     }
+
     if (!$isElementNode(node) || !node.excludeFromCopy('clone')) {
       const key = node.getKey();
       let clone = nodeMap.get(key);
       const needsClone = clone === undefined;
+
       if (needsClone) {
         clone = $cloneWithProperties<LexicalNode>(node);
         nodeMap.set(key, clone);
       }
+
       if ($isTextNode(clone) && !clone.isSegmented() && !clone.isToken()) {
         clone.__text = clone.__text.slice(
           isLeftSide ? offset : 0,
@@ -111,15 +121,18 @@ function $copyLeafNodeBranchToRoot(
           isLeftSide ? undefined : (offset || 0) + 1,
         );
       }
+
       if ($isRootNode(parent)) {
         if (needsClone) {
           // We only want to collect a range of top level nodes.
           // So if the parent is the root, we know this is a top level.
           range.push(key);
         }
+
         break;
       }
     }
+
     offset = $getIndexFromPossibleClone(node, parent, nodeMap);
     node = parent;
   }
@@ -132,18 +145,22 @@ function errGetLatestOnClone(): void {
 export function $cloneContents(
   selection: RangeSelection | NodeSelection | GridSelection,
 ): {
-  nodeMap: Array<[NodeKey, LexicalNode]>,
-  range: Array<NodeKey>,
+  nodeMap: Array<[NodeKey, LexicalNode]>;
+  range: Array<NodeKey>;
 } {
   const clone = $cloneContentsImpl(selection);
+
+  // @ts-ignore
   if (__DEV__) {
     const nodeMap = clone.nodeMap;
+
     for (let i = 0; i < nodeMap.length; i++) {
       const node = nodeMap[i][1];
-      // $FlowFixMe[method-unbinding]
+
       if (node.getLatest === errGetLatestOnClone) {
         continue;
       }
+
       Object.setPrototypeOf(
         node,
         Object.create(Object.getPrototypeOf(node), {
@@ -157,55 +174,65 @@ export function $cloneContents(
       );
     }
   }
+
   return clone;
 }
 
 function $cloneContentsImpl(
   selection: RangeSelection | NodeSelection | GridSelection,
 ): {
-  nodeMap: Array<[NodeKey, LexicalNode]>,
-  range: Array<NodeKey>,
+  nodeMap: Array<[NodeKey, LexicalNode]>;
+  range: Array<NodeKey>;
 } {
   if ($isRangeSelection(selection)) {
     const anchor = selection.anchor;
     const focus = selection.focus;
     const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
     const nodes = selection.getNodes();
+
     if (nodes.length === 0) {
-      return {nodeMap: [], range: []};
+      return {
+        nodeMap: [],
+        range: [],
+      };
     }
+
     // Check if we can use the parent of the nodes, if the
     // parent can't be empty, then it's important that we
     // also copy that element node along with its children.
     let nodesLength = nodes.length;
     const firstNode = nodes[0];
     const firstNodeParent = firstNode.getParent();
+
     if (
       firstNodeParent !== null &&
       (!firstNodeParent.canBeEmpty() || $isRootNode(firstNodeParent))
     ) {
       const parentChildren = firstNodeParent.__children;
       const parentChildrenLength = parentChildren.length;
+
       if (parentChildrenLength === nodesLength) {
         let areTheSame = true;
+
         for (let i = 0; i < parentChildren.length; i++) {
           if (parentChildren[i] !== nodes[i].__key) {
             areTheSame = false;
             break;
           }
         }
+
         if (areTheSame) {
           nodesLength++;
           nodes.push(firstNodeParent);
         }
       }
     }
+
     const lastNode = nodes[nodesLength - 1];
     const isBefore = anchor.isBefore(focus);
     const nodeMap = new Map();
     const range = [];
     const isOnlyText = $isTextNode(firstNode) && nodesLength === 1;
-
     // Do first node to root
     $copyLeafNodeBranchToRoot(
       firstNode,
@@ -215,23 +242,28 @@ function $cloneContentsImpl(
       range,
       nodeMap,
     );
+
     // Copy all nodes between
     for (let i = 0; i < nodesLength; i++) {
       const node = nodes[i];
       const key = node.getKey();
+
       if (
         !nodeMap.has(key) &&
         (!$isElementNode(node) || !node.excludeFromCopy('clone'))
       ) {
         const clone = $cloneWithProperties<LexicalNode>(node);
+
         if ($isRootNode(node.getParent())) {
           range.push(node.getKey());
         }
+
         if (key !== 'root') {
           nodeMap.set(key, clone);
         }
       }
     }
+
     // Do last node to root
     $copyLeafNodeBranchToRoot(
       lastNode,
@@ -242,35 +274,47 @@ function $cloneContentsImpl(
       nodeMap,
     );
 
-    return {nodeMap: Array.from(nodeMap.entries()), range};
+    return {
+      nodeMap: Array.from(nodeMap.entries()),
+      range,
+    };
   } else if ($isGridSelection(selection)) {
-    const nodeMap = selection.getNodes().map((node) => {
+    const nodeMap = selection.getNodes().map<[NodeKey, LexicalNode]>((node) => {
       const nodeKey = node.getKey();
+
       const clone = $cloneWithProperties<LexicalNode>(node);
+
       return [nodeKey, clone];
     });
 
-    return {nodeMap, range: [selection.gridKey]};
+    return {
+      nodeMap,
+      range: [selection.gridKey],
+    };
   }
 
   invariant(false, 'TODO');
 }
 
-export function getStyleObjectFromCSS(css: string): {[string]: string} | null {
+export function getStyleObjectFromCSS(
+  css: string,
+): Record<string, string> | null {
   return cssToStyles.get(css) || null;
 }
 
-function getCSSFromStyleObject(styles: {[string]: string}): string {
+function getCSSFromStyleObject(styles: Record<string, string>): string {
   let css = '';
+
   for (const style in styles) {
     if (style) {
       css += `${style}: ${styles[style]};`;
     }
   }
+
   return css;
 }
 
-function $patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
+function $patchNodeStyle(node: TextNode, patch: Record<string, string>): void {
   const prevStyles = getStyleObjectFromCSS(node.getStyle());
   const newStyles = prevStyles ? {...prevStyles, ...patch} : patch;
   const newCSSText = getCSSFromStyleObject(newStyles);
@@ -280,16 +324,18 @@ function $patchNodeStyle(node: TextNode, patch: {[string]: string}): void {
 
 export function $patchStyleText(
   selection: RangeSelection | GridSelection,
-  patch: {[string]: string},
+  patch: Record<string, string>,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
+
   if (selection.isCollapsed()) {
     return;
   }
+
   const anchor = selection.anchor;
   const focus = selection.focus;
   const firstNodeText = firstNode.getTextContent();
@@ -298,7 +344,6 @@ export function $patchStyleText(
   let anchorOffset = anchor.offset;
   let startOffset;
   let endOffset;
-
   const isBefore = anchor.isBefore(focus);
   startOffset = isBefore ? anchorOffset : focusOffset;
   endOffset = isBefore ? focusOffset : anchorOffset;
@@ -326,6 +371,7 @@ export function $patchStyleText(
       if (startOffset === endOffset) {
         return;
       }
+
       // The entire node is selected, so just format it
       if (startOffset === 0 && endOffset === firstNodeTextLength) {
         $patchNodeStyle(firstNode, patch);
@@ -338,27 +384,29 @@ export function $patchStyleText(
         $patchNodeStyle(replacement, patch);
         replacement.select(0, endOffset - startOffset);
       }
-    }
-    // multiple nodes selected.
+    } // multiple nodes selected.
   } else {
     if ($isTextNode(firstNode)) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
-        [, firstNode] = firstNode.splitText(startOffset);
+        firstNode = firstNode.splitText(startOffset)[1];
         startOffset = 0;
       }
-      $patchNodeStyle(firstNode, patch);
+
+      $patchNodeStyle(firstNode as TextNode, patch);
     }
 
     if ($isTextNode(lastNode)) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
+
       // if the entire last node isn't selected, split it
       if (endOffset !== lastNodeTextLength) {
         [lastNode] = lastNode.splitText(endOffset);
       }
+
       if (endOffset !== 0) {
-        $patchNodeStyle(lastNode, patch);
+        $patchNodeStyle(lastNode as TextNode, patch);
       }
     }
 
@@ -366,6 +414,7 @@ export function $patchStyleText(
     for (let i = 1; i < lastIndex; i++) {
       const selectedNode = selectedNodes[i];
       const selectedNodeKey = selectedNode.getKey();
+
       if (
         $isTextNode(selectedNode) &&
         selectedNodeKey !== firstNode.getKey() &&
@@ -381,7 +430,7 @@ export function $patchStyleText(
 export function $getSelectionStyleValueForProperty(
   selection: RangeSelection,
   styleProperty: string,
-  defaultValue: string = '',
+  defaultValue = '',
 ): string {
   let styleValue = null;
   const nodes = selection.getNodes();
@@ -390,20 +439,24 @@ export function $getSelectionStyleValueForProperty(
   const isBackward = selection.isBackward();
   const endOffset = isBackward ? focus.offset : anchor.offset;
   const endNode = isBackward ? focus.getNode() : anchor.getNode();
+
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
+
     // if no actual characters in the end node are selected, we don't
     // include it in the selection for purposes of determining style
     // value
     if (i !== 0 && endOffset === 0 && node.is(endNode)) {
       continue;
     }
+
     if ($isTextNode(node)) {
       const nodeStyleValue = $getNodeStyleValueForProperty(
         node,
         styleProperty,
         defaultValue,
       );
+
       if (styleValue === null) {
         styleValue = nodeStyleValue;
       } else if (styleValue !== nodeStyleValue) {
@@ -414,6 +467,7 @@ export function $getSelectionStyleValueForProperty(
       }
     }
   }
+
   return styleValue === null ? defaultValue : styleValue;
 }
 
@@ -424,9 +478,11 @@ function $getNodeStyleValueForProperty(
 ): string {
   const css = node.getStyle();
   const styleObject = getStyleObjectFromCSS(css);
+
   if (styleObject !== null) {
     return styleObject[styleProperty] || defaultValue;
   }
+
   return defaultValue;
 }
 
@@ -444,6 +500,7 @@ export function $isParentElementRTL(selection: RangeSelection): boolean {
   const parent = $isRootNode(anchorNode)
     ? anchorNode
     : anchorNode.getParentOrThrow();
+
   return parent.getDirection() === 'rtl';
 }
 
@@ -469,8 +526,8 @@ export function $selectAll(selection: RangeSelection): void {
   const root = topParent.getParentOrThrow();
   let firstNode = root.getFirstDescendant();
   let lastNode = root.getLastDescendant();
-  let firstType = 'element';
-  let lastType = 'element';
+  let firstType: 'element' | 'text' = 'element';
+  let lastType: 'element' | 'text' = 'element';
   let lastOffset = 0;
 
   if ($isTextNode(firstNode)) {
@@ -478,13 +535,14 @@ export function $selectAll(selection: RangeSelection): void {
   } else if (!$isElementNode(firstNode) && firstNode !== null) {
     firstNode = firstNode.getParentOrThrow();
   }
+
   if ($isTextNode(lastNode)) {
     lastType = 'text';
     lastOffset = lastNode.getTextContentSize();
   } else if (!$isElementNode(lastNode) && lastNode !== null) {
     lastNode = lastNode.getParentOrThrow();
-    lastOffset = lastNode.getChildrenSize();
   }
+
   if (firstNode && lastNode) {
     anchor.set(firstNode.getKey(), 0, firstType);
     focus.set(lastNode.getKey(), lastOffset, lastType);
@@ -493,12 +551,15 @@ export function $selectAll(selection: RangeSelection): void {
 
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node = startingNode;
+
   while (node !== null && !$isRootNode(node)) {
-    const latest = node.getLatest();
+    const latest = node.getLatest<ElementNode>();
     const parentNode = node.getParent();
+
     if (latest.__children.length === 0) {
       node.remove(true);
     }
+
     node = parentNode;
   }
 }
@@ -511,6 +572,7 @@ export function $wrapLeafNodesInElements(
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
   const anchor = selection.anchor;
+
   if (
     nodesLength === 0 ||
     (nodesLength === 1 &&
@@ -524,12 +586,16 @@ export function $wrapLeafNodesInElements(
     const children = target.getChildren();
     let element = createElement();
     children.forEach((child) => element.append(child));
+
     if (wrappingElement) {
       element = wrappingElement.append(element);
     }
+
     target.replace(element);
+
     return;
   }
+
   const firstNode = nodes[0];
   const elementMapping: Map<NodeKey, ElementNode> = new Map();
   const elements = [];
@@ -540,25 +606,32 @@ export function $wrapLeafNodesInElements(
   let target = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
+
   if (target.isInline()) {
     target = target.getParentOrThrow();
   }
+
   while (target !== null) {
-    const prevSibling = target.getPreviousSibling();
+    const prevSibling = target.getPreviousSibling<ElementNode>();
+
     if (prevSibling !== null) {
       target = prevSibling;
       break;
     }
+
     target = target.getParentOrThrow();
+
     if ($isRootNode(target)) {
       break;
     }
   }
+
   const emptyElements = new Set();
 
   // Find any top level empty elements
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
+
     if ($isElementNode(node) && node.getChildrenSize() === 0) {
       emptyElements.add(node.getKey());
     }
@@ -572,20 +645,22 @@ export function $wrapLeafNodesInElements(
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     let parent = node.getParent();
+
     if (parent !== null && parent.isInline()) {
       parent = parent.getParent();
     }
+
     if (
       parent !== null &&
       $isLeafNode(node) &&
       !movedLeafNodes.has(node.getKey())
     ) {
       const parentKey = parent.getKey();
+
       if (elementMapping.get(parentKey) === undefined) {
         const targetElement = createElement();
         elements.push(targetElement);
         elementMapping.set(parentKey, targetElement);
-
         // Move node and its siblings to the new
         // element.
         parent.getChildren().forEach((child) => {
@@ -599,16 +674,19 @@ export function $wrapLeafNodesInElements(
       node.remove();
     }
   }
+
   if (wrappingElement) {
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i];
       wrappingElement.append(element);
     }
   }
+
   // If our target is the root, let's see if we can re-adjust
   // so that the target is the first child instead.
   if ($isRootNode(target)) {
     const firstChild = target.getFirstChild();
+
     if ($isElementNode(firstChild)) {
       target = firstChild;
     }
@@ -642,7 +720,9 @@ export function $wrapLeafNodesInElements(
       }
     }
   }
+
   const prevSelection = $getPreviousSelection();
+
   if (
     $isRangeSelection(prevSelection) &&
     isPointAttached(prevSelection.anchor) &&
@@ -662,6 +742,7 @@ export function $isAtNodeEnd(point: Point): boolean {
   if (point.type === 'text') {
     return point.offset === point.getNode().getTextContentSize();
   }
+
   return point.offset === point.getNode().getChildrenSize();
 }
 
@@ -670,26 +751,31 @@ export function $shouldOverrideDefaultCharacterSelection(
   isBackward: boolean,
 ): boolean {
   const possibleNode = $getDecoratorNode(selection.focus, isBackward);
+
   return $isDecoratorNode(possibleNode) && !possibleNode.isIsolated();
 }
 
 function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
+
   while (node != null) {
-    if (node.nodeType === 3) {
-      // $FlowFixMe: this is a Text
-      return node;
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node as Text;
     }
+
     node = node.firstChild;
   }
+
   return null;
 }
 
-function getDOMIndexWithinParent(node: Node): [Node, number] {
+function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
   const parent = node.parentNode;
+
   if (parent == null) {
     throw new Error('Should never happen');
   }
+
   return [parent, Array.from(parent.childNodes).indexOf(node)];
 }
 
@@ -703,17 +789,19 @@ export function createDOMRange(
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
   const range = document.createRange();
-  let anchorDOM = editor.getElementByKey(anchorKey);
-  let focusDOM = editor.getElementByKey(focusKey);
+  let anchorDOM = editor.getElementByKey(anchorKey) as Node;
+  let focusDOM = editor.getElementByKey(focusKey) as Node;
   let anchorOffset = _anchorOffset;
   let focusOffset = _focusOffset;
 
   if ($isTextNode(anchorNode)) {
     anchorDOM = getDOMTextNode(anchorDOM);
   }
+
   if ($isTextNode(focusNode)) {
     focusDOM = getDOMTextNode(focusDOM);
   }
+
   if (
     anchorNode === undefined ||
     focusNode === undefined ||
@@ -722,13 +810,17 @@ export function createDOMRange(
   ) {
     return null;
   }
+
   if (anchorDOM.nodeName === 'BR') {
-    [anchorDOM, anchorOffset] = getDOMIndexWithinParent(anchorDOM);
+    [anchorDOM, anchorOffset] = getDOMIndexWithinParent(anchorDOM as ChildNode);
   }
+
   if (focusDOM.nodeName === 'BR') {
-    [focusDOM, focusOffset] = getDOMIndexWithinParent(focusDOM);
+    [focusDOM, focusOffset] = getDOMIndexWithinParent(focusDOM as ChildNode);
   }
+
   const firstChild = anchorDOM.firstChild;
+
   if (
     anchorDOM === focusDOM &&
     firstChild != null &&
@@ -738,6 +830,7 @@ export function createDOMRange(
   ) {
     focusOffset = 1;
   }
+
   try {
     range.setStart(anchorDOM, anchorOffset);
     range.setEnd(focusDOM, focusOffset);
@@ -753,6 +846,7 @@ export function createDOMRange(
     range.setStart(focusDOM, focusOffset);
     range.setEnd(anchorDOM, anchorOffset);
   }
+
   return range;
 }
 
@@ -761,6 +855,7 @@ export function createRectsFromDOMRange(
   range: Range,
 ): Array<ClientRect> {
   const rootElement = editor.getRootElement();
+
   if (rootElement === null) {
     return [];
   }

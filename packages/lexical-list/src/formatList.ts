@@ -252,7 +252,6 @@ export function updateChildrenListItemValue(
   list: ListNode,
   children?: Array<LexicalNode>,
 ): void {
-  // $FlowFixMe: children are always list item nodes
   (children || list.getChildren()).forEach((child: ListItemNode) => {
     const prevValue = child.getValue();
     const nextValue = $getListItemValue(child);

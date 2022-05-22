@@ -45,13 +45,11 @@ declare interface Provider {
   connect(): void | Promise<void>;
   disconnect(): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
-  // $FlowFixMe: temp
   off(type: 'update', cb: (arg0: any) => void): void;
   off(type: 'status', cb: (arg0: {status: string}) => void): void;
   off(type: 'reload', cb: (doc: Doc) => void): void;
   on(type: 'sync', cb: (isSynced: boolean) => void): void;
   on(type: 'status', cb: (arg0: {status: string}) => void): void;
-  // $FlowFixMe: temp
   on(type: 'update', cb: (arg0: any) => void): void;
   on(type: 'reload', cb: (doc: Doc) => void): void;
 }

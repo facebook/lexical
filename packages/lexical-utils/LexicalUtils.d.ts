@@ -5,9 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {Class} from 'utility-types';
 
 import type {LexicalNode, ElementNode, LexicalEditor} from 'lexical';
+
 export type DFSNode = Readonly<{
   depth: number;
   node: LexicalNode;
@@ -30,7 +32,9 @@ declare function $getNearestNodeOfType<T extends LexicalNode>(
   node: LexicalNode,
   klass: Class<T>,
 ): T | null;
+
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
+
 export type DOMNodeToLexicalConversionMap = Record<
   string,
   DOMNodeToLexicalConversion

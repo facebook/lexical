@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {ElementNode, LexicalEditor, LexicalNode, RootNode} from 'lexical';
@@ -16,23 +15,25 @@ import {
   $isTextNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
+import invariant from 'shared-ts/invariant';
+import {Class} from 'utility-types';
 
 export type TextNodeWithOffset = {
-  node: TextNode,
-  offset: number,
+  node: TextNode;
+  offset: number;
 };
 
 export function $findTextIntersectionFromCharacters(
   root: RootNode,
   targetCharacters: number,
-): null | {node: TextNode, offset: number} {
+): null | {node: TextNode; offset: number} {
   let node = root.getFirstChild();
   let currentCharacters = 0;
 
   mainLoop: while (node !== null) {
     if ($isElementNode(node)) {
       const child = node.getFirstChild();
+
       if (child !== null) {
         node = child;
         continue;
@@ -46,6 +47,7 @@ export function $findTextIntersectionFromCharacters(
       currentCharacters += characters;
     }
     const sibling = node.getNextSibling();
+
     if (sibling !== null) {
       node = sibling;
       continue;
@@ -53,6 +55,7 @@ export function $findTextIntersectionFromCharacters(
     let parent = node.getParent();
     while (parent !== null) {
       const parentSibling = parent.getNextSibling();
+
       if (parentSibling !== null) {
         node = parentSibling;
         continue mainLoop;
@@ -61,6 +64,7 @@ export function $findTextIntersectionFromCharacters(
     }
     break;
   }
+
   return null;
 }
 
@@ -76,8 +80,10 @@ export function $joinTextNodesInElementNode(
   let textContent = '';
   const children = elementNode.getChildren();
   const length = children.length;
+
   for (let i = 0; i < length; ++i) {
     const child = children[i];
+
     if ($isTextNode(child)) {
       const childTextContent = child.getTextContent();
 
@@ -98,6 +104,7 @@ export function $joinTextNodesInElementNode(
       textContent += separator;
     }
   }
+
   return textContent;
 }
 
@@ -120,17 +127,19 @@ export function $findNodeWithOffsetFromJoinedText(
   joinedTextLength: number,
   separatorLength: number,
   elementNode: ElementNode,
-): ?TextNodeWithOffset {
+): TextNodeWithOffset | null {
   const children = elementNode.getChildren();
   const childrenLength = children.length;
   let runningLength = 0;
   let isPriorNodeTextNode = false;
+
   for (let i = 0; i < childrenLength; ++i) {
     // We must examine the offsetInJoinedText that is located
     // at the length of the string.
     // For example, given "hello", the length is 5, yet
     // the caller still wants the node + offset at the
     // right edge of the "o".
+
     if (runningLength > joinedTextLength) {
       break;
     }
@@ -151,6 +160,7 @@ export function $findNodeWithOffsetFromJoinedText(
 
     if (isJoinedOffsetWithinNode && $isTextNode(child)) {
       // Check isTextNode again for flow.
+
       return {
         node: child,
         offset: offsetInJoinedText - runningLength,
@@ -159,20 +169,23 @@ export function $findNodeWithOffsetFromJoinedText(
     runningLength = newRunningLength;
     isPriorNodeTextNode = isChildNodeTestNode;
   }
+
   return null;
 }
 
 export function $isRootTextContentEmpty(
   isEditorComposing: boolean,
-  trim?: boolean = true,
+  trim = true,
 ): boolean {
   if (isEditorComposing) {
     return false;
   }
   let text = $rootTextContentCurry();
+
   if (trim) {
     text = text.trim();
   }
+
   return text === '';
 }
 
@@ -185,6 +198,7 @@ export function $isRootTextContentEmptyCurry(
 
 export function $rootTextContentCurry(): string {
   const root = $getRoot();
+
   return root.getTextContent();
 }
 
@@ -192,12 +206,15 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
   if (!$isRootTextContentEmpty(isComposing, false)) {
     return false;
   }
+
   const root = $getRoot();
   const children = root.getChildren();
   const childrenLength = children.length;
+
   if (childrenLength > 1) {
     return false;
   }
+
   for (let i = 0; i < childrenLength; i++) {
     const topBlock = children[i];
 
@@ -205,19 +222,24 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
       if (topBlock.__type !== 'paragraph') {
         return false;
       }
+
       if (topBlock.__indent !== 0) {
         return false;
       }
+
       const topBlockChildren = topBlock.getChildren();
       const topBlockChildrenLength = topBlockChildren.length;
+
       for (let s = 0; s < topBlockChildrenLength; s++) {
         const child = topBlockChildren[i];
+
         if (!$isTextNode(child)) {
           return false;
         }
       }
     }
   }
+
   return true;
 }
 
@@ -227,15 +249,15 @@ export function $canShowPlaceholderCurry(
   return () => $canShowPlaceholder(isEditorComposing);
 }
 
-export type EntityMatch = {end: number, start: number};
+export type EntityMatch = {end: number; start: number};
 
-export function registerLexicalTextEntity<N: TextNode>(
+export function registerLexicalTextEntity<N extends TextNode>(
   editor: LexicalEditor,
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Class<N>,
   createNode: (textNode: TextNode) => N,
 ): Array<() => void> {
-  const isTargetNode = (node: ?LexicalNode): boolean %checks => {
+  const isTargetNode = (node: LexicalNode | null | undefined): node is N => {
     return node instanceof targetNode;
   };
 
@@ -246,13 +268,14 @@ export function registerLexicalTextEntity<N: TextNode>(
   };
 
   const getMode = (node: TextNode): number => {
-    return node.getLatest().__mode;
+    return node.getLatest<TextNode>().__mode;
   };
 
   const textNodeTransform = (node: TextNode) => {
     if (!node.isSimpleText()) {
       return;
     }
+
     const prevSibling = node.getPreviousSibling();
     let text = node.getTextContent();
     let currentNode = node;
@@ -266,20 +289,24 @@ export function registerLexicalTextEntity<N: TextNode>(
       if (isTargetNode(prevSibling)) {
         if (prevMatch === null || getMode(prevSibling) !== 0) {
           replaceWithSimpleText(prevSibling);
+
           return;
         } else {
           const diff = prevMatch.end - previousText.length;
+
           if (diff > 0) {
             const concatText = text.slice(0, diff);
             const newTextContent = previousText + concatText;
             prevSibling.select();
             prevSibling.setTextContent(newTextContent);
+
             if (diff === text.length) {
               node.remove();
             } else {
               const remainingText = text.slice(diff);
               node.setTextContent(remainingText);
             }
+
             return;
           }
         }
@@ -288,22 +315,27 @@ export function registerLexicalTextEntity<N: TextNode>(
       }
     }
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       match = getMatch(text);
       let nextText = match === null ? '' : text.slice(match.end);
       text = nextText;
+
       if (nextText === '') {
         const nextSibling = currentNode.getNextSibling();
+
         if ($isTextNode(nextSibling)) {
           nextText =
             currentNode.getTextContent() + nextSibling.getTextContent();
           const nextMatch = getMatch(nextText);
+
           if (nextMatch === null) {
             if (isTargetNode(nextSibling)) {
               replaceWithSimpleText(nextSibling);
             } else {
               nextSibling.markDirty();
             }
+
             return;
           } else if (nextMatch.start !== 0) {
             return;
@@ -311,13 +343,16 @@ export function registerLexicalTextEntity<N: TextNode>(
         }
       } else {
         const nextMatch = getMatch(nextText);
+
         if (nextMatch !== null && nextMatch.start === 0) {
           return;
         }
       }
+
       if (match === null) {
         return;
       }
+
       if (
         match.start === 0 &&
         $isTextNode(prevSibling) &&
@@ -325,6 +360,7 @@ export function registerLexicalTextEntity<N: TextNode>(
       ) {
         continue;
       }
+
       let nodeToReplace;
 
       if (match.start === 0) {
@@ -335,8 +371,10 @@ export function registerLexicalTextEntity<N: TextNode>(
           match.end,
         );
       }
+
       const replacementNode = createNode(nodeToReplace);
       nodeToReplace.replace(replacementNode);
+
       if (currentNode == null) {
         return;
       }
@@ -346,23 +384,32 @@ export function registerLexicalTextEntity<N: TextNode>(
   const reverseNodeTransform = (node: N) => {
     const text = node.getTextContent();
     const match = getMatch(text);
+
     if (match === null || match.start !== 0) {
       replaceWithSimpleText(node);
+
       return;
     }
+
     if (text.length > match.end) {
       // This will split out the rest of the text as simple text
       node.splitText(match.end);
+
       return;
     }
+
     const prevSibling = node.getPreviousSibling();
+
     if ($isTextNode(prevSibling) && prevSibling.isTextEntity()) {
       replaceWithSimpleText(prevSibling);
       replaceWithSimpleText(node);
     }
+
     const nextSibling = node.getNextSibling();
+
     if ($isTextNode(nextSibling) && nextSibling.isTextEntity()) {
       replaceWithSimpleText(nextSibling);
+
       // This may have already been converted in the previous block
       if (isTargetNode(node)) {
         replaceWithSimpleText(node);

@@ -60,7 +60,6 @@ export class ListNode extends ElementNode {
 
   constructor(listType: ListType, start: number, key?: NodeKey) {
     super(key);
-    // $FlowFixMe added for backward compatibility to map tags to list type
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
     this.__listType = _listType;
     this.__tag = _listType === 'number' ? 'ol' : 'ul';

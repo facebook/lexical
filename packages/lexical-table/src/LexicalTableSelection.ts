@@ -26,9 +26,9 @@ import {
   $setSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {CAN_USE_DOM} from 'shared-ts/canUseDOM';
-import getDOMSelection from 'shared-ts/getDOMSelection';
-import invariant from 'shared-ts/invariant';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
+import getDOMSelection from 'shared/getDOMSelection';
+import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';

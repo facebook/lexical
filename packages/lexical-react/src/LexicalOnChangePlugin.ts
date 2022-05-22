@@ -9,7 +9,7 @@
 import type {EditorState, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import useLayoutEffect from 'shared-ts/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 export function OnChangePlugin({
   ignoreInitialChange = true,

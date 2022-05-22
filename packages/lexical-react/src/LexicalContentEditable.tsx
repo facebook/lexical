@@ -9,7 +9,7 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 import {CSSProperties, useCallback, useState} from 'react';
-import useLayoutEffect from 'shared-ts/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type Props = Readonly<{
   ariaActiveDescendantID?: string;

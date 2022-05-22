@@ -16,7 +16,7 @@ import type {
 } from './LexicalSelection';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {$isElementNode} from '.';
 import {

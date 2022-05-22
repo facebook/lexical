@@ -33,7 +33,7 @@ import {
   ElementNode,
 } from 'lexical';
 import {Spread} from 'libdefs/globals';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {$createListNode, $isListNode} from './';
 import {

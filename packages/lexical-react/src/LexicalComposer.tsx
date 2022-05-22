@@ -16,7 +16,7 @@ import {
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
-import useLayoutEffect from 'shared-ts/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 import {Class} from 'utility-types';
 
 type Props = {

@@ -16,7 +16,7 @@ import {
 } from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 import {useContext, useMemo} from 'react';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 export function LexicalNestedComposer({
   initialEditor,

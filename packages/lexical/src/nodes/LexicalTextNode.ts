@@ -20,7 +20,7 @@ import type {
 } from '../LexicalSelection';
 
 import {Spread} from 'libdefs/globals';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {ElementNode} from '..';
 import {

@@ -11,7 +11,7 @@ import type {LexicalNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {$createParagraphNode, $createTextNode} from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {
   $createTableCellNode,

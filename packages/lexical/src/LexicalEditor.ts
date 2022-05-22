@@ -13,8 +13,8 @@ import type {
 } from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
-import getDOMSelection from 'shared-ts/getDOMSelection';
-import invariant from 'shared-ts/invariant';
+import getDOMSelection from 'shared/getDOMSelection';
+import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';

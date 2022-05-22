@@ -17,7 +17,7 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
-import simpleDiffWithCursor from 'shared-ts/simpleDiffWithCursor';
+import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 

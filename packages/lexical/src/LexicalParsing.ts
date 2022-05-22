@@ -9,7 +9,7 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {LexicalNode, NodeKey} from './LexicalNode';
 
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {$isElementNode, $isRootNode, $isTextNode, createEditor} from '.';
 import {

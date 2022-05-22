@@ -26,9 +26,9 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
-import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
-import getDOMSelection from 'shared-ts/getDOMSelection';
-import invariant from 'shared-ts/invariant';
+import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
+import invariant from 'shared/invariant';
 
 import {
   $createTextNode,

@@ -9,7 +9,7 @@
 import type {LexicalNode} from '../LexicalNode';
 import type {ParsedElementNode} from '../LexicalParsing';
 
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';

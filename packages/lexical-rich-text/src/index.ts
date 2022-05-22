@@ -70,9 +70,7 @@ import {
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
 import {Spread} from 'libdefs/globals';
-import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
-
-libdefs / globald;
+import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 

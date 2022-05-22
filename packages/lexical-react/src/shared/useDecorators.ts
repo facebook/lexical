@@ -10,7 +10,7 @@ import type {LexicalEditor} from 'lexical';
 
 import {useEffect, useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
-import useLayoutEffect from 'shared-ts/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
   const [decorators, setDecorators] = useState<Record<string, JSX.Element>>(

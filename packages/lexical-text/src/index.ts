@@ -15,7 +15,7 @@ import {
   $isTextNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
 
 export type TextNodeWithOffset = {

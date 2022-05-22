@@ -46,7 +46,7 @@ import {
   $isRangeSelection,
   $setSelection,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 /*
    How to add a new syntax to capture and transform.

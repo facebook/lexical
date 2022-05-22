@@ -9,7 +9,7 @@
 import type {ElementFormatType} from './nodes/LexicalElementNode';
 import type {TextFormatType, TextModeType} from './nodes/LexicalTextNode';
 
-import {IS_FIREFOX, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
+import {IS_FIREFOX, IS_IOS, IS_SAFARI} from 'shared/environment';
 // DOM
 export const DOM_ELEMENT_TYPE = 1;
 export const DOM_TEXT_TYPE = 3;

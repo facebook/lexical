@@ -24,7 +24,7 @@ import {
   TextNode,
 } from 'lexical';
 import {useEffect} from 'react';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 

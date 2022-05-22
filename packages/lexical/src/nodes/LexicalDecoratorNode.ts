@@ -9,7 +9,7 @@
 import type {LexicalEditor} from '../LexicalEditor';
 import type {NodeKey} from '../LexicalNode';
 
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {LexicalNode} from '../LexicalNode';
 

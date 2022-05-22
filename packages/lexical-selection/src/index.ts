@@ -30,7 +30,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 const cssToStyles: Map<string, Record<string, string>> = new Map();
 

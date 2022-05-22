@@ -9,7 +9,7 @@
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode} from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
 
 export type DFSNode = Readonly<{

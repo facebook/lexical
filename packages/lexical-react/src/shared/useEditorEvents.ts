@@ -8,7 +8,7 @@
 
 import type {EventHandler, LexicalEditor} from 'lexical';
 
-import useLayoutEffect from 'shared-ts/useLayoutEffect';
+import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type InputEvents = Array<[string, EventHandler]>;
 

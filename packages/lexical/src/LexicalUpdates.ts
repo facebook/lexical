@@ -21,7 +21,7 @@ import type {
 import type {LexicalNode} from './LexicalNode';
 import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {$isElementNode, $isTextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';

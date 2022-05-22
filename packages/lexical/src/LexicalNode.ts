@@ -10,7 +10,7 @@
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
 
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {
   $isDecoratorNode,

@@ -17,9 +17,9 @@ import type {
 import type {NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
-import {IS_IOS, IS_SAFARI} from 'shared-ts/environment';
-import getDOMSelection from 'shared-ts/getDOMSelection';
-import invariant from 'shared-ts/invariant';
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
+import invariant from 'shared/invariant';
 
 import {
   $isDecoratorNode,

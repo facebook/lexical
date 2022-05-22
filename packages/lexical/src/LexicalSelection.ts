@@ -13,8 +13,8 @@ import type {ParsedSelection} from './LexicalParsing';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import getDOMSelection from 'shared-ts/getDOMSelection';
-import invariant from 'shared-ts/invariant';
+import getDOMSelection from 'shared/getDOMSelection';
+import invariant from 'shared/invariant';
 
 import {
   $createLineBreakNode,

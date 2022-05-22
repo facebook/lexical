@@ -14,8 +14,8 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 
-import {IS_FIREFOX} from 'shared-ts/environment';
-import getDOMSelection from 'shared-ts/getDOMSelection';
+import {IS_FIREFOX} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
 
 import {
   $getSelection,

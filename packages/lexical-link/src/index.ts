@@ -21,7 +21,7 @@ import type {
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
 import {Spread} from 'libdefs/globals';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 export type SerializedLinkNode = Spread<
   {

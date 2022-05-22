@@ -13,7 +13,7 @@ import type {
   NodeKey,
   NodeMap,
 } from 'lexical';
-import type {XmlElement, XmlText} from 'yjs';
+import type {AbstractType, XmlText} from 'yjs';
 
 import {
   $getNodeByKey,
@@ -21,7 +21,6 @@ import {
   $isElementNode,
   $isTextNode,
 } from 'lexical';
-import {Map as YMap} from 'yjs';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
@@ -122,9 +121,12 @@ export class CollabElementNode {
   applyChildrenYjsDelta(
     binding: Binding,
     deltas: Array<{
-      insert: string;
-      delete: number;
-      retain: number;
+      insert?: string | object | AbstractType<unknown>;
+      delete?: number;
+      retain?: number;
+      attributes?: {
+        [x: string]: unknown;
+      };
     }>,
   ): void {
     const children = this._children;
@@ -204,7 +206,7 @@ export class CollabElementNode {
 
           currIndex += insertDelta.length;
         } else {
-          const sharedType: XmlText | YMap<unknown> | XmlElement = insertDelta;
+          const sharedType = insertDelta;
           const {nodeIndex} = getPositionFromElementAndOffset(
             this,
             currIndex,

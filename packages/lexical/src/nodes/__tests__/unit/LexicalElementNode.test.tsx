@@ -16,7 +16,7 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef, useEffect, useMemo} from 'react';
+import {createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
@@ -46,11 +46,14 @@ describe('LexicalElementNode tests', () => {
   }
 
   function useLexicalEditor(rootElementRef) {
-    const editor = useMemo(() => createTestEditor({}), []);
+    // @ts-ignore
+    const editor = React.useMemo(() => createTestEditor({}), []);
+
     useEffect(() => {
       const rootElement = rootElementRef.current;
       editor.setRootElement(rootElement);
     }, [rootElementRef, editor]);
+
     return editor;
   }
 
@@ -61,14 +64,15 @@ describe('LexicalElementNode tests', () => {
 
     function TestBase() {
       editor = useLexicalEditor(ref);
+
       return <div ref={ref} contentEditable={true} />;
     }
 
     ReactTestUtils.act(() => {
       createRoot(container).render(<TestBase />);
     });
-    // Insert initial block
 
+    // Insert initial block
     await update(() => {
       const block = $createTestElementNode();
       const text = $createTextNode('Foo');
@@ -161,15 +165,20 @@ describe('LexicalElementNode tests', () => {
 
         $getRoot().append(block);
       });
-    }); // TODO: Add tests where there are nested inert nodes.
+    });
+
+    // TODO: Add tests where there are nested inert nodes.
   });
 
   describe('getFirstChild()', () => {
     test('basic', async () => {
       await update(() => {
-        expect($getRoot().getFirstChild<ElementNode>().getTextContent()).toBe(
-          'Foo',
-        );
+        expect(
+          $getRoot()
+            .getFirstChild<ElementNode>()
+            .getFirstChild()
+            .getTextContent(),
+        ).toBe('Foo');
       });
     });
 
@@ -184,9 +193,12 @@ describe('LexicalElementNode tests', () => {
   describe('getLastChild()', () => {
     test('basic', async () => {
       await update(() => {
-        expect($getRoot().getLastChild<ElementNode>().getTextContent()).toBe(
-          'Baz',
-        );
+        expect(
+          $getRoot()
+            .getFirstChild<ElementNode>()
+            .getLastChild()
+            .getTextContent(),
+        ).toBe('Baz');
       });
     });
 
@@ -266,28 +278,30 @@ describe('LexicalElementNode tests', () => {
         expectedText: 'FooBarBaz',
         name: 'Do nothing',
         start: 0,
-      }, // Insert
+      },
+      // Insert
       {
         deleteCount: 0,
-        deleteOnly: true,
+        deleteOnly: false,
         expectedText: 'QuxQuuzFooBarBaz',
         name: 'Insert in the beginning',
         start: 0,
       },
       {
         deleteCount: 0,
-        deleteOnly: true,
+        deleteOnly: false,
         expectedText: 'FooQuxQuuzBarBaz',
         name: 'Insert in the middle',
         start: 1,
       },
       {
         deleteCount: 0,
-        deleteOnly: true,
+        deleteOnly: false,
         expectedText: 'FooBarBazQuxQuuz',
         name: 'Insert in the end',
         start: 3,
-      }, // Delete
+      },
+      // Delete
       {
         deleteCount: 1,
         deleteOnly: true,
@@ -315,36 +329,38 @@ describe('LexicalElementNode tests', () => {
         expectedText: '',
         name: 'Delete all',
         start: 0,
-      }, // Replace
+      },
+      // Replace
       {
         deleteCount: 1,
-        deleteOnly: true,
+        deleteOnly: false,
         expectedText: 'QuxQuuzBarBaz',
         name: 'Replace in the beginning',
         start: 0,
       },
       {
         deleteCount: 1,
-        deleteOnly: true,
+        deleteOnly: false,
         expectedText: 'FooQuxQuuzBaz',
         name: 'Replace in the middle',
         start: 1,
       },
       {
         deleteCount: 1,
-        deleteOnly: true,
+        deleteOnly: false,
         expectedText: 'FooBarQuxQuuz',
         name: 'Replace in the end',
         start: 2,
       },
       {
         deleteCount: 3,
-        deleteOnly: true,
+        deleteOnly: false,
         expectedText: 'QuxQuuz',
         name: 'Replace all',
         start: 0,
       },
     ];
+
     BASE_INSERTIONS.forEach((testCase) => {
       it(`Plain text: ${testCase.name}`, async () => {
         await update(() => {
@@ -355,11 +371,14 @@ describe('LexicalElementNode tests', () => {
               ? []
               : [$createTextNode('Qux'), $createTextNode('Quuz')],
           );
+
           expect(block.getTextContent()).toEqual(testCase.expectedText);
         });
       });
     });
+
     let nodes: Record<string, LexicalNode> = {};
+
     const NESTED_ELEMENTS_TESTS: Array<{
       deleteCount: number;
       deleteOnly?: boolean;
@@ -484,17 +503,21 @@ describe('LexicalElementNode tests', () => {
         start: 0,
       },
     ];
+
     NESTED_ELEMENTS_TESTS.forEach((testCase) => {
       it(`Nested elements: ${testCase.name}`, async () => {
         await update(() => {
           const text1 = $createTextNode('Foo');
           const text2 = $createTextNode('Bar');
+
           const nestedBlock1 = $createTestElementNode();
           const nestedText1 = $createTextNode('Wiz');
           nestedBlock1.append(nestedText1);
+
           const nestedBlock2 = $createTestElementNode();
           const nestedText2 = $createTextNode('Fuz');
           nestedBlock2.append(nestedText2);
+
           block.clear();
           block.append(text1, nestedBlock1, nestedBlock2, text2);
           nestedText1.select(1, 1);
@@ -544,9 +567,11 @@ describe('LexicalElementNode tests', () => {
         });
       });
     });
+
     it('Running transforms for inserted nodes, their previous siblings and new siblings', async () => {
       const transforms = new Set();
       const expectedTransforms = [];
+
       const removeTransform = editor.registerNodeTransform(TextNode, (node) => {
         transforms.add(node.__key);
       });
@@ -560,6 +585,7 @@ describe('LexicalElementNode tests', () => {
         const text3 = $createTextNode('3');
         anotherBlock.append(text1, text2, text3);
         $getRoot().append(anotherBlock);
+
         // Expect inserted node, its old siblings and new siblings to receive
         // transformer calls
         expectedTransforms.push(

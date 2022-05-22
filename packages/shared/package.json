@@ -1,5 +1,5 @@
 {
-  "name": "shared-ts",
+  "name": "shared",
   "private": "true",
   "keywords": [
     "react",
@@ -15,6 +15,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
-    "directory": "packages/shared-ts"
+    "directory": "packages/shared"
   }
 }

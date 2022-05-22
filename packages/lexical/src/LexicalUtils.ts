@@ -112,7 +112,7 @@ function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
 }
 
 export function isSelectionWithinEditor(
-  editor: LexicalEditor | LexicalEditor,
+  editor: LexicalEditor,
   anchorDOM: null | Node,
   focusDOM: null | Node,
 ): boolean {
@@ -914,6 +914,7 @@ export function getCachedClassNameArray<T>(
     classNamesTheme[classNameThemeType] = classNamesArr;
     return classNamesArr;
   }
+  return classNames;
 }
 
 export function setMutatedNode(

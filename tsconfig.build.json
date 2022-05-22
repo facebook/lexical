@@ -3,7 +3,8 @@
   "exclude": [
     "node_modules/**/*",
     "packages/lexical-playground/**/*",
-    "packages/playwright-core/**/*"
+    "packages/playwright-core/**/*",
+    "**/__tests__/**"
   ],
   "extends": "./tsconfig.json"
 }

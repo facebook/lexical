@@ -106,7 +106,7 @@ describe('LexicalUtils tests', () => {
         root.append(paragraph);
       });
 
-      editor.update(() => {
+      await editor.update(() => {
         const domSelection = window.getSelection();
 
         expect(

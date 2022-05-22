@@ -15,6 +15,7 @@ import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
+import {Class} from 'utility-types';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
@@ -125,8 +126,8 @@ export type RegisteredNode = {
 };
 export type Transform<T> = (node: T) => void;
 export type ErrorHandler = (error: Error) => void;
-export type MutationListeners = Map<MutationListener, typeof LexicalNode>;
-export type MutatedNodes = Map<typeof LexicalNode, Map<NodeKey, NodeMutation>>;
+export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
+export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
@@ -248,7 +249,12 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(editorConfig?: EditorConfig): LexicalEditor {
+export function createEditor(
+  editorConfig: EditorConfig = {
+    namespace: '',
+    theme: {},
+  },
+): LexicalEditor {
   const config = editorConfig;
   const namespace = config.namespace || createUID();
   const theme = config.theme || {};

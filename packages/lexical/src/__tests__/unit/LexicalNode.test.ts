@@ -10,11 +10,11 @@ import {
   $getRoot,
   $getSelection,
   $isNodeSelection,
-  LexicalNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
 
+import {LexicalNode} from '../../LexicalNode';
 import {initializeUnitTest, TestElementNode} from '../utils';
 
 class TestNode extends LexicalNode {
@@ -29,9 +29,10 @@ class TestNode extends LexicalNode {
   createDOM() {
     return document.createElement('div');
   }
-} // This is a hack to bypass the node type validation on LexicalNode. We never want to create
-// an LexicalNode directly but we're testing the base functionality in this module.
+}
 
+// This is a hack to bypass the node type validation on LexicalNode. We never want to create
+// an LexicalNode directly but we're testing the base functionality in this module.
 LexicalNode.getType = function () {
   return 'node';
 };
@@ -76,7 +77,6 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const node = new LexicalNode('__custom_key__');
 
-          // @ts-expect-error
           expect(() => node.clone()).toThrow();
         });
       });
@@ -666,6 +666,7 @@ describe('LexicalNode tests', () => {
                 namespace: '',
                 theme: {},
               },
+              // @ts-expect-error Not sure why editor throws a TS error. The type is correct.
               editor,
             ),
           ).toThrow();

@@ -86,7 +86,7 @@ export class TestElementNode extends ElementNode {
     return 'test_block';
   }
 
-  static clone(node: ElementNode) {
+  static clone(node: TestElementNode) {
     return new TestElementNode(node.__key);
   }
 
@@ -102,6 +102,7 @@ export class TestElementNode extends ElementNode {
 export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
+
 export class TestInlineElementNode extends ElementNode {
   static getType(): string {
     return 'test_inline_block';
@@ -219,6 +220,7 @@ const DEFAULT_NODES = [
 export function TestComposer({
   config = {
     nodes: [],
+    theme: {},
   },
   children,
 }) {

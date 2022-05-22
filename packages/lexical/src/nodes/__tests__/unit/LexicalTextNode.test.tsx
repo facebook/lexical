@@ -75,7 +75,7 @@ describe('LexicalTextNode tests', () => {
   }
 
   function useLexicalEditor(rootElementRef) {
-    const editor = useMemo(() => createTestEditor({}), []);
+    const editor = useMemo(() => createTestEditor(editorConfig), []);
 
     useEffect(() => {
       const rootElement = rootElementRef.current;

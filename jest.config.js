@@ -80,8 +80,8 @@ module.exports = {
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.ts',
         '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.ts',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
-        '^canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
         '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
+        '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.ts',
         '^shared/getDOMSelection$':
           '<rootDir>/packages/shared/src/getDOMSelection.ts',

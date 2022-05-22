@@ -18,7 +18,7 @@ import babel from '@rollup/plugin-babel';
 const moduleResolution = [
   {
     find: /lexical$/,
-    replacement: path.resolve('../lexical/src/index.js'),
+    replacement: path.resolve('../lexical/src/index.ts'),
   },
   {
     find: '@lexical/clipboard',
@@ -94,15 +94,11 @@ const moduleResolution = [
   },
   {
     find: '@lexical/yjs',
-    replacement: path.resolve('../lexical-yjs/src/index.js'),
+    replacement: path.resolve('../lexical-yjs/src/index.ts'),
   },
   {
     find: 'shared',
     replacement: path.resolve('../shared/src'),
-  },
-  {
-    find: 'shared-ts',
-    replacement: path.resolve('../shared-ts/src'),
   },
 ];
 // Lexical React
@@ -166,6 +162,22 @@ export default defineConfig({
           to: 'true',
         },
       ],
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      babelrc: false,
+      configFile: false,
+      exclude: '/**/node_modules/**',
+      plugins: [
+        '@babel/plugin-transform-flow-strip-types',
+        [
+          require('../../scripts/error-codes/transform-error-messages'),
+          {
+            noMinify: true,
+          },
+        ],
+      ],
+      presets: ['@babel/preset-react'],
     }),
     flowPlugin(),
     react(),

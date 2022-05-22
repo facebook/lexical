@@ -14,7 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedElementNode,
   SerializedGridCellNode,
 } from 'lexical';
 
@@ -26,8 +25,6 @@ import {
   GridCellNode,
 } from 'lexical';
 import {Spread} from 'libdefs/globals';
-
-libdefs / globald;
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -137,9 +134,10 @@ export class TableCellNode extends GridCellNode {
     };
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedTableCellNode {
     return {
       ...super.exportJSON(),
+      colSpan: super.__colSpan,
       headerState: this.__headerState,
       type: 'tablecell',
       width: this.getWidth(),

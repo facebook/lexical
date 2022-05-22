@@ -11,6 +11,7 @@ import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
 
 import invariant from 'shared/invariant';
+import {Class} from 'utility-types';
 
 import {
   $isDecoratorNode,
@@ -130,29 +131,35 @@ export type DOMConversion = {
   conversion: DOMConversionFn;
   priority: 0 | 1 | 2 | 3 | 4;
 };
+
 export type DOMConversionFn = (
   element: Node,
   parent?: Node,
 ) => DOMConversionOutput;
+
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
 ) => LexicalNode | null | void;
+
 export type DOMConversionMap = Record<
   NodeName,
   (node: Node) => DOMConversion | null
 >;
 type NodeName = string;
+
 export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
   node: LexicalNode | null;
 };
+
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | null | undefined,
   ) => HTMLElement | null | undefined;
   element: HTMLElement | null;
 };
+
 export type NodeKey = string;
 
 export class LexicalNode {
@@ -794,7 +801,7 @@ export class LexicalNode {
 
 function errorOnTypeKlassMismatch(
   type: string,
-  klass: typeof LexicalNode,
+  klass: Class<LexicalNode>,
 ): void {
   const registeredNode = getActiveEditor()._nodes.get(type);
   // Common error - split in its own invariant
@@ -811,6 +818,8 @@ function errorOnTypeKlassMismatch(
       false,
       'Create node: Type %s in node %s does not match registered node %s with the same type',
       type,
+      klass.name,
+      editorKlass.name,
     );
   }
 }

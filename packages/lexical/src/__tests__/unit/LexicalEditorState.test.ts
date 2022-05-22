@@ -130,7 +130,7 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(table);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        '{"_nodeMap":[["root",{"__children":["1"],"__dir":null,"__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"table","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":null}],["2",{"__type":"tablerow","__parent":"1","__key":"2","__children":["3"],"__format":0,"__indent":0,"__dir":null}],["3",{"__type":"tablecell","__parent":"2","__key":"3","__children":[],"__format":0,"__indent":0,"__dir":null,"__headerState":0}]],"_selection":{"anchor":{"key":"3","offset":0,"type":"element"},"focus":{"key":"3","offset":0,"type":"element"},"gridKey":"1","type":"grid"}}',
+        '{"_nodeMap":[["root",{"__children":["1"],"__dir":null,"__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"table","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":null}],["2",{"__type":"tablerow","__parent":"1","__key":"2","__children":["3"],"__format":0,"__indent":0,"__dir":null}],["3",{"__type":"tablecell","__parent":"2","__key":"3","__children":[],"__format":0,"__indent":0,"__dir":null,"__colSpan":1,"__headerState":0}]],"_selection":{"anchor":{"key":"3","offset":0,"type":"element"},"focus":{"key":"3","offset":0,"type":"element"},"gridKey":"1","type":"grid"}}',
       );
     });
 

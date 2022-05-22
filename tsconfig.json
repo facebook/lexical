@@ -8,7 +8,6 @@
     "noEmit": true,
     "strict": false,
     "baseUrl": ".",
-    "typeRoots": ["./node_modules/@types", "./libdefs/globals.d.ts"],
     "paths": {
       "lexical": ["./packages/lexical/Lexical.d.ts"],
       "@lexical/clipboard": [

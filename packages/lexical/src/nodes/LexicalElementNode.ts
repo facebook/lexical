@@ -185,7 +185,7 @@ export class ElementNode extends LexicalNode {
     return firstChild;
   }
   getLastChild<T extends LexicalNode>(): null | T {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {

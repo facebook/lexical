@@ -16,12 +16,7 @@ import type {
   Point,
   RangeSelection,
 } from 'lexical';
-import type {
-  AbsolutePosition,
-  Map as YMap,
-  RelativePosition,
-  XmlText,
-} from 'yjs';
+import type {AbsolutePosition, RelativePosition} from 'yjs';
 
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {
@@ -322,7 +317,7 @@ export function syncLocalCursorPosition(
 }
 
 function getCollabNodeAndOffset(
-  sharedType: XmlText | YMap<unknown>,
+  sharedType: any,
   offset: number,
 ): [
   (
@@ -334,7 +329,6 @@ function getCollabNodeAndOffset(
   ),
   number,
 ] {
-  // @ts-expect-error: internal field
   const collabNode = sharedType._collabNode;
 
   if (collabNode === undefined) {

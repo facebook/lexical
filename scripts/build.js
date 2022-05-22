@@ -171,10 +171,6 @@ async function build(name, inputFile, outputFile, isProd) {
     plugins: [
       alias({
         entries: [
-          {
-            find: 'shared-ts',
-            replacement: path.resolve('packages/shared-ts/src'),
-          },
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
         ],
       }),

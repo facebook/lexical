@@ -11,7 +11,6 @@ import type {
   DecoratorNode,
   ElementNode,
   LexicalNode,
-  NodeKey,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -145,14 +144,13 @@ function getNodeTypeFromSharedType(
 
 export function getOrInitCollabNodeFromSharedType(
   binding: Binding,
-  sharedType: XmlText | YMap<unknown> | XmlElement,
+  sharedType: any,
   parent?: CollabElementNode,
 ):
   | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode
   | CollabDecoratorNode {
-  // @ts-expect-error: internal field
   const collabNode = sharedType._collabNode;
 
   if (collabNode === undefined) {

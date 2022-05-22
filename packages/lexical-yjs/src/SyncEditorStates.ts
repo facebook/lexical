@@ -23,7 +23,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
-import {YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
+import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
 
 import {Binding, Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -40,14 +40,12 @@ import {
   syncWithTransaction,
 } from './Utils';
 
-function syncEvent(
-  binding: Binding,
-  event: YTextEvent | YMapEvent<void> | YXmlEvent,
-): void {
+function syncEvent(binding: Binding, event: any): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
+    // @ts-expect-error We need to access the private property of the class
     const {keysChanged, childListChanged, delta} = event;
 
     // Update
@@ -87,7 +85,7 @@ function syncEvent(
 export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
-  events: Array<YEvent<void>>,
+  events: Array<YEvent<YText>>,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;

@@ -253,10 +253,6 @@ pre::-webkit-scrollbar-thumb {
   background: #eee;
 }
 
-#mentions-typeahead ul li.hovered {
-  background: #ddd;
-}
-
 .link-editor {
   position: absolute;
   z-index: 10;

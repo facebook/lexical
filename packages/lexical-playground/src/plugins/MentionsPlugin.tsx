@@ -557,19 +557,15 @@ function useMentionLookupService(mentionString) {
 
 function MentionsTypeaheadItem({
   index,
-  isHovered,
   isSelected,
   onClick,
   onMouseEnter,
-  onMouseLeave,
   result,
 }: {
   index: number;
-  isHovered: boolean;
   isSelected: boolean;
   onClick: () => void;
   onMouseEnter: () => void;
-  onMouseLeave: () => void;
   result: string;
 }) {
   const liRef = useRef(null);
@@ -577,9 +573,6 @@ function MentionsTypeaheadItem({
   let className = 'item';
   if (isSelected) {
     className += ' selected';
-  }
-  if (isHovered) {
-    className += ' hovered';
   }
 
   return (
@@ -592,7 +585,6 @@ function MentionsTypeaheadItem({
       aria-selected={isSelected}
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
       onClick={onClick}>
       {result}
     </li>
@@ -612,7 +604,6 @@ function MentionsTypeahead({
   const match = resolution.match;
   const results = useMentionLookupService(match.matchingString);
   const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
     const div = divRef.current;
@@ -776,17 +767,13 @@ function MentionsTypeahead({
         {results.slice(0, SUGGESTION_LIST_LENGTH_LIMIT).map((result, i) => (
           <MentionsTypeaheadItem
             index={i}
-            isHovered={i === hoveredIndex}
             isSelected={i === selectedIndex}
             onClick={() => {
               setSelectedIndex(i);
               applyCurrentSelected();
             }}
             onMouseEnter={() => {
-              setHoveredIndex(i);
-            }}
-            onMouseLeave={() => {
-              setHoveredIndex(null);
+              setSelectedIndex(i);
             }}
             key={result}
             result={result}

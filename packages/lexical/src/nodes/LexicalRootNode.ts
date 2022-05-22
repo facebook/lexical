@@ -70,11 +70,11 @@ export class RootNode extends ElementNode {
     invariant(false, 'replace: cannot be called on root nodes');
   }
 
-  insertBefore(nodeToInsert: LexicalNode): never {
+  insertBefore<T extends LexicalNode>(nodeToInsert: T): T {
     invariant(false, 'insertBefore: cannot be called on root nodes');
   }
 
-  insertAfter(node: LexicalNode): never {
+  insertAfter<T extends LexicalNode>(nodeToInsert: T): T {
     invariant(false, 'insertAfter: cannot be called on root nodes');
   }
 

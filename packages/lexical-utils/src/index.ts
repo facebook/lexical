@@ -161,7 +161,7 @@ export function mergeRegister(...func: Array<Func>): () => void {
 
 export function registerNestedElementResolver<N extends ElementNode>(
   editor: LexicalEditor,
-  targetNode: Class<N>,
+  targetNode: {new (): N},
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void {

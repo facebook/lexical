@@ -285,6 +285,7 @@ export function syncLocalCursorPosition(
       if (anchorCollabNode !== null && focusCollabNode !== null) {
         const anchorKey = anchorCollabNode.getKey();
         const focusKey = focusCollabNode.getKey();
+
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -371,6 +372,7 @@ export function syncCursorPositions(
       visitedClientIDs.add(clientID);
       const {anchorPos, focusPos, name, color, focusing} = awareness;
       let selection = null;
+
       let cursor = cursors.get(clientID);
 
       if (cursor === undefined) {

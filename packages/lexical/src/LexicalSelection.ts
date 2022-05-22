@@ -88,7 +88,6 @@ class Point {
   _selection: RangeSelection | GridSelection;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
-    // $FlowFixMe: is temporarily null
     this._selection = null;
     this.key = key;
     this.offset = offset;
@@ -228,9 +227,7 @@ function $setPointValues(
   type: 'text' | 'element',
 ): void {
   point.key = key;
-  // $FlowFixMe: internal utility function
   point.offset = offset;
-  // $FlowFixMe: internal utility function
   point.type = type;
 }
 
@@ -1686,7 +1683,6 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
-      // $FlowFixMe[incompatible-call]
       this.applyDOMRange(range);
       this.dirty = true;
       // Because a range works on start and end, we might need to flip
@@ -1711,8 +1707,7 @@ export class RangeSelection implements BaseSelection {
         !isBackward &&
         // Delete forward handle case
         ((anchor.type === 'element' &&
-          // $FlowFixMe: always an element node
-          anchor.offset === (anchorNode as ElementNode).getChildrenSize()) ||
+          anchor.offset === anchorNode.getChildrenSize()) ||
           (anchor.type === 'text' &&
             anchor.offset === anchorNode.getTextContentSize()))
       ) {
@@ -1792,8 +1787,8 @@ function getCharacterOffset(point: PointType): number {
   if (point.type === 'text') {
     return offset;
   }
-  // $FlowFixMe: cast
-  const parent: ElementNode = point.getNode();
+
+  const parent = point.getNode();
   return offset === parent.getChildrenSize()
     ? parent.getTextContent().length
     : 0;
@@ -1833,7 +1828,6 @@ function $moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  // $FlowFixMe[prop-missing]
   domSelection.modify(alter, direction, granularity);
 }
 

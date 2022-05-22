@@ -13,7 +13,7 @@ import type {
   NodeKey,
   NodeMap,
 } from 'lexical';
-import type {AbstractType, XmlText} from 'yjs';
+import type {AbstractType, XmlElement, XmlText} from 'yjs';
 
 import {
   $getNodeByKey,
@@ -21,6 +21,7 @@ import {
   $isElementNode,
   $isTextNode,
 } from 'lexical';
+import {YMap} from 'yjs/dist/src/internals';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
@@ -164,7 +165,8 @@ export class CollabElementNode {
               delCount === 1 &&
               nodeIndex > 0 &&
               prevCollabNode instanceof CollabTextNode &&
-              length === nodeSize && // If the node has no keys, it's been deleted
+              length === nodeSize &&
+              // If the node has no keys, it's been deleted
               Array.from(node._map.keys()).length === 0
             ) {
               // Merge the text node with previous.
@@ -197,6 +199,7 @@ export class CollabElementNode {
             // TODO: maybe we can improve this by keeping around a redundant
             // text node map, rather than removing all the text nodes, so there
             // never can be dangling text.
+
             // We have a conflict where there was likely a CollabTextNode and
             // an Lexical TextNode too, but they were removed in a merge. So
             // let's just ignore the text and trigger a removal for it from our
@@ -214,7 +217,7 @@ export class CollabElementNode {
           );
           const collabNode = getOrInitCollabNodeFromSharedType(
             binding,
-            sharedType,
+            sharedType as XmlText | YMap<unknown> | XmlElement,
             this,
           );
           children.splice(nodeIndex, 0, collabNode);

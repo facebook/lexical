@@ -72,6 +72,7 @@ export class CollabDecoratorNode {
   ): void {
     const prevLexicalNode = this.getPrevNode(prevNodeMap);
     const xmlElem = this._xmlElem;
+
     syncPropertiesFromLexical(
       binding,
       xmlElem,
@@ -97,9 +98,7 @@ export class CollabDecoratorNode {
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
     collabNodeMap.delete(this._key);
-
     this._unobservers.forEach((unobserver) => unobserver());
-
     this._unobservers.clear();
   }
 }

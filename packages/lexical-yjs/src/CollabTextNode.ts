@@ -120,6 +120,7 @@ export class CollabTextNode {
   ): void {
     const prevLexicalNode = this.getPrevNode(prevNodeMap);
     const nextText = nextLexicalNode.__text;
+
     syncPropertiesFromLexical(
       binding,
       this._map,
@@ -149,6 +150,7 @@ export class CollabTextNode {
     }
 
     syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
+
     const collabText = this._text;
 
     if (lexicalNode.__text !== collabText) {

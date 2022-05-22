@@ -63,7 +63,7 @@ export function getIndexOfYjsNode(
       return i;
     }
 
-    // @ts-expect-error
+    // @ts-expect-error Sibling exists but type is not available from YJS.
     node = node.nextSibling;
 
     if (node === null) {
@@ -144,13 +144,14 @@ function getNodeTypeFromSharedType(
 
 export function getOrInitCollabNodeFromSharedType(
   binding: Binding,
-  sharedType: any,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
   parent?: CollabElementNode,
 ):
   | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode
   | CollabDecoratorNode {
+  // @ts-expect-error: internal field
   const collabNode = sharedType._collabNode;
 
   if (collabNode === undefined) {
@@ -165,7 +166,10 @@ export function getOrInitCollabNodeFromSharedType(
     const sharedParent = sharedType.parent;
     const targetParent =
       parent === undefined && sharedParent !== null
-        ? getOrInitCollabNodeFromSharedType(binding, sharedParent)
+        ? getOrInitCollabNodeFromSharedType(
+            binding,
+            sharedParent as XmlText | YMap<unknown> | XmlElement,
+          )
         : parent || null;
 
     if (!(targetParent instanceof CollabElementNode)) {
@@ -209,9 +213,11 @@ export function createLexicalNodeFromCollabNode(
     throw new Error('createLexicalNode failed');
   }
 
-  // @ts-expect-error: needs refining
-  const lexicalNode: DecoratorNode<unknown> | TextNode | ElementNode =
-    new nodeInfo.klass();
+  const lexicalNode:
+    | DecoratorNode<unknown>
+    | TextNode
+    | ElementNode
+    | LexicalNode = new nodeInfo.klass();
   lexicalNode.__parent = parentKey;
   collabNode._key = lexicalNode.__key;
 
@@ -251,7 +257,6 @@ export function syncPropertiesFromYjs(
       continue;
     }
 
-    // $FlowFixMe: intentional
     const prevValue = lexicalNode[property];
     let nextValue =
       sharedType instanceof YMap
@@ -270,6 +275,7 @@ export function syncPropertiesFromYjs(
         const key = nextValue.guid;
         nestedEditor._key = key;
         yjsDocMap.set(key, nextValue);
+
         nextValue = nestedEditor;
       }
 
@@ -313,7 +319,8 @@ export function syncPropertiesFromLexical(
         let prevDoc;
 
         if (prevValue instanceof EditorClass) {
-          const prevKey = (prevValue as CollabTextNode)._key;
+          // @ts-expect-error Lexical node
+          const prevKey = prevValue._key;
           prevDoc = yjsDocMap.get(prevKey);
           yjsDocMap.delete(prevKey);
         }
@@ -321,7 +328,8 @@ export function syncPropertiesFromLexical(
         // If we already have a document, use it.
         const doc = prevDoc || new Doc();
         const key = doc.guid;
-        (nextValue as CollabTextNode)._key = key;
+        // @ts-expect-error Lexical node
+        nextValue._key = key;
         yjsDocMap.set(key, doc);
         nextValue = doc;
         // Mark the node dirty as we've assigned a new key to it
@@ -430,7 +438,8 @@ export function doesSelectionNeedRecovering(
     if (
       // We might have removed a node that no longer exists
       !anchorNode.isAttached() ||
-      !focusNode.isAttached() || // If we've split a node, then the offset might not be right
+      !focusNode.isAttached() ||
+      // If we've split a node, then the offset might not be right
       ($isTextNode(anchorNode) &&
         anchor.offset > anchorNode.getTextContentSize()) ||
       ($isTextNode(focusNode) && focus.offset > focusNode.getTextContentSize())

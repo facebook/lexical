@@ -116,7 +116,7 @@ function EquationComponent({
   );
 }
 
-type NewType = Spread<
+export type SerializedEquationNode = Spread<
   {
     type: 'equation';
     equation: string;
@@ -124,8 +124,6 @@ type NewType = Spread<
   },
   SerializedLexicalNode
 >;
-
-export type SerializedEquationNode = NewType;
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;

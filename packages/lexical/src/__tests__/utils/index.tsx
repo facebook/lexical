@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {EditorState, EditorThemeClasses, LexicalEditor} from 'lexical';
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
@@ -239,7 +239,18 @@ export function TestComposer({
   );
 }
 
-export function createTestEditor(config): LexicalEditor {
+export function createTestEditor(
+  config: {
+    namespace?: string;
+    editorState?: EditorState;
+    theme?: EditorThemeClasses;
+    parentEditor?: LexicalEditor;
+    nodes?: ReadonlyArray<typeof DEFAULT_NODES[number]>;
+    onError?: (error: Error) => void;
+    disableEvents?: boolean;
+    readOnly?: boolean;
+  } = {},
+): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
     onError: (e) => {

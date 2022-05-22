@@ -582,7 +582,7 @@ export class LexicalNode {
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);
-    // $FlowFixMe this is LexicalNode
+
     return mutableNode;
   }
 

@@ -9,9 +9,9 @@
 import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
 
 export function createCommand<T>(): LexicalCommand<T> {
-  // $FlowFixMe: avoid freezing the object for perf reasons
   return {};
 }
+
 export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> = createCommand();
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> = createCommand();
 export const DELETE_CHARACTER_COMMAND: LexicalCommand<boolean> =

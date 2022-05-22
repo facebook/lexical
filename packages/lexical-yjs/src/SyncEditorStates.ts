@@ -6,7 +6,6 @@
  *
  */
 
-// import type {Binding, Provider, YjsEvent} from '.';
 import type {
   EditorState,
   IntentionallyMarkedAsDirtyElement,

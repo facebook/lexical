@@ -341,6 +341,7 @@ declare export class LexicalNode {
   static importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
+  exportJSON(): SerializedLexicalNode;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;

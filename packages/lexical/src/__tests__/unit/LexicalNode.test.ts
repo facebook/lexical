@@ -1152,7 +1152,6 @@ describe('LexicalNode tests', () => {
     {
       namespace: '',
       nodes: [LexicalNode, TestNode],
-
       theme: {},
     },
   );

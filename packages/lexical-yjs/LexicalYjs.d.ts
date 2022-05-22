@@ -13,6 +13,7 @@ import type {
   XmlElement,
   XmlText,
   Map as YMap,
+  AbstractType,
 } from 'yjs';
 import type {
   DecoratorNode,
@@ -74,6 +75,15 @@ export type Cursor = {
   name: string;
   selection: null | CursorSelection;
 };
+export type TextOperation = {
+  insert?: string | object | AbstractType<unknown>;
+  delete?: number;
+  retain?: number;
+  attributes?: {
+    [x: string]: unknown;
+  };
+};
+
 export type Binding = {
   clientID: number;
   collabNodeMap: Map<
@@ -99,8 +109,8 @@ export declare class CollabDecoratorNode {
   _type: string;
   _unobservers: Set<() => void>;
   constructor(xmlElem: XmlElement, parent: CollabElementNode, type: string);
-  getPrevNode(nodeMap: null | NodeMap): null | DecoratorNode<{}>;
-  getNode(): null | DecoratorNode<{}>;
+  getPrevNode(nodeMap: null | NodeMap): null | DecoratorNode<unknown>;
+  getNode(): null | DecoratorNode<unknown>;
   getSharedType(): XmlElement;
   getType(): string;
   getKey(): NodeKey;
@@ -108,7 +118,7 @@ export declare class CollabDecoratorNode {
   getOffset(): number;
   syncPropertiesFromLexical(
     binding: Binding,
-    nextLexicalNode: DecoratorNode<{}>,
+    nextLexicalNode: DecoratorNode<unknown>,
     prevNodeMap: null | NodeMap,
   ): void;
   syncPropertiesFromYjs(
@@ -187,7 +197,7 @@ export declare class CollabElementNode {
     binding: Binding,
     keysChanged: null | Set<string>,
   ): void;
-  applyChildrenYjsDelta(binding: Binding, deltas: Array<unknown>): void;
+  applyChildrenYjsDelta(binding: Binding, deltas: Array<TextOperation>): void;
   syncChildrenFromYjs(binding: Binding): void;
   syncPropertiesFromLexical(
     binding: Binding,

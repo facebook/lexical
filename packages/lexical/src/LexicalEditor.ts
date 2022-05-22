@@ -40,6 +40,7 @@ import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 
 export type EditorThemeClassName = string;
+
 export type TextNodeThemeClasses = {
   base?: EditorThemeClassName;
   bold?: EditorThemeClassName;
@@ -49,14 +50,17 @@ export type TextNodeThemeClasses = {
   underline?: EditorThemeClassName;
   underlineStrikethrough?: EditorThemeClassName;
 };
+
 export type EditorUpdateOptions = {
   onUpdate?: () => void;
   skipTransforms?: true;
   tag?: string;
 };
+
 export type EditorSetOptions = {
   tag?: string;
 };
+
 export type EditorThemeClasses = {
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
@@ -109,6 +113,7 @@ export type EditorThemeClasses = {
             };
       };
 };
+
 export type EditorConfig = {
   namespace: string;
   theme: EditorThemeClasses;
@@ -119,16 +124,24 @@ export type EditorConfig = {
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
 };
+
 export type RegisteredNodes = Map<string, RegisteredNode>;
+
 export type RegisteredNode = {
   klass: typeof LexicalNode;
   transforms: Set<Transform<LexicalNode>>;
 };
+
 export type Transform<T> = (node: T) => void;
+
 export type ErrorHandler = (error: Error) => void;
+
 export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
+
 export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
+
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
+
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
   dirtyLeaves: Set<NodeKey>;
@@ -137,21 +150,30 @@ export type UpdateListener = (arg0: {
   prevEditorState: EditorState;
   tags: Set<string>;
 }) => void;
+
 export type DecoratorListener = (decorator: Record<NodeKey, unknown>) => void;
+
 export type RootListener = (
   rootElement: null | HTMLElement,
   prevRootElement: null | HTMLElement,
 ) => void;
+
 export type TextContentListener = (text: string) => void;
+
 export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
+
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
+
 export type ReadOnlyListener = (readOnly: boolean) => void;
+
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+
 export const COMMAND_PRIORITY_EDITOR = 0;
 export const COMMAND_PRIORITY_LOW = 1;
 export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type LexicalCommand<T> = Readonly<Record<string, unknown>>;
 type Commands = Map<
@@ -166,6 +188,7 @@ type Listeners = {
   textcontent: Set<TextContentListener>;
   update: Set<UpdateListener>;
 };
+
 export type ListenerType =
   | 'update'
   | 'root'
@@ -173,7 +196,9 @@ export type ListenerType =
   | 'textcontent'
   | 'mutation'
   | 'readonly';
+
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
+
 export type IntentionallyMarkedAsDirtyElement = boolean;
 type DOMConversionCache = Map<
   string,
@@ -192,16 +217,13 @@ export function resetEditor(
   editor._pendingEditorState = pendingEditorState;
   editor._compositionKey = null;
   editor._dirtyType = NO_DIRTY_NODES;
-
   editor._cloneNotNeeded.clear();
-
   editor._dirtyLeaves = new Set();
-
   editor._dirtyElements.clear();
-
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._updates = [];
+
   const observer = editor._observer;
 
   if (observer !== null) {
@@ -249,12 +271,16 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(
-  editorConfig: EditorConfig = {
-    namespace: '',
-    theme: {},
-  },
-): LexicalEditor {
+export function createEditor(editorConfig?: {
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: ReadonlyArray<typeof LexicalNode>;
+  onError: ErrorHandler;
+  parentEditor?: LexicalEditor;
+  readOnly?: boolean;
+  theme?: EditorThemeClasses;
+}): LexicalEditor {
   const config = editorConfig;
   const namespace = config.namespace || createUID();
   const theme = config.theme || {};

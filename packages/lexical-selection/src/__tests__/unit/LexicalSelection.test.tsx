@@ -93,7 +93,6 @@ describe('LexicalSelection tests', () => {
       return (
         <TestComposer
           config={{
-            nodes: [],
             theme: {
               code: 'editor-code',
               heading: {
@@ -1762,7 +1761,7 @@ describe('LexicalSelection tests', () => {
 
   describe('insertParagraph', () => {
     test('three text nodes at offset 0 on third node', async () => {
-      const testEditor = createTestEditor({});
+      const testEditor = createTestEditor();
       const element = document.createElement('div');
       testEditor.setRootElement(element);
 
@@ -1807,7 +1806,7 @@ describe('LexicalSelection tests', () => {
     });
 
     test('four text nodes at offset 0 on third node', async () => {
-      const testEditor = createTestEditor({});
+      const testEditor = createTestEditor();
       const element = document.createElement('div');
       testEditor.setRootElement(element);
 
@@ -1901,7 +1900,7 @@ describe('LexicalSelection tests', () => {
     let text1, text2, text3, paragraph, testEditor;
 
     beforeEach(async () => {
-      testEditor = createTestEditor({});
+      testEditor = createTestEditor();
 
       const element = document.createElement('div');
       testEditor.setRootElement(element);

@@ -684,7 +684,7 @@ describe('LexicalEditor tests', () => {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase({element}) {
-      editor = useMemo(() => createTestEditor({}), []);
+      editor = useMemo(() => createTestEditor(), []);
 
       useEffect(() => {
         editor.setRootElement(element);
@@ -794,7 +794,7 @@ describe('LexicalEditor tests', () => {
     const updateListener = jest.fn();
 
     function TestBase({changeElement}) {
-      editor = useMemo(() => createTestEditor({}), []);
+      editor = useMemo(() => createTestEditor(), []);
 
       useEffect(() => {
         editor.update(() => {
@@ -883,7 +883,7 @@ describe('LexicalEditor tests', () => {
       const listener = jest.fn();
 
       function Test() {
-        editor = useMemo(() => createTestEditor({}), []);
+        editor = useMemo(() => createTestEditor(), []);
 
         useEffect(() => {
           editor.registerRootListener(listener);

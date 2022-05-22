@@ -286,7 +286,7 @@ export function parseEditorState(
 
   try {
     const parsedNodeMap = new Map(parsedEditorState._nodeMap);
-    // $FlowFixMe: root always exists in Map
+    // root always exists in Map
     const parsedRoot = parsedNodeMap.get('root') as ParsedNode;
     internalCreateNodeFromParse(
       parsedRoot,
@@ -366,8 +366,7 @@ export function unstable_parseEditorState(
 
   try {
     const registeredNodes = editor._nodes;
-    // $FlowFixMe: intentional cast to our internal type
-    const serializedNode: InternalSerializedNode = serializedEditorState.root;
+    const serializedNode = serializedEditorState.root;
     parseSerializedNode(serializedNode, registeredNodes);
 
     if (updateFn) {
@@ -420,17 +419,14 @@ function handleDEVOnlyPendingUpdateGuarantees(
   // we instead replace its set, clear and delete methods.
   const nodeMap = pendingEditorState._nodeMap;
 
-  // $FlowFixMe: this is allowed
   nodeMap.set = () => {
     throw new Error('Cannot call set() on a frozen Lexical node map');
   };
 
-  // $FlowFixMe: this is allowed
   nodeMap.clear = () => {
     throw new Error('Cannot call clear() on a frozen Lexical node map');
   };
 
-  // $FlowFixMe: this is allowed
   nodeMap.delete = () => {
     throw new Error('Cannot call delete() on a frozen Lexical node map');
   };
@@ -583,7 +579,7 @@ function triggerMutationListeners(
 export function triggerListeners(
   type: 'update' | 'root' | 'decorator' | 'textcontent' | 'readonly',
   editor: LexicalEditor,
-  isCurrentlyEnqueuingUpdates: boolean, // $FlowFixMe: needs refining
+  isCurrentlyEnqueuingUpdates: boolean,
   ...payload: unknown[]
 ): void {
   const previouslyUpdating = editor._updating;
@@ -626,7 +622,6 @@ export function triggerCommandListeners<P>(
 
         if (listeners !== undefined) {
           for (const listener of listeners) {
-            // $FlowFixMe[missing-type-arg]
             if (listener(payload, editor) === true) {
               return true;
             }

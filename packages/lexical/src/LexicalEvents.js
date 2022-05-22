@@ -543,6 +543,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     const selection = $getSelection();
     const data = event.data;
     const possibleTextReplacement =
+      CAN_USE_DOM &&
       event.inputType === 'insertText' &&
       data != null &&
       data.length > 1 &&
@@ -562,7 +563,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         isFirefoxEndingComposition = false;
       }
       dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
-      if (possibleTextReplacement && CAN_USE_DOM) {
+      if (possibleTextReplacement) {
         // If the DOM selection offset is higher than the existing
         // offset, then restore the offset as it's likely correct
         // in the case of text replacements.

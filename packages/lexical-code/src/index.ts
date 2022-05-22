@@ -59,7 +59,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 

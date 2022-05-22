@@ -6,18 +6,17 @@
  *
  */
 
-import type {
+import {addClassNamesToElement} from '@lexical/utils';
+import {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  GridRowNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
 } from 'lexical';
-
-import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
-import {GridRowNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 export type SerializedTableRowNode = Spread<
   {

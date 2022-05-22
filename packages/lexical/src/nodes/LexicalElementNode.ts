@@ -14,7 +14,7 @@ import type {
   RangeSelection,
 } from '../LexicalSelection';
 
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 import invariant from 'shared-ts/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';

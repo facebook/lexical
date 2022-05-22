@@ -43,7 +43,6 @@ import {
 
 const editorConfig = Object.freeze({
   namespace: '',
-
   theme: {
     text: {
       bold: 'my-bold-class',
@@ -76,7 +75,7 @@ describe('LexicalTextNode tests', () => {
   }
 
   function useLexicalEditor(rootElementRef) {
-    const editor = useMemo(() => createTestEditor(), []);
+    const editor = useMemo(() => createTestEditor({}), []);
 
     useEffect(() => {
       const rootElement = rootElementRef.current;

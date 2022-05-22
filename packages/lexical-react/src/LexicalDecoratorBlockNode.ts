@@ -14,7 +14,7 @@ import type {
 } from 'lexical';
 
 import {DecoratorNode} from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 
 export type SerializedDecoratorBlockNode = Spread<
   {

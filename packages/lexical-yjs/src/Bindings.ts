@@ -50,15 +50,13 @@ export function createBinding(
     throw new Error('Should never happen');
   }
 
-  // $FlowFixMe: this will work
-  const rootXmlText: XmlText = doc.get('root', XmlText);
+  const rootXmlText = doc.get('root', XmlText) as XmlText;
   const root: CollabElementNode = $createCollabElementNode(
     rootXmlText,
     null,
     'root',
   );
   root._key = 'root';
-  // $FlowFixMe: our Flow bindings need fixing
   return {
     clientID: doc.clientID,
     collabNodeMap: new Map(),

@@ -11,7 +11,6 @@ import type {LexicalCommand} from 'lexical';
 import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
 
 import {createCommand} from 'lexical';
-// @ts-expect-error: need Flow typings for yjs
 import {UndoManager as YjsUndoManager} from 'yjs';
 
 export type UserState = {
@@ -35,27 +34,23 @@ declare interface Provider {
   connect(): void | Promise<void>;
   disconnect(): void;
   off(type: 'sync', cb: (isSynced: boolean) => void): void;
-  // $FlowFixMe: temp
-  off(type: 'update', cb: (arg0: any) => void): void;
+  off(type: 'update', cb: (arg0: unknown) => void): void;
   off(type: 'status', cb: (arg0: {status: string}) => void): void;
   off(type: 'reload', cb: (doc: Doc) => void): void;
   on(type: 'sync', cb: (isSynced: boolean) => void): void;
   on(type: 'status', cb: (arg0: {status: string}) => void): void;
-  // $FlowFixMe: temp
-  on(type: 'update', cb: (arg0: any) => void): void;
+  on(type: 'update', cb: (arg0: unknown) => void): void;
   on(type: 'reload', cb: (doc: Doc) => void): void;
 }
 export type Operation = {
   attributes: {
     __type: string;
   };
-  insert: string | {};
+  insert: string | Record<string, unknown>;
 };
 export type Delta = Array<Operation>;
-// @ts-expect-error: todo
-export type YjsNode = Record<string, any>;
-// @ts-expect-error: todo
-export type YjsEvent = Record<string, any>;
+export type YjsNode = Record<string, unknown>;
+export type YjsEvent = Record<string, unknown>;
 export type {Provider};
 export type {Binding, ClientID} from './Bindings';
 export {createBinding} from './Bindings';

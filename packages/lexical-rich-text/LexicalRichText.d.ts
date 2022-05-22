@@ -17,7 +17,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 import {ElementNode} from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 

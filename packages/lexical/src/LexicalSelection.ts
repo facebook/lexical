@@ -29,6 +29,7 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  DecoratorNode,
   GridCellNode,
   GridNode,
   TextNode,
@@ -137,10 +138,7 @@ class Point {
       if ($getCompositionKey() === oldKey) {
         $setCompositionKey(key);
       }
-      if (
-        selection !== null &&
-        (selection.anchor === this || selection.focus === this)
-      ) {
+      if (selection !== null) {
         selection._cachedNodes = null;
         selection.dirty = true;
       }
@@ -153,14 +151,14 @@ function $createPoint(
   offset: number,
   type: 'text' | 'element',
 ): PointType {
-  // $FlowFixMe: intentionally cast as we use a class for perf reasons
+  // @ts-expect-error: intentionally cast as we use a class for perf reasons
   return new Point(key, offset, type);
 }
 
 function selectPointOnNode(point: PointType, node: LexicalNode): void {
   let key = node.__key;
   let offset = point.offset;
-  let type = 'element';
+  let type: 'element' | 'text' = 'element';
   if ($isTextNode(node)) {
     type = 'text';
     const textContentLength = node.getTextContentSize();
@@ -351,7 +349,7 @@ export class GridSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
-  _cachedNodes: null | Array<LexicalNode>;
+  _cachedNodes: Array<LexicalNode>;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
     this.gridKey = gridKey;
@@ -442,7 +440,7 @@ export class GridSelection implements BaseSelection {
     if (cachedNodes !== null) {
       return cachedNodes;
     }
-    const nodesSet = new Set();
+    const nodesSet = new Set<LexicalNode>();
     const {fromX, fromY, toX, toY} = this.getShape();
 
     const gridNode = $getNodeByKey<GridNode>(this.gridKey);
@@ -860,7 +858,11 @@ export class RangeSelection implements BaseSelection {
       firstNode = firstNode.spliceText(startOffset, delCount, text, true);
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
-      } else if (firstNode.isComposing() && this.anchor.type === 'text') {
+      } else if (
+        $isTextNode(firstNode) &&
+        firstNode.isComposing() &&
+        this.anchor.type === 'text'
+      ) {
         // When composing, we need to adjust the anchor offset so that
         // we correctly replace that right range.
         this.anchor.offset -= text.length;
@@ -991,7 +993,7 @@ export class RangeSelection implements BaseSelection {
 
       // Ensure we do splicing after moving of nodes, as splicing
       // can have side-effects (in the case of hashtags).
-      if (!$isTokenOrInert(firstNode)) {
+      if ($isTextNode(firstNode) && !$isTokenOrInert(firstNode)) {
         firstNode = firstNode.spliceText(
           startOffset,
           firstNodeTextLength - startOffset,
@@ -1167,11 +1169,14 @@ export class RangeSelection implements BaseSelection {
     const anchor = this.anchor;
     const anchorOffset = anchor.offset;
     const anchorNode = anchor.getNode();
-    let target = anchorNode;
+    let target: ElementNode | TextNode | DecoratorNode<unknown> | LexicalNode =
+      anchorNode;
 
     if (anchor.type === 'element') {
       const element = anchor.getNode();
-      const placementNode = element.getChildAtIndex(anchorOffset - 1);
+      const placementNode = element.getChildAtIndex<ElementNode>(
+        anchorOffset - 1,
+      );
       if (placementNode === null) {
         target = element;
       } else {
@@ -1191,7 +1196,7 @@ export class RangeSelection implements BaseSelection {
       const textContent = anchorNode.getTextContent();
       const textContentLength = textContent.length;
       if (anchorOffset === 0 && textContentLength !== 0) {
-        const prevSibling = anchorNode.getPreviousSibling();
+        const prevSibling = anchorNode.getPreviousSibling<ElementNode>();
         if (prevSibling !== null) {
           target = prevSibling;
         } else {
@@ -1309,7 +1314,7 @@ export class RangeSelection implements BaseSelection {
       } else if (
         didReplaceOrMerge &&
         !$isDecoratorNode(node) &&
-        $isRootNode(target.getParent())
+        $isRootNode(target.getParent<ElementNode>())
       ) {
         invariant(
           false,
@@ -1320,7 +1325,7 @@ export class RangeSelection implements BaseSelection {
       if ($isElementNode(target) && !target.isInline()) {
         lastNodeInserted = node;
         if ($isDecoratorNode(node) && node.isTopLevel()) {
-          target = target.insertAfter(node);
+          target = target.insertAfter<DecoratorNode>(node);
         } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
@@ -1929,7 +1934,7 @@ function internalResolveSelectionPoint(
   lastPoint: null | PointType,
 ): null | PointType {
   let resolvedOffset = offset;
-  let resolvedNode: LexicalNode | null;
+  let resolvedNode: TextNode | LexicalNode | null;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
@@ -1979,7 +1984,7 @@ function internalResolveSelectionPoint(
         if ($isTextNode(child)) {
           resolvedNode = child;
           resolvedElement = null;
-          resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
+          resolvedOffset = getTextNodeOffset(child, moveSelectionToEnd);
         } else if (child !== resolvedElement && moveSelectionToEnd) {
           resolvedOffset++;
         }
@@ -2032,7 +2037,7 @@ function resolveSelectionPointOnBoundary(
       ) {
         point.key = prevSibling.__key;
         point.offset = prevSibling.getChildrenSize();
-        // $FlowFixMe: intentional
+        // @ts-expect-error: intentional
         point.type = 'element';
       } else if ($isTextNode(prevSibling) && !prevSibling.isInert()) {
         point.key = prevSibling.__key;
@@ -2057,7 +2062,7 @@ function resolveSelectionPointOnBoundary(
     if (isBackward && $isElementNode(nextSibling) && nextSibling.isInline()) {
       point.key = nextSibling.__key;
       point.offset = 0;
-      // $FlowFixMe: intentional
+      // @ts-expect-error: intentional
       point.type = 'element';
     } else if (
       (isCollapsed || isBackward) &&
@@ -2250,7 +2255,9 @@ function internalCreateRangeSelection(
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
       eventType === 'compositionend' ||
-      (eventType === 'click' && windowEvent && windowEvent.detail === 3) ||
+      (eventType === 'click' &&
+        windowEvent &&
+        (windowEvent as InputEvent).detail === 3) ||
       eventType === undefined);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 

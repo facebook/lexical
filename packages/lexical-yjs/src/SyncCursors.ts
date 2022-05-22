@@ -322,7 +322,7 @@ export function syncLocalCursorPosition(
 }
 
 function getCollabNodeAndOffset(
-  sharedType: XmlText | YMap,
+  sharedType: XmlText | YMap<unknown>,
   offset: number,
 ): [
   (
@@ -334,7 +334,7 @@ function getCollabNodeAndOffset(
   ),
   number,
 ] {
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   const collabNode = sharedType._collabNode;
 
   if (collabNode === undefined) {

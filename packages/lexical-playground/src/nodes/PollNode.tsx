@@ -12,8 +12,8 @@ import './PollNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-
 import {$getNodeByKey, DecoratorNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useMemo, useRef} from 'react';
 

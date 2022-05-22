@@ -18,7 +18,6 @@ import {
 
 const editorConfig = Object.freeze({
   namespace: '',
-
   theme: {
     list: {
       listitem: 'my-listItem-item-class',

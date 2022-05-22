@@ -14,13 +14,12 @@ import type {
 } from 'lexical';
 
 import {createEditor} from 'lexical';
-import {Class} from 'utility-types';
 
 export function createHeadlessEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  nodes?: ReadonlyArray<typeof LexicalNode>;
   onError: (error: Error) => void;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;

@@ -20,8 +20,8 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
 import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';

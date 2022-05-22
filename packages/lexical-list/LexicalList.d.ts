@@ -17,7 +17,7 @@ import {
   LexicalCommand,
   SerializedElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 
 export type ListType = 'number' | 'bullet' | 'check';
 export function $createListItemNode(checked?: boolean | void): ListItemNode;

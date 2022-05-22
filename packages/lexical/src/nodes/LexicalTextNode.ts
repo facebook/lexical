@@ -19,7 +19,7 @@ import type {
   RangeSelection,
 } from '../LexicalSelection';
 
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 import invariant from 'shared-ts/invariant';
 
 import {ElementNode} from '..';
@@ -683,7 +683,7 @@ export class TextNode extends LexicalNode {
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
-      writableNode = self.getWritable();
+      writableNode = self.getWritable<this>();
       writableNode.__text = firstPart;
     }
 
@@ -691,7 +691,7 @@ export class TextNode extends LexicalNode {
     const selection = $getSelection();
 
     // Then handle all other parts
-    const splitNodes = [writableNode];
+    const splitNodes: TextNode[] = [writableNode];
     let textSize = firstPart.length;
 
     for (let i = 1; i < partsLength; i++) {

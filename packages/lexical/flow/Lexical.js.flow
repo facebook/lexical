@@ -241,11 +241,6 @@ export type EditorConfig = {
   namespace: string,
   theme: EditorThemeClasses,
   disableEvents?: boolean,
-  editorState?: EditorState,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-  onError: ErrorHandler,
-  parentEditor?: LexicalEditor,
-  readOnly?: boolean,
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;
@@ -611,7 +606,7 @@ declare export class TextNode extends LexicalNode {
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
   static getType(): string;
-  static clone(node: $FlowFixMe): TextNode;
+  static clone(node: TextNode): TextNode;
   constructor(text: string, key?: NodeKey): void;
   getFormat(): number;
   getStyle(): string;
@@ -699,8 +694,8 @@ declare export class RootNode extends ElementNode {
   select(): RangeSelection;
   remove(): void;
   replace<N: LexicalNode>(node: N): N;
-  insertBefore(): LexicalNode;
-  insertAfter(node: LexicalNode): LexicalNode;
+  insertBefore<T: LexicalNode>(nodeToInsert: T): T;
+  insertAfter<T: LexicalNode>(nodeToInsert: T): T;
   updateDOM(prevNode: RootNode, dom: HTMLElement): false;
   append(...nodesToAppend: Array<LexicalNode>): ElementNode;
   canBeEmpty(): false;

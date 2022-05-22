@@ -6,7 +6,7 @@
  *
  */
 
-import type {Binding, Provider, YjsEvent} from '.';
+// import type {Binding, Provider, YjsEvent} from '.';
 import type {
   EditorState,
   IntentionallyMarkedAsDirtyElement,
@@ -23,13 +23,9 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
-import {
-  // $FlowFixMe: need Flow typings for yjs
-  YMapEvent, // $FlowFixMe: need Flow typings for yjs
-  YTextEvent, // $FlowFixMe: need Flow typings for yjs
-  YXmlEvent,
-} from 'yjs';
+import {YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
 
+import {Binding, Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -46,7 +42,7 @@ import {
 
 function syncEvent(
   binding: Binding,
-  event: YTextEvent | YMapEvent | YXmlEvent,
+  event: YTextEvent | YMapEvent<void> | YXmlEvent,
 ): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
@@ -91,13 +87,12 @@ function syncEvent(
 export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
-  events: Array<YjsEvent>,
+  events: Array<YEvent<void>>,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
   editor.update(
     () => {
-      // $FlowFixMe: this is always true
       const pendingEditorState: EditorState = editor._pendingEditorState;
 
       for (let i = 0; i < events.length; i++) {

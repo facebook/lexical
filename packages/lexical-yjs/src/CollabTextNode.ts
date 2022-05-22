@@ -43,7 +43,7 @@ function diffTextContentAndApplyDelta(
 }
 
 export class CollabTextNode {
-  _map: YMap;
+  _map: YMap<unknown>;
   _key: NodeKey;
   _parent: CollabElementNode;
   _text: string;
@@ -51,7 +51,7 @@ export class CollabTextNode {
   _normalized: boolean;
 
   constructor(
-    map: YMap,
+    map: YMap<unknown>,
     text: string,
     parent: CollabElementNode,
     type: string,
@@ -78,7 +78,7 @@ export class CollabTextNode {
     return $isTextNode(node) ? node : null;
   }
 
-  getSharedType(): YMap {
+  getSharedType(): YMap<unknown> {
     return this._map;
   }
 
@@ -152,7 +152,7 @@ export class CollabTextNode {
     const collabText = this._text;
 
     if (lexicalNode.__text !== collabText) {
-      const writable = lexicalNode.getWritable();
+      const writable = lexicalNode.getWritable<TextNode>();
       writable.__text = collabText;
     }
   }
@@ -164,13 +164,13 @@ export class CollabTextNode {
 }
 
 export function $createCollabTextNode(
-  map: YMap,
+  map: YMap<unknown>,
   text: string,
   parent: CollabElementNode,
   type: string,
 ): CollabTextNode {
   const collabNode = new CollabTextNode(map, text, parent, type);
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   map._collabNode = collabNode;
   return collabNode;
 }

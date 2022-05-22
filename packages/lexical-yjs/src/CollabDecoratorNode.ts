@@ -30,7 +30,7 @@ export class CollabDecoratorNode {
     this._unobservers = new Set();
   }
 
-  getPrevNode(nodeMap: null | NodeMap): null | DecoratorNode<{}> {
+  getPrevNode(nodeMap: null | NodeMap): null | DecoratorNode<unknown> {
     if (nodeMap === null) {
       return null;
     }
@@ -39,7 +39,7 @@ export class CollabDecoratorNode {
     return $isDecoratorNode(node) ? node : null;
   }
 
-  getNode(): null | DecoratorNode<{}> {
+  getNode(): null | DecoratorNode<unknown> {
     const node = $getNodeByKey(this._key);
     return $isDecoratorNode(node) ? node : null;
   }
@@ -67,7 +67,7 @@ export class CollabDecoratorNode {
 
   syncPropertiesFromLexical(
     binding: Binding,
-    nextLexicalNode: DecoratorNode<{}>,
+    nextLexicalNode: DecoratorNode<unknown>,
     prevNodeMap: null | NodeMap,
   ): void {
     const prevLexicalNode = this.getPrevNode(prevNodeMap);
@@ -110,7 +110,7 @@ export function $createCollabDecoratorNode(
   type: string,
 ): CollabDecoratorNode {
   const collabNode = new CollabDecoratorNode(xmlElem, parent, type);
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   xmlElem._collabNode = collabNode;
   return collabNode;
 }

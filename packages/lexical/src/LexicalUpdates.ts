@@ -134,7 +134,7 @@ export function $applyTransforms(
 }
 
 function $isNodeValidForTransform(
-  node: void | LexicalNode,
+  node: LexicalNode,
   compositionKey: null | string,
 ): boolean {
   return (
@@ -287,7 +287,7 @@ export function parseEditorState(
   try {
     const parsedNodeMap = new Map(parsedEditorState._nodeMap);
     // $FlowFixMe: root always exists in Map
-    const parsedRoot = parsedNodeMap.get('root') as any as ParsedNode;
+    const parsedRoot = parsedNodeMap.get('root') as ParsedNode;
     internalCreateNodeFromParse(
       parsedRoot,
       parsedNodeMap,
@@ -377,6 +377,7 @@ export function unstable_parseEditorState(
     // Make the editorState immutable
     editorState._readOnly = true;
 
+    // @ts-ignore
     if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(editorState);
     }
@@ -505,6 +506,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
 
   pendingEditorState._readOnly = true;
 
+  // @ts-ignore
   if (__DEV__) {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
   }
@@ -582,16 +584,16 @@ export function triggerListeners(
   type: 'update' | 'root' | 'decorator' | 'textcontent' | 'readonly',
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean, // $FlowFixMe: needs refining
-  ...payload: Array<any>
+  ...payload: unknown[]
 ): void {
   const previouslyUpdating = editor._updating;
   editor._updating = isCurrentlyEnqueuingUpdates;
 
   try {
-    const listeners = Array.from(editor._listeners[type]);
+    const listeners = [...editor._listeners[type]];
 
     for (let i = 0; i < listeners.length; i++) {
-      listeners[i](...payload);
+      listeners[i].apply(null, payload);
     }
   } finally {
     editor._updating = previouslyUpdating;

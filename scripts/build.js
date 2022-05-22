@@ -139,16 +139,7 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
-const COMMON_BABEL_SETTINGS = {
-  babelHelpers: 'bundled',
-  babelrc: false,
-  configFile: false,
-  exclude: '/**/node_modules/**',
-};
-
 async function build(name, inputFile, outputFile, isProd) {
-  const isTypeScript = /\.tsx?$/.test(inputFile);
-
   const inputOptions = {
     external(modulePath, src) {
       return externals.includes(modulePath);
@@ -191,44 +182,35 @@ async function build(name, inputFile, outputFile, isProd) {
       {
         transform(source) {
           // eslint-disable-next-line no-unused-expressions
-          extractCodes && findAndRecordErrorCodes(source, isTypeScript);
+          extractCodes && findAndRecordErrorCodes(source);
           return source;
         },
       },
       nodeResolve({
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
       }),
-      isTypeScript
-        ? babel({
-            ...COMMON_BABEL_SETTINGS,
-            extensions: ['.js', '.jsx', '.ts', '.tsx'],
-            plugins: [
-              [
-                require('./error-codes/transform-error-messages'),
-                {noMinify: !isProd},
-              ],
-            ],
-            presets: [
-              [
-                '@babel/preset-typescript',
-                {
-                  tsconfig: path.resolve('./tsconfig.build.json'),
-                },
-              ],
-              '@babel/preset-react',
-            ],
-          })
-        : babel({
-            ...COMMON_BABEL_SETTINGS,
-            plugins: [
-              '@babel/plugin-transform-flow-strip-types',
-              [
-                require('./error-codes/transform-error-messages'),
-                {noMinify: !isProd},
-              ],
-            ],
-            presets: ['@babel/preset-react'],
-          }),
+      babel({
+        babelHelpers: 'bundled',
+        babelrc: false,
+        configFile: false,
+        exclude: '/**/node_modules/**',
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        plugins: [
+          [
+            require('./error-codes/transform-error-messages'),
+            {noMinify: !isProd},
+          ],
+        ],
+        presets: [
+          [
+            '@babel/preset-typescript',
+            {
+              tsconfig: path.resolve('./tsconfig.build.json'),
+            },
+          ],
+          '@babel/preset-react',
+        ],
+      }),
       {
         resolveId(importee, importer) {
           if (importee === 'formatProdErrorMessage') {

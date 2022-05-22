@@ -6,10 +6,8 @@
  *
  */
 
-import type {EditorConfig, SerializedTextNode} from 'lexical';
-
-import {TextNode} from 'lexical';
-import {Spread} from 'libdefs/global';
+import {EditorConfig, SerializedTextNode, TextNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 export type SerializedTypeaheadNode = Spread<
   {

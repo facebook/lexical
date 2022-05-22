@@ -9,7 +9,6 @@
 import type {
   IntentionallyMarkedAsDirtyElement,
   LexicalCommand,
-  LexicalEditor,
   MutatedNodes,
   MutationListeners,
   NodeMutation,
@@ -30,7 +29,6 @@ import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
 import getDOMSelection from 'shared-ts/getDOMSelection';
 import invariant from 'shared-ts/invariant';
-import {Class} from 'utility-types';
 
 import {
   $createTextNode,
@@ -52,6 +50,13 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+// This function is used to determine if Lexical should attempt to override
+// the default browser behavior for insertion of text and use its own internal
+// heuristics. This is an extremely important function, and makes much of Lexical
+// work as intended between different browsers and across word, line and character
+// boundary/formats. It also is important for text replacement, node schemas and
+// composition mechanics.import { EditorState } from './LexicalEditorState';
+import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   errorOnInfiniteTransforms,
@@ -107,7 +112,7 @@ function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
 }
 
 export function isSelectionWithinEditor(
-  editor: LexicalEditor,
+  editor: LexicalEditor | LexicalEditor,
   anchorDOM: null | Node,
   focusDOM: null | Node,
 ): boolean {
@@ -323,7 +328,7 @@ export function $getNodeByKey<T extends LexicalNode>(
   _editorState?: EditorState,
 ): T | null {
   const editorState = _editorState || getActiveEditorState();
-  const node = editorState._nodeMap.get(key);
+  const node = editorState._nodeMap.get(key) as T;
   if (node === undefined) {
     return null;
   }
@@ -366,7 +371,7 @@ export function cloneDecorators(
   return pendingDecorators;
 }
 
-export function getEditorStateTextContent(editorState: EditorState): string {
+export function getEditorStateTextContent(editorState): string {
   return editorState.read(() => $getRoot().getTextContent());
 }
 
@@ -624,13 +629,6 @@ function $shouldInsertTextAfterOrBeforeTextNode(
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
-
-// This function is used to determine if Lexical should attempt to override
-// the default browser behavior for insertion of text and use its own internal
-// heuristics. This is an extremely important function, and makes much of Lexical
-// work as intended between different browsers and across word, line and character
-// boundary/formats. It also is important for text replacement, node schemas and
-// composition mechanics.
 
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
@@ -945,7 +943,9 @@ export function setMutatedNode(
   }
 }
 
-export function $nodesOfType<T extends LexicalNode>(klass: Class<T>): Array<T> {
+export function $nodesOfType<T extends LexicalNode>(
+  klass: typeof LexicalNode,
+): Array<T> {
   const editorState = getActiveEditorState();
   const readOnly = editorState._readOnly;
   const klassType = klass.getType();
@@ -1015,7 +1015,7 @@ export function $getDecoratorNode(
 
 export function isFirefoxClipboardEvents(): boolean {
   const event = window.event;
-  const inputType = event && event.inputType;
+  const inputType = event && (event as InputEvent).inputType;
   return (
     inputType === 'insertFromPaste' ||
     inputType === 'insertFromPasteAsQuotation'

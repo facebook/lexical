@@ -19,13 +19,15 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
 import {
   $createParagraphNode,
   $isElementNode,
   $isLineBreakNode,
   GridCellNode,
 } from 'lexical';
+import {Spread} from 'libdefs/globals';
+
+libdefs / globald;
 
 export const TableCellHeaderStates = {
   BOTH: 3,

@@ -16,7 +16,6 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_HIGH,
@@ -24,6 +23,7 @@ import {
   KEY_ESCAPE_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -116,7 +116,7 @@ function EquationComponent({
   );
 }
 
-export type SerializedEquationNode = Spread<
+type NewType = Spread<
   {
     type: 'equation';
     equation: string;
@@ -124,6 +124,8 @@ export type SerializedEquationNode = Spread<
   },
   SerializedLexicalNode
 >;
+
+export type SerializedEquationNode = NewType;
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;

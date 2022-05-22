@@ -6,15 +6,14 @@
  *
  */
 
-import type {
+import {
   EditorConfig,
   LexicalNode,
   NodeKey,
   SerializedTextNode,
+  TextNode,
 } from 'lexical';
-
-import {TextNode} from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 
 export type SerializedMentionNode = Spread<
   {

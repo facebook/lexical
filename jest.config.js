@@ -7,8 +7,8 @@ const common = {
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
-    '<rootDir>/packages/lexical/src/core/**/*.js',
-    '<rootDir>/packages/lexical/src/extensions/**/*.js',
+    '<rootDir>/packages/lexical/src/core/**/*.ts',
+    '<rootDir>/packages/lexical/src/extensions/**/*.ts',
     '<rootDir>/packages/lexical-react/src/**/*.ts',
   ],
   coverageReporters: ['json', 'text'],
@@ -79,8 +79,8 @@ module.exports = {
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.ts',
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.ts',
         '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.ts',
-        '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
-        '^lexical$': '<rootDir>/packages/lexical/src/index.js',
+        '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
+        '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
         '^shared-ts/canUseDOM$':
           '<rootDir>/packages/shared-ts/src/canUseDOM.ts',
         '^shared-ts/environment$':

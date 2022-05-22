@@ -69,8 +69,10 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
+
+libdefs / globald;
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 

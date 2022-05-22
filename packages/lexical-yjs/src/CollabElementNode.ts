@@ -13,7 +13,7 @@ import type {
   NodeKey,
   NodeMap,
 } from 'lexical';
-import type {TextOperation, XmlElement, XmlText} from 'yjs';
+import type {XmlElement, XmlText} from 'yjs';
 
 import {
   $getNodeByKey,
@@ -119,7 +119,14 @@ export class CollabElementNode {
     syncPropertiesFromYjs(binding, this._xmlText, lexicalNode, keysChanged);
   }
 
-  applyChildrenYjsDelta(binding: Binding, deltas: Array<TextOperation>): void {
+  applyChildrenYjsDelta(
+    binding: Binding,
+    deltas: Array<{
+      insert: string;
+      delete: number;
+      retain: number;
+    }>,
+  ): void {
     const children = this._children;
     let currIndex = 0;
 
@@ -197,7 +204,7 @@ export class CollabElementNode {
 
           currIndex += insertDelta.length;
         } else {
-          const sharedType: XmlText | YMap | XmlElement = insertDelta;
+          const sharedType: XmlText | YMap<unknown> | XmlElement = insertDelta;
           const {nodeIndex} = getPositionFromElementAndOffset(
             this,
             currIndex,
@@ -413,8 +420,8 @@ export class CollabElementNode {
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
     const collabNodeMap = binding.collabNodeMap;
-    let prevChildrenSet: void | Set<NodeKey>;
-    let nextChildrenSet: void | Set<NodeKey>;
+    let prevChildrenSet: Set<NodeKey>;
+    let nextChildrenSet: Set<NodeKey>;
     let prevIndex = 0;
     let nextIndex = 0;
 
@@ -632,11 +639,11 @@ export class CollabElementNode {
 
 function lazilyCloneElementNode(
   lexicalNode: ElementNode,
-  writableLexicalNode: void | ElementNode,
+  writableLexicalNode: ElementNode,
   nextLexicalChildrenKeys: Array<NodeKey>,
 ): ElementNode {
   if (writableLexicalNode === undefined) {
-    const clone = lexicalNode.getWritable();
+    const clone = lexicalNode.getWritable<ElementNode>();
     clone.__children = nextLexicalChildrenKeys;
     return clone;
   }
@@ -650,7 +657,7 @@ export function $createCollabElementNode(
   type: string,
 ): CollabElementNode {
   const collabNode = new CollabElementNode(xmlText, parent, type);
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   xmlText._collabNode = collabNode;
   return collabNode;
 }

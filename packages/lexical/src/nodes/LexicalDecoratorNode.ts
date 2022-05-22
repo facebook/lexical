@@ -9,17 +9,16 @@
 import type {LexicalEditor} from '../LexicalEditor';
 import type {NodeKey} from '../LexicalNode';
 
-import {__DEV__} from 'libdefs/global';
 import invariant from 'shared-ts/invariant';
 
 import {LexicalNode} from '../LexicalNode';
 
-export class DecoratorNode extends LexicalNode {
+export class DecoratorNode<T = unknown> extends LexicalNode {
   constructor(key?: NodeKey) {
     super(key);
 
     // ensure custom nodes implement required methods
-
+    // @ts-ignore
     if (__DEV__) {
       const proto = Object.getPrototypeOf(this);
       ['decorate'].forEach((method) => {
@@ -33,7 +32,7 @@ export class DecoratorNode extends LexicalNode {
     }
   }
 
-  decorate(editor: LexicalEditor) {
+  decorate(editor: LexicalEditor): T {
     invariant(false, 'decorate: base method not extended');
   }
 
@@ -46,8 +45,8 @@ export class DecoratorNode extends LexicalNode {
   }
 }
 
-export function $isDecoratorNode(
+export function $isDecoratorNode<T>(
   node: LexicalNode | null | undefined,
-): node is DecoratorNode {
+): node is DecoratorNode<T> {
   return node instanceof DecoratorNode;
 }

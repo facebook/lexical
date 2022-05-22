@@ -8,7 +8,7 @@
 
 import type {LexicalNode, NodeKey, SerializedElementNode} from 'lexical';
 
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 
 import {ElementNode} from './LexicalElementNode';
 

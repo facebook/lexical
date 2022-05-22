@@ -17,7 +17,6 @@ import {initializeUnitTest} from '../../../__tests__/utils';
 
 const editorConfig = Object.freeze({
   namespace: '',
-
   theme: {
     paragraph: 'my-paragraph-class',
   },

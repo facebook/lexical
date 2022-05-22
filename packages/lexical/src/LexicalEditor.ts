@@ -15,7 +15,6 @@ import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared-ts/getDOMSelection';
 import invariant from 'shared-ts/invariant';
-import {Class} from 'utility-types';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
@@ -71,15 +70,17 @@ export type EditorThemeClasses = {
   image?: EditorThemeClassName;
   link?: EditorThemeClassName;
   list?: {
-    listitem: EditorThemeClassName;
-    nested: {
+    ul?: EditorThemeClassName;
+    ulDepth?: Array<EditorThemeClassName>;
+    ol?: EditorThemeClassName;
+    olDepth?: Array<EditorThemeClassName>;
+    listitem?: EditorThemeClassName;
+    listitemChecked?: EditorThemeClassName;
+    listitemUnchecked?: EditorThemeClassName;
+    nested?: {
       list?: EditorThemeClassName;
       listitem?: EditorThemeClassName;
     };
-    ol?: EditorThemeClassName;
-    olDepth?: Array<EditorThemeClassName>;
-    ul?: EditorThemeClassName;
-    ulDepth: Array<EditorThemeClassName>;
   };
   ltr?: EditorThemeClassName;
   mark?: EditorThemeClassName;
@@ -94,27 +95,38 @@ export type EditorThemeClasses = {
   tableRow?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   // Handle other generic values
-  [key: string]: EditorThemeClassName | Record<string, EditorThemeClassName>;
+  [key: string]:
+    | EditorThemeClassName
+    | TextNodeThemeClasses
+    | {
+        [key: string]:
+          | Array<EditorThemeClassName>
+          | EditorThemeClassName
+          | TextNodeThemeClasses
+          | {
+              [key: string]: EditorThemeClassName;
+            };
+      };
 };
 export type EditorConfig = {
   namespace: string;
   theme: EditorThemeClasses;
   disableEvents?: boolean;
   editorState?: EditorState;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
-  onError: ErrorHandler;
+  nodes?: ReadonlyArray<typeof LexicalNode>;
+  onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
 };
 export type RegisteredNodes = Map<string, RegisteredNode>;
 export type RegisteredNode = {
-  klass: Class<LexicalNode>;
+  klass: typeof LexicalNode;
   transforms: Set<Transform<LexicalNode>>;
 };
 export type Transform<T> = (node: T) => void;
 export type ErrorHandler = (error: Error) => void;
-export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
-export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
+export type MutationListeners = Map<MutationListener, typeof LexicalNode>;
+export type MutatedNodes = Map<typeof LexicalNode, Map<NodeKey, NodeMutation>>;
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 export type UpdateListener = (arg0: {
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
@@ -264,9 +276,7 @@ export function createEditor(editorConfig?: EditorConfig): LexicalEditor {
     });
   }
 
-  // klass: Array<Class<LexicalNode>>
-  // $FlowFixMe: use our declared type instead
-  const editor: editor = new LexicalEditor(
+  const editor = new LexicalEditor(
     editorState,
     parentEditor,
     registeredNodes,
@@ -296,7 +306,7 @@ export class LexicalEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _updates: Array<[() => void, void | EditorUpdateOptions]>;
+  _updates: Array<[() => void, EditorUpdateOptions]>;
   _updating: boolean;
   _listeners: Listeners;
   _commands: Commands;
@@ -447,7 +457,7 @@ export class LexicalEditor {
       invariant(
         false,
         'registerCommand: Command %s not found in command map',
-        command,
+        String(command),
       );
     }
 
@@ -467,7 +477,7 @@ export class LexicalEditor {
   }
 
   registerMutationListener(
-    klass: Class<LexicalNode>,
+    klass: typeof LexicalNode,
     listener: MutationListener,
   ): () => void {
     const registeredNode = this._nodes.get(klass.getType());
@@ -490,7 +500,7 @@ export class LexicalEditor {
   registerNodeTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T = LexicalNode> in the
     // declaration below guarantees these are LexicalNodes.
-    klass: Class<LexicalNode>,
+    klass: typeof LexicalNode,
     listener: Transform<LexicalNode>,
   ): () => void {
     const type = klass.getType();
@@ -513,7 +523,7 @@ export class LexicalEditor {
     };
   }
 
-  hasNodes(nodes: Array<Class<LexicalNode>>): boolean {
+  hasNodes(nodes: Array<typeof LexicalNode>): boolean {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
       const type = klass.getType();

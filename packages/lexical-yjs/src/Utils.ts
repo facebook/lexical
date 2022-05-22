@@ -7,7 +7,14 @@
  */
 
 import type {Binding, YjsNode} from '.';
-import type {LexicalNode, NodeKey, RangeSelection, TextNode} from 'lexical';
+import type {
+  DecoratorNode,
+  ElementNode,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+  TextNode,
+} from 'lexical';
 
 import {
   $getNodeByKey,
@@ -16,6 +23,7 @@ import {
   $isLineBreakNode,
   $isTextNode,
   createEditor,
+  NodeKey,
 } from 'lexical';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
@@ -56,6 +64,7 @@ export function getIndexOfYjsNode(
       return i;
     }
 
+    // @ts-expect-error
     node = node.nextSibling;
 
     if (node === null) {
@@ -120,7 +129,7 @@ export function $createCollabNodeFromLexicalNode(
 }
 
 function getNodeTypeFromSharedType(
-  sharedType: XmlText | YMap | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
 ): string {
   const type =
     sharedType instanceof YMap
@@ -136,14 +145,14 @@ function getNodeTypeFromSharedType(
 
 export function getOrInitCollabNodeFromSharedType(
   binding: Binding,
-  sharedType: XmlText | YMap | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
   parent?: CollabElementNode,
 ):
   | CollabElementNode
   | CollabTextNode
   | CollabLineBreakNode
   | CollabDecoratorNode {
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   const collabNode = sharedType._collabNode;
 
   if (collabNode === undefined) {
@@ -202,8 +211,8 @@ export function createLexicalNodeFromCollabNode(
     throw new Error('createLexicalNode failed');
   }
 
-  // $FlowFixMe: needs refining
-  const lexicalNode: DecoratorNode | TextNode | ElementNode =
+  // @ts-expect-error: needs refining
+  const lexicalNode: DecoratorNode<unknown> | TextNode | ElementNode =
     new nodeInfo.klass();
   lexicalNode.__parent = parentKey;
   collabNode._key = lexicalNode.__key;
@@ -225,7 +234,7 @@ export function createLexicalNodeFromCollabNode(
 
 export function syncPropertiesFromYjs(
   binding: Binding,
-  sharedType: XmlText | YMap | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
   lexicalNode: LexicalNode,
   keysChanged: null | Set<string>,
 ): void {
@@ -270,7 +279,6 @@ export function syncPropertiesFromYjs(
         writableNode = lexicalNode.getWritable();
       }
 
-      // $FlowFixMe
       writableNode[property] = nextValue;
     }
   }
@@ -278,7 +286,7 @@ export function syncPropertiesFromYjs(
 
 export function syncPropertiesFromLexical(
   binding: Binding,
-  sharedType: XmlText | YMap | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
   prevLexicalNode: null | LexicalNode,
   nextLexicalNode: LexicalNode,
 ): void {
@@ -297,9 +305,8 @@ export function syncPropertiesFromLexical(
 
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
-    const prevValue = // $FlowFixMe: intentional override
+    const prevValue =
       prevLexicalNode === null ? undefined : prevLexicalNode[property];
-    // $FlowFixMe: intentional override
     let nextValue = nextLexicalNode[property];
 
     if (prevValue !== nextValue) {
@@ -308,16 +315,15 @@ export function syncPropertiesFromLexical(
         let prevDoc;
 
         if (prevValue instanceof EditorClass) {
-          const prevKey = prevValue._key;
+          const prevKey = (prevValue as CollabTextNode)._key;
           prevDoc = yjsDocMap.get(prevKey);
           yjsDocMap.delete(prevKey);
         }
 
         // If we already have a document, use it.
         const doc = prevDoc || new Doc();
-        // $FlowFixMe: guid exists
         const key = doc.guid;
-        nextValue._key = key;
+        (nextValue as CollabTextNode)._key = key;
         yjsDocMap.set(key, doc);
         nextValue = doc;
         // Mark the node dirty as we've assigned a new key to it

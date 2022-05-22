@@ -31,11 +31,19 @@ import {
   COMMAND_PRIORITY_EDITOR,
   ElementNode,
   LexicalEditor,
+  NodeKey,
   ParagraphNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef, useCallback, useEffect, useMemo, useState} from 'react';
+import {
+  createRef,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
@@ -93,7 +101,7 @@ describe('LexicalEditor tests', () => {
 
   let editor: LexicalEditor = null;
 
-  function init(onError: () => void) {
+  function init(onError?: () => void) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
@@ -391,7 +399,7 @@ describe('LexicalEditor tests', () => {
     const italicsListener = editor.registerNodeTransform(
       ParagraphNode,
       (paragraph) => {
-        const child = paragraph.getLastDescendant();
+        const child = paragraph.getLastDescendant<TextNode>();
 
         if (
           child !== null &&
@@ -510,6 +518,7 @@ describe('LexicalEditor tests', () => {
       $getRoot().getLastDescendant().remove();
       hasBeenRemoved = true;
     });
+
     expect(executeTransform).toHaveBeenCalledTimes(1);
     removeListener();
   });
@@ -517,9 +526,13 @@ describe('LexicalEditor tests', () => {
   it('transforms only run on nodes that were explictly marked as dirty', async () => {
     init();
 
-    let executeParagraphNodeTransform = () => {};
+    let executeParagraphNodeTransform = () => {
+      return;
+    };
 
-    let executeTextNodeTransform = () => {};
+    let executeTextNodeTransform = () => {
+      return;
+    };
 
     const removeParagraphTransform = editor.registerNodeTransform(
       ParagraphNode,
@@ -543,12 +556,13 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const root = $getRoot();
-      const paragraph = root.getFirstChild();
-      const textNode = paragraph.getFirstChild();
+      const paragraph = root.getFirstChild<ParagraphNode>();
+      const textNode = paragraph.getFirstChild<TextNode>();
       textNode.getWritable();
       executeParagraphNodeTransform = jest.fn();
       executeTextNodeTransform = jest.fn();
     });
+
     expect(executeParagraphNodeTransform).toHaveBeenCalledTimes(0);
     expect(executeTextNodeTransform).toHaveBeenCalledTimes(1);
     removeParagraphTransform();
@@ -573,7 +587,7 @@ describe('LexicalEditor tests', () => {
         const textNodes = [];
 
         for (let i = 0; i < 6; i++) {
-          const node = $createTextNode(i).toggleUnmergeable();
+          const node = $createTextNode(String(i)).toggleUnmergeable();
           textNodes.push(node);
           textNodeKeys.push(node.getKey());
           textTransformCount[i] = 0;
@@ -628,7 +642,7 @@ describe('LexicalEditor tests', () => {
 
     it('on splitText', async () => {
       await editor.update(() => {
-        const textNode1 = $getNodeByKey(textNodeKeys[1]);
+        const textNode1 = $getNodeByKey<TextNode>(textNodeKeys[1]);
         textNode1.setTextContent('67');
         textNode1.splitText(1);
         textTransformCount.push(0, 0);
@@ -638,7 +652,7 @@ describe('LexicalEditor tests', () => {
 
     it('on append', async () => {
       await editor.update(() => {
-        const paragraph1 = $getRoot().getFirstChild();
+        const paragraph1 = $getRoot().getFirstChild<ParagraphNode>();
         paragraph1.append($createTextNode('6').toggleUnmergeable());
         textTransformCount.push(0);
       });
@@ -670,7 +684,7 @@ describe('LexicalEditor tests', () => {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase({element}) {
-      editor = useMemo(() => createTestEditor(), []);
+      editor = useMemo(() => createTestEditor({}), []);
 
       useEffect(() => {
         editor.setRootElement(element);
@@ -689,10 +703,12 @@ describe('LexicalEditor tests', () => {
       root.append(paragraph);
       paragraph.append(text);
     });
+
     expect(container.innerHTML).toBe('<div contenteditable="true"></div>');
     ReactTestUtils.act(() => {
       reactRoot.render(<TestBase element={ref.current} />);
     });
+
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
@@ -778,7 +794,7 @@ describe('LexicalEditor tests', () => {
     const updateListener = jest.fn();
 
     function TestBase({changeElement}) {
-      editor = useMemo(() => createTestEditor(), []);
+      editor = useMemo(() => createTestEditor({}), []);
 
       useEffect(() => {
         editor.update(() => {
@@ -839,7 +855,7 @@ describe('LexicalEditor tests', () => {
   describe('With node decorators', () => {
     function useDecorators() {
       const [decorators, setDecorators] = useState(() =>
-        editor.getDecorators(),
+        editor.getDecorators<ReactNode>(),
       );
       // Subscribe to changes
 
@@ -867,7 +883,7 @@ describe('LexicalEditor tests', () => {
       const listener = jest.fn();
 
       function Test() {
-        editor = useMemo(() => createTestEditor(), []);
+        editor = useMemo(() => createTestEditor({}), []);
 
         useEffect(() => {
           editor.registerRootListener(listener);
@@ -910,13 +926,15 @@ describe('LexicalEditor tests', () => {
     it('Should correctly render React component into Lexical node #2', async () => {
       const listener = jest.fn();
 
-      function Test({divKey}) {
+      function Test({divKey}): JSX.Element {
         function TestPlugin() {
           [editor] = useLexicalComposerContext();
 
           useEffect(() => {
             editor.registerRootListener(listener);
           }, []);
+
+          return null;
         }
 
         return (
@@ -1285,7 +1303,7 @@ describe('LexicalEditor tests', () => {
       });
     }
 
-    function generatePermutations(maxLen: number): string[] {
+    function generatePermutations(maxLen: number): string[][] {
       if (maxLen > 26) {
         throw new Error('maxLen <= 26');
       }
@@ -1324,7 +1342,7 @@ describe('LexicalEditor tests', () => {
         const textToKey: Map<string, NodeKey> = new Map();
         // Previous editor state
 
-        await update((state: State) => {
+        await update(() => {
           const writableParagraph: ParagraphNode = $getRoot()
             .getFirstChild()
             .getWritable();
@@ -1503,9 +1521,9 @@ describe('LexicalEditor tests', () => {
         paragraph.append(elementNode1, elementNode2);
       });
 
-      await update((state: State) => {
-        const elementNode1: ElementNode = $getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = $getNodeByKey(elementNode2Key);
+      await update(() => {
+        const elementNode1 = $getNodeByKey<TextNode>(elementNode1Key);
+        const elementNode2 = $getNodeByKey<ElementNode>(elementNode2Key);
         elementNode2.append(elementNode1);
       });
       expect(container.innerHTML).toBe(
@@ -1537,13 +1555,14 @@ describe('LexicalEditor tests', () => {
         paragraph.append(elementNode1, elementNode2, elementNode3);
       });
 
-      await update((state: State) => {
-        const elementNode1: ElementNode = $getNodeByKey(elementNode1Key);
-        const elementNode2: TextNode = $getNodeByKey(elementNode2Key);
+      await update(() => {
+        const elementNode1 = $getNodeByKey<ElementNode>(elementNode1Key);
+        const elementNode2 = $getNodeByKey<ElementNode>(elementNode2Key);
         const elementNode3: TextNode = $getNodeByKey(elementNode3Key);
         elementNode2.append(elementNode3);
         elementNode1.append(elementNode3);
       });
+
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">C</span></div></div><div dir="ltr"><span data-lexical-text="true">B</span></div></p></div>',
       );
@@ -1564,12 +1583,15 @@ describe('LexicalEditor tests', () => {
     editor.dispatchCommand(command, payload);
     editor.dispatchCommand(command, payload);
     editor.dispatchCommand(command, payload);
+
     expect(commandListener).toHaveBeenCalledTimes(3);
     expect(commandListener).toHaveBeenCalledWith(payload, editor);
+
     removeCommandListener();
     editor.dispatchCommand(command, payload);
     editor.dispatchCommand(command, payload);
     editor.dispatchCommand(command, payload);
+
     expect(commandListener).toHaveBeenCalledTimes(3);
     expect(commandListener).toHaveBeenCalledWith(payload, editor);
   });
@@ -1590,6 +1612,7 @@ describe('LexicalEditor tests', () => {
       commandListenerTwo,
       COMMAND_PRIORITY_EDITOR,
     );
+
     expect(editor._commands).toEqual(
       new Map([
         [
@@ -1604,7 +1627,9 @@ describe('LexicalEditor tests', () => {
         ],
       ]),
     );
+
     removeCommandListener();
+
     expect(editor._commands).toEqual(
       new Map([
         [
@@ -1619,14 +1644,18 @@ describe('LexicalEditor tests', () => {
         ],
       ]),
     );
+
     removeCommandListenerTwo();
+
     expect(editor._commands).toEqual(new Map());
   });
 
   it('can register transforms before updates', async () => {
     init();
 
-    const emptyTransform = () => {};
+    const emptyTransform = () => {
+      return;
+    };
 
     const removeTextTransform = editor.registerNodeTransform(
       TextNode,
@@ -1642,6 +1671,7 @@ describe('LexicalEditor tests', () => {
       const paragraph = $createParagraphNode();
       root.append(paragraph);
     });
+
     removeTextTransform();
     removeParagraphTransform();
   });
@@ -1666,6 +1696,7 @@ describe('LexicalEditor tests', () => {
       const child = root.getLastDescendant();
       child.insertAfter($createTextNode('bar'));
     });
+
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledWith('foobar');
 
@@ -1674,6 +1705,7 @@ describe('LexicalEditor tests', () => {
       const child = root.getLastDescendant();
       child.insertAfter($createLineBreakNode());
     });
+
     expect(fn).toHaveBeenCalledTimes(2);
     expect(fn).toHaveBeenCalledWith('foobar\n');
   });
@@ -1720,11 +1752,14 @@ describe('LexicalEditor tests', () => {
       textNodeKeys.push($createTextNode('zzz').getKey());
       root.append(paragraph);
     });
+
     expect(paragraphNodeMutations.mock.calls.length).toBe(3);
     expect(textNodeMutations.mock.calls.length).toBe(2);
+
     const [paragraphMutation1, paragraphMutation2, paragraphMutation3] =
       paragraphNodeMutations.mock.calls;
     const [textNodeMutation1, textNodeMutation2] = textNodeMutations.mock.calls;
+
     expect(paragraphMutation1[0].size).toBe(1);
     expect(paragraphMutation1[0].get(paragraphKeys[0])).toBe('created');
     expect(paragraphMutation1[0].size).toBe(1);
@@ -1747,17 +1782,19 @@ describe('LexicalEditor tests', () => {
     await editor.update(() => {
       $getRoot().append($createParagraphNode());
     });
+
     const initialEditorState = editor.getEditorState();
     const textNodeMutations = jest.fn();
     editor.registerMutationListener(TextNode, textNodeMutations);
     const textNodeKeys = [];
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild();
+      const paragraph = $getRoot().getFirstChild<ParagraphNode>();
       const textNode1 = $createTextNode('foo');
       paragraph.append(textNode1);
       textNodeKeys.push(textNode1.getKey());
     });
+
     const fooEditorState = editor.getEditorState();
 
     await editor.setEditorState(initialEditorState);
@@ -1767,7 +1804,7 @@ describe('LexicalEditor tests', () => {
     );
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild();
+      const paragraph = $getRoot().getFirstChild<ParagraphNode>();
       const textNode2 = $createTextNode('bar').toggleFormat('bold');
       const textNode3 = $createTextNode('xyz').toggleFormat('italic');
       paragraph.append(textNode2, textNode3);
@@ -1775,13 +1812,16 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.setEditorState(parsedFooEditorState);
+
     expect(textNodeMutations.mock.calls.length).toBe(4);
+
     const [
       textNodeMutation1,
       textNodeMutation2,
       textNodeMutation3,
       textNodeMutation4,
     ] = textNodeMutations.mock.calls;
+
     expect(textNodeMutation1[0].size).toBe(1);
     expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
     expect(textNodeMutation2[0].size).toBe(1);
@@ -1790,7 +1830,6 @@ describe('LexicalEditor tests', () => {
     expect(textNodeMutation3[0].get(textNodeKeys[1])).toBe('created');
     expect(textNodeMutation3[0].get(textNodeKeys[2])).toBe('created');
     expect(textNodeMutation4[0].size).toBe(3); // +1 newly generated key by parseEditorState
-
     expect(textNodeMutation4[0].get(textNodeKeys[1])).toBe('destroyed');
     expect(textNodeMutation4[0].get(textNodeKeys[2])).toBe('destroyed');
   });
@@ -1806,6 +1845,7 @@ describe('LexicalEditor tests', () => {
     await editor.update(() => {
       $getRoot().append($createParagraphNode());
     });
+
     expect(paragraphNodeMutations.mock.calls.length).toBe(1);
     expect(textNodeMutations.mock.calls.length).toBe(0);
   });
@@ -1828,19 +1868,22 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild();
+      const paragraph = $getRoot().getFirstChild<ParagraphNode>();
       const textNode3 = $createTextNode('xyz').toggleFormat('bold');
       paragraph.append(textNode3);
       textNodeKeys.push(textNode3.getKey());
     });
 
     await editor.update(() => {
-      const textNode3 = $getNodeByKey(textNodeKeys[2]);
+      const textNode3 = $getNodeByKey<TextNode>(textNodeKeys[2]);
       textNode3.toggleFormat('bold'); // Normalize with foobar
     });
+
     expect(textNodeMutations.mock.calls.length).toBe(3);
+
     const [textNodeMutation1, textNodeMutation2, textNodeMutation3] =
       textNodeMutations.mock.calls;
+
     expect(textNodeMutation1[0].size).toBe(1);
     expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
     expect(textNodeMutation2[0].size).toBe(1);
@@ -1869,31 +1912,40 @@ describe('LexicalEditor tests', () => {
       root.append(paragraph);
       paragraph.append(textNode1);
     });
+
     expect(paragraphNodeMutations.mock.calls.length).toBe(1);
+
     const [paragraphNodeMutation1] = paragraphNodeMutations.mock.calls;
     expect(textNodeMutations.mock.calls.length).toBe(1);
+
     const [textNodeMutation1] = textNodeMutations.mock.calls;
+
     expect(textNodeMutation1[0].size).toBe(1);
     expect(paragraphNodeMutation1[0].size).toBe(1);
-    // Change first text node's content.
 
+    // Change first text node's content.
     await editor.update(() => {
-      const textNode1 = $getNodeByKey(textNodeKeys[0]);
+      const textNode1 = $getNodeByKey<TextNode>(textNodeKeys[0]);
       textNode1.setTextContent('Test'); // Normalize with foobar
     });
-    // Append text node to paragraph.
 
+    // Append text node to paragraph.
     await editor.update(() => {
-      const paragraphNode1 = $getNodeByKey(paragraphNodeKeys[0]);
+      const paragraphNode1 = $getNodeByKey<ParagraphNode>(paragraphNodeKeys[0]);
       const textNode1 = $createTextNode('foo');
       paragraphNode1.append(textNode1);
     });
+
     expect(textNodeMutations.mock.calls.length).toBe(3);
+
     const textNodeMutation2 = textNodeMutations.mock.calls[1];
+
     // Show TextNode was updated when text content changed.
     expect(textNodeMutation2[0].get(textNodeKeys[0])).toBe('updated');
     expect(paragraphNodeMutations.mock.calls.length).toBe(2);
+
     const paragraphNodeMutation2 = paragraphNodeMutations.mock.calls[1];
+
     // Show ParagraphNode was updated when new text node was appended.
     expect(paragraphNodeMutation2[0].get(paragraphNodeKeys[0])).toBe('updated');
     let tableCellKey;
@@ -1906,7 +1958,7 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const root = $getRoot();
-      const tableCell = $createTableCellNode();
+      const tableCell = $createTableCellNode(0);
       const tableRow = $createTableRowNode();
       const table = $createTableNode();
       tableRow.append(tableCell);
@@ -1918,22 +1970,25 @@ describe('LexicalEditor tests', () => {
     // Add New Table Cell To Row
 
     await editor.update(() => {
-      const tableRow = $getNodeByKey(tableRowKey);
-      const tableCell = $createTableCellNode();
+      const tableRow = $getNodeByKey<TableRowNode>(tableRowKey);
+      const tableCell = $createTableCellNode(0);
       tableRow.append(tableCell);
     });
     // Update Table Cell
-
     await editor.update(() => {
-      const tableCell = $getNodeByKey(tableCellKey);
-      tableCell.toggleHeaderStyle('row');
+      const tableCell = $getNodeByKey<TableCellNode>(tableCellKey);
+      tableCell.toggleHeaderStyle(1);
     });
+
     expect(tableCellMutations.mock.calls.length).toBe(3);
     const tableCellMutation3 = tableCellMutations.mock.calls[2];
+
     // Show table cell is updated when header value changes.
     expect(tableCellMutation3[0].get(tableCellKey)).toBe('updated');
     expect(tableRowMutations.mock.calls.length).toBe(2);
+
     const tableRowMutation2 = tableRowMutations.mock.calls[1];
+
     // Show row is updated when a new child is added.
     expect(tableRowMutation2[0].get(tableRowKey)).toBe('updated');
   });
@@ -1943,10 +1998,15 @@ describe('LexicalEditor tests', () => {
 
     const readOnlyFn = jest.fn();
     editor.registerReadOnlyListener(readOnlyFn);
+
     expect(editor.isReadOnly()).toBe(false);
+
     editor.setReadOnly(true);
+
     expect(editor.isReadOnly()).toBe(true);
+
     editor.setReadOnly(false);
+
     expect(readOnlyFn.mock.calls).toEqual([[true], [false]]);
   });
 
@@ -1964,6 +2024,7 @@ describe('LexicalEditor tests', () => {
     await update(() => {
       $getRoot().getFirstChild().replace($createParagraphNode());
     });
+
     expect(updateListener).toHaveBeenCalledTimes(1);
   });
 });

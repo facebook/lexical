@@ -7,15 +7,8 @@
  */
 
 import {
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-  ParagraphNode,
-  TextNode,
-} from 'lexical';
-
-import {
   $getNodeByKey,
+  $getRoot,
   $isTokenOrInertOrSegmented,
   $nodesOfType,
   emptyFunction,
@@ -26,6 +19,11 @@ import {
   resetRandomKey,
   scheduleMicroTask,
 } from '../../LexicalUtils';
+import {
+  $createParagraphNode,
+  ParagraphNode,
+} from '../../nodes/LexicalParagraphNode';
+import {$createTextNode, TextNode} from '../../nodes/LexicalTextNode';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalUtils tests', () => {
@@ -108,11 +106,12 @@ describe('LexicalUtils tests', () => {
         root.append(paragraph);
       });
 
-      await editor.update(() => {
+      editor.update(() => {
         const domSelection = window.getSelection();
 
         expect(
           isSelectionWithinEditor(
+            // @ts-expect-error Not sure why the below causes a TS error but the editor instance is valid
             editor,
             domSelection.anchorNode,
             domSelection.focusNode,
@@ -127,6 +126,7 @@ describe('LexicalUtils tests', () => {
 
         expect(
           isSelectionWithinEditor(
+            // @ts-expect-error Not sure why the below causes a TS error but the editor instance is valid
             editor,
             domSelection.anchorNode,
             domSelection.focusNode,

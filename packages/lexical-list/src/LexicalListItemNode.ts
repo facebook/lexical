@@ -32,7 +32,7 @@ import {
   $isRangeSelection,
   ElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 import invariant from 'shared-ts/invariant';
 
 import {$createListNode, $isListNode} from './';

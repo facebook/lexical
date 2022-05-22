@@ -14,7 +14,7 @@ type Props = {
     editor__DEPRECATED?: LexicalEditor | null;
     readOnly?: boolean;
     namespace?: string;
-    nodes?: Array<Class<LexicalNode>>;
+    nodes?: Array<typeof LexicalNode>;
     theme?: EditorThemeClasses;
     onError: (error: Error, editor: LexicalEditor) => void;
   };

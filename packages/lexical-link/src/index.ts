@@ -20,7 +20,7 @@ import type {
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 import invariant from 'shared-ts/invariant';
 
 export type SerializedLinkNode = Spread<

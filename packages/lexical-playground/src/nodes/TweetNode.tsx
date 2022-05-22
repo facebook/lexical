@@ -13,7 +13,7 @@ import {
   DecoratorBlockNode,
   SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 

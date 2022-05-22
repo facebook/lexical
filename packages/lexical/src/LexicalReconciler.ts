@@ -15,11 +15,6 @@ import type {
   RegisteredNodes,
 } from './LexicalEditor';
 import type {NodeKey, NodeMap} from './LexicalNode';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import {IS_IOS, IS_SAFARI} from 'shared-ts/environment';
@@ -48,6 +43,7 @@ import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromReconcile,
 } from './LexicalEvents';
+import {GridSelection, NodeSelection, RangeSelection} from './LexicalSelection';
 import {
   $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
@@ -56,6 +52,7 @@ import {
   isSelectionWithinEditor,
   setMutatedNode,
 } from './LexicalUtils';
+import {RootNode} from './nodes/LexicalRootNode';
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
@@ -233,7 +230,7 @@ function createNode(
     if (insertDOM != null) {
       parentDOM.insertBefore(dom, insertDOM);
     } else {
-      // $FlowFixMe: internal field
+      // @ts-expect-error: internal field
       const possibleLineBreak = parentDOM.__lexicalLineBreak;
 
       if (possibleLineBreak != null) {
@@ -244,6 +241,7 @@ function createNode(
     }
   }
 
+  // @ts-ignore
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
@@ -287,7 +285,7 @@ function createChildren(
     createNode(children[startIndex], dom, insertDOM);
   }
 
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   dom.__lexicalTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
@@ -318,28 +316,29 @@ function reconcileElementTerminatingLineBreak(
 
   if (prevLineBreak) {
     if (!nextLineBreak) {
-      // $FlowFixMe: internal field
+      // @ts-expect-error: internal field
       const element = dom.__lexicalLineBreak;
 
       if (element != null) {
         dom.removeChild(element);
       }
 
-      // $FlowFixMe: internal field
+      // @ts-expect-error: internal field
       dom.__lexicalLineBreak = null;
     }
   } else if (nextLineBreak) {
     const element = document.createElement('br');
-    // $FlowFixMe: internal field
+    // @ts-expect-error: internal field
     dom.__lexicalLineBreak = element;
     dom.appendChild(element);
   }
 }
 
 function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
-  const previousSubTreeDirectionTextContent: string = // $FlowFixMe: internal field
+  const previousSubTreeDirectionTextContent: string =
+    // @ts-expect-error: internal field
     dom.__lexicalDirTextContent;
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   const previousDirection: string = dom.__lexicalDir;
 
   if (
@@ -363,11 +362,11 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
       if (previousDirectionTheme !== undefined) {
         if (typeof previousDirectionTheme === 'string') {
           const classNamesArr = previousDirectionTheme.split(' ');
-          // $FlowFixMe: intentional
+          // @ts-expect-error: intentional
           previousDirectionTheme = theme[previousDirection] = classNamesArr;
         }
 
-        // $FlowFixMe: intentional
+        // @ts-expect-error: intentional
         classList.remove(...previousDirectionTheme);
       }
 
@@ -382,7 +381,7 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
         if (nextDirectionTheme !== undefined) {
           if (typeof nextDirectionTheme === 'string') {
             const classNamesArr = nextDirectionTheme.split(' ');
-            // $FlowFixMe: intentional
+            // @ts-expect-error: intentional
             nextDirectionTheme = theme[direction] = classNamesArr;
           }
 
@@ -394,15 +393,15 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
       }
 
       if (!activeEditorStateReadOnly) {
-        const writableNode = element.getWritable();
+        const writableNode = element.getWritable<ElementNode>();
         writableNode.__dir = direction;
       }
     }
 
     activeTextDirection = direction;
-    // $FlowFixMe: internal field
+    // @ts-expect-error: internal field
     dom.__lexicalDirTextContent = subTreeDirectionedTextContent;
-    // $FlowFixMe: internal field
+    // @ts-expect-error: internal field
     dom.__lexicalDir = direction;
   }
 }
@@ -449,7 +448,7 @@ function reconcileChildren(
     }
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
-      // $FlowFixMe: internal field
+      // @ts-expect-error: internal field
       const lexicalLineBreak = dom.__lexicalLineBreak;
       const canUseFastPath = lexicalLineBreak == null;
       destroyChildren(
@@ -479,7 +478,7 @@ function reconcileChildren(
     subTreeTextContent += DOUBLE_LINE_BREAK;
   }
 
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   dom.__lexicalTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
@@ -506,7 +505,7 @@ function reconcileNode(
 
   if (prevNode === nextNode && !isDirty) {
     if ($isElementNode(prevNode)) {
-      // $FlowFixMe: internal field
+      // @ts-expect-error: internal field
       const previousSubTreeTextContent = dom.__lexicalTextContent;
 
       if (previousSubTreeTextContent !== undefined) {
@@ -514,7 +513,7 @@ function reconcileNode(
         editorTextContent += previousSubTreeTextContent;
       }
 
-      // $FlowFixMe: internal field
+      // @ts-expect-error: internal field
       const previousSubTreeDirectionTextContent = dom.__lexicalDirTextContent;
 
       if (previousSubTreeDirectionTextContent !== undefined) {
@@ -614,10 +613,13 @@ function reconcileNode(
     nextNode.__cachedText !== editorTextContent
   ) {
     // Cache the latest text content.
-    nextNode = nextNode.getWritable();
-    nextNode.__cachedText = editorTextContent;
+    nextNode = nextNode.getWritable<RootNode>();
+    if ($isRootNode(nextNode)) {
+      nextNode.__cachedText = editorTextContent;
+    }
   }
 
+  // @ts-ignore
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(nextNode);
@@ -642,12 +644,10 @@ function reconcileDecorator(key: NodeKey, decorator: unknown): void {
 }
 
 function getFirstChild(element: HTMLElement): Node | null {
-  // $FlowFixMe: firstChild is always null or a Node
   return element.firstChild;
 }
 
 function getNextSibling(element: HTMLElement): Node | null {
-  // $FlowFixMe: nextSibling is always null or a Node
   return element.nextSibling;
 }
 
@@ -661,8 +661,8 @@ function reconcileNodeChildren(
 ): void {
   const prevEndIndex = prevChildrenLength - 1;
   const nextEndIndex = nextChildrenLength - 1;
-  let prevChildrenSet: void | Set<NodeKey>;
-  let nextChildrenSet: void | Set<NodeKey>;
+  let prevChildrenSet: Set<NodeKey>;
+  let nextChildrenSet: Set<NodeKey>;
   let siblingDOM: null | Node = getFirstChild(dom);
   let prevIndex = 0;
   let nextIndex = 0;
@@ -765,23 +765,14 @@ function reconcileRoot(
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we
   // can leak memory.
-  // $FlowFixMe
   activeEditor = undefined;
-  // $FlowFixMe
   activeEditorNodes = undefined;
-  // $FlowFixMe
   activeDirtyElements = undefined;
-  // $FlowFixMe
   activeDirtyLeaves = undefined;
-  // $FlowFixMe
   activePrevNodeMap = undefined;
-  // $FlowFixMe
   activeNextNodeMap = undefined;
-  // $FlowFixMe
   activeEditorConfig = undefined;
-  // $FlowFixMe
   activePrevKeyToDOMMap = undefined;
-  // $FlowFixMe
   mutatedNodes = undefined;
   return currentMutatedNodes;
 }
@@ -845,8 +836,9 @@ function scrollIntoViewIfNeeded(
   node: Node,
   rootElement: HTMLElement | null | undefined,
 ): void {
-  const element: Element = // $FlowFixMe: this is valid, as we are checking the nodeType
-    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node;
+  const element = (
+    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node
+  ) as Element;
 
   if (element !== null) {
     const rect = element.getBoundingClientRect();
@@ -909,6 +901,7 @@ function reconcileSelection(
   const anchor = nextSelection.anchor;
   const focus = nextSelection.focus;
 
+  // @ts-ignore
   if (__DEV__) {
     // Freeze the selection in DEV to prevent accidental mutations
     Object.freeze(anchor);
@@ -924,8 +917,8 @@ function reconcileSelection(
   const nextFocusOffset = focus.offset;
   const nextFormat = nextSelection.format;
   const isCollapsed = nextSelection.isCollapsed();
-  let nextAnchorNode = anchorDOM;
-  let nextFocusNode = focusDOM;
+  let nextAnchorNode: HTMLElement | Text = anchorDOM;
+  let nextFocusNode: HTMLElement | Text = focusDOM;
   let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {
@@ -947,7 +940,7 @@ function reconcileSelection(
     isCollapsed &&
     (prevSelection === null ||
       anchorFormatChanged ||
-      prevSelection.format !== nextFormat)
+      ($isRangeSelection(prevSelection) && prevSelection.format !== nextFormat))
   ) {
     markCollapsedSelectionFormat(
       nextFormat,
@@ -1014,7 +1007,6 @@ export function storeDOMWithKey(
   editor: LexicalEditor,
 ): void {
   const keyToDOMMap = editor._keyToDOMMap;
-  // $FlowFixMe: internal field
   dom['__lexicalKey_' + editor._key] = key;
   keyToDOMMap.set(key, dom);
 }

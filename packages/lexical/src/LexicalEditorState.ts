@@ -27,16 +27,19 @@ import {
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
+
 // TODO: deprecated
 export type ParsedEditorState = {
   _nodeMap: Array<[NodeKey, ParsedNode]>;
   _selection: null | ParsedSelection;
 };
+
 // TODO: deprecated
 export type JSONEditorState = {
   _nodeMap: Array<[NodeKey, LexicalNode]>;
   _selection: null | ParsedSelection;
 };
+
 export interface SerializedEditorState {
   root: SerializedRootNode;
 }
@@ -73,6 +76,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
+  // @ts-expect-error
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
@@ -81,6 +85,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
     );
   }
 
+  // @ts-expect-error
   const serializedChildren = serializedNode.children;
 
   if ($isElementNode(node)) {
@@ -101,6 +106,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
     }
   }
 
+  // @ts-expect-error
   return serializedNode;
 }
 

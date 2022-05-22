@@ -7,23 +7,23 @@
  *
  */
 
-import type {
+import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
+import {
+  $createTextNode,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
   EditorThemeClasses,
+  ElementNode,
   LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
 } from 'lexical';
-
-import {
-  addClassNamesToElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {$createTextNode, ElementNode} from 'lexical';
-import {Spread} from 'libdefs/global';
+import {Spread} from 'libdefs/globals';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';

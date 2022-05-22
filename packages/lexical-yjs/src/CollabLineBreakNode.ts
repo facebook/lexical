@@ -14,12 +14,12 @@ import type {Map as YMap} from 'yjs';
 import {$getNodeByKey, $isLineBreakNode} from 'lexical';
 
 export class CollabLineBreakNode {
-  _map: YMap;
+  _map: YMap<unknown>;
   _key: NodeKey;
   _parent: CollabElementNode;
   _type: 'linebreak';
 
-  constructor(map: YMap, parent: CollabElementNode) {
+  constructor(map: YMap<unknown>, parent: CollabElementNode) {
     this._key = '';
     this._map = map;
     this._parent = parent;
@@ -35,7 +35,7 @@ export class CollabLineBreakNode {
     return this._key;
   }
 
-  getSharedType(): YMap {
+  getSharedType(): YMap<unknown> {
     return this._map;
   }
 
@@ -59,11 +59,11 @@ export class CollabLineBreakNode {
 }
 
 export function $createCollabLineBreakNode(
-  map: YMap,
+  map: YMap<unknown>,
   parent: CollabElementNode,
 ): CollabLineBreakNode {
   const collabNode = new CollabLineBreakNode(map, parent);
-  // $FlowFixMe: internal field
+  // @ts-expect-error: internal field
   map._collabNode = collabNode;
   return collabNode;
 }

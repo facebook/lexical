@@ -28,9 +28,8 @@ describe('LexicalEditorState tests', () => {
   initializeUnitTest((testEnv) => {
     test('constructor', async () => {
       const root = $createRootNode();
-      const nodeMap = {
-        root,
-      };
+      const nodeMap = new Map([['root', root]]);
+
       const editorState = new EditorState(nodeMap);
       expect(editorState._nodeMap).toBe(nodeMap);
       expect(editorState._selection).toBe(null);
@@ -95,7 +94,7 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(paragraph);
       });
       expect(JSON.stringify(editor.getEditorState().toJSON())).toEqual(
-        `{\"_nodeMap\":[[\"root\",{\"__children\":[\"1\"],\"__dir\":\"ltr\",\"__format\":0,\"__indent\":0,\"__key\":\"root\",\"__parent\":null,\"__type\":\"root\"}],[\"1\",{\"__type\":\"paragraph\",\"__parent\":\"root\",\"__key\":\"1\",\"__children\":[\"2\"],\"__format\":0,\"__indent\":0,\"__dir\":\"ltr\"}],[\"2\",{\"__type\":\"text\",\"__parent\":\"1\",\"__key\":\"2\",\"__text\":\"Hello world\",\"__format\":0,\"__style\":\"\",\"__mode\":0,\"__detail\":0}]],\"_selection\":{\"anchor\":{\"key\":\"2\",\"offset\":6,\"type\":\"text\"},\"focus\":{\"key\":\"2\",\"offset\":11,\"type\":\"text\"},\"type\":\"range\"}}`,
+        `{"_nodeMap":[["root",{"__children":["1"],"__dir":"ltr","__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"paragraph","__parent":"root","__key":"1","__children":["2"],"__format":0,"__indent":0,"__dir":"ltr"}],["2",{"__type":"text","__parent":"1","__key":"2","__text":"Hello world","__format":0,"__style":"","__mode":0,"__detail":0}]],"_selection":{"anchor":{"key":"2","offset":6,"type":"text"},"focus":{"key":"2","offset":11,"type":"text"},"type":"range"}}`,
       );
     });
 
@@ -122,7 +121,7 @@ describe('LexicalEditorState tests', () => {
       await editor.update(() => {
         const table = $createTableNode();
         const tableRow = $createTableRowNode();
-        const tableCell = $createTableCellNode();
+        const tableCell = $createTableCellNode(0);
         const selection = $createGridSelection();
         selection.set(table.getKey(), tableCell.getKey(), tableCell.getKey());
         $setSelection(selection);

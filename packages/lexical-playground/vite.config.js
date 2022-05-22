@@ -167,22 +167,6 @@ export default defineConfig({
         },
       ],
     }),
-    babel({
-      babelHelpers: 'bundled',
-      babelrc: false,
-      configFile: false,
-      exclude: '/**/node_modules/**',
-      plugins: [
-        '@babel/plugin-transform-flow-strip-types',
-        [
-          require('../../scripts/error-codes/transform-error-messages'),
-          {
-            noMinify: true,
-          },
-        ],
-      ],
-      presets: ['@babel/preset-react'],
-    }),
     flowPlugin(),
     react(),
   ],

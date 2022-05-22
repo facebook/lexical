@@ -13,7 +13,6 @@ import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_FIREFOX,
@@ -543,7 +542,6 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     const selection = $getSelection();
     const data = event.data;
     const possibleTextReplacement =
-      CAN_USE_DOM &&
       event.inputType === 'insertText' &&
       data != null &&
       data.length > 1 &&

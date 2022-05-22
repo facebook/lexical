@@ -62,7 +62,7 @@ export type DOMChildConversion = (
 ) => LexicalNode | null | void;
 ```
 
-@lexical/code provides a good example of the usefulness of this design. GitHub uses HTML /<table> elements to represent the structure of copied code in HTML. If we interpreted all HTML /<table> elements as literal tables, then code pasted from GitHub would appear in Lexical as a Lexical TableNode. Instead, CodeNode specifies that it can handle /<table> elements too:
+@lexical/code provides a good example of the usefulness of this design. GitHub uses HTML ```<table>``` elements to represent the structure of copied code in HTML. If we interpreted all HTML ```<table>``` elements as literal tables, then code pasted from GitHub would appear in Lexical as a Lexical TableNode. Instead, CodeNode specifies that it can handle ```<table>``` elements too:
 
 ```
 class CodeNode extends ElementNode {
@@ -88,7 +88,7 @@ static importDOM(): DOMConversionMap | null {
 }
 ```
 
-If the imported /<table> doesn't align with the expected GitHub code HTML, then we return null and allow the node to be handled by lower priority conversions.
+If the imported ```<table>``` doesn't align with the expected GitHub code HTML, then we return null and allow the node to be handled by lower priority conversions.
 
 Much like exportDOM, importDOM exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a DOMConversionOutput which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete.
 

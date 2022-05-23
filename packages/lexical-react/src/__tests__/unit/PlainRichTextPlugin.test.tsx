@@ -121,52 +121,7 @@ describe('LexicalNodeHelpers tests', () => {
     it(`${plugin} custom initialEditorState`, async () => {
       let editor;
       const initialEditorStateJson = `
-      {
-        "_nodeMap": [
-          [
-            "root",
-            {
-              "__children": ["2"],
-              "__dir": "ltr",
-              "__format": 0,
-              "__indent": 0,
-              "__key": "root",
-              "__parent": null,
-              "__type": "root"
-            }
-          ],
-          [
-            "2",
-            {
-              "__type": "paragraph",
-              "__parent": "root",
-              "__key": "2",
-              "__children": ["3"],
-              "__format": 0,
-              "__indent": 0,
-              "__dir": "ltr"
-            }
-          ],
-          [
-            "3",
-            {
-              "__type": "text",
-              "__parent": "2",
-              "__key": "3",
-              "__text": "foo",
-              "__format": 0,
-              "__style": "",
-              "__mode": 0,
-              "__detail": 0
-            }
-          ]
-        ],
-        "_selection": {
-          "anchor": { "key": "3", "offset": 1, "type": "text" },
-          "focus": { "key": "3", "offset": 1, "type": "text" },
-          "type": "range"
-        }
-      }
+      {"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"foo","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}
       `;
 
       function GrabEditor() {
@@ -222,6 +177,8 @@ describe('LexicalNodeHelpers tests', () => {
       await ReactTestUtils.act(async () => {
         reactRoot.render(<App />);
       });
+
+      await editor.focus();
 
       await editor.getEditorState().read(() => {
         expect($rootTextContent()).toBe('foo');

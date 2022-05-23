@@ -128,6 +128,7 @@ export class TestInlineElementNode extends ElementNode {
 export function $createTestInlineElementNode(): TestInlineElementNode {
   return new TestInlineElementNode();
 }
+
 export class TestSegmentedNode extends TextNode {
   static getType(): string {
     return 'test_segmented';
@@ -141,6 +142,7 @@ export class TestSegmentedNode extends TextNode {
 export function $createTestSegmentedNode(text): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
+
 export class TestExcludeFromCopyElementNode extends ElementNode {
   static getType(): string {
     return 'test_exclude_from_copy_block';
@@ -166,6 +168,7 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
 export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElementNode {
   return new TestExcludeFromCopyElementNode();
 }
+
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static getType(): string {
     return 'test_decorator';

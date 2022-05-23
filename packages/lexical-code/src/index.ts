@@ -122,7 +122,7 @@ export class CodeHighlightNode extends TextNode {
   }
 
   getHighlightType(): string | null | undefined {
-    const self = this.getLatest<CodeHighlightNode>();
+    const self = this.getLatest();
     return self.__highlightType;
   }
 
@@ -398,12 +398,12 @@ export class CodeNode extends ElementNode {
   }
 
   setLanguage(language: string): void {
-    const writable = this.getWritable<CodeNode>();
+    const writable = this.getWritable();
     writable.__language = mapToPrismLanguage(language);
   }
 
   getLanguage(): string | null | undefined {
-    return this.getLatest<CodeNode>().__language;
+    return this.getLatest().__language;
   }
 }
 

@@ -234,14 +234,14 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   addOption(option: Option): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const options = Array.from(self.__options);
     options.push(option);
     self.__options = options;
   }
 
   deleteOption(option: Option): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const options = Array.from(self.__options);
     const index = options.indexOf(option);
     options.splice(index, 1);
@@ -249,7 +249,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   setOptionText(option: Option, text: string): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const clonedOption = cloneOption(option, text);
     const options = Array.from(self.__options);
     const index = options.indexOf(option);
@@ -258,7 +258,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   toggleVote(option: Option, clientID: number): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const votes = option.votes;
     const votesClone = Array.from(votes);
     const voteIndex = votes.indexOf(clientID);

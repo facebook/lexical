@@ -35,7 +35,7 @@ import invariant from 'shared/invariant';
 const cssToStyles: Map<string, Record<string, string>> = new Map();
 
 export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const latest = node.getLatest<T>();
+  const latest = node.getLatest();
   const constructor = latest.constructor;
   // @ts-expect-error
   const clone: T = constructor.clone(latest);
@@ -553,7 +553,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node = startingNode;
 
   while (node !== null && !$isRootNode(node)) {
-    const latest = node.getLatest<ElementNode>();
+    const latest = node.getLatest();
     const parentNode = node.getParent();
 
     if (latest.__children.length === 0) {

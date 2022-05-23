@@ -732,7 +732,7 @@ export class RangeSelection implements BaseSelection {
     const endPoint = isBefore ? focus : anchor;
     const startOffset = firstPoint.offset;
     const endOffset = endPoint.offset;
-    let firstNode = selectedNodes[0];
+    let firstNode: TextNode | LexicalNode = selectedNodes[0];
 
     if (!$isTextNode(firstNode)) {
       invariant(false, 'insertText: first node is not a text node');
@@ -820,7 +820,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
 
-    if (selectedNodesLength === 1 && $isTextNode(firstNode)) {
+    if (selectedNodesLength === 1) {
       if ($isTokenOrInert(firstNode)) {
         const textNode = $createTextNode(text);
         textNode.select();
@@ -855,11 +855,7 @@ export class RangeSelection implements BaseSelection {
       firstNode = firstNode.spliceText(startOffset, delCount, text, true);
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
-      } else if (
-        $isTextNode(firstNode) &&
-        firstNode.isComposing() &&
-        this.anchor.type === 'text'
-      ) {
+      } else if (firstNode.isComposing() && this.anchor.type === 'text') {
         // When composing, we need to adjust the anchor offset so that
         // we correctly replace that right range.
         this.anchor.offset -= text.length;
@@ -869,6 +865,7 @@ export class RangeSelection implements BaseSelection {
         ...firstNode.getParentKeys(),
         ...lastNode.getParentKeys(),
       ]);
+
       // We have to get the parent elements before the next section,
       // as in that section we might mutate the lastNode.
       const firstElement = $isElementNode(firstNode)
@@ -990,7 +987,7 @@ export class RangeSelection implements BaseSelection {
 
       // Ensure we do splicing after moving of nodes, as splicing
       // can have side-effects (in the case of hashtags).
-      if ($isTextNode(firstNode) && !$isTokenOrInert(firstNode)) {
+      if (!$isTokenOrInert(firstNode)) {
         firstNode = firstNode.spliceText(
           startOffset,
           firstNodeTextLength - startOffset,
@@ -1193,7 +1190,7 @@ export class RangeSelection implements BaseSelection {
       const textContent = anchorNode.getTextContent();
       const textContentLength = textContent.length;
       if (anchorOffset === 0 && textContentLength !== 0) {
-        const prevSibling = anchorNode.getPreviousSibling<ElementNode>();
+        const prevSibling = anchorNode.getPreviousSibling();
         if (prevSibling !== null) {
           target = prevSibling;
         } else {
@@ -1322,7 +1319,7 @@ export class RangeSelection implements BaseSelection {
       if ($isElementNode(target) && !target.isInline()) {
         lastNodeInserted = node;
         if ($isDecoratorNode(node) && node.isTopLevel()) {
-          target = target.insertAfter<DecoratorNode>(node);
+          target = target.insertAfter(node);
         } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {

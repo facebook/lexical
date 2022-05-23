@@ -183,6 +183,7 @@ describe('LexicalNode tests', () => {
           selection.focus.offset = 1;
           selection.focus.key = newTextNode.getKey();
         });
+
         await Promise.resolve().then();
 
         await editor.update(() => {
@@ -650,7 +651,8 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.getEditorState().read(() => {
-          expect(textNode.getTextContentSize()).toBe('foo'.length); // TODO: more tests with inert and directionless children
+          expect(textNode.getTextContentSize()).toBe('foo'.length);
+          // TODO: more tests with inert and directionless children
         });
         expect(() => textNode.getTextContentSize()).toThrow();
       });
@@ -830,7 +832,8 @@ describe('LexicalNode tests', () => {
 
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><span data-lexical-text="true">bar</span></p></div>',
-        ); // TODO: add text direction validations
+        );
+        // TODO: add text direction validations
       });
 
       test('LexicalNode.insertAfter()', async () => {
@@ -926,7 +929,8 @@ describe('LexicalNode tests', () => {
 
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foobar</span></p></div>',
-        ); // TODO: add text direction validations
+        );
+        // TODO: add text direction validations
       });
 
       test('LexicalNode.insertAfter() move blocks around', async () => {
@@ -1121,9 +1125,13 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const barTextNode = new TextNode('bar');
           textNode.insertAfter(barTextNode);
+
           expect(barTextNode.isSelected()).not.toBe(true);
+
           textNode.selectNext();
-          expect(barTextNode.isSelected()).toBe(true); // TODO: additional validation of anchorOffset and focusOffset
+
+          expect(barTextNode.isSelected()).toBe(true);
+          // TODO: additional validation of anchorOffset and focusOffset
         });
       });
 
@@ -1144,6 +1152,7 @@ describe('LexicalNode tests', () => {
           const barNode = new TestNode();
           textNode.insertAfter(barNode);
           const selection = textNode.selectNext();
+
           expect(selection.anchor.getNode()).toBe(textNode.getParent());
           expect(selection.anchor.offset).toBe(1);
         });

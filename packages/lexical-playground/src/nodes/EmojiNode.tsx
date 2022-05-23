@@ -82,7 +82,7 @@ export class EmojiNode extends TextNode {
   }
 
   getClassName(): string {
-    const self = this.getLatest<EmojiNode>();
+    const self = this.getLatest();
     return self.__className;
   }
 }

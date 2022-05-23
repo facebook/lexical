@@ -48,7 +48,7 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   }
 
   setFormat(format: ElementFormatType): void {
-    const self = this.getWritable<DecoratorBlockNode>();
+    const self = this.getWritable();
     self.__format = format;
   }
 }

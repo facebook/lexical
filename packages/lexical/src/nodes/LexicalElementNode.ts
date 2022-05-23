@@ -64,7 +64,7 @@ export class ElementNode extends LexicalNode {
   }
 
   getFormat(): number {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__format;
   }
   getFormatType(): ElementFormatType {
@@ -72,11 +72,11 @@ export class ElementNode extends LexicalNode {
     return ELEMENT_FORMAT_TO_TYPE[format] || '';
   }
   getIndent(): number {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__indent;
   }
   getChildren<T extends LexicalNode>(): Array<T> {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const children = self.__children;
     const childrenNodes = [];
     for (let i = 0; i < children.length; i++) {
@@ -88,10 +88,10 @@ export class ElementNode extends LexicalNode {
     return childrenNodes;
   }
   getChildrenKeys(): Array<NodeKey> {
-    return this.getLatest<this>().__children;
+    return this.getLatest().__children;
   }
   getChildrenSize(): number {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__children.length;
   }
   isEmpty(): boolean {
@@ -103,13 +103,13 @@ export class ElementNode extends LexicalNode {
     return dirtyElements !== null && dirtyElements.has(this.__key);
   }
   isLastChild(): boolean {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const parent = self.getParentOrThrow();
     return parent.getLastChild() === self;
   }
   getAllTextNodes(includeInert?: boolean): Array<TextNode> {
     const textNodes = [];
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
       const childNode = $getNodeByKey<LexicalNode>(children[i]);
@@ -169,7 +169,7 @@ export class ElementNode extends LexicalNode {
     );
   }
   getFirstChild<T extends LexicalNode>(): null | T {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const children = self.__children;
     const childrenLength = children.length;
     if (childrenLength === 0) {
@@ -194,7 +194,7 @@ export class ElementNode extends LexicalNode {
     return $getNodeByKey<T>(children[childrenLength - 1]);
   }
   getChildAtIndex<T extends LexicalNode>(index: number): null | T {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const children = self.__children;
     const key = children[index];
     if (key === undefined) {
@@ -220,7 +220,7 @@ export class ElementNode extends LexicalNode {
     return textContent;
   }
   getDirection(): 'ltr' | 'rtl' | null {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__dir;
   }
   hasFormat(type: ElementFormatType): boolean {
@@ -283,7 +283,7 @@ export class ElementNode extends LexicalNode {
   }
   clear(): this {
     errorOnReadOnly();
-    const writableSelf = this.getWritable<this>();
+    const writableSelf = this.getWritable();
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     return writableSelf;
@@ -294,19 +294,19 @@ export class ElementNode extends LexicalNode {
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__dir = direction;
     return self;
   }
   setFormat(type: ElementFormatType): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__format = ELEMENT_TYPE_TO_FORMAT[type] || 0;
     return this;
   }
   setIndent(indentLevel: number): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__indent = indentLevel;
     return this;
   }
@@ -316,7 +316,7 @@ export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this {
     errorOnReadOnly();
-    const writableSelf = this.getWritable<this>();
+    const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
     const nodesToInsertLength = nodesToInsert.length;

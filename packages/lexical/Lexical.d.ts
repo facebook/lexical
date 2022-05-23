@@ -359,8 +359,8 @@ export declare class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T extends ElementNode>(): T | null;
   getParentOrThrow<T extends ElementNode>(): T;
-  getTopLevelElement(): ElementNode | null;
-  getTopLevelElementOrThrow(): ElementNode;
+  getTopLevelElement(): ElementNode | this | null;
+  getTopLevelElementOrThrow(): ElementNode | this;
   getParents<T extends ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T extends LexicalNode>(): T | null;
@@ -373,8 +373,8 @@ export declare class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  getLatest<T extends LexicalNode>(): T;
-  getWritable<T extends LexicalNode>(): T;
+  getLatest(): this;
+  getWritable(): this;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getTextContentSize(
     includeInert?: boolean,
@@ -679,7 +679,7 @@ export declare class RootNode extends ElementNode {
   insertBefore<T extends LexicalNode>(nodeToInsert: T): T;
   insertAfter<T extends LexicalNode>(nodeToInsert: T): T;
   updateDOM(prevNode: RootNode, dom: HTMLElement): false;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
   static importJSON(serializedRootNode: SerializedRootNode): RootNode;
   exportJSON(): SerializedElementNode;
@@ -721,8 +721,8 @@ export declare class ElementNode extends LexicalNode {
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;
-  clear(): ElementNode;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  clear(): this;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   setDirection(direction: 'ltr' | 'rtl' | null): ElementNode;
   setFormat(type: ElementFormatType): ElementNode;
   setIndent(indentLevel: number): ElementNode;
@@ -748,7 +748,7 @@ export declare class ElementNode extends LexicalNode {
     start: number,
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
-  ): ElementNode;
+  ): this;
   exportJSON(): SerializedElementNode;
 }
 export function $isElementNode(

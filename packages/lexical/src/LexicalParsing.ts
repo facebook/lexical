@@ -127,6 +127,7 @@ export function internalCreateNodeFromParse(
   // We set the parsedKey to undefined before calling clone() so that
   // we get a new random key assigned.
   parsedNode.__key = undefined;
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const node = NodeKlass.clone(parsedNode);
   parsedNode.__key = parsedKey;
   const key = node.__key;

@@ -22,7 +22,6 @@ import type {
 import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
-import {ElementNode} from '..';
 import {
   COMPOSITION_SUFFIX,
   IS_BOLD,
@@ -274,27 +273,27 @@ export class TextNode extends LexicalNode {
   }
 
   getFormat(): number {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__format;
   }
 
   getDetail(): number {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__detail;
   }
 
   getMode(): TextModeType {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return TEXT_TYPE_TO_MODE[self.__mode];
   }
 
   getStyle(): string {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__style;
   }
 
   isToken(): boolean {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__mode === IS_TOKEN;
   }
 
@@ -303,22 +302,22 @@ export class TextNode extends LexicalNode {
   }
 
   isSegmented(): boolean {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__mode === IS_SEGMENTED;
   }
 
   isInert(): boolean {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__mode === IS_INERT;
   }
 
   isDirectionless(): boolean {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return (self.__detail & IS_DIRECTIONLESS) !== 0;
   }
 
   isUnmergeable(): boolean {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return (self.__detail & IS_UNMERGEABLE) !== 0;
   }
 
@@ -338,12 +337,12 @@ export class TextNode extends LexicalNode {
     ) {
       return '';
     }
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     return self.__text;
   }
 
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const format = self.__format;
     return toggleTextFormatType(format, type, alignWithFormat);
   }
@@ -501,21 +500,21 @@ export class TextNode extends LexicalNode {
 
   setFormat(format: number): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__format = format;
     return self;
   }
 
   setDetail(detail: number): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__detail = detail;
     return self;
   }
 
   setStyle(style: string): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__style = style;
     return self;
   }
@@ -527,14 +526,14 @@ export class TextNode extends LexicalNode {
 
   toggleDirectionless(): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__detail ^= IS_DIRECTIONLESS;
     return self;
   }
 
   toggleUnmergeable(): this {
     errorOnReadOnly();
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__detail ^= IS_UNMERGEABLE;
     return self;
   }
@@ -542,14 +541,14 @@ export class TextNode extends LexicalNode {
   setMode(type: TextModeType): this {
     errorOnReadOnly();
     const mode = TEXT_MODE_TO_TYPE[type];
-    const self = this.getWritable<this>();
+    const self = this.getWritable();
     self.__mode = mode;
     return self;
   }
 
   setTextContent(text: string): this {
     errorOnReadOnly();
-    const writableSelf = this.getWritable<this>();
+    const writableSelf = this.getWritable();
     writableSelf.__text = text;
     return writableSelf;
   }
@@ -602,7 +601,7 @@ export class TextNode extends LexicalNode {
     moveSelection?: boolean,
   ): TextNode {
     errorOnReadOnly();
-    const writableSelf = this.getWritable<this>();
+    const writableSelf = this.getWritable();
     const text = writableSelf.__text;
     const handledTextLength = newText.length;
     let index = offset;
@@ -640,7 +639,7 @@ export class TextNode extends LexicalNode {
 
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
-    const self = this.getLatest<this>();
+    const self = this.getLatest();
     const textContent = self.getTextContent();
     const key = self.__key;
     const compositionKey = $getCompositionKey();
@@ -683,7 +682,7 @@ export class TextNode extends LexicalNode {
       hasReplacedSelf = true;
     } else {
       // For the first part, update the existing node
-      writableNode = self.getWritable<this>();
+      writableNode = self.getWritable();
       writableNode.__text = firstPart;
     }
 
@@ -697,7 +696,7 @@ export class TextNode extends LexicalNode {
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
       const partSize = part.length;
-      const sibling = $createTextNode(part).getWritable<TextNode>();
+      const sibling = $createTextNode(part).getWritable();
       sibling.__format = format;
       sibling.__style = style;
       sibling.__detail = detail;
@@ -739,7 +738,7 @@ export class TextNode extends LexicalNode {
 
     // Insert the nodes into the parent's children
     internalMarkSiblingsAsDirty(this);
-    const writableParent = parent.getWritable<ElementNode>();
+    const writableParent = parent.getWritable();
     const writableParentChildren = writableParent.__children;
     const insertionIndex = writableParentChildren.indexOf(key);
     const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
@@ -807,7 +806,7 @@ export class TextNode extends LexicalNode {
     const targetText = target.__text;
     const newText = isBefore ? targetText + text : text + targetText;
     this.setTextContent(newText);
-    const writableSelf = this.getWritable<this>();
+    const writableSelf = this.getWritable();
     target.remove();
     return writableSelf;
   }
@@ -818,7 +817,7 @@ export class TextNode extends LexicalNode {
 }
 
 function convertSpanElement(domNode: HTMLSpanElement): DOMConversionOutput {
-  //  domNode is a <span> since we matched it by nodeName
+  // domNode is a <span> since we matched it by nodeName
   const span = domNode;
   // Google Docs uses span tags + font-weight for bold text
   const hasBoldFontWeight = span.style.fontWeight === '700';

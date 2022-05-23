@@ -93,6 +93,7 @@ describe('LexicalSelection tests', () => {
       return (
         <TestComposer
           config={{
+            nodes: [],
             theme: {
               code: 'editor-code',
               heading: {

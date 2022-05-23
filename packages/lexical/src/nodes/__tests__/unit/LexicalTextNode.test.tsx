@@ -79,8 +79,10 @@ describe('LexicalTextNode tests', () => {
 
     useEffect(() => {
       const rootElement = rootElementRef.current;
+
       editor.setRootElement(rootElement);
     }, [rootElementRef, editor]);
+
     return editor;
   }
 
@@ -91,6 +93,7 @@ describe('LexicalTextNode tests', () => {
 
     function TestBase() {
       editor = useLexicalEditor(ref);
+
       return <div ref={ref} contentEditable={true} />;
     }
 
@@ -280,6 +283,7 @@ describe('LexicalTextNode tests', () => {
           const root = $getRoot();
           const paragraphNode = root.getFirstChild<ParagraphNode>();
           const textNode = paragraphNode.getFirstChild<TextNode>();
+
           textNode.setFormat(stateFormat);
 
           expect(flagPredicate(textNode)).toBe(true);
@@ -391,7 +395,9 @@ describe('LexicalTextNode tests', () => {
           const textNode = $createTextNode('Hello World');
           paragraphNode.append(textNode);
           $getRoot().append(paragraphNode);
+
           const selection = textNode.select(anchorOffset, focusOffset);
+
           expect(selection.focus.getNode()).toBe(textNode);
           expect(selection.anchor.offset).toBe(expectedAnchorOffset);
           expect(selection.focus.getNode()).toBe(textNode);
@@ -407,7 +413,9 @@ describe('LexicalTextNode tests', () => {
         const segmentedNode = $createTestSegmentedNode('Hello World');
         const paragraphNode = $createParagraphNode();
         paragraphNode.append(segmentedNode);
+
         const [middle, next] = segmentedNode.splitText(5);
+
         const children = paragraphNode.getAllTextNodes();
         expect(paragraphNode.getTextContent()).toBe('Hello World');
         expect(children[0].isSimpleText()).toBe(true);
@@ -433,7 +441,9 @@ describe('LexicalTextNode tests', () => {
           const paragraphNode = $createParagraphNode();
           const textNode = $createTextNode(initialString);
           paragraphNode.append(textNode);
+
           const splitNodes = textNode.splitText(...splitOffsets);
+
           expect(paragraphNode.getChildren()).toHaveLength(splitStrings.length);
           expect(splitNodes.map((node) => node.getTextContent())).toEqual(
             splitStrings,
@@ -448,10 +458,12 @@ describe('LexicalTextNode tests', () => {
         const textNode = $createTextNode('12345');
         paragraphNode.append(textNode);
         $setCompositionKey(textNode.getKey());
+
         const [, splitNode2] = textNode.splitText(1);
         expect($getCompositionKey()).toBe(splitNode2.getKey());
       });
     });
+
     test.each([
       [
         'Hello',
@@ -554,8 +566,10 @@ describe('LexicalTextNode tests', () => {
           const textNode = $createTextNode(initialString);
           paragraphNode.append(textNode);
           $getRoot().append(paragraphNode);
+
           const selection = textNode.select(...selectionOffsets);
           const childrenNodes = textNode.splitText(...splitOffsets);
+
           expect(selection.anchor.getNode()).toBe(
             childrenNodes[anchorNodeIndex],
           );
@@ -749,7 +763,6 @@ describe('LexicalTextNode tests', () => {
           expect(textNode.updateDOM(prevTextNode, element, editorConfig)).toBe(
             result,
           );
-
           // Only need to bother about DOM element contents if updateDOM()
           // returns false.
           if (!result) {
@@ -768,6 +781,7 @@ describe('LexicalTextNode tests', () => {
       const textNode3 = $createTextNode('3');
       paragraph.append(textNode1, textNode2, textNode3);
       textNode2.select();
+
       const selection = $getSelection();
       textNode2.mergeWithSibling(textNode1);
 

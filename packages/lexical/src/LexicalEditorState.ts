@@ -76,7 +76,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
-  // @ts-expect-error
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
@@ -85,7 +85,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
     );
   }
 
-  // @ts-expect-error
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const serializedChildren = serializedNode.children;
 
   if ($isElementNode(node)) {
@@ -142,12 +142,14 @@ export class EditorState {
       selection === undefined ? this._selection : selection,
     );
     editorState._readOnly = true;
+
     return editorState;
   }
 
   // TODO: remove when we use the other toJSON
   toJSON(space?: string | number): JSONEditorState {
     const selection = this._selection;
+
     return {
       _nodeMap: Array.from(this._nodeMap.entries()),
       _selection: $isRangeSelection(selection)

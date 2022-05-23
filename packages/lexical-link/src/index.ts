@@ -93,11 +93,11 @@ export class LinkNode extends ElementNode {
   }
 
   getURL(): string {
-    return this.getLatest<LinkNode>().__url;
+    return this.getLatest().__url;
   }
 
   setURL(url: string): void {
-    const writable = this.getWritable<LinkNode>();
+    const writable = this.getWritable();
     writable.__url = url;
   }
 

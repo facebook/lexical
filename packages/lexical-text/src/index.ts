@@ -268,7 +268,7 @@ export function registerLexicalTextEntity<N extends TextNode>(
   };
 
   const getMode = (node: TextNode): number => {
-    return node.getLatest<TextNode>().__mode;
+    return node.getLatest().__mode;
   };
 
   const textNodeTransform = (node: TextNode) => {

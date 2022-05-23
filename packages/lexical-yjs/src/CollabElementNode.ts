@@ -648,7 +648,7 @@ function lazilyCloneElementNode(
   nextLexicalChildrenKeys: Array<NodeKey>,
 ): ElementNode {
   if (writableLexicalNode === undefined) {
-    const clone = lexicalNode.getWritable<ElementNode>();
+    const clone = lexicalNode.getWritable();
     clone.__children = nextLexicalChildrenKeys;
     return clone;
   }

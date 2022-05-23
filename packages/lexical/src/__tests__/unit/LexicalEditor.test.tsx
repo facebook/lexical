@@ -62,14 +62,17 @@ global.IS_REACT_ACT_ENVIRONMENT = true;
 describe('LexicalEditor tests', () => {
   let container = null;
   let reactRoot;
+
   beforeEach(() => {
     container = document.createElement('div');
     reactRoot = createRoot(container);
     document.body.appendChild(container);
   });
+
   afterEach(() => {
     document.body.removeChild(container);
     container = null;
+
     jest.restoreAllMocks();
   });
 
@@ -93,6 +96,7 @@ describe('LexicalEditor tests', () => {
 
     useEffect(() => {
       const rootElement = rootElementRef.current;
+
       editor.setRootElement(rootElement);
     }, [rootElementRef, editor]);
 
@@ -137,7 +141,9 @@ describe('LexicalEditor tests', () => {
       root.append(paragraph);
       paragraph.append(text);
     });
+
     initialEditor.setRootElement(rootElement);
+
     // Wait for update to complete
     await Promise.resolve().then();
 
@@ -147,6 +153,7 @@ describe('LexicalEditor tests', () => {
 
     const initialEditorState = initialEditor.getEditorState();
     initialEditor.setRootElement(null);
+
     expect(container.innerHTML).toBe(
       '<div style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"></div>',
     );
@@ -167,6 +174,7 @@ describe('LexicalEditor tests', () => {
     init();
 
     let log = [];
+
     editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
@@ -174,6 +182,7 @@ describe('LexicalEditor tests', () => {
       root.append(paragraph);
       paragraph.append(text);
     });
+
     editor.update(
       () => {
         log.push('A1');
@@ -206,9 +215,12 @@ describe('LexicalEditor tests', () => {
         },
       },
     );
+
     // Wait for update to complete
     await Promise.resolve().then();
+
     expect(log).toEqual(['A1', 'B1', 'C1', 'D1', 'E1', 'F1']);
+
     log = [];
     editor.update(
       () => {
@@ -245,9 +257,12 @@ describe('LexicalEditor tests', () => {
         },
       },
     );
+
     // Wait for update to complete
     await Promise.resolve().then();
+
     expect(log).toEqual(['A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2']);
+
     log = [];
     editor.registerNodeTransform(TextNode, () => {
       log.push('TextTransform A3');
@@ -262,13 +277,16 @@ describe('LexicalEditor tests', () => {
         },
       );
     });
+
     // Wait for update to complete
     await Promise.resolve().then();
+
     expect(log).toEqual([
       'TextTransform A3',
       'TextTransform B3',
       'TextTransform C3',
     ]);
+
     log = [];
     editor.update(
       () => {
@@ -281,8 +299,10 @@ describe('LexicalEditor tests', () => {
         },
       },
     );
+
     // Wait for update to complete
     await Promise.resolve().then();
+
     expect(log).toEqual([
       'A3',
       'TextTransform A3',
@@ -314,6 +334,7 @@ describe('LexicalEditor tests', () => {
       const root = $getRoot();
       root.append($createParagraphNode());
     });
+
     const fn = jest.fn();
 
     await editor.focus(fn);
@@ -334,6 +355,7 @@ describe('LexicalEditor tests', () => {
         node.toggleFormat('italic');
       }
     });
+
     // 1. Add bold
     const boldListener = editor.registerNodeTransform(TextNode, (node) => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
@@ -361,6 +383,7 @@ describe('LexicalEditor tests', () => {
     italicsListener();
     boldListener();
     underlineListener();
+
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic editor-text-underline" data-lexical-text="true">foo</strong></p></div>',
     );
@@ -422,9 +445,11 @@ describe('LexicalEditor tests', () => {
       const paragraph = root.getFirstChild();
       paragraph.markDirty();
     });
+
     testParagraphListener();
     boldListener();
     italicsListener();
+
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold editor-text-italic" data-lexical-text="true">foo</strong></p></div>',
     );
@@ -438,10 +463,12 @@ describe('LexicalEditor tests', () => {
     const fooListener = editor.registerNodeTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo' && !hasRun[0]) {
         const [before, after] = node.splitText(2);
+
         before.insertBefore($createTextNode(''));
         after.insertAfter($createTextNode(''));
         after.insertAfter($createTextNode('!'));
         after.insertAfter($createTextNode(''));
+
         hasRun[0] = true;
       }
     });
@@ -458,10 +485,12 @@ describe('LexicalEditor tests', () => {
           !hasRun[1]
         ) {
           const [before, after] = child.splitText(2);
+
           before.insertBefore($createTextNode(''));
           after.insertAfter($createTextNode(''));
           after.insertAfter($createTextNode('!'));
           after.insertAfter($createTextNode(''));
+
           hasRun[1] = true;
         }
       },
@@ -471,9 +500,11 @@ describe('LexicalEditor tests', () => {
     const boldFooListener = editor.registerNodeTransform(TextNode, (node) => {
       if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
         node.toggleFormat('bold');
+
         const [before, after] = node.splitText(2);
         before.insertBefore($createTextNode(''));
         after.insertAfter($createTextNode(''));
+
         hasRun[2] = true;
       }
     });
@@ -481,6 +512,7 @@ describe('LexicalEditor tests', () => {
     await editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
+
       root.append(paragraph);
       paragraph.append($createTextNode('Foo'));
     });
@@ -488,6 +520,7 @@ describe('LexicalEditor tests', () => {
     fooListener();
     megaFooListener();
     boldFooListener();
+
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">Foo!!</strong></p></div>',
     );
@@ -520,6 +553,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(executeTransform).toHaveBeenCalledTimes(1);
+
     removeListener();
   });
 
@@ -558,13 +592,16 @@ describe('LexicalEditor tests', () => {
       const root = $getRoot();
       const paragraph = root.getFirstChild<ParagraphNode>();
       const textNode = paragraph.getFirstChild<TextNode>();
+
       textNode.getWritable();
+
       executeParagraphNodeTransform = jest.fn();
       executeTextNodeTransform = jest.fn();
     });
 
     expect(executeParagraphNodeTransform).toHaveBeenCalledTimes(0);
     expect(executeTextNodeTransform).toHaveBeenCalledTimes(1);
+
     removeParagraphTransform();
     removeTextNodeTransform();
   });
@@ -597,10 +634,12 @@ describe('LexicalEditor tests', () => {
         paragraph0.append(...textNodes.slice(0, 3));
         paragraph1.append(...textNodes.slice(3));
       });
+
       removeTransform = editor.registerNodeTransform(TextNode, (node) => {
         textTransformCount[node.__text]++;
       });
     });
+
     afterEach(() => {
       removeTransform();
     });
@@ -663,6 +702,7 @@ describe('LexicalEditor tests', () => {
   it('Detects infinite recursivity on transforms', async () => {
     const errorListener = jest.fn();
     init(errorListener);
+
     const boldListener = editor.registerNodeTransform(TextNode, (node) => {
       node.toggleFormat('bold');
     });
@@ -705,6 +745,7 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(container.innerHTML).toBe('<div contenteditable="true"></div>');
+
     ReactTestUtils.act(() => {
       reactRoot.render(<TestBase element={ref.current} />);
     });
@@ -727,13 +768,15 @@ describe('LexicalEditor tests', () => {
         paragraph.append(text);
       }
     });
+
     // Wait for update to complete
     await Promise.resolve().then();
+
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
-
     expect(errorListener).toHaveBeenCalledTimes(0);
+
     editor.update(() => {
       const root = $getRoot();
       root
@@ -762,8 +805,10 @@ describe('LexicalEditor tests', () => {
         paragraph.append(text);
       }
     });
+
     // Wait for update to complete
     await Promise.resolve().then();
+
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
     );
@@ -778,8 +823,10 @@ describe('LexicalEditor tests', () => {
     });
 
     expect(errorListener).toHaveBeenCalledTimes(0);
+
     // This is an intentional bug, to trigger the recovery
     editor._editorState._nodeMap = null;
+
     // Wait for update to complete
     await Promise.resolve().then();
 
@@ -954,6 +1001,7 @@ describe('LexicalEditor tests', () => {
       ReactTestUtils.act(() => {
         reactRoot.render(<Test divKey={0} />);
       });
+
       // Wait for update to complete
       await Promise.resolve().then();
 
@@ -961,15 +1009,19 @@ describe('LexicalEditor tests', () => {
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
+
       ReactTestUtils.act(() => {
         reactRoot.render(<Test divKey={1} />);
       });
+
       expect(listener).toHaveBeenCalledTimes(4);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
+
       // Wait for update to complete
       await Promise.resolve().then();
+
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
@@ -1220,9 +1272,11 @@ describe('LexicalEditor tests', () => {
           paragraph.append(originalText);
           $getRoot().append(paragraph);
         });
+
         const stringifiedEditorState = JSON.stringify(
           editor.getEditorState().toJSON(),
         );
+
         parsedEditorState = editor.parseEditorState(stringifiedEditorState);
         parsedEditorState.read(() => {
           parsedRoot = $getRoot();
@@ -1340,11 +1394,11 @@ describe('LexicalEditor tests', () => {
     it('adds/removes/updates children', async () => {
       async function forPreviousNext(previous: string[], next: string[]) {
         const textToKey: Map<string, NodeKey> = new Map();
-        // Previous editor state
 
+        // Previous editor state
         await update(() => {
-          const writableParagraph: ParagraphNode = $getRoot()
-            .getFirstChild()
+          const writableParagraph = $getRoot()
+            .getFirstChild<ParagraphNode>()
             .getWritable();
           writableParagraph.__children = [];
 
@@ -1358,15 +1412,17 @@ describe('LexicalEditor tests', () => {
             textToKey.set(previousText, textNode.__key);
           }
         });
+
         expect(getEditorStateTextContent(editor.getEditorState())).toBe(
           previous.join(''),
         );
+
         // Next editor state
         const nextSet = new Set(next);
 
         await update(() => {
-          const writableParagraph: ParagraphNode = $getRoot()
-            .getFirstChild()
+          const writableParagraph = $getRoot()
+            .getFirstChild<ParagraphNode>()
             .getWritable();
 
           // Remove previous that are not in next
@@ -1390,13 +1446,16 @@ describe('LexicalEditor tests', () => {
               // New node; append to the end
               textNode = new TextNode(nextText).toggleUnmergeable();
               textNode.__parent = writableParagraph.__key;
+
               expect($getNodeByKey(nextKey)).toBe(null);
+
               textToKey.set(nextText, textNode.__key);
 
               writableParagraph.__children.push(textNode.__key);
             } else {
               // Node exists in previous; reorder it
               textNode = $getNodeByKey(nextKey);
+
               expect(textNode.__text).toBe(nextText);
 
               writableParagraph.__children.splice(
@@ -1425,14 +1484,17 @@ describe('LexicalEditor tests', () => {
               : `<br>`
           }</p></div>`,
         );
+
         // Expect editorState to have the correct latest nodes
         editor.getEditorState().read(() => {
           for (let i = 0; i < next.length; i++) {
             const nextText = next[i];
             const nextKey = textToKey.get(nextText);
+
             expect($getNodeByKey(nextKey)).not.toBe(null);
           }
         });
+
         expect(editor.getEditorState()._nodeMap.size).toBe(next.length + 2);
       }
 
@@ -1464,12 +1526,15 @@ describe('LexicalEditor tests', () => {
       await update(() => {
         const paragraph: ParagraphNode = $getRoot().getFirstChild();
         paragraphNodeKey = paragraph.getKey();
+
         const [elementNode1, textNode1] = createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
         textNode1Key = textNode1.getKey();
+
         const [elementNode2, textNode2] = createElementNodeWithText('B');
         elementNode2Key = elementNode2.getKey();
         textNode2Key = textNode2.getKey();
+
         paragraph.append(elementNode1, elementNode2);
       });
 
@@ -1492,9 +1557,7 @@ describe('LexicalEditor tests', () => {
       }
 
       expect(editor._editorState._nodeMap.size).toBe(keys.length + 1); // + root
-
       expect(editor._keyToDOMMap.size).toBe(keys.length + 1); // + root
-
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">A</span><div dir="ltr"><span data-lexical-text="true">B</span></div></div></p></div>',
       );
@@ -1514,10 +1577,13 @@ describe('LexicalEditor tests', () => {
 
       await update(() => {
         const paragraph: ParagraphNode = $getRoot().getFirstChild();
+
         const elementNode1 = createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
+
         const elementNode2 = createElementNodeWithText('B');
         elementNode2Key = elementNode2.getKey();
+
         paragraph.append(elementNode1, elementNode2);
       });
 
@@ -1526,6 +1592,7 @@ describe('LexicalEditor tests', () => {
         const elementNode2 = $getNodeByKey<ElementNode>(elementNode2Key);
         elementNode2.append(elementNode1);
       });
+
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><div dir="ltr"><span data-lexical-text="true">B</span><div dir="ltr"><span data-lexical-text="true">A</span></div></div></p></div>',
       );
@@ -1546,12 +1613,16 @@ describe('LexicalEditor tests', () => {
 
       await update(() => {
         const paragraph: ParagraphNode = $getRoot().getFirstChild();
+
         const elementNode1 = createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
+
         const elementNode2 = createElementNodeWithText('B');
         elementNode2Key = elementNode2.getKey();
+
         const elementNode3 = createElementNodeWithText('C');
         elementNode3Key = elementNode3.getKey();
+
         paragraph.append(elementNode1, elementNode2, elementNode3);
       });
 
@@ -1588,6 +1659,7 @@ describe('LexicalEditor tests', () => {
     expect(commandListener).toHaveBeenCalledWith(payload, editor);
 
     removeCommandListener();
+
     editor.dispatchCommand(command, payload);
     editor.dispatchCommand(command, payload);
     editor.dispatchCommand(command, payload);
@@ -1719,6 +1791,7 @@ describe('LexicalEditor tests', () => {
     editor.registerMutationListener(TextNode, textNodeMutations);
     const paragraphKeys = [];
     const textNodeKeys = [];
+
     // No await intentional (batch with next)
     editor.update(() => {
       const root = $getRoot();
@@ -1747,7 +1820,9 @@ describe('LexicalEditor tests', () => {
     await editor.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
+
       paragraphKeys.push(paragraph.getKey());
+
       // Created and deleted in the same update (not attached to node)
       textNodeKeys.push($createTextNode('zzz').getKey());
       root.append(paragraph);
@@ -1862,6 +1937,7 @@ describe('LexicalEditor tests', () => {
       const paragraph = $createParagraphNode();
       const textNode1 = $createTextNode('foo');
       const textNode2 = $createTextNode('bar');
+
       textNodeKeys.push(textNode1.getKey(), textNode2.getKey());
       root.append(paragraph);
       paragraph.append(textNode1, textNode2);
@@ -1898,8 +1974,10 @@ describe('LexicalEditor tests', () => {
 
     const paragraphNodeMutations = jest.fn();
     const textNodeMutations = jest.fn();
+
     editor.registerMutationListener(ParagraphNode, paragraphNodeMutations);
     editor.registerMutationListener(TextNode, textNodeMutations);
+
     const paragraphNodeKeys = [];
     const textNodeKeys = [];
 
@@ -1948,10 +2026,13 @@ describe('LexicalEditor tests', () => {
 
     // Show ParagraphNode was updated when new text node was appended.
     expect(paragraphNodeMutation2[0].get(paragraphNodeKeys[0])).toBe('updated');
+
     let tableCellKey;
     let tableRowKey;
+
     const tableCellMutations = jest.fn();
     const tableRowMutations = jest.fn();
+
     editor.registerMutationListener(TableCellNode, tableCellMutations);
     editor.registerMutationListener(TableRowNode, tableRowMutations);
     // Create Table
@@ -1961,9 +2042,11 @@ describe('LexicalEditor tests', () => {
       const tableCell = $createTableCellNode(0);
       const tableRow = $createTableRowNode();
       const table = $createTableNode();
+
       tableRow.append(tableCell);
       table.append(tableRow);
       root.append(table);
+
       tableRowKey = tableRow.getKey();
       tableCellKey = tableCell.getKey();
     });
@@ -1974,6 +2057,7 @@ describe('LexicalEditor tests', () => {
       const tableCell = $createTableCellNode(0);
       tableRow.append(tableCell);
     });
+
     // Update Table Cell
     await editor.update(() => {
       const tableCell = $getNodeByKey<TableCellNode>(tableCellKey);
@@ -2016,6 +2100,7 @@ describe('LexicalEditor tests', () => {
 
     editor.registerUpdateListener(() => {
       updateListener();
+
       editor.registerUpdateListener(() => {
         updateListener();
       });

@@ -149,27 +149,27 @@ export class TableCellNode extends GridCellNode {
   }
 
   setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState {
-    const self = this.getWritable<TableCellNode>();
+    const self = this.getWritable();
     self.__headerState = headerState;
     return this.__headerState;
   }
 
   getHeaderStyles(): TableCellHeaderState {
-    return this.getLatest<TableCellNode>().__headerState;
+    return this.getLatest().__headerState;
   }
 
   setWidth(width: number): number {
-    const self = this.getWritable<TableCellNode>();
+    const self = this.getWritable();
     self.__width = width;
     return this.__width;
   }
 
   getWidth(): number {
-    return this.getLatest<TableCellNode>().__width;
+    return this.getLatest().__width;
   }
 
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
-    const self = this.getWritable<TableCellNode>();
+    const self = this.getWritable();
 
     if ((self.__headerState & headerStateToToggle) === headerStateToToggle) {
       self.__headerState -= headerStateToToggle;
@@ -185,10 +185,7 @@ export class TableCellNode extends GridCellNode {
   }
 
   hasHeader(): boolean {
-    return (
-      this.getLatest<TableCellNode>().__headerState !==
-      TableCellHeaderStates.NO_STATUS
-    );
+    return this.getLatest().__headerState !== TableCellHeaderStates.NO_STATUS;
   }
 
   updateDOM(prevNode: TableCellNode): boolean {

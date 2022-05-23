@@ -180,7 +180,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   setEquation(equation: string): void {
-    const writable = this.getWritable<EquationNode>();
+    const writable = this.getWritable();
     writable.__equation = equation;
   }
 

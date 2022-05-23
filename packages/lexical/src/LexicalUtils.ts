@@ -29,6 +29,7 @@ import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
+import {Class} from 'utility-types';
 
 import {
   $createTextNode,
@@ -50,12 +51,6 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
-// This function is used to determine if Lexical should attempt to override
-// the default browser behavior for insertion of text and use its own internal
-// heuristics. This is an extremely important function, and makes much of Lexical
-// work as intended between different browsers and across word, line and character
-// boundary/formats. It also is important for text replacement, node schemas and
-// composition mechanics.import { EditorState } from './LexicalEditorState';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
@@ -162,8 +157,8 @@ export function $isTokenOrInertOrSegmented(node: TextNode): boolean {
   return $isTokenOrInert(node) || node.isSegmented();
 }
 
-export function $isTokenOrInert(node: TextNode): boolean {
-  return node.isToken() || node.isInert();
+export function $isTokenOrInert(node: TextNode | LexicalNode): boolean {
+  return $isTextNode(node) && (node.isToken() || node.isInert());
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {
@@ -251,7 +246,7 @@ function internalMarkParentElementsAsDirty(
 export function removeFromParent(writableNode: LexicalNode): void {
   const oldParent = writableNode.getParent();
   if (oldParent !== null) {
-    const writableParent = oldParent.getWritable<ElementNode>();
+    const writableParent = oldParent.getWritable();
     const children = writableParent.__children;
     const index = children.indexOf(writableNode.__key);
     if (index === -1) {
@@ -264,7 +259,6 @@ export function removeFromParent(writableNode: LexicalNode): void {
 
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
-
 export function internalMarkNodeAsDirty(node: LexicalNode): void {
   errorOnInfiniteTransforms();
   const latest = node.getLatest();
@@ -459,9 +453,7 @@ function getNodeKeyFromDOM(
 ): NodeKey | null {
   let node = dom;
   while (node != null) {
-    const key: NodeKey =
-      // internal field
-      node['__lexicalKey_' + editor._key];
+    const key: NodeKey = node['__lexicalKey_' + editor._key];
     if (key !== undefined) {
       return key;
     }
@@ -630,6 +622,12 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 
+// This function is used to determine if Lexical should attempt to override
+// the default browser behavior for insertion of text and use its own internal
+// heuristics. This is an extremely important function, and makes much of Lexical
+// work as intended between different browsers and across word, line and character
+// boundary/formats. It also is important for text replacement, node schemas and
+// composition mechanics.
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   text: string,
@@ -945,10 +943,11 @@ export function setMutatedNode(
 }
 
 export function $nodesOfType<T extends LexicalNode>(
-  klass: typeof LexicalNode,
+  klass: Class<LexicalNode>,
 ): Array<T> {
   const editorState = getActiveEditorState();
   const readOnly = editorState._readOnly;
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const klassType = klass.getType();
   const nodes = editorState._nodeMap;
   const nodesOfType = [];

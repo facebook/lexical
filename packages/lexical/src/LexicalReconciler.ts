@@ -52,7 +52,6 @@ import {
   isSelectionWithinEditor,
   setMutatedNode,
 } from './LexicalUtils';
-import {RootNode} from './nodes/LexicalRootNode';
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
@@ -393,7 +392,7 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
       }
 
       if (!activeEditorStateReadOnly) {
-        const writableNode = element.getWritable<ElementNode>();
+        const writableNode = element.getWritable();
         writableNode.__dir = direction;
       }
     }
@@ -613,7 +612,7 @@ function reconcileNode(
     nextNode.__cachedText !== editorTextContent
   ) {
     // Cache the latest text content.
-    nextNode = nextNode.getWritable<RootNode>();
+    nextNode = nextNode.getWritable();
     if ($isRootNode(nextNode)) {
       nextNode.__cachedText = editorTextContent;
     }
@@ -774,6 +773,7 @@ function reconcileRoot(
   activeEditorConfig = undefined;
   activePrevKeyToDOMMap = undefined;
   mutatedNodes = undefined;
+
   return currentMutatedNodes;
 }
 

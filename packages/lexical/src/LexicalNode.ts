@@ -87,7 +87,7 @@ export function removeNode(
     }
   }
 
-  const writableParent = parent.getWritable<ElementNode>();
+  const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
   if (index === -1) {
@@ -279,7 +279,7 @@ export class LexicalNode {
   }
 
   getParent<T extends ElementNode>(): T | null {
-    const parent = this.getLatest<T>().__parent;
+    const parent = this.getLatest().__parent;
     if (parent === null) {
       return null;
     }
@@ -473,7 +473,7 @@ export class LexicalNode {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
     const visited = new Set();
-    let node = this;
+    let node: LexicalNode | this = this;
     while (true) {
       const key = node.__key;
       if (!visited.has(key)) {
@@ -485,16 +485,16 @@ export class LexicalNode {
       }
       const child = $isElementNode(node)
         ? isBefore
-          ? node.getFirstChild<this>()
-          : node.getLastChild<this>()
+          ? node.getFirstChild()
+          : node.getLastChild()
         : null;
       if (child !== null) {
         node = child;
         continue;
       }
       const nextSibling = isBefore
-        ? node.getNextSibling<this>()
-        : node.getPreviousSibling<this>();
+        ? node.getNextSibling()
+        : node.getPreviousSibling();
       if (nextSibling !== null) {
         node = nextSibling;
         continue;
@@ -536,21 +536,22 @@ export class LexicalNode {
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
 
-  getLatest<T extends LexicalNode>(): T {
-    const latest = $getNodeByKey<T>(this.__key);
+  getLatest(): this {
+    const latest = $getNodeByKey<this>(this.__key);
     if (latest === null) {
       invariant(false, 'getLatest: node not found');
     }
     return latest;
   }
-  getWritable<T extends LexicalNode>(): T {
+
+  getWritable(): this {
     errorOnReadOnly();
     const editorState = getActiveEditorState();
     const editor = getActiveEditor();
     const nodeMap = editorState._nodeMap;
     const key = this.__key;
     // Ensure we get the latest node from pending state
-    const latestNode = this.getLatest<T>();
+    const latestNode = this.getLatest();
     const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
@@ -656,7 +657,7 @@ export class LexicalNode {
     const writableReplaceWith = replaceWith.getWritable();
     removeFromParent(writableReplaceWith);
     const newParent = this.getParentOrThrow();
-    const writableParent = newParent.getWritable<ElementNode>();
+    const writableParent = newParent.getWritable();
     const children = writableParent.__children;
     const index = children.indexOf(this.__key);
     const newKey = writableReplaceWith.__key;
@@ -684,7 +685,7 @@ export class LexicalNode {
     return writableReplaceWith;
   }
 
-  insertAfter<T extends LexicalNode>(nodeToInsert: T): T {
+  insertAfter(nodeToInsert: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
@@ -709,7 +710,7 @@ export class LexicalNode {
           focus.offset === oldIndex + 1;
       }
     }
-    const writableParent = this.getParentOrThrow().getWritable<ElementNode>();
+    const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;
@@ -736,12 +737,12 @@ export class LexicalNode {
     return nodeToInsert;
   }
 
-  insertBefore<T extends LexicalNode>(nodeToInsert: T): T {
+  insertBefore(nodeToInsert: LexicalNode): LexicalNode {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     removeFromParent(writableNodeToInsert);
-    const writableParent = this.getParentOrThrow().getWritable<ElementNode>();
+    const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const children = writableParent.__children;

@@ -119,11 +119,10 @@ type RootElementEvents = Array<
 const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
-  // $FlowIgnore bad event inheritance
-  ['keydown', onKeyDown], // $FlowIgnore bad event inheritance
-  ['compositionstart', onCompositionStart], // $FlowIgnore bad event inheritance
-  ['compositionend', onCompositionEnd], // $FlowIgnore bad event inheritance
-  ['input', onInput], // $FlowIgnore bad event inheritance
+  ['keydown', onKeyDown],
+  ['compositionstart', onCompositionStart],
+  ['compositionend', onCompositionEnd],
+  ['input', onInput],
   ['click', onClick],
   ['cut', PASS_THROUGH_COMMAND],
   ['copy', PASS_THROUGH_COMMAND],
@@ -136,7 +135,6 @@ const rootElementEvents: RootElementEvents = [
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
-  // $FlowIgnore bad event inheritance
   rootElementEvents.push(['beforeinput', onBeforeInput]);
 }
 
@@ -324,7 +322,8 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
   // We let the browser do its own thing for composition.
   if (
-    inputType === 'deleteCompositionText' || // If we're pasting in FF, we shouldn't get this event
+    inputType === 'deleteCompositionText' ||
+    // If we're pasting in FF, we shouldn't get this event
     // as the `paste` event should have triggered, unless the
     // user has dom.event.clipboardevents.enabled disabled in
     // about:config. In that case, we need to process the
@@ -571,7 +570,8 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         break;
       }
 
-      default: // NO-OP
+      default:
+      // NO-OP
     }
   });
 }
@@ -652,7 +652,8 @@ function onCompositionStart(
         // If it has been 30ms since the last keydown, then we should
         // apply the empty space heuristic. We can't do this for Safari,
         // as the keydown fires after composition start.
-        event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY || // FF has issues around composing multibyte characters, so we also
+        event.timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
+        // FF has issues around composing multibyte characters, so we also
         // need to invoke the empty space heuristic below.
         anchor.type === 'element' ||
         !selection.isCollapsed() ||

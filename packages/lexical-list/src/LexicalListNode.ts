@@ -147,7 +147,7 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  append(...nodesToAppend: LexicalNode[]): ListNode {
+  append(...nodesToAppend: LexicalNode[]): this {
     for (let i = 0; i < nodesToAppend.length; i++) {
       const currentNode = nodesToAppend[i];
 
@@ -168,6 +168,7 @@ export class ListNode extends ElementNode {
 
     return this;
   }
+
   extractWithChild(child: LexicalNode): boolean {
     return $isListItemNode(child);
   }

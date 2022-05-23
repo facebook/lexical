@@ -119,7 +119,7 @@ export type EditorConfig = {
   theme: EditorThemeClasses;
   disableEvents?: boolean;
   editorState?: EditorState;
-  nodes?: ReadonlyArray<typeof LexicalNode>;
+  nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
@@ -128,7 +128,7 @@ export type EditorConfig = {
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
 export type RegisteredNode = {
-  klass: typeof LexicalNode;
+  klass: Class<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
 };
 
@@ -246,6 +246,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   const conversionCache = new Map();
   const handledConversions = new Set();
   nodes.forEach((node) => {
+    // @ts-expect-error TODO Replace Class utility type with InstanceType
     const importDOM = node.klass.importDOM;
 
     if (handledConversions.has(importDOM)) {
@@ -275,7 +276,7 @@ export function createEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<typeof LexicalNode>;
+  nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError: ErrorHandler;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
@@ -301,6 +302,7 @@ export function createEditor(editorConfig?: {
 
   for (let i = 0; i < nodes.length; i++) {
     const klass = nodes[i];
+    // @ts-expect-error TODO Replace Class utility type with InstanceType
     const type = klass.getType();
     registeredNodes.set(type, {
       klass,
@@ -509,9 +511,10 @@ export class LexicalEditor {
   }
 
   registerMutationListener(
-    klass: typeof LexicalNode,
+    klass: Class<LexicalNode>,
     listener: MutationListener,
   ): () => void {
+    // @ts-expect-error TODO Replace Class utility type with InstanceType
     const registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
@@ -532,9 +535,10 @@ export class LexicalEditor {
   registerNodeTransform(
     // There's no Flow-safe way to preserve the T in Transform<T>, but <T = LexicalNode> in the
     // declaration below guarantees these are LexicalNodes.
-    klass: typeof LexicalNode,
+    klass: Class<LexicalNode>,
     listener: Transform<LexicalNode>,
   ): () => void {
+    // @ts-expect-error TODO Replace Class utility type with InstanceType
     const type = klass.getType();
 
     const registeredNode = this._nodes.get(type);
@@ -555,9 +559,10 @@ export class LexicalEditor {
     };
   }
 
-  hasNodes(nodes: Array<typeof LexicalNode>): boolean {
+  hasNodes(nodes: Array<Class<LexicalNode>>): boolean {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
+      // @ts-expect-error TODO Replace Class utility type with InstanceType
       const type = klass.getType();
 
       if (!this._nodes.has(type)) {

@@ -77,13 +77,13 @@ export class TableRowNode extends GridRowNode {
   }
 
   setHeight(height: number): number {
-    const self = this.getWritable<TableRowNode>();
+    const self = this.getWritable();
     self.__height = height;
     return this.__height;
   }
 
   getHeight(): number {
-    return this.getLatest<TableRowNode>().__height;
+    return this.getLatest().__height;
   }
 
   updateDOM(prevNode: TableRowNode): boolean {

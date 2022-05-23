@@ -29,7 +29,7 @@ export function $isListNode(node?: LexicalNode): node is ListNode;
 export function indentList(): void;
 export function insertList(editor: LexicalEditor, listType: ListType): void;
 export declare class ListItemNode extends ElementNode {
-  append(...nodes: LexicalNode[]): ListItemNode;
+  append(...nodes: LexicalNode[]): this;
   replace<N extends LexicalNode>(replaceWithNode: N): N;
   insertAfter(node: LexicalNode): LexicalNode;
   insertNewAfter(): ListItemNode | ParagraphNode;
@@ -48,7 +48,7 @@ export declare class ListItemNode extends ElementNode {
 }
 export declare class ListNode extends ElementNode {
   canBeEmpty(): false;
-  append(...nodesToAppend: LexicalNode[]): ListNode;
+  append(...nodesToAppend: LexicalNode[]): this;
   getTag(): ListNodeTagType;
   getStart(): number;
   getListType(): ListType;

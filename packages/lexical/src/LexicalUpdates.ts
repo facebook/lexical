@@ -138,7 +138,8 @@ function $isNodeValidForTransform(
   compositionKey: null | string,
 ): boolean {
   return (
-    node !== undefined && // We don't want to transform nodes being composed
+    node !== undefined &&
+    // We don't want to transform nodes being composed
     node.__key !== compositionKey &&
     node.isAttached()
   );
@@ -184,6 +185,7 @@ function $applyAllTransforms(
   const nodeMap = editorState._nodeMap;
   const compositionKey = $getCompositionKey();
   const transformsCache = new Map();
+
   let untransformedDirtyLeaves = dirtyLeaves;
   let untransformedDirtyLeavesLength = untransformedDirtyLeaves.size;
   let untransformedDirtyElements = dirtyElements;
@@ -267,7 +269,6 @@ function $applyAllTransforms(
 }
 
 // TODO: once unstable_parseEditorState is stable, swap that for this.
-
 export function parseEditorState(
   parsedEditorState: ParsedEditorState,
   editor: LexicalEditor,
@@ -326,6 +327,7 @@ function parseSerializedNode<SerializedNode extends InternalSerializedNode>(
 
   const nodeClass = registeredNode.klass;
 
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
@@ -334,6 +336,7 @@ function parseSerializedNode<SerializedNode extends InternalSerializedNode>(
     );
   }
 
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const node = nodeClass.importJSON(serializedNode);
   const children = serializedNode.children;
 
@@ -388,6 +391,7 @@ export function unstable_parseEditorState(
 
   return editorState;
 }
+
 // This technically isn't an update but given we need
 // exposure to the module's active bindings, we have this
 // function here
@@ -399,6 +403,7 @@ export function readEditorState<V>(
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
+
   activeEditorState = editorState;
   isReadOnlyMode = true;
   activeEditor = null;
@@ -514,9 +519,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
-
     editor._cloneNotNeeded.clear();
-
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
     editor._normalizedNodes = new Set();

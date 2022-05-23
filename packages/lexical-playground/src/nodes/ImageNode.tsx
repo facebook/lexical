@@ -411,13 +411,13 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     width: 'inherit' | number,
     height: 'inherit' | number,
   ): void {
-    const writable = this.getWritable<ImageNode>();
+    const writable = this.getWritable();
     writable.__width = width;
     writable.__height = height;
   }
 
   setShowCaption(showCaption: boolean): void {
-    const writable = this.getWritable<ImageNode>();
+    const writable = this.getWritable();
     writable.__showCaption = showCaption;
   }
 

@@ -128,7 +128,7 @@ export class ListItemNode extends ElementNode {
     };
   }
 
-  append(...nodes: LexicalNode[]): ListItemNode {
+  append(...nodes: LexicalNode[]): this {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
 
@@ -296,24 +296,24 @@ export class ListItemNode extends ElementNode {
   }
 
   getValue(): number {
-    const self = this.getLatest<ListItemNode>();
+    const self = this.getLatest();
 
     return self.__value;
   }
 
   setValue(value: number): void {
-    const self = this.getWritable<ListItemNode>();
+    const self = this.getWritable();
     self.__value = value;
   }
 
   getChecked(): boolean {
-    const self = this.getLatest<ListItemNode>();
+    const self = this.getLatest();
 
     return self.__checked;
   }
 
   setChecked(checked: boolean): void {
-    const self = this.getWritable<ListItemNode>();
+    const self = this.getWritable();
     self.__checked = checked;
   }
 
@@ -325,7 +325,7 @@ export class ListItemNode extends ElementNode {
     // If we don't have a parent, we are likely serializing
     const parent = this.getParent();
     if (parent === null) {
-      return this.getLatest<ListItemNode>().__indent;
+      return this.getLatest().__indent;
     }
     // ListItemNode should always have a ListNode for a parent.
     let listNodeParent = parent.getParentOrThrow();

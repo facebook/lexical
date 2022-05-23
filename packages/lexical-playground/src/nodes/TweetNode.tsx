@@ -6,7 +6,14 @@
  *
  */
 
-import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  ElementFormatType,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
@@ -30,6 +37,12 @@ type TweetComponentProps = Readonly<{
   onLoad?: () => void;
   tweetID: string;
 }>;
+
+function convertTweetElement(domNode: HTMLElement): null | DOMConversionOutput {
+  const id = domNode.getAttribute('data-tweet-id');
+  const node = $createTweetNode(id);
+  return {node};
+}
 
 function TweetComponent({
   format,
@@ -126,6 +139,26 @@ export class TweetNode extends DecoratorBlockNode<JSX.Element> {
       type: 'tweet',
       version: 1,
     };
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-tweet-id')) {
+          return null;
+        }
+        return {
+          conversion: convertTweetElement,
+          priority: 2,
+        };
+      },
+    };
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('div');
+    element.setAttribute('data-tweet-id', this.__id);
+    return {element};
   }
 
   constructor(id: string, format?: ElementFormatType | null, key?: NodeKey) {

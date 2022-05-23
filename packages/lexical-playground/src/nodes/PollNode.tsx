@@ -6,7 +6,14 @@
  *
  */
 
-import type {LexicalNode, NodeKey, SerializedLexicalNode} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical';
 
 import './PollNode.css';
 
@@ -200,6 +207,12 @@ export type SerializedPollNode = Spread<
   SerializedLexicalNode
 >;
 
+function convertPollElement(domNode: HTMLElement): null | DOMConversionOutput {
+  const question = domNode.getAttribute('data-poll-question');
+  const node = $createPollNode(question);
+  return {node};
+}
+
 export class PollNode extends DecoratorNode<JSX.Element> {
   __question: string;
   __options: Options;
@@ -272,6 +285,26 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     const index = options.indexOf(option);
     options[index] = clonedOption;
     self.__options = options;
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-poll-question')) {
+          return null;
+        }
+        return {
+          conversion: convertPollElement,
+          priority: 2,
+        };
+      },
+    };
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('span');
+    element.setAttribute('data-poll-question', this.__question);
+    return {element};
   }
 
   createDOM(): HTMLElement {

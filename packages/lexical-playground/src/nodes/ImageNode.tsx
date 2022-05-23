@@ -338,7 +338,9 @@ function convertImageElement(domNode: Node): null | DOMConversionOutput {
       const parsedJSON = JSON.parse(captionJSON);
       const nestedEditor = node.__caption;
       const editorState = nestedEditor.parseEditorState(parsedJSON.editorState);
-      nestedEditor.setEditorState(editorState);
+      if (!editorState.isEmpty()) {
+        nestedEditor.setEditorState(editorState);
+      }
     }
     return {node};
   }
@@ -374,15 +376,20 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
     const {altText, height, width, maxWidth, caption, src, showCaption} =
       serializedNode;
-    return $createImageNode({
+    const node = $createImageNode({
       altText,
-      caption,
       height,
       maxWidth,
       showCaption,
       src,
       width,
     });
+    const nestedEditor = node.__caption;
+    const editorState = nestedEditor.parseEditorState(caption.editorState);
+    if (!editorState.isEmpty()) {
+      nestedEditor.setEditorState(editorState);
+    }
+    return node;
   }
 
   constructor(

@@ -124,7 +124,7 @@ export const HEADING: ElementTransformer = {
 
 export const QUOTE: ElementTransformer = {
   export: (node, exportChildren) => {
-    return $isQuoteNode(node) ? '> ' + exportChildren(node) : null;
+    return $isQuoteNode(node) ? '> ' + exportChildren(node) + '\n' : null;
   },
   regExp: /^>\s/,
   replace: replaceWithBlock(() => $createQuoteNode()),

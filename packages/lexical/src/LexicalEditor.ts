@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  EditorState,
-  ParsedEditorState,
-  SerializedEditorState,
-} from './LexicalEditorState';
+import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
@@ -26,11 +22,9 @@ import {
   commitPendingUpdates,
   parseEditorState,
   triggerListeners,
-  unstable_parseEditorState,
   updateEditor,
 } from './LexicalUpdates';
 import {
-  createUID,
   dispatchCommand,
   generateRandomKey,
   markAllNodesAsDirty,
@@ -117,14 +111,8 @@ export type EditorThemeClasses = {
 };
 
 export type EditorConfig = {
-  namespace: string;
-  theme: EditorThemeClasses;
   disableEvents?: boolean;
-  editorState?: EditorState;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
-  onError?: ErrorHandler;
-  parentEditor?: LexicalEditor;
-  readOnly?: boolean;
+  theme: EditorThemeClasses;
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -286,7 +274,6 @@ export function createEditor(
   editorConfig: {
     disableEvents?: boolean;
     editorState?: EditorState;
-    namespace?: string;
     nodes?: ReadonlyArray<Class<LexicalNode>>;
     onError?: ErrorHandler;
     parentEditor?: LexicalEditor;
@@ -295,7 +282,6 @@ export function createEditor(
   } = {},
 ): LexicalEditor {
   const config = editorConfig;
-  const namespace = config.namespace || createUID();
   const theme = config.theme || {};
   const parentEditor = config.parentEditor || null;
   const disableEvents = config.disableEvents || false;
@@ -370,7 +356,6 @@ export function createEditor(
     registeredNodes,
     {
       disableEvents,
-      namespace,
       theme,
     },
     onError,
@@ -721,18 +706,7 @@ export class LexicalEditor {
     commitPendingUpdates(this);
   }
 
-  // TODO: once unstable_parseEditorState is stable, swap that for this.
   parseEditorState(
-    maybeStringifiedEditorState: string | ParsedEditorState,
-  ): EditorState {
-    const parsedEditorState =
-      typeof maybeStringifiedEditorState === 'string'
-        ? JSON.parse(maybeStringifiedEditorState)
-        : maybeStringifiedEditorState;
-    return parseEditorState(parsedEditorState, this);
-  }
-
-  unstable_parseEditorState(
     maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState {
@@ -740,7 +714,7 @@ export class LexicalEditor {
       typeof maybeStringifiedEditorState === 'string'
         ? JSON.parse(maybeStringifiedEditorState)
         : maybeStringifiedEditorState;
-    return unstable_parseEditorState(serializedEditorState, this, updateFn);
+    return parseEditorState(serializedEditorState, this, updateFn);
   }
 
   update(updateFn: () => void, options?: EditorUpdateOptions): void {

@@ -7,6 +7,8 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalEditor,
@@ -326,6 +328,23 @@ export type SerializedImageNode = Spread<
   SerializedLexicalNode
 >;
 
+function convertImageElement(domNode: Node): null | DOMConversionOutput {
+  if (domNode instanceof HTMLImageElement) {
+    const {alt: altText, src} = domNode;
+    const showCaption = domNode.getAttribute('data-show-caption') === 'true';
+    const captionJSON = domNode.getAttribute('data-caption-json');
+    const node = $createImageNode({altText, showCaption, src});
+    if (showCaption && captionJSON) {
+      const parsedJSON = JSON.parse(captionJSON);
+      const nestedEditor = node.__caption;
+      const editorState = nestedEditor.parseEditorState(parsedJSON.editorState);
+      nestedEditor.setEditorState(editorState);
+    }
+    return {node};
+  }
+  return null;
+}
+
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
   __altText: string;
@@ -390,6 +409,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     const element = document.createElement('img');
     element.setAttribute('src', this.__src);
     element.setAttribute('alt', this.__altText);
+    element.setAttribute(
+      'data-show-caption',
+      this.__showCaption ? 'true' : 'false',
+    );
+    element.setAttribute('data-caption-json', JSON.stringify(this.__caption));
     return {element};
   }
 
@@ -404,6 +428,15 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       type: 'image',
       version: 1,
       width: this.__width === 'inherit' ? 0 : this.__width,
+    };
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      img: (node: Node) => ({
+        conversion: convertImageElement,
+        priority: 0,
+      }),
     };
   }
 

@@ -25,7 +25,6 @@ declare export function $insertDataTransferForRichText(
 ): void;
 
 declare export function $getHtmlContent(editor: LexicalEditor): string;
-declare export function $getLexicalContent(editor: LexicalEditor): string;
 
 /*
  * Plain Text

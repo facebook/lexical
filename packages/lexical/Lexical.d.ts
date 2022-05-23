@@ -163,9 +163,6 @@ export declare class LexicalEditor {
   getEditorState(): EditorState;
   setEditorState(editorState: EditorState, options?: EditorSetOptions): void;
   parseEditorState(
-    maybeStringifiedEditorState: string | ParsedEditorState,
-  ): EditorState;
-  unstable_parseEditorState(
     maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
@@ -251,7 +248,6 @@ export type EditorThemeClasses = {
 };
 
 export type EditorConfig = {
-  namespace: string;
   theme: EditorThemeClasses;
   disableEvents?: boolean;
 };
@@ -264,7 +260,6 @@ export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 export type IntentionallyMarkedAsDirtyElement = boolean;
 export function createEditor(editorConfig?: {
-  namespace?: string;
   editorState?: EditorState;
   theme?: EditorThemeClasses;
   parentEditor?: LexicalEditor;
@@ -277,25 +272,7 @@ export function createEditor(editorConfig?: {
 /**
  * LexicalEditorState
  */
-export type ParsedEditorState = {
-  _selection: null | {
-    anchor: {
-      key: string;
-      offset: number;
-      type: 'text' | 'element';
-    };
-    focus: {
-      key: string;
-      offset: number;
-      type: 'text' | 'element';
-    };
-  };
-  _nodeMap: Array<[NodeKey, ParsedNode]>;
-};
-type JSONEditorState = {
-  _nodeMap: Array<[NodeKey, LexicalNode]>;
-  _selection: null | ParsedSelection;
-};
+
 export interface EditorState {
   _nodeMap: NodeMap;
   _selection: null | RangeSelection | NodeSelection | GridSelection;
@@ -307,8 +284,7 @@ export interface EditorState {
   );
   isEmpty(): boolean;
   read<V>(callbackFn: () => V): V;
-  toJSON(space?: string | number): JSONEditorState;
-  unstable_toJSON(): SerializedEditorState;
+  toJSON(): SerializedEditorState;
   clone(
     selection?: RangeSelection | NodeSelection | GridSelection | null,
   ): EditorState;
@@ -394,32 +370,6 @@ export declare class LexicalNode {
   markDirty(): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
-
-/**
- * LexicalParsing
- */
-export type ParsedNode = {
-  __key: NodeKey;
-  __type: string;
-  __parent: null | NodeKey;
-};
-export type ParsedNodeMap = Map<NodeKey, ParsedNode>;
-export function $createNodeFromParse(
-  parsedNode: ParsedNode,
-  parsedNodeMap: ParsedNodeMap,
-): LexicalNode;
-type ParsedSelection = {
-  anchor: {
-    key: NodeKey;
-    offset: number;
-    type: 'text' | 'element';
-  };
-  focus: {
-    key: NodeKey;
-    offset: number;
-    type: 'text' | 'element';
-  };
-};
 
 /**
  * LexicalSelection

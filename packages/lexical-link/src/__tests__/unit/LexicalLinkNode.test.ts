@@ -10,7 +10,6 @@ import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
-  namespace: '',
   theme: {
     link: 'my-link-class',
     text: {
@@ -88,7 +87,6 @@ describe('LexicalLinkNode tests', () => {
         );
         expect(
           linkNode.createDOM({
-            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<a href="https://example.com/foo"></a>');

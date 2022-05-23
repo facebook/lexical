@@ -22,7 +22,6 @@ import type {
 
 import {
   $getHtmlContent,
-  $getLexicalContent,
   $insertDataTransferForRichText,
 } from '@lexical/clipboard';
 import {
@@ -366,12 +365,8 @@ function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
     if (selection !== null) {
       if (clipboardData != null) {
         const htmlString = $getHtmlContent(editor);
-        const lexicalString = $getLexicalContent(editor);
         if (htmlString !== null) {
           clipboardData.setData('text/html', htmlString);
-        }
-        if (lexicalString !== null) {
-          clipboardData.setData('application/x-lexical-editor', lexicalString);
         }
         clipboardData.setData('text/plain', selection.getTextContent());
       }

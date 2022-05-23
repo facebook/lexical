@@ -14,7 +14,6 @@ import {
   COMMAND_PRIORITY_NORMAL,
   createEditor,
 } from './LexicalEditor';
-import {$createNodeFromParse} from './LexicalParsing';
 import {
   $createEmptyGridSelection as $createGridSelection,
   $createEmptyObjectSelection as $createNodeSelection,
@@ -58,7 +57,6 @@ import {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
 export {
   $createGridSelection,
   $createLineBreakNode,
-  $createNodeFromParse,
   $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,

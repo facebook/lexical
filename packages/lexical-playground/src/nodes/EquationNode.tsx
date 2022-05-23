@@ -7,6 +7,8 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalNode,
@@ -116,6 +118,22 @@ function EquationComponent({
   );
 }
 
+function convertEquationElement(
+  domNode: HTMLElement,
+): null | DOMConversionOutput {
+  const isEquation = domNode.getAttribute('data-equation') === 'true';
+  if (isEquation) {
+    const node = $createEquationNode(
+      domNode.textContent,
+      domNode.nodeName === 'SPAN',
+    );
+    return {
+      node,
+    };
+  }
+  return null;
+}
+
 export type SerializedEquationNode = Spread<
   {
     type: 'equation';
@@ -163,7 +181,31 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   exportDOM(): DOMExportOutput {
     const element = document.createElement(this.__inline ? 'span' : 'div');
     element.innerText = this.__equation;
+    element.setAttribute('data-equation', 'true');
     return {element};
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-equation')) {
+          return null;
+        }
+        return {
+          conversion: convertEquationElement,
+          priority: 1,
+        };
+      },
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-equation')) {
+          return null;
+        }
+        return {
+          conversion: convertEquationElement,
+          priority: 1,
+        };
+      },
+    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

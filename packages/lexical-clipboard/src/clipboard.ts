@@ -12,7 +12,6 @@ import type {
   LexicalNode,
   NodeKey,
   NodeSelection,
-  ParsedNodeMap,
   RangeSelection,
 } from 'lexical';
 
@@ -24,7 +23,6 @@ import {
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createGridSelection,
-  $createNodeFromParse,
   $createParagraphNode,
   $getRoot,
   $getSelection,
@@ -167,58 +165,6 @@ export function $appendSelectedNodesToClone(
 
   return shouldIncludeChildrenInRange ? nodeKeys : [];
 }
-export function $cloneSelectedContent<
-  TKey extends NodeKey,
-  TNode extends LexicalNode,
->(
-  editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection,
-): {
-  nodeMap: Array<[TKey, TNode]>;
-  range: Array<NodeKey>;
-} {
-  const root = $getRoot();
-  const nodeMap = new Map<TKey, TNode>();
-  const range = [];
-  const topLevelChildren = root.getChildren();
-
-  for (let i = 0; i < topLevelChildren.length; i++) {
-    const topLevelNode = topLevelChildren[i];
-    const childNodeKeys = $appendSelectedNodesToClone(
-      editor,
-      selection,
-      topLevelNode,
-      nodeMap,
-      range,
-      true,
-    );
-
-    for (let j = 0; j < childNodeKeys.length; j++) {
-      const childNodeKey = childNodeKeys[j];
-      range.push(childNodeKey);
-    }
-  }
-
-  return {
-    nodeMap: Array.from(nodeMap),
-    range,
-  };
-}
-
-export function $getLexicalContent(editor: LexicalEditor): string | null {
-  const selection = $getSelection();
-
-  if (selection !== null) {
-    const namespace = editor._config.namespace;
-    const state = $cloneSelectedContent(editor, selection);
-    return JSON.stringify({
-      namespace,
-      state,
-    });
-  }
-
-  return null;
-}
 
 export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
@@ -235,9 +181,6 @@ export function $insertDataTransferForRichText(
   selection: RangeSelection,
   editor: LexicalEditor,
 ): void {
-  const lexicalNodesString = dataTransfer.getData(
-    'application/x-lexical-editor',
-  );
   const isSelectionInsideOfGrid =
     $isGridSelection(selection) ||
     ($findMatchingParent(selection.anchor.getNode(), (n) =>
@@ -246,33 +189,6 @@ export function $insertDataTransferForRichText(
       $findMatchingParent(selection.focus.getNode(), (n) =>
         $isGridCellNode(n),
       ) !== null);
-
-  if (lexicalNodesString) {
-    const namespace = editor._config.namespace;
-
-    try {
-      const lexicalClipboardData = JSON.parse(lexicalNodesString);
-
-      if (lexicalClipboardData.namespace === namespace) {
-        const nodeRange = lexicalClipboardData.state;
-        const nodes = $generateNodes(nodeRange);
-
-        if (
-          isSelectionInsideOfGrid &&
-          nodes.length === 1 &&
-          $isGridNode(nodes[0])
-        ) {
-          $mergeGridNodesStrategy(nodes, selection, false, editor);
-          return;
-        }
-
-        $basicInsertStrategy(nodes, selection, true);
-        return;
-      }
-    } catch (e) {
-      // Malformed, missing nodes..
-    }
-  }
 
   const textHtmlMimeType = 'text/html';
   const htmlString = dataTransfer.getData(textHtmlMimeType);
@@ -467,23 +383,3 @@ function $mergeGridNodesStrategy(
   }
 }
 
-export function $generateNodes(nodeRange: {
-  nodeMap: ParsedNodeMap;
-  range: Array<NodeKey>;
-}): Array<LexicalNode> {
-  const {range, nodeMap} = nodeRange;
-  const parsedNodeMap: ParsedNodeMap = new Map(nodeMap);
-  const nodes = [];
-
-  for (let i = 0; i < range.length; i++) {
-    const key = range[i];
-    const parsedNode = parsedNodeMap.get(key);
-
-    if (parsedNode !== undefined) {
-      const node = $createNodeFromParse(parsedNode, parsedNodeMap);
-      nodes.push(node);
-    }
-  }
-
-  return nodes;
-}

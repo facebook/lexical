@@ -13,7 +13,6 @@ type Props = {
   initialConfig: {
     editor__DEPRECATED?: LexicalEditor | null;
     readOnly?: boolean;
-    namespace?: string;
     nodes?: Array<Class<LexicalNode>>;
     theme?: EditorThemeClasses;
     onError: (error: Error, editor: LexicalEditor) => void;

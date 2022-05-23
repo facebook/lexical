@@ -8,6 +8,9 @@
 
 import type {ExcalidrawElementFragment} from './ExcalidrawModal';
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   LexicalEditor,
   LexicalNode,
@@ -208,6 +211,18 @@ export type SerializedExcalidrawNode = Spread<
   SerializedLexicalNode
 >;
 
+function convertExcalidrawElement(domNode: HTMLElement): DOMConversionOutput {
+  const excalidrawData = domNode.getAttribute('data-excalidraw-json');
+  if (excalidrawData) {
+    const node = $createExcalidrawNode();
+    node.__data = excalidrawData;
+    return {
+      node,
+    };
+  }
+  return null;
+}
+
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
 
@@ -249,6 +264,30 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   updateDOM(): false {
     return false;
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-excalidraw-json')) {
+          return null;
+        }
+        return {
+          conversion: convertExcalidrawElement,
+          priority: 1,
+        };
+      },
+    };
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const element = document.createElement('span');
+    const content = editor.getElementByKey(this.getKey());
+    if (content !== null) {
+      element.innerHTML = content.querySelector('svg').outerHTML;
+    }
+    element.setAttribute('data-excalidraw-json', this.__data);
+    return {element};
   }
 
   setData(data: string): void {

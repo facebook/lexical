@@ -19,7 +19,6 @@ import {Class} from 'utility-types';
 export function createHeadlessEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
-  namespace?: string;
   nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError: (error: Error) => void;
   parentEditor?: LexicalEditor;

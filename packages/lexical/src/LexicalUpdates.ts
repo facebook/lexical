@@ -15,12 +15,8 @@ import type {
   RegisteredNodes,
   Transform,
 } from './LexicalEditor';
-import type {
-  ParsedEditorState,
-  SerializedEditorState,
-} from './LexicalEditorState';
+import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
-import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -40,14 +36,12 @@ import {
 } from './LexicalGC';
 import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
-import {internalCreateNodeFromParse} from './LexicalParsing';
-import {reconcileRoot} from './LexicalReconciler';
+import { reconcileRoot } from './LexicalReconciler';
 import {
   $isNodeSelection,
   $isRangeSelection,
   applySelectionTransforms,
   internalCreateSelection,
-  internalCreateSelectionFromParse,
   updateDOMSelection,
 } from './LexicalSelection';
 import {
@@ -270,48 +264,7 @@ function $applyAllTransforms(
   editor._dirtyElements = dirtyElements;
 }
 
-// TODO: once unstable_parseEditorState is stable, swap that for this.
-export function parseEditorState(
-  parsedEditorState: ParsedEditorState,
-  editor: LexicalEditor,
-): EditorState {
-  const nodeMap = new Map();
-  const editorState = new EditorState(nodeMap);
-  const nodeParserState: NodeParserState = {
-    originalSelection: parsedEditorState._selection,
-  };
-  const previousActiveEditorState = activeEditorState;
-  const previousReadOnlyMode = isReadOnlyMode;
-  const previousActiveEditor = activeEditor;
-  activeEditorState = editorState;
-  isReadOnlyMode = false;
-  activeEditor = editor;
-
-  try {
-    const parsedNodeMap = new Map(parsedEditorState._nodeMap);
-    // root always exists in Map
-    const parsedRoot = parsedNodeMap.get('root') as ParsedNode;
-    internalCreateNodeFromParse(
-      parsedRoot,
-      parsedNodeMap,
-      editor,
-      null,
-      /* parentKey */
-      nodeParserState,
-    );
-  } finally {
-    activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
-    activeEditor = previousActiveEditor;
-  }
-
-  editorState._selection = internalCreateSelectionFromParse(
-    nodeParserState.remappedSelection || nodeParserState.originalSelection,
-  );
-  return editorState;
-}
-
-export interface InternalSerializedNode {
+type InternalSerializedNode = {
   children?: Array<InternalSerializedNode>;
   type: string;
   version: number;
@@ -370,7 +323,7 @@ function $parseSerializedNodeImpl<
   return node;
 }
 
-export function unstable_parseEditorState(
+export function parseEditorState(
   serializedEditorState: SerializedEditorState,
   editor: LexicalEditor,
   updateFn: void | (() => void),

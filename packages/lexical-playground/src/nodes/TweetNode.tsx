@@ -39,7 +39,7 @@ type TweetComponentProps = Readonly<{
 }>;
 
 function convertTweetElement(domNode: HTMLElement): null | DOMConversionOutput {
-  const id = domNode.getAttribute('data-tweet-id');
+  const id = domNode.getAttribute('data-lexical-tweet-id');
   const node = $createTweetNode(id);
   return {node};
 }
@@ -144,7 +144,7 @@ export class TweetNode extends DecoratorBlockNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-tweet-id')) {
+        if (!domNode.hasAttribute('data-lexical-tweet-id')) {
           return null;
         }
         return {
@@ -157,7 +157,7 @@ export class TweetNode extends DecoratorBlockNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('div');
-    element.setAttribute('data-tweet-id', this.__id);
+    element.setAttribute('data-lexical-tweet-id', this.__id);
     return {element};
   }
 

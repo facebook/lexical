@@ -181,14 +181,14 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   exportDOM(): DOMExportOutput {
     const element = document.createElement(this.__inline ? 'span' : 'div');
     element.innerText = this.__equation;
-    element.setAttribute('data-equation', 'true');
+    element.setAttribute('data-lexical-equation', 'true');
     return {element};
   }
 
   static importDOM(): DOMConversionMap | null {
     return {
       div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-equation')) {
+        if (!domNode.hasAttribute('data-lexical-equation')) {
           return null;
         }
         return {
@@ -197,7 +197,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
         };
       },
       span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-equation')) {
+        if (!domNode.hasAttribute('data-lexical-equation')) {
           return null;
         }
         return {

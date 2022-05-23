@@ -212,7 +212,7 @@ export type SerializedExcalidrawNode = Spread<
 >;
 
 function convertExcalidrawElement(domNode: HTMLElement): DOMConversionOutput {
-  const excalidrawData = domNode.getAttribute('data-excalidraw-json');
+  const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
   if (excalidrawData) {
     const node = $createExcalidrawNode();
     node.__data = excalidrawData;
@@ -269,7 +269,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-excalidraw-json')) {
+        if (!domNode.hasAttribute('data-lexical-excalidraw-json')) {
           return null;
         }
         return {
@@ -286,7 +286,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     if (content !== null) {
       element.innerHTML = content.querySelector('svg').outerHTML;
     }
-    element.setAttribute('data-excalidraw-json', this.__data);
+    element.setAttribute('data-lexical-excalidraw-json', this.__data);
     return {element};
   }
 

@@ -57,7 +57,7 @@ export type SerializedYouTubeNode = Spread<
 function convertYouTubeElement(
   domNode: HTMLElement,
 ): null | DOMConversionOutput {
-  const id = domNode.getAttribute('data-youtube-id');
+  const id = domNode.getAttribute('data-lexical-youtube-id');
   const node = $createYouTubeNode(id);
   return {node};
 }
@@ -91,7 +91,7 @@ export class YouTubeNode extends DecoratorBlockNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-youtube-id')) {
+        if (!domNode.hasAttribute('data-lexical-youtube-id')) {
           return null;
         }
         return {
@@ -104,7 +104,7 @@ export class YouTubeNode extends DecoratorBlockNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('div');
-    element.setAttribute('data-youtube-id', this.__id);
+    element.setAttribute('data-lexical-youtube-id', this.__id);
     return {element};
   }
 

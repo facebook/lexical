@@ -331,8 +331,9 @@ export type SerializedImageNode = Spread<
 function convertImageElement(domNode: Node): null | DOMConversionOutput {
   if (domNode instanceof HTMLImageElement) {
     const {alt: altText, src} = domNode;
-    const showCaption = domNode.getAttribute('data-show-caption') === 'true';
-    const captionJSON = domNode.getAttribute('data-caption-json');
+    const showCaption =
+      domNode.getAttribute('data-lexical-show-caption') === 'true';
+    const captionJSON = domNode.getAttribute('data-lexical-caption-json');
     const node = $createImageNode({altText, showCaption, src});
     if (showCaption && captionJSON) {
       const parsedJSON = JSON.parse(captionJSON);
@@ -420,7 +421,10 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       'data-show-caption',
       this.__showCaption ? 'true' : 'false',
     );
-    element.setAttribute('data-caption-json', JSON.stringify(this.__caption));
+    element.setAttribute(
+      'data-lexical-caption-json',
+      JSON.stringify(this.__caption),
+    );
     return {element};
   }
 

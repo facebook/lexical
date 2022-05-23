@@ -208,7 +208,7 @@ export type SerializedPollNode = Spread<
 >;
 
 function convertPollElement(domNode: HTMLElement): null | DOMConversionOutput {
-  const question = domNode.getAttribute('data-poll-question');
+  const question = domNode.getAttribute('data-lexical-poll-question');
   const node = $createPollNode(question);
   return {node};
 }
@@ -290,7 +290,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-poll-question')) {
+        if (!domNode.hasAttribute('data-lexical-poll-question')) {
           return null;
         }
         return {
@@ -303,7 +303,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
-    element.setAttribute('data-poll-question', this.__question);
+    element.setAttribute('data-lexical-poll-question', this.__question);
     return {element};
   }
 

@@ -8,9 +8,9 @@
 
 import type {InitialEditorStateType} from './shared/PlainRichTextUtils';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 import {useDecorators} from './shared/useDecorators';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';

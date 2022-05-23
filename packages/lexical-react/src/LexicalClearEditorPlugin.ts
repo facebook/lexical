@@ -6,6 +6,7 @@
  *
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
   $getRoot,
@@ -14,8 +15,6 @@ import {
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import useLayoutEffect from 'shared-ts/useLayoutEffect';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 type Props = Readonly<{
   onClear?: () => void;

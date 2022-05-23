@@ -8,6 +8,9 @@
 
 import type {ElementFormatType, NodeKey} from 'lexical';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
+import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
   $getNearestBlockElementAncestorOrThrow,
   mergeRegister,
@@ -26,10 +29,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
-import {$isDecoratorBlockNode} from './LexicalDecoratorBlockNode';
-import {useLexicalNodeSelection} from './useLexicalNodeSelection';
 
 type Props = Readonly<{
   children: JSX.Element;

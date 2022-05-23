@@ -9,9 +9,9 @@
 import type {Provider} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {createContext, useContext, useMemo} from 'react';
 
-import {useLexicalComposerContext} from './LexicalComposerContext';
 import {
   useYjsCollaboration,
   useYjsFocusTracking,

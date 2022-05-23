@@ -19,7 +19,7 @@ import {
   $createTextNode,
   $getRoot,
   COMMAND_PRIORITY_NORMAL,
-  INSERT_TEXT_COMMAND,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
   ParagraphNode,
 } from 'lexical';
 
@@ -118,7 +118,7 @@ describe('LexicalHeadlessEditor', () => {
 
     editor.registerUpdateListener(onUpdate);
     editor.registerCommand(
-      INSERT_TEXT_COMMAND,
+      CONTROLLED_TEXT_INSERTION_COMMAND,
       onCommand,
       COMMAND_PRIORITY_NORMAL,
     );
@@ -132,7 +132,7 @@ describe('LexicalHeadlessEditor', () => {
           $createTextNode('world'),
         ),
       );
-      editor.dispatchCommand(INSERT_TEXT_COMMAND, 'foo');
+      editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, 'foo');
     });
 
     expect(onUpdate).toBeCalled();

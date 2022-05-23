@@ -272,16 +272,18 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(editorConfig?: {
-  disableEvents?: boolean;
-  editorState?: EditorState;
-  namespace?: string;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
-  onError: ErrorHandler;
-  parentEditor?: LexicalEditor;
-  readOnly?: boolean;
-  theme?: EditorThemeClasses;
-}): LexicalEditor {
+export function createEditor(
+  editorConfig: {
+    disableEvents?: boolean;
+    editorState?: EditorState;
+    namespace?: string;
+    nodes?: ReadonlyArray<Class<LexicalNode>>;
+    onError?: ErrorHandler;
+    parentEditor?: LexicalEditor;
+    readOnly?: boolean;
+    theme?: EditorThemeClasses;
+  } = {},
+): LexicalEditor {
   const config = editorConfig;
   const namespace = config.namespace || createUID();
   const theme = config.theme || {};

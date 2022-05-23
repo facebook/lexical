@@ -9,7 +9,6 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import {resolve} from 'path';
-import {flowPlugin, esbuildFlowPlugin} from '@bunchtogether/vite-plugin-flow';
 import path from 'path';
 import fs from 'fs';
 import {replaceCodePlugin} from 'vite-plugin-replace';
@@ -149,11 +148,6 @@ const moduleResolution = [
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  optimizeDeps: {
-    esbuildOptions: {
-      plugins: [esbuildFlowPlugin()],
-    },
-  },
   plugins: [
     replaceCodePlugin({
       replacements: [
@@ -179,7 +173,6 @@ export default defineConfig({
       ],
       presets: ['@babel/preset-react'],
     }),
-    flowPlugin(),
     react(),
   ],
   resolve: {

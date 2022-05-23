@@ -23,7 +23,7 @@ import {
   ParagraphNode,
 } from 'lexical';
 
-import {createHeadlessEditor} from '../../';
+import {createHeadlessEditor} from '../..';
 
 describe('LexicalHeadlessEditor', () => {
   let editor;
@@ -44,7 +44,11 @@ describe('LexicalHeadlessEditor', () => {
   }
 
   beforeEach(() => {
-    editor = createHeadlessEditor();
+    editor = createHeadlessEditor({
+      onError: () => {
+        return;
+      },
+    });
   });
 
   it('should be headless environment', async () => {

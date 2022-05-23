@@ -45,6 +45,7 @@ import {
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
@@ -58,7 +59,6 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
-  INSERT_TEXT_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -470,7 +470,7 @@ export function registerRichText(
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<InputEvent | string>(
-      INSERT_TEXT_COMMAND,
+      CONTROLLED_TEXT_INSERTION_COMMAND,
       (eventOrText) => {
         const selection = $getSelection();
 
@@ -569,7 +569,7 @@ export function registerRichText(
       () => {
         handleIndentAndOutdent(
           () => {
-            editor.dispatchCommand(INSERT_TEXT_COMMAND, '\t');
+            editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, '\t');
           },
           (block) => {
             const indent = block.getIndent();

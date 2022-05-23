@@ -33,6 +33,7 @@ import {
   $setCompositionKey,
   BLUR_COMMAND,
   CLICK_COMMAND,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
@@ -46,7 +47,6 @@ import {
   FORMAT_TEXT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
-  INSERT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -350,7 +350,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             const prevTextContent = prevNode.getTextContent();
             if (composedText.indexOf(prevTextContent) === 0) {
               const insertedText = composedText.slice(prevTextContent.length);
-              dispatchCommand(editor, INSERT_TEXT_COMMAND, insertedText);
+              dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, insertedText);
               setTimeout(() => {
                 updateEditor(editor, () => {
                   node.select();
@@ -425,7 +425,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         $shouldPreventDefaultAndInsertText(selection, data)
       ) {
         event.preventDefault();
-        dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
       }
       return;
     }
@@ -439,13 +439,13 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       case 'insertFromYank':
       case 'insertFromDrop':
       case 'insertReplacementText': {
-        dispatchCommand(editor, INSERT_TEXT_COMMAND, event);
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
         break;
       }
       case 'insertFromComposition': {
         // This is the end of composition
         $setCompositionKey(null);
-        dispatchCommand(editor, INSERT_TEXT_COMMAND, event);
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
         break;
       }
       case 'insertLineBreak': {
@@ -562,7 +562,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         onCompositionEndImpl(editor, data);
         isFirefoxEndingComposition = false;
       }
-      dispatchCommand(editor, INSERT_TEXT_COMMAND, data);
+      dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
       if (possibleTextReplacement) {
         // If the DOM selection offset is higher than the existing
         // offset, then restore the offset as it's likely correct
@@ -618,7 +618,7 @@ function onCompositionStart(
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        dispatchCommand(editor, INSERT_TEXT_COMMAND, COMPOSITION_START_CHAR);
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, COMPOSITION_START_CHAR);
       }
     }
   });

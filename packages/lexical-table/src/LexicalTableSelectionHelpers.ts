@@ -29,10 +29,10 @@ import {
   $isRangeSelection,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
   DELETE_CHARACTER_COMMAND,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
-  INSERT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -710,7 +710,7 @@ export function applyTableHandlers(
 
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
-      INSERT_TEXT_COMMAND,
+      CONTROLLED_TEXT_INSERTION_COMMAND,
       (payload) => {
         const selection = $getSelection();
 

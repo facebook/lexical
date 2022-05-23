@@ -123,7 +123,13 @@ function exportTextFormat(
   textContent: string,
   textTransformers: Array<TextFormatTransformer>,
 ): string {
-  let output = textContent;
+  // This function handles the case of a string looking like this: "   foo   "
+  // Where it would be invalid markdown to generate: "**   foo   **"
+  // We instead want to trim the whitespace out, apply formatting, and then
+  // bring the whitespace back. So our returned string looks like this: "   **foo**   "
+  const frozenString = textContent.trim();
+  let output = frozenString;
+
   const applied = new Set();
 
   for (const transformer of textTransformers) {
@@ -149,7 +155,8 @@ function exportTextFormat(
     }
   }
 
-  return output;
+  // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
+  return textContent.replace(frozenString, output);
 }
 
 // Get next or previous text sibling a text node, including cases

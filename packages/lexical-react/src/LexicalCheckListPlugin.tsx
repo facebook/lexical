@@ -15,6 +15,7 @@ import {
   INSERT_CHECK_LIST_COMMAND,
   insertList,
 } from '@lexical/list';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
@@ -29,8 +30,6 @@ import {
   KEY_SPACE_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export function CheckListPlugin(): null {
   const [editor] = useLexicalComposerContext();

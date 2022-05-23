@@ -6,6 +6,7 @@
  *
  */
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
@@ -17,7 +18,6 @@ import {
   useCollaborationContext,
 } from '../../LexicalCollaborationPlugin';
 import {LexicalComposer} from '../../LexicalComposer';
-import {useLexicalComposerContext} from '../../LexicalComposerContext';
 import {ContentEditable} from '../../LexicalContentEditable';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 

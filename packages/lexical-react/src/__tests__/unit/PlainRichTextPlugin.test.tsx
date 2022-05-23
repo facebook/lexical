@@ -11,6 +11,7 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {$rootTextContentCurry} from '@lexical/text';
@@ -26,7 +27,6 @@ import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {LexicalComposer} from '../../LexicalComposer';
-import {useLexicalComposerContext} from '../../LexicalComposerContext';
 import {ContentEditable} from '../../LexicalContentEditable';
 import {PlainTextPlugin} from '../../LexicalPlainTextPlugin';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';

@@ -79,8 +79,9 @@ const lexicalReactModules = fs
   );
 
 const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
-  const external = `@lexical/react/${module}`;
-  wwwMappings[external] = module;
+  const basename = path.basename(path.basename(module, '.ts'), '.tsx');
+  const external = `@lexical/react/${basename}`;
+  wwwMappings[external] = basename;
   return external;
 });
 

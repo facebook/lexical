@@ -350,7 +350,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             const prevTextContent = prevNode.getTextContent();
             if (composedText.indexOf(prevTextContent) === 0) {
               const insertedText = composedText.slice(prevTextContent.length);
-              dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, insertedText);
+              dispatchCommand(
+                editor,
+                CONTROLLED_TEXT_INSERTION_COMMAND,
+                insertedText,
+              );
               setTimeout(() => {
                 updateEditor(editor, () => {
                   node.select();
@@ -618,7 +622,11 @@ function onCompositionStart(
         // to get inserted into the new node we create. If
         // we don't do this, Safari will fail on us because
         // there is no text node matching the selection.
-        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, COMPOSITION_START_CHAR);
+        dispatchCommand(
+          editor,
+          CONTROLLED_TEXT_INSERTION_COMMAND,
+          COMPOSITION_START_CHAR,
+        );
       }
     }
   });

@@ -20,7 +20,9 @@ export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
 export var DELETE_CHARACTER_COMMAND: LexicalCommand<boolean>;
 export var INSERT_LINE_BREAK_COMMAND: LexicalCommand<boolean>;
 export var INSERT_PARAGRAPH_COMMAND: LexicalCommand<void>;
-export var CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<InputEvent | string>;
+export var CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
+  InputEvent | string
+>;
 export var PASTE_COMMAND: LexicalCommand<ClipboardEvent>;
 export var REMOVE_TEXT_COMMAND: LexicalCommand<void>;
 export var DELETE_WORD_COMMAND: LexicalCommand<boolean>;

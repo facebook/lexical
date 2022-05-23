@@ -52,7 +52,7 @@ import {
   $isParagraphNode,
   ParagraphNode,
 } from './nodes/LexicalParagraphNode';
-import {$isRootNode} from './nodes/LexicalRootNode';
+import {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 import {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
 
 export {
@@ -98,6 +98,7 @@ export {
   GridRowNode,
   LineBreakNode,
   ParagraphNode,
+  RootNode,
   TextNode,
   VERSION,
 };

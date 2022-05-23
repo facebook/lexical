@@ -348,8 +348,8 @@ declare export class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T: ElementNode>(): T | null;
   getParentOrThrow<T: ElementNode>(): T;
-  getTopLevelElement<T: RootNode>(): T | null;
-  getTopLevelElementOrThrow<T: RootNode>(): T;
+  getTopLevelElement(): ElementNode | null;
+  getTopLevelElementOrThrow(): ElementNode;
   getParents<T: ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T: LexicalNode>(): T | null;

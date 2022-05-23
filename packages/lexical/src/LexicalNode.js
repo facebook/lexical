@@ -7,7 +7,6 @@
  * @flow strict
  */
 
-import type {RootNode} from '../flow/Lexical';
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
 
@@ -277,12 +276,11 @@ export class LexicalNode {
     return parent;
   }
 
-  getTopLevelElement<T: RootNode>(): T | null {
+  getTopLevelElement(): ElementNode | null {
     let node = this;
     while (node !== null) {
       const parent = node.getParent();
-      if ($isRootNode(parent)) {
-        // $FlowFixMe
+      if ($isRootNode(parent) && $isElementNode(node)) {
         return node;
       }
       node = parent;
@@ -290,7 +288,7 @@ export class LexicalNode {
     return null;
   }
 
-  getTopLevelElementOrThrow<T: RootNode>(): T {
+  getTopLevelElementOrThrow(): ElementNode {
     const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(

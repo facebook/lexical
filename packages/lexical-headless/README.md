@@ -55,6 +55,7 @@ const htmlString = $generateHtmlFromNodes(editor, selection | null);
 ```
 
 ### Importing
+First we need to parse the HTML string into a DOM instance.
 ```js
 // In the browser you can use the native DOMParser API to parse the HTML string.
 const parser = new DOMParser();
@@ -62,7 +63,9 @@ const dom = parser.parseFromString(htmlString, textHtmlMimeType);
 
 // In a headless environment you can use a package such as JSDom to parse the HTML string.
 const dom = new JSDOM(htmlString);
-
+```
+And once you have the DOM instance.
+```js
 const nodes = $generateNodesFromDOM(editor, dom);
 
 // Once you have the lexical nodes you can initialize an editor instance with the parsed nodes.

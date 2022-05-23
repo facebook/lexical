@@ -7,9 +7,6 @@
  */
 
 import type {
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
   GridSelection,
   LexicalEditor,
   LexicalNode,
@@ -17,15 +14,14 @@ import type {
   NodeSelection,
   ParsedNodeMap,
   RangeSelection,
-  TextNode,
 } from 'lexical';
 
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/headless';
 import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
 import {$findMatchingParent} from '@lexical/utils';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/headless';
 import {
   $createGridSelection,
   $createNodeFromParse,
@@ -282,7 +278,7 @@ export function $insertDataTransferForRichText(
   if (htmlString) {
     const parser = new DOMParser();
     const dom = parser.parseFromString(htmlString, textHtmlMimeType);
-    const nodes = $generateNodesFromDOM(dom, editor);
+    const nodes = $generateNodesFromDOM(editor, dom);
 
     if (
       isSelectionInsideOfGrid &&

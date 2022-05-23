@@ -1,6 +1,6 @@
 # `@lexical/headless`
 
-This package allows creating headless lexical editor (that does not rely on DOM, e.g. for Node.js environment), and use its
+This package allows you to use interact with Lexical in a headless environment (one that does not rely on DOM, e.g. for Node.js environment), and use its
 main features like editor.update(), editor.registerNodeTransform(), editor.registerUpdateListener()
 to create, update or traverse state.
 
@@ -42,4 +42,33 @@ app.get('article/:id/markdown', await (req, res) => {
   });
 });
 
+```
+
+# HTML
+This package also exports utility functions for converting `Lexical` -> `HTML` and `HTML` -> `Lexical`. These same functions are also used in the `lexical-clipboard` package for copy and paste.
+
+### Exporting
+```js
+// When converting to HTML you can pass in a selection object to narrow it
+// down to a certain part of the editor's contents.
+const htmlString = $generateHtmlFromNodes(editor, selection | null);
+```
+
+### Importing
+```js
+// In the browser you can use the native DOMParser API to parse the HTML string.
+const parser = new DOMParser();
+const dom = parser.parseFromString(htmlString, textHtmlMimeType);
+
+// In a headless environment you can use a package such as JSDom to parse the HTML string.
+const dom = new JSDOM(htmlString);
+
+const nodes = $generateNodesFromDOM(editor, dom);
+
+// Once you have the lexical nodes you can initialize an editor instance with the parsed nodes.
+const editor = createEditor({ ...config, nodes });
+
+// Or insert them at a selection.
+const selection = $getSelection();
+selection.insertNodes(nodes);
 ```

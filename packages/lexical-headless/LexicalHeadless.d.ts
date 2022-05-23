@@ -35,6 +35,6 @@ export function $generateHtmlFromNodes(
 ): string;
 
 export function $generateNodesFromDOM(
-  dom: Document,
   editor: LexicalEditor,
+  dom: Document,
 ): Array<LexicalNode>;

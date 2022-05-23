@@ -36,3 +36,18 @@ editor.getEditorState().read(...);
 If you've used React Hooks before, you can think of `$` functions as being something that follows a similar pattern. These are functions that show their intent as to where and where they cannot be used. This makes it possible for a developer to create their own functions that give the same signal, by simply prefixing the function with the dollar.
 
 Internally, we've found this scales really well and developers get to grips with it in almost no time at all.
+
+## How do I listen for user text insertions?
+
+Listening to text insertion events is problematic with content editables in general. It's a common source of bugs due to how
+different browsers and third-party extensions interact with the DOM. Whilst it's possible to use DOM events like `input` and
+`beforeinput` to gauge some of the possible cases where a user has inserted text, these are hardly reliable and also don't
+take into account edge-cases. Instead, Lexical prefers to consider any change as a possible user input, and as such doesn't
+make a distinction between the cases. This is important for tools like spellcheck, browser extensions, IME, speech-to-text,
+screen readers and other external tools that often don't reliably trigger a reliable event sequence (some don't even trigger
+any events at all!).
+
+For those wanting to react to a text change and possibly block/alter the intent, the recommended approach is to use a node
+transform. This also plays nicely with other sub-systems at play that might also be looking to do the same thing as you.
+
+For those who just want to know of the changes, this can be achieved using a text content listener or an editor update listener.

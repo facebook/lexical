@@ -468,14 +468,14 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const currentSelection = currentEditorState._selection;
   const pendingSelection = pendingEditorState._selection;
   const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
-  editor._pendingEditorState = null;
-  editor._editorState = pendingEditorState;
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   const previouslyUpdating = editor._updating;
   const observer = editor._observer;
   let mutatedNodes = null;
+  editor._pendingEditorState = null;
+  editor._editorState = pendingEditorState;
 
   if (!headless && needsUpdate && observer !== null) {
     activeEditor = editor;

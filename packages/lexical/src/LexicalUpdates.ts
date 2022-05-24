@@ -309,9 +309,9 @@ export function parseEditorState(
 }
 
 export interface InternalSerializedNode {
-  children?: Array<InternalSerializedNode>,
-  type: string,
-  version: number,
+  children?: Array<InternalSerializedNode>;
+  type: string;
+  version: number;
 }
 
 export function $parseSerializedNode(
@@ -325,7 +325,9 @@ export function $parseSerializedNode(
   );
 }
 
-function $parseSerializedNodeImpl<SerializedNode extends InternalSerializedNode>(
+function $parseSerializedNodeImpl<
+  SerializedNode extends InternalSerializedNode,
+>(
   serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,
 ): LexicalNode {

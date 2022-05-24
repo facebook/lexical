@@ -462,9 +462,12 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // We don't want updates to sync block the reconcilation.
   editor._updating = true;
 
+  let needsFocus = false;
+  let mutatedNodes = null;
+
   try {
     if (!headless && rootElement !== null) {
-      const mutatedNodes = updateEditorState(
+      [mutatedNodes, needsFocus] = updateEditorState(
         rootElement,
         currentEditorState,
         pendingEditorState,
@@ -527,8 +530,12 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
 
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
-  const pendingDecorators = editor._pendingDecorators;
 
+  if (needsFocus) {
+    rootElement.focus({preventScroll: true});
+  }
+
+  const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;

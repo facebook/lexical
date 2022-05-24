@@ -23,6 +23,8 @@
       "@lexical/text": ["./packages/lexical-text/LexicalText.d.ts"],
       "@lexical/offset": ["./packages/lexical-offset/LexicalOffset.d.ts"],
       "@lexical/history": ["./packages/lexical-history/LexicalHistory.d.ts"],
+      "@lexical/headless": ["./packages/lexical-headless/LexicalHeadless.d.ts"],
+      "@lexical/html": ["./packages/lexical-html/LexicalHtml.d.ts"],
       "@lexical/utils": ["./packages/lexical-utils/LexicalUtils.d.ts"],
       "@lexical/code": ["./packages/lexical-code/LexicalCode.d.ts"],
       "@lexical/plain-text": [

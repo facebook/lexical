@@ -21,6 +21,7 @@ const DEFAULT_PKGS = [
   'lexical-clipboard',
   'lexical-hashtag',
   'lexical-headless',
+  'lexical-html',
   'lexical-history',
   'lexical-selection',
   'lexical-offset',

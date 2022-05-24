@@ -51,6 +51,7 @@ const wwwMappings = {
   '@lexical/hashtag': 'LexicalHashtag',
   '@lexical/headless': 'LexicalHeadless',
   '@lexical/history': 'LexicalHistory',
+  '@lexical/html': 'LexicalHtml',
   '@lexical/link': 'LexicalLink',
   '@lexical/list': 'LexicalList',
   '@lexical/mark': 'LexicalMark',
@@ -104,6 +105,8 @@ const externals = [
   '@lexical/file',
   '@lexical/clipboard',
   '@lexical/hashtag',
+  '@lexical/headless',
+  '@lexical/html',
   '@lexical/history',
   '@lexical/selection',
   '@lexical/text',
@@ -506,6 +509,17 @@ const packages = [
     name: 'Lexical Headless',
     outputPath: './packages/lexical-headless/dist/',
     sourcePath: './packages/lexical-headless/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalHtml',
+        sourceFileName: 'index.ts',
+      },
+    ],
+    name: 'Lexical HTML',
+    outputPath: './packages/lexical-html/dist/',
+    sourcePath: './packages/lexical-html/src/',
   },
   {
     modules: [

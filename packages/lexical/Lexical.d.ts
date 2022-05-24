@@ -832,7 +832,18 @@ export type EventHandler = (event: Event, editor: LexicalEditor) => void;
  */
 export declare var VERSION: string;
 
-// Serialization
+/**
+ *  Serialization/Deserialization
+ * */
+interface InternalSerializedNode {
+  children?: Array<InternalSerializedNode>;
+  type: string;
+  version: number;
+}
+
+export function $parseSerializedNode<
+  SerializedNode extends InternalSerializedNode,
+>(serializedNode: SerializedNode): LexicalNode;
 
 export type SerializedLexicalNode = {
   type: string;

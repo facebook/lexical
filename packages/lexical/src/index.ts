@@ -25,6 +25,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
 } from './LexicalSelection';
+import {$parseSerializedNode} from './LexicalUpdates';
 import {
   $getDecoratorNode,
   $getNearestNodeFromDOMNode,
@@ -82,6 +83,7 @@ export {
   $isRootNode,
   $isTextNode,
   $nodesOfType,
+  $parseSerializedNode,
   $setCompositionKey,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,

@@ -26,6 +26,7 @@ import {
   $getRoot,
   $getSelection,
   $isTextNode,
+  $parseSerializedNode,
   $setCompositionKey,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
@@ -1337,6 +1338,33 @@ describe('LexicalEditor tests', () => {
         expect(parsedSelection.anchor.key).toEqual(parsedText.__key);
         expect(parsedSelection.focus.key).toEqual(parsedText.__key);
       });
+    });
+  });
+
+  describe('$parseSerializedNode()', () => {
+    it('parses serialized nodes', async () => {
+      const expectedTextContent = 'Hello world\n\nHello world';
+      let actualTextContent;
+      let root;
+      await update(() => {
+        root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('Hello world'));
+        root.append(paragraph);
+      });
+      const stringifiedEditorState = JSON.stringify(
+        editor.getEditorState().unstable_toJSON(),
+      );
+      const parsedEditorStateJson = JSON.parse(stringifiedEditorState);
+      const rootJson = parsedEditorStateJson.root;
+      await update(() => {
+        const children = rootJson.children.map($parseSerializedNode);
+        root = $getRoot();
+        root.append(...children);
+        actualTextContent = root.getTextContent();
+      });
+      expect(actualTextContent).toEqual(expectedTextContent);
     });
   });
 

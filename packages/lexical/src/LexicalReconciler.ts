@@ -17,20 +17,16 @@ import type {
 import type {NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
-import {IS_IOS, IS_SAFARI} from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isRangeSelection,
   $isRootNode,
   $isTextNode,
 } from '.';
 import {
-  DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
   FULL_RECONCILE,
   IS_ALIGN_CENTER,
@@ -40,16 +36,10 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
-  markCollapsedSelectionFormat,
-  markSelectionChangeFromReconcile,
-} from './LexicalEvents';
-import {GridSelection, NodeSelection, RangeSelection} from './LexicalSelection';
-import {
   $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
-  getDOMTextNode,
+  getElementByKeyOrThrow,
   getTextDirection,
-  isSelectionWithinEditor,
   setMutatedNode,
 } from './LexicalUtils';
 
@@ -732,7 +722,7 @@ function reconcileNodeChildren(
   }
 }
 
-function reconcileRoot(
+export function reconcileRoot(
   prevEditorState: EditorState,
   nextEditorState: EditorState,
   editor: LexicalEditor,
@@ -777,230 +767,6 @@ function reconcileRoot(
   return currentMutatedNodes;
 }
 
-export function updateEditorState(
-  rootElement: HTMLElement,
-  currentEditorState: EditorState,
-  pendingEditorState: EditorState,
-  currentSelection: RangeSelection | NodeSelection | GridSelection | null,
-  pendingSelection: RangeSelection | NodeSelection | GridSelection | null,
-  needsUpdate: boolean,
-  editor: LexicalEditor,
-): null | MutatedNodes {
-  const observer = editor._observer;
-  let reconcileMutatedNodes = null;
-
-  if (needsUpdate && observer !== null) {
-    const dirtyType = editor._dirtyType;
-    const dirtyElements = editor._dirtyElements;
-    const dirtyLeaves = editor._dirtyLeaves;
-    observer.disconnect();
-
-    try {
-      reconcileMutatedNodes = reconcileRoot(
-        currentEditorState,
-        pendingEditorState,
-        editor,
-        dirtyType,
-        dirtyElements,
-        dirtyLeaves,
-      );
-    } finally {
-      observer.observe(rootElement, {
-        characterData: true,
-        childList: true,
-        subtree: true,
-      });
-    }
-  }
-
-  const domSelection = getDOMSelection();
-
-  if (
-    !editor._readOnly &&
-    domSelection !== null &&
-    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
-  ) {
-    reconcileSelection(
-      currentSelection,
-      pendingSelection,
-      editor,
-      domSelection,
-    );
-  }
-
-  return reconcileMutatedNodes;
-}
-
-function scrollIntoViewIfNeeded(
-  editor: LexicalEditor,
-  node: Node,
-  rootElement: HTMLElement | null | undefined,
-): void {
-  const element = (
-    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node
-  ) as Element;
-
-  if (element !== null) {
-    const rect = element.getBoundingClientRect();
-
-    if (rect.bottom > window.innerHeight) {
-      element.scrollIntoView(false);
-    } else if (rect.top < 0) {
-      element.scrollIntoView();
-    } else if (rootElement) {
-      const rootRect = rootElement.getBoundingClientRect();
-
-      if (rect.bottom > rootRect.bottom) {
-        element.scrollIntoView(false);
-      } else if (rect.top < rootRect.top) {
-        element.scrollIntoView();
-      }
-    }
-
-    editor._updateTags.add('scroll-into-view');
-  }
-}
-
-function reconcileSelection(
-  prevSelection: RangeSelection | NodeSelection | GridSelection | null,
-  nextSelection: RangeSelection | NodeSelection | GridSelection | null,
-  editor: LexicalEditor,
-  domSelection: Selection,
-): void {
-  const anchorDOMNode = domSelection.anchorNode;
-  const focusDOMNode = domSelection.focusNode;
-  const anchorOffset = domSelection.anchorOffset;
-  const focusOffset = domSelection.focusOffset;
-  const activeElement = document.activeElement;
-  const rootElement = editor._rootElement;
-
-  // TODO: make this not hard-coded, and add another config option
-  // that makes this configurable.
-  if (
-    editor._updateTags.has('collaboration') &&
-    activeElement !== rootElement
-  ) {
-    return;
-  }
-
-  if (!$isRangeSelection(nextSelection)) {
-    // We don't remove selection if the prevSelection is null because
-    // of editor.setRootElement(). If this occurs on init when the
-    // editor is already focused, then this can cause the editor to
-    // lose focus.
-    if (
-      prevSelection !== null &&
-      isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)
-    ) {
-      domSelection.removeAllRanges();
-    }
-
-    return;
-  }
-
-  const anchor = nextSelection.anchor;
-  const focus = nextSelection.focus;
-
-  // @ts-ignore
-  if (__DEV__) {
-    // Freeze the selection in DEV to prevent accidental mutations
-    Object.freeze(anchor);
-    Object.freeze(focus);
-    Object.freeze(nextSelection);
-  }
-
-  const anchorKey = anchor.key;
-  const focusKey = focus.key;
-  const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
-  const focusDOM = getElementByKeyOrThrow(editor, focusKey);
-  const nextAnchorOffset = anchor.offset;
-  const nextFocusOffset = focus.offset;
-  const nextFormat = nextSelection.format;
-  const isCollapsed = nextSelection.isCollapsed();
-  let nextAnchorNode: HTMLElement | Text = anchorDOM;
-  let nextFocusNode: HTMLElement | Text = focusDOM;
-  let anchorFormatChanged = false;
-
-  if (anchor.type === 'text') {
-    nextAnchorNode = getDOMTextNode(anchorDOM);
-    anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
-  }
-
-  if (focus.type === 'text') {
-    nextFocusNode = getDOMTextNode(focusDOM);
-  }
-
-  // If we can't get an underlying text node for selection, then
-  // we should avoid setting selection to something incorrect.
-  if (nextAnchorNode === null || nextFocusNode === null) {
-    return;
-  }
-
-  if (
-    isCollapsed &&
-    (prevSelection === null ||
-      anchorFormatChanged ||
-      ($isRangeSelection(prevSelection) && prevSelection.format !== nextFormat))
-  ) {
-    markCollapsedSelectionFormat(
-      nextFormat,
-      nextAnchorOffset,
-      anchorKey,
-      performance.now(),
-    );
-  }
-
-  // Diff against the native DOM selection to ensure we don't do
-  // an unnecessary selection update. We also skip this check if
-  // we're moving selection to within an element, as this can
-  // sometimes be problematic around scrolling.
-  if (
-    anchorOffset === nextAnchorOffset &&
-    focusOffset === nextFocusOffset &&
-    anchorDOMNode === nextAnchorNode &&
-    focusDOMNode === nextFocusNode && // Badly interpreted range selection when collapsed - #1482
-    !(domSelection.type === 'Range' && isCollapsed)
-  ) {
-    // If the root element does not have focus, ensure it has focus
-    if (
-      rootElement !== null &&
-      (activeElement === null || !rootElement.contains(activeElement))
-    ) {
-      rootElement.focus({
-        preventScroll: true,
-      });
-    }
-
-    // In Safari/iOS if we have selection on an element, then we also
-    // need to additionally set the DOM selection, otherwise a selectionchange
-    // event will not fire.
-    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
-      return;
-    }
-  }
-
-  // Apply the updated selection to the DOM. Note: this will trigger
-  // a "selectionchange" event, although it will be asynchronous.
-  try {
-    domSelection.setBaseAndExtent(
-      nextAnchorNode,
-      nextAnchorOffset,
-      nextFocusNode,
-      nextFocusOffset,
-    );
-
-    if (nextSelection.isCollapsed() && rootElement === activeElement) {
-      scrollIntoViewIfNeeded(editor, nextAnchorNode, rootElement);
-    }
-
-    markSelectionChangeFromReconcile();
-  } catch (error) {
-    // If we encounter an error, continue. This can sometimes
-    // occur with FF and there's no good reason as to why it
-    // should happen.
-  }
-}
-
 export function storeDOMWithKey(
   key: NodeKey,
   dom: HTMLElement,
@@ -1013,22 +779,6 @@ export function storeDOMWithKey(
 
 function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
   const element = activePrevKeyToDOMMap.get(key);
-
-  if (element === undefined) {
-    invariant(
-      false,
-      'Reconciliation: could not find DOM element for node key "${key}"',
-    );
-  }
-
-  return element;
-}
-
-export function getElementByKeyOrThrow(
-  editor: LexicalEditor,
-  key: NodeKey,
-): HTMLElement {
-  const element = editor._keyToDOMMap.get(key);
 
   if (element === undefined) {
     invariant(

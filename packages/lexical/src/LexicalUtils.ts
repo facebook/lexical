@@ -1035,3 +1035,49 @@ export function $textContentRequiresDoubleLinebreakAtEnd(
 ): boolean {
   return !$isRootNode(node) && !node.isLastChild() && !node.isInline();
 }
+
+export function getElementByKeyOrThrow(
+  editor: LexicalEditor,
+  key: NodeKey,
+): HTMLElement {
+  const element = editor._keyToDOMMap.get(key);
+
+  if (element === undefined) {
+    invariant(
+      false,
+      'Reconciliation: could not find DOM element for node key "${key}"',
+    );
+  }
+
+  return element;
+}
+
+export function scrollIntoViewIfNeeded(
+  editor: LexicalEditor,
+  node: Node,
+  rootElement: HTMLElement | null | undefined,
+): void {
+  const element = (
+    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node
+  ) as Element;
+
+  if (element !== null) {
+    const rect = element.getBoundingClientRect();
+
+    if (rect.bottom > window.innerHeight) {
+      element.scrollIntoView(false);
+    } else if (rect.top < 0) {
+      element.scrollIntoView();
+    } else if (rootElement) {
+      const rootRect = rootElement.getBoundingClientRect();
+
+      if (rect.bottom > rootRect.bottom) {
+        element.scrollIntoView(false);
+      } else if (rect.top < rootRect.top) {
+        element.scrollIntoView();
+      }
+    }
+
+    editor._updateTags.add('scroll-into-view');
+  }
+}

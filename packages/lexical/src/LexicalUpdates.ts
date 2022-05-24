@@ -573,6 +573,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         pendingSelection,
         editor,
         domSelection,
+        tags,
       );
     } finally {
       activeEditorState = previousActiveEditorState;

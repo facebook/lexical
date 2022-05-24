@@ -2552,6 +2552,7 @@ export function updateDOMSelection(
   nextSelection: RangeSelection | NodeSelection | GridSelection | null,
   editor: LexicalEditor,
   domSelection: Selection,
+  tags: Set<string>,
 ): void {
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;
@@ -2563,7 +2564,7 @@ export function updateDOMSelection(
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
   if (
-    editor._updateTags.has('collaboration') &&
+    tags.has('collaboration') &&
     activeElement !== rootElement
   ) {
     return;

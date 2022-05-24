@@ -75,6 +75,7 @@ function importBlocks(
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
+  if (lineText === '') return
   const textNode = $createTextNode(lineText);
   const elementNode = $createParagraphNode();
   elementNode.append(textNode);

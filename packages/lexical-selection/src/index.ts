@@ -997,8 +997,14 @@ export function trimTextContentFromAnchor(
       } else if (currentNode.isSimpleText()) {
         // Split text
         const isSelected = anchor.key === key;
-        const splitStart = isSelected ? anchor.offset - remaining : 0;
-        const splitEnd = isSelected ? anchor.offset : offset;
+        let anchorOffset = anchor.offset;
+        // Move offset to end if it's less than the remaniing number, otherwise
+        // we'll have a negative splitStart.
+        if (anchorOffset < remaining) {
+          anchorOffset = textNodeSize;
+        }
+        const splitStart = isSelected ? anchorOffset - remaining : 0;
+        const splitEnd = isSelected ? anchorOffset : offset;
         if (isSelected && splitStart === 0) {
           const [excessNode] = currentNode.splitText(splitStart, splitEnd);
           excessNode.remove();

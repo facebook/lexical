@@ -6,7 +6,43 @@
  *
  */
 
-import {createHeadlessEditor} from './LexicalHeadlessEditor';
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from './LexicalHtml';
+import type {
+  EditorState,
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
-export {$generateHtmlFromNodes, $generateNodesFromDOM, createHeadlessEditor};
+import {createEditor} from 'lexical';
+import {Class} from 'utility-types';
+
+export function createHeadlessEditor(editorConfig?: {
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  onError: (error: Error) => void;
+  parentEditor?: LexicalEditor;
+  readOnly?: boolean;
+  theme?: EditorThemeClasses;
+}): LexicalEditor {
+  const editor = createEditor(editorConfig);
+  editor._headless = true;
+
+  [
+    'registerDecoratorListener',
+    'registerRootListener',
+    'registerMutationListeners',
+    'getRootElement',
+    'setRootElement',
+    'getElementByKey',
+    'focus',
+    'blur',
+  ].forEach((method) => {
+    editor[method] = () => {
+      throw new Error(`${method} is not supported in headless mode`);
+    };
+  });
+
+  return editor;
+}

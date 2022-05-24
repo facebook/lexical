@@ -16,7 +16,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/headless';
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,

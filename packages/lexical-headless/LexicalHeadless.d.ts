@@ -11,9 +11,6 @@ import type {
   LexicalNode,
   EditorState,
   EditorThemeClasses,
-  RangeSelection,
-  NodeSelection,
-  GridSelection,
 } from 'lexical';
 
 import {Class} from 'utility-types';
@@ -28,13 +25,3 @@ export function createHeadlessEditor(editorConfig?: {
   disableEvents?: boolean;
   readOnly?: boolean;
 }): LexicalEditor;
-
-export function $generateHtmlFromNodes(
-  editor: LexicalEditor,
-  selection?: RangeSelection | NodeSelection | GridSelection | null,
-): string;
-
-export function $generateNodesFromDOM(
-  editor: LexicalEditor,
-  dom: Document,
-): Array<LexicalNode>;

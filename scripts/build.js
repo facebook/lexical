@@ -511,6 +511,17 @@ const packages = [
   {
     modules: [
       {
+        outputFileName: 'LexicalHtml',
+        sourceFileName: 'index.ts',
+      },
+    ],
+    name: 'Lexical HTML',
+    outputPath: './packages/lexical-html/dist/',
+    sourcePath: './packages/lexical-html/src/',
+  },
+  {
+    modules: [
+      {
         outputFileName: 'LexicalMark',
         sourceFileName: 'index.ts',
       },

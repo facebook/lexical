@@ -7,54 +7,73 @@
  */
 
 import type {
-  EditorState,
-  EditorThemeClasses,
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
+  GridSelection,
   LexicalEditor,
   LexicalNode,
-  RangeSelection,
   NodeSelection,
-  GridSelection,
-  DOMChildConversion,
-  DOMConversionFn,
-  DOMConversion,
+  RangeSelection,
 } from 'lexical';
 
-import {$cloneWithProperties, $splitTextNode} from '@lexical/selection';
-import {createEditor, $getRoot, $isElementNode, $isTextNode} from 'lexical';
-import {Class} from 'utility-types';
+import {
+  $cloneWithProperties,
+  $sliceSelectedTextNodeContent,
+} from '@lexical/selection';
+import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
-export function createHeadlessEditor(editorConfig?: {
-  disableEvents?: boolean;
-  editorState?: EditorState;
-  namespace?: string;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
-  onError: (error: Error) => void;
-  parentEditor?: LexicalEditor;
-  readOnly?: boolean;
-  theme?: EditorThemeClasses;
-}): LexicalEditor {
-  const editor = createEditor(editorConfig);
-  editor._headless = true;
+/**
+ * How you parse your html string to get a document is left up to you. In the browser you can use the native
+ * DOMParser API to generate a document (see clipboard.ts), but to use in a headless environment you can use JSDom
+ * or an equivilant library and pass in the document here.
+ */
+export function $generateNodesFromDOM(
+  editor: LexicalEditor,
+  dom: Document,
+): Array<LexicalNode> {
+  let lexicalNodes = [];
+  const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
+  const elementsLength = elements.length;
 
-  [
-    'registerDecoratorListener',
-    'registerRootListener',
-    'registerMutationListeners',
-    'getRootElement',
-    'setRootElement',
-    'getElementByKey',
-    'focus',
-    'blur',
-  ].forEach((method) => {
-    editor[method] = () => {
-      throw new Error(`${method} is not supported in headless mode`);
-    };
-  });
+  for (let i = 0; i < elementsLength; i++) {
+    const element = elements[i];
 
-  return editor;
+    if (!IGNORE_TAGS.has(element.nodeName)) {
+      const lexicalNode = $createNodesFromDOM(element, editor);
+
+      if (lexicalNode !== null) {
+        lexicalNodes = lexicalNodes.concat(lexicalNode);
+      }
+    }
+  }
+
+  return lexicalNodes;
 }
 
-export function $appendNodesToHTML(
+export function $generateHtmlFromNodes(
+  editor: LexicalEditor,
+  selection?: RangeSelection | NodeSelection | GridSelection | null,
+): string {
+  if (document == null || window == null) {
+    throw new Error(
+      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
+    );
+  }
+
+  const container = document.createElement('div');
+  const root = $getRoot();
+  const topLevelChildren = root.getChildren();
+
+  for (let i = 0; i < topLevelChildren.length; i++) {
+    const topLevelNode = topLevelChildren[i];
+    $appendNodesToHTML(editor, selection, topLevelNode, container);
+  }
+
+  return container.innerHTML;
+}
+
+function $appendNodesToHTML(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection | null,
   currentNode: LexicalNode,
@@ -66,7 +85,7 @@ export function $appendNodesToHTML(
   let clone = $cloneWithProperties<LexicalNode>(currentNode);
   clone =
     $isTextNode(clone) && selection != null
-      ? $splitTextNode(selection, clone)
+      ? $sliceSelectedTextNodeContent(selection, clone)
       : clone;
   const children = $isElementNode(clone) ? clone.getChildren() : [];
   const {element, after} = clone.exportDOM(editor);
@@ -109,28 +128,6 @@ export function $appendNodesToHTML(
   }
 
   return shouldInclude;
-}
-
-export function $generateHtmlFromNodes(
-  editor: LexicalEditor,
-  selection?: RangeSelection | NodeSelection | GridSelection | null,
-): string {
-  if (document == null || window == null) {
-    throw new Error(
-      'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
-    );
-  }
-
-  const container = document.createElement('div');
-  const root = $getRoot();
-  const topLevelChildren = root.getChildren();
-
-  for (let i = 0; i < topLevelChildren.length; i++) {
-    const topLevelNode = topLevelChildren[i];
-    $appendNodesToHTML(editor, selection, topLevelNode, container);
-  }
-
-  return container.innerHTML;
 }
 
 function getConversionFunction(
@@ -235,34 +232,6 @@ function $createNodesFromDOM(
       // If the current node is a ElementNode after conversion,
       // we can append all the children to it.
       currentLexicalNode.append(...childLexicalNodes);
-    }
-  }
-
-  return lexicalNodes;
-}
-
-/**
- * How you parse your html string to get a document is left up to you. In the browser you can use the native
- * DOMParser API to generate a document (see clipboard.ts), but to use in a headless environment you can use JSDom
- * or an equivilant library and pass in the document here.
- */
-export function $generateNodesFromDOM(
-  dom: Document,
-  editor: LexicalEditor,
-): Array<LexicalNode> {
-  let lexicalNodes = [];
-  const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
-  const elementsLength = elements.length;
-
-  for (let i = 0; i < elementsLength; i++) {
-    const element = elements[i];
-
-    if (!IGNORE_TAGS.has(element.nodeName)) {
-      const lexicalNode = $createNodesFromDOM(element, editor);
-
-      if (lexicalNode !== null) {
-        lexicalNodes = lexicalNodes.concat(lexicalNode);
-      }
     }
   }
 

@@ -34,6 +34,7 @@ module.exports = {
         '^@lexical/headless$':
           '<rootDir>/packages/lexical-headless/src/index.ts',
         '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.ts',
+        '^@lexical/html$': '<rootDir>/packages/lexical-html/src/index.ts',
         '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.ts',
         '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.ts',
         '^@lexical/mark$': '<rootDir>/packages/lexical-mark/src/index.ts',

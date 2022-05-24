@@ -1056,6 +1056,7 @@ export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   node: Node,
   rootElement: HTMLElement | null | undefined,
+  tags: Set<string>,
 ): void {
   const element = (
     node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node
@@ -1078,6 +1079,6 @@ export function scrollIntoViewIfNeeded(
       }
     }
 
-    editor._updateTags.add('scroll-into-view');
+    tags.add('scroll-into-view');
   }
 }

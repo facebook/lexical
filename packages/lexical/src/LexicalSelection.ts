@@ -2668,7 +2668,7 @@ export function updateDOMSelection(
     );
 
     if (nextSelection.isCollapsed() && rootElement === activeElement) {
-      scrollIntoViewIfNeeded(editor, nextAnchorNode, rootElement);
+      scrollIntoViewIfNeeded(editor, nextAnchorNode, rootElement, tags);
     }
 
     markSelectionChangeFromDOMUpdate();

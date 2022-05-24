@@ -408,11 +408,14 @@ export function $setSelection(
 ): void {
   const editorState = getActiveEditorState();
   if (selection !== null) {
-    if (Object.isFrozen(selection)) {
-      invariant(
-        false,
-        '$setSelection called on frozen selection object. Ensure selection is cloned before passing in.',
-      );
+    // @ts-ignore
+    if (__DEV__) {
+      if (Object.isFrozen(selection)) {
+        invariant(
+          false,
+          '$setSelection called on frozen selection object. Ensure selection is cloned before passing in.',
+        );
+      }
     }
     selection.dirty = true;
     selection._cachedNodes = null;

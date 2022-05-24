@@ -9,11 +9,13 @@ Internally, Lexical maintains the state of a given editor in memory, updating it
 
 ## HTML
 
-Currently, HTML serialization is primarily used to transfer data between Lexical and non-Lexical editors (such as Google Docs or Quip) via the copy & paste functionality in [`@lexical/clipboard`](https://github.com/facebook/lexical/blob/main/packages/lexical-clipboard/README.md), but we also offer generic utilities for converting `Lexical` -> `HTML` and `HTML` -> `Lexical` in our [`@lexical/headless`](https://github.com/facebook/lexical/blob/main/packages/lexical-headless/README.md) package.
+Currently, HTML serialization is primarily used to transfer data between Lexical and non-Lexical editors (such as Google Docs or Quip) via the copy & paste functionality in [`@lexical/clipboard`](https://github.com/facebook/lexical/blob/main/packages/lexical-clipboard/README.md), but we also offer generic utilities for converting `Lexical` -> `HTML` and `HTML` -> `Lexical` in our [`@lexical/html`](https://github.com/facebook/lexical/blob/main/packages/lexical-html/README.md) package.
 
 ### Lexical -> HTML
 When generating HTML from an editor you can pass in a selection object to narrow it down to a certain section or pass in null to convert the whole editor.
 ```js
+import {$generateHtmlFromNodes} from '@lexical/html';
+
 const htmlString = $generateHtmlFromNodes(editor, selection | null);
 ```
 
@@ -40,6 +42,8 @@ If the element property is null in the return value of exportDOM, that Node will
 ### HTML -> Lexical
 
 ```js
+import {$generateNodesFromDOM} from '@lexical/html';
+
 // In the browser you can use the native DOMParser API to parse the HTML string.
 const parser = new DOMParser();
 const dom = parser.parseFromString(htmlString, textHtmlMimeType);

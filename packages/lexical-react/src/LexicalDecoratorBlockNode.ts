@@ -13,8 +13,8 @@ import type {
   SerializedLexicalNode,
 } from 'lexical';
 
-import {Spread} from 'globals';
 import {DecoratorNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 export type SerializedDecoratorBlockNode = Spread<
   {
@@ -48,7 +48,7 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   }
 
   setFormat(format: ElementFormatType): void {
-    const self = this.getWritable<DecoratorBlockNode>();
+    const self = this.getWritable();
     self.__format = format;
   }
 }

@@ -9,7 +9,7 @@
 
 import type {LexicalNode} from 'lexical';
 
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
 

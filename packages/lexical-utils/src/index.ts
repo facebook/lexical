@@ -9,7 +9,7 @@
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$getRoot, $isElementNode} from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
 
 export type DFSNode = Readonly<{
@@ -161,7 +161,7 @@ export function mergeRegister(...func: Array<Func>): () => void {
 
 export function registerNestedElementResolver<N extends ElementNode>(
   editor: LexicalEditor,
-  targetNode: Class<N>,
+  targetNode: {new (): N},
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void {

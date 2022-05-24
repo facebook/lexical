@@ -39,7 +39,7 @@ import {
   GridNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 const IGNORE_TAGS = new Set(['STYLE']);
 

@@ -6,18 +6,17 @@
  *
  */
 
-import type {
+import {addClassNamesToElement} from '@lexical/utils';
+import {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  GridRowNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
 } from 'lexical';
-
-import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
-import {GridRowNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 export type SerializedTableRowNode = Spread<
   {
@@ -78,13 +77,13 @@ export class TableRowNode extends GridRowNode {
   }
 
   setHeight(height: number): number {
-    const self = this.getWritable<TableRowNode>();
+    const self = this.getWritable();
     self.__height = height;
     return this.__height;
   }
 
   getHeight(): number {
-    return this.getLatest<TableRowNode>().__height;
+    return this.getLatest().__height;
   }
 
   updateDOM(prevNode: TableRowNode): boolean {

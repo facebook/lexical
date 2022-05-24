@@ -24,7 +24,7 @@ import {
   $isRangeSelection,
   $isRootNode,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {
   $createListItemNode,

@@ -6,8 +6,8 @@
  *
  */
 
+import {Spread} from 'libdefs/globals';
 import {Class} from 'utility-types';
-import {Spread} from 'globals';
 
 /**
  * LexicalCommands
@@ -172,6 +172,7 @@ export declare class LexicalEditor {
   blur(): void;
   isReadOnly(): boolean;
   setReadOnly(readOnly: boolean): void;
+  toJSON(): void;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void;
@@ -193,12 +194,14 @@ type TextNodeThemeClasses = {
   subscript?: EditorThemeClassName;
   superscript?: EditorThemeClassName;
 };
+
 export type EditorThemeClasses = {
   ltr?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   paragraph?: EditorThemeClassName;
   image?: EditorThemeClassName;
+  characterLimit?: EditorThemeClassName;
   list?: {
     ul?: EditorThemeClassName;
     ulDepth?: Array<EditorThemeClassName>;
@@ -233,18 +236,24 @@ export type EditorThemeClasses = {
   // Handle other generic values
   [key: string]:
     | EditorThemeClassName
-    | Record<
-        string,
-        | EditorThemeClassName
-        | Array<EditorThemeClassName>
-        | Record<string, EditorThemeClassName>
-      >;
+    | TextNodeThemeClasses
+    | {
+        [key: string]:
+          | Array<EditorThemeClassName>
+          | EditorThemeClassName
+          | TextNodeThemeClasses
+          | {
+              [key: string]: EditorThemeClassName;
+            };
+      };
 };
+
 export type EditorConfig = {
   namespace: string;
   theme: EditorThemeClasses;
   disableEvents?: boolean;
 };
+
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;
 export const COMMAND_PRIORITY_LOW = 1;
@@ -337,8 +346,10 @@ export declare class LexicalNode {
   __type: string;
   __key: NodeKey;
   __parent: null | NodeKey;
+  static getType: () => string;
   getType(): string;
   clone(data: any): LexicalNode;
+  exportJSON(): SerializedLexicalNode;
   importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey);
   getType(): string;
@@ -348,8 +359,8 @@ export declare class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T extends ElementNode>(): T | null;
   getParentOrThrow<T extends ElementNode>(): T;
-  getTopLevelElement(): ElementNode | null;
-  getTopLevelElementOrThrow(): ElementNode;
+  getTopLevelElement(): ElementNode | this | null;
+  getTopLevelElementOrThrow(): ElementNode | this;
   getParents<T extends ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T extends LexicalNode>(): T | null;
@@ -362,8 +373,8 @@ export declare class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  getLatest<T extends LexicalNode>(): T;
-  getWritable<T extends LexicalNode>(): T;
+  getLatest(): this;
+  getWritable(): this;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getTextContentSize(
     includeInert?: boolean,
@@ -371,13 +382,13 @@ export declare class LexicalNode {
   ): number;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
-  updateDOM(prevNode: any, dom: HTMLElement, config: EditorConfig): boolean;
+  updateDOM(prevNode: unknown, dom: HTMLElement, config: EditorConfig): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
   insertBefore(nodeToInsert: LexicalNode): LexicalNode;
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection;
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection;
+  selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
+  selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
@@ -542,7 +553,6 @@ declare class _Point {
   getNode(): LexicalNode;
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void;
 }
-
 export function $createRangeSelection(): RangeSelection;
 export function $createNodeSelection(): NodeSelection;
 export function $createGridSelection(): GridSelection;
@@ -666,10 +676,10 @@ export declare class RootNode extends ElementNode {
   select(): RangeSelection;
   remove(): void;
   replace<N extends LexicalNode>(node: N): N;
-  insertBefore(): LexicalNode;
-  insertAfter(node: LexicalNode): LexicalNode;
+  insertBefore<T extends LexicalNode>(nodeToInsert: T): T;
+  insertAfter<T extends LexicalNode>(nodeToInsert: T): T;
   updateDOM(prevNode: RootNode, dom: HTMLElement): false;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
   static importJSON(serializedRootNode: SerializedRootNode): RootNode;
   exportJSON(): SerializedElementNode;
@@ -681,7 +691,7 @@ export function $isRootNode(
 /**
  * LexicalElementNode
  */
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
+export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 export declare class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
   __format: number;
@@ -689,7 +699,7 @@ export declare class ElementNode extends LexicalNode {
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey);
   getFormat(): number;
-  getFormatType(): 'left' | 'center' | 'right' | 'justify';
+  getFormatType(): ElementFormatType;
   getIndent(): number;
   getChildren<T extends LexicalNode>(): Array<T>;
   getChildren<T extends Array<LexicalNode>>(): T;
@@ -711,8 +721,8 @@ export declare class ElementNode extends LexicalNode {
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;
-  clear(): ElementNode;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  clear(): this;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   setDirection(direction: 'ltr' | 'rtl' | null): ElementNode;
   setFormat(type: ElementFormatType): ElementNode;
   setIndent(indentLevel: number): ElementNode;
@@ -738,7 +748,7 @@ export declare class ElementNode extends LexicalNode {
     start: number,
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
-  ): ElementNode;
+  ): this;
   exportJSON(): SerializedElementNode;
 }
 export function $isElementNode(
@@ -748,7 +758,7 @@ export function $isElementNode(
 /**
  * LexicalDecoratorNode
  */
-export declare class DecoratorNode<X> extends LexicalNode {
+export declare class DecoratorNode<X = unknown> extends LexicalNode {
   constructor(key?: NodeKey);
   decorate(editor: LexicalEditor): X;
   isIsolated(): boolean;
@@ -844,7 +854,7 @@ export type SerializedElementNode = Spread<
   {
     children: Array<SerializedLexicalNode>;
     direction: 'ltr' | 'rtl' | null;
-    format: 'left' | 'center' | 'right' | 'justify';
+    format: ElementFormatType;
     indent: number;
   },
   SerializedLexicalNode

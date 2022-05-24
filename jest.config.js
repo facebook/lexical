@@ -7,8 +7,8 @@ const common = {
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
-    '<rootDir>/packages/lexical/src/core/**/*.js',
-    '<rootDir>/packages/lexical/src/extensions/**/*.js',
+    '<rootDir>/packages/lexical/src/core/**/*.ts',
+    '<rootDir>/packages/lexical/src/extensions/**/*.ts',
     '<rootDir>/packages/lexical-react/src/**/*.ts',
   ],
   coverageReporters: ['json', 'text'],
@@ -79,29 +79,17 @@ module.exports = {
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.ts',
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.ts',
         '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.ts',
-        '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
-        '^lexical$': '<rootDir>/packages/lexical/src/index.js',
-        '^shared-ts/canUseDOM$':
-          '<rootDir>/packages/shared-ts/src/canUseDOM.ts',
-        '^shared-ts/environment$':
-          '<rootDir>/packages/shared-ts/src/environment.ts',
-        '^shared-ts/getDOMSelection$':
-          '<rootDir>/packages/shared-ts/src/getDOMSelection.ts',
-        '^shared-ts/invariant$':
-          '<rootDir>/packages/shared-ts/src/invariant.ts',
-        '^shared-ts/simpleDiffWithCursor$':
-          '<rootDir>/packages/shared-ts/src/simpleDiffWithCursor.ts',
-        '^shared-ts/useLayoutEffect$':
-          '<rootDir>/packages/shared-ts/src/useLayoutEffect.ts',
-        '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
-        '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
+        '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
+        '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
+        '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
+        '^shared/environment$': '<rootDir>/packages/shared/src/environment.ts',
         '^shared/getDOMSelection$':
-          '<rootDir>/packages/shared/src/getDOMSelection.js',
-        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
+          '<rootDir>/packages/shared/src/getDOMSelection.ts',
+        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.ts',
         '^shared/simpleDiffWithCursor$':
-          '<rootDir>/packages/shared/src/simpleDiffWithCursor.js',
+          '<rootDir>/packages/shared/src/simpleDiffWithCursor.ts',
         '^shared/useLayoutEffect$':
-          '<rootDir>/packages/shared/src/useLayoutEffect.js',
+          '<rootDir>/packages/shared/src/useLayoutEffect.ts',
         formatProdErrorMessage:
           '<rootDir>/scripts/error-codes/formatProdErrorMessage.js',
       },

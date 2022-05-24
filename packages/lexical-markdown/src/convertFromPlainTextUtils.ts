@@ -26,7 +26,7 @@ import {
   $isParagraphNode,
   $isTextNode,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 import {
   getAllMarkdownCriteriaForParagraphs,

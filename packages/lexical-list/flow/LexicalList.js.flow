@@ -40,7 +40,7 @@ declare export function insertList(
   listType: ListType,
 ): void;
 declare export class ListItemNode extends ElementNode {
-  append(...nodes: LexicalNode[]): ListItemNode;
+  append(...nodes: LexicalNode[]): this;
   replace<N: LexicalNode>(replaceWithNode: N): N;
   insertAfter(node: LexicalNode): LexicalNode;
   insertNewAfter(): ListItemNode | ParagraphNode;
@@ -60,7 +60,7 @@ declare export class ListNode extends ElementNode {
   __tag: ListNodeTagType;
   __start: number;
   canBeEmpty(): false;
-  append(...nodesToAppend: LexicalNode[]): ListNode;
+  append(...nodesToAppend: LexicalNode[]): this;
   getTag(): ListNodeTagType;
   getStart(): number;
   getListType(): ListType;

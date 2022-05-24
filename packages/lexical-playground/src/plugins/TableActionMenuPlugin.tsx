@@ -61,7 +61,7 @@ function TableActionMenu({
 
       if (nodeUpdated) {
         editor.getEditorState().read(() => {
-          updateTableCellNode(tableCellNode.getLatest<TableCellNode>());
+          updateTableCellNode(tableCellNode.getLatest());
         });
       }
     });
@@ -132,7 +132,7 @@ function TableActionMenu({
         tableSelection.clearHighlight();
 
         tableNode.markDirty();
-        updateTableCellNode(tableCellNode.getLatest<TableCellNode>());
+        updateTableCellNode(tableCellNode.getLatest());
       }
 
       $setSelection(null);

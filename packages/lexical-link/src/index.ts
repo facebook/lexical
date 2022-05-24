@@ -19,9 +19,9 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
 import {$isElementNode, createCommand, ElementNode} from 'lexical';
-import invariant from 'shared-ts/invariant';
+import {Spread} from 'libdefs/globals';
+import invariant from 'shared/invariant';
 
 export type SerializedLinkNode = Spread<
   {
@@ -84,7 +84,7 @@ export class LinkNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedLinkNode {
     return {
       ...super.exportJSON(),
       type: 'link',
@@ -93,11 +93,11 @@ export class LinkNode extends ElementNode {
   }
 
   getURL(): string {
-    return this.getLatest<LinkNode>().__url;
+    return this.getLatest().__url;
   }
 
   setURL(url: string): void {
-    const writable = this.getWritable<LinkNode>();
+    const writable = this.getWritable();
     writable.__url = url;
   }
 
@@ -180,7 +180,7 @@ export class AutoLinkNode extends LinkNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
       type: 'autolink',

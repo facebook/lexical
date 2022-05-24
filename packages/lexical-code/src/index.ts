@@ -41,7 +41,7 @@ import {
   mergeRegister,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {Spread} from 'globals';
+
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -59,6 +59,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
@@ -121,7 +122,7 @@ export class CodeHighlightNode extends TextNode {
   }
 
   getHighlightType(): string | null | undefined {
-    const self = this.getLatest<CodeHighlightNode>();
+    const self = this.getLatest();
     return self.__highlightType;
   }
 
@@ -397,12 +398,12 @@ export class CodeNode extends ElementNode {
   }
 
   setLanguage(language: string): void {
-    const writable = this.getWritable<CodeNode>();
+    const writable = this.getWritable();
     writable.__language = mapToPrismLanguage(language);
   }
 
   getLanguage(): string | null | undefined {
-    return this.getLatest<CodeNode>().__language;
+    return this.getLatest().__language;
   }
 }
 

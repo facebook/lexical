@@ -9,7 +9,6 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import {resolve} from 'path';
-import {flowPlugin, esbuildFlowPlugin} from '@bunchtogether/vite-plugin-flow';
 import path from 'path';
 import fs from 'fs';
 import {replaceCodePlugin} from 'vite-plugin-replace';
@@ -18,7 +17,7 @@ import babel from '@rollup/plugin-babel';
 const moduleResolution = [
   {
     find: /lexical$/,
-    replacement: path.resolve('../lexical/src/index.js'),
+    replacement: path.resolve('../lexical/src/index.ts'),
   },
   {
     find: '@lexical/clipboard',
@@ -94,15 +93,11 @@ const moduleResolution = [
   },
   {
     find: '@lexical/yjs',
-    replacement: path.resolve('../lexical-yjs/src/index.js'),
+    replacement: path.resolve('../lexical-yjs/src/index.ts'),
   },
   {
     find: 'shared',
     replacement: path.resolve('../shared/src'),
-  },
-  {
-    find: 'shared-ts',
-    replacement: path.resolve('../shared-ts/src'),
   },
 ];
 // Lexical React
@@ -153,11 +148,6 @@ const moduleResolution = [
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  optimizeDeps: {
-    esbuildOptions: {
-      plugins: [esbuildFlowPlugin()],
-    },
-  },
   plugins: [
     replaceCodePlugin({
       replacements: [
@@ -183,7 +173,6 @@ export default defineConfig({
       ],
       presets: ['@babel/preset-react'],
     }),
-    flowPlugin(),
     react(),
   ],
   resolve: {

@@ -341,6 +341,7 @@ declare export class LexicalNode {
   static importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
+  exportJSON(): SerializedLexicalNode;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;
@@ -348,8 +349,8 @@ declare export class LexicalNode {
   getIndexWithinParent(): number;
   getParent<T: ElementNode>(): T | null;
   getParentOrThrow<T: ElementNode>(): T;
-  getTopLevelElement(): ElementNode | null;
-  getTopLevelElementOrThrow(): ElementNode;
+  getTopLevelElement(): ElementNode | this | null;
+  getTopLevelElementOrThrow(): ElementNode | this;
   getParents<T: ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
   getPreviousSibling<T: LexicalNode>(): T | null;
@@ -382,8 +383,8 @@ declare export class LexicalNode {
   replace<N: LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
   insertBefore(nodeToInsert: LexicalNode): LexicalNode;
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection;
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection;
+  selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
+  selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
@@ -606,7 +607,7 @@ declare export class TextNode extends LexicalNode {
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
   static getType(): string;
-  static clone(node: $FlowFixMe): TextNode;
+  static clone(node: TextNode): TextNode;
   constructor(text: string, key?: NodeKey): void;
   getFormat(): number;
   getStyle(): string;
@@ -694,10 +695,10 @@ declare export class RootNode extends ElementNode {
   select(): RangeSelection;
   remove(): void;
   replace<N: LexicalNode>(node: N): N;
-  insertBefore(): LexicalNode;
-  insertAfter(node: LexicalNode): LexicalNode;
+  insertBefore<T: LexicalNode>(nodeToInsert: T): T;
+  insertAfter<T: LexicalNode>(nodeToInsert: T): T;
   updateDOM(prevNode: RootNode, dom: HTMLElement): false;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
 }
 declare export function $isRootNode(
@@ -737,8 +738,8 @@ declare export class ElementNode extends LexicalNode {
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;
-  clear(): ElementNode;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  clear(): this;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   setDirection(direction: 'ltr' | 'rtl' | null): this;
   setFormat(type: ElementFormatType): this;
   setIndent(indentLevel: number): this;
@@ -764,7 +765,7 @@ declare export class ElementNode extends LexicalNode {
     start: number,
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
-  ): ElementNode;
+  ): this;
   exportJSON(): SerializedElementNode;
 }
 declare export function $isElementNode(

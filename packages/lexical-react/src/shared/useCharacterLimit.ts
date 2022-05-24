@@ -23,7 +23,7 @@ import {
   $setSelection,
 } from 'lexical';
 import {useEffect} from 'react';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 type OptionalProps = {
   remainingCharacters?: (characters: number) => void;

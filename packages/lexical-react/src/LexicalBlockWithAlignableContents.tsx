@@ -138,7 +138,7 @@ export function BlockWithAlignableContents({
       className={`embed-block${isSelected ? ' focused' : ''}`}
       ref={ref}
       style={{
-        textAlign: format,
+        textAlign: format ? format : null,
       }}>
       {children}
     </div>

@@ -22,7 +22,7 @@ import {
   $isElementNode,
   $isTextNode,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 type OffsetElementNode = {
   child: null | OffsetNode;

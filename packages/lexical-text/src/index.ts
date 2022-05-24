@@ -15,7 +15,7 @@ import {
   $isTextNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
 
 export type TextNodeWithOffset = {
@@ -268,7 +268,7 @@ export function registerLexicalTextEntity<N extends TextNode>(
   };
 
   const getMode = (node: TextNode): number => {
-    return node.getLatest<TextNode>().__mode;
+    return node.getLatest().__mode;
   };
 
   const textNodeTransform = (node: TextNode) => {

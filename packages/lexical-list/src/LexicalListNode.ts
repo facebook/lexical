@@ -4,26 +4,26 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ *
  */
-
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
-} from 'lexical';
 
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {Spread} from 'globals';
-import {$createTextNode, ElementNode} from 'lexical';
+import {
+  $createTextNode,
+  DOMConversionMap,
+  DOMConversionOutput,
+  EditorConfig,
+  EditorThemeClasses,
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  SerializedElementNode,
+} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';
@@ -129,7 +129,7 @@ export class ListNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedListNode {
     return {
       ...super.exportJSON(),
       listType: this.getListType(),
@@ -147,7 +147,7 @@ export class ListNode extends ElementNode {
     return false;
   }
 
-  append(...nodesToAppend: LexicalNode[]): ListNode {
+  append(...nodesToAppend: LexicalNode[]): this {
     for (let i = 0; i < nodesToAppend.length; i++) {
       const currentNode = nodesToAppend[i];
 
@@ -168,6 +168,7 @@ export class ListNode extends ElementNode {
 
     return this;
   }
+
   extractWithChild(child: LexicalNode): boolean {
     return $isListItemNode(child);
   }

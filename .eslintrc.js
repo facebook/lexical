@@ -58,6 +58,7 @@ module.exports = {
       plugins: ['react', '@typescript-eslint'],
       rules: {
         '@typescript-eslint/ban-ts-comment': OFF,
+        '@typescript-eslint/no-this-alias': OFF,
         '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
       },
     },

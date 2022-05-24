@@ -189,7 +189,13 @@ type Listeners = {
   update: Set<UpdateListener>;
 };
 
-export type Listener = DecoratorListener | ReadOnlyListener | MutationListener | RootListener | TextContentListener | UpdateListener;
+export type Listener =
+  | DecoratorListener
+  | ReadOnlyListener
+  | MutationListener
+  | RootListener
+  | TextContentListener
+  | UpdateListener;
 
 export type ListenerType =
   | 'update'

@@ -31,8 +31,10 @@ export const UNDO_COMMAND: LexicalCommand<void> = createCommand();
 export const REDO_COMMAND: LexicalCommand<void> = createCommand();
 export const KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
+export const MOVE_TO_END: LexicalCommand<KeyboardEvent> = createCommand();
 export const KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
+export const MOVE_TO_START: LexicalCommand<KeyboardEvent> = createCommand();
 export const KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
 export const KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent> =

@@ -831,6 +831,16 @@ export function isMoveBackward(
   return isArrowLeft(keyCode) && !ctrlKey && !metaKey && !altKey;
 }
 
+export function isMoveToStart(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowLeft(keyCode) && !altKey && !shiftKey && (ctrlKey || metaKey);
+}
+
 export function isMoveForward(
   keyCode: number,
   ctrlKey: boolean,
@@ -839,6 +849,16 @@ export function isMoveForward(
   metaKey: boolean,
 ): boolean {
   return isArrowRight(keyCode) && !ctrlKey && !metaKey && !altKey;
+}
+
+export function isMoveToEnd(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowRight(keyCode) && !altKey && !shiftKey && (ctrlKey || metaKey);
 }
 
 export function isMoveUp(

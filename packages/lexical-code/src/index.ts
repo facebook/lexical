@@ -56,6 +56,8 @@ import {
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  MOVE_TO_START,
+  MOVE_TO_END,
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
@@ -453,6 +455,134 @@ export function getLastCodeHighlightNodeOfLine(
   }
 
   return currentNode;
+}
+
+function isSpaceOrTabChar(char: string): boolean {
+  return char === ' ' || char === '\t';
+}
+
+function findFirstNotSpaceOrTabCharAtText(
+  text: string,
+  isForward: boolean,
+): number {
+  const length = text.length;
+  let offset = -1;
+
+  if (isForward) {
+    for (let i = 0; i < length; i++) {
+      const char = text[i];
+      if (!isSpaceOrTabChar(char)) {
+        offset = i;
+        break;
+      }
+    }
+  } else {
+    for (let i = length - 1; i > -1; i--) {
+      const char = text[i];
+      if (!isSpaceOrTabChar(char)) {
+        offset = i;
+        break;
+      }
+    }
+  }
+
+  return offset;
+}
+
+export function getStartOfCodeInLine(anchor: LexicalNode): {
+  node: TextNode | null;
+  offset: number;
+} {
+  let currentNode = null;
+  let currentNodeOffset = -1;
+  const previousSiblings = anchor.getPreviousSiblings();
+  previousSiblings.push(anchor);
+  while (previousSiblings.length > 0) {
+    const node = previousSiblings.pop();
+    if ($isCodeHighlightNode(node)) {
+      const text = node.getTextContent();
+      const offset = findFirstNotSpaceOrTabCharAtText(text, true);
+      if (offset !== -1) {
+        currentNode = node;
+        currentNodeOffset = offset;
+      }
+    }
+    if ($isLineBreakNode(node)) {
+      break;
+    }
+  }
+
+  if (currentNode === null) {
+    const nextSiblings = anchor.getNextSiblings();
+    while (nextSiblings.length > 0) {
+      const node = nextSiblings.shift();
+      if ($isCodeHighlightNode(node)) {
+        const text = node.getTextContent();
+        const offset = findFirstNotSpaceOrTabCharAtText(text, true);
+        if (offset !== -1) {
+          currentNode = node;
+          currentNodeOffset = offset;
+          break;
+        }
+      }
+      if ($isLineBreakNode(node)) {
+        break;
+      }
+    }
+  }
+
+  return {
+    node: currentNode,
+    offset: currentNodeOffset,
+  };
+}
+
+export function getEndOfCodeInLine(anchor: LexicalNode): {
+  node: TextNode | null;
+  offset: number;
+} {
+  let currentNode = null;
+  let currentNodeOffset = -1;
+  const nextSiblings = anchor.getNextSiblings();
+  nextSiblings.unshift(anchor);
+  while (nextSiblings.length > 0) {
+    const node = nextSiblings.shift();
+    if ($isCodeHighlightNode(node)) {
+      const text = node.getTextContent();
+      const offset = findFirstNotSpaceOrTabCharAtText(text, false);
+      if (offset !== -1) {
+        currentNode = node;
+        currentNodeOffset = offset + 1;
+      }
+    }
+    if ($isLineBreakNode(node)) {
+      break;
+    }
+  }
+
+  if (currentNode === null) {
+    const previousSiblings = anchor.getPreviousSiblings();
+    while (previousSiblings.length > 0) {
+      const node = previousSiblings.pop();
+      if ($isCodeHighlightNode(node)) {
+        const text = node.getTextContent();
+        const offset = findFirstNotSpaceOrTabCharAtText(text, false);
+        if (offset !== -1) {
+          currentNode = node;
+          currentNodeOffset = offset + 1;
+          break;
+        }
+      }
+      if ($isLineBreakNode(node)) {
+        break;
+      }
+    }
+  }
+
+  return {
+    node: currentNode,
+    offset: currentNodeOffset,
+  };
 }
 
 function convertPreElement(domNode: Node): DOMConversionOutput {
@@ -928,6 +1058,41 @@ function handleShiftLines(
   return true;
 }
 
+function handleMoveTo(
+  type: LexicalCommand<KeyboardEvent>,
+  event: KeyboardEvent,
+): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+
+  const {anchor, focus} = selection;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  const isMoveToStart = type === MOVE_TO_START;
+
+  if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
+    return false;
+  }
+
+  let node;
+  let offset;
+
+  if (isMoveToStart) {
+    ({node, offset} = getStartOfCodeInLine(focusNode));
+  } else {
+    ({node, offset} = getEndOfCodeInLine(focusNode));
+  }
+
+  if (node !== null && offset !== -1) {
+    selection.setTextNodeRange(node, offset, node, offset);
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 export function registerCodeHighlighting(editor: LexicalEditor): () => void {
   if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
     throw new Error(
@@ -977,6 +1142,16 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
       KEY_ARROW_DOWN_COMMAND,
       (payload: KeyboardEvent): boolean =>
         handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      MOVE_TO_END,
+      (payload: KeyboardEvent): boolean => handleMoveTo(MOVE_TO_END, payload),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      MOVE_TO_START,
+      (payload: KeyboardEvent): boolean => handleMoveTo(MOVE_TO_START, payload),
       COMMAND_PRIORITY_LOW,
     ),
   );

@@ -601,8 +601,7 @@ export function triggerListeners(
   editor._updating = isCurrentlyEnqueuingUpdates;
 
   try {
-    const listeners = [...editor._listeners[type]];
-
+    const listeners = [...editor._listeners[type].values()];
     for (let i = 0; i < listeners.length; i++) {
       listeners[i].apply(null, payload);
     }

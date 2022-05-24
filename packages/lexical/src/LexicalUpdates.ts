@@ -476,13 +476,13 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const previouslyUpdating = editor._updating;
   const observer = editor._observer;
   let mutatedNodes = null;
-  activeEditor = editor;
-  activeEditorState = pendingEditorState;
-  isReadOnlyMode = false;
-  // We don't want updates to sync block the reconcilation.
-  editor._updating = true;
 
   if (!headless && needsUpdate && observer !== null) {
+    activeEditor = editor;
+    activeEditorState = pendingEditorState;
+    isReadOnlyMode = false;
+    // We don't want updates to sync block the reconcilation.
+    editor._updating = true;
     try {
       const dirtyType = editor._dirtyType;
       const dirtyElements = editor._dirtyElements;

@@ -240,8 +240,7 @@ function $applyAllTransforms(
     for (const currentUntransformedDirtyElement of untransformedDirtyElements) {
       const nodeKey = currentUntransformedDirtyElement[0];
       const intentionallyMarkedAsDirty = currentUntransformedDirtyElement[1];
-
-      if (nodeKey === 'root' || !intentionallyMarkedAsDirty) {
+      if (nodeKey !== 'root' && !intentionallyMarkedAsDirty) {
         continue;
       }
 

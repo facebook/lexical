@@ -19,7 +19,9 @@ import type {
 } from 'lexical';
 
 import {
+  $createTextNode,
   $getDecoratorNode,
+  $getNodeByKey,
   $getPreviousSelection,
   $isDecoratorNode,
   $isElementNode,
@@ -893,4 +895,122 @@ export function createRectsFromDOMRange(
     prevRect = selectionRect;
   }
   return selectionRects;
+}
+
+function doesContainGrapheme(str: string): boolean {
+  return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
+}
+
+export function trimTextContentFromAnchor(
+  editor: LexicalEditor,
+  anchor: Point,
+  delCount: number,
+): void {
+  // Work from the current selection anchor point
+  let currentNode: LexicalNode | null = anchor.getNode();
+  let remaining: number = delCount;
+
+  if ($isElementNode(currentNode)) {
+    const descendantNode = currentNode.getDescendantByIndex(anchor.offset);
+    if (descendantNode !== null) {
+      currentNode = descendantNode;
+    }
+  }
+
+  while (remaining > 0 && currentNode !== null) {
+    let nextNode = currentNode.getPreviousSibling();
+    let additionalElementWhitespace = 0;
+    if (nextNode === null) {
+      let parent = currentNode.getParentOrThrow();
+      let parentSibling = parent.getPreviousSibling();
+
+      while (parentSibling === null) {
+        parent = parent.getParent();
+        if (parent === null) {
+          nextNode = null;
+          break;
+        }
+        parentSibling = parent.getPreviousSibling();
+      }
+      if (parent !== null) {
+        additionalElementWhitespace = parent.isInline() ? 0 : 2;
+        if ($isElementNode(parentSibling)) {
+          nextNode = parentSibling.getLastDescendant();
+        } else {
+          nextNode = parentSibling;
+        }
+      }
+    }
+    let text = currentNode.getTextContent();
+    // If the text is empty, we need to consider adding in two line breaks to match
+    // the content if we were to get it from its parent.
+    if (text === '' && $isElementNode(currentNode) && !currentNode.isInline()) {
+      // TODO: should this be handled in core?
+      text = '\n\n';
+    }
+    const textNodeSize = text.length;
+    const offset = textNodeSize - remaining;
+    const slicedText = text.slice(0, offset);
+    // Sometimes the text we're putting in might be a partial grapheme.
+    // So we just remove the entire thing, rather than show a partial unicode grapheme.
+    const containsPartialGraphemeHeuristic =
+      doesContainGrapheme(text) && !doesContainGrapheme(slicedText);
+
+    if (
+      !$isTextNode(currentNode) ||
+      remaining >= textNodeSize ||
+      containsPartialGraphemeHeuristic
+    ) {
+      const parent = currentNode.getParent();
+      currentNode.remove();
+      if (parent.getChildrenSize() === 0) {
+        parent.remove();
+      }
+      remaining -= textNodeSize + additionalElementWhitespace;
+      currentNode = nextNode;
+    } else {
+      const key = currentNode.getKey();
+      // See if we can just revert it to what was in the last editor state
+      const prevTextContent: string | null = editor
+        .getEditorState()
+        .read(() => {
+          const prevNode = $getNodeByKey(key);
+          if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
+            return prevNode.getTextContent();
+          }
+          return null;
+        });
+      if (prevTextContent !== null) {
+        const prevSelection = $getPreviousSelection();
+        let target = currentNode;
+        if (!currentNode.isSimpleText()) {
+          const textNode = $createTextNode(prevTextContent);
+          currentNode.replace(textNode);
+          target = textNode;
+        } else {
+          currentNode.setTextContent(prevTextContent);
+        }
+        if ($isRangeSelection(prevSelection) && prevSelection.isCollapsed()) {
+          const prevOffset = prevSelection.anchor.offset;
+          target.select(prevOffset, prevOffset);
+        }
+      } else if (currentNode.isSimpleText()) {
+        // Split text
+        const isSelected = anchor.key === key;
+        const splitStart = isSelected ? anchor.offset - remaining : 0;
+        const splitEnd = isSelected ? anchor.offset : offset;
+        if (isSelected && splitStart === 0) {
+          const [excessNode] = currentNode.splitText(splitStart, splitEnd);
+          excessNode.remove();
+        } else {
+          const [, excessNode] = currentNode.splitText(splitStart, splitEnd);
+          excessNode.remove();
+        }
+      } else {
+        const textNode = $createTextNode(slicedText);
+        currentNode.replace(textNode);
+      }
+      remaining = 0;
+    }
+  }
 }

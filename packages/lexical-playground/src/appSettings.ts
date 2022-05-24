@@ -12,6 +12,7 @@ export type SettingName =
   | 'isRichText'
   | 'isCollab'
   | 'isCharLimit'
+  | 'isMaxLength'
   | 'isCharLimitUtf8'
   | 'isAutocomplete'
   | 'showTreeView'
@@ -32,6 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: false,
+  isMaxLength: false,
   isRichText: true,
   measureTypingPerf: false,
   showNestedEditorTreeView: false,

@@ -73,3 +73,9 @@ declare export function createRectsFromDOMRange(
   editor: LexicalEditor,
   range: Range,
 ): Array<ClientRect>;
+
+declare export function trimTextContentFromAnchor(
+  editor: LexicalEditor,
+  anchor: Point,
+  delCount: number,
+): void;

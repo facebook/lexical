@@ -788,7 +788,7 @@ export function applyTableHandlers(
     editor.registerCommand(
       FOCUS_COMMAND,
       (payload) => {
-        return tableNode.isSelected();
+        return editor.getEditorState().read(() => tableNode.isSelected());
       },
       COMMAND_PRIORITY_CRITICAL,
     ),

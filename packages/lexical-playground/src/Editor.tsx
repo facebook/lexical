@@ -44,6 +44,7 @@ import ImagesPlugin from './plugins/ImagesPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
+import {MaxLengthPlugin} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
@@ -147,6 +148,7 @@ export default function Editor(): JSX.Element {
     settings: {
       isCollab,
       isAutocomplete,
+      isMaxLength,
       isCharLimit,
       isCharLimitUtf8,
       isRichText,
@@ -170,6 +172,7 @@ export default function Editor(): JSX.Element {
           !isRichText ? 'plain-text' : ''
         }`}
         ref={scrollRef}>
+        {isMaxLength && <MaxLengthPlugin maxLength={30} />}
         <AutoFocusPlugin />
         <ClearEditorPlugin />
         <MentionsPlugin />

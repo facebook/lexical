@@ -159,13 +159,15 @@ export class ElementNode extends LexicalNode {
       const resolvedNode = children[childrenLength - 1];
       return (
         ($isElementNode(resolvedNode) && resolvedNode.getLastDescendant()) ||
-        resolvedNode
+        resolvedNode ||
+        null
       );
     }
     const resolvedNode = children[index];
     return (
       ($isElementNode(resolvedNode) && resolvedNode.getFirstDescendant()) ||
-      resolvedNode
+      resolvedNode ||
+      null
     );
   }
   getFirstChild<T extends LexicalNode>(): null | T {

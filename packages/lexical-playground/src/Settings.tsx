@@ -21,6 +21,7 @@ export default function Settings(): JSX.Element {
       measureTypingPerf,
       isCollab,
       isRichText,
+      isMaxLength,
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
@@ -104,6 +105,11 @@ export default function Settings(): JSX.Element {
             onClick={() => setOption('isCharLimitUtf8', !isCharLimitUtf8)}
             checked={isCharLimitUtf8}
             text="Char Limit (UTF-8)"
+          />
+          <Switch
+            onClick={() => setOption('isMaxLength', !isMaxLength)}
+            checked={isMaxLength}
+            text="Max Length"
           />
           <Switch
             onClick={() => setOption('isAutocomplete', !isAutocomplete)}

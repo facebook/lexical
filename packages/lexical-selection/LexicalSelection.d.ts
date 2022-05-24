@@ -62,7 +62,7 @@ export function $shouldOverrideDefaultCharacterSelection(
   isBackward: boolean,
 ): boolean;
 
-declare function createDOMRange(
+export declare function createDOMRange(
   editor: LexicalEditor,
   anchorNode: LexicalNode,
   anchorOffset: number,
@@ -70,7 +70,13 @@ declare function createDOMRange(
   focusOffset: number,
 ): Range | null;
 
-declare function createRectsFromDOMRange(
+export declare function createRectsFromDOMRange(
   editor: LexicalEditor,
   range: Range,
 ): Array<ClientRect>;
+
+export declare function trimTextContentFromAnchor(
+  editor: LexicalEditor,
+  anchor: Point,
+  delCount: number,
+): void;

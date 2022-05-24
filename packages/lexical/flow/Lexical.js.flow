@@ -607,7 +607,7 @@ declare export class TextNode extends LexicalNode {
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
   static getType(): string;
-  static clone(node: TextNode): TextNode;
+  static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
   getFormat(): number;
   getStyle(): string;

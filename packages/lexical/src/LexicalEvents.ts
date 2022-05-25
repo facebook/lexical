@@ -140,7 +140,7 @@ if (CAN_USE_BEFORE_INPUT) {
 
 let lastKeyDownTimeStamp = 0;
 let rootElementsRegistered = 0;
-let isSelectionChangeFromReconcile = false;
+let isSelectionChangeFromDOMUpdate = false;
 let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let collapsedSelectionFormat: [number, number, NodeKey, number] = [
@@ -174,8 +174,8 @@ function onSelectionChange(
     focusOffset,
   } = domSelection;
 
-  if (isSelectionChangeFromReconcile) {
-    isSelectionChangeFromReconcile = false;
+  if (isSelectionChangeFromDOMUpdate) {
+    isSelectionChangeFromDOMUpdate = false;
 
     // If native DOM selection is on a DOM element, then
     // we should continue as usual, as Lexical's selection
@@ -980,8 +980,8 @@ function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
   }
 }
 
-export function markSelectionChangeFromReconcile(): void {
-  isSelectionChangeFromReconcile = true;
+export function markSelectionChangeFromDOMUpdate(): void {
+  isSelectionChangeFromDOMUpdate = true;
 }
 
 export function markCollapsedSelectionFormat(

@@ -1038,3 +1038,55 @@ export function $textContentRequiresDoubleLinebreakAtEnd(
 ): boolean {
   return !$isRootNode(node) && !node.isLastChild() && !node.isInline();
 }
+
+export function getElementByKeyOrThrow(
+  editor: LexicalEditor,
+  key: NodeKey,
+): HTMLElement {
+  const element = editor._keyToDOMMap.get(key);
+
+  if (element === undefined) {
+    invariant(
+      false,
+      'Reconciliation: could not find DOM element for node key "${key}"',
+    );
+  }
+
+  return element;
+}
+
+export function scrollIntoViewIfNeeded(
+  editor: LexicalEditor,
+  anchor: PointType,
+  rootElement: HTMLElement,
+  tags: Set<string>,
+): void {
+  let anchorNode: LexicalNode = anchor.getNode();
+  if ($isElementNode(anchorNode)) {
+    const descendantNode = anchorNode.getDescendantByIndex(anchor.offset);
+    if (descendantNode !== null) {
+      anchorNode = descendantNode;
+    }
+  }
+  const element = editor.getElementByKey(anchorNode.__key) as Element;
+
+  if (element !== null) {
+    const rect = element.getBoundingClientRect();
+
+    if (rect.bottom > window.innerHeight) {
+      element.scrollIntoView(false);
+    } else if (rect.top < 0) {
+      element.scrollIntoView();
+    } else {
+      const rootRect = rootElement.getBoundingClientRect();
+
+      if (rect.bottom > rootRect.bottom) {
+        element.scrollIntoView(false);
+      } else if (rect.top < rootRect.top) {
+        element.scrollIntoView();
+      }
+    }
+
+    tags.add('scroll-into-view');
+  }
+}

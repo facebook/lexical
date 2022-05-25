@@ -13,6 +13,7 @@ import type {ParsedSelection} from './LexicalParsing';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -35,6 +36,10 @@ import {
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {
+  markCollapsedSelectionFormat,
+  markSelectionChangeFromDOMUpdate,
+} from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
 import {
   getActiveEditor,
@@ -49,9 +54,12 @@ import {
   $isTokenOrInertOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
+  getDOMTextNode,
+  getElementByKeyOrThrow,
   getNodeFromDOM,
   getTextNodeOffset,
   isSelectionWithinEditor,
+  scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
 
@@ -2536,5 +2544,131 @@ export function adjustPointOffsetForMergedSibling(
     }
   } else if (point.offset > target.getIndexWithinParent()) {
     point.offset -= 1;
+  }
+}
+
+export function updateDOMSelection(
+  prevSelection: RangeSelection | NodeSelection | GridSelection | null,
+  nextSelection: RangeSelection | NodeSelection | GridSelection | null,
+  editor: LexicalEditor,
+  domSelection: Selection,
+  tags: Set<string>,
+  rootElement: HTMLElement,
+): void {
+  const anchorDOMNode = domSelection.anchorNode;
+  const focusDOMNode = domSelection.focusNode;
+  const anchorOffset = domSelection.anchorOffset;
+  const focusOffset = domSelection.focusOffset;
+  const activeElement = document.activeElement;
+
+  // TODO: make this not hard-coded, and add another config option
+  // that makes this configurable.
+  if (tags.has('collaboration') && activeElement !== rootElement) {
+    return;
+  }
+
+  if (!$isRangeSelection(nextSelection)) {
+    // We don't remove selection if the prevSelection is null because
+    // of editor.setRootElement(). If this occurs on init when the
+    // editor is already focused, then this can cause the editor to
+    // lose focus.
+    if (
+      prevSelection !== null &&
+      isSelectionWithinEditor(editor, anchorDOMNode, focusDOMNode)
+    ) {
+      domSelection.removeAllRanges();
+    }
+
+    return;
+  }
+
+  const anchor = nextSelection.anchor;
+  const focus = nextSelection.focus;
+  const anchorKey = anchor.key;
+  const focusKey = focus.key;
+  const anchorDOM = getElementByKeyOrThrow(editor, anchorKey);
+  const focusDOM = getElementByKeyOrThrow(editor, focusKey);
+  const nextAnchorOffset = anchor.offset;
+  const nextFocusOffset = focus.offset;
+  const nextFormat = nextSelection.format;
+  const isCollapsed = nextSelection.isCollapsed();
+  let nextAnchorNode: HTMLElement | Text = anchorDOM;
+  let nextFocusNode: HTMLElement | Text = focusDOM;
+  let anchorFormatChanged = false;
+
+  if (anchor.type === 'text') {
+    nextAnchorNode = getDOMTextNode(anchorDOM);
+    anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
+  }
+
+  if (focus.type === 'text') {
+    nextFocusNode = getDOMTextNode(focusDOM);
+  }
+
+  // If we can't get an underlying text node for selection, then
+  // we should avoid setting selection to something incorrect.
+  if (nextAnchorNode === null || nextFocusNode === null) {
+    return;
+  }
+
+  if (
+    isCollapsed &&
+    (prevSelection === null ||
+      anchorFormatChanged ||
+      ($isRangeSelection(prevSelection) && prevSelection.format !== nextFormat))
+  ) {
+    markCollapsedSelectionFormat(
+      nextFormat,
+      nextAnchorOffset,
+      anchorKey,
+      performance.now(),
+    );
+  }
+
+  // Diff against the native DOM selection to ensure we don't do
+  // an unnecessary selection update. We also skip this check if
+  // we're moving selection to within an element, as this can
+  // sometimes be problematic around scrolling.
+  if (
+    anchorOffset === nextAnchorOffset &&
+    focusOffset === nextFocusOffset &&
+    anchorDOMNode === nextAnchorNode &&
+    focusDOMNode === nextFocusNode && // Badly interpreted range selection when collapsed - #1482
+    !(domSelection.type === 'Range' && isCollapsed)
+  ) {
+    // If the root element does not have focus, ensure it has focus
+    if (activeElement === null || !rootElement.contains(activeElement)) {
+      rootElement.focus({
+        preventScroll: true,
+      });
+    }
+
+    // In Safari/iOS if we have selection on an element, then we also
+    // need to additionally set the DOM selection, otherwise a selectionchange
+    // event will not fire.
+    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
+      return;
+    }
+  }
+
+  // Apply the updated selection to the DOM. Note: this will trigger
+  // a "selectionchange" event, although it will be asynchronous.
+  try {
+    domSelection.setBaseAndExtent(
+      nextAnchorNode,
+      nextAnchorOffset,
+      nextFocusNode,
+      nextFocusOffset,
+    );
+
+    if (nextSelection.isCollapsed() && rootElement === activeElement) {
+      scrollIntoViewIfNeeded(editor, anchor, rootElement, tags);
+    }
+
+    markSelectionChangeFromDOMUpdate();
+  } catch (error) {
+    // If we encounter an error, continue. This can sometimes
+    // occur with FF and there's no good reason as to why it
+    // should happen.
   }
 }

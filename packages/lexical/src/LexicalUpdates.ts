@@ -22,6 +22,7 @@ import type {
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 import type {NodeParserState, ParsedNode} from './LexicalParsing';
 
+import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {$isElementNode, $isTextNode} from '.';
@@ -40,13 +41,14 @@ import {
 import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {internalCreateNodeFromParse} from './LexicalParsing';
-import {updateEditorState} from './LexicalReconciler';
+import {reconcileRoot} from './LexicalReconciler';
 import {
   $isNodeSelection,
   $isRangeSelection,
   applySelectionTransforms,
   internalCreateSelection,
   internalCreateSelectionFromParse,
+  updateDOMSelection,
 } from './LexicalSelection';
 import {
   $getCompositionKey,
@@ -459,63 +461,69 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     return;
   }
 
+  // ======
+  // Reconcilation has started.
+  // ======
+
   const currentEditorState = editor._editorState;
   const currentSelection = currentEditorState._selection;
   const pendingSelection = pendingEditorState._selection;
   const needsUpdate = editor._dirtyType !== NO_DIRTY_NODES;
-  editor._pendingEditorState = null;
-  editor._editorState = pendingEditorState;
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;
   const previousActiveEditor = activeEditor;
   const previouslyUpdating = editor._updating;
-  activeEditor = editor;
-  activeEditorState = pendingEditorState;
-  isReadOnlyMode = false;
-  // We don't want updates to sync block the reconcilation.
-  editor._updating = true;
+  const observer = editor._observer;
+  let mutatedNodes = null;
+  editor._pendingEditorState = null;
+  editor._editorState = pendingEditorState;
 
-  try {
-    if (!headless && rootElement !== null) {
-      const mutatedNodes = updateEditorState(
-        rootElement,
+  if (!headless && needsUpdate && observer !== null) {
+    activeEditor = editor;
+    activeEditorState = pendingEditorState;
+    isReadOnlyMode = false;
+    // We don't want updates to sync block the reconcilation.
+    editor._updating = true;
+    try {
+      const dirtyType = editor._dirtyType;
+      const dirtyElements = editor._dirtyElements;
+      const dirtyLeaves = editor._dirtyLeaves;
+      observer.disconnect();
+
+      mutatedNodes = reconcileRoot(
         currentEditorState,
         pendingEditorState,
-        currentSelection,
-        pendingSelection,
-        needsUpdate,
         editor,
+        dirtyType,
+        dirtyElements,
+        dirtyLeaves,
       );
+    } catch (error) {
+      // Report errors
+      editor._onError(error);
 
-      if (mutatedNodes !== null) {
-        triggerMutationListeners(
-          editor,
-          currentEditorState,
-          pendingEditorState,
-          mutatedNodes,
-        );
+      // Reset editor and restore incoming editor state to the DOM
+      if (!isAttemptingToRecoverFromReconcilerError) {
+        resetEditor(editor, null, rootElement, pendingEditorState);
+        initMutationObserver(editor);
+        editor._dirtyType = FULL_RECONCILE;
+        isAttemptingToRecoverFromReconcilerError = true;
+        commitPendingUpdates(editor);
+        isAttemptingToRecoverFromReconcilerError = false;
       }
-    }
-  } catch (error) {
-    // Report errors
-    editor._onError(error);
 
-    // Reset editor and restore incoming editor state to the DOM
-    if (!isAttemptingToRecoverFromReconcilerError) {
-      resetEditor(editor, null, rootElement, pendingEditorState);
-      initMutationObserver(editor);
-      editor._dirtyType = FULL_RECONCILE;
-      isAttemptingToRecoverFromReconcilerError = true;
-      commitPendingUpdates(editor);
-      isAttemptingToRecoverFromReconcilerError = false;
+      return;
+    } finally {
+      observer.observe(rootElement, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+      });
+      editor._updating = previouslyUpdating;
+      activeEditorState = previousActiveEditorState;
+      isReadOnlyMode = previousReadOnlyMode;
+      activeEditor = previousActiveEditor;
     }
-
-    return;
-  } finally {
-    editor._updating = previouslyUpdating;
-    activeEditorState = previousActiveEditorState;
-    isReadOnlyMode = previousReadOnlyMode;
-    activeEditor = previousActiveEditor;
   }
 
   pendingEditorState._readOnly = true;
@@ -523,12 +531,19 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // @ts-ignore
   if (__DEV__) {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
+    if ($isRangeSelection(pendingSelection)) {
+      Object.freeze(pendingSelection.anchor);
+      Object.freeze(pendingSelection.focus);
+    }
+    Object.freeze(pendingSelection);
   }
 
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
+  const pendingDecorators = editor._pendingDecorators;
+  const deferred = editor._deferred;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -538,9 +553,45 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     editor._normalizedNodes = new Set();
     editor._updateTags = new Set();
   }
-
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
-  const pendingDecorators = editor._pendingDecorators;
+
+  // ======
+  // Reconcilation has finished. Now update selection and trigger listeners.
+  // ======
+
+  const domSelection = headless ? null : getDOMSelection();
+
+  // Attempt to update the DOM selection, including focusing of the root element,
+  // and scroll into view if needed.
+  if (
+    !editor._readOnly &&
+    // domSelection will be null in headless
+    domSelection !== null &&
+    (needsUpdate || pendingSelection === null || pendingSelection.dirty)
+  ) {
+    activeEditorState = pendingEditorState;
+    try {
+      updateDOMSelection(
+        currentSelection,
+        pendingSelection,
+        editor,
+        domSelection,
+        tags,
+        rootElement,
+      );
+    } finally {
+      activeEditorState = previousActiveEditorState;
+    }
+  }
+
+  if (mutatedNodes !== null) {
+    triggerMutationListeners(
+      editor,
+      currentEditorState,
+      pendingEditorState,
+      mutatedNodes,
+    );
+  }
 
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
@@ -557,7 +608,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     prevEditorState: currentEditorState,
     tags,
   });
-  triggerDeferredUpdateCallbacks(editor);
+  triggerDeferredUpdateCallbacks(editor, deferred);
   triggerEnqueuedUpdates(editor);
 }
 
@@ -658,8 +709,10 @@ function triggerEnqueuedUpdates(editor: LexicalEditor): void {
   }
 }
 
-function triggerDeferredUpdateCallbacks(editor: LexicalEditor): void {
-  const deferred = editor._deferred;
+function triggerDeferredUpdateCallbacks(
+  editor: LexicalEditor,
+  deferred: Array<() => void>,
+): void {
   editor._deferred = [];
 
   if (deferred.length !== 0) {

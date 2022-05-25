@@ -393,12 +393,11 @@ export function $restoreEditorState(
   editor: LexicalEditor,
   editorState: EditorState,
 ): void {
+  const FULL_RECONCILE = 2;
   const nodeMap = new Map(editorState._nodeMap);
   const activeEditorState = editor._pendingEditorState;
   activeEditorState._nodeMap = nodeMap;
-  for (const [, node] of nodeMap) {
-    node.markDirty();
-  }
+  editor._dirtyType = FULL_RECONCILE;
   const selection = editorState._selection;
   $setSelection(selection === null ? null : selection.clone());
 }

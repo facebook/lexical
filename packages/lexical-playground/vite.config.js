@@ -170,6 +170,7 @@ export default defineConfig({
       babelrc: false,
       configFile: false,
       exclude: '/**/node_modules/**',
+      extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
       plugins: [
         '@babel/plugin-transform-flow-strip-types',
         [

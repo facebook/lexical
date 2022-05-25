@@ -58,3 +58,8 @@ declare export function unstable_convertLegacyJSONEditorState(
   editor: LexicalEditor,
   maybeStringifiedEditorState: string,
 ): EditorState;
+
+declare export function $restoreEditorState(
+  editor: LexicalEditor,
+  editorState: EditorState,
+): void;

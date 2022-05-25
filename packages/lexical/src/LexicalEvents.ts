@@ -55,6 +55,8 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  MOVE_TO_END,
+  MOVE_TO_START,
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -98,6 +100,8 @@ import {
   isMoveBackward,
   isMoveDown,
   isMoveForward,
+  isMoveToEnd,
+  isMoveToStart,
   isMoveUp,
   isOpenLineBreak,
   isParagraph,
@@ -749,8 +753,12 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
 
   if (isMoveForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
+  } else if (isMoveToEnd(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+    dispatchCommand(editor, MOVE_TO_END, event);
   } else if (isMoveBackward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_LEFT_COMMAND, event);
+  } else if (isMoveToStart(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+    dispatchCommand(editor, MOVE_TO_START, event);
   } else if (isMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_UP_COMMAND, event);
   } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {

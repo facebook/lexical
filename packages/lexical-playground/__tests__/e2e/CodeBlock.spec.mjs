@@ -6,7 +6,11 @@
  *
  */
 
-import {moveToEditorBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  moveToEditorBeginning,
+  selectAll,
+  selectCharacters,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -14,6 +18,8 @@ import {
   focusEditor,
   html,
   initialize,
+  moveToEnd,
+  moveToStart,
   pasteFromClipboard,
   selectOption,
   test,
@@ -1009,5 +1015,86 @@ test.describe('CodeBlock', () => {
       });
       await assertHTML(page, testCase.expectedHTML);
     });
+  });
+
+  test('When pressing CMD/Ctrl + Left, CMD/Ctrl + Right, the cursor should go to the start of the code', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('``` ');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('a b');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('c d');
+    await page.keyboard.press('Space');
+    await assertHTML(
+      page,
+      `
+      <code
+        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+        dir="ltr"
+        spellcheck="false"
+        data-gutter="12"
+        data-highlight-language="javascript">
+        <span data-lexical-text="true">a b</span>
+        <br />
+        <span data-lexical-text="true">c d</span>
+      </code>
+    `,
+    );
+
+    await selectCharacters(page, 'left', 13);
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 2, 0],
+      focusOffset: 0,
+      focusPath: [0, 0, 0],
+    });
+
+    await moveToStart(page);
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [0, 0, 0],
+      focusOffset: 2,
+      focusPath: [0, 0, 0],
+    });
+
+    await moveToEnd(page);
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 0, 0],
+    });
+
+    await moveToStart(page);
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [0, 0, 0],
+      focusOffset: 2,
+      focusPath: [0, 0, 0],
+    });
+
+    await selectCharacters(page, 'right', 11);
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [0, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 2, 0],
+    });
+
+    await moveToEnd(page);
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 2, 0],
+      focusOffset: 5,
+      focusPath: [0, 2, 0],
+    });
+
+    await page.pause();
   });
 });

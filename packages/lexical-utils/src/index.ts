@@ -14,7 +14,13 @@ import type {
   NodeKey,
 } from 'lexical';
 
-import {$getRoot, $isElementNode, $isTextNode, createEditor} from 'lexical';
+import {
+  $getRoot,
+  $isElementNode,
+  $isTextNode,
+  $setSelection,
+  createEditor,
+} from 'lexical';
 import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
 
@@ -381,4 +387,18 @@ export function unstable_convertLegacyJSONEditorState(
       ? JSON.parse(maybeStringifiedEditorState)
       : maybeStringifiedEditorState;
   return unstable_parseEditorState(parsedEditorState, editor);
+}
+
+export function $restoreEditorState(
+  editor: LexicalEditor,
+  editorState: EditorState,
+): void {
+  const nodeMap = new Map(editorState._nodeMap);
+  const activeEditorState = editor._pendingEditorState;
+  activeEditorState._nodeMap = nodeMap;
+  for (const [, node] of nodeMap) {
+    node.markDirty();
+  }
+  const selection = editorState._selection;
+  $setSelection(selection === null ? null : selection.clone());
 }

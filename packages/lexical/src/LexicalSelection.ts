@@ -740,7 +740,7 @@ export class RangeSelection implements BaseSelection {
     const endPoint = isBefore ? focus : anchor;
     const startOffset = firstPoint.offset;
     const endOffset = endPoint.offset;
-    let firstNode: TextNode | LexicalNode = selectedNodes[0];
+    let firstNode: TextNode = selectedNodes[0] as TextNode;
 
     if (!$isTextNode(firstNode)) {
       invariant(false, 'insertText: first node is not a text node');

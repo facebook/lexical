@@ -157,8 +157,8 @@ export function $isTokenOrInertOrSegmented(node: TextNode): boolean {
   return $isTokenOrInert(node) || node.isSegmented();
 }
 
-export function $isTokenOrInert(node: TextNode | LexicalNode): boolean {
-  return $isTextNode(node) && (node.isToken() || node.isInert());
+export function $isTokenOrInert(node: TextNode): boolean {
+  return node.isToken() || node.isInert();
 }
 
 export function getDOMTextNode(element: Node | null): Text | null {

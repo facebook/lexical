@@ -2563,10 +2563,7 @@ export function updateDOMSelection(
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
-  if (
-    tags.has('collaboration') &&
-    activeElement !== rootElement
-  ) {
+  if (tags.has('collaboration') && activeElement !== rootElement) {
     return;
   }
 
@@ -2668,7 +2665,7 @@ export function updateDOMSelection(
     );
 
     if (nextSelection.isCollapsed() && rootElement === activeElement) {
-      scrollIntoViewIfNeeded(editor, nextAnchorNode, rootElement, tags);
+      scrollIntoViewIfNeeded(editor, anchor, rootElement, tags);
     }
 
     markSelectionChangeFromDOMUpdate();

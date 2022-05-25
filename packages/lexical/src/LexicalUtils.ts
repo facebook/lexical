@@ -1054,13 +1054,16 @@ export function getElementByKeyOrThrow(
 
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
-  node: Node,
+  anchor: PointType,
   rootElement: HTMLElement | null | undefined,
   tags: Set<string>,
 ): void {
-  const element = (
-    node.nodeType === DOM_TEXT_TYPE ? node.parentNode : node
-  ) as Element;
+  let anchorNode = anchor.getNode();
+  const descendantNode = anchorNode.getDescendantByIndex(anchor.offset);
+  if (descendantNode !== null) {
+    anchorNode = descendantNode;
+  }
+  const element = editor.getElementByKey(anchorNode.__key) as Element;
 
   if (element !== null) {
     const rect = element.getBoundingClientRect();

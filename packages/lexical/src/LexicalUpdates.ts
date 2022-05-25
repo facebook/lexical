@@ -36,7 +36,7 @@ import {
 } from './LexicalGC';
 import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
-import { reconcileRoot } from './LexicalReconciler';
+import {reconcileRoot} from './LexicalReconciler';
 import {
   $isNodeSelection,
   $isRangeSelection,
@@ -268,7 +268,7 @@ type InternalSerializedNode = {
   children?: Array<InternalSerializedNode>;
   type: string;
   version: number;
-}
+};
 
 export function $parseSerializedNode(
   serializedNode: SerializedLexicalNode,

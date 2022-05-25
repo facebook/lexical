@@ -382,4 +382,3 @@ function $mergeGridNodesStrategy(
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 }
-

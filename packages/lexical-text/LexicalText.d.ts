@@ -39,7 +39,7 @@ export function $isRootTextContentEmptyCurry(
   isEditorComposing: boolean,
   trim?: boolean,
 ): () => boolean;
-export function $rootTextContentCurry(): string;
+export function $rootTextContent(): string;
 export function $canShowPlaceholder(isComposing: boolean): boolean;
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,

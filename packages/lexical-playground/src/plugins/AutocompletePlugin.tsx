@@ -9,7 +9,7 @@
 import type {LexicalEditor, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$rootTextContentCurry} from '@lexical/text';
+import {$rootTextContent} from '@lexical/text';
 import {
   $getNodeByKey,
   $getRoot,
@@ -26,7 +26,7 @@ import {$createTypeaheadNode, TypeaheadNode} from '../nodes/TypeaheadNode';
 function useTypeahead(editor: LexicalEditor): void {
   const typeaheadNodeKey = useRef<NodeKey | null>(null);
   const [text, setText] = useState<string>(
-    editor.getEditorState().read($rootTextContentCurry),
+    editor.getEditorState().read($rootTextContent),
   );
   const [selectionCollapsed, $setSelectionCollapsed] = useState<boolean>(false);
   const server = useMemo(() => new TypeaheadServer(), []);

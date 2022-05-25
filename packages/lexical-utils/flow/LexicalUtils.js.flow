@@ -6,7 +6,7 @@
  *
  * @flow strict
  */
-import type {LexicalEditor, LexicalNode, ElementNode} from 'lexical';
+import type {EditorState, LexicalEditor, LexicalNode, ElementNode} from 'lexical';
 export type DFSNode = $ReadOnly<{
   depth: number,
   node: LexicalNode,
@@ -48,3 +48,8 @@ declare export function registerNestedElementResolver<N: ElementNode>(
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void;
+
+declare export function unsupported_convertLegacyJSONEditorState(
+  editor: LexicalEditor,
+  maybeStringifiedEditorState: string,
+): EditorState;

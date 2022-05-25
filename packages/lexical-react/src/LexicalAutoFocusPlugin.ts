@@ -7,7 +7,6 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {unsupported_convertLegacyJSONEditorState} from '@lexical/utils';
 import {useEffect} from 'react';
 
 export function AutoFocusPlugin(): null {
@@ -15,14 +14,6 @@ export function AutoFocusPlugin(): null {
 
   useEffect(() => {
     editor.focus();
-    return editor.registerUpdateListener(({editorState}) => {
-      const json = JSON.stringify(editorState);
-      const newEditorState = unsupported_convertLegacyJSONEditorState(
-        editor,
-        json,
-      );
-      console.log(newEditorState);
-    });
   }, [editor]);
 
   return null;

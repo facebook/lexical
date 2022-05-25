@@ -980,7 +980,7 @@ export function trimTextContentFromAnchor(
           }
           return null;
         });
-      if (prevTextContent !== null) {
+      if (prevTextContent !== null && prevTextContent !== text) {
         const prevSelection = $getPreviousSelection();
         let target = currentNode;
         if (!currentNode.isSimpleText()) {

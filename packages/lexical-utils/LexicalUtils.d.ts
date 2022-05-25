@@ -8,7 +8,12 @@
 
 import {Class} from 'utility-types';
 
-import type {LexicalNode, ElementNode, LexicalEditor} from 'lexical';
+import type {
+  EditorState,
+  LexicalNode,
+  ElementNode,
+  LexicalEditor,
+} from 'lexical';
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -54,3 +59,8 @@ declare function registerNestedElementResolver<N>(
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void;
+
+export declare function unstable_convertLegacyJSONEditorState(
+  editor: LexicalEditor,
+  maybeStringifiedEditorState: string,
+): EditorState;

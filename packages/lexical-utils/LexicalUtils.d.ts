@@ -8,7 +8,12 @@
 
 import {Class} from 'utility-types';
 
-import type {EditorState, LexicalNode, ElementNode, LexicalEditor} from 'lexical';
+import type {
+  EditorState,
+  LexicalNode,
+  ElementNode,
+  LexicalEditor,
+} from 'lexical';
 
 export type DFSNode = Readonly<{
   depth: number;

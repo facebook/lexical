@@ -1295,9 +1295,7 @@ describe('LexicalEditor tests', () => {
         paragraph.append($createTextNode('Hello world'));
         root.append(paragraph);
       });
-      const stringifiedEditorState = JSON.stringify(
-        editor.getEditorState().unstable_toJSON(),
-      );
+      const stringifiedEditorState = JSON.stringify(editor.getEditorState());
       const parsedEditorStateJson = JSON.parse(stringifiedEditorState);
       const rootJson = parsedEditorStateJson.root;
       await update(() => {

@@ -21,14 +21,13 @@ export function useCanShowPlaceholder(editor: LexicalEditor): boolean {
   );
 
   useLayoutEffect(() => {
-    const isComposing = editor.isComposing();
-    const currentCanShowPlaceholder = editor.getEditorState().read(
-      $canShowPlaceholderCurry(isComposing),
-    );
+    let currentCanShowPlaceholder = editor
+      .getEditorState()
+      .read($canShowPlaceholderCurry(editor.isComposing()));
     setCanShowPlaceholder(currentCanShowPlaceholder);
     return editor.registerUpdateListener(({editorState}) => {
       const isComposing = editor.isComposing();
-      const currentCanShowPlaceholder = editorState.read(
+      currentCanShowPlaceholder = editorState.read(
         $canShowPlaceholderCurry(isComposing),
       );
       setCanShowPlaceholder(currentCanShowPlaceholder);

@@ -2553,13 +2553,13 @@ export function updateDOMSelection(
   editor: LexicalEditor,
   domSelection: Selection,
   tags: Set<string>,
+  rootElement: HTMLElement,
 ): void {
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;
   const anchorOffset = domSelection.anchorOffset;
   const focusOffset = domSelection.focusOffset;
   const activeElement = document.activeElement;
-  const rootElement = editor._rootElement;
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
@@ -2637,10 +2637,7 @@ export function updateDOMSelection(
     !(domSelection.type === 'Range' && isCollapsed)
   ) {
     // If the root element does not have focus, ensure it has focus
-    if (
-      rootElement !== null &&
-      (activeElement === null || !rootElement.contains(activeElement))
-    ) {
+    if (activeElement === null || !rootElement.contains(activeElement)) {
       rootElement.focus({
         preventScroll: true,
       });

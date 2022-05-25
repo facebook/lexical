@@ -1055,7 +1055,7 @@ export function getElementByKeyOrThrow(
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   anchor: PointType,
-  rootElement: HTMLElement | null | undefined,
+  rootElement: HTMLElement,
   tags: Set<string>,
 ): void {
   let anchorNode: LexicalNode = anchor.getNode();
@@ -1074,7 +1074,7 @@ export function scrollIntoViewIfNeeded(
       element.scrollIntoView(false);
     } else if (rect.top < 0) {
       element.scrollIntoView();
-    } else if (rootElement) {
+    } else {
       const rootRect = rootElement.getBoundingClientRect();
 
       if (rect.bottom > rootRect.bottom) {

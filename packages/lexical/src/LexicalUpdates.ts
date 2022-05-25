@@ -541,6 +541,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
+  const pendingDecorators = editor._pendingDecorators;
+  const deferred = editor._deferred;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -590,7 +592,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     );
   }
 
-  const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
@@ -606,7 +607,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     prevEditorState: currentEditorState,
     tags,
   });
-  triggerDeferredUpdateCallbacks(editor);
+  triggerDeferredUpdateCallbacks(editor, deferred);
   triggerEnqueuedUpdates(editor);
 }
 
@@ -708,8 +709,10 @@ function triggerEnqueuedUpdates(editor: LexicalEditor): void {
   }
 }
 
-function triggerDeferredUpdateCallbacks(editor: LexicalEditor): void {
-  const deferred = editor._deferred;
+function triggerDeferredUpdateCallbacks(
+  editor: LexicalEditor,
+  deferred: Array<() => void>,
+): void {
   editor._deferred = [];
 
   if (deferred.length !== 0) {

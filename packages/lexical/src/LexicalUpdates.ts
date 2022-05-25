@@ -569,6 +569,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)
   ) {
+    activeEditor = editor;
     activeEditorState = pendingEditorState;
     try {
       updateDOMSelection(
@@ -580,6 +581,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         rootElement,
       );
     } finally {
+      activeEditor = previousActiveEditor;
       activeEditorState = previousActiveEditorState;
     }
   }

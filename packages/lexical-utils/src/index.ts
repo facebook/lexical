@@ -243,7 +243,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ParseObject = any;
 
-function unsupported_internalCreateNodeFromParse(
+function unstable_internalCreateNodeFromParse(
   parsedNode: ParseObject,
   parsedNodeMap: Map<string, ParseObject>,
   editor: LexicalEditor,
@@ -269,7 +269,7 @@ function unsupported_internalCreateNodeFromParse(
         nestedEditor._nodes = editor._nodes;
         nestedEditor._parentEditor = editor._parentEditor;
         nestedEditor._pendingEditorState =
-          unsupported_convertLegacyJSONEditorState(
+          unstable_convertLegacyJSONEditorState(
             nestedEditor,
             parsedEditorState,
           );
@@ -301,7 +301,7 @@ function unsupported_internalCreateNodeFromParse(
       const parsedChild = parsedNodeMap.get(childKey);
 
       if (parsedChild !== undefined) {
-        const child = unsupported_internalCreateNodeFromParse(
+        const child = unstable_internalCreateNodeFromParse(
           parsedChild,
           parsedNodeMap,
           editor,
@@ -326,7 +326,7 @@ function unsupported_internalCreateNodeFromParse(
   return node;
 }
 
-function unsupported_parseEditorState(
+function unstable_parseEditorState(
   parsedEditorState: ParseObject,
   editor: LexicalEditor,
 ): EditorState {
@@ -351,7 +351,7 @@ function unsupported_parseEditorState(
       editor._dirtyLeaves = new Set();
       editor._dirtyType = 0;
       try {
-        unsupported_internalCreateNodeFromParse(
+        unstable_internalCreateNodeFromParse(
           parsedRoot,
           parsedNodeMap,
           editor,
@@ -371,7 +371,8 @@ function unsupported_parseEditorState(
   return editorState;
 }
 
-export function unsupported_convertLegacyJSONEditorState(
+// TODO: remove this function in version 0.4
+export function unstable_convertLegacyJSONEditorState(
   editor: LexicalEditor,
   maybeStringifiedEditorState: string,
 ): EditorState {
@@ -379,5 +380,5 @@ export function unsupported_convertLegacyJSONEditorState(
     typeof maybeStringifiedEditorState === 'string'
       ? JSON.parse(maybeStringifiedEditorState)
       : maybeStringifiedEditorState;
-  return unsupported_parseEditorState(parsedEditorState, editor);
+  return unstable_parseEditorState(parsedEditorState, editor);
 }

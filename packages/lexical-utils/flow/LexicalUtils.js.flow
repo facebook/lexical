@@ -54,7 +54,7 @@ declare export function registerNestedElementResolver<N: ElementNode>(
   handleOverlap: (from: N, to: N) => void,
 ): () => void;
 
-declare export function unsupported_convertLegacyJSONEditorState(
+declare export function unstable_convertLegacyJSONEditorState(
   editor: LexicalEditor,
   maybeStringifiedEditorState: string,
 ): EditorState;

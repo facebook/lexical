@@ -192,6 +192,26 @@ function getChangeType(
   return OTHER;
 }
 
+function isTextNodeUnchanged(
+  key: NodeKey,
+  prevEditorState: EditorState,
+  nextEditorState: EditorState,
+): boolean {
+  const prevNode = prevEditorState._nodeMap.get(key);
+  const nextNode = nextEditorState._nodeMap.get(key);
+  if ($isTextNode(prevNode) && $isTextNode(nextNode)) {
+    return (
+      prevNode.__type === nextNode.__type &&
+      prevNode.__text === nextNode.__text &&
+      prevNode.__mode === nextNode.__mode &&
+      prevNode.__detail === nextNode.__detail &&
+      prevNode.__style === nextNode.__style &&
+      prevNode.__format === nextNode.__format
+    );
+  }
+  return false;
+}
+
 function createMergeActionGetter(
   editor: LexicalEditor,
   delay: number,
@@ -268,6 +288,17 @@ function createMergeActionGetter(
         isSameEditor
       ) {
         return HISTORY_MERGE;
+      }
+
+      // A single node might have been marked as dirty, but not have changed
+      // due to some node transform reverting the change.
+      if (dirtyLeaves.size === 1) {
+        const dirtyLeafKey = Array.from(dirtyLeaves)[0];
+        if (
+          isTextNodeUnchanged(dirtyLeafKey, prevEditorState, nextEditorState)
+        ) {
+          return HISTORY_MERGE;
+        }
       }
 
       return HISTORY_PUSH;

@@ -712,3 +712,27 @@ export async function dragImage(page, selector, position = 'middle') {
     position,
   );
 }
+
+export async function moveToStart(page) {
+  if (IS_MAC) {
+    await page.keyboard.down('Meta');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.up('Meta');
+  } else {
+    await page.keyboard.down('Control');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.up('Control');
+  }
+}
+
+export async function moveToEnd(page) {
+  if (IS_MAC) {
+    await page.keyboard.down('Meta');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.up('Meta');
+  } else {
+    await page.keyboard.down('Control');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.up('Control');
+  }
+}

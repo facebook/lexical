@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import type {ElementFormatType, NodeKey} from 'lexical';
@@ -14,5 +13,4 @@ type Props = Readonly<{
   format: ElementFormatType | null;
   nodeKey: NodeKey;
 }>;
-
-declare function BlockWithAlignableContents(Props): JSX.Element;
+declare function BlockWithAlignableContents(arg0: Props): JSX.Element;

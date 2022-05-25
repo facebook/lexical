@@ -4,10 +4,19 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
-import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
+
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+  SerializedElementNode,
+} from 'lexical';
+
 import {ElementNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
+
 export declare class OverflowNode extends ElementNode {
   static getType(): string;
   static clone(node: OverflowNode): OverflowNode;
@@ -16,6 +25,16 @@ export declare class OverflowNode extends ElementNode {
   updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   excludeFromCopy(): boolean;
+  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode;
+  exportJSON(): SerializedElementNode;
 }
+
 export function $createOverflowNode(): OverflowNode;
 export function $isOverflowNode(node: LexicalNode | null): node is OverflowNode;
+
+export type SerializedOverflowNode = Spread<
+  {
+    type: 'overflow';
+  },
+  SerializedElementNode
+>;

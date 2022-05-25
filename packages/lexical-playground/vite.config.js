@@ -9,7 +9,6 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import {resolve} from 'path';
-import {flowPlugin, esbuildFlowPlugin} from '@bunchtogether/vite-plugin-flow';
 import path from 'path';
 import fs from 'fs';
 import {replaceCodePlugin} from 'vite-plugin-replace';
@@ -18,19 +17,27 @@ import babel from '@rollup/plugin-babel';
 const moduleResolution = [
   {
     find: /lexical$/,
-    replacement: path.resolve('../lexical/src/index.js'),
+    replacement: path.resolve('../lexical/src/index.ts'),
   },
   {
     find: '@lexical/clipboard',
-    replacement: path.resolve('../lexical-clipboard/src/index.js'),
+    replacement: path.resolve('../lexical-clipboard/src/index.ts'),
   },
   {
     find: '@lexical/selection',
-    replacement: path.resolve('../lexical-selection/src/index.js'),
+    replacement: path.resolve('../lexical-selection/src/index.ts'),
   },
   {
     find: '@lexical/text',
-    replacement: path.resolve('../lexical-text/src/index.js'),
+    replacement: path.resolve('../lexical-text/src/index.ts'),
+  },
+  {
+    find: '@lexical/headless',
+    replacement: path.resolve('../lexical-headless/src/index.ts'),
+  },
+  {
+    find: '@lexical/html',
+    replacement: path.resolve('../lexical-html/src/index.ts'),
   },
   {
     find: '@lexical/hashtag',
@@ -42,7 +49,7 @@ const moduleResolution = [
   },
   {
     find: '@lexical/list',
-    replacement: path.resolve('../lexical-list/src/index.js'),
+    replacement: path.resolve('../lexical-list/src/index.ts'),
   },
   {
     find: '@lexical/file',
@@ -50,15 +57,15 @@ const moduleResolution = [
   },
   {
     find: '@lexical/table',
-    replacement: path.resolve('../lexical-table/src/index.js'),
+    replacement: path.resolve('../lexical-table/src/index.ts'),
   },
   {
     find: '@lexical/offset',
-    replacement: path.resolve('../lexical-offset/src/index.js'),
+    replacement: path.resolve('../lexical-offset/src/index.ts'),
   },
   {
     find: '@lexical/utils',
-    replacement: path.resolve('../lexical-utils/src/index.js'),
+    replacement: path.resolve('../lexical-utils/src/index.ts'),
   },
   {
     find: '@lexical/code',
@@ -78,15 +85,15 @@ const moduleResolution = [
   },
   {
     find: '@lexical/link',
-    replacement: path.resolve('../lexical-link/src/index.js'),
+    replacement: path.resolve('../lexical-link/src/index.ts'),
   },
   {
     find: '@lexical/overflow',
-    replacement: path.resolve('../lexical-overflow/src/index.js'),
+    replacement: path.resolve('../lexical-overflow/src/index.ts'),
   },
   {
     find: '@lexical/markdown',
-    replacement: path.resolve('../lexical-markdown/src/index.js'),
+    replacement: path.resolve('../lexical-markdown/src/index.ts'),
   },
   {
     find: '@lexical/mark',
@@ -94,15 +101,11 @@ const moduleResolution = [
   },
   {
     find: '@lexical/yjs',
-    replacement: path.resolve('../lexical-yjs/src/index.js'),
+    replacement: path.resolve('../lexical-yjs/src/index.ts'),
   },
   {
     find: 'shared',
     replacement: path.resolve('../shared/src'),
-  },
-  {
-    find: 'shared-ts',
-    replacement: path.resolve('../shared-ts/src'),
   },
 ];
 // Lexical React
@@ -135,7 +138,7 @@ const moduleResolution = [
   'LexicalOnChangePlugin',
   'LexicalAutoScrollPlugin',
 ].forEach((module) => {
-  let resolvedPath = path.resolve(`../lexical-react/src/${module}.js`);
+  let resolvedPath = path.resolve(`../lexical-react/src/${module}.ts`);
 
   if (fs.existsSync(resolvedPath)) {
     moduleResolution.push({
@@ -143,7 +146,7 @@ const moduleResolution = [
       replacement: resolvedPath,
     });
   } else {
-    resolvedPath = path.resolve(`../lexical-react/src/${module}.jsx`);
+    resolvedPath = path.resolve(`../lexical-react/src/${module}.tsx`);
     moduleResolution.push({
       find: `@lexical/react/${module}`,
       replacement: resolvedPath,
@@ -153,11 +156,6 @@ const moduleResolution = [
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  optimizeDeps: {
-    esbuildOptions: {
-      plugins: [esbuildFlowPlugin()],
-    },
-  },
   plugins: [
     replaceCodePlugin({
       replacements: [
@@ -172,6 +170,7 @@ export default defineConfig({
       babelrc: false,
       configFile: false,
       exclude: '/**/node_modules/**',
+      extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
       plugins: [
         '@babel/plugin-transform-flow-strip-types',
         [
@@ -183,7 +182,6 @@ export default defineConfig({
       ],
       presets: ['@babel/preset-react'],
     }),
-    flowPlugin(),
     react(),
   ],
   resolve: {

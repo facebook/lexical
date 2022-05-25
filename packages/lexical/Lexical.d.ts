@@ -6,20 +6,23 @@
  *
  */
 
-import {Class, $ReadOnly} from 'utility-types';
+import {Spread} from 'libdefs/globals';
+import {Class} from 'utility-types';
 
 /**
  * LexicalCommands
  */
 
-export type LexicalCommand<P> = $ReadOnly<{}>;
+export type LexicalCommand<P> = Readonly<{}>;
 
 export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
 export var DELETE_CHARACTER_COMMAND: LexicalCommand<boolean>;
 export var INSERT_LINE_BREAK_COMMAND: LexicalCommand<boolean>;
 export var INSERT_PARAGRAPH_COMMAND: LexicalCommand<void>;
-export var INSERT_TEXT_COMMAND: LexicalCommand<InputEvent | string>;
+export var CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
+  InputEvent | string
+>;
 export var PASTE_COMMAND: LexicalCommand<ClipboardEvent>;
 export var REMOVE_TEXT_COMMAND: LexicalCommand<void>;
 export var DELETE_WORD_COMMAND: LexicalCommand<boolean>;
@@ -28,7 +31,9 @@ export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
 export var UNDO_COMMAND: LexicalCommand<void>;
 export var REDO_COMMAND: LexicalCommand<void>;
 export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent>;
+export var MOVE_TO_END: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent>;
+export var MOVE_TO_START: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ARROW_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
 export var KEY_ENTER_COMMAND: LexicalCommand<KeyboardEvent | null>;
@@ -90,7 +95,6 @@ type Listeners = {
   update: Set<UpdateListener>;
 };
 type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
-// $FlowFixMe[unclear-type]
 type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
@@ -161,11 +165,16 @@ export declare class LexicalEditor {
   parseEditorState(
     maybeStringifiedEditorState: string | ParsedEditorState,
   ): EditorState;
+  unstable_parseEditorState(
+    maybeStringifiedEditorState: string | SerializedEditorState,
+    updateFn?: () => void,
+  ): EditorState;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void): void;
   blur(): void;
   isReadOnly(): boolean;
   setReadOnly(readOnly: boolean): void;
+  toJSON(): void;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void;
@@ -187,12 +196,14 @@ type TextNodeThemeClasses = {
   subscript?: EditorThemeClassName;
   superscript?: EditorThemeClassName;
 };
+
 export type EditorThemeClasses = {
   ltr?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   paragraph?: EditorThemeClassName;
   image?: EditorThemeClassName;
+  characterLimit?: EditorThemeClassName;
   list?: {
     ul?: EditorThemeClassName;
     ulDepth?: Array<EditorThemeClassName>;
@@ -227,18 +238,24 @@ export type EditorThemeClasses = {
   // Handle other generic values
   [key: string]:
     | EditorThemeClassName
-    | Record<
-        string,
-        | EditorThemeClassName
-        | Array<EditorThemeClassName>
-        | Record<string, EditorThemeClassName>
-      >;
+    | TextNodeThemeClasses
+    | {
+        [key: string]:
+          | Array<EditorThemeClassName>
+          | EditorThemeClassName
+          | TextNodeThemeClasses
+          | {
+              [key: string]: EditorThemeClassName;
+            };
+      };
 };
+
 export type EditorConfig = {
   namespace: string;
   theme: EditorThemeClasses;
   disableEvents?: boolean;
 };
+
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 export const COMMAND_PRIORITY_EDITOR = 0;
 export const COMMAND_PRIORITY_LOW = 1;
@@ -291,6 +308,7 @@ export interface EditorState {
   isEmpty(): boolean;
   read<V>(callbackFn: () => V): V;
   toJSON(space?: string | number): JSONEditorState;
+  unstable_toJSON(): SerializedEditorState;
   clone(
     selection?: RangeSelection | NodeSelection | GridSelection | null,
   ): EditorState;
@@ -330,8 +348,10 @@ export declare class LexicalNode {
   __type: string;
   __key: NodeKey;
   __parent: null | NodeKey;
+  static getType: () => string;
   getType(): string;
   clone(data: any): LexicalNode;
+  exportJSON(): SerializedLexicalNode;
   importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey);
   getType(): string;
@@ -339,24 +359,24 @@ export declare class LexicalNode {
   isSelected(): boolean;
   getKey(): NodeKey;
   getIndexWithinParent(): number;
-  getParent(): ElementNode | null;
-  getParentOrThrow(): ElementNode;
-  getTopLevelElement(): null | ElementNode;
-  getTopLevelElementOrThrow(): ElementNode;
-  getParents(): Array<ElementNode>;
+  getParent<T extends ElementNode>(): T | null;
+  getParentOrThrow<T extends ElementNode>(): T;
+  getTopLevelElement(): ElementNode | this | null;
+  getTopLevelElementOrThrow(): ElementNode | this;
+  getParents<T extends ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
-  getPreviousSibling(): LexicalNode | null;
-  getPreviousSiblings(): Array<LexicalNode>;
-  getNextSibling(): LexicalNode | null;
-  getNextSiblings(): Array<LexicalNode>;
-  getCommonAncestor(node: LexicalNode): ElementNode | null;
+  getPreviousSibling<T extends LexicalNode>(): T | null;
+  getPreviousSiblings<T extends LexicalNode>(): Array<T>;
+  getNextSibling<T extends LexicalNode>(): T | null;
+  getNextSiblings<T extends LexicalNode>(): Array<T>;
+  getCommonAncestor<T extends ElementNode>(node: LexicalNode): T | null;
   is(object: LexicalNode | null | undefined): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  getLatest<T extends LexicalNode>(): T;
-  getWritable<T extends LexicalNode>(): T;
+  getLatest(): this;
+  getWritable(): this;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getTextContentSize(
     includeInert?: boolean,
@@ -364,13 +384,13 @@ export declare class LexicalNode {
   ): number;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
-  updateDOM(prevNode: any, dom: HTMLElement, config: EditorConfig): boolean;
+  updateDOM(prevNode: unknown, dom: HTMLElement, config: EditorConfig): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(nodeToInsert: LexicalNode): LexicalNode;
   insertBefore(nodeToInsert: LexicalNode): LexicalNode;
-  selectPrevious(anchorOffset?: number, focusOffset?: number): Selection;
-  selectNext(anchorOffset?: number, focusOffset?: number): Selection;
+  selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
+  selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
 }
 export type NodeMap = Map<NodeKey, LexicalNode>;
@@ -477,7 +497,6 @@ export declare class RangeSelection {
     focusOffset: number,
   ): void;
   getTextContent(): string;
-  // $FlowFixMe DOM API
   applyDOMRange(range: StaticRange): void;
   clone(): RangeSelection;
   toggleFormat(format: TextFormatType): void;
@@ -536,7 +555,6 @@ declare class _Point {
   getNode(): LexicalNode;
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void;
 }
-
 export function $createRangeSelection(): RangeSelection;
 export function $createNodeSelection(): NodeSelection;
 export function $createGridSelection(): GridSelection;
@@ -588,9 +606,7 @@ export declare class TextNode extends LexicalNode {
   isSimpleText(): boolean;
   getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
-  // $FlowFixMe
   createDOM(config: EditorConfig): HTMLElement;
-  // $FlowFixMe
   updateDOM(
     prevNode: TextNode,
     dom: HTMLElement,
@@ -605,7 +621,10 @@ export declare class TextNode extends LexicalNode {
   toggleFormat(type: TextFormatType): TextNode;
   toggleDirectionless(): TextNode;
   toggleUnmergeable(): TextNode;
-  setMode(type: TextModeType): TextNode;
+  setMode(type: TextModeType): this;
+  setDetail(detail: number): TextNode;
+  getDetail(): number;
+  getMode(): TextModeType;
   setTextContent(text: string): TextNode;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   spliceText(
@@ -619,6 +638,8 @@ export declare class TextNode extends LexicalNode {
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
+  static importJSON(serializedTextNode: SerializedTextNode): TextNode;
+  exportJSON(): SerializedTextNode;
 }
 export function $createTextNode(text?: string): TextNode;
 export function $isTextNode(
@@ -635,6 +656,10 @@ export declare class LineBreakNode extends LexicalNode {
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
+  static importJSON(
+    serializedLineBreakNode: SerializedLexicalNode,
+  ): LineBreakNode;
+  exportJSON(): SerializedLexicalNode;
 }
 export function $createLineBreakNode(): LineBreakNode;
 export function $isLineBreakNode(
@@ -653,11 +678,13 @@ export declare class RootNode extends ElementNode {
   select(): RangeSelection;
   remove(): void;
   replace<N extends LexicalNode>(node: N): N;
-  insertBefore(): LexicalNode;
-  insertAfter(node: LexicalNode): LexicalNode;
+  insertBefore<T extends LexicalNode>(nodeToInsert: T): T;
+  insertAfter<T extends LexicalNode>(nodeToInsert: T): T;
   updateDOM(prevNode: RootNode, dom: HTMLElement): false;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   canBeEmpty(): false;
+  static importJSON(serializedRootNode: SerializedRootNode): RootNode;
+  exportJSON(): SerializedElementNode;
 }
 export function $isRootNode(
   node: LexicalNode | null | undefined,
@@ -666,7 +693,7 @@ export function $isRootNode(
 /**
  * LexicalElementNode
  */
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify';
+export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 export declare class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
   __format: number;
@@ -674,7 +701,9 @@ export declare class ElementNode extends LexicalNode {
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey);
   getFormat(): number;
+  getFormatType(): ElementFormatType;
   getIndent(): number;
+  getChildren<T extends LexicalNode>(): Array<T>;
   getChildren<T extends Array<LexicalNode>>(): T;
   getChildrenKeys(): Array<NodeKey>;
   getChildrenSize(): number;
@@ -694,8 +723,8 @@ export declare class ElementNode extends LexicalNode {
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;
-  clear(): ElementNode;
-  append(...nodesToAppend: Array<LexicalNode>): ElementNode;
+  clear(): this;
+  append(...nodesToAppend: Array<LexicalNode>): this;
   setDirection(direction: 'ltr' | 'rtl' | null): ElementNode;
   setFormat(type: ElementFormatType): ElementNode;
   setIndent(indentLevel: number): ElementNode;
@@ -721,7 +750,8 @@ export declare class ElementNode extends LexicalNode {
     start: number,
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
-  ): ElementNode;
+  ): this;
+  exportJSON(): SerializedElementNode;
 }
 export function $isElementNode(
   node: LexicalNode | null | undefined,
@@ -730,7 +760,7 @@ export function $isElementNode(
 /**
  * LexicalDecoratorNode
  */
-export declare class DecoratorNode<X> extends LexicalNode {
+export declare class DecoratorNode<X = unknown> extends LexicalNode {
   constructor(key?: NodeKey);
   decorate(editor: LexicalEditor): X;
   isIsolated(): boolean;
@@ -751,6 +781,10 @@ export declare class ParagraphNode extends ElementNode {
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;
+  static importJSON(
+    serializedParagraphNode: SerializedElementNode,
+  ): ParagraphNode;
+  exportJSON(): SerializedElementNode;
 }
 export function $createParagraphNode(): ParagraphNode;
 export function $isParagraphNode(
@@ -793,7 +827,66 @@ export function $getDecoratorNode(
   isBackward: boolean,
 ): null | LexicalNode;
 
+export type EventHandler = (event: Event, editor: LexicalEditor) => void;
+
 /**
  * LexicalVersion
  */
 export declare var VERSION: string;
+
+/**
+ *  Serialization/Deserialization
+ * */
+interface InternalSerializedNode {
+  children?: Array<InternalSerializedNode>;
+  type: string;
+  version: number;
+}
+
+export function $parseSerializedNode<
+  SerializedNode extends InternalSerializedNode,
+>(serializedNode: SerializedNode): LexicalNode;
+
+export type SerializedLexicalNode = {
+  type: string;
+  version: number;
+};
+
+export type SerializedTextNode = Spread<
+  {
+    detail: number;
+    format: number;
+    mode: TextModeType;
+    style: string;
+    text: string;
+  },
+  SerializedLexicalNode
+>;
+
+export type SerializedElementNode = Spread<
+  {
+    children: Array<SerializedLexicalNode>;
+    direction: 'ltr' | 'rtl' | null;
+    format: ElementFormatType;
+    indent: number;
+  },
+  SerializedLexicalNode
+>;
+
+export type SerializedRootNode = Spread<
+  {
+    type: 'root';
+  },
+  SerializedElementNode
+>;
+
+export type SerializedGridCellNode = Spread<
+  {
+    colSpan: number;
+  },
+  SerializedElementNode
+>;
+
+export interface SerializedEditorState {
+  root: SerializedRootNode;
+}

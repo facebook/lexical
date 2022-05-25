@@ -32,7 +32,7 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
-import {$isRootTextContentEmpty, $rootTextContentCurry} from '@lexical/text';
+import {$isRootTextContentEmpty, $rootTextContent} from '@lexical/text';
 import {mergeRegister, registerNestedElementResolver} from '@lexical/utils';
 import {
   $getNodeByKey,
@@ -188,7 +188,7 @@ function useOnChange(setContent, setCanSubmit) {
   return useCallback(
     (editorState: EditorState, _editor: LexicalEditor) => {
       editorState.read(() => {
-        setContent($rootTextContentCurry());
+        setContent($rootTextContent());
         setCanSubmit(!$isRootTextContentEmpty(_editor.isComposing(), true));
       });
     },

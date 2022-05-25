@@ -9,7 +9,6 @@
 import type {LexicalEditor} from 'lexical';
 
 import {CLEAR_HISTORY_COMMAND, VERSION} from 'lexical';
-import {$ReadOnly} from 'utility-types';
 
 export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem((text) => {
@@ -42,7 +41,7 @@ function readTextFileFromSystem(callback: (text: string) => void) {
 
 export function exportFile(
   editor: LexicalEditor,
-  config: $ReadOnly<{
+  config: Readonly<{
     fileName?: string;
     source?: string;
   }> = Object.freeze({}),

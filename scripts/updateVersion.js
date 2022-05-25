@@ -17,6 +17,7 @@ const packages = {
   '@lexical/hashtag': 'lexical-hashtag',
   '@lexical/headless': 'lexical-headless',
   '@lexical/history': 'lexical-history',
+  '@lexical/html': 'lexical-html',
   '@lexical/link': 'lexical-link',
   '@lexical/list': 'lexical-list',
   '@lexical/mark': 'lexical-mark',

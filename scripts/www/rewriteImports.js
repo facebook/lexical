@@ -33,6 +33,46 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from 'lexical'/g, "from 'Lexical'")
         .replace(/from 'lexical'/g, "from 'Lexical'")
         .replace(/from 'lexical\/LinkNode'/g, "from 'LexicalLinkNode'")
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalEditor'/g,
+          "from 'DEPRECATED_useLexicalEditor'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalRichText'/g,
+          "from 'DEPRECATED_useLexicalRichText'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalPlainText'/g,
+          "from 'DEPRECATED_useLexicalPlainText'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalEditorEvents'/g,
+          "from 'DEPRECATED_useLexicalEditorEvents'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalAutoFormatter'/g,
+          "from 'DEPRECATED_useLexicalAutoFormatter'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalDecorators'/g,
+          "from 'DEPRECATED_useLexicalDecorators'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalList'/g,
+          "from 'DEPRECATED_useLexicalList'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalCanShowPlaceholder'/g,
+          "from 'DEPRECATED_useLexicalCanShowPlaceholder'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalCharacterLimit'/g,
+          "from 'DEPRECATED_useLexicalCharacterLimit'",
+        )
+        .replace(
+          /from '@lexical\/react\/DEPRECATED_useLexicalHistory'/g,
+          "from 'DEPRECATED_useLexicalHistory'",
+        )
         .replace(/from '@lexical\/react\/'/g, "from 'Lexical")
         .replace(/from '@lexical\/utils\/'/g, "from 'LexicalUtils")
         .replace(/from '@lexical\/clipboard\'/g, "from 'LexicalClipboard'")

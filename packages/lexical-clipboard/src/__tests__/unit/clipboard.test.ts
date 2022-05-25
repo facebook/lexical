@@ -6,6 +6,7 @@
  *
  */
 
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
@@ -28,12 +29,7 @@ import {
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {
-  $cloneSelectedContent,
-  $convertSelectedContentToHtml,
-  $generateNodes,
-  $generateNodesFromDOM,
-} from '../../clipboard';
+import {$cloneSelectedContent, $generateNodes} from '../../clipboard';
 
 function setAnchorPoint(point) {
   let selection = $getSelection();
@@ -79,7 +75,7 @@ function expectMatchingOutput(editor, cloneState, htmlString) {
 
   const htmlToLexicalTreeRoot = $createParagraphNode();
 
-  htmlToLexicalTreeRoot.append(...$generateNodesFromDOM(dom, editor));
+  htmlToLexicalTreeRoot.append(...$generateNodesFromDOM(editor, dom));
 
   const lexicalToLexicalTreeRoot = $createParagraphNode();
 
@@ -210,7 +206,7 @@ describe('Clipboard tests', () => {
         expect(rangeSet.has(table.getKey()));
         expect(nodeMap.size).toBe(selectedNodes.length);
 
-        const htmlString = $convertSelectedContentToHtml(editor, selection);
+        const htmlString = $generateHtmlFromNodes(editor, selection);
 
         expect(htmlString).toBe(
           '<p><strong>h</strong><a href="https://"><span>ello worl</span></a><em>d</em></p><table><colgroup><col><col><col></colgroup><tbody><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><span>table cell text!</span></p></th><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th></tr><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td></tr><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td></tr></tbody></table><ul><li value="1"><span>1: Lorem ipsum dolor sit amet</span></li><li value="2"><span>2: Lorem ipsum dolor sit amet</span></li><li value="3"><span>3: Lorem ipsum dolor sit amet</span></li><li value="4"><span>4: Lorem ipsum dolor sit ame</span></li></ul>',
@@ -264,7 +260,7 @@ describe('Clipboard tests', () => {
         // Check if text is split on the cloned node.
         expect(nodeMap.get(linkTextNode.getKey()).__text).toBe('ello wo');
 
-        const htmlString = $convertSelectedContentToHtml(editor, selection);
+        const htmlString = $generateHtmlFromNodes(editor, selection);
 
         expect(htmlString).toBe(
           '<strong>h</strong><a href="https://"><span>ello wo</span></a>',
@@ -323,7 +319,7 @@ describe('Clipboard tests', () => {
           ': Lorem ipsum dolor sit',
         );
 
-        const htmlString = $convertSelectedContentToHtml(editor, selection);
+        const htmlString = $generateHtmlFromNodes(editor, selection);
 
         expect(htmlString).toBe('<span>: Lorem ipsum dolor sit</span>');
 
@@ -386,7 +382,7 @@ describe('Clipboard tests', () => {
           '2: Lorem ipsum dolor sit',
         );
 
-        const htmlString = $convertSelectedContentToHtml(editor, selection);
+        const htmlString = $generateHtmlFromNodes(editor, selection);
 
         expect(htmlString).toBe(
           '<ul><li value="1"><span>: Lorem ipsum dolor sit amet</span></li><li value="2"><span>2: Lorem ipsum dolor sit</span></li></ul>',
@@ -436,7 +432,7 @@ describe('Clipboard tests', () => {
           expect(nodeMap.has(n.getKey())).toBe(true);
         });
 
-        const htmlString = $convertSelectedContentToHtml(editor, selection);
+        const htmlString = $generateHtmlFromNodes(editor, selection);
 
         expect(htmlString).toBe(
           '<table><colgroup><col><col><col></colgroup><tbody><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><span>table cell text!</span></p></th><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th></tr><tr><th style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start; background-color: rgb(242, 243, 245);"><p><br><span></span></p></th><td style="border: 1px solid black; width: 233.33333333333334px; vertical-align: top; text-align: start;"><p><br><span></span></p></td></tr></tbody></table>',

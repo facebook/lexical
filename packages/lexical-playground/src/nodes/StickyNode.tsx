@@ -6,7 +6,13 @@
  *
  */
 
-import type {EditorConfig, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical';
 
 import './StickyNode.css';
 
@@ -266,10 +272,24 @@ function StickyComponent({
   );
 }
 
+type StickyNoteColor = 'pink' | 'yellow';
+
+export type SerializedStickyNode = Spread<
+  {
+    xOffset: number;
+    yOffset: number;
+    color: StickyNoteColor;
+    caption: LexicalEditor;
+    type: 'sticky';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
+
 export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
   __y: number;
-  __color: 'pink' | 'yellow';
+  __color: StickyNoteColor;
   __caption: LexicalEditor;
 
   static getType(): string {
@@ -283,6 +303,14 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__color,
       node.__caption,
       node.__key,
+    );
+  }
+  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
+    return new StickyNode(
+      serializedNode.xOffset,
+      serializedNode.yOffset,
+      serializedNode.color,
+      serializedNode.caption,
     );
   }
 
@@ -300,6 +328,17 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__color = color;
   }
 
+  exportJSON(): SerializedStickyNode {
+    return {
+      caption: this.__caption,
+      color: this.__color,
+      type: 'sticky',
+      version: 1,
+      xOffset: this.__x,
+      yOffset: this.__y,
+    };
+  }
+
   createDOM(config: EditorConfig): HTMLElement {
     const div = document.createElement('div');
     div.style.display = 'contents';
@@ -311,14 +350,14 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   }
 
   setPosition(x: number, y: number): void {
-    const writable = this.getWritable<StickyNode>();
+    const writable = this.getWritable();
     writable.__x = x;
     writable.__y = y;
     $setSelection(null);
   }
 
   toggleColor(): void {
-    const writable = this.getWritable<StickyNode>();
+    const writable = this.getWritable();
     writable.__color = writable.__color === 'pink' ? 'yellow' : 'pink';
   }
 

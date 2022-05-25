@@ -51,6 +51,7 @@ const wwwMappings = {
   '@lexical/hashtag': 'LexicalHashtag',
   '@lexical/headless': 'LexicalHeadless',
   '@lexical/history': 'LexicalHistory',
+  '@lexical/html': 'LexicalHtml',
   '@lexical/link': 'LexicalLink',
   '@lexical/list': 'LexicalList',
   '@lexical/mark': 'LexicalMark',
@@ -71,7 +72,6 @@ const wwwMappings = {
 
 const lexicalReactModules = fs
   .readdirSync(path.resolve('./packages/lexical-react/src'))
-  .map((str) => path.basename(path.basename(str, '.js'), '.jsx'))
   .filter(
     (str) =>
       !str.includes('__tests__') &&
@@ -80,8 +80,9 @@ const lexicalReactModules = fs
   );
 
 const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
-  const external = `@lexical/react/${module}`;
-  wwwMappings[external] = module;
+  const basename = path.basename(path.basename(module, '.ts'), '.tsx');
+  const external = `@lexical/react/${basename}`;
+  wwwMappings[external] = basename;
   return external;
 });
 
@@ -104,6 +105,8 @@ const externals = [
   '@lexical/file',
   '@lexical/clipboard',
   '@lexical/hashtag',
+  '@lexical/headless',
+  '@lexical/html',
   '@lexical/history',
   '@lexical/selection',
   '@lexical/text',
@@ -139,16 +142,7 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
-const COMMON_BABEL_SETTINGS = {
-  babelHelpers: 'bundled',
-  babelrc: false,
-  configFile: false,
-  exclude: '/**/node_modules/**',
-};
-
 async function build(name, inputFile, outputFile, isProd) {
-  const isTypeScript = /\.tsx?$/.test(inputFile);
-
   const inputOptions = {
     external(modulePath, src) {
       return externals.includes(modulePath);
@@ -180,10 +174,6 @@ async function build(name, inputFile, outputFile, isProd) {
     plugins: [
       alias({
         entries: [
-          {
-            find: 'shared-ts',
-            replacement: path.resolve('packages/shared-ts/src'),
-          },
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
         ],
       }),
@@ -198,37 +188,28 @@ async function build(name, inputFile, outputFile, isProd) {
       nodeResolve({
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
       }),
-      isTypeScript
-        ? babel({
-            ...COMMON_BABEL_SETTINGS,
-            extensions: ['.js', '.jsx', '.ts', '.tsx'],
-            plugins: [
-              [
-                require('./error-codes/transform-error-messages'),
-                {noMinify: !isProd},
-              ],
-            ],
-            presets: [
-              [
-                '@babel/preset-typescript',
-                {
-                  tsconfig: path.resolve('./tsconfig.build.json'),
-                },
-              ],
-              '@babel/preset-react',
-            ],
-          })
-        : babel({
-            ...COMMON_BABEL_SETTINGS,
-            plugins: [
-              '@babel/plugin-transform-flow-strip-types',
-              [
-                require('./error-codes/transform-error-messages'),
-                {noMinify: !isProd},
-              ],
-            ],
-            presets: ['@babel/preset-react'],
-          }),
+      babel({
+        babelHelpers: 'bundled',
+        babelrc: false,
+        configFile: false,
+        exclude: '/**/node_modules/**',
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        plugins: [
+          [
+            require('./error-codes/transform-error-messages'),
+            {noMinify: !isProd},
+          ],
+        ],
+        presets: [
+          [
+            '@babel/preset-typescript',
+            {
+              tsconfig: path.resolve('./tsconfig.build.json'),
+            },
+          ],
+          '@babel/preset-react',
+        ],
+      }),
       {
         resolveId(importee, importer) {
           if (importee === 'formatProdErrorMessage') {
@@ -324,7 +305,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'Lexical',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Core',
@@ -335,7 +316,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalList',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical List',
@@ -346,7 +327,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalTable',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Table',
@@ -401,7 +382,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalSelection',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Selection',
@@ -412,7 +393,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalText',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Text',
@@ -423,7 +404,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalOffset',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Offset',
@@ -434,7 +415,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalUtils',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Utils',
@@ -467,7 +448,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalLink',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Link',
@@ -478,7 +459,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalOverflow',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Overflow',
@@ -511,7 +492,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalMarkdown',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Markdown',
@@ -528,6 +509,17 @@ const packages = [
     name: 'Lexical Headless',
     outputPath: './packages/lexical-headless/dist/',
     sourcePath: './packages/lexical-headless/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalHtml',
+        sourceFileName: 'index.ts',
+      },
+    ],
+    name: 'Lexical HTML',
+    outputPath: './packages/lexical-html/dist/',
+    sourcePath: './packages/lexical-html/src/',
   },
   {
     modules: [
@@ -551,13 +543,17 @@ const packages = [
           'useRichTextSetup',
           'useYjsCollaboration',
         ];
+
         return !ignoredModules.includes(module);
       })
-      .map((module) => ({
-        name: module,
-        outputFileName: module,
-        sourceFileName: module,
-      })),
+      .map((module) => {
+        const basename = path.basename(path.basename(module, '.ts'), '.tsx');
+        return {
+          name: basename,
+          outputFileName: basename,
+          sourceFileName: module,
+        };
+      }),
     name: 'Lexical React',
     outputPath: './packages/lexical-react/dist/',
     sourcePath: './packages/lexical-react/src/',
@@ -566,7 +562,7 @@ const packages = [
     modules: [
       {
         outputFileName: 'LexicalYjs',
-        sourceFileName: 'index.js',
+        sourceFileName: 'index.ts',
       },
     ],
     name: 'Lexical Yjs',

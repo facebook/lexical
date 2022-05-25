@@ -16,10 +16,10 @@ import type {
   Point,
   RangeSelection,
 } from 'lexical';
-declare export function $cloneContents(
+declare export function $cloneContents<T: LexicalNode>(
   selection: RangeSelection | NodeSelection | GridSelection,
 ): {
-  nodeMap: Array<[NodeKey, LexicalNode]>,
+  nodeMap: Array<[NodeKey, T]>,
   range: Array<NodeKey>,
 };
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
@@ -73,3 +73,9 @@ declare export function createRectsFromDOMRange(
   editor: LexicalEditor,
   range: Range,
 ): Array<ClientRect>;
+
+declare export function trimTextContentFromAnchor(
+  editor: LexicalEditor,
+  anchor: Point,
+  delCount: number,
+): void;

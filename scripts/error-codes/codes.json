@@ -68,5 +68,11 @@
   "66": "createNode: node does not exist in nodeMap",
   "67": "reconcileNode: prevNode or nextNode does not exist in nodeMap",
   "68": "reconcileNode: parentDOM is null",
-  "69": "Reconciliation: could not find DOM element for node key \"${key}\""
+  "69": "Reconciliation: could not find DOM element for node key \"${key}\"",
+  "70": "Incorrect node type received in importJSON for %s",
+  "71": "LexicalNode: Node %s does not implement .exportJSON().",
+  "72": "LexicalNode: Node %s is an element but .exportJSON() does not have a children array.",
+  "73": "parseEditorState: type \"%s\" + not found",
+  "74": "LexicalNode: Node %s does not implement .importJSON().",
+  "75": "exportJSON: base method not extended"
 }

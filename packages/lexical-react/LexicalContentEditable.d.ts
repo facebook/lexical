@@ -6,8 +6,7 @@
  *
  */
 
-import {$ReadOnly} from 'utility-types';
-export type Props = $ReadOnly<{
+export type Props = Readonly<{
   ariaActiveDescendantID?: string;
   ariaAutoComplete?: string;
   ariaControls?: string;

@@ -74,7 +74,6 @@ function FloatingCharacterStylesEditor({
   isUnderline: boolean;
 }): JSX.Element {
   const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
-  const mouseDownRef = useRef(false);
 
   const insertLink = useCallback(() => {
     if (!isLink) {
@@ -120,9 +119,7 @@ function FloatingCharacterStylesEditor({
         rect = domRange.getBoundingClientRect();
       }
 
-      if (!mouseDownRef.current) {
-        setPopupPosition(popupCharStylesEditorElem, rect, rootElementRect);
-      }
+      setPopupPosition(popupCharStylesEditorElem, rect, rootElementRect);
     }
   }, [editor]);
 

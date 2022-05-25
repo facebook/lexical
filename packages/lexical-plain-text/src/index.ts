@@ -23,6 +23,7 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
+  CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
@@ -32,7 +33,6 @@ import {
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
-  INSERT_TEXT_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -41,7 +41,7 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared-ts/environment';
+import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
@@ -201,7 +201,7 @@ export function registerPlainText(
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<InputEvent | string>(
-      INSERT_TEXT_COMMAND,
+      CONTROLLED_TEXT_INSERTION_COMMAND,
       (eventOrText) => {
         const selection = $getSelection();
 

@@ -4,10 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+
  */
 
-import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {TextNode} from 'lexical';
@@ -29,6 +34,22 @@ export class HashtagNode extends TextNode {
     const element = super.createDOM(config);
     addClassNamesToElement(element, config.theme.hashtag);
     return element;
+  }
+
+  static importJSON(serializedNode: SerializedTextNode): HashtagNode {
+    const node = $createHashtagNode(serializedNode.text);
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
+    return node;
+  }
+
+  exportJSON(): SerializedTextNode {
+    return {
+      ...super.exportJSON(),
+      type: 'hashtag',
+    };
   }
 
   canInsertTextBefore(): boolean {

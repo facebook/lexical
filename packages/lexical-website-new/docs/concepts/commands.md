@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Commands
 
-Commands are a very powerful feature of Lexical that lets you register listeners for events like `INSERT_TEXT_COMMAND` or `KEY_TAB_COMMAND` and contextually react to them _wherever_ & _however_ you'd like.
+Commands are a very powerful feature of Lexical that lets you register listeners for events like `KEY_ENTER_COMMAND` or `KEY_TAB_COMMAND` and contextually react to them _wherever_ & _however_ you'd like.
 
 This is pattern is useful for building [`Toolbars`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.jsx) or complex `Plugins` and `Nodes` such as the [`TablePlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-table) which require special handling for `selection`, `keyboard events`, and more.
 
@@ -55,7 +55,7 @@ const formatBulletList = () => {
 };
 ```
 
-Which is later handled in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.js#L65) to insert the list into the editor.
+Which is later handled in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.ts#L65) to insert the list into the editor.
 
 ```js
 editor.registerCommand(

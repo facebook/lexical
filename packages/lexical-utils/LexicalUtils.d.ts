@@ -5,13 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {Class} from 'utility-types';
 
 import type {LexicalNode, ElementNode, LexicalEditor} from 'lexical';
+
 export type DFSNode = Readonly<{
   depth: number;
   node: LexicalNode;
 }>;
+
 declare function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
@@ -29,7 +32,9 @@ declare function $getNearestNodeOfType<T extends LexicalNode>(
   node: LexicalNode,
   klass: Class<T>,
 ): T | null;
+
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
+
 export type DOMNodeToLexicalConversionMap = Record<
   string,
   DOMNodeToLexicalConversion
@@ -43,7 +48,6 @@ declare function mergeRegister(...func: Array<Func>): () => void;
 declare function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode;
-
 declare function registerNestedElementResolver<N>(
   editor: LexicalEditor,
   targetNode: Class<N>,

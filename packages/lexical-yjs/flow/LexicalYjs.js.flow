@@ -62,7 +62,14 @@ export type XmlElement = Object;
 // $FlowFixMe: work around for internal
 export type YMap = Object;
 // $FlowFixMe: work around for internal
-export type TextOperation = Object;
+export type TextOperation = {
+  insert?: string | mixed,
+  delete?: number,
+  retain?: number,
+  attributes?: {
+    [x: string]: mixed,
+  },
+};
 
 export type CursorSelection = {
   anchor: {

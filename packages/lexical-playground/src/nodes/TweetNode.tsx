@@ -9,7 +9,11 @@
 import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
-import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
+import {
+  DecoratorBlockNode,
+  SerializedDecoratorBlockNode,
+} from '@lexical/react/LexicalDecoratorBlockNode';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -42,6 +46,7 @@ function TweetComponent({
 
   const createTweet = useCallback(async () => {
     try {
+      // @ts-expect-error Twitter is attached to the window.
       await window.twttr.widgets.createTweet(tweetID, containerRef.current);
 
       setIsLoading(false);
@@ -88,6 +93,15 @@ function TweetComponent({
   );
 }
 
+export type SerializedTweetNode = Spread<
+  {
+    id: string;
+    type: 'tweet';
+    version: 1;
+  },
+  SerializedDecoratorBlockNode
+>;
+
 export class TweetNode extends DecoratorBlockNode<JSX.Element> {
   __id: string;
 
@@ -97,6 +111,21 @@ export class TweetNode extends DecoratorBlockNode<JSX.Element> {
 
   static clone(node: TweetNode): TweetNode {
     return new TweetNode(node.__id, node.__format, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedTweetNode): TweetNode {
+    const node = $createTweetNode(serializedNode.id);
+    node.setFormat(serializedNode.format);
+    return node;
+  }
+
+  exportJSON(): SerializedTweetNode {
+    return {
+      ...super.exportJSON(),
+      id: this.getId(),
+      type: 'tweet',
+      version: 1,
+    };
   }
 
   constructor(id: string, format?: ElementFormatType | null, key?: NodeKey) {

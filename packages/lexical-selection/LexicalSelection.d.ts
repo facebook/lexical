@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
+
 import type {
   ElementNode,
   GridSelection,
@@ -15,15 +15,19 @@ import type {
   NodeSelection,
   Point,
   RangeSelection,
+  TextNode,
 } from 'lexical';
-export function $cloneContents(
+
+export function $cloneContents<T extends LexicalNode>(
   selection: RangeSelection | NodeSelection | GridSelection,
 ): {
-  nodeMap: Array<[NodeKey, LexicalNode]>;
+  nodeMap: Array<[NodeKey, T]>;
   range: Array<NodeKey>;
 };
-export function $cloneWithProperties<LexicalNode>(
-  node: LexicalNode,
+export function $cloneWithProperties<T extends LexicalNode>(node: T): T;
+export function $sliceSelectedTextNodeContent(
+  selection: RangeSelection | GridSelection | NodeSelection,
+  node: TextNode,
 ): LexicalNode;
 export function getStyleObjectFromCSS(css: string): {
   [key: string]: string;
@@ -63,7 +67,7 @@ export function $shouldOverrideDefaultCharacterSelection(
   isBackward: boolean,
 ): boolean;
 
-declare function createDOMRange(
+export declare function createDOMRange(
   editor: LexicalEditor,
   anchorNode: LexicalNode,
   anchorOffset: number,
@@ -71,7 +75,13 @@ declare function createDOMRange(
   focusOffset: number,
 ): Range | null;
 
-declare function createRectsFromDOMRange(
+export declare function createRectsFromDOMRange(
   editor: LexicalEditor,
   range: Range,
 ): Array<ClientRect>;
+
+export declare function trimTextContentFromAnchor(
+  editor: LexicalEditor,
+  anchor: Point,
+  delCount: number,
+): void;

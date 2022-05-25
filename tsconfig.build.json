@@ -1,5 +1,9 @@
 {
   "include": ["packages/**/*"],
-  "exclude": ["node_modules/**/*", "packages/lexical-playground/**/*"],
+  "exclude": [
+    "node_modules/**/*",
+    "packages/lexical-playground/**/*",
+    "packages/playwright-core/**/*"
+  ],
   "extends": "./tsconfig.json"
 }

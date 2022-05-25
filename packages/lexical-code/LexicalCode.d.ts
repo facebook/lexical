@@ -14,9 +14,12 @@ import type {
   RangeSelection,
   EditorThemeClasses,
   LexicalEditor,
+  SerializedElementNode,
+  SerializedTextNode,
 } from 'lexical';
 
 import {ElementNode, TextNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 
 declare class CodeNode extends ElementNode {
   static getType(): string;
@@ -31,6 +34,8 @@ declare class CodeNode extends ElementNode {
   collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;
+  importJSON(serializedNode: SerializedCodeNode): CodeNode;
+  exportJSON(): SerializedElementNode;
 }
 declare function $createCodeNode(language?: string): CodeNode;
 declare function $isCodeNode(
@@ -74,3 +79,21 @@ declare function $isCodeHighlightNode(
 ): node is CodeHighlightNode;
 
 declare function registerCodeHighlighting(editor: LexicalEditor): () => void;
+
+type SerializedCodeNode = Spread<
+  {
+    language: string | null | undefined;
+    type: 'code';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
+type SerializedCodeHighlightNode = Spread<
+  {
+    highlightType: string | null | undefined;
+    type: 'code-highlight';
+    version: 1;
+  },
+  SerializedTextNode
+>;

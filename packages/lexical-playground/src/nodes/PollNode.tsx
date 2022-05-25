@@ -6,13 +6,14 @@
  *
  */
 
-import type {LexicalNode, NodeKey} from 'lexical';
+import type {LexicalNode, NodeKey, SerializedLexicalNode} from 'lexical';
 
 import './PollNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNodeByKey, DecoratorNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useMemo, useRef} from 'react';
 
@@ -189,6 +190,16 @@ function PollComponent({
   );
 }
 
+export type SerializedPollNode = Spread<
+  {
+    question: string;
+    options: Options;
+    type: 'poll';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
+
 export class PollNode extends DecoratorNode<JSX.Element> {
   __question: string;
   __options: Options;
@@ -201,21 +212,36 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return new PollNode(node.__question, node.__options, node.__key);
   }
 
+  static importJSON(serializedNode: SerializedPollNode): PollNode {
+    const node = $createPollNode(serializedNode.question);
+    serializedNode.options.forEach(node.addOption);
+    return node;
+  }
+
   constructor(question: string, options?: Options, key?: NodeKey) {
     super(key);
     this.__question = question;
     this.__options = options || [createPollOption(), createPollOption()];
   }
 
+  exportJSON(): SerializedPollNode {
+    return {
+      options: this.__options,
+      question: this.__question,
+      type: 'poll',
+      version: 1,
+    };
+  }
+
   addOption(option: Option): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const options = Array.from(self.__options);
     options.push(option);
     self.__options = options;
   }
 
   deleteOption(option: Option): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const options = Array.from(self.__options);
     const index = options.indexOf(option);
     options.splice(index, 1);
@@ -223,7 +249,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   setOptionText(option: Option, text: string): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const clonedOption = cloneOption(option, text);
     const options = Array.from(self.__options);
     const index = options.indexOf(option);
@@ -232,7 +258,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   toggleVote(option: Option, clientID: number): void {
-    const self = this.getWritable<PollNode>();
+    const self = this.getWritable();
     const votes = option.votes;
     const votesClone = Array.from(votes);
     const voteIndex = votes.indexOf(clientID);

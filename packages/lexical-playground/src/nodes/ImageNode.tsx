@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedLexicalNode,
 } from 'lexical';
 
 import './ImageNode.css';
@@ -310,6 +311,21 @@ function ImageComponent({
   );
 }
 
+export type SerializedImageNode = Spread<
+  {
+    altText: string;
+    caption: LexicalEditor;
+    height?: number;
+    maxWidth: number;
+    showCaption: boolean;
+    src: string;
+    width?: number;
+    type: 'image';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
+
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
   __altText: string;
@@ -334,6 +350,20 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       node.__caption,
       node.__key,
     );
+  }
+
+  static importJSON(serializedNode: SerializedImageNode): ImageNode {
+    const {altText, height, width, maxWidth, caption, src, showCaption} =
+      serializedNode;
+    return $createImageNode({
+      altText,
+      caption,
+      height,
+      maxWidth,
+      showCaption,
+      src,
+      width,
+    });
   }
 
   constructor(
@@ -363,17 +393,31 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return {element};
   }
 
+  exportJSON(): SerializedImageNode {
+    return {
+      altText: this.getAltText(),
+      caption: this.__caption,
+      height: this.__height === 'inherit' ? 0 : this.__height,
+      maxWidth: this.__maxWidth,
+      showCaption: this.__showCaption,
+      src: this.getSrc(),
+      type: 'image',
+      version: 1,
+      width: this.__width === 'inherit' ? 0 : this.__width,
+    };
+  }
+
   setWidthAndHeight(
     width: 'inherit' | number,
     height: 'inherit' | number,
   ): void {
-    const writable = this.getWritable<ImageNode>();
+    const writable = this.getWritable();
     writable.__width = width;
     writable.__height = height;
   }
 
   setShowCaption(showCaption: boolean): void {
-    const writable = this.getWritable<ImageNode>();
+    const writable = this.getWritable();
     writable.__showCaption = showCaption;
   }
 

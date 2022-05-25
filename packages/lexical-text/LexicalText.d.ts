@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import type {ElementNode, LexicalEditor, RootNode, TextNode} from 'lexical';
 import {Class} from 'utility-types';
+
 export type TextNodeWithOffset = {
   node: TextNode;
   offset: number;
@@ -37,7 +39,7 @@ export function $isRootTextContentEmptyCurry(
   isEditorComposing: boolean,
   trim?: boolean,
 ): () => boolean;
-export function $rootTextContentCurry(): string;
+export function $rootTextContent(): string;
 export function $canShowPlaceholder(isComposing: boolean): boolean;
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,

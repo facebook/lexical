@@ -6,12 +6,25 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+} from 'lexical';
 
 import {TextNode} from 'lexical';
 
+export type SerializedEmojiNode = Spread<
+  {
+    className: string;
+    type: 'emoji';
+  },
+  SerializedTextNode
+>;
+
 export class EmojiNode extends TextNode {
-  __className?: string;
+  __className: string;
 
   static getType(): string {
     return 'emoji';
@@ -46,6 +59,31 @@ export class EmojiNode extends TextNode {
     }
     super.updateDOM(prevNode, inner as HTMLElement, config);
     return false;
+  }
+
+  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
+    const node = $createEmojiNode(
+      serializedNode.className,
+      serializedNode.text,
+    );
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
+    return node;
+  }
+
+  exportJSON(): SerializedEmojiNode {
+    return {
+      ...super.exportJSON(),
+      className: this.getClassName(),
+      type: 'emoji',
+    };
+  }
+
+  getClassName(): string {
+    const self = this.getLatest();
+    return self.__className;
   }
 }
 

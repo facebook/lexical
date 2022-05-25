@@ -7,6 +7,7 @@
  */
 
 import type {NodeKey} from 'lexical';
+
 export function useLexicalNodeSelection(
   key: NodeKey,
 ): [boolean, (arg0: boolean) => void, () => void];

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import type {
   DOMConversionMap,
   EditorConfig,
@@ -13,8 +14,11 @@ import type {
   NodeKey,
   ParagraphNode,
   LexicalEditor,
+  SerializedElementNode,
 } from 'lexical';
 import {ElementNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
+
 export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 export declare class QuoteNode extends ElementNode {
@@ -25,6 +29,7 @@ export declare class QuoteNode extends ElementNode {
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
+  importJSON(serializedNode: SerializedQuoteNode): QuoteNode;
 }
 export function $createQuoteNode(): QuoteNode;
 export function $isQuoteNode(
@@ -42,7 +47,9 @@ export declare class HeadingNode extends ElementNode {
   static importDOM(): DOMConversionMap | null;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): true;
+  importJSON(serializedNode: SerializedHeadingNode): QuoteNode;
 }
+
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode;
 export function $isHeadingNode(
   node: LexicalNode | null | undefined,
@@ -51,3 +58,20 @@ export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
 ): () => void;
+
+export type SerializedHeadingNode = Spread<
+  {
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    type: 'heading';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
+export type SerializedQuoteNode = Spread<
+  {
+    type: 'quote';
+    version: 1;
+  },
+  SerializedElementNode
+>;

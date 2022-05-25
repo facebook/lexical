@@ -7,9 +7,9 @@ const common = {
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
-    '<rootDir>/packages/lexical/src/core/**/*.js',
-    '<rootDir>/packages/lexical/src/extensions/**/*.js',
-    '<rootDir>/packages/lexical-react/src/**/*.js',
+    '<rootDir>/packages/lexical/src/core/**/*.ts',
+    '<rootDir>/packages/lexical/src/extensions/**/*.ts',
+    '<rootDir>/packages/lexical-react/src/**/*.ts',
   ],
   coverageReporters: ['json', 'text'],
   projects: [
@@ -34,78 +34,69 @@ module.exports = {
         '^@lexical/headless$':
           '<rootDir>/packages/lexical-headless/src/index.ts',
         '^@lexical/history$': '<rootDir>/packages/lexical-history/src/index.ts',
-        '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.js',
-        '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.js',
+        '^@lexical/html$': '<rootDir>/packages/lexical-html/src/index.ts',
+        '^@lexical/link$': '<rootDir>/packages/lexical-link/src/index.ts',
+        '^@lexical/list$': '<rootDir>/packages/lexical-list/src/index.ts',
         '^@lexical/mark$': '<rootDir>/packages/lexical-mark/src/index.ts',
-        '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.js',
+        '^@lexical/markdown$':
+          '<rootDir>/packages/lexical-markdown/src/index.ts',
+        '^@lexical/offset$': '<rootDir>/packages/lexical-offset/src/index.ts',
         '^@lexical/overflow$':
-          '<rootDir>/packages/lexical-overflow/src/index.js',
+          '<rootDir>/packages/lexical-overflow/src/index.ts',
         '^@lexical/plain-text$':
           '<rootDir>/packages/lexical-plain-text/src/index.ts',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
-          '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.js',
+          '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.ts',
         '^@lexical/react/LexicalAutoLinkPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.ts',
         '^@lexical/react/LexicalAutoScrollPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.ts',
         '^@lexical/react/LexicalCheckListPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalCheckListPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalCheckListPlugin.ts',
         '^@lexical/react/LexicalCollaborationPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.ts',
         '^@lexical/react/LexicalComposerContext$':
-          '<rootDir>/packages/lexical-react/src/LexicalComposerContext.js',
+          '<rootDir>/packages/lexical-react/src/LexicalComposerContext.ts',
         '^@lexical/react/LexicalContentEditable$':
-          '<rootDir>/packages/lexical-react/src/LexicalContentEditable.jsx',
+          '<rootDir>/packages/lexical-react/src/LexicalContentEditable.tsx',
         '^@lexical/react/LexicalLinkPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.ts',
         '^@lexical/react/LexicalListPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalListPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalListPlugin.ts',
         '^@lexical/react/LexicalPlainTextPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.ts',
         '^@lexical/react/LexicalTablePlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.js',
+          '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.ts',
         '^@lexical/react/useLexicalCanShowPlaceholder$':
-          '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.js',
+          '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.ts',
         '^@lexical/react/useLexicalDecorators$':
-          '<rootDir>/packages/lexical-react/src/useLexicalDecorators.js',
+          '<rootDir>/packages/lexical-react/src/useLexicalDecorators.ts',
         '^@lexical/react/useLexicalEditor$':
-          '<rootDir>/packages/lexical-react/src/useLexicalEditor.js',
+          '<rootDir>/packages/lexical-react/src/useLexicalEditor.ts',
         '^@lexical/rich-text$':
           '<rootDir>/packages/lexical-rich-text/src/index.ts',
         '^@lexical/selection$':
-          '<rootDir>/packages/lexical-selection/src/index.js',
-        '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.js',
-        '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.js',
-        '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.js',
-        '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.js',
-        '^lexical$': '<rootDir>/packages/lexical/src/index.js',
-        '^shared-ts/canUseDOM$':
-          '<rootDir>/packages/shared-ts/src/canUseDOM.ts',
-        '^shared-ts/environment$':
-          '<rootDir>/packages/shared-ts/src/environment.ts',
-        '^shared-ts/getDOMSelection$':
-          '<rootDir>/packages/shared-ts/src/getDOMSelection.ts',
-        '^shared-ts/invariant$':
-          '<rootDir>/packages/shared-ts/src/invariant.ts',
-        '^shared-ts/simpleDiffWithCursor$':
-          '<rootDir>/packages/shared-ts/src/simpleDiffWithCursor.ts',
-        '^shared-ts/useLayoutEffect$':
-          '<rootDir>/packages/shared-ts/src/useLayoutEffect.ts',
-        '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.js',
-        '^shared/environment$': '<rootDir>/packages/shared/src/environment.js',
+          '<rootDir>/packages/lexical-selection/src/index.ts',
+        '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.ts',
+        '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.ts',
+        '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.ts',
+        '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
+        '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
+        '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
+        '^shared/environment$': '<rootDir>/packages/shared/src/environment.ts',
         '^shared/getDOMSelection$':
-          '<rootDir>/packages/shared/src/getDOMSelection.js',
-        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.js',
+          '<rootDir>/packages/shared/src/getDOMSelection.ts',
+        '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.ts',
         '^shared/simpleDiffWithCursor$':
-          '<rootDir>/packages/shared/src/simpleDiffWithCursor.js',
+          '<rootDir>/packages/shared/src/simpleDiffWithCursor.ts',
         '^shared/useLayoutEffect$':
-          '<rootDir>/packages/shared/src/useLayoutEffect.js',
+          '<rootDir>/packages/shared/src/useLayoutEffect.ts',
         formatProdErrorMessage:
           '<rootDir>/scripts/error-codes/formatProdErrorMessage.js',
       },
       preset: 'ts-jest',
       testEnvironment: 'jsdom',
-      testMatch: ['**/__tests__/unit/**/*.test{.ts,.js}'],
+      testMatch: ['**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
       transform: {
         '^.+\\.jsx?$': 'babel-jest',
         '^.+\\.tsx$': 'ts-jest',

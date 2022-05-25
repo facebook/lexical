@@ -7,6 +7,7 @@
  */
 
 import type {EditorState, LexicalEditor} from 'lexical';
+
 export function OnChangePlugin(arg0: {
   ignoreInitialChange?: boolean;
   ignoreSelectionChange?: boolean;

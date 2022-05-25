@@ -10,6 +10,7 @@ import type {
   EditorUpdateOptions,
   LexicalCommand,
   LexicalEditor,
+  Listener,
   MutatedNodes,
   RegisteredNodes,
   Transform,
@@ -601,8 +602,7 @@ export function triggerListeners(
   editor._updating = isCurrentlyEnqueuingUpdates;
 
   try {
-    const listeners = [...editor._listeners[type]];
-
+    const listeners = Array.from<Listener>(editor._listeners[type]);
     for (let i = 0; i < listeners.length; i++) {
       listeners[i].apply(null, payload);
     }

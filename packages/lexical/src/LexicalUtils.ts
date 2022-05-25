@@ -1058,10 +1058,12 @@ export function scrollIntoViewIfNeeded(
   rootElement: HTMLElement | null | undefined,
   tags: Set<string>,
 ): void {
-  let anchorNode = anchor.getNode();
-  const descendantNode = anchorNode.getDescendantByIndex(anchor.offset);
-  if (descendantNode !== null) {
-    anchorNode = descendantNode;
+  let anchorNode: LexicalNode = anchor.getNode();
+  if ($isElementNode(anchorNode)) {
+    const descendantNode = anchorNode.getDescendantByIndex(anchor.offset);
+    if (descendantNode !== null) {
+      anchorNode = descendantNode;
+    }
   }
   const element = editor.getElementByKey(anchorNode.__key) as Element;
 

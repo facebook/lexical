@@ -832,6 +832,8 @@ declare export function $isGridCellNode(
 /**
  * LexicalUtils
  */
+declare export function $getUpdateTags(): Set<string>;
+declare export function $addUpdateTag(tag: string): void;
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;

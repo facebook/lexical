@@ -1110,3 +1110,14 @@ export function scrollIntoViewIfNeeded(
     tags.add('scroll-into-view');
   }
 }
+
+export function $getUpdateTags(): Set<string> {
+  const editor = getActiveEditor();
+  return editor._updateTags;
+}
+
+export function $addUpdateTag(tag: string): void {
+  errorOnReadOnly();
+  const editor = getActiveEditor();
+  editor._updateTags.add(tag);
+}

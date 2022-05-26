@@ -29,7 +29,7 @@ Both the `anchor` and `focus` points refer to an object that represents a specif
 
 - `key` representing the `NodeKey` of the selected Lexical node
 - `offset` representing the position from within its selected Lexical node. For the `text` type this is the character, and for the `element` type this is the child index from within the `ElementNode`
-- `type` representing either `element` or `text.
+- `type` representing either `element` or `text`.
 
 ### `NodeSelection`
 

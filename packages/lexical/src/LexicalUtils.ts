@@ -1111,9 +1111,9 @@ export function scrollIntoViewIfNeeded(
   }
 }
 
-export function $getUpdateTags(): Set<string> {
+export function $hasUpdateTag(tag: string): boolean {
   const editor = getActiveEditor();
-  return editor._updateTags;
+  return editor._updateTags.has(tag);
 }
 
 export function $addUpdateTag(tag: string): void {

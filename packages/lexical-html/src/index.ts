@@ -213,7 +213,7 @@ function $createNodesFromDOM(
       ...$createNodesFromDOM(
         children[i],
         editor,
-        forChildMap,
+        new Map(forChildMap),
         currentLexicalNode,
       ),
     );

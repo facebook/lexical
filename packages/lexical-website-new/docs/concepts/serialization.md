@@ -144,4 +144,136 @@ export type DOMChildConversion = (
 
 
 ## JSON
-Documentation coming soon
+
+### Lexical -> JSON
+To generate a JSON snapshot from an `EditorState`, you can call the `toJSON()` method on the `EditorState` object.
+
+```js
+const editorState = editor.getEditorState();
+const json = editorState.toJSON();
+```
+
+Alternatively, if you are trying to generate a stringified version of the `EditorState`, you can simply using `JSON.stringify` directly:
+
+```js
+const editorState = editor.getEditorState();
+const jsonString = JSON.stringify(editorState);
+```
+
+#### `LexicalNode.exportJSON()`
+
+You can control how a `LexicalNode` is represented as JSON by adding an `exportJSON()` method. It's important to ensure your serialized JSON node has a `type` field and a `children` field if it's an `ElementNode`.
+
+```js
+export type SerializedLexicalNode = {
+  type: string;
+  version: number;
+};
+
+exportJSON(): SerializedLexicalNode
+```
+
+When transforming an editor state into JSON, we simply traverse the current editor state and call the `exportJSON` method for each Node in order to convert it to a `SerializedLexicalNode` object that represents the JSON object for the given node. The built-in nodes from Lexical already have a JSON representation defined, but you'll need to define ones for your own custom nodes.
+
+Here's an example of `exportJSON` for the `HeadingNode`:
+
+```js
+export type SerializedHeadingNode = Spread<
+  {
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    type: 'heading';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
+exportJSON(): SerializedHeadingNode {
+  return {
+    ...super.exportJSON(),
+    tag: this.getTag(),
+    type: 'heading',
+    version: 1,
+  };
+}
+```
+
+#### `LexicalNode.importJSON()`
+
+You can control how a `LexicalNode` is serialized back into a node from JSON by adding an `importJSON()` method.
+
+```js
+export type SerializedLexicalNode = {
+  type: string;
+  version: number;
+};
+
+importJSON(jsonNode: SerializedLexicalNode): LexicalNode
+```
+
+This method works in the opposite way to how `exportJSON` works. Lexical uses the `type` field on the JSON object to determine what Lexical node class it needs to map to, so keeping the `type` field consistent with the `getType()` of the LexicalNode is essential.
+
+Here's an example of `importJSON` for the `HeadingNode`:
+
+```js
+static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
+  const node = $createHeadingNode(serializedNode.tag);
+  node.setFormat(serializedNode.format);
+  node.setIndent(serializedNode.indent);
+  node.setDirection(serializedNode.direction);
+  return node;
+}
+```
+
+### Versioning & Breaking Changes
+
+It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. That's why we recommend using a version field to separate the different changes in your node as you add or change functionality of custom nodes. Here's the serialized type definition for Lexical's base `TextNode` class:
+
+```js
+import {Spread} from 'libdefs/globals';
+
+// Spread is a Typescript utility that allows us to spread the properties
+// over the base SerializedLexicalNode type.
+export type SerializedTextNode = Spread<
+  {
+    detail: number;
+    format: number;
+    mode: TextModeType;
+    style: string;
+    text: string;
+  },
+  SerializedLexicalNode
+>;
+```
+
+If we wanted to make changes to the above `TextNode`, we should be sure to not remove or change an existing property, as this can cause data corruption. Instead, opt to add the functionality as a new property field instead, and use the version to determine how to handle the differences in your node.
+
+```js
+export type SerializedTextNodeV1 = Spread<
+  {
+    detail: number;
+    format: number;
+    mode: TextModeType;
+    style: string;
+    text: string;
+    version: 1,
+  },
+  SerializedLexicalNode
+>;
+
+export type SerializedTextNodeV2 = Spread<
+  {
+    detail: number;
+    format: number;
+    mode: TextModeType;
+    style: string;
+    text: string;
+    // Our new field we've added
+    newField: string,
+    // Notice the version is now 2
+    version: 2,
+  },
+  SerializedLexicalNode
+>;
+
+export type SerializedTextNode = SerializedTextNodeV1 | SerializedTextNodeV2;
+```

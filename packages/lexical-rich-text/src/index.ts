@@ -245,7 +245,7 @@ export class HeadingNode extends ElementNode {
   exportJSON(): SerializedHeadingNode {
     return {
       ...super.exportJSON(),
-      tag: this.__tag,
+      tag: this.getTag(),
       type: 'heading',
       version: 1,
     };

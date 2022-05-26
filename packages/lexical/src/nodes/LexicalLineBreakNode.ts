@@ -51,10 +51,21 @@ export class LineBreakNode extends LexicalNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      br: (node: Node) => ({
-        conversion: convertLineBreakElement,
-        priority: 0,
-      }),
+      br: (node: Node) => {
+        const parentElement = node.parentElement;
+        // If the <br> is the only child, then skip including it
+        if (
+          parentElement != null &&
+          parentElement.firstChild === node &&
+          parentElement.lastChild === node
+        ) {
+          return null;
+        }
+        return {
+          conversion: convertLineBreakElement,
+          priority: 0,
+        };
+      },
     };
   }
 

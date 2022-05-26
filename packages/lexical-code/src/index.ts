@@ -64,6 +64,7 @@ import {
 import {Spread} from 'libdefs/globals';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
+let selectedLanguage: string;
 
 type SerializedCodeNode = Spread<
   {
@@ -400,6 +401,7 @@ export class CodeNode extends ElementNode {
   }
 
   setLanguage(language: string): void {
+    selectedLanguage = language;
     const writable = this.getWritable();
     writable.__language = mapToPrismLanguage(language);
   }
@@ -600,7 +602,7 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
       }
       return childLexicalNodes;
     },
-    node: isCodeElement(div) ? $createCodeNode() : null,
+    node: isCodeElement(div) ? $createCodeNode(selectedLanguage) : null,
   };
 }
 

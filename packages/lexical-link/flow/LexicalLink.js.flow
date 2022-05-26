@@ -52,3 +52,4 @@ declare export function $isAutoLinkNode(
 ): boolean %checks(node instanceof AutoLinkNode);
 
 declare export var TOGGLE_LINK_COMMAND: LexicalCommand<string | null>;
+declare export function toggleLink(url: null | string): void;

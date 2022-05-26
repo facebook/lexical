@@ -809,7 +809,7 @@ export function $isGridCellNode(
 /**
  * LexicalUtils
  */
-export function $getUpdateTags(): Set<string>;
+export function $hasUpdateTag(tag: string): boolean;
 export function $addUpdateTag(tag: string): void;
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,

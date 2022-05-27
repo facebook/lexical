@@ -356,8 +356,7 @@ export class LexicalNode {
   }
 
   getPreviousSiblings<T extends LexicalNode>(): Array<T> {
-    const latest = this.getLatest();
-    let prevSiblings = [];
+    const prevSiblings = [];
     let prev = this.getPreviousSibling();
     while (prev !== null) {
       prevSiblings.unshift(prev);

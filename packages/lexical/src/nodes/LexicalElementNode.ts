@@ -18,7 +18,7 @@ import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';
-import {DOUBLE_LINE_BREAK, ELEMENT_TYPE_TO_FORMAT, ELEMENT_FORMAT_TO_TYPE} from '../LexicalConstants';
+import {DOUBLE_LINE_BREAK, ELEMENT_FORMAT_TO_TYPE,ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {$getNodeByKeyOrThrow, LexicalNode} from '../LexicalNode';
 import {
   $getSelection,

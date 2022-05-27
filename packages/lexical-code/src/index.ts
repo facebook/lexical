@@ -734,7 +734,7 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
             lastNode.setNext(to.__key);
             to.setPrev(lastNode.__key);
           } else {
-            node.getWritable<CodeNode>().__last = lastNode.__key;
+            node.getWritable().__last = lastNode.__key;
           }
           return true;
         }

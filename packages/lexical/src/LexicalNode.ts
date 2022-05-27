@@ -195,18 +195,8 @@ export class LexicalNode {
     this.__parent = null;
     $setNodeKey(this, key);
 
-    // Ensure custom nodes implement required methods.
     // @ts-ignore
     if (__DEV__) {
-      const proto = Object.getPrototypeOf(this);
-      ['getType', 'clone'].forEach((method) => {
-        // eslint-disable-next-line no-prototype-builtins
-        if (!proto.constructor.hasOwnProperty(method)) {
-          console.warn(
-            `${this.constructor.name} must implement static "${method}" method`,
-          );
-        }
-      });
       if (this.__type !== 'root') {
         errorOnReadOnly();
         errorOnTypeKlassMismatch(

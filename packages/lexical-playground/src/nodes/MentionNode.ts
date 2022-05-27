@@ -7,6 +7,9 @@
  */
 
 import {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,
@@ -23,6 +26,13 @@ export type SerializedMentionNode = Spread<
   },
   SerializedTextNode
 >;
+
+function convertMentionElement(domNode: HTMLElement): DOMConversionOutput {
+  const node = $createMentionNode(domNode.textContent);
+  return {
+    node,
+  };
+}
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
@@ -64,6 +74,27 @@ export class MentionNode extends TextNode {
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
     return dom;
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('span');
+    element.setAttribute('data-lexical-mention', 'true');
+    element.textContent = this.__text;
+    return {element};
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-lexical-mention')) {
+          return null;
+        }
+        return {
+          conversion: convertMentionElement,
+          priority: 1,
+        };
+      },
+    };
   }
 
   isTextEntity(): true {

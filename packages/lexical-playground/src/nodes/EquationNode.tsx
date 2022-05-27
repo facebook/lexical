@@ -118,20 +118,14 @@ function EquationComponent({
   );
 }
 
-function convertEquationElement(
-  domNode: HTMLElement,
-): null | DOMConversionOutput {
-  const isEquation = domNode.getAttribute('data-equation') === 'true';
-  if (isEquation) {
-    const node = $createEquationNode(
-      domNode.textContent,
-      domNode.nodeName === 'SPAN',
-    );
-    return {
-      node,
-    };
-  }
-  return null;
+function convertEquationElement(domNode: HTMLElement): DOMConversionOutput {
+  const node = $createEquationNode(
+    domNode.textContent,
+    domNode.nodeName === 'SPAN',
+  );
+  return {
+    node,
+  };
 }
 
 export type SerializedEquationNode = Spread<

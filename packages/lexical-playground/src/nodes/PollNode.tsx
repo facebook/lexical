@@ -207,7 +207,7 @@ export type SerializedPollNode = Spread<
   SerializedLexicalNode
 >;
 
-function convertPollElement(domNode: HTMLElement): null | DOMConversionOutput {
+function convertPollElement(domNode: HTMLElement): DOMConversionOutput {
   const question = domNode.getAttribute('data-lexical-poll-question');
   const node = $createPollNode(question);
   return {node};

@@ -324,7 +324,7 @@ export function createEditor(
           // eslint-disable-next-line no-prototype-builtins
           if (!klass.hasOwnProperty(method)) {
             console.warn(
-              `${klass.name} must implement static "${method}" method`,
+              `${name} must implement static "${method}" method`,
             );
           }
         });

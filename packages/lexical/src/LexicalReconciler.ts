@@ -36,10 +36,6 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
-  markCollapsedSelectionFormat,
-  markSelectionChangeFromReconcile,
-} from './LexicalEvents';
-import {
   $textContentRequiresDoubleLinebreakAtEnd,
   cloneDecorators,
   getElementByKeyOrThrow,

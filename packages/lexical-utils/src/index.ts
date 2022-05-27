@@ -300,12 +300,12 @@ function unstable_internalCreateNodeFromParse(
   // We will need to recursively handle the children in the case
   // of a ElementNode.
   if ($isElementNode(node)) {
-    const children = parsedNode.__children;
-
-    for (let i = 0; i < children.length; i++) {
-      const childKey = children[i];
-      const parsedChild = parsedNodeMap.get(childKey);
-
+    const firstChild = parsedNode.__first;
+    let next = firstChild;
+    let prev = null;
+    let childCount = 0;
+    while (next !== null) {
+      const parsedChild = parsedNodeMap.get(next);
       if (parsedChild !== undefined) {
         const child = unstable_internalCreateNodeFromParse(
           parsedChild,
@@ -314,12 +314,22 @@ function unstable_internalCreateNodeFromParse(
           key,
           activeEditorState,
         );
-        const newChildKey = child.__key;
-
-        node.__children.push(newChildKey);
+        if (prev !== null) {
+          prev.__next = child.__key;
+          child.__prev = prev.__key;
+        }
+        prev = child;
+        if (firstChild === next) {
+          node.__first = child.__key;
+        }
+        node.__last = child.__key;
+        childCount++;
+        next = parsedChild.__next;
+      } else {
+        next = null;
       }
     }
-
+    node.__size = childCount;
     node.__indent = parsedNode.__indent;
     node.__format = parsedNode.__format;
     node.__dir = parsedNode.__dir;

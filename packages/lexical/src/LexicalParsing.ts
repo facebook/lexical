@@ -28,6 +28,7 @@ export type ParsedNode = {
   __next: null | NodeKey,
   __parent: null | NodeKey,
   __prev: null | NodeKey,
+  __type: string
 };
 
 export type ParsedElementNode = ParsedNode & {

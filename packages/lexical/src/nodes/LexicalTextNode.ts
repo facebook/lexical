@@ -734,13 +734,13 @@ export class TextNode extends LexicalNode {
 
     // Insert the nodes into the parent's children
     if (hasReplacedSelf) {
-      let target = this;
+      let target: LexicalNode = this;
       for (let i = 0; i < splitNodes.length; i++) {
         target = target.insertAfter(splitNodes[i]);
       }
       this.remove();
     } else {
-      let target = this;
+      let target: LexicalNode = this;
       for (let i = 1; i < splitNodes.length; i++) {
         target = target.insertAfter(splitNodes[i]);
       }

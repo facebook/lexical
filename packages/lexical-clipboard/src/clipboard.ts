@@ -197,7 +197,8 @@ function sanitizeClonedNodeLinks(
   const currentNodeMapEntry = nodeMap.get(key);
   if (
     currentNodeMapEntry !== undefined &&
-    $isElementNode(currentNodeMapEntry)
+    $isElementNode(currentNodeMapEntry) &&
+    $isElementNode(currentNode)
   ) {
     currentNodeMapEntry.__first = null;
     currentNodeMapEntry.__last = null;

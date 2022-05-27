@@ -54,3 +54,4 @@ export function $isAutoLinkNode(
 ): node is AutoLinkNode;
 
 export var TOGGLE_LINK_COMMAND: LexicalCommand<string | null>;
+export function toggleLink(url: null | string): void;

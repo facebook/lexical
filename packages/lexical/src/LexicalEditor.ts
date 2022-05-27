@@ -323,9 +323,7 @@ export function createEditor(
         ['getType', 'clone'].forEach((method) => {
           // eslint-disable-next-line no-prototype-builtins
           if (!klass.hasOwnProperty(method)) {
-            console.warn(
-              `${name} must implement static "${method}" method`,
-            );
+            console.warn(`${name} must implement static "${method}" method`);
           }
         });
         if (proto instanceof DecoratorNode || proto instanceof ElementNode) {

@@ -35,6 +35,8 @@ import {
   generateRandomKey,
   markAllNodesAsDirty,
 } from './LexicalUtils';
+import {DecoratorNode} from './nodes/LexicalDecoratorNode';
+import {ElementNode} from './nodes/LexicalElementNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -312,6 +314,40 @@ export function createEditor(
 
   for (let i = 0; i < nodes.length; i++) {
     const klass = nodes[i];
+    // Ensure custom nodes implement required methods.
+    // @ts-ignore
+    if (__DEV__) {
+      const name = klass.name;
+      if (name !== 'RootNode') {
+        const proto = klass.prototype;
+        ['getType', 'clone'].forEach((method) => {
+          // eslint-disable-next-line no-prototype-builtins
+          if (!klass.hasOwnProperty(method)) {
+            console.warn(`${name} must implement static "${method}" method`);
+          }
+        });
+        if (proto instanceof DecoratorNode || proto instanceof ElementNode) {
+          // eslint-disable-next-line no-prototype-builtins
+          if (!klass.hasOwnProperty('importDOM')) {
+            console.warn(
+              `${name} should implement "importDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
+            );
+          }
+        }
+        // eslint-disable-next-line no-prototype-builtins
+        if (!klass.hasOwnProperty('importJSON')) {
+          console.warn(
+            `${name} should implement "importJSON" method to ensure JSON serialization works as expected`,
+          );
+        }
+        // eslint-disable-next-line no-prototype-builtins
+        if (!proto.hasOwnProperty('exportJSON')) {
+          console.warn(
+            `${name} should implement "exportJSON" method to ensure JSON serialization works as expected`,
+          );
+        }
+      }
+    }
     // @ts-expect-error TODO Replace Class utility type with InstanceType
     const type = klass.getType();
     registeredNodes.set(type, {

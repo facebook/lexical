@@ -1212,6 +1212,7 @@ button.action-button:disabled {
   background: none;
   border-radius: 10px;
   padding: 8px;
+  padding-right: 24px;
   vertical-align: middle;
   -webkit-appearance: none;
   -moz-appearance: none;

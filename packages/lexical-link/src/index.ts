@@ -27,7 +27,7 @@ import {
   createCommand,
   ElementNode,
 } from 'lexical';
-import invariant from 'shared-ts/invariant';
+import invariant from 'shared/invariant';
 
 export type SerializedLinkNode = Spread<
   {

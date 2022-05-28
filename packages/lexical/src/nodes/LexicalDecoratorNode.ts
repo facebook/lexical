@@ -16,20 +16,6 @@ import {LexicalNode} from '../LexicalNode';
 export class DecoratorNode<T = unknown> extends LexicalNode {
   constructor(key?: NodeKey) {
     super(key);
-
-    // ensure custom nodes implement required methods
-    // @ts-ignore
-    if (__DEV__) {
-      const proto = Object.getPrototypeOf(this);
-      ['decorate'].forEach((method) => {
-        // eslint-disable-next-line no-prototype-builtins
-        if (!proto.hasOwnProperty(method)) {
-          console.warn(
-            `${this.constructor.name} must implement "${method}" method`,
-          );
-        }
-      });
-    }
   }
 
   decorate(editor: LexicalEditor): T {

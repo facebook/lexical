@@ -334,6 +334,14 @@ export function createEditor(
             );
           }
         }
+        if (proto instanceof DecoratorNode) {
+          // eslint-disable-next-line no-prototype-builtins
+          if (!proto.hasOwnProperty('decorate')) {
+            console.warn(
+              `${this.constructor.name} must implement "decorate" method`,
+            );
+          }
+        }
         // eslint-disable-next-line no-prototype-builtins
         if (!klass.hasOwnProperty('importJSON')) {
           console.warn(

@@ -6,10 +6,9 @@
  */
 
 import {LinkNode, TOGGLE_LINK_COMMAND, toggleLink} from '@lexical/link';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {COMMAND_PRIORITY_EDITOR} from 'lexical';
 import {useEffect} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export function LinkPlugin(): null {
   const [editor] = useLexicalComposerContext();

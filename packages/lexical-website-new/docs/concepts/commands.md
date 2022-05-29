@@ -6,13 +6,13 @@ sidebar_position: 2
 
 Commands are a very powerful feature of Lexical that lets you register listeners for events like `KEY_ENTER_COMMAND` or `KEY_TAB_COMMAND` and contextually react to them _wherever_ & _however_ you'd like.
 
-This is pattern is useful for building [`Toolbars`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.jsx) or complex `Plugins` and `Nodes` such as the [`TablePlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-table) which require special handling for `selection`, `keyboard events`, and more.
+This is pattern is useful for building [`Toolbars`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.tsx) or complex `Plugins` and `Nodes` such as the [`TablePlugin`](https://github.com/facebook/lexical/tree/main/packages/lexical-table) which require special handling for `selection`, `keyboard events`, and more.
 
-When registering a `command` you supply a `priority` and can return `true` to mark it as "handled", which stops other listeners from receiving the event. If a command isn't handled explicitly by you, it's likely handled by default in the [`RichTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.js) or the [`PlainTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-plain-text/src/index.js).
+When registering a `command` you supply a `priority` and can return `true` to mark it as "handled", which stops other listeners from receiving the event. If a command isn't handled explicitly by you, it's likely handled by default in the [`RichTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-rich-text/src/index.ts) or the [`PlainTextPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-plain-text/src/index.ts).
 
 ## `createCommand(...)`
 
-You can view all of the existing commands in [`LexicalCommands.js`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.js), but if you need a custom command for your own use case check out the typed `createCommand(...)` function.
+You can view all of the existing commands in [`LexicalCommands.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.ts), but if you need a custom command for your own use case check out the typed `createCommand(...)` function.
 
 ```js
 const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand();
@@ -31,7 +31,7 @@ editor.registerCommand(
 
 ## `editor.dispatchCommand(...)`
 
-Commands can be dispatched from anywhere you have access to the `editor` such as a Toolbar Button, an event listener, or a Plugin, but most of the core commands are dispatched from [`LexicalEvents.js`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalEvents.js).
+Commands can be dispatched from anywhere you have access to the `editor` such as a Toolbar Button, an event listener, or a Plugin, but most of the core commands are dispatched from [`LexicalEvents.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalEvents.ts).
 
 ```js
 editor.dispatchCommand(command, payload);
@@ -39,7 +39,7 @@ editor.dispatchCommand(command, payload);
 
 The `payload`s are typed via the `createCommand(...)` API, but they're usually a DOM `event` for commands dispatched from an event listener.
 
-Here are some real examples from [`LexicalEvents.js`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalEvents.js).
+Here are some real examples from [`LexicalEvents.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalEvents.ts).
 
 ```js
 editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
@@ -47,7 +47,7 @@ editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
 editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
 ```
 
-And another example from the [`ToolbarPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.jsx) in our Playground.
+And another example from the [`ToolbarPlugin`](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/ToolbarPlugin.tsx) in our Playground.
 
 ```js
 const formatBulletList = () => {

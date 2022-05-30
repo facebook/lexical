@@ -852,7 +852,7 @@ export default function ToolbarPlugin(): JSX.Element {
           }
         }
       }
-      // Hande buttons
+      // Handle buttons
       setFontSize(
         $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
       );

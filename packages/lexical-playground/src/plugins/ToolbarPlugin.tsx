@@ -943,6 +943,14 @@ export default function ToolbarPlugin(): JSX.Element {
             node.setStyle('');
           }
         });
+<<<<<<< HEAD
+=======
+        $patchStyleText(selection, {
+          'background-color': '#fff',
+          color: '#000',
+          'font-family': 'Arial',
+        });
+>>>>>>> fixes
       }
       activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
     });
@@ -1005,9 +1013,9 @@ export default function ToolbarPlugin(): JSX.Element {
     <div className="toolbar">
       <button
         onClick={clearFormatting}
-        title="Clear Formatting"
+        title="Clear text formatting"
         className="toolbar-item spaced"
-        aria-label="Clear">
+        aria-label="Clear all text formatting">
         <i className="format clear" />
       </button>
       <button

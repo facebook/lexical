@@ -33,6 +33,7 @@ import {
   $isAtNodeEnd,
   $isParentElementRTL,
   $patchStyleText,
+  $selectAll,
   $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
@@ -43,6 +44,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -920,6 +922,29 @@ export default function ToolbarPlugin(): JSX.Element {
     [activeEditor],
   );
 
+  const clearFormatting = useCallback(() => {
+    activeEditor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        $selectAll(selection);
+        selection.getNodes().forEach((node) => {
+          if ($isTextNode(node)) {
+            node.setFormat(0);
+          }
+        });
+        $patchStyleText(selection, {
+          'background-color': '#fff',
+          color: '#000',
+          'font-family': 'Arial',
+          'font-size': '15px',
+        });
+        $wrapLeafNodesInElements(selection, () => $createParagraphNode());
+      }
+      activeEditor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+      activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
+    });
+  }, [activeEditor]);
+
   const onFontSizeSelect = useCallback(
     (e) => {
       applyStyleText({'font-size': e.target.value});
@@ -975,6 +1000,13 @@ export default function ToolbarPlugin(): JSX.Element {
 
   return (
     <div className="toolbar">
+      <button
+        onClick={clearFormatting}
+        title="Clear Formatting"
+        className="toolbar-item spaced"
+        aria-label="Clear">
+        <i className="format clear" />
+      </button>
       <button
         disabled={!canUndo}
         onClick={() => {

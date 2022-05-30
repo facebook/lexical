@@ -1012,13 +1012,6 @@ export default function ToolbarPlugin(): JSX.Element {
   return (
     <div className="toolbar">
       <button
-        onClick={clearFormatting}
-        title="Clear text formatting"
-        className="toolbar-item spaced"
-        aria-label="Clear all text formatting">
-        <i className="format clear" />
-      </button>
-      <button
         disabled={!canUndo}
         onClick={() => {
           activeEditor.dispatchCommand(UNDO_COMMAND, undefined);

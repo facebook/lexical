@@ -998,13 +998,6 @@ export default function ToolbarPlugin(): JSX.Element {
   return (
     <div className="toolbar">
       <button
-        onClick={clearFormatting}
-        title="Clear text formatting"
-        className="toolbar-item spaced"
-        aria-label="Clear all text formatting">
-        <i className="format clear" />
-      </button>
-      <button
         disabled={!canUndo}
         onClick={() => {
           activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
@@ -1197,6 +1190,14 @@ export default function ToolbarPlugin(): JSX.Element {
               aria-label="Format text with a superscript">
               <i className="icon superscript" />
               <span className="text">Superscript</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={clearFormatting}
+              className="item"
+              title="Clear text formatting"
+              aria-label="Clear all text formatting">
+              <i className="icon clear" />
+              <span className="text">Clear Formatting</span>
             </DropDownItem>
           </DropDown>
           <Divider />

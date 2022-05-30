@@ -30,6 +30,7 @@ export async function initialize({
   isCollab,
   isCharLimit,
   isCharLimitUtf8,
+  isMaxLength,
   showNestedEditorTreeView,
 }) {
   const appSettings = {};
@@ -45,6 +46,7 @@ export async function initialize({
   }
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
+  appSettings.isMaxLength = !!isMaxLength;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -61,6 +63,7 @@ export const test = base.extend({
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
+  isMaxLength: false,
   isPlainText: IS_PLAIN_TEXT,
   isRichText: IS_RICH_TEXT,
   legacyEvents: LEGACY_EVENTS,

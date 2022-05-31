@@ -171,7 +171,7 @@ export declare class LexicalEditor {
   blur(): void;
   isReadOnly(): boolean;
   setReadOnly(readOnly: boolean): void;
-  toJSON(): void;
+  toJSON(): SerializedEditor;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void;
@@ -802,6 +802,10 @@ export function $parseSerializedNode<
 export type SerializedLexicalNode = {
   type: string;
   version: number;
+};
+
+export type SerializedEditor = {
+  editorState: SerializedEditorState;
 };
 
 export type SerializedTextNode = Spread<

@@ -14,6 +14,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedEditor,
   SerializedLexicalNode,
 } from 'lexical';
 
@@ -43,6 +44,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 } from 'lexical';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 
@@ -316,7 +318,7 @@ function ImageComponent({
 export type SerializedImageNode = Spread<
   {
     altText: string;
-    caption: LexicalEditor;
+    caption: SerializedEditor;
     height?: number;
     maxWidth: number;
     showCaption: boolean;
@@ -431,7 +433,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   exportJSON(): SerializedImageNode {
     return {
       altText: this.getAltText(),
-      caption: this.__caption,
+      caption: this.__caption.toJSON(),
       height: this.__height === 'inherit' ? 0 : this.__height,
       maxWidth: this.__maxWidth,
       showCaption: this.__showCaption,

@@ -173,6 +173,7 @@ declare export class LexicalEditor {
   blur(): void;
   isReadOnly(): boolean;
   setReadOnly(readOnly: boolean): void;
+  toJSON(): SerializedEditor<>;
 }
 type EditorUpdateOptions = {
   onUpdate?: () => void,
@@ -876,3 +877,7 @@ export type SerializedGridCellNode = {
 export interface SerializedEditorState<SerializedNode> {
   root: SerializedRootNode<SerializedNode>;
 }
+
+export type SerializedEditor<SerializedNode> = {
+  editorState: SerializedEditorState<SerializedNode>,
+};

@@ -22,6 +22,7 @@ import {
   REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
   $createHeadingNode,
@@ -37,7 +38,11 @@ import {
   $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
-import {$getNearestNodeOfType, mergeRegister} from '@lexical/utils';
+import {
+  $getNearestBlockElementAncestorOrThrow,
+  $getNearestNodeOfType,
+  mergeRegister,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -941,6 +946,10 @@ export default function ToolbarPlugin(): JSX.Element {
           if ($isTextNode(node)) {
             node.setFormat(0);
             node.setStyle('');
+            $getNearestBlockElementAncestorOrThrow(node).setFormat('');
+          }
+          if ($isDecoratorBlockNode(node)) {
+            node.setFormat('');
           }
         });
 <<<<<<< HEAD
@@ -955,7 +964,6 @@ export default function ToolbarPlugin(): JSX.Element {
 =======
 >>>>>>> use setStyle to remove node styling
       }
-      activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
     });
   }, [activeEditor]);
 

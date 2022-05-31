@@ -310,6 +310,10 @@ i.italic {
   background-image: url(images/icons/type-italic.svg);
 }
 
+i.clear {
+  background-image: url(images/icons/trash.svg);
+}
+
 i.code {
   background-image: url(images/icons/code.svg);
 }
@@ -988,10 +992,6 @@ select.font-family {
 
 .actions i.table {
   background-image: url(images/icons/table.svg);
-}
-
-.actions i.clear {
-  background-image: url(images/icons/trash.svg);
 }
 
 .actions i.unlock {

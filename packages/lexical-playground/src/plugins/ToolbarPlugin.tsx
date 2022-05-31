@@ -33,6 +33,7 @@ import {
   $isAtNodeEnd,
   $isParentElementRTL,
   $patchStyleText,
+  $selectAll,
   $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
@@ -43,6 +44,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -850,7 +852,7 @@ export default function ToolbarPlugin(): JSX.Element {
           }
         }
       }
-      // Hande buttons
+      // Handle buttons
       setFontSize(
         $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
       );
@@ -919,6 +921,22 @@ export default function ToolbarPlugin(): JSX.Element {
     },
     [activeEditor],
   );
+
+  const clearFormatting = useCallback(() => {
+    activeEditor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        $selectAll(selection);
+        selection.getNodes().forEach((node) => {
+          if ($isTextNode(node)) {
+            node.setFormat(0);
+            node.setStyle('');
+          }
+        });
+      }
+      activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
+    });
+  }, [activeEditor]);
 
   const onFontSizeSelect = useCallback(
     (e) => {
@@ -1168,6 +1186,14 @@ export default function ToolbarPlugin(): JSX.Element {
               aria-label="Format text with a superscript">
               <i className="icon superscript" />
               <span className="text">Superscript</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={clearFormatting}
+              className="item"
+              title="Clear text formatting"
+              aria-label="Clear all text formatting">
+              <i className="icon clear" />
+              <span className="text">Clear Formatting</span>
             </DropDownItem>
           </DropDown>
           <Divider />

@@ -11,7 +11,6 @@ import {$getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
-  namespace: '',
   theme: {
     quote: 'my-quote-class',
   },
@@ -38,7 +37,6 @@ describe('LexicalQuoteNode tests', () => {
         );
         expect(
           quoteNode.createDOM({
-            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<blockquote></blockquote>');

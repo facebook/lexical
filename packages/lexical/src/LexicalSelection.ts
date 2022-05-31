@@ -9,7 +9,6 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey} from './LexicalNode';
-import type {ParsedSelection} from './LexicalParsing';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
@@ -2315,45 +2314,6 @@ export function $getPreviousSelection():
   | GridSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
-}
-
-export function internalCreateSelectionFromParse(
-  parsedSelection: null | ParsedSelection,
-): null | RangeSelection | NodeSelection | GridSelection {
-  if (parsedSelection !== null) {
-    if (parsedSelection.type === 'range') {
-      return new RangeSelection(
-        $createPoint(
-          parsedSelection.anchor.key,
-          parsedSelection.anchor.offset,
-          parsedSelection.anchor.type,
-        ),
-        $createPoint(
-          parsedSelection.focus.key,
-          parsedSelection.focus.offset,
-          parsedSelection.focus.type,
-        ),
-        0,
-      );
-    } else if (parsedSelection.type === 'node') {
-      return new NodeSelection(new Set(parsedSelection.nodes));
-    } else if (parsedSelection.type === 'grid') {
-      return new GridSelection(
-        parsedSelection.gridKey,
-        $createPoint(
-          parsedSelection.anchor.key,
-          parsedSelection.anchor.offset,
-          parsedSelection.anchor.type,
-        ),
-        $createPoint(
-          parsedSelection.focus.key,
-          parsedSelection.focus.offset,
-          parsedSelection.focus.type,
-        ),
-      );
-    }
-  }
-  return null;
 }
 
 export function $updateElementSelectionOnCreateDeleteNode(

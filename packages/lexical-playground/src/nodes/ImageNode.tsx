@@ -7,11 +7,14 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedEditor,
   SerializedLexicalNode,
 } from 'lexical';
 
@@ -41,6 +44,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 } from 'lexical';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 
@@ -314,7 +318,7 @@ function ImageComponent({
 export type SerializedImageNode = Spread<
   {
     altText: string;
-    caption: LexicalEditor;
+    caption: SerializedEditor;
     height?: number;
     maxWidth: number;
     showCaption: boolean;
@@ -325,6 +329,26 @@ export type SerializedImageNode = Spread<
   },
   SerializedLexicalNode
 >;
+
+function convertImageElement(domNode: Node): null | DOMConversionOutput {
+  if (domNode instanceof HTMLImageElement) {
+    const {alt: altText, src} = domNode;
+    const showCaption =
+      domNode.getAttribute('data-lexical-show-caption') === 'true';
+    const captionJSON = domNode.getAttribute('data-lexical-caption-json');
+    const node = $createImageNode({altText, showCaption, src});
+    if (showCaption && captionJSON) {
+      const parsedJSON = JSON.parse(captionJSON);
+      const nestedEditor = node.__caption;
+      const editorState = nestedEditor.parseEditorState(parsedJSON.editorState);
+      if (!editorState.isEmpty()) {
+        nestedEditor.setEditorState(editorState);
+      }
+    }
+    return {node};
+  }
+  return null;
+}
 
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
@@ -355,15 +379,20 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
     const {altText, height, width, maxWidth, caption, src, showCaption} =
       serializedNode;
-    return $createImageNode({
+    const node = $createImageNode({
       altText,
-      caption,
       height,
       maxWidth,
       showCaption,
       src,
       width,
     });
+    const nestedEditor = node.__caption;
+    const editorState = nestedEditor.parseEditorState(caption.editorState);
+    if (!editorState.isEmpty()) {
+      nestedEditor.setEditorState(editorState);
+    }
+    return node;
   }
 
   constructor(
@@ -390,13 +419,21 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     const element = document.createElement('img');
     element.setAttribute('src', this.__src);
     element.setAttribute('alt', this.__altText);
+    element.setAttribute(
+      'data-show-caption',
+      this.__showCaption ? 'true' : 'false',
+    );
+    element.setAttribute(
+      'data-lexical-caption-json',
+      JSON.stringify(this.__caption),
+    );
     return {element};
   }
 
   exportJSON(): SerializedImageNode {
     return {
       altText: this.getAltText(),
-      caption: this.__caption,
+      caption: this.__caption.toJSON(),
       height: this.__height === 'inherit' ? 0 : this.__height,
       maxWidth: this.__maxWidth,
       showCaption: this.__showCaption,
@@ -404,6 +441,15 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       type: 'image',
       version: 1,
       width: this.__width === 'inherit' ? 0 : this.__width,
+    };
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      img: (node: Node) => ({
+        conversion: convertImageElement,
+        priority: 0,
+      }),
     };
   }
 

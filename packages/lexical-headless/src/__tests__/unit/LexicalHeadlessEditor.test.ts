@@ -90,7 +90,7 @@ describe('LexicalHeadlessEditor', () => {
   it('can set editor state from json', async () => {
     editor.setEditorState(
       editor.parseEditorState(
-        '{"_nodeMap":[["root",{"__children":["1"],"__dir":null,"__format":0,"__indent":0,"__key":"root","__parent":null,"__type":"root"}],["1",{"__type":"paragraph","__parent":"root","__key":"1","__children":["2","3"],"__format":0,"__indent":0,"__dir":null}],["2",{"__type":"text","__parent":"1","__key":"2","__text":"Hello","__format":1,"__style":"","__mode":0,"__detail":0}],["3",{"__type":"text","__parent":"1","__key":"3","__text":"world","__format":0,"__style":"","__mode":0,"__detail":0}]],"_selection":null}',
+        '{"root":{"children":[{"children":[{"detail":0,"format":1,"mode":"normal","style":"","text":"Hello","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}',
       ),
     );
 

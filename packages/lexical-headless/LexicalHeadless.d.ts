@@ -16,7 +16,6 @@ import type {
 import {Class} from 'utility-types';
 
 export function createHeadlessEditor(editorConfig?: {
-  namespace?: string;
   editorState?: EditorState;
   theme?: EditorThemeClasses;
   parentEditor?: LexicalEditor;

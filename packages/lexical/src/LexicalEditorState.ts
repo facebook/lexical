@@ -7,8 +7,7 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
-import type {ParsedNode, ParsedSelection} from './LexicalParsing';
+import type {LexicalNode, NodeMap} from './LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
@@ -19,26 +18,9 @@ import type {SerializedRootNode} from './nodes/LexicalRootNode';
 import invariant from 'shared/invariant';
 
 import {$isElementNode} from '.';
-import {
-  $isGridSelection,
-  $isNodeSelection,
-  $isRangeSelection,
-} from './LexicalSelection';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
-
-// TODO: deprecated
-export type ParsedEditorState = {
-  _nodeMap: Array<[NodeKey, ParsedNode]>;
-  _selection: null | ParsedSelection;
-};
-
-// TODO: deprecated
-export type JSONEditorState = {
-  _nodeMap: Array<[NodeKey, LexicalNode]>;
-  _selection: null | ParsedSelection;
-};
 
 export interface SerializedEditorState {
   root: SerializedRootNode;
@@ -145,52 +127,7 @@ export class EditorState {
 
     return editorState;
   }
-
-  // TODO: remove when we use the other toJSON
-  toJSON(space?: string | number): JSONEditorState {
-    const selection = this._selection;
-
-    return {
-      _nodeMap: Array.from(this._nodeMap.entries()),
-      _selection: $isRangeSelection(selection)
-        ? {
-            anchor: {
-              key: selection.anchor.key,
-              offset: selection.anchor.offset,
-              type: selection.anchor.type,
-            },
-            focus: {
-              key: selection.focus.key,
-              offset: selection.focus.offset,
-              type: selection.focus.type,
-            },
-            type: 'range',
-          }
-        : $isNodeSelection(selection)
-        ? {
-            nodes: Array.from(selection._nodes),
-            type: 'node',
-          }
-        : $isGridSelection(selection)
-        ? {
-            anchor: {
-              key: selection.anchor.key,
-              offset: selection.anchor.offset,
-              type: selection.anchor.type,
-            },
-            focus: {
-              key: selection.focus.key,
-              offset: selection.focus.offset,
-              type: selection.focus.type,
-            },
-            gridKey: selection.gridKey,
-            type: 'grid',
-          }
-        : null,
-    };
-  }
-
-  unstable_toJSON(): SerializedEditorState {
+  toJSON(): SerializedEditorState {
     return readEditorState(this, () => ({
       root: exportNodeToJSON($getRoot()),
     }));

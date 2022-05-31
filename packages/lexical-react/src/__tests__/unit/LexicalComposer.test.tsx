@@ -43,7 +43,6 @@ describe('LexicalNodeHelpers tests', () => {
       return (
         <LexicalComposer
           initialConfig={{
-            namespace: 'PlaygroundEditor',
             nodes: [],
             onError: () => {
               throw Error();

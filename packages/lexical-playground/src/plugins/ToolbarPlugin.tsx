@@ -952,17 +952,6 @@ export default function ToolbarPlugin(): JSX.Element {
             node.setFormat('');
           }
         });
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        $patchStyleText(selection, {
-          'background-color': '#fff',
-          color: '#000',
-          'font-family': 'Arial',
-        });
->>>>>>> fixes
-=======
->>>>>>> use setStyle to remove node styling
       }
     });
   }, [activeEditor]);

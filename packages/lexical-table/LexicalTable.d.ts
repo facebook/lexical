@@ -224,5 +224,6 @@ export declare class TableSelection {
 export type InsertTableCommandPayload = Readonly<{
   columns: string;
   rows: string;
+  includeHeaders?: boolean;
 }>;
 export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;

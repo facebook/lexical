@@ -930,12 +930,8 @@ export default function ToolbarPlugin(): JSX.Element {
         selection.getNodes().forEach((node) => {
           if ($isTextNode(node)) {
             node.setFormat(0);
+            node.setStyle('');
           }
-        });
-        $patchStyleText(selection, {
-          'background-color': '#fff',
-          color: '#000',
-          'font-family': 'Arial',
         });
       }
       activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');

@@ -161,8 +161,7 @@ function positionEditorElement(
   } else {
     editor.style.opacity = '1';
     editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
-    const left =
-      rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2;
+    const left = rect.left - editor.offsetWidth / 2 + rect.width / 2;
     if (rootElementRect.left > left) {
       editor.style.left = `${rect.left + window.pageXOffset}px`;
     } else if (left + editor.offsetWidth > rootElementRect.right) {

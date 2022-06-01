@@ -154,8 +154,8 @@ function exportTextFormat(
   }
 
   appliedOrder.forEach((transformer) => {
-    const format = transform.format[0];
-    const tag = transform.tag;
+    const format = transformer.format[0];
+    const tag = transformer.tag;
 
     if (hasFormat(node, format)) {
       // Prevent adding closing tag if next sibling will do it

@@ -131,7 +131,7 @@ function exportTextFormat(
   let output = frozenString;
 
   const applied = new Set();
-  const appliedOrder = []
+  const appliedOrder = [];
 
   for (const transformer of textTransformers) {
     const format = transformer.format[0];
@@ -140,9 +140,9 @@ function exportTextFormat(
     if (hasFormat(node, format) && !applied.has(format)) {
       // Multiple tags might be used for the same format (*, _)
       applied.add(format);
-      // Add most recent textTransform to beginning of appliedOrder where 
+      // Add most recent textTransform to beginning of appliedOrder where
       // we'll later iterate last-in-first-out when appending closing tags
-      appliedOrder = [transformer, ...appliedOrder]
+      appliedOrder = [transformer, ...appliedOrder];
 
       // Prevent adding opening tag is already opened by the previous sibling
       const previousNode = getTextSibling(node, true);
@@ -153,18 +153,18 @@ function exportTextFormat(
     }
   }
 
-  appliedOrder.forEach(transformer => {
+  appliedOrder.forEach((transformer) => {
     const format = transform.format[0];
     const tag = transform.tag;
 
     // Prevent adding closing tag if next sibling will do it
     if (hasFormat(node, format)) {
-        const nextNode = getTextSibling(node, false);
-        if (!hasFormat(nextNode, format)) {
-          output += tag
-        }
+      const nextNode = getTextSibling(node, false);
+      if (!hasFormat(nextNode, format)) {
+        output += tag;
+      }
     }
-  })
+  });
 
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
   return textContent.replace(frozenString, output);

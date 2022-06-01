@@ -1207,7 +1207,7 @@ export class RangeSelection implements BaseSelection {
       } else if (anchorOffset === textContentLength) {
         target = anchorNode;
       } else if ($isTokenOrInert(anchorNode)) {
-        // Do nothing if we're inside an immutable/inert node
+        // Do nothing if we're inside a token/inert node
         return false;
       } else {
         // If we started with a range selected grab the danglingText after the

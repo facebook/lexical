@@ -465,7 +465,7 @@ test.describe('Emoticons', () => {
     }
 
     await moveToLineBeginning(page);
-    // This should not crash on a deletion on an immutable node
+    // This should not crash on a deletion on a token node
     await page.keyboard.press('Backspace');
     await moveToLineEnd(page);
 

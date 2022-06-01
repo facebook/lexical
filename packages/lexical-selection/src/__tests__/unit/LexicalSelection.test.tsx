@@ -34,8 +34,8 @@ import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {
   applySelectionInputs,
-  convertToImmutableNode,
   convertToSegmentedNode,
+  convertToTokenNode,
   deleteBackward,
   deleteWordBackward,
   deleteWordForward,
@@ -44,9 +44,9 @@ import {
   formatStrikeThrough,
   formatUnderline,
   getNodeFromPath,
-  insertImmutableNode,
   insertSegmentedNode,
   insertText,
+  insertTokenNode,
   moveBackward,
   moveEnd,
   moveNativeSelection,
@@ -381,8 +381,8 @@ describe('LexicalSelection tests', () => {
         focusOffset: 16,
         focusPath: [0, 0, 0],
       },
-      inputs: [insertImmutableNode('Dominic Gannaway')],
-      name: 'Creation of an immutable node',
+      inputs: [insertTokenNode('Dominic Gannaway')],
+      name: 'Creation of an token node',
     },
     {
       expectedHTML:
@@ -398,9 +398,9 @@ describe('LexicalSelection tests', () => {
       inputs: [
         insertText('Dominic Gannaway'),
         moveNativeSelection([0, 0, 0], 0, [0, 0, 0], 16),
-        convertToImmutableNode(),
+        convertToTokenNode(),
       ],
-      name: 'Convert text to an immutable node',
+      name: 'Convert text to an token node',
     },
     {
       expectedHTML:
@@ -908,12 +908,12 @@ describe('LexicalSelection tests', () => {
         },
         inputs: [
           insertText('Hello '),
-          insertImmutableNode('Bob'),
+          insertTokenNode('Bob'),
           moveBackward(1),
           moveBackward(1),
           moveEnd(),
         ],
-        name: 'Type a text and an immutable text, move the caret to the end of the first text',
+        name: 'Type a text and token text, move the caret to the end of the first text',
       },
       {
         expectedHTML:

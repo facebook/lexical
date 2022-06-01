@@ -525,11 +525,11 @@ describe('LexicalNode tests', () => {
 
       test('LexicalNode.isToken()', async () => {
         const {editor} = testEnv;
-        let immutableTextNode;
+        let tokenTextNode;
 
         await editor.update(() => {
-          immutableTextNode = new TextNode('token').setMode('token');
-          paragraphNode.append(immutableTextNode);
+          tokenTextNode = new TextNode('token').setMode('token');
+          paragraphNode.append(tokenTextNode);
         });
 
         expect(testEnv.outerHTML).toBe(
@@ -538,7 +538,7 @@ describe('LexicalNode tests', () => {
 
         await editor.getEditorState().read(() => {
           expect(textNode.isToken(textNode)).toBe(false);
-          expect(immutableTextNode.isToken()).toBe(true);
+          expect(tokenTextNode.isToken()).toBe(true);
         });
         expect(() => textNode.isToken()).toThrow();
       });
@@ -765,7 +765,7 @@ describe('LexicalNode tests', () => {
         );
       });
 
-      test('LexicalNode.replace(): immutable', async () => {
+      test('LexicalNode.replace(): token', async () => {
         const {editor} = testEnv;
 
         expect(testEnv.outerHTML).toBe(
@@ -773,8 +773,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          // @ts-expect-error
-          const barTextNode = new TextNode('bar').setMode('immutable');
+          const barTextNode = new TextNode('bar').setMode('token');
           textNode.replace(barTextNode);
         });
 
@@ -861,7 +860,7 @@ describe('LexicalNode tests', () => {
         );
       });
 
-      test('LexicalNode.insertAfter(): immutable', async () => {
+      test('LexicalNode.insertAfter(): token', async () => {
         const {editor} = testEnv;
 
         expect(testEnv.outerHTML).toBe(
@@ -869,8 +868,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          // @ts-expect-error
-          const barTextNode = new TextNode('bar').setMode('immutable');
+          const barTextNode = new TextNode('bar').setMode('token');
           textNode.insertAfter(barTextNode);
         });
 
@@ -887,8 +885,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          // @ts-expect-error
-          const barTextNode = new TextNode('bar').setMode('immutable');
+          const barTextNode = new TextNode('bar').setMode('token');
           textNode.insertAfter(barTextNode);
         });
 
@@ -1049,7 +1046,7 @@ describe('LexicalNode tests', () => {
         );
       });
 
-      test('LexicalNode.insertBefore(): immutable', async () => {
+      test('LexicalNode.insertBefore(): token', async () => {
         const {editor} = testEnv;
 
         expect(testEnv.outerHTML).toBe(
@@ -1057,8 +1054,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          // @ts-expect-error
-          const barTextNode = new TextNode('bar').setMode('immutable');
+          const barTextNode = new TextNode('bar').setMode('token');
           textNode.insertBefore(barTextNode);
         });
 

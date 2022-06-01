@@ -842,7 +842,7 @@ function getTextUpToAnchor(selection: RangeSelection): string | null {
   const anchorNode = anchor.getNode();
   // We should not be attempting to extract mentions out of nodes
   // that are already being used for other core things. This is
-  // especially true for immutable nodes, which can't be mutated at all.
+  // especially true for token nodes, which can't be mutated at all.
   if (!anchorNode.isSimpleText()) {
     return null;
   }
@@ -924,7 +924,7 @@ function createMentionNodeFromSearchResult(
     const anchorNode = anchor.getNode();
     // We should not be attempting to extract mentions out of nodes
     // that are already being used for other core things. This is
-    // especially true for immutable nodes, which can't be mutated at all.
+    // especially true for token nodes, which can't be mutated at all.
     if (!anchorNode.isSimpleText()) {
       return;
     }

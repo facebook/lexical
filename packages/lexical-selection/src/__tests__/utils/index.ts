@@ -231,10 +231,10 @@ export function insertText(text) {
   };
 }
 
-export function insertImmutableNode(text) {
+export function insertTokenNode(text) {
   return {
     text,
-    type: 'insert_immutable_node',
+    type: 'insert_token_node',
   };
 }
 
@@ -245,10 +245,10 @@ export function insertSegmentedNode(text) {
   };
 }
 
-export function convertToImmutableNode() {
+export function convertToTokenNode() {
   return {
     text: null,
-    type: 'convert_to_immutable_node',
+    type: 'convert_to_token_node',
   };
 }
 
@@ -725,10 +725,9 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
 
-          case 'insert_immutable_node': {
+          case 'insert_token_node': {
             const text = $createTextNode(input.text);
-            // @ts-expect-error TODO Remove or refactor these tests as immutable nodes are no longer valid.
-            text.setMode('immutable');
+            text.setMode('token');
             if ($isRangeSelection(selection)) {
               selection.insertNodes([text]);
             }
@@ -745,10 +744,9 @@ export async function applySelectionInputs(inputs, update, editor) {
             break;
           }
 
-          case 'convert_to_immutable_node': {
+          case 'convert_to_token_node': {
             const text = $createTextNode(selection.getTextContent());
-            // @ts-expect-error TODO Remove or refactor these tests as immutable nodes are no longer valid.
-            text.setMode('immutable');
+            text.setMode('token');
             if ($isRangeSelection(selection)) {
               selection.insertNodes([text]);
             }

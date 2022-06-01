@@ -79,10 +79,10 @@ function testSuite(charset) {
     });
   });
 
-  test('displays overflow on immutable nodes', async ({page, isCollab}) => {
+  test('displays overflow on token nodes', async ({page, isCollab}) => {
     // The smile emoji (S) is length 2, so for 1234S56:
     // - 1234 is non-overflow text
-    // - S takes characters 5 and 6, since it's immutable and can't be split we count the whole
+    // - S takes characters 5 and 6, since it's a token and can't be split we count the whole
     //   node as overflowed
     // - 56 is overflowed
     test.skip(isCollab);
@@ -244,12 +244,12 @@ function testSuite(charset) {
     }
   });
 
-  test('can delete text in front and overflow is recomputed (immutable nodes)', async ({
+  test('can delete text in front and overflow is recomputed (token nodes)', async ({
     page,
     isCollab,
   }) => {
     test.skip(isCollab);
-    // See 'displays overflow on immutable nodes'
+    // See 'displays overflow on token nodes'
     await page.focus('div[contenteditable="true"]');
 
     await page.keyboard.type('1234:)56');

@@ -149,7 +149,11 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   }
 }
 
-function positionEditorElement(editor, rect) {
+function positionEditorElement(
+  editor: HTMLElement,
+  rect: ClientRect,
+  rootElementRect: ClientRect,
+): void {
   if (rect === null) {
     editor.style.opacity = '0';
     editor.style.top = '-1000px';
@@ -157,9 +161,15 @@ function positionEditorElement(editor, rect) {
   } else {
     editor.style.opacity = '1';
     editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
-    editor.style.left = `${
-      rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2
-    }px`;
+    const left =
+      rect.left + window.pageXOffset - editor.offsetWidth / 2 + rect.width / 2;
+    if (rootElementRect.left > left) {
+      editor.style.left = `${rect.left + window.pageXOffset}px`;
+    } else if (left + editor.offsetWidth > rootElementRect.right) {
+      editor.style.left = `${
+        rect.right + window.pageXOffset - editor.offsetWidth
+      }px`;
+    }
   }
 }
 
@@ -192,6 +202,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
     }
 
     const rootElement = editor.getRootElement();
+    const rootElementRect = rootElement.getBoundingClientRect();
     if (
       selection !== null &&
       !nativeSelection.isCollapsed &&
@@ -210,10 +221,10 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
         rect = domRange.getBoundingClientRect();
       }
 
-      positionEditorElement(editorElem, rect);
+      positionEditorElement(editorElem, rect, rootElementRect);
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
-      positionEditorElement(editorElem, null);
+      positionEditorElement(editorElem, null, rootElementRect);
       setLastSelection(null);
       setEditMode(false);
       setLinkUrl('');

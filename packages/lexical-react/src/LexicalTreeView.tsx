@@ -445,7 +445,7 @@ function printSelectedCharsLine({
     ...indent.slice(0, indent.length - 1),
     selectionLastIndent,
   ];
-  const unselectedChars = Array(start).fill(' ');
+  const unselectedChars = Array(start + 1).fill(' ');
   const selectedChars = Array(end - start).fill(SYMBOLS.selectedChar);
   const paddingLength = typeDisplay.length + 3; // 2 for the spaces around + 1 for the double quote.
 

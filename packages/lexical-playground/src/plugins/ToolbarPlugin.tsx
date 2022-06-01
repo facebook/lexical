@@ -152,7 +152,7 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
 function positionEditorElement(
   editor: HTMLElement,
   rect: ClientRect,
-  rootElementRect: ClientRect,
+  rootElement: HTMLElement,
 ): void {
   if (rect === null) {
     editor.style.opacity = '0';
@@ -162,6 +162,7 @@ function positionEditorElement(
     editor.style.opacity = '1';
     editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
     const left = rect.left - editor.offsetWidth / 2 + rect.width / 2;
+    const rootElementRect = rootElement.getBoundingClientRect();
     if (rootElementRect.left > left) {
       editor.style.left = `${rect.left + window.pageXOffset}px`;
     } else if (left + editor.offsetWidth > rootElementRect.right) {
@@ -201,7 +202,6 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
     }
 
     const rootElement = editor.getRootElement();
-    const rootElementRect = rootElement.getBoundingClientRect();
     if (
       selection !== null &&
       !nativeSelection.isCollapsed &&
@@ -220,10 +220,10 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
         rect = domRange.getBoundingClientRect();
       }
 
-      positionEditorElement(editorElem, rect, rootElementRect);
+      positionEditorElement(editorElem, rect, rootElement);
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
-      positionEditorElement(editorElem, null, rootElementRect);
+      positionEditorElement(editorElem, null, rootElement);
       setLastSelection(null);
       setEditMode(false);
       setLinkUrl('');

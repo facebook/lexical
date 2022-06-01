@@ -131,7 +131,7 @@ function exportTextFormat(
   let output = frozenString;
 
   const applied = new Set();
-  const appliedOrder = [];
+  let appliedOrder = [];
 
   for (const transformer of textTransformers) {
     const format = transformer.format[0];

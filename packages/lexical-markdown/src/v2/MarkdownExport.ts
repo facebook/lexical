@@ -157,8 +157,8 @@ function exportTextFormat(
     const format = transform.format[0];
     const tag = transform.tag;
 
-    // Prevent adding closing tag if next sibling will do it
     if (hasFormat(node, format)) {
+      // Prevent adding closing tag if next sibling will do it
       const nextNode = getTextSibling(node, false);
       if (!hasFormat(nextNode, format)) {
         output += tag;

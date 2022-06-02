@@ -436,6 +436,51 @@ export class ElementNode extends LexicalNode {
 
     return removedNodes;
   }
+  splitNode(index: number): [ElementNode, LexicalNode, ElementNode] {
+    errorOnReadOnly();
+    const splitChild = this.getChildAtIndex(index);
+    if (splitChild == null) {
+      invariant(false, 'cannot split node, the child is out of bound');
+    }
+
+    const childrenLength = this.getChildrenSize();
+    const writableParent = this.getParentOrThrow().getWritable();
+    const children = writableParent.__children;
+    const thisIndex = children.indexOf(this.__key);
+    if (thisIndex === -1) {
+      invariant(false, 'Node is not a child of its parent');
+    }
+
+    const beforeNode = this;
+    const beforeNodeWritable = beforeNode.getWritable();
+
+    // create a node of the same type
+    const afterNode = new this.constructor();
+    const afterNodeWritable = afterNode.getWritable();
+
+    // Add the node right after the node we are splitting
+    writableParent.splice(thisIndex + 1, 0, [afterNodeWritable]);
+
+    // remove elements after a split point and save them to the variable
+    const nodesToMove = beforeNodeWritable.splice(
+      index,
+      childrenLength - index,
+      [],
+    );
+    afterNodeWritable.append(...nodesToMove);
+
+    // handle selection
+    const selection = $getSelection();
+
+    /* if the element was selected we want to add the split node into selection as well
+    if ($isNodeSelection(selection)) {
+      if (selection.has(this.getKey())) {
+        selection.add(afterNode.getKey());
+      }
+    }*/
+
+    return [beforeNodeWritable, splitChild, afterNodeWritable];
+  }
   // JSON serialization
   exportJSON(): SerializedElementNode {
     return {

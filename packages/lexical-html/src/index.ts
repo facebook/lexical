@@ -136,7 +136,18 @@ function getConversionFunction(
 ): DOMConversionFn | null {
   const {nodeName} = domNode;
 
-  const cachedConversions = editor._htmlConversions.get(nodeName.toLowerCase());
+  const baseCacheConversions =
+    domNode instanceof HTMLElement &&
+    domNode.hasAttribute('data-lexical-node-type')
+      ? editor._htmlConversions.get('*')
+      : [];
+
+  const nodeNameCacheConversions =
+    editor._htmlConversions.get(nodeName.toLowerCase()) || [];
+
+  const cachedConversions = Array.from(nodeNameCacheConversions).concat(
+    baseCacheConversions,
+  );
 
   let currentConversion: DOMConversion | null = null;
 

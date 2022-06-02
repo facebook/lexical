@@ -13,13 +13,7 @@ import type {RangeSelection} from './LexicalSelection';
 import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
 
-import {
-  $isDecoratorNode,
-  $isElementNode,
-  $isRootNode,
-  $isTextNode,
-  ElementNode,
-} from '.';
+import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -609,20 +603,48 @@ export class LexicalNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    if ($isDecoratorNode(this)) {
-      const element = editor.getElementByKey(this.getKey());
-      return {
-        element: element ? (element.cloneNode() as HTMLElement) : null,
-      };
-    }
-
     const element = this.createDOM(editor._config, editor);
-
+    const serializedNode = this.exportJSON();
+    element.setAttribute('data-lexical-node-type', this.__type);
+    element.setAttribute(
+      'data-lexical-node-json',
+      JSON.stringify(serializedNode),
+    );
+    element.setAttribute('data-lexical-editor-key', editor._key);
     return {element};
   }
 
   static importDOM(): DOMConversionMap | null {
-    return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proto: any = this.prototype.constructor;
+    return {
+      // Catch-all key because we don't know the nodeName of the element returned by exportDOM.
+      '*': (domNode: Node) => {
+        if (!(domNode instanceof HTMLElement)) return null;
+        const editorKey = domNode.getAttribute('data-lexical-editor-key');
+        const nodeType = domNode.getAttribute('data-lexical-node-type');
+        if (editorKey == null || nodeType == null) return null;
+        const editor = getActiveEditor();
+        if (editorKey === editor.getKey() && nodeType === proto.getType()) {
+          try {
+            const json = domNode.getAttribute('data-lexical-node-json');
+            if (json != null) {
+              const serializedNode: SerializedLexicalNode = JSON.parse(json);
+              const node = proto.importJSON(serializedNode);
+              return {
+                conversion: () => ({node}),
+                // Max priority because of the 'data-lexical-node-type' attribute
+                // matching the one on node klass guarantees a match.
+                priority: 4,
+              };
+              // eslint-disable-next-line no-empty
+            }
+            // eslint-disable-next-line no-empty
+          } catch {}
+        }
+        return null;
+      },
+    };
   }
 
   exportJSON(): SerializedLexicalNode {

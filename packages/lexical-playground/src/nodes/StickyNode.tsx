@@ -329,10 +329,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__color = color;
   }
 
-  static importDOM(): null {
-    return null;
-  }
-
   exportJSON(): SerializedStickyNode {
     return {
       caption: this.__caption,

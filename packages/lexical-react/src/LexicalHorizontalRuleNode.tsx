@@ -6,14 +6,7 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  LexicalCommand,
-  LexicalNode,
-  SerializedLexicalNode,
-} from 'lexical';
+import type {LexicalCommand, LexicalNode, SerializedLexicalNode} from 'lexical';
 
 import {createCommand, DecoratorNode} from 'lexical';
 import * as React from 'react';
@@ -37,19 +30,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
 
   static clone(node: HorizontalRuleNode): HorizontalRuleNode {
     return new HorizontalRuleNode(node.__key);
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      hr: (node: Node) => ({
-        conversion: convertHorizontalRuleElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  exportDOM(): DOMExportOutput {
-    return {element: document.createElement('hr')};
   }
 
   static importJSON(
@@ -86,10 +66,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     return <HorizontalRuleComponent />;
   }
-}
-
-function convertHorizontalRuleElement(): DOMConversionOutput {
-  return {node: $createHorizontalRuleNode()};
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {

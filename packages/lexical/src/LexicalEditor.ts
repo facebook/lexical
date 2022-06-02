@@ -24,13 +24,8 @@ import {
   triggerListeners,
   updateEditor,
 } from './LexicalUpdates';
-import {
-  dispatchCommand,
-  generateRandomKey,
-  markAllNodesAsDirty,
-} from './LexicalUtils';
+import {createUID, dispatchCommand, markAllNodesAsDirty} from './LexicalUtils';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
-import {ElementNode} from './nodes/LexicalElementNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
@@ -245,8 +240,9 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   const handledConversions = new Set();
   nodes.forEach((node) => {
     // @ts-expect-error TODO Replace Class utility type with InstanceType
-    const importDOM = node.klass.importDOM;
+    const importDOM = node.klass.importDOM.bind(node.klass);
 
+    // debugger;
     if (handledConversions.has(importDOM)) {
       return;
     }
@@ -312,13 +308,16 @@ export function createEditor(
             console.warn(`${name} must implement static "${method}" method`);
           }
         });
-        if (proto instanceof DecoratorNode || proto instanceof ElementNode) {
+        if (
           // eslint-disable-next-line no-prototype-builtins
-          if (!klass.hasOwnProperty('importDOM')) {
-            console.warn(
-              `${name} should implement "importDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
-            );
-          }
+          !klass.hasOwnProperty('importDOM') &&
+          // eslint-disable-next-line no-prototype-builtins
+          klass.hasOwnProperty('exportDOM') &&
+          process.env.NODE_ENV !== 'test'
+        ) {
+          console.warn(
+            `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
+          );
         }
         if (proto instanceof DecoratorNode) {
           // eslint-disable-next-line no-prototype-builtins
@@ -328,16 +327,22 @@ export function createEditor(
             );
           }
         }
-        // eslint-disable-next-line no-prototype-builtins
-        if (!klass.hasOwnProperty('importJSON')) {
+        if (
+          // eslint-disable-next-line no-prototype-builtins
+          !klass.hasOwnProperty('importJSON') &&
+          process.env.NODE_ENV !== 'test'
+        ) {
           console.warn(
-            `${name} should implement "importJSON" method to ensure JSON serialization works as expected`,
+            `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
           );
         }
-        // eslint-disable-next-line no-prototype-builtins
-        if (!proto.hasOwnProperty('exportJSON')) {
+        if (
+          // eslint-disable-next-line no-prototype-builtins
+          !proto.hasOwnProperty('exportJSON') &&
+          process.env.NODE_ENV !== 'test'
+        ) {
           console.warn(
-            `${name} should implement "exportJSON" method to ensure JSON serialization works as expected`,
+            `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
           );
         }
       }
@@ -450,7 +455,8 @@ export class LexicalEditor {
     // Handling of DOM mutations
     this._observer = null;
     // Used for identifying owning editors
-    this._key = generateRandomKey();
+    this._key = createUID();
+
     this._onError = onError;
     this._htmlConversions = htmlConversions;
     this._readOnly = false;

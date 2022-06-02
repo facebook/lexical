@@ -24,11 +24,7 @@ import {
   triggerListeners,
   updateEditor,
 } from './LexicalUpdates';
-import {
-  dispatchCommand,
-  generateRandomKey,
-  markAllNodesAsDirty,
-} from './LexicalUtils';
+import {createUID, dispatchCommand, markAllNodesAsDirty} from './LexicalUtils';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
@@ -452,7 +448,7 @@ export class LexicalEditor {
     // Handling of DOM mutations
     this._observer = null;
     // Used for identifying owning editors
-    this._key = generateRandomKey();
+    this._key = createUID();
     this._onError = onError;
     this._htmlConversions = htmlConversions;
     this._readOnly = false;

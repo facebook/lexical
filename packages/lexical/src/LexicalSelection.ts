@@ -2218,7 +2218,10 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection();
 
-  if ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) {
+  if (
+    domSelection.rangeCount === 0 &&
+    ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection))
+  ) {
     return lastSelection.clone();
   }
 

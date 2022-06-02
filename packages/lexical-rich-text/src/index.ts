@@ -373,29 +373,41 @@ function onPasteForRichText(
 
 function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
   event.preventDefault();
-  editor.update(() => {
+  const selection = $getSelection();
+  if (selection !== null) {
     const clipboardData = event.clipboardData;
-    const selection = $getSelection();
-    if (selection !== null) {
-      if (clipboardData != null) {
-        const htmlString = $getHtmlContent(editor);
-        if (htmlString !== null) {
-          clipboardData.setData('text/html', htmlString);
-        }
-        clipboardData.setData('text/plain', selection.getTextContent());
+    const htmlString = $getHtmlContent(editor);
+
+    if (clipboardData != null) {
+      if (htmlString !== null) {
+        clipboardData.setData('text/html', htmlString);
+      }
+      const plainString = selection.getTextContent();
+      clipboardData.setData('text/plain', plainString);
+    } else {
+      const clipboard = navigator.clipboard;
+      if (clipboard != null) {
+        // Most browsers only support a single item in the clipboard at one time.
+        // So we optimize by only putting in HTML.
+        const data = [
+          new ClipboardItem({
+            'text/html': new Blob([htmlString], {type: 'text/html'}),
+          }),
+        ];
+        clipboard.write(data);
       }
     }
-  });
+  }
 }
 
 function onCutForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
   onCopyForRichText(event, editor);
-  editor.update(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    }
-  });
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    selection.removeText();
+  } else if ($isNodeSelection(selection)) {
+    selection.getNodes().forEach((node) => node.remove());
+  }
 }
 
 function handleIndentAndOutdent(
@@ -763,24 +775,16 @@ export function registerRichText(
     editor.registerCommand<ClipboardEvent>(
       COPY_COMMAND,
       (event) => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-          onCopyForRichText(event, editor);
-          return true;
-        }
-        return false;
+        onCopyForRichText(event, editor);
+        return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<ClipboardEvent>(
       CUT_COMMAND,
       (event) => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-          onCutForRichText(event, editor);
-          return true;
-        }
-        return false;
+        onCutForRichText(event, editor);
+        return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

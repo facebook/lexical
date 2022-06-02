@@ -392,21 +392,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__caption = caption || createEditor();
   }
 
-  // exportDOM(): DOMExportOutput {
-  //   const element = document.createElement('img');
-  //   element.setAttribute('src', this.__src);
-  //   element.setAttribute('alt', this.__altText);
-  //   element.setAttribute(
-  //     'data-show-caption',
-  //     this.__showCaption ? 'true' : 'false',
-  //   );
-  //   element.setAttribute(
-  //     'data-lexical-caption-json',
-  //     JSON.stringify(this.__caption),
-  //   );
-  //   return {element};
-  // }
-
   exportJSON(): SerializedImageNode {
     return {
       altText: this.getAltText(),
@@ -420,15 +405,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       width: this.__width === 'inherit' ? 0 : this.__width,
     };
   }
-
-  // static importDOM(): DOMConversionMap | null {
-  //   return {
-  //     img: (node: Node) => ({
-  //       conversion: convertImageElement,
-  //       priority: 0,
-  //     }),
-  //   };
-  // }
 
   setWidthAndHeight(
     width: 'inherit' | number,

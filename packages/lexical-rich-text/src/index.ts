@@ -125,6 +125,15 @@ export class QuoteNode extends ElementNode {
     return false;
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      blockquote: (node: Node) => ({
+        conversion: convertBlockquoteElement,
+        priority: 0,
+      }),
+    };
+  }
+
   static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
     const node = $createQuoteNode();
     node.setFormat(serializedNode.format);
@@ -286,6 +295,11 @@ function convertHeadingElement(domNode: Node): DOMConversionOutput {
   ) {
     node = $createHeadingNode(nodeName);
   }
+  return {node};
+}
+
+function convertBlockquoteElement(): DOMConversionOutput {
+  const node = $createQuoteNode();
   return {node};
 }
 

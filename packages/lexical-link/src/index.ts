@@ -27,7 +27,6 @@ import {
   createCommand,
   ElementNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 export type SerializedLinkNode = Spread<
   {
@@ -174,16 +173,16 @@ export class AutoLinkNode extends LinkNode {
   static importJSON(
     serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
   ): AutoLinkNode {
-    invariant(
-      serializedNode.type !== 'autolink',
-      'Incorrect node type received in importJSON for %s',
-      this.getType(),
-    );
     const node = $createAutoLinkNode(serializedNode.url);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
     return node;
+  }
+
+  static importDOM(): null {
+    // TODO: Should link node should handle the import over autolink?
+    return null;
   }
 
   exportJSON(): SerializedAutoLinkNode {

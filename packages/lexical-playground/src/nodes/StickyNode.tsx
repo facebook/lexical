@@ -30,6 +30,7 @@ import {
   createEditor,
   DecoratorNode,
 } from 'lexical';
+import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
@@ -326,6 +327,10 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__y = y;
     this.__caption = caption || createEditor();
     this.__color = color;
+  }
+
+  static importDOM(): null {
+    return null;
   }
 
   exportJSON(): SerializedStickyNode {

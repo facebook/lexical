@@ -39,6 +39,10 @@ export class OverflowNode extends ElementNode {
     return $createOverflowNode();
   }
 
+  static importDOM(): null {
+    return null;
+  }
+
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'overflow';

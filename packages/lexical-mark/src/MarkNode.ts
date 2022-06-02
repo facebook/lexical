@@ -13,6 +13,7 @@ import type {
   NodeKey,
   NodeSelection,
   RangeSelection,
+  SerializedElementNode,
 } from 'lexical';
 
 import {
@@ -20,6 +21,16 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {$isElementNode, $isRangeSelection, ElementNode} from 'lexical';
+import {Spread} from 'libdefs/globals';
+
+export type SerializedMarkNode = Spread<
+  {
+    ids: Array<string>;
+    type: 'mark';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 export class MarkNode extends ElementNode {
   __ids: Array<string>;
@@ -30,6 +41,26 @@ export class MarkNode extends ElementNode {
 
   static clone(node: MarkNode): MarkNode {
     return new MarkNode(Array.from(node.__ids), node.__key);
+  }
+
+  static importDOM(): null {
+    return null;
+  }
+
+  static importJSON(serializedNode: SerializedMarkNode): MarkNode {
+    const node = $createMarkNode(serializedNode.ids);
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedMarkNode {
+    return {
+      ...super.exportJSON(),
+      ids: this.getIDs(),
+      type: 'mark',
+    };
   }
 
   constructor(ids: Array<string>, key?: NodeKey) {

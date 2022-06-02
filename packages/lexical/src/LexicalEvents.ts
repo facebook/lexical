@@ -277,13 +277,15 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
 
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
+      const anchorNode = anchor.getNode();
 
       if (
         anchor.type === 'element' &&
         anchor.offset === 0 &&
         selection.isCollapsed() &&
+        !$isRootNode(anchorNode) &&
         $getRoot().getChildrenSize() === 1 &&
-        anchor.getNode().getTopLevelElementOrThrow().isEmpty()
+        anchorNode.getTopLevelElementOrThrow().isEmpty()
       ) {
         const lastSelection = $getPreviousSelection();
 

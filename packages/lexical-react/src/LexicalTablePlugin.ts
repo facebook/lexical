@@ -42,7 +42,7 @@ export function TablePlugin(): JSX.Element {
 
     return editor.registerCommand<InsertTableCommandPayload>(
       INSERT_TABLE_COMMAND,
-      ({columns, rows}) => {
+      ({columns, rows, includeHeaders}) => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -56,6 +56,7 @@ export function TablePlugin(): JSX.Element {
           const tableNode = $createTableNodeWithDimensions(
             Number(rows),
             Number(columns),
+            includeHeaders,
           );
 
           if ($isRootNode(focusNode)) {

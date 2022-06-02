@@ -61,6 +61,7 @@ export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
 export var INSERT_TABLE_COMMAND: LexicalCommand<{
   rows: string;
   columns: string;
+  includeHeaders?: boolean;
 }>;
 
 export declare function createCommand<T>(): LexicalCommand<T>;

@@ -13,7 +13,7 @@ import * as React from 'react';
 type Props = Readonly<{
   'data-test-id'?: string;
   label: string;
-  onChange: (string) => void;
+  onChange: (val: string) => void;
   placeholder?: string;
   value: string;
 }>;

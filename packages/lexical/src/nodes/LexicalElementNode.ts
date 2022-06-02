@@ -459,7 +459,7 @@ export class ElementNode extends LexicalNode {
     const afterNode = new self.constructor();
     const afterNodeWritable = afterNode.getWritable();
 
-    // Add the node right after the node we are splitting
+    // add the node right after the node we are splitting
     writableParent.splice(thisIndex + 1, 0, [afterNodeWritable]);
 
     // remove elements after a split point and save them to the variable

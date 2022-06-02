@@ -36,7 +36,6 @@ import {
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
-  hasSelectonDisengaged,
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
@@ -2216,14 +2215,25 @@ export function internalCreateSelection(
   editor: LexicalEditor,
 ): null | RangeSelection | NodeSelection | GridSelection {
   const currentEditorState = editor.getEditorState();
-  const lastSelection = currentEditorState._selection;
+  const lastEditorState = currentEditorState;
+  const lastSelection = lastEditorState._selection;
   const domSelection = getDOMSelection();
 
-  if (
-    ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) &&
-    (domSelection.rangeCount === 0 || hasSelectonDisengaged())
-  ) {
-    return lastSelection.clone();
+  if ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) {
+    const selectedNodes = lastEditorState.read(() => lastSelection.getNodes());
+    const anchorNode = domSelection.anchorNode;
+    for (let i = 0; i < selectedNodes.length; i++) {
+      const selectedNode = selectedNodes[i];
+      const selectedNodeKey = selectedNode.__key;
+      const selectedElement = editor.getElementByKey(selectedNodeKey);
+      if (
+        selectedElement === null ||
+        anchorNode === null ||
+        selectedElement.contains(anchorNode)
+      ) {
+        return lastSelection.clone();
+      }
+    }
   }
 
   return internalCreateRangeSelection(lastSelection, domSelection, editor);

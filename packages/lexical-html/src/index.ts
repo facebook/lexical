@@ -145,10 +145,9 @@ function getConversionFunction(
   const nodeNameCacheConversions =
     editor._htmlConversions.get(nodeName.toLowerCase()) || [];
 
-  const cachedConversions = [
-    ...nodeNameCacheConversions,
-    ...baseCacheConversions,
-  ];
+  const cachedConversions = Array.from(nodeNameCacheConversions).concat(
+    baseCacheConversions,
+  );
 
   let currentConversion: DOMConversion | null = null;
 

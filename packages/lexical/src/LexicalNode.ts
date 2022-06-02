@@ -602,12 +602,12 @@ export class LexicalNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
     const serializedNode = this.exportJSON();
-    element.setAttribute('data-lexical-node-type', this.getType());
+    element.setAttribute('data-lexical-node-type', this.__type);
     element.setAttribute(
       'data-lexical-node-json',
       JSON.stringify(serializedNode),
     );
-    element.setAttribute('data-lexical-editor-key', editor.getKey());
+    element.setAttribute('data-lexical-editor-key', editor._key);
     return {element};
   }
 

@@ -295,7 +295,8 @@ export class ElementNode extends LexicalNode {
   }
   append(...nodesToAppend: LexicalNode[]): this {
     errorOnReadOnly();
-    return this.splice(this.getChildrenSize(), 0, nodesToAppend);
+    this.splice(this.getChildrenSize(), 0, nodesToAppend);
+    return this;
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     errorOnReadOnly();
@@ -319,13 +320,14 @@ export class ElementNode extends LexicalNode {
     start: number,
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
-  ): this {
+  ): Array<LexicalNode> {
     errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
     const nodesToInsertLength = nodesToInsert.length;
     const nodesToInsertKeys = [];
+    const removedNodes = [];
 
     // Remove nodes to insert from their previous parent
     for (let i = 0; i < nodesToInsertLength; i++) {
@@ -417,6 +419,7 @@ export class ElementNode extends LexicalNode {
           if (nodeToRemove != null) {
             const writableNodeToRemove = nodeToRemove.getWritable();
             writableNodeToRemove.__parent = null;
+            removedNodes.push(writableNodeToRemove);
           }
         }
 
@@ -431,7 +434,7 @@ export class ElementNode extends LexicalNode {
       }
     }
 
-    return writableSelf;
+    return removedNodes;
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {

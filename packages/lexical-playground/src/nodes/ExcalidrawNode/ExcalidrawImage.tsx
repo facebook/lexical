@@ -61,9 +61,9 @@ const removeStyleFromSvg_HACK = (svg) => {
   // We want to match the real size of the SVG element
   const viewBox = svg.getAttribute('viewBox');
   if (viewBox != null) {
-    const viewBoxDimentions = viewBox.split(' ');
-    svg.setAttribute('width', viewBoxDimentions[2]);
-    svg.setAttribute('height', viewBoxDimentions[3]);
+    const viewBoxDimensions = viewBox.split(' ');
+    svg.setAttribute('width', viewBoxDimensions[2]);
+    svg.setAttribute('height', viewBoxDimensions[3]);
   }
 
   if (styleTag && styleTag.tagName === 'style') {

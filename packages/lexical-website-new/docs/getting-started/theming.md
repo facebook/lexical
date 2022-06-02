@@ -46,7 +46,7 @@ To apply it, you need to pass it to your editor instance. If you're using a fram
 it as a property of the `initialConfig` to `<LexicalComposer>`, like shown:
 
 ```jsx
-import LexicalComposer from '@lexical/react/LexicalComposer';
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {exampleTheme} from './exampleTheme';
 
 const initialConfig = {theme: exampleTheme};

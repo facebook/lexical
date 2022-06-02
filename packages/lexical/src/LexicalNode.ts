@@ -607,6 +607,7 @@ export class LexicalNode {
       'data-lexical-node-json',
       JSON.stringify(serializedNode),
     );
+    element.setAttribute('data-lexical-editor-key', editor.getKey());
     return {element};
   }
 
@@ -616,11 +617,12 @@ export class LexicalNode {
     return {
       // Catch-all key because we don't know the nodeName of the element returned by exportDOM.
       '*': (domNode: Node) => {
-        if (
-          domNode instanceof HTMLElement &&
-          domNode.hasAttribute('data-lexical-node-type') &&
-          domNode.getAttribute('data-lexical-node-type') === proto.getType()
-        ) {
+        if (!(domNode instanceof HTMLElement)) return null;
+        const editorKey = domNode.getAttribute('data-lexical-editor-key');
+        const nodeType = domNode.getAttribute('data-lexical-node-type');
+        if (editorKey == null || nodeType == null) return null;
+        const editor = getActiveEditor();
+        if (editorKey === editor.getKey() && nodeType === proto.getType()) {
           try {
             const json = domNode.getAttribute('data-lexical-node-json');
             if (json != null) {

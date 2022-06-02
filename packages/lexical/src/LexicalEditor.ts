@@ -314,16 +314,12 @@ export function createEditor(
         });
         if (
           // eslint-disable-next-line no-prototype-builtins
-          (klass.hasOwnProperty('importDOM') &&
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('exportDOM')) ||
+          !klass.hasOwnProperty('importDOM') &&
           // eslint-disable-next-line no-prototype-builtins
-          (!klass.hasOwnProperty('importDOM') &&
-            // eslint-disable-next-line no-prototype-builtins
-            klass.hasOwnProperty('exportDOM'))
+          klass.hasOwnProperty('exportDOM')
         ) {
           console.warn(
-            `${name} should implement "importDOM" AND "exportDOM" methods to ensure HTML serialization (important for copy & paste) works as expected`,
+            `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
           );
         }
         if (proto instanceof DecoratorNode) {

@@ -384,7 +384,7 @@ function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
       }
       const plainString = selection.getTextContent();
       clipboardData.setData('text/plain', plainString);
-    } else {
+    } else if ($isNodeSelection(selection)) {
       const clipboard = navigator.clipboard;
       if (clipboard != null) {
         // Most browsers only support a single item in the clipboard at one time.

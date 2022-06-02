@@ -143,7 +143,7 @@ function getConversionFunction(
       : [];
 
   const nodeNameCacheConversions =
-    editor._htmlConversions.get(nodeName.toLowerCase()) ?? [];
+    editor._htmlConversions.get(nodeName.toLowerCase()) || [];
 
   const cachedConversions = [
     ...nodeNameCacheConversions,

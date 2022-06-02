@@ -456,6 +456,7 @@ export class LexicalEditor {
     this._observer = null;
     // Used for identifying owning editors
     this._key = createUID();
+
     this._onError = onError;
     this._htmlConversions = htmlConversions;
     this._readOnly = false;

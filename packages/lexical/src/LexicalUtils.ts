@@ -66,10 +66,10 @@ export const emptyFunction = () => {
   return;
 };
 
-let keyCounter = 0;
+let keyCounter = 1;
 
 export function resetRandomKey(): void {
-  keyCounter = 0;
+  keyCounter = 1;
 }
 
 export function generateRandomKey(): string {

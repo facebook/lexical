@@ -529,7 +529,10 @@ export class LexicalNode {
   getLatest(): this {
     const latest = $getNodeByKey<this>(this.__key);
     if (latest === null) {
-      invariant(false, 'getLatest: node not found');
+      invariant(
+        false,
+        'Lexical node does not exist in active edtior state. Avoid using the same node references between nested closures from editor.read/editor.update.',
+      );
     }
     return latest;
   }

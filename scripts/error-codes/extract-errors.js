@@ -18,6 +18,7 @@ const plugins = [
   'jsx',
   'trailingFunctionCommas',
   'objectRestSpread',
+  'typescript',
 ];
 
 const babylonOptions = {
@@ -99,13 +100,7 @@ module.exports = function (opts) {
     );
   }
 
-  return function extractErrors(source, isTypeScript) {
-    if (isTypeScript) {
-      babylonOptions.plugins = [...plugins, 'typescript'];
-    } else {
-      babylonOptions.plugins = [...plugins, 'flow'];
-    }
-
+  return function extractErrors(source) {
     transform(source);
     flush();
   };

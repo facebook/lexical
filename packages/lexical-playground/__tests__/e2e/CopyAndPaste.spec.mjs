@@ -1631,11 +1631,7 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
-  test('Merge Grids on Copy + paste', async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
+  test('Merge Grids on Copy + paste', async ({page, isPlainText, isCollab}) => {
     test.skip(isPlainText);
     test.fixme(
       isCollab,

@@ -156,7 +156,6 @@ let collapsedSelectionFormat: [number, number, NodeKey, number] = [
   0,
 ];
 
-
 function shouldSkipSelectionChange(
   domNode: null | Node,
   offset: number,

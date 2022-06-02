@@ -76,7 +76,7 @@ function updateDependencies(packageJSON, version) {
 
 function getVersionFromFile() {
   const fileContent = fs.readFileSync(
-    './packages/lexical/src/LexicalVersion.js',
+    './packages/lexical/src/LexicalVersion.ts',
     'utf8',
   );
   const regex = /VERSION = '(\d{1,3}\.\d{1,3}\.\d{1,3})'/;

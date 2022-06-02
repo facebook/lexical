@@ -36,6 +36,7 @@ import {
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
 import {
+  hasSelectonDisengaged,
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
@@ -2219,8 +2220,8 @@ export function internalCreateSelection(
   const domSelection = getDOMSelection();
 
   if (
-    domSelection.rangeCount === 0 &&
-    ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection))
+    ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) &&
+    (domSelection.rangeCount === 0 || hasSelectonDisengaged())
   ) {
     return lastSelection.clone();
   }

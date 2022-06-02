@@ -145,6 +145,7 @@ if (CAN_USE_BEFORE_INPUT) {
 }
 
 let lastKeyDownTimeStamp = 0;
+let lastClickTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
 let isInsertLineBreak = false;
@@ -155,6 +156,10 @@ let collapsedSelectionFormat: [number, number, NodeKey, number] = [
   'root',
   0,
 ];
+
+export function hasSelectonDisengaged(): boolean {
+  return performance.now() > lastClickTimeStamp + 100;
+}
 
 function shouldSkipSelectionChange(
   domNode: null | Node,
@@ -274,6 +279,7 @@ function onSelectionChange(
 // also help other browsers when selection might "appear" lost, when it
 // really isn't.
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
+  lastClickTimeStamp = event.timeStamp;
   updateEditor(editor, () => {
     const selection = $getSelection();
 

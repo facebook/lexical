@@ -6,7 +6,7 @@
  *
  */
 
-import {WebsocketProvider} from 'y-websocket';
+ import type {Provider} from '@lexical/yjs';
 import type {Doc, RelativePosition} from 'yjs';
 
 export type UserState = {
@@ -31,7 +31,7 @@ type CollaborationContextType = {
 };
 export function CollaborationPlugin(arg0: {
   id: string;
-  providerFactory(id: string, yjsDocMap: Map<string, Doc>): WebsocketProvider;
+  providerFactory(id: string, yjsDocMap: Map<string, Doc>): Provider;
   shouldBootstrap: boolean;
   username?: string;
 }): JSX.Element | null;

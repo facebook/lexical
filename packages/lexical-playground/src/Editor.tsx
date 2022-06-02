@@ -182,7 +182,7 @@ export default function Editor(): JSX.Element {
         <SpeechToTextPlugin />
         <AutoLinkPlugin />
         <AutoScrollPlugin scrollRef={scrollRef} />
-        {!isCollab && <CommentPlugin />}
+        <CommentPlugin providerFactory={isCollab ? createWebsocketProvider : undefined} />
         {isRichText ? (
           <>
             {isCollab ? (

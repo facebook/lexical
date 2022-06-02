@@ -1,3 +1,58 @@
+## 0.3.0 (June 2, 2022)
+
+> Note: this release contains a number of breaking changes.
+
+### Major Changes
+- JSON parsing has changed from previous versions when serializing/parsing EditorState. See https://lexical.dev/docs/concepts/serialization.
+- Custom nodes that do not implement `importDOM`/`exportDOM`/`importJSON`/`exportJSON` may trigger a warning in DEV.
+- Imports from the Lexical npm packages that were previously default exports are now all named exports.
+
+### All Changes
+- Fix various JSON/HTML issues (#2317)
+- Add includeHeaders argument to INSERT_TABLE_COMMAND (#2300)
+- 02cb62f8 Fix invariant and update codes (#2315)
+- 6665c41c Stengthen onClick conditional (#2314)
+- 099376fa fix mispositioning of treeview caret (#2309)
+- c7191cc7 Remove unstable JSON serialization functions + unify copy+paste to be HTML (#2241)
+- 52c3d325 Normalize decorator warnings (#2291)
+- 3970b95b Improve DEV warnings for node methods (#2290)
+- 048fccab move toggleLink to lexical/link (#2239)
+- 6a01a8f3 Revise $hasUpdateTag (#2281)
+- 2f78eeb4 Improve scroll plugin (#2282)
+- eadd6dba Expose $getUpdateTags and $addUpdateTag (#2279)
+- eeccb4dd Improve copy + paste logic (#2276)
+- 06cac8e8 Fix bug in $createNodesFromDOM (#2275)
+- f6d4fa1a Simplify runtime logic (#2272)
+- 62f4052a Fix placeholder race conditions on load (#2270)
+- 2ff67df4 Provide legacy editor state JSON conversion (#2269)
+- b69f8df5 fix(code-block): move to start/move to end (#2257)
+- 65ebc8d9 Rename $rootTextContentCurry -> $rootTextContent (#2018)
+- 4e81bd30 Alter sequence for commitPendingUpdates (#2262)
+- a0f7c0d2 Fix bug in trimTextContentFromAnchor (#2265)
+- 018083f8 Check for frozen selection only on dev env (#2264)
+- 82f4365a Move HTML<->Lexical functions to new package, @lexical/html. (#2246)
+- e0ad392f Expose $parseSerializedNode (#2253)
+- 584b8460 feat: drop down keyboard navigation (#1985)
+- 90aad493 Add MaxLengthPlugin (#2254)
+- 94673423 Trim surrounding whitespace before applying text formatting during markdown export (#2251)
+- 77f1d594 Expose RootNode to be used in node transform (#2243)
+- eb411fd7 Rename insert text command (#2242)
+- 3b7e6846 Skip underscores for links (non-intraword format) (#2191)
+- d411cce8 Add missing types (#2225)
+- 8d549259 Support Strikethrough and italic paste from Google Docs (#2220)
+- 71824d1b Fix text replacement event handling (#2203)
+- 97acadd3 Ensure selection is not prematurely nulled out on blur (#2158)
+- 4229de03 Improve useDecorators sequencing (#2200)
+- 21a9d456 Adjust selection to be after decorator node when moving selection to the end of decorator/linebreak (#2162)
+- 92237d6f add runtime check for list node and list item node (#2196)
+- 91ba4725 Remove default exports from synced packages (#2193)
+- bf4ed74a Fix Safari IME issues (#2185)
+- cfc1cf62 Ensure window.event is valid (#2184)
+- ebbedbbc Delete unused variable dfsAncestor (#2173)
+- 29bcd493 Add utility types as dep (#2177)
+- d83515c4 Update LexicalMarkdownShortcutPlugin.d.ts (#2160)
+- bccd5402 Replace element node with list item instead of appending. Fix #2142 (#2146)
+
 ## 0.2.9 (May 11, 2022)
 
 - Fix a breaking change to the NPM release (#2144)
@@ -7,6 +62,7 @@
 - Migrate more packages to TypeScript (#2135)
 - Fix several TypeScript type bugs (#2116)
 - Fix several Markdown export bugs (#2136m #2137, #2139)
+
 ## 0.2.7 (May 9, 2022)
 
 - Fix Firefox composition bug with emojis (#2109)

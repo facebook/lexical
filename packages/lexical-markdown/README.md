@@ -33,7 +33,7 @@ It can also be used for initializing editor's state from markdown string. Here's
 Can use `<LexicalMarkdownShortcutPlugin>` if using React
 ```jsx
 import { TRANSFORMERS } from '@lexical/markdown';
-import LexicalMarkdownShortcutPlugin from '@lexical/react/LexicalMarkdownShortcutPlugin';
+import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlugin';
 
 <LexicalComposer>
   <LexicalMarkdownShortcutPlugin transformers={TRANSFORMERS} />

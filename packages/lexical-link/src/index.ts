@@ -302,6 +302,9 @@ export function toggleLink(url: null | string): void {
         }
 
         if ($isLinkNode(node)) {
+          if (node.is(linkNode)) {
+            return;
+          }
           if (linkNode !== null) {
             const children = node.getChildren();
 

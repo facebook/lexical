@@ -8,6 +8,10 @@
 - Imports from the Lexical npm packages that were previously default exports are now all named exports.
 
 ### All Changes
+- Fix link toggle bug (#2331)
+- Enable copy+paste on NodeSelection (#2327)
+- Add default exportDOM and importDOM methods (#2324)
+- Disable checklist items in readOnly mode (#2321)
 - Fix various JSON/HTML issues (#2317)
 - Add includeHeaders argument to INSERT_TABLE_COMMAND (#2300)
 - 02cb62f8 Fix invariant and update codes (#2315)

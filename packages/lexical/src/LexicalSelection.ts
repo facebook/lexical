@@ -2225,7 +2225,7 @@ export function internalCreateSelection(
   return internalCreateRangeSelection(lastSelection, domSelection, editor);
 }
 
-function internalCreateRangeSelection(
+export function internalCreateRangeSelection(
   lastSelection: null | RangeSelection | NodeSelection | GridSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,

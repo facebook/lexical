@@ -808,6 +808,34 @@ export function isRedo(
   return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
 }
 
+export function isCopy(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (shiftKey) {
+    return false;
+  }
+  if (keyCode === 67) {
+    return IS_APPLE ? metaKey : ctrlKey;
+  }
+}
+
+export function isCut(
+  keyCode: number,
+  shiftKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  if (shiftKey) {
+    return false;
+  }
+  if (keyCode === 88) {
+    return IS_APPLE ? metaKey : ctrlKey;
+  }
+}
+
 function isArrowLeft(keyCode: number): boolean {
   return keyCode === 37;
 }

@@ -153,17 +153,15 @@ function ImageComponent({
       if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
         event.preventDefault();
-        editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if ($isImageNode(node)) {
-            node.remove();
-          }
-          setSelected(false);
-        });
+        const node = $getNodeByKey(nodeKey);
+        if ($isImageNode(node)) {
+          node.remove();
+        }
+        setSelected(false);
       }
       return false;
     },
-    [editor, isSelected, nodeKey, setSelected],
+    [isSelected, nodeKey, setSelected],
   );
 
   useEffect(() => {

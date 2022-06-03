@@ -805,6 +805,7 @@ select.font-family {
   cursor: default;
   display: inline-block;
   position: relative;
+  user-select: none;
 }
 
 .editor-shell .editor-image img {

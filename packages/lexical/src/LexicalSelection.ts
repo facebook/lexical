@@ -2218,17 +2218,14 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection();
 
-  if (
-    ($isNodeSelection(lastSelection) && domSelection.rangeCount === 0) ||
-    $isGridSelection(lastSelection)
-  ) {
+  if ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) {
     return lastSelection.clone();
   }
 
   return internalCreateRangeSelection(lastSelection, domSelection, editor);
 }
 
-function internalCreateRangeSelection(
+export function internalCreateRangeSelection(
   lastSelection: null | RangeSelection | NodeSelection | GridSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,

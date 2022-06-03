@@ -8,7 +8,6 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {NodeKey} from './LexicalNode';
-import type {RangeSelection} from './LexicalSelection';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
@@ -25,6 +24,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -69,6 +69,7 @@ import {
   DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
 } from './LexicalConstants';
+import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -276,6 +277,8 @@ function onSelectionChange(
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
+    const domSelection = getDOMSelection();
+    const lastSelection = $getPreviousSelection();
 
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
@@ -287,14 +290,24 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         selection.isCollapsed() &&
         !$isRootNode(anchorNode) &&
         $getRoot().getChildrenSize() === 1 &&
-        anchorNode.getTopLevelElementOrThrow().isEmpty()
+        anchorNode.getTopLevelElementOrThrow().isEmpty() &&
+        lastSelection !== null &&
+        selection.is(lastSelection)
       ) {
-        const lastSelection = $getPreviousSelection();
-
-        if (lastSelection !== null && selection.is(lastSelection)) {
-          getDOMSelection().removeAllRanges();
-          selection.dirty = true;
-        }
+        domSelection.removeAllRanges();
+        selection.dirty = true;
+      }
+    } else if ($isNodeSelection(selection) && domSelection.isCollapsed) {
+      const domAnchor = domSelection.anchorNode;
+      // If the user is attempting to click selection back onto text, then
+      // we should attempt create a range selection.
+      if (domAnchor !== null && domAnchor.nodeType === DOM_TEXT_TYPE) {
+        const newSelection = internalCreateRangeSelection(
+          lastSelection,
+          domSelection,
+          editor,
+        );
+        $setSelection(newSelection);
       }
     }
 

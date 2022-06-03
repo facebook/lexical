@@ -6,8 +6,6 @@
  *
  */
 
-import {ListNodeTagType} from './src/LexicalListNode';
-
 import {
   ElementNode,
   LexicalNode,
@@ -19,6 +17,7 @@ import {
 } from 'lexical';
 import {Spread} from 'libdefs/globals';
 
+export type ListNodeTagType = 'ul' | 'ol';
 export type ListType = 'number' | 'bullet' | 'check';
 export function $createListItemNode(checked?: boolean | void): ListItemNode;
 export function $createListNode(listType: ListType, start?: number): ListNode;
@@ -41,7 +40,7 @@ export declare class ListItemNode extends ElementNode {
   canReplaceWith(replacement: LexicalNode): boolean;
   canMergeWith(node: LexicalNode): boolean;
   getChecked(): boolean | void;
-  setChecked(boolean): this;
+  setChecked(boolean: boolean): this;
   toggleChecked(): void;
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode;
   exportJSON(): SerializedListItemNode;

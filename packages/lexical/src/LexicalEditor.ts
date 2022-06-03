@@ -312,8 +312,7 @@ export function createEditor(
           // eslint-disable-next-line no-prototype-builtins
           !klass.hasOwnProperty('importDOM') &&
           // eslint-disable-next-line no-prototype-builtins
-          klass.hasOwnProperty('exportDOM') &&
-          process.env.NODE_ENV !== 'test'
+          klass.hasOwnProperty('exportDOM')
         ) {
           console.warn(
             `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
@@ -329,8 +328,7 @@ export function createEditor(
         }
         if (
           // eslint-disable-next-line no-prototype-builtins
-          !klass.hasOwnProperty('importJSON') &&
-          process.env.NODE_ENV !== 'test'
+          !klass.hasOwnProperty('importJSON')
         ) {
           console.warn(
             `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
@@ -338,8 +336,7 @@ export function createEditor(
         }
         if (
           // eslint-disable-next-line no-prototype-builtins
-          !proto.hasOwnProperty('exportJSON') &&
-          process.env.NODE_ENV !== 'test'
+          !proto.hasOwnProperty('exportJSON')
         ) {
           console.warn(
             `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,

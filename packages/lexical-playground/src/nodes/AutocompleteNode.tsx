@@ -90,7 +90,7 @@ function AutocompleteComponent(): JSX.Element {
   const userAgentData = window.navigator.userAgentData;
   const isMobile =
     userAgentData !== undefined
-      ? userAgentData
+      ? userAgentData.mobile
       : window.innerWidth <= 800 && window.innerHeight <= 600;
   // TODO Move to theme
   return (

@@ -28,6 +28,7 @@ export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export async function initialize({
   page,
   isCollab,
+  isAutocomplete,
   isCharLimit,
   isCharLimitUtf8,
   showNestedEditorTreeView,
@@ -43,6 +44,7 @@ export async function initialize({
   if (showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;
   }
+  appSettings.isAutocomplete = !!isAutocomplete;
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
 

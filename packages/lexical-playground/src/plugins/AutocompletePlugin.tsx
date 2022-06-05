@@ -24,6 +24,7 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_LOW,
+  KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect} from 'react';
@@ -33,6 +34,7 @@ import {
   $createAutocompleteNode,
   AutocompleteNode,
 } from '../nodes/AutocompleteNode';
+import {addSwipeRightListener} from '../utils/swipe';
 
 type SearchPromise = {
   dismiss: () => void;
@@ -181,12 +183,19 @@ export default function AutocompletePlugin(): JSX.Element {
       $clearSuggestion();
       return true;
     }
-    function $handleTab(e: Event) {
+    function $handleKeypressCommand(e: Event) {
       if ($handleAutocompleteIntent()) {
         e.preventDefault();
         return true;
       }
       return false;
+    }
+    function handleSwipeRight(_force: number, e: TouchEvent) {
+      editor.update(() => {
+        if ($handleAutocompleteIntent()) {
+          e.preventDefault();
+        }
+      });
     }
     function unmountSuggestion() {
       editor.update(() => {
@@ -199,7 +208,17 @@ export default function AutocompletePlugin(): JSX.Element {
         handleAutocompleteNodeTransform,
       ),
       editor.registerUpdateListener(handleUpdate),
-      editor.registerCommand(KEY_TAB_COMMAND, $handleTab, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(
+        KEY_TAB_COMMAND,
+        $handleKeypressCommand,
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_ARROW_RIGHT_COMMAND,
+        $handleKeypressCommand,
+        COMMAND_PRIORITY_LOW,
+      ),
+      addSwipeRightListener(editor.getRootElement(), handleSwipeRight),
       unmountSuggestion,
     );
   }, [editor, query, setSuggestion]);

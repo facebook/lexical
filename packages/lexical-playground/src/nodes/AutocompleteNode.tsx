@@ -86,10 +86,16 @@ export function $createAutocompleteNode(uuid: string): AutocompleteNode {
 
 function AutocompleteComponent(): JSX.Element {
   const [suggestion] = useSharedAutocompleteContext();
+  // @ts-ignore Experimental property
+  const userAgentData = window.navigator.userAgentData;
+  const isMobile =
+    userAgentData !== undefined
+      ? userAgentData
+      : window.innerWidth <= 800 && window.innerHeight <= 600;
   // TODO Move to theme
   return (
     <span style={{color: '#ccc'}} spellCheck="false">
-      {suggestion} (TAB)
+      {suggestion} {isMobile ? '(SWIPE \u2B95)' : '(TAB)'}
     </span>
   );
 }

@@ -837,12 +837,17 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
-  } else if (isCopy(keyCode, shiftKey, metaKey, ctrlKey)) {
-    event.preventDefault();
-    dispatchCommand(editor, COPY_COMMAND, event);
-  } else if (isCut(keyCode, shiftKey, metaKey, ctrlKey)) {
-    event.preventDefault();
-    dispatchCommand(editor, CUT_COMMAND, event);
+  } else {
+    const prevSelection = editor._editorState._selection;
+    if ($isNodeSelection(prevSelection)) {
+      if (isCopy(keyCode, shiftKey, metaKey, ctrlKey)) {
+        event.preventDefault();
+        dispatchCommand(editor, COPY_COMMAND, event);
+      } else if (isCut(keyCode, shiftKey, metaKey, ctrlKey)) {
+        event.preventDefault();
+        dispatchCommand(editor, CUT_COMMAND, event);
+      }
+    }
   }
 
   if (isModifier(ctrlKey, shiftKey, altKey, metaKey)) {

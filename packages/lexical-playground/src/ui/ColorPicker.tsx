@@ -52,6 +52,7 @@ export default function ColorPicker({
   ...rest
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
+  const innerDivRef = useRef(null);
 
   const saturationPosition = useMemo(
     () => ({
@@ -86,7 +87,10 @@ export default function ColorPicker({
   };
 
   useEffect(() => {
-    onChange(selfColor.hex);
+    // Check if the dropdown is actually active
+    if (innerDivRef.current !== null) {
+      onChange(selfColor.hex);
+    }
   }, [selfColor, onChange]);
 
   useEffect(() => {
@@ -96,7 +100,10 @@ export default function ColorPicker({
 
   return (
     <DropDown {...rest} stopCloseOnClickSelf={true}>
-      <div className="color-picker-wrapper" style={{width: WIDTH}}>
+      <div
+        className="color-picker-wrapper"
+        style={{width: WIDTH}}
+        ref={innerDivRef}>
         <div className="color-picker-basic-color">
           {basicColors.map((basicColor) => (
             <button

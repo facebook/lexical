@@ -39,6 +39,7 @@ import {
   syncWithTransaction,
 } from './Utils';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function syncEvent(binding: Binding, event: any): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);

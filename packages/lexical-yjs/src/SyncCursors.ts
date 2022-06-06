@@ -318,6 +318,7 @@ export function syncLocalCursorPosition(
 }
 
 function getCollabNodeAndOffset(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sharedType: any,
   offset: number,
 ): [

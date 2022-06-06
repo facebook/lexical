@@ -71,7 +71,7 @@ function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <PlainTextPlugin
-        contentEditable={ContentEditable />}
+        contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
       />
       <OnChangePlugin onChange={onChange} />

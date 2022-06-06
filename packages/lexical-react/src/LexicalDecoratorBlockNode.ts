@@ -11,10 +11,10 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
+  Spread,
 } from 'lexical';
 
 import {DecoratorNode} from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 export type SerializedDecoratorBlockNode = Spread<
   {

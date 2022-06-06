@@ -15,6 +15,7 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedGridCellNode,
+  Spread,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
@@ -24,7 +25,6 @@ import {
   $isLineBreakNode,
   GridCellNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 export const TableCellHeaderStates = {
   BOTH: 3,

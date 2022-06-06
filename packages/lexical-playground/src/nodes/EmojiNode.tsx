@@ -11,10 +11,10 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedTextNode,
+  Spread,
 } from 'lexical';
 
 import {TextNode} from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 export type SerializedEmojiNode = Spread<
   {

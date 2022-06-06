@@ -15,7 +15,7 @@ import {
   LexicalCommand,
   SerializedElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
+import type {Spread} from 'lexical';
 
 export type ListNodeTagType = 'ul' | 'ol';
 export type ListType = 'number' | 'bullet' | 'check';

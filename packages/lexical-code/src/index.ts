@@ -6,7 +6,6 @@
  *
  */
 
-// eslint-disable-next-line simple-import-sort/imports
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -20,9 +19,8 @@ import type {
   RangeSelection,
   SerializedElementNode,
   SerializedTextNode,
+  Spread,
 } from 'lexical';
-
-import * as Prism from 'prismjs';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -41,7 +39,6 @@ import {
   mergeRegister,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -56,12 +53,12 @@ import {
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
-  MOVE_TO_START,
   MOVE_TO_END,
+  MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
+import * as Prism from 'prismjs';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 

@@ -13,6 +13,7 @@ import type {
   NodeKey,
   SerializedEditor,
   SerializedLexicalNode,
+  Spread,
 } from 'lexical';
 
 import './ImageNode.css';
@@ -41,7 +42,6 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 

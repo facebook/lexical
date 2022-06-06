@@ -6,13 +6,14 @@
  *
  */
 
+import type {Spread} from 'lexical';
+
 import {
   DecoratorNode,
   EditorConfig,
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';

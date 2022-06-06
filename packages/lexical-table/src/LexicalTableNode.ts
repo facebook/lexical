@@ -17,11 +17,11 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';

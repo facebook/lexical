@@ -13,8 +13,8 @@ import type {
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
+import type {Spread} from 'lexical';
 
-import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';

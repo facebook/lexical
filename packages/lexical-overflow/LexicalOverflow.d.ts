@@ -15,7 +15,7 @@ import type {
 } from 'lexical';
 
 import {ElementNode} from 'lexical';
-import {Spread} from 'libdefs/globals';
+import type {Spread} from 'lexical';
 
 export declare class OverflowNode extends ElementNode {
   static getType(): string;

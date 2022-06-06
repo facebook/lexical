@@ -18,8 +18,8 @@ import type {
   NodeSelection,
   RangeSelection,
 } from '../LexicalSelection';
+import type {Spread} from 'lexical';
 
-import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
 import {

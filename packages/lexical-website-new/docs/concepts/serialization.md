@@ -254,7 +254,7 @@ static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. That's why we recommend using a version field to separate the different changes in your node as you add or change functionality of custom nodes. Here's the serialized type definition for Lexical's base `TextNode` class:
 
 ```js
-import {Spread} from 'libdefs/globals';
+import type {Spread} from 'lexical';
 
 // Spread is a Typescript utility that allows us to spread the properties
 // over the base SerializedLexicalNode type.

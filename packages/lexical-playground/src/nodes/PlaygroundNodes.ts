@@ -19,6 +19,7 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {Class} from 'utility-types';
 
+import {AutocompleteNode} from './AutocompleteNode';
 import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
@@ -52,6 +53,7 @@ const PlaygroundNodes: Array<Class<LexicalNode>> = [
   EmojiNode,
   ExcalidrawNode,
   EquationNode,
+  AutocompleteNode,
   TypeaheadNode,
   KeywordNode,
   HorizontalRuleNode,

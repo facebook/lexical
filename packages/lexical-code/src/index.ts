@@ -258,6 +258,7 @@ export class CodeNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
+      ...super.prototype.importDOM(),
       div: (node: Node) => ({
         conversion: convertDivElement,
         priority: 1,

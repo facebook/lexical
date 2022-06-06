@@ -44,22 +44,47 @@ If the element property is null in the return value of exportDOM, that Node will
 ```js
 import {$generateNodesFromDOM} from '@lexical/html';
 
-// In the browser you can use the native DOMParser API to parse the HTML string.
-const parser = new DOMParser();
-const dom = parser.parseFromString(htmlString, textHtmlMimeType);
+editor.update(() => {
+  // In the browser you can use the native DOMParser API to parse the HTML string.
+  const parser = new DOMParser();
+  const dom = parser.parseFromString(htmlString, textHtmlMimeType);
 
-// In a headless environment you can use a package such as JSDom to parse the HTML string.
-const dom = new JSDOM(htmlString);
+  // Once you have the DOM instance it's easy to generate LexicalNodes.
+  const nodes = $generateNodesFromDOM(editor, dom);
+  
+  // Select the root
+  $getRoot().select();
 
-// Once you have the DOM instance it's easy to generate LexicalNodes.
-const nodes = $generateNodesFromDOM(editor, dom);
+  // Insert them at a selection.
+  const selection = $getSelection();
+  selection.insertNodes(nodes);
+});
+```
+
+If you are running in headless mode, you can do it this way using JSDOM:
+
+```js
+import {createHeadlessEditor} from '@lexical/headless';
+import {$generateNodesFromDOM} from '@lexical/html';
 
 // Once you've generated LexicalNodes from your HTML you can now initialize an editor instance with the parsed nodes.
-const editor = createEditor({ ...config, nodes });
+const editorNodes = [] // Any custom nodes you register on the editor
+const editor = createHeadlessEditor({ ...config, nodes: editorNodes });
 
-// Or insert them at a selection.
-const selection = $getSelection();
-selection.insertNodes(nodes);
+editor.update(() => {
+  // In a headless environment you can use a package such as JSDom to parse the HTML string.
+  const dom = new JSDOM(htmlString);
+
+  // Once you have the DOM instance it's easy to generate LexicalNodes.
+  const nodes = $generateNodesFromDOM(editor, dom);
+  
+  // Select the root
+  $getRoot().select();
+
+  // Insert them at a selection.
+  const selection = $getSelection();
+  selection.insertNodes(nodes);
+});
 ```
 
 #### `LexicalNode.importDOM()`

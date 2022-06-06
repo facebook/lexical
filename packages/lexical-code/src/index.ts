@@ -6,6 +6,7 @@
  *
  */
 
+// eslint-disable-next-line simple-import-sort/imports
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -21,6 +22,8 @@ import type {
   SerializedTextNode,
   Spread,
 } from 'lexical';
+
+import * as Prism from 'prismjs';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -58,7 +61,6 @@ import {
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
-import * as Prism from 'prismjs';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 

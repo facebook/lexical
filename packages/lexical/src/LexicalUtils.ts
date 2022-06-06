@@ -1128,9 +1128,11 @@ export function scrollIntoViewIfNeeded(
     } else {
       const rootRect = rootElement.getBoundingClientRect();
 
-      if (rect.bottom > rootRect.bottom) {
+      // Rects can returning decimal numbers that differ due to rounding
+      // differences. So let's normalize the values.
+      if (Math.floor(rect.bottom) > Math.floor(rootRect.bottom)) {
         element.scrollIntoView(false);
-      } else if (rect.top < rootRect.top) {
+      } else if (Math.floor(rect.top) < Math.floor(rootRect.top)) {
         element.scrollIntoView();
       }
     }

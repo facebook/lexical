@@ -1,3 +1,16 @@
+## 0.3.2 (June 6, 2022)
+
+- added typing for ListItemNode.setChecked, export ListNodeTagType (#2335) 
+- Fix copy + paste in plain text (#2342)
+- Remove process.env (#2338)
+
+## 0.3.1 (June 3, 2022)
+
+- Fix link toggle bug (#2331)
+- Enable copy+paste on NodeSelection (#2327)
+- Add default exportDOM and importDOM methods (#2324)
+- Disable checklist items in readOnly mode (#2321)
+
 ## 0.3.0 (June 2, 2022)
 
 > Note: this release contains a number of breaking changes.

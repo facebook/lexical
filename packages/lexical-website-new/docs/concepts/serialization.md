@@ -205,7 +205,7 @@ Here's an example of `exportJSON` for the `HeadingNode`:
 ```js
 export type SerializedHeadingNode = Spread<
   {
-    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     type: 'heading';
     version: 1;
   },

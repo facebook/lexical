@@ -22,6 +22,7 @@ const editorConfig = Object.freeze({
       h3: 'my-h3-class',
       h4: 'my-h4-class',
       h5: 'my-h5-class',
+      h6: 'my-h6-class',
     },
   },
 });

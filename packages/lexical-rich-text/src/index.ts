@@ -75,7 +75,7 @@ export type InitialEditorStateType = null | string | EditorState | (() => void);
 
 export type SerializedHeadingNode = Spread<
   {
-    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     type: 'heading';
     version: 1;
   },
@@ -178,7 +178,7 @@ export function $isQuoteNode(
   return node instanceof QuoteNode;
 }
 
-export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
 export class HeadingNode extends ElementNode {
   __tag: HeadingTagType;
@@ -240,6 +240,10 @@ export class HeadingNode extends ElementNode {
         conversion: convertHeadingElement,
         priority: 0,
       }),
+      h6: (node: Node) => ({
+        conversion: convertHeadingElement,
+        priority: 0,
+      }),
     };
   }
 
@@ -291,7 +295,8 @@ function convertHeadingElement(domNode: Node): DOMConversionOutput {
     nodeName === 'h2' ||
     nodeName === 'h3' ||
     nodeName === 'h4' ||
-    nodeName === 'h5'
+    nodeName === 'h5' ||
+    nodeName === 'h6'
   ) {
     node = $createHeadingNode(nodeName);
   }

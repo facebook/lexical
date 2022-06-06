@@ -52,6 +52,7 @@ const theme: EditorThemeClasses = {
     h3: 'PlaygroundEditorTheme__h3',
     h4: 'PlaygroundEditorTheme__h4',
     h5: 'PlaygroundEditorTheme__h5',
+    h6: 'PlaygroundEditorTheme__h6',
   },
   image: 'editor-image',
   link: 'PlaygroundEditorTheme__link',

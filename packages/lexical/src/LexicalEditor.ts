@@ -62,6 +62,7 @@ export type EditorThemeClasses = {
     h3?: EditorThemeClassName;
     h4?: EditorThemeClassName;
     h5?: EditorThemeClassName;
+    h6?: EditorThemeClassName;
   };
   image?: EditorThemeClassName;
   link?: EditorThemeClassName;

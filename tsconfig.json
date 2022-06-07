@@ -178,5 +178,12 @@
       "shared/useLayoutEffect": ["packages/shared/src/useLayoutEffect.ts"]
     }
   },
-  "exclude": ["node_modules/**/*"]
+  "exclude": [
+    "**/__test__/**",
+    "**/dist/**",
+    "**/npm/**",
+    "node_modules/**/*",
+    "packages/lexical-playground/**/*",
+    "packages/playwright-core/**/*"
+  ]
 }

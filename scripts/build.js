@@ -200,15 +200,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
             {noMinify: !isProd},
           ],
         ],
-        presets: [
-          [
-            '@babel/preset-typescript',
-            {
-              tsconfig: path.resolve('./tsconfig.build.json'),
-            },
-          ],
-          '@babel/preset-react',
-        ],
+        presets: [['@babel/preset-typescript'], '@babel/preset-react'],
       }),
       {
         resolveId(importee, importer) {

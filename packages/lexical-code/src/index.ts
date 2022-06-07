@@ -166,7 +166,10 @@ export class CodeHighlightNode extends TextNode {
   static importJSON(
     serializedNode: SerializedCodeHighlightNode,
   ): CodeHighlightNode {
-    const node = $createCodeHighlightNode(serializedNode.highlightType);
+    const node = $createCodeHighlightNode(
+      serializedNode.text,
+      serializedNode.highlightType,
+    );
     node.setFormat(serializedNode.format);
     node.setDetail(serializedNode.detail);
     node.setMode(serializedNode.mode);

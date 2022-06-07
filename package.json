@@ -136,7 +136,7 @@
     "prettier": "^2.3.2",
     "prettier-plugin-organize-attributes": "^0.0.5",
     "react-test-renderer": "^17.0.2",
-    "rollup": "^2.60.2",
+    "rollup": "^2.75.5",
     "serve": "^13.0.2",
     "start-server-and-test": "^1.13.0",
     "tmp": "^0.2.1",

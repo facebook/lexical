@@ -168,22 +168,15 @@
       "@lexical/utils/LexicalUtils": ["./packages/lexical-utils/src/"],
       "@lexical/yjs": ["./packages/lexical-yjs/src/"],
 
-      "shared/canUseDOM": ["packages/shared/src/canUseDOM.ts"],
-      "shared/getDOMSelection": ["packages/shared/src/getDOMSelection.ts"],
+      "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
+      "shared/getDOMSelection": ["./packages/shared/src/getDOMSelection.ts"],
       "shared/simpleDiffWithCursor": [
         "packages/shared/src/simpleDiffWithCursor.ts"
       ],
-      "shared/invariant": ["packages/shared/src/invariant.ts"],
-      "shared/environment": ["packages/shared/src/environment.ts"],
-      "shared/useLayoutEffect": ["packages/shared/src/useLayoutEffect.ts"]
+      "shared/invariant": ["./packages/shared/src/invariant.ts"],
+      "shared/environment": ["./packages/shared/src/environment.ts"],
+      "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"]
     }
   },
-  "exclude": [
-    "**/__test__/**",
-    "**/dist/**",
-    "**/npm/**",
-    "node_modules/**/*",
-    "packages/lexical-playground/**/*",
-    "packages/playwright-core/**/*"
-  ]
+  "exclude": ["**/dist/**", "**/npm/**", "node_modules/**/*"]
 }

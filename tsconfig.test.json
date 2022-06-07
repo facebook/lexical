@@ -3,5 +3,9 @@
     "allowJs": true,
     "esModuleInterop": true
   },
+  "exclude": [
+    "packages/lexical-playground/**/*",
+    "packages/playwright-core/**/*"
+  ],
   "extends": "./tsconfig.json"
 }

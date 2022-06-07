@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationDir": "./.ts-temp"
+  },
+  "include": ["packages/**/*"],
+  "exclude": [
+    "**/__tests__/**",
+    "node_modules/**/*",
+    "packages/lexical-playground/**/*",
+    "packages/playwright-core/**/*"
+  ],
+  "extends": "./tsconfig.json"
+}

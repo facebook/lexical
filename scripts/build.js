@@ -24,7 +24,6 @@ const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.`;
 
-const isWatchMode = argv.watch;
 const isProduction = argv.prod;
 const isRelease = argv.release;
 const isWWW = argv.www;
@@ -250,29 +249,8 @@ ${source}`;
     freeze: false,
     interop: false,
   };
-  if (isWatchMode) {
-    const watcher = rollup.watch({
-      ...inputOptions,
-      output: outputOptions,
-    });
-    watcher.on('event', async (event) => {
-      switch (event.code) {
-        case 'BUNDLE_START':
-          console.log(`Building ${name}...`);
-          break;
-        case 'BUNDLE_END':
-          console.log(`Built ${name}`);
-          break;
-        case 'ERROR':
-        case 'FATAL':
-          console.error(`Build failed for ${name}:\n\n${event.error}`);
-          break;
-      }
-    });
-  } else {
-    const result = await rollup.rollup(inputOptions);
-    await result.write(outputOptions);
-  }
+  const result = await rollup.rollup(inputOptions);
+  await result.write(outputOptions);
 }
 
 function getComment() {

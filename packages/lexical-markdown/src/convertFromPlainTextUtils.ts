@@ -326,7 +326,7 @@ function convertMarkdownForTextCriteria<T>(
 function getLastTextNodeInElementNode(
   elementNode: ElementNode,
 ): null | TextNode {
-  const children = elementNode.getChildren<Array<TextNode>>();
+  const children = elementNode.getChildren<TextNode>();
   const countOfChildren = children.length;
 
   for (let i = countOfChildren - 1; i >= 0; i--) {

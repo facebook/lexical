@@ -19,7 +19,7 @@ export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
 
   // Subscribe to changes
   useLayoutEffect(() => {
-    return editor.registerDecoratorListener((nextDecorators) => {
+    return editor.registerDecoratorListener<JSX.Element>((nextDecorators) => {
       flushSync(() => {
         setDecorators(nextDecorators);
       });

@@ -18,6 +18,7 @@ const replace = require('@rollup/plugin-replace');
 const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
 const compiler = require('@ampproject/rollup-plugin-closure-compiler');
+const buildTypescript = require('./build-typescript');
 
 const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -141,7 +142,7 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
-async function build(name, inputFile, outputFile, isProd) {
+async function build(name, inputFile, outputPath, outputFile, isProd) {
   const inputOptions = {
     external(modulePath, src) {
       return externals.includes(modulePath);
@@ -230,6 +231,7 @@ async function build(name, inputFile, outputFile, isProd) {
         ),
       ),
       isProd && compiler(closureOptions),
+      isProd && buildTypescript(inputFile, outputPath),
       {
         renderChunk(source) {
           return `${getComment()}
@@ -557,6 +559,7 @@ packages.forEach((pkg) => {
     build(
       `${name}${module.name ? '-' + module.name : ''}`,
       inputFile,
+      outputPath,
       path.resolve(
         path.join(`${outputPath}${getFileName(outputFileName, isProduction)}`),
       ),
@@ -566,6 +569,7 @@ packages.forEach((pkg) => {
       build(
         name,
         inputFile,
+        outputPath,
         path.resolve(
           path.join(`${outputPath}${getFileName(outputFileName, false)}`),
         ),

@@ -1,6 +1,6 @@
 {
-  "include": ["packages/**/*"],
   "exclude": [
+    "**/__test__/**",
     "node_modules/**/*",
     "packages/lexical-playground/**/*",
     "packages/playwright-core/**/*"

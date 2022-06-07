@@ -174,7 +174,6 @@ describe('LexicalNodeHelpers tests', () => {
 
         const block3 = $createTestElementNode();
 
-        // @ts-expect-error TODO Add generic type above once Lexical Core has been migrated to TS
         block1.append(block3);
 
         expect($dfs(root)).toEqual([

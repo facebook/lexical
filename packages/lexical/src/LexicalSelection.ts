@@ -88,7 +88,7 @@ export type ElementPointType = {
 
 export type PointType = TextPointType | ElementPointType;
 
-class Point {
+export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
@@ -2195,17 +2195,17 @@ export function internalMakeRangeSelection(
   return selection;
 }
 
-export function $createEmptyRangeSelection(): RangeSelection {
+export function $createRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new RangeSelection(anchor, focus, 0);
 }
 
-export function $createEmptyObjectSelection(): NodeSelection {
+export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
-export function $createEmptyGridSelection(): GridSelection {
+export function $createGridSelection(): GridSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new GridSelection('root', anchor, focus);

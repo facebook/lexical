@@ -8,13 +8,8 @@
  */
 
 import type {ListNode, ListType} from '@lexical/list';
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-} from '@lexical/markdown';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {ElementNode, LexicalNode} from 'lexical';
+import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {$createLinkNode, $isLinkNode} from '@lexical/link';
@@ -31,6 +26,49 @@ import {
   $isQuoteNode,
 } from '@lexical/rich-text';
 import {$createTextNode, $isTextNode} from 'lexical';
+
+export type Transformer =
+  | ElementTransformer
+  | TextFormatTransformer
+  | TextMatchTransformer;
+
+export type ElementTransformer = {
+  export: (
+    node: LexicalNode,
+    // eslint-disable-next-line no-shadow
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null;
+  regExp: RegExp;
+  replace: (
+    parentNode: ElementNode,
+    children: Array<LexicalNode>,
+    match: Array<string>,
+    isImport: boolean,
+  ) => void;
+  type: 'element';
+};
+
+export type TextFormatTransformer = Readonly<{
+  format: ReadonlyArray<TextFormatType>;
+  tag: string;
+  intraword?: boolean;
+  type: 'text-format';
+}>;
+
+export type TextMatchTransformer = Readonly<{
+  export: (
+    node: LexicalNode,
+    // eslint-disable-next-line no-shadow
+    exportChildren: (node: ElementNode) => string,
+    // eslint-disable-next-line no-shadow
+    exportFormat: (node: TextNode, textContent: string) => string,
+  ) => string | null;
+  importRegExp: RegExp;
+  regExp: RegExp;
+  replace: (node: TextNode, match: RegExpMatchArray) => void;
+  trigger: string;
+  type: 'text-match';
+}>;
 
 const replaceWithBlock = (
   createNode: (match: Array<string>) => ElementNode,

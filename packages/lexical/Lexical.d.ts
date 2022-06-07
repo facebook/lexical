@@ -6,7 +6,6 @@
  *
  */
 
-import {Spread} from 'libdefs/globals';
 import {Class} from 'utility-types';
 
 /**
@@ -790,6 +789,8 @@ export declare var VERSION: string;
 /**
  *  Serialization/Deserialization
  * */
+export type Spread<T1, T2> = {[K in Exclude<keyof T1, keyof T2>]: T1[K]} & T2;
+
 interface InternalSerializedNode {
   children?: Array<InternalSerializedNode>;
   type: string;

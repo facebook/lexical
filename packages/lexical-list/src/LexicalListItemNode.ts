@@ -19,6 +19,7 @@ import type {
   ParagraphNode,
   RangeSelection,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {
@@ -32,7 +33,6 @@ import {
   $isRangeSelection,
   ElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
 import {$createListNode, $isListNode} from './';

@@ -11,22 +11,22 @@
   "version": "0.3.2",
   "dependencies": {
     "@lexical/clipboard": "0.3.2",
-    "@lexical/list": "0.3.2",
-    "@lexical/table": "0.3.2",
-    "@lexical/yjs": "0.3.2",
-    "@lexical/hashtag": "0.3.2",
-    "@lexical/selection": "0.3.2",
-    "@lexical/utils": "0.3.2",
+    "@lexical/code": "0.3.2",
     "@lexical/dragon": "0.3.2",
+    "@lexical/hashtag": "0.3.2",
+    "@lexical/history": "0.3.2",
+    "@lexical/link": "0.3.2",
+    "@lexical/list": "0.3.2",
+    "@lexical/mark": "0.3.2",
+    "@lexical/markdown": "0.3.2",
+    "@lexical/overflow": "0.3.2",
     "@lexical/plain-text": "0.3.2",
     "@lexical/rich-text": "0.3.2",
-    "@lexical/code": "0.3.2",
+    "@lexical/selection": "0.3.2",
+    "@lexical/table": "0.3.2",
     "@lexical/text": "0.3.2",
-    "@lexical/link": "0.3.2",
-    "@lexical/overflow": "0.3.2",
-    "@lexical/history": "0.3.2",
-    "@lexical/markdown": "0.3.2",
-    "@lexical/mark": "0.3.2"
+    "@lexical/utils": "0.3.2",
+    "@lexical/yjs": "0.3.2"
   },
   "peerDependencies": {
     "lexical": "0.3.2",
@@ -37,5 +37,8 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-react"
+  },
+  "devDependencies": {
+    "utility-types": "^3.10.0"
   }
 }

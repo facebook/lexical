@@ -13,10 +13,10 @@ import type {
   NodeKey,
   RangeSelection,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {ElementNode} from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 export type SerializedOverflowNode = Spread<
   {

@@ -7,6 +7,8 @@
  *
  */
 
+import type {Spread} from 'lexical';
+
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
@@ -23,7 +25,6 @@ import {
   NodeKey,
   SerializedElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';

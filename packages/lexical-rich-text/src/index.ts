@@ -17,6 +17,7 @@ import type {
   NodeKey,
   ParagraphNode,
   SerializedElementNode,
+  Spread,
   TextFormatType,
 } from 'lexical';
 
@@ -68,7 +69,6 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);

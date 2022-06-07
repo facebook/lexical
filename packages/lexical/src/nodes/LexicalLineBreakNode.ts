@@ -12,8 +12,7 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
-
-import {Spread} from 'libdefs/globals';
+import type {Spread} from 'lexical';
 
 import {LexicalNode} from '../LexicalNode';
 

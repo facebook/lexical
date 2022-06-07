@@ -19,7 +19,7 @@ import type {
 } from 'lexical';
 
 import {ElementNode, TextNode} from 'lexical';
-import {Spread} from 'libdefs/globals';
+import type {Spread} from 'lexical';
 
 declare class CodeNode extends ElementNode {
   static getType(): string;

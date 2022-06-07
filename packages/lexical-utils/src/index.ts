@@ -271,7 +271,9 @@ function unstable_internalCreateNodeFromParse(
       const parsedEditorState = value.editorState;
 
       if (parsedEditorState != null) {
-        const nestedEditor = createEditor();
+        const nestedEditor = createEditor({
+          namespace: parsedEditorState.namespace,
+        });
         nestedEditor._nodes = editor._nodes;
         nestedEditor._parentEditor = editor._parentEditor;
         nestedEditor._pendingEditorState =

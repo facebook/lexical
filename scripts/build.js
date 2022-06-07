@@ -573,8 +573,32 @@ const packages = [
   },
 ];
 
-async function buildAll() {
+async function buildTSDeclarationFiles(packageName, outputPath) {
   await exec('tsc -p ./tsconfig.build.json');
+}
+
+async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
+  await exec(`cp -R ./.ts-temp/${packageName}/src/ ${outputPath}`);
+}
+
+function buildForkModule(outputPath, outputFileName) {
+  const lines = [
+    getComment(),
+    `'use strict'`,
+    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
+    `module.exports = ${outputFileName};`,
+  ];
+  const fileContent = lines.join('\n');
+  fs.outputFileSync(
+    path.resolve(path.join(`${outputPath}${outputFileName}.js`)),
+    fileContent,
+  );
+}
+
+async function buildAll() {
+  if (isRelease || isProduction) {
+    await buildTSDeclarationFiles();
+  }
 
   for (const pkg of packages) {
     const {name, sourcePath, outputPath, packageName, modules} = pkg;
@@ -609,30 +633,10 @@ async function buildAll() {
       }
     }
 
-    await moveDeclarationFilesIntoDistFolder(packageName, outputPath);
+    if (isRelease || isProduction) {
+      await moveTSDeclarationFilesIntoDist(packageName, outputPath);
+    }
   }
-}
-
-async function moveDeclarationFilesIntoDistFolder(packageName, outputPath) {
-  try {
-    await exec(`cp -R ./.ts-temp/${packageName}/src/ ${outputPath}`);
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-function buildForkModule(outputPath, outputFileName) {
-  const lines = [
-    getComment(),
-    `'use strict'`,
-    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
-    `module.exports = ${outputFileName};`,
-  ];
-  const fileContent = lines.join('\n');
-  fs.outputFileSync(
-    path.resolve(path.join(`${outputPath}${outputFileName}.js`)),
-    fileContent,
-  );
 }
 
 buildAll();

@@ -10,7 +10,6 @@ import type {
   GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   NodeSelection,
   RangeSelection,
 } from 'lexical';
@@ -35,6 +34,7 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  $parseSerializedNode,
   $setSelection,
   GridNode,
   SELECTION_CHANGE_COMMAND,
@@ -59,111 +59,22 @@ export function $getHtmlContent(editor: LexicalEditor): string | null {
   return $generateHtmlFromNodes(editor, selection);
 }
 
-export function $appendSelectedNodesToClone(
-  editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection,
-  currentNode: LexicalNode,
-  nodeMap: Map<NodeKey, LexicalNode>,
-  range: Array<NodeKey>,
-  shouldIncludeInRange = true,
-): Array<NodeKey> {
-  let shouldInclude = currentNode.isSelected();
-  const shouldExclude =
-    $isElementNode(currentNode) && currentNode.excludeFromCopy('clone');
-  let clone = $cloneWithProperties<LexicalNode>(currentNode);
-  clone = $isTextNode(clone)
-    ? $sliceSelectedTextNodeContent(selection, clone)
-    : clone;
-  const children = $isElementNode(clone) ? clone.getChildren() : [];
-  const nodeKeys = [];
-  let shouldIncludeChildrenInRange = shouldIncludeInRange;
+export function $getLexicalContent(editor: LexicalEditor): string | null {
+  const selection = $getSelection();
 
-  if (shouldInclude && !shouldExclude) {
-    nodeMap.set(clone.getKey(), clone);
-
-    if (shouldIncludeInRange) {
-      shouldIncludeChildrenInRange = false;
-    }
+  if (selection == null) {
+    throw new Error('Expected valid LexicalSelection');
   }
 
-  for (let i = 0; i < children.length; i++) {
-    const childNode = children[i];
-    const childNodeKeys = $appendSelectedNodesToClone(
-      editor,
-      selection,
-      childNode,
-      nodeMap,
-      range,
-      shouldIncludeChildrenInRange,
-    );
-
-    for (let j = 0; j < childNodeKeys.length; j++) {
-      const childNodeKey = childNodeKeys[j];
-      nodeKeys.push(childNodeKey);
-    }
-
-    if (
-      !shouldInclude &&
-      $isElementNode(currentNode) &&
-      nodeKeys.includes(childNode.getKey()) &&
-      currentNode.extractWithChild(childNode, selection, 'clone')
-    ) {
-      shouldInclude = true;
-    }
+  // If we haven't selected anything
+  if (
+    ($isRangeSelection(selection) && selection.isCollapsed()) ||
+    selection.getNodes().length === 0
+  ) {
+    return null;
   }
 
-  // The tree is later built using $generateNodes which works
-  // by going through the nodes specified in the "range" & their children
-  // while filtering out nodes not found in the "nodeMap".
-  // This gets complicated when we want to "exclude" a node but
-  // keep it's children i.e. a MarkNode and it's Text children.
-  // The solution is to check if there's a cloned parent already in our map and
-  // splice the current node's children into the nearest parent.
-  // If there is no parent in the map already, the children will be added to the
-  // top level range be default.
-  if ($isElementNode(clone) && shouldExclude && shouldInclude) {
-    let nearestClonedParent: LexicalNode;
-    let idxWithinClonedParent: number;
-    let prev = clone;
-    let curr = clone.getParent();
-    const root = $getRoot();
-
-    while (curr != null && !curr.is(root)) {
-      if (
-        nodeMap.has(curr.getKey()) ||
-        curr.extractWithChild(currentNode, selection, 'clone')
-      ) {
-        nearestClonedParent = $cloneWithProperties<LexicalNode>(curr);
-        idxWithinClonedParent = prev.getIndexWithinParent();
-        nodeMap.set(nearestClonedParent.getKey(), nearestClonedParent);
-        break;
-      }
-
-      prev = curr;
-      curr = curr.getParent();
-    }
-
-    // Add children to nearest cloned parent at the correct position.
-    if ($isElementNode(nearestClonedParent) && idxWithinClonedParent != null) {
-      nearestClonedParent.__children.splice(
-        idxWithinClonedParent,
-        1,
-        ...clone.__children,
-      );
-    }
-  }
-
-  if (shouldInclude && !shouldExclude) {
-    if (!nodeMap.has(clone.getKey())) {
-      nodeMap.set(clone.getKey(), clone);
-    }
-
-    if (shouldIncludeInRange) {
-      return [clone.getKey()];
-    }
-  }
-
-  return shouldIncludeChildrenInRange ? nodeKeys : [];
+  return JSON.stringify($generateJSONFromSelectedNodes(editor, selection));
 }
 
 export function $insertDataTransferForPlainText(
@@ -181,6 +92,46 @@ export function $insertDataTransferForRichText(
   selection: RangeSelection,
   editor: LexicalEditor,
 ): void {
+  const htmlString = dataTransfer.getData('text/html');
+  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
+
+  if (htmlString !== null || lexicalString !== null) {
+    if (lexicalString) {
+      try {
+        const payload = JSON.parse(lexicalString);
+        if (
+          payload.namespace === editor._config.namespace &&
+          Array.isArray(payload.nodes)
+        ) {
+          const nodes = $generateNodesFromSerializedNodes(payload.nodes);
+          return $insertGeneratedNodes(editor, nodes, selection);
+        }
+        // eslint-disable-next-line no-empty
+      } catch {}
+    }
+
+    if (htmlString) {
+      try {
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(htmlString, 'text/html');
+        return $insertGeneratedNodes(
+          editor,
+          $generateNodesFromDOM(editor, dom),
+          selection,
+        );
+        // eslint-disable-next-line no-empty
+      } catch {}
+    }
+  }
+
+  $insertDataTransferForPlainText(dataTransfer, selection);
+}
+
+function $insertGeneratedNodes(
+  editor: LexicalEditor,
+  nodes: Array<LexicalNode>,
+  selection: RangeSelection,
+) {
   const isSelectionInsideOfGrid =
     $isGridSelection(selection) ||
     ($findMatchingParent(selection.anchor.getNode(), (n) =>
@@ -190,28 +141,13 @@ export function $insertDataTransferForRichText(
         $isGridCellNode(n),
       ) !== null);
 
-  const textHtmlMimeType = 'text/html';
-  const htmlString = dataTransfer.getData(textHtmlMimeType);
-
-  if (htmlString) {
-    const parser = new DOMParser();
-    const dom = parser.parseFromString(htmlString, textHtmlMimeType);
-    const nodes = $generateNodesFromDOM(editor, dom);
-
-    if (
-      isSelectionInsideOfGrid &&
-      nodes.length === 1 &&
-      $isGridNode(nodes[0])
-    ) {
-      $mergeGridNodesStrategy(nodes, selection, false, editor);
-      return;
-    }
-
-    $basicInsertStrategy(nodes, selection, false);
+  if (isSelectionInsideOfGrid && nodes.length === 1 && $isGridNode(nodes[0])) {
+    $mergeGridNodesStrategy(nodes, selection, false, editor);
     return;
   }
 
-  $insertDataTransferForPlainText(dataTransfer, selection);
+  $basicInsertStrategy(nodes, selection, false);
+  return;
 }
 
 function $basicInsertStrategy(
@@ -381,4 +317,127 @@ function $mergeGridNodesStrategy(
     $setSelection(newGridSelection);
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
+}
+
+interface BaseSerializedNode {
+  children?: Array<BaseSerializedNode>;
+  type: string;
+  version: number;
+}
+
+function exportNodeToJSON(node: LexicalNode): BaseSerializedNode {
+  const serializedNode = node.exportJSON();
+  const nodeClass = node.constructor;
+
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
+  if (serializedNode.type !== nodeClass.getType()) {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .exportJSON().',
+      nodeClass.name,
+    );
+  }
+
+  // @ts-expect-error TODO Replace Class utility type with InstanceType
+  const serializedChildren = serializedNode.children;
+
+  if ($isElementNode(node)) {
+    if (!Array.isArray(serializedChildren)) {
+      invariant(
+        false,
+        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
+        nodeClass.name,
+      );
+    }
+  }
+
+  return serializedNode;
+}
+
+function $appendNodesToJSON(
+  editor: LexicalEditor,
+  selection: RangeSelection | NodeSelection | GridSelection | null,
+  currentNode: LexicalNode,
+  targetArray: Array<BaseSerializedNode>,
+): boolean {
+  let shouldInclude = selection != null ? currentNode.isSelected() : true;
+  const shouldExclude =
+    $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
+  let clone = $cloneWithProperties<LexicalNode>(currentNode);
+  clone =
+    $isTextNode(clone) && selection != null
+      ? $sliceSelectedTextNodeContent(selection, clone)
+      : clone;
+  const children = $isElementNode(clone) ? clone.getChildren() : [];
+
+  const serializedNode = exportNodeToJSON(clone);
+
+  // TODO: TextNode calls getTextContent() (NOT node.__text) within it's exportJSON method
+  // which uses getLatest() to get the text from the original node with the same key.
+  // This is a deeper issue with the word "clone" here, it's still a reference to the
+  // same node as far as the LexicalEditor is concerned since it shares a key.
+  // We need a way to create a clone of a Node in memory with it's own key, but
+  // until then this hack will work for the selected text extract use case.
+  if ($isTextNode(clone)) {
+    // @ts-ignore
+    serializedNode.text = clone.__text;
+  }
+
+  for (let i = 0; i < children.length; i++) {
+    const childNode = children[i];
+    const shouldIncludeChild = $appendNodesToJSON(
+      editor,
+      selection,
+      childNode,
+      serializedNode.children,
+    );
+
+    if (
+      !shouldInclude &&
+      $isElementNode(currentNode) &&
+      shouldIncludeChild &&
+      currentNode.extractWithChild(childNode, selection, 'clone')
+    ) {
+      shouldInclude = true;
+    }
+  }
+
+  if (shouldInclude && !shouldExclude) {
+    targetArray.push(serializedNode);
+  } else if (Array.isArray(serializedNode.children)) {
+    targetArray.concat(serializedNode.children);
+  }
+
+  return shouldInclude;
+}
+
+export function $generateJSONFromSelectedNodes<SerializedNode>(
+  editor: LexicalEditor,
+  selection: RangeSelection | NodeSelection | GridSelection | null,
+): {
+  namespace: string;
+  nodes: Array<SerializedNode>;
+} {
+  const nodes = [];
+  const root = $getRoot();
+  const topLevelChildren = root.getChildren();
+  for (let i = 0; i < topLevelChildren.length; i++) {
+    const topLevelNode = topLevelChildren[i];
+    $appendNodesToJSON(editor, selection, topLevelNode, nodes);
+  }
+  return {
+    namespace: editor._config.namespace,
+    nodes,
+  };
+}
+
+export function $generateNodesFromSerializedNodes(
+  serializedNodes: Array<BaseSerializedNode>,
+): Array<LexicalNode> {
+  const nodes = [];
+  for (let i = 0; i < serializedNodes.length; i++) {
+    const serializedNode = serializedNodes[i];
+    nodes.push($parseSerializedNode(serializedNode));
+  }
+  return nodes;
 }

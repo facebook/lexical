@@ -781,7 +781,7 @@ export function $getDecoratorNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
-
+export function generateRandomKey(): string;
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 
 /**

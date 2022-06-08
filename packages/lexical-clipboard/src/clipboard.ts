@@ -98,7 +98,6 @@ export function $insertDataTransferForRichText(
   if (lexicalString) {
     try {
       const payload = JSON.parse(lexicalString);
-      debugger;
       if (
         payload.namespace === editor._config.namespace &&
         Array.isArray(payload.nodes)

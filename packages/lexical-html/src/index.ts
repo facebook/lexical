@@ -15,6 +15,7 @@ import type {
   LexicalNode,
   NodeSelection,
   RangeSelection,
+  SerializedElementNode,
 } from 'lexical';
 
 import {
@@ -242,6 +243,18 @@ function $createNodesFromDOM(
     if ($isElementNode(currentLexicalNode)) {
       // If the current node is a ElementNode after conversion,
       // we can append all the children to it.
+      // We can set the indent and format too over here!
+      const json =
+        node instanceof HTMLElement &&
+        node.hasAttribute('data-lexical-node-json')
+          ? node.getAttribute('data-lexical-node-json')
+          : null;
+      if (json != null) {
+        const serializedNode: SerializedElementNode = JSON.parse(json);
+        currentLexicalNode.setDirection(serializedNode.direction);
+        currentLexicalNode.setFormat(serializedNode.format);
+        currentLexicalNode.setIndent(serializedNode.indent);
+      }
       currentLexicalNode.append(...childLexicalNodes);
     }
   }

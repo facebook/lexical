@@ -98,6 +98,7 @@ export function $insertDataTransferForRichText(
   if (lexicalString) {
     try {
       const payload = JSON.parse(lexicalString);
+      debugger;
       if (
         payload.namespace === editor._config.namespace &&
         Array.isArray(payload.nodes)
@@ -403,7 +404,10 @@ function $appendNodesToJSON(
   if (shouldInclude && !shouldExclude) {
     targetArray.push(serializedNode);
   } else if (Array.isArray(serializedNode.children)) {
-    targetArray.concat(serializedNode.children);
+    for (let i = 0; i < serializedNode.children.length; i++) {
+      const serializedChildNode = serializedNode.children[i];
+      targetArray.push(serializedChildNode);
+    }
   }
 
   return shouldInclude;

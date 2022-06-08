@@ -67,6 +67,7 @@ describe('LexicalNodeHelpers tests', () => {
         return (
           <LexicalComposer
             initialConfig={{
+              namespace: '',
               nodes:
                 plugin === 'PlainTextPlugin'
                   ? []
@@ -133,6 +134,7 @@ describe('LexicalNodeHelpers tests', () => {
         return (
           <LexicalComposer
             initialConfig={{
+              namespace: '',
               nodes:
                 plugin === 'PlainTextPlugin'
                   ? []

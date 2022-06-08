@@ -235,6 +235,7 @@ export function TestComposer({
           throw e;
         },
         ...config,
+        namespace: '',
         nodes: DEFAULT_NODES.concat(customNodes),
       }}>
       {children}
@@ -256,6 +257,7 @@ export function createTestEditor(
 ): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
+    namespace: config.namespace,
     onError: (e) => {
       throw e;
     },

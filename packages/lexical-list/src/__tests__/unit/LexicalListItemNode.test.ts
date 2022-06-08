@@ -17,6 +17,7 @@ import {
 } from '../..';
 
 const editorConfig = Object.freeze({
+  namespace: '',
   theme: {
     list: {
       listitem: 'my-listItem-item-class',
@@ -55,6 +56,7 @@ describe('LexicalListItemNode tests', () => {
 
         expect(
           listItemNode.createDOM({
+            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<li value="1"></li>');

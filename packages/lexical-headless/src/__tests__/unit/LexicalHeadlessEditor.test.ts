@@ -45,6 +45,7 @@ describe('LexicalHeadlessEditor', () => {
 
   beforeEach(() => {
     editor = createHeadlessEditor({
+      namespace: '',
       onError: () => {
         return;
       },

@@ -40,6 +40,7 @@ describe('useLexicalIsTextContentEmpty', () => {
     const editor = React.useMemo(
       () =>
         createEditor({
+          namespace: '',
           nodes: [ParagraphNode],
           onError: () => {
             throw Error();

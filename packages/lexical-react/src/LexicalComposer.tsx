@@ -23,6 +23,7 @@ type Props = {
   children: JSX.Element | string | (JSX.Element | string)[];
   initialConfig: Readonly<{
     editor__DEPRECATED?: LexicalEditor | null;
+    namespace: string;
     nodes?: ReadonlyArray<Class<LexicalNode>>;
     onError: (error: Error, editor: LexicalEditor) => void;
     readOnly?: boolean;
@@ -35,6 +36,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
     () => {
       const {
         theme,
+        namespace,
         editor__DEPRECATED: initialEditor,
         nodes,
         onError,
@@ -49,6 +51,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
 
       if (editor === null) {
         const newEditor = createEditor({
+          namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
           readOnly: true,

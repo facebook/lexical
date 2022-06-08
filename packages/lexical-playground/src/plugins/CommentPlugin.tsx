@@ -158,6 +158,7 @@ function PlainTextEditor({
   placeholder?: string;
 }) {
   const initialConfig = {
+    namespace: 'Commenting',
     nodes: [],
     onError: (error) => {
       throw error;

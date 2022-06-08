@@ -20,6 +20,7 @@ import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {
   commitPendingUpdates,
+  internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
   updateEditor,
@@ -107,6 +108,7 @@ export type EditorThemeClasses = {
 
 export type EditorConfig = {
   disableEvents?: boolean;
+  namespace: string;
   theme: EditorThemeClasses;
 };
 
@@ -266,22 +268,26 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(
-  editorConfig: {
-    disableEvents?: boolean;
-    editorState?: EditorState;
-    nodes?: ReadonlyArray<Class<LexicalNode>>;
-    onError?: ErrorHandler;
-    parentEditor?: LexicalEditor;
-    readOnly?: boolean;
-    theme?: EditorThemeClasses;
-  } = {},
-): LexicalEditor {
-  const config = editorConfig;
+export function createEditor(editorConfig: {
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  onError?: ErrorHandler;
+  parentEditor?: LexicalEditor;
+  readOnly?: boolean;
+  theme?: EditorThemeClasses;
+}): LexicalEditor {
+  const config = editorConfig || {};
+  const activeEditor = internalGetActiveEditor();
   const theme = config.theme || {};
-  const parentEditor = config.parentEditor || null;
+  const parentEditor =
+    editorConfig === undefined ? activeEditor : config.parentEditor || null;
   const disableEvents = config.disableEvents || false;
   const editorState = createEmptyEditorState();
+  const namespace =
+    config.namespace ||
+    (parentEditor !== null ? parentEditor._config.namespace : createUID());
   const initialEditorState = config.editorState;
   const nodes = [
     RootNode,
@@ -292,64 +298,69 @@ export function createEditor(
   ];
   const onError = config.onError;
   const isReadOnly = config.readOnly || false;
-  const registeredNodes = new Map();
+  let registeredNodes;
 
-  for (let i = 0; i < nodes.length; i++) {
-    const klass = nodes[i];
-    // Ensure custom nodes implement required methods.
-    // @ts-ignore
-    if (__DEV__) {
-      const name = klass.name;
-      if (name !== 'RootNode') {
-        const proto = klass.prototype;
-        ['getType', 'clone'].forEach((method) => {
-          // eslint-disable-next-line no-prototype-builtins
-          if (!klass.hasOwnProperty(method)) {
-            console.warn(`${name} must implement static "${method}" method`);
-          }
-        });
-        if (
-          // eslint-disable-next-line no-prototype-builtins
-          !klass.hasOwnProperty('importDOM') &&
-          // eslint-disable-next-line no-prototype-builtins
-          klass.hasOwnProperty('exportDOM')
-        ) {
-          console.warn(
-            `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
-          );
-        }
-        if (proto instanceof DecoratorNode) {
-          // eslint-disable-next-line no-prototype-builtins
-          if (!proto.hasOwnProperty('decorate')) {
+  if (editorConfig === undefined && activeEditor !== null) {
+    registeredNodes = activeEditor._nodes;
+  } else {
+    registeredNodes = new Map();
+    for (let i = 0; i < nodes.length; i++) {
+      const klass = nodes[i];
+      // Ensure custom nodes implement required methods.
+      // @ts-ignore
+      if (__DEV__) {
+        const name = klass.name;
+        if (name !== 'RootNode') {
+          const proto = klass.prototype;
+          ['getType', 'clone'].forEach((method) => {
+            // eslint-disable-next-line no-prototype-builtins
+            if (!klass.hasOwnProperty(method)) {
+              console.warn(`${name} must implement static "${method}" method`);
+            }
+          });
+          if (
+            // eslint-disable-next-line no-prototype-builtins
+            !klass.hasOwnProperty('importDOM') &&
+            // eslint-disable-next-line no-prototype-builtins
+            klass.hasOwnProperty('exportDOM')
+          ) {
             console.warn(
-              `${this.constructor.name} must implement "decorate" method`,
+              `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
+            );
+          }
+          if (proto instanceof DecoratorNode) {
+            // eslint-disable-next-line no-prototype-builtins
+            if (!proto.hasOwnProperty('decorate')) {
+              console.warn(
+                `${this.constructor.name} must implement "decorate" method`,
+              );
+            }
+          }
+          if (
+            // eslint-disable-next-line no-prototype-builtins
+            !klass.hasOwnProperty('importJSON')
+          ) {
+            console.warn(
+              `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
+            );
+          }
+          if (
+            // eslint-disable-next-line no-prototype-builtins
+            !proto.hasOwnProperty('exportJSON')
+          ) {
+            console.warn(
+              `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }
         }
-        if (
-          // eslint-disable-next-line no-prototype-builtins
-          !klass.hasOwnProperty('importJSON')
-        ) {
-          console.warn(
-            `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
-          );
-        }
-        if (
-          // eslint-disable-next-line no-prototype-builtins
-          !proto.hasOwnProperty('exportJSON')
-        ) {
-          console.warn(
-            `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
-          );
-        }
       }
+      // @ts-expect-error TODO Replace Class utility type with InstanceType
+      const type = klass.getType();
+      registeredNodes.set(type, {
+        klass,
+        transforms: new Set(),
+      });
     }
-    // @ts-expect-error TODO Replace Class utility type with InstanceType
-    const type = klass.getType();
-    registeredNodes.set(type, {
-      klass,
-      transforms: new Set(),
-    });
   }
 
   const editor = new LexicalEditor(
@@ -358,6 +369,7 @@ export function createEditor(
     registeredNodes,
     {
       disableEvents,
+      namespace,
       theme,
     },
     onError,

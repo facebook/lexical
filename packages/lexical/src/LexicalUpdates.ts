@@ -892,3 +892,7 @@ export function updateEditor(
     beginUpdate(editor, updateFn, options);
   }
 }
+
+export function internalGetActiveEditor(): null | LexicalEditor {
+  return activeEditor;
+}

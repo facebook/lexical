@@ -95,33 +95,31 @@ export function $insertDataTransferForRichText(
   const htmlString = dataTransfer.getData('text/html');
   const lexicalString = dataTransfer.getData('application/x-lexical-editor');
 
-  if (htmlString !== null || lexicalString !== null) {
-    if (lexicalString) {
-      try {
-        const payload = JSON.parse(lexicalString);
-        if (
-          payload.namespace === editor._config.namespace &&
-          Array.isArray(payload.nodes)
-        ) {
-          const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-          return $insertGeneratedNodes(editor, nodes, selection);
-        }
-        // eslint-disable-next-line no-empty
-      } catch {}
-    }
+  if (lexicalString) {
+    try {
+      const payload = JSON.parse(lexicalString);
+      if (
+        payload.namespace === editor._config.namespace &&
+        Array.isArray(payload.nodes)
+      ) {
+        const nodes = $generateNodesFromSerializedNodes(payload.nodes);
+        return $insertGeneratedNodes(editor, nodes, selection);
+      }
+      // eslint-disable-next-line no-empty
+    } catch {}
+  }
 
-    if (htmlString) {
-      try {
-        const parser = new DOMParser();
-        const dom = parser.parseFromString(htmlString, 'text/html');
-        return $insertGeneratedNodes(
-          editor,
-          $generateNodesFromDOM(editor, dom),
-          selection,
-        );
-        // eslint-disable-next-line no-empty
-      } catch {}
-    }
+  if (htmlString) {
+    try {
+      const parser = new DOMParser();
+      const dom = parser.parseFromString(htmlString, 'text/html');
+      return $insertGeneratedNodes(
+        editor,
+        $generateNodesFromDOM(editor, dom),
+        selection,
+      );
+      // eslint-disable-next-line no-empty
+    } catch {}
   }
 
   $insertDataTransferForPlainText(dataTransfer, selection);

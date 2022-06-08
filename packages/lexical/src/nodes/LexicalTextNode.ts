@@ -20,6 +20,7 @@ import type {
 } from '../LexicalSelection';
 import type {Spread} from 'lexical';
 
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -216,7 +217,9 @@ function setTextContent(
   } else {
     const nodeValue = firstChild.nodeValue;
     if (nodeValue !== text)
-      if (isComposing) {
+      if (isComposing || IS_FIREFOX) {
+        // We also use the diff composed text for general text in FF to avoid
+        // the spellcheck red line from flickering.
         const [index, remove, insert] = diffComposedText(nodeValue, text);
         if (remove !== 0) {
           // @ts-expect-error

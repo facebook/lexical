@@ -27,7 +27,10 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Clear All Formatting', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isPlainText, isCollab, page}) => {
+    test.skip(isPlainText);
+    initialize({isCollab, page});
+  });
   test(`Can clear BIU formatting`, async ({page}) => {
     await focusEditor(page);
 

@@ -81,7 +81,15 @@ test.describe('Markdown', () => {
       isBlockTest: true,
       markdownImport: '',
       markdownText: '##### ',
-      undoHTML: '', // H55.
+      undoHTML: '', // H5.
+    },
+    {
+      expectation: '<h6 class="PlaygroundEditorTheme__h6"><br></h6>',
+      importExpectation: '',
+      isBlockTest: true,
+      markdownImport: '',
+      markdownText: '###### ',
+      undoHTML: '', // H6.
     },
     {
       expectation:

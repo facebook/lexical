@@ -35,7 +35,7 @@ export function $createQuoteNode(): QuoteNode;
 export function $isQuoteNode(
   node: LexicalNode | null | undefined,
 ): node is QuoteNode;
-export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 export declare class HeadingNode extends ElementNode {
   __tag: HeadingTagType;
   static getType(): string;
@@ -61,7 +61,7 @@ export function registerRichText(
 
 export type SerializedHeadingNode = Spread<
   {
-    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     type: 'heading';
     version: 1;
   },

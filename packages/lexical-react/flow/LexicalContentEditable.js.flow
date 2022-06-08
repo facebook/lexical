@@ -24,7 +24,7 @@ export type Props = $ReadOnly<{
   className?: string,
   readOnly?: boolean,
   role?: string,
-  style?: StyleSheetList,
+  style?: $Shape<{[string]: string | number}>,
   spellCheck?: boolean,
   tabIndex?: number,
   testid?: string,

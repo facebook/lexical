@@ -646,12 +646,12 @@ function isGitHubCodeTable(table: HTMLTableElement): table is HTMLTableElement {
   return table.classList.contains('js-file-line-container');
 }
 
-function textNodeTransform(node: TextNode, editor: LexicalEditor): void {
+function textNodeTransform(node: TextNode, editor: LexicalEditor, threshold?: number): void {
   // Since CodeNode has flat children structure we only need to check
   // if node's parent is a code node and run highlighting if so
   const parentNode = node.getParent();
   if ($isCodeNode(parentNode)) {
-    codeNodeTransform(parentNode, editor);
+    codeNodeTransform(parentNode, editor, threshold);
   } else if ($isCodeHighlightNode(node)) {
     // When code block converted into paragraph or other element
     // code highlight nodes converted back to normal text
@@ -691,7 +691,7 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
 // in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
 // Especially when pasting code into CodeBlock.
 let isHighlighting = false;
-function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
+function codeNodeTransform(node: CodeNode, editor: LexicalEditor, threshold?: number) {
   if (isHighlighting) {
     return;
   }
@@ -716,7 +716,8 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(node.getChildren(), highlightNodes);
         const {from, to, nodesForReplacement} = diffRange;
-        if (from !== to || nodesForReplacement.length) {
+        console.log("Length: ", code.length)
+        if ((from !== to || nodesForReplacement.length) && code.length <= threshold) {
           node.splice(from, to - from, nodesForReplacement);
           return true;
         }
@@ -1097,7 +1098,7 @@ function handleMoveTo(
   event.stopPropagation();
 }
 
-export function registerCodeHighlighting(editor: LexicalEditor): () => void {
+export function registerCodeHighlighting(editor: LexicalEditor, threshold: number): () => void {
   if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
     throw new Error(
       'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
@@ -1118,13 +1119,13 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
       });
     }),
     editor.registerNodeTransform(CodeNode, (node) =>
-      codeNodeTransform(node, editor),
+      codeNodeTransform(node, editor, threshold),
     ),
     editor.registerNodeTransform(TextNode, (node) =>
-      textNodeTransform(node, editor),
+      textNodeTransform(node, editor, threshold),
     ),
     editor.registerNodeTransform(CodeHighlightNode, (node) =>
-      textNodeTransform(node, editor),
+      textNodeTransform(node, editor, threshold),
     ),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,

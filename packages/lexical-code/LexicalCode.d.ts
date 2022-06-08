@@ -78,7 +78,10 @@ declare function $isCodeHighlightNode(
   node: LexicalNode | null | undefined,
 ): node is CodeHighlightNode;
 
-declare function registerCodeHighlighting(editor: LexicalEditor): () => void;
+declare function registerCodeHighlighting(
+  editor: LexicalEditor,
+  threshold: number,
+): () => void;
 
 type SerializedCodeNode = Spread<
   {

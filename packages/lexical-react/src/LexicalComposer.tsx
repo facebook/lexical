@@ -23,6 +23,7 @@ type Props = {
   children: JSX.Element | string | (JSX.Element | string)[];
   initialConfig: Readonly<{
     editor__DEPRECATED?: LexicalEditor | null;
+    namespace?: string;
     nodes?: ReadonlyArray<Class<LexicalNode>>;
     onError: (error: Error, editor: LexicalEditor) => void;
     readOnly?: boolean;

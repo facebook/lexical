@@ -237,6 +237,7 @@ export type EditorThemeClasses = {
 };
 export type EditorConfig = {
   theme: EditorThemeClasses,
+  namespace: string,
   disableEvents?: boolean,
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
@@ -249,6 +250,7 @@ export const COMMAND_PRIORITY_CRITICAL = 4;
 export type IntentionallyMarkedAsDirtyElement = boolean;
 declare export function createEditor(editorConfig?: {
   editorState?: EditorState,
+  namespace?: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
   nodes?: $ReadOnlyArray<Class<LexicalNode>>,

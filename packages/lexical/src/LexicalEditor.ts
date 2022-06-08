@@ -108,6 +108,7 @@ export type EditorThemeClasses = {
 
 export type EditorConfig = {
   disableEvents?: boolean;
+  namespace: string;
   theme: EditorThemeClasses;
 };
 
@@ -270,6 +271,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
 export function createEditor(editorConfig: {
   disableEvents?: boolean;
   editorState?: EditorState;
+  namespace?: string;
   nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
@@ -283,6 +285,10 @@ export function createEditor(editorConfig: {
     editorConfig === undefined ? activeEditor : config.parentEditor || null;
   const disableEvents = config.disableEvents || false;
   const editorState = createEmptyEditorState();
+  const namespace =
+    config.namespace || parentEditor !== null
+      ? parentEditor._config.namespace
+      : createUID();
   const initialEditorState = config.editorState;
   const nodes = [
     RootNode,
@@ -364,6 +370,7 @@ export function createEditor(editorConfig: {
     registeredNodes,
     {
       disableEvents,
+      namespace,
       theme,
     },
     onError,

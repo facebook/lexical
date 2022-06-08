@@ -50,6 +50,7 @@ export function LexicalNestedComposer({
 
       initialEditor._parentEditor = parentEditor;
       initialEditor._nodes = parentEditor._nodes;
+      initialEditor._config.namespace = parentEditor._config.namespace;
 
       return [initialEditor, context];
     },

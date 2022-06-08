@@ -235,6 +235,7 @@ export function TestComposer({
           throw e;
         },
         ...config,
+        clipboardID: '',
         nodes: DEFAULT_NODES.concat(customNodes),
       }}>
       {children}
@@ -244,7 +245,7 @@ export function TestComposer({
 
 export function createTestEditor(
   config: {
-    namespace?: string;
+    clipboardID?: string;
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
@@ -256,6 +257,7 @@ export function createTestEditor(
 ): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
+    clipboardID: config.clipboardID,
     onError: (e) => {
       throw e;
     },

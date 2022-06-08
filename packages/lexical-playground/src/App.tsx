@@ -30,6 +30,7 @@ function App(): JSX.Element {
   const {measureTypingPerf} = settings;
 
   const initialConfig = {
+    clipboardID: 'Playground',
     nodes: [...PlaygroundNodes],
     onError: (error) => {
       throw error;

@@ -158,6 +158,7 @@ function PlainTextEditor({
   placeholder?: string;
 }) {
   const initialConfig = {
+    clipboardID: 'Commenting',
     nodes: [],
     onError: (error) => {
       throw error;

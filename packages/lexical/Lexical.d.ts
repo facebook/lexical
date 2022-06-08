@@ -248,7 +248,7 @@ export type EditorThemeClasses = {
 };
 
 export type EditorConfig = {
-  namespace: string;
+  clipboardID: string;
   theme: EditorThemeClasses;
   disableEvents?: boolean;
 };
@@ -262,7 +262,7 @@ export const COMMAND_PRIORITY_CRITICAL = 4;
 export type IntentionallyMarkedAsDirtyElement = boolean;
 export function createEditor(editorConfig?: {
   editorState?: EditorState;
-  namespace?: string;
+  clipboardID: string;
   theme?: EditorThemeClasses;
   parentEditor?: LexicalEditor;
   nodes?: ReadonlyArray<Class<LexicalNode>>;

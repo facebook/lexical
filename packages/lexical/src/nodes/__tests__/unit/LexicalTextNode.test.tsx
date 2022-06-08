@@ -42,7 +42,7 @@ import {
 } from '../../../LexicalUtils';
 
 const editorConfig = Object.freeze({
-  namespace: '',
+  clipboardID: '',
   theme: {
     text: {
       bold: 'my-bold-class',

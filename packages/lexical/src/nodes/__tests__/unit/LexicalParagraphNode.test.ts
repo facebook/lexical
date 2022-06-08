@@ -16,7 +16,7 @@ import {
 import {initializeUnitTest} from '../../../__tests__/utils';
 
 const editorConfig = Object.freeze({
-  clipboardID: '',
+  namespace: '',
   theme: {
     paragraph: 'my-paragraph-class',
   },
@@ -68,7 +68,7 @@ describe('LexicalParagraphNode tests', () => {
         );
         expect(
           paragraphNode.createDOM({
-            clipboardID: '',
+            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<p></p>');

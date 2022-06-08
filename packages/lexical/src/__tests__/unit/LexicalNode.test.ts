@@ -665,7 +665,7 @@ describe('LexicalNode tests', () => {
           expect(() =>
             node.createDOM(
               {
-                clipboardID: '',
+                namespace: '',
                 theme: {},
               },
               // @ts-expect-error Not sure why editor throws a TS error. The type is correct.
@@ -1155,7 +1155,7 @@ describe('LexicalNode tests', () => {
       });
     },
     {
-      clipboardID: '',
+      namespace: '',
       nodes: [LexicalNode, TestNode],
       theme: {},
     },

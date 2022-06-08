@@ -22,7 +22,7 @@ import {useLexicalEditor} from './DEPRECATED_useLexicalEditor';
 export function useLexical(editorConfig: {
   disableEvents?: boolean;
   editorState?: EditorState;
-  clipboardID: string;
+  namespace: string;
   nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError: (error: Error) => void;
   parentEditor?: LexicalEditor;

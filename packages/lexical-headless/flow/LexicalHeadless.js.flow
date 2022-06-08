@@ -15,8 +15,9 @@ import type {
 } from 'lexical';
 
 declare export function createHeadlessEditor(editorConfig?: {
-  clipboardID?: string,
+  namespace?: string,
   editorState?: EditorState,
+  namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
   nodes?: $ReadOnlyArray<Class<LexicalNode>>,

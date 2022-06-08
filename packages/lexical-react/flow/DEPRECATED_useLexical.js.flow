@@ -13,7 +13,7 @@ import type {
 } from 'lexical';
 
 declare export function useLexical<EditorContext>(editorConfig?: {
-  clipboardID?: string,
+  namespace?: string,
   onError: (error: Error) => void,
   initialEditorState?: EditorState,
   theme?: EditorThemeClasses,

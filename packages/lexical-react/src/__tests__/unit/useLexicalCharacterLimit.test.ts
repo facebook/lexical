@@ -228,7 +228,7 @@ describe('LexicalNodeHelpers tests', () => {
       });
     },
     {
-      clipboardID: '',
+      namespace: '',
       nodes: [OverflowNode],
       theme: {},
     },

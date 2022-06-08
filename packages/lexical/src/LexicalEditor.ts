@@ -108,7 +108,7 @@ export type EditorThemeClasses = {
 
 export type EditorConfig = {
   disableEvents?: boolean;
-  clipboardID: string;
+  namespace: string;
   theme: EditorThemeClasses;
 };
 
@@ -271,7 +271,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
 export function createEditor(editorConfig: {
   disableEvents?: boolean;
   editorState?: EditorState;
-  clipboardID?: string;
+  namespace?: string;
   nodes?: ReadonlyArray<Class<LexicalNode>>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
@@ -285,9 +285,9 @@ export function createEditor(editorConfig: {
     editorConfig === undefined ? activeEditor : config.parentEditor || null;
   const disableEvents = config.disableEvents || false;
   const editorState = createEmptyEditorState();
-  const clipboardID =
-    config.clipboardID ||
-    (parentEditor !== null ? parentEditor._config.clipboardID : createUID());
+  const namespace =
+    config.namespace ||
+    (parentEditor !== null ? parentEditor._config.namespace : createUID());
   const initialEditorState = config.editorState;
   const nodes = [
     RootNode,
@@ -368,8 +368,8 @@ export function createEditor(editorConfig: {
     parentEditor,
     registeredNodes,
     {
-      clipboardID,
       disableEvents,
+      namespace,
       theme,
     },
     onError,

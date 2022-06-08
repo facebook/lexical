@@ -13,7 +13,7 @@ type Props = {
   initialConfig: $ReadOnly<{
     editor__DEPRECATED?: LexicalEditor | null,
     readOnly?: boolean,
-    clipboardID: string,
+    namespace: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     theme?: EditorThemeClasses,
     onError: (error: Error, editor: LexicalEditor) => void,

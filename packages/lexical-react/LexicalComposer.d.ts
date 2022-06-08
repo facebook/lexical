@@ -11,7 +11,7 @@ import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 
 type Props = {
   initialConfig: {
-    clipboardID: string;
+    namespace: string;
     editor__DEPRECATED?: LexicalEditor | null;
     readOnly?: boolean;
     nodes?: Array<Class<LexicalNode>>;

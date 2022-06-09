@@ -6,7 +6,7 @@
  *
  */
 
- import type {
+import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
@@ -69,7 +69,8 @@ import {
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
-  REMOVE_TEXT_COMMAND} from 'lexical';
+  REMOVE_TEXT_COMMAND,
+} from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
@@ -675,8 +676,7 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
       (event) => {
-        // @ts-ignore event.target will be a HTMLElement here
-        if (isTargetWithinDecorator(event.target)) {
+        if (isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
         const selection = $getSelection();

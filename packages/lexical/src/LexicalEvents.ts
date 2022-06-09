@@ -603,17 +603,11 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
     const data = event.data;
-    const possibleTextReplacement =
-      event.inputType === 'insertText' &&
-      data != null &&
-      data.length > 1 &&
-      !doesContainGrapheme(data);
 
     if (
       data != null &&
       $isRangeSelection(selection) &&
-      (possibleTextReplacement ||
-        $shouldPreventDefaultAndInsertText(selection, data))
+      $shouldPreventDefaultAndInsertText(selection, data)
     ) {
       // Given we're over-riding the default behavior, we will need
       // to ensure to disable composition before dispatching the
@@ -623,19 +617,6 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         isFirefoxEndingComposition = false;
       }
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
-      if (possibleTextReplacement) {
-        // If the DOM selection offset is higher than the existing
-        // offset, then restore the offset as it's likely correct
-        // in the case of text replacements.
-        const {anchorOffset} = window.getSelection();
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-
-        if (anchorOffset > anchor.offset) {
-          anchor.set(anchor.key, anchorOffset, anchor.type);
-          focus.set(anchor.key, anchorOffset, anchor.type);
-        }
-      }
 
       // This ensures consistency on Android.
       if (!IS_SAFARI && !IS_IOS && editor.isComposing()) {

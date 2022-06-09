@@ -8,12 +8,12 @@ React-based plugins are using Lexical editor instance from `<LexicalComposer>` c
 
 ```jsx
 <LexicalComposer initialConfig={initialConfig}>
-  <LexicalPlainTextPlugin
-    contentEditable={<LexicalContentEditable />}
+  <PlainTextPlugin
+    contentEditable={<ContentEditable />}
     placeholder={<div>Enter some text...</div>}
   />
-  <LexicalHistoryPlugin />
-  <LexicalOnChangePlugin onChange={onChange} />
+  <HistoryPlugin />
+  <OnChangePlugin onChange={onChange} />
   ...
 </LexicalComposer>
 ```
@@ -23,8 +23,8 @@ React-based plugins are using Lexical editor instance from `<LexicalComposer>` c
 React wrapper for `@lexical/plain-text` that adds major features for plain text editing, including typing, deletion and copy/pasting
 
 ```jsx
-<LexicalPlainTextPlugin
-  contentEditable={<LexicalContentEditable />}
+<PlainTextPlugin
+  contentEditable={<ContentEditable />}
   placeholder={<div>Enter some text...</div>}
 />
 ```
@@ -34,8 +34,8 @@ React wrapper for `@lexical/plain-text` that adds major features for plain text 
 React wrapper for `@lexical/rich-text` that adds major features for rich text editing, including typing, deletion, copy/pasting, indent/outdent and bold/italic/underline/strikethrough text formatting
 
 ```jsx
-<LexicalRichTextPlugin
-  contentEditable={<LexicalContentEditable />}
+<RichTextPlugin
+  contentEditable={<ContentEditable />}
   placeholder={null}
 />
 ```
@@ -45,7 +45,7 @@ React wrapper for `@lexical/rich-text` that adds major features for rich text ed
 Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreInitialChange` (`true` by default) and `ignoreSelectionChange` (`false` by default) can give more granular control over changes that are causing `onChange` call
 
 ```jsx
-<LexicalOnChangePlugin onChange={onChange} />
+<OnChangePlugin onChange={onChange} />
 ```
 
 ### `LexicalHistoryPlugin`
@@ -53,7 +53,7 @@ Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreIni
 React wrapper for `@lexical/history` that adds support for history stack management and `undo` / `redo` commands
 
 ```jsx
-<LexicalHistoryPlugin />
+<HistoryPlugin />
 ```
 
 ### `LexicalLinkPlugin`
@@ -61,7 +61,7 @@ React wrapper for `@lexical/history` that adds support for history stack managem
 React wrapper for `@lexical/link` that adds support for links, including `toggleLink` command support that toggles link for selected text
 
 ```jsx
-<LexicalLinkPlugin />
+<LinkPlugin />
 ```
 
 ### `LexicalListPlugin`
@@ -69,7 +69,7 @@ React wrapper for `@lexical/link` that adds support for links, including `toggle
 React wrapper for `@lexical/list` that adds support for lists (ordered and unordered)
 
 ```jsx
-<LexicalLinkPlugin />
+<ListPlugin />
 ```
 
 ### `LexicalCheckListPlugin`
@@ -77,7 +77,7 @@ React wrapper for `@lexical/list` that adds support for lists (ordered and unord
 React wrapper for `@lexical/list` that adds support for check lists. Note that it requires some css to render check/uncheck marks. See PlaygroundEditorTheme.css for details.
 
 ```jsx
-<LexicalLinkPlugin />
+<CheckListPlugin />
 ```
 
 ### `LexicalTablePlugin`
@@ -85,7 +85,7 @@ React wrapper for `@lexical/list` that adds support for check lists. Note that i
 React wrapper for `@lexical/table` that adds support for tables
 
 ```jsx
-<LexicalTablePlugin />
+<TablePlugin />
 ```
 
 ### `LexicalAutoLinkPlugin`
@@ -112,7 +112,7 @@ const MATCHERS = [
 
 ...
 
-<LexicalAutoLinkPlugin matchers=[MATCHERS] />
+<AutoLinkPlugin matchers=[MATCHERS] />
 ```
 
 ### `LexicalAutoScrollPlugin`
@@ -123,7 +123,7 @@ Lexical auto-scrolls its contenteditable container while typing. This plugin can
 <div ref={containerWithScrollRef}>
   <LexicalComposer>
     ...
-    <LexicalAutoScrollPlugin scrollRef={containerWithScrollRef} />
+    <AutoScrollPlugin scrollRef={containerWithScrollRef} />
   </LexicalComposer>
 </div>
 ```

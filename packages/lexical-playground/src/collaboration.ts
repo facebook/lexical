@@ -38,6 +38,6 @@ export function createWebsocketProvider(
     doc,
     {
       connect: false,
-    }
+    },
   ) as unknown as Provider;
 }

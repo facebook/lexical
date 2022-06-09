@@ -6,7 +6,7 @@
  *
  */
 
- import type {Provider} from '@lexical/yjs';
+import type {Provider} from '@lexical/yjs';
 import type {Doc, RelativePosition} from 'yjs';
 
 export type UserState = {

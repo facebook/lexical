@@ -104,6 +104,7 @@ function onError(error) {
 
 function Editor() {
   const initialConfig = {
+    namespace: 'MyEditor',
     theme,
     onError,
   };
@@ -199,6 +200,7 @@ An editor instance can be created from the `lexical` package and accepts an opti
 import {createEditor} from 'lexical';
 
 const config = {
+  namespace: 'MyEditor',
   theme: {
     ...
   },

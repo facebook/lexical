@@ -149,7 +149,7 @@ export default function EmoticonPlugin() {
 Once we've done that, let's register our newly-created EmoticonNode so that Lexical knows how to handle it:
 
 ```jsx
-<LexicalComposer initialConfig={{nodes: [EmoticonNode]}}>...</LexicalComposer>
+<LexicalComposer initialConfig={{namespace: 'MyEditor', nodes: [EmoticonNode]}}>...</LexicalComposer>
 ```
 
 Next, let's setup a transform to listen for changes. Transforms are special event listeners that only respond to changes in nodes of a certain type. In this case, we want to listen for changes in TextNodes, since that's what will be created as the user enters or changes text:
@@ -267,7 +267,7 @@ Finally, we need to wire this plugin up to an Editor so we can actually use it.
 
 export default function Editor() {
   return (
-    <LexicalComposer initialConfig={{theme: ExampleTheme, nodes: [EmoticonNode]}}>
+    <LexicalComposer initialConfig={{namespace: 'MyEditor', theme: ExampleTheme, nodes: [EmoticonNode]}}>
       <div className="editor-container">
         <PlainTextPlugin
           contentEditable={<ContentEditable className="editor-input" />}

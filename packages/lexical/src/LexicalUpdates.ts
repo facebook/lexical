@@ -475,6 +475,9 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         isAttemptingToRecoverFromReconcilerError = true;
         commitPendingUpdates(editor);
         isAttemptingToRecoverFromReconcilerError = false;
+      } else {
+        // To avoid a possible situation of infinite loops, lets throw
+        throw error;
       }
 
       return;

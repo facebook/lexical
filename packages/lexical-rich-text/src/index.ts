@@ -330,8 +330,7 @@ function initializeEditor(
   } else if (initialEditorState === undefined) {
     editor.update(() => {
       const root = $getRoot();
-      const firstChild = root.getFirstChild();
-      if (firstChild === null) {
+      if (root.isEmpty()) {
         const paragraph = $createParagraphNode();
         root.append(paragraph);
         const activeElement = document.activeElement;
@@ -355,7 +354,12 @@ function initializeEditor(
         break;
       }
       case 'function': {
-        editor.update(initialEditorState, updateOptions);
+        editor.update(() => {
+          const root = $getRoot();
+          if (root.isEmpty()) {
+            initialEditorState();
+          }
+        }, updateOptions);
         break;
       }
     }

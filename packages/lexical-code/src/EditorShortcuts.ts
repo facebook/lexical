@@ -6,64 +6,19 @@
  *
  */
 
-
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
-
 // eslint-disable-next-line simple-import-sort/imports
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  SerializedTextNode,
-} from 'lexical';
+import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
-import * as Prism from 'prismjs';
+import {CodeNode} from './CodeHighlighter';
 
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-markup';
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-c';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-objectivec';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-rust';
-import 'prismjs/components/prism-swift';
-
-import { CodeNode } from "./CodeHighlighter";
+import {mergeRegister} from '@lexical/utils';
 
 import {
-  addClassNamesToElement,
-  mergeRegister,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-
-import {
-  $createLineBreakNode,
-  $createParagraphNode,
-  $createTextNode,
   $getNodeByKey,
   $getSelection,
   $isLineBreakNode,
   $isRangeSelection,
-  $isTextNode,
   COMMAND_PRIORITY_LOW,
-  ElementNode,
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -72,27 +27,13 @@ import {
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
+import {
+  CodeHighlightNode,
+  $createCodeHighlightNode,
+  $isCodeHighlightNode,
+} from './HighlighterHelper';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
-
-type SerializedCodeNode = Spread<
-  {
-    language: string | null | undefined;
-    type: 'code';
-    version: 1;
-  },
-  SerializedElementNode
->;
-
-type SerializedCodeHighlightNode = Spread<
-  {
-    highlightType: string | null | undefined;
-    type: 'code-highlight';
-    version: 1;
-  },
-  SerializedTextNode
->;
 
 export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
 
@@ -104,116 +45,6 @@ export const getCodeLanguages = (): Array<string> =>
       (language) => typeof Prism.languages[language] !== 'function',
     )
     .sort();
-
-export class CodeHighlightNode extends TextNode {
-  __highlightType: string | null | undefined;
-
-  constructor(text: string, highlightType?: string, key?: NodeKey) {
-    super(text, key);
-    this.__highlightType = highlightType;
-  }
-
-  static getType(): string {
-    return 'code-highlight';
-  }
-
-  static clone(node: CodeHighlightNode): CodeHighlightNode {
-    return new CodeHighlightNode(
-      node.__text,
-      node.__highlightType || undefined,
-      node.__key,
-    );
-  }
-
-  getHighlightType(): string | null | undefined {
-    const self = this.getLatest();
-    return self.__highlightType;
-  }
-
-  createDOM(config: EditorConfig): HTMLElement {
-    const element = super.createDOM(config);
-    const className = getHighlightThemeClass(
-      config.theme,
-      this.__highlightType,
-    );
-    addClassNamesToElement(element, className);
-    return element;
-  }
-
-  updateDOM(
-    prevNode: CodeHighlightNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean {
-    const update = super.updateDOM(prevNode, dom, config);
-    const prevClassName = getHighlightThemeClass(
-      config.theme,
-      prevNode.__highlightType,
-    );
-    const nextClassName = getHighlightThemeClass(
-      config.theme,
-      this.__highlightType,
-    );
-    if (prevClassName !== nextClassName) {
-      if (prevClassName) {
-        removeClassNamesFromElement(dom, prevClassName);
-      }
-      if (nextClassName) {
-        addClassNamesToElement(dom, nextClassName);
-      }
-    }
-    return update;
-  }
-
-  static importJSON(
-    serializedNode: SerializedCodeHighlightNode,
-  ): CodeHighlightNode {
-    const node = $createCodeHighlightNode(serializedNode.highlightType);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
-  exportJSON(): SerializedCodeHighlightNode {
-    return {
-      ...super.exportJSON(),
-      highlightType: this.getHighlightType(),
-      type: 'code-highlight',
-    };
-  }
-
-  // Prevent formatting (bold, underline, etc)
-  setFormat(format: number): this {
-    return this;
-  }
-}
-
-function getHighlightThemeClass(
-  theme: EditorThemeClasses,
-  highlightType: string | undefined,
-): string | undefined {
-  return (
-    highlightType &&
-    theme &&
-    theme.codeHighlight &&
-    theme.codeHighlight[highlightType]
-  );
-}
-
-export function $createCodeHighlightNode(
-  text: string,
-  highlightType?: string,
-): CodeHighlightNode {
-  return new CodeHighlightNode(text, highlightType);
-}
-
-export function $isCodeHighlightNode(
-  node: LexicalNode | CodeHighlightNode | null | undefined,
-): node is CodeHighlightNode {
-  return node instanceof CodeHighlightNode;
-}
 
 export function getFirstCodeHighlightNodeOfLine(
   anchor: LexicalNode,
@@ -379,63 +210,6 @@ export function getEndOfCodeInLine(anchor: LexicalNode): {
     node: currentNode,
     offset: currentNodeOffset,
   };
-}
-
-function convertPreElement(domNode: Node): DOMConversionOutput {
-  return {node: $createCodeNode()};
-}
-
-function convertDivElement(domNode: Node): DOMConversionOutput {
-  // domNode is a <div> since we matched it by nodeName
-  const div = domNode as HTMLDivElement;
-  return {
-    after: (childLexicalNodes) => {
-      const domParent = domNode.parentNode;
-      if (domParent != null && domNode !== domParent.lastChild) {
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
-    node: isCodeElement(div) ? $createCodeNode() : null,
-  };
-}
-
-function convertTableElement(): DOMConversionOutput {
-  return {node: $createCodeNode()};
-}
-
-function convertCodeNoop(): DOMConversionOutput {
-  return {node: null};
-}
-
-function convertTableCellElement(domNode: Node): DOMConversionOutput {
-  // domNode is a <td> since we matched it by nodeName
-  const cell = domNode as HTMLTableCellElement;
-
-  return {
-    after: (childLexicalNodes) => {
-      if (cell.parentNode && cell.parentNode.nextSibling) {
-        // Append newline between code lines
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
-    node: null,
-  };
-}
-
-function isCodeElement(div: HTMLDivElement): boolean {
-  return div.style.fontFamily.match('monospace') !== null;
-}
-
-function isGitHubCodeCell(
-  cell: HTMLTableCellElement,
-): cell is HTMLTableCellElement {
-  return cell.classList.contains('js-file-line');
-}
-
-function isGitHubCodeTable(table: HTMLTableElement): table is HTMLTableElement {
-  return table.classList.contains('js-file-line-container');
 }
 
 function doIndent(node: CodeHighlightNode, type: LexicalCommand<void>) {
@@ -667,8 +441,19 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
 }
 
 export function registerCodeIndent(editor: LexicalEditor): () => void {
-  console.log("Start: ", "Started")
-  return(
+  return mergeRegister(
+    editor.registerMutationListener(CodeNode, (mutations) => {
+      editor.update(() => {
+        for (const [key, type] of mutations) {
+          if (type !== 'destroyed') {
+            const node = $getNodeByKey(key);
+            if (node !== null) {
+              updateCodeGutter(node as CodeNode, editor);
+            }
+          }
+        }
+      });
+    }),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       (payload): boolean => handleMultilineIndent(INDENT_CONTENT_COMMAND),
@@ -703,8 +488,3 @@ export function registerCodeIndent(editor: LexicalEditor): () => void {
     ),
   );
 }
-
-
-
-
-

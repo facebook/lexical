@@ -8,6 +8,8 @@
     "noEmit": true,
     "strict": false,
     "baseUrl": ".",
+    "typeRoots": ["node_modules/@types", "libdefs/globals"],
+
     "paths": {
       "lexical": ["./packages/lexical/src/"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/"],
@@ -69,13 +71,13 @@
         "./packages/lexical-react/src/LexicalComposerContext.ts"
       ],
       "@lexical/react/LexicalNestedComposer": [
-        "./packages/lexical-react/src/LexicalNestedComposer.ts"
+        "./packages/lexical-react/src/LexicalNestedComposer.tsx"
       ],
       "@lexical/react/LexicalContentEditable": [
-        "./packages/lexical-react/src/LexicalContentEditable.ts"
+        "./packages/lexical-react/src/LexicalContentEditable.tsx"
       ],
       "@lexical/react/LexicalTreeView": [
-        "./packages/lexical-react/src/LexicalTreeView.ts"
+        "./packages/lexical-react/src/LexicalTreeView.tsx"
       ],
       "@lexical/react/LexicalHorizontalRuleNode": [
         "./packages/lexical-react/src/LexicalHorizontalRuleNode.tsx"
@@ -84,7 +86,7 @@
         "./packages/lexical-react/src/LexicalDecoratorBlockNode.ts"
       ],
       "@lexical/react/LexicalBlockWithAlignableContents": [
-        "./packages/lexical-react/src/LexicalBlockWithAlignableContents.ts"
+        "./packages/lexical-react/src/LexicalBlockWithAlignableContents.tsx"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "./packages/lexical-reactsrc//useLexicalIsTextContentEmpty.ts"
@@ -97,10 +99,10 @@
       ],
 
       "@lexical/react/LexicalPlainTextPlugin": [
-        "./packages/lexical-react/src/LexicalPlainTextPlugin.ts"
+        "./packages/lexical-react/src/LexicalPlainTextPlugin.tsx"
       ],
       "@lexical/react/LexicalRichTextPlugin": [
-        "./packages/lexical-react/src/LexicalRichTextPlugin.ts"
+        "./packages/lexical-react/src/LexicalRichTextPlugin.tsx"
       ],
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"
@@ -112,7 +114,7 @@
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
       ],
       "@lexical/react/LexicalMarkdownShortcutPlugin": [
-        "./packages/lexical-react/src/LexicalMarkdownShortcutPlugin.ts"
+        "./packages/lexical-react/src/LexicalMarkdownShortcutPlugin.tsx"
       ],
       "@lexical/react/LexicalAutoFocusPlugin": [
         "./packages/lexical-react/src/LexicalAutoFocusPlugin.ts"
@@ -121,7 +123,7 @@
         "./packages/lexical-react/src/LexicalAutoFormatterPlugin.ts"
       ],
       "@lexical/react/LexicalCharacterLimitPlugin": [
-        "./packages/lexical-react/src/LexicalCharacterLimitPlugin.ts"
+        "./packages/lexical-react/src/LexicalCharacterLimitPlugin.tsx"
       ],
       "@lexical/react/LexicalClearEditorPlugin": [
         "./packages/lexical-react/src/LexicalClearEditorPlugin.ts"
@@ -142,7 +144,7 @@
         "./packages/lexical-react/src/LexicalListPlugin.ts"
       ],
       "@lexical/react/LexicalCheckListPlugin": [
-        "./packages/lexical-react/src/LexicalCheckListPlugin.ts"
+        "./packages/lexical-react/src/LexicalCheckListPlugin.tsx"
       ],
       "@lexical/react/LexicalAutoScrollPlugin": [
         "./packages/lexical-react/src/LexicalAutoScrollPlugin.ts"
@@ -178,5 +180,11 @@
       "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"]
     }
   },
-  "exclude": ["**/dist/**", "**/npm/**", "node_modules/**/*"]
+  "include": ["./libdefs", "./packages"],
+  "exclude": [
+    "**/dist/**",
+    "**/npm/**",
+    "**/node_modules/**",
+    "./packages/playwright-core/**"
+  ]
 }

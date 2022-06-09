@@ -5,7 +5,6 @@
     "emitDeclarationOnly": true,
     "declarationDir": "./.ts-temp"
   },
-  "include": ["packages/**/*"],
   "exclude": [
     "**/__tests__/**",
     "node_modules/**/*",

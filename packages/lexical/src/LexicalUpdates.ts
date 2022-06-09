@@ -355,7 +355,6 @@ export function parseEditorState(
     // Make the editorState immutable
     editorState._readOnly = true;
 
-    // @ts-ignore
     if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(editorState);
     }
@@ -496,7 +495,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
 
   pendingEditorState._readOnly = true;
 
-  // @ts-ignore
   if (__DEV__) {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
     if ($isRangeSelection(pendingSelection)) {

@@ -9,7 +9,6 @@
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
-import {SerializedEditor} from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
@@ -42,6 +41,8 @@ export type TextNodeThemeClasses = {
   code?: EditorThemeClassName;
   italic?: EditorThemeClassName;
   strikethrough?: EditorThemeClassName;
+  subscript?: EditorThemeClassName;
+  superscript?: EditorThemeClassName;
   underline?: EditorThemeClassName;
   underlineStrikethrough?: EditorThemeClassName;
 };
@@ -206,6 +207,10 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>
 >;
 
+export type SerializedEditor = {
+  editorState: SerializedEditorState;
+};
+
 export function resetEditor(
   editor: LexicalEditor,
   prevRootElement: null | HTMLElement,
@@ -274,7 +279,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(editorConfig: {
+export function createEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
@@ -313,7 +318,6 @@ export function createEditor(editorConfig: {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
       // Ensure custom nodes implement required methods.
-      // @ts-ignore
       if (__DEV__) {
         const name = klass.name;
         if (name !== 'RootNode') {
@@ -617,10 +621,12 @@ export class LexicalEditor {
     };
   }
 
-  hasNodes(nodes: Array<Class<LexicalNode>>): boolean {
+  hasNodes<T extends {new (...args: unknown[]): LexicalNode}>(
+    nodes: Array<T>,
+  ): boolean {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
-      // @ts-expect-error TODO Replace Class utility type with InstanceType
+      // @ts-expect-error
       const type = klass.getType();
 
       if (!this._nodes.has(type)) {

@@ -152,7 +152,6 @@ export function $cloneContents(
 } {
   const clone = $cloneContentsImpl(selection);
 
-  // @ts-ignore
   if (__DEV__) {
     const nodeMap = clone.nodeMap;
 

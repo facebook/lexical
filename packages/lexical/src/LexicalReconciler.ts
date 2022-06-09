@@ -230,7 +230,6 @@ function createNode(
     }
   }
 
-  // @ts-ignore
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(node);
@@ -606,7 +605,6 @@ function reconcileNode(
     nextNode.__cachedText = editorTextContent;
   }
 
-  // @ts-ignore
   if (__DEV__) {
     // Freeze the node in DEV to prevent accidental mutations
     Object.freeze(nextNode);

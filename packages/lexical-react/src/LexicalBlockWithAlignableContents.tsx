@@ -31,7 +31,7 @@ import * as React from 'react';
 import {useCallback, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
-  children: JSX.Element;
+  children: JSX.Element | string | (JSX.Element | string)[];
   format: ElementFormatType | null | undefined;
   nodeKey: NodeKey;
 }>;

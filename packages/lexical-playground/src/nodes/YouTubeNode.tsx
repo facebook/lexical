@@ -46,7 +46,7 @@ export type SerializedYouTubeNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-export class YouTubeNode extends DecoratorBlockNode<JSX.Element> {
+export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
   static getType(): string {

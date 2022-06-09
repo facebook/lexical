@@ -6,7 +6,6 @@
  *
  */
 
-import type {Provider} from '.';
 import type {Binding} from './Bindings';
 import type {
   GridSelection,
@@ -25,6 +24,7 @@ import {
   $isElementNode,
   $isRangeSelection,
 } from 'lexical';
+import {WebsocketProvider} from 'y-websocket';
 import {
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
@@ -256,7 +256,7 @@ function updateCursor(
 
 export function syncLocalCursorPosition(
   binding: Binding,
-  provider: Provider,
+  provider: WebsocketProvider,
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();
@@ -356,7 +356,7 @@ function getCollabNodeAndOffset(
 
 export function syncCursorPositions(
   binding: Binding,
-  provider: Provider,
+  provider: WebsocketProvider,
 ): void {
   const awarenessStates = Array.from(provider.awareness.getStates());
   const localClientID = binding.clientID;
@@ -442,7 +442,7 @@ export function syncCursorPositions(
 
 export function syncLexicalSelectionToYjs(
   binding: Binding,
-  provider: Provider,
+  provider: WebsocketProvider,
   prevSelection: null | RangeSelection | NodeSelection | GridSelection,
   nextSelection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {

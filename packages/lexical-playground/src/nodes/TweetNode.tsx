@@ -115,7 +115,7 @@ export type SerializedTweetNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-export class TweetNode extends DecoratorBlockNode<JSX.Element> {
+export class TweetNode extends DecoratorBlockNode {
   __id: string;
 
   static getType(): string {

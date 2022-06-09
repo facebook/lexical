@@ -128,7 +128,7 @@ export function $insertDataTransferForRichText(
 function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
 ) {
   const isSelectionInsideOfGrid =
     $isGridSelection(selection) ||

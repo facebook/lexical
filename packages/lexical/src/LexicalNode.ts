@@ -191,7 +191,6 @@ export class LexicalNode {
     this.__parent = null;
     $setNodeKey(this, key);
 
-    // @ts-ignore
     if (__DEV__) {
       if (this.__type !== 'root') {
         errorOnReadOnly();

@@ -23,8 +23,8 @@ export function $insertDataTransferForRichText(
   editor: LexicalEditor,
 ): void;
 
-export function $getHtmlContent(editor: LexicalEditor): string;
-
+export function $getHtmlContent(editor: LexicalEditor): string | null;
+export function $getLexicalContent(editor: LexicalEditor): string | null;
 /*
  * Plain Text
  */

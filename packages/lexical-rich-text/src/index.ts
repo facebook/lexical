@@ -700,8 +700,7 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       (event) => {
-        // @ts-ignore event.target will be a HTMLElement here
-        if (isTargetWithinDecorator(event.target)) {
+        if (isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
         const selection = $getSelection();

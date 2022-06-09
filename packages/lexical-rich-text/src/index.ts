@@ -74,7 +74,11 @@ import {
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-export type InitialEditorStateType = null | string | EditorState | (() => void);
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
 
 export type SerializedHeadingNode = Spread<
   {
@@ -357,7 +361,7 @@ function initializeEditor(
         editor.update(() => {
           const root = $getRoot();
           if (root.isEmpty()) {
-            initialEditorState();
+            initialEditorState(editor);
           }
         }, updateOptions);
         break;

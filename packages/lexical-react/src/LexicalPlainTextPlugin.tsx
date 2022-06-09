@@ -6,8 +6,7 @@
  *
  */
 
-import type {InitialEditorStateType} from './shared/PlainRichTextUtils';
-
+import {InitialEditorStateType} from '@lexical/plain-text';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 

@@ -6,9 +6,8 @@
  *
  */
 
-import type {InitialEditorStateType} from './shared/PlainRichTextUtils';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {InitialEditorStateType} from '@lexical/rich-text';
 import * as React from 'react';
 
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';

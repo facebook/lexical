@@ -80,7 +80,6 @@ import {
   $updateSelectedTextFromDOM,
   $updateTextNodeFromDOMContent,
   dispatchCommand,
-  doesContainGrapheme,
   getDOMTextNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,

@@ -7,9 +7,13 @@
  * @flow strict
  */
 
-import type {EditorState} from 'lexical';
+import type {EditorState, LexicalEditor} from 'lexical';
 
-type InitialEditorStateType = null | string | EditorState | (() => void);
+type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
 
 declare export function RichTextPlugin({
   contentEditable: React$Node,

@@ -19,7 +19,11 @@ import type {
 import {ElementNode} from 'lexical';
 import type {Spread} from 'lexical';
 
-export type InitialEditorStateType = null | string | EditorState | (() => void);
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
 
 export declare class QuoteNode extends ElementNode {
   static getType(): string;

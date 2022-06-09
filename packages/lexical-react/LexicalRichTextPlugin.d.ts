@@ -6,9 +6,9 @@
  *
  */
 
-import type {EditorState} from 'lexical';
+import {InitialEditorStateType} from '@lexical/rich-text';
+import type {EditorState, LexicalEditor} from 'lexical';
 
-type InitialEditorStateType = null | string | EditorState | (() => void);
 export function RichTextPlugin(arg0: {
   contentEditable: JSX.Element | null;
   initialEditorState?: InitialEditorStateType;

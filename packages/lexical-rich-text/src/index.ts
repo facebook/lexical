@@ -74,7 +74,11 @@ import {
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-export type InitialEditorStateType = null | string | EditorState | (() => void);
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
 
 export type SerializedHeadingNode = Spread<
   {
@@ -330,8 +334,7 @@ function initializeEditor(
   } else if (initialEditorState === undefined) {
     editor.update(() => {
       const root = $getRoot();
-      const firstChild = root.getFirstChild();
-      if (firstChild === null) {
+      if (root.isEmpty()) {
         const paragraph = $createParagraphNode();
         root.append(paragraph);
         const activeElement = document.activeElement;
@@ -355,7 +358,12 @@ function initializeEditor(
         break;
       }
       case 'function': {
-        editor.update(initialEditorState, updateOptions);
+        editor.update(() => {
+          const root = $getRoot();
+          if (root.isEmpty()) {
+            initialEditorState(editor);
+          }
+        }, updateOptions);
         break;
       }
     }

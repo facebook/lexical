@@ -6,9 +6,9 @@
  *
  */
 
-import type {EditorState} from 'lexical';
+import {InitialEditorStateType} from '@lexical/plain-text';
+import type {EditorState, LexicalEditor} from 'lexical';
 
-type InitialEditorStateType = null | string | EditorState | (() => void);
 export function PlainTextPlugin(arg0: {
   contentEditable: JSX.Element | null;
   initialEditorState?: InitialEditorStateType;

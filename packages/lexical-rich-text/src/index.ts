@@ -6,7 +6,7 @@
  *
  */
 
-import type {
+ import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
@@ -36,8 +36,10 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
@@ -67,8 +69,7 @@ import {
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
-  REMOVE_TEXT_COMMAND,
-} from 'lexical';
+  REMOVE_TEXT_COMMAND} from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type InitialEditorStateType = null | string | EditorState | (() => void);
@@ -442,6 +443,11 @@ function handleIndentAndOutdent(
   }
 }
 
+function isTargetWithinDecorator(target: HTMLElement): boolean {
+  const node = $getNearestNodeFromDOMNode(target);
+  return $isDecoratorNode(node);
+}
+
 export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
@@ -669,6 +675,10 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
       (event) => {
+        // @ts-ignore event.target will be a HTMLElement here
+        if (isTargetWithinDecorator(event.target)) {
+          return false;
+        }
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -690,6 +700,10 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       (event) => {
+        // @ts-ignore event.target will be a HTMLElement here
+        if (isTargetWithinDecorator(event.target)) {
+          return false;
+        }
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;

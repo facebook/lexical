@@ -36,8 +36,10 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
@@ -442,6 +444,11 @@ function handleIndentAndOutdent(
   }
 }
 
+function isTargetWithinDecorator(target: HTMLElement): boolean {
+  const node = $getNearestNodeFromDOMNode(target);
+  return $isDecoratorNode(node);
+}
+
 export function registerRichText(
   editor: LexicalEditor,
   initialEditorState?: InitialEditorStateType,
@@ -669,6 +676,9 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
       (event) => {
+        if (isTargetWithinDecorator(event.target as HTMLElement)) {
+          return false;
+        }
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -690,6 +700,9 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       (event) => {
+        if (isTargetWithinDecorator(event.target as HTMLElement)) {
+          return false;
+        }
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;

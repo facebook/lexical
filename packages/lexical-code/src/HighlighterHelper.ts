@@ -147,6 +147,9 @@ export function $createCodeHighlightNode(
 ): CodeHighlightNode {
   return new CodeHighlightNode(text, highlightType);
 }
+// export function $replaceCodeHighlightNode(text: string): LexicalNode {
+//   return new LexicalNode(text);
+// }
 
 export function $isCodeHighlightNode(
   node: LexicalNode | CodeHighlightNode | null | undefined,

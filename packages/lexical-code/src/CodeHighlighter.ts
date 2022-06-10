@@ -374,6 +374,16 @@ export function $createCodeNode(language?: string): CodeNode {
   return new CodeNode(language);
 }
 
+// export function $replaceCodeNode(
+//   highlightedNode: LexicalNode[],
+//   unHighlightedNode: LexicalNode[],
+// ): CodeNode {
+//   for (let i = 0; i < highlightedNode.length; i++) {
+//     unHighlightedNode.push(highlightedNode[i]);
+//   }
+//   return new CodeNode(language);
+// }
+
 export function $isCodeNode(
   node: LexicalNode | null | undefined,
 ): node is CodeNode {
@@ -465,10 +475,10 @@ function getHighlightNodes(
   tokens: (string | Prism.Token)[],
 ): Array<LexicalNode> {
   const nodes: LexicalNode[] = [];
-
   tokens.forEach((token) => {
     if (typeof token === 'string') {
       const partials = token.split('\n');
+
       for (let i = 0; i < partials.length; i++) {
         const text = partials[i];
         if (text.length) {
@@ -480,6 +490,7 @@ function getHighlightNodes(
       }
     } else {
       const {content} = token;
+
       if (typeof content === 'string') {
         nodes.push($createCodeHighlightNode(content, token.type));
       } else if (
@@ -585,39 +596,58 @@ function codeNodeTransform(
   if (node.getLanguage() === undefined) {
     node.setLanguage(DEFAULT_CODE_LANGUAGE);
   }
-
   // Using nested update call to pass `skipTransforms` since we don't want
   // each individual codehighlight node to be transformed again as it's already
   // in its final state
-  editor.update(
-    () => {
+  const code = node.getTextContent();
+
+  if (code.length <= threshold) {
+    editor.update(
+      () => {
+        updateAndRetainSelection(node, () => {
+          const tokens = Prism.tokenize(
+            code,
+            Prism.languages[node.getLanguage() || ''] ||
+              Prism.languages[DEFAULT_CODE_LANGUAGE],
+          );
+
+          const highlightNodes = getHighlightNodes(tokens);
+
+          const diffRange = getDiffRange(node.getChildren(), highlightNodes);
+          const {from, to, nodesForReplacement} = diffRange;
+          if (from !== to || nodesForReplacement.length) {
+            node.splice(from, to - from, nodesForReplacement);
+            return true;
+          }
+          return false;
+        });
+      },
+      {
+        onUpdate: () => {
+          isHighlighting = false;
+        },
+        skipTransforms: true,
+      },
+    );
+  } else {
+    const selection = $getSelection();
+    editor.update(() => {
       updateAndRetainSelection(node, () => {
-        const code = node.getTextContent();
-        const tokens = Prism.tokenize(
-          code,
-          Prism.languages[node.getLanguage() || ''] ||
-            Prism.languages[DEFAULT_CODE_LANGUAGE],
-        );
-        const highlightNodes = getHighlightNodes(tokens);
-        const diffRange = getDiffRange(node.getChildren(), highlightNodes);
-        const {from, to, nodesForReplacement} = diffRange;
-        if (
-          (from !== to || nodesForReplacement.length) &&
-          code.length <= threshold
-        ) {
-          node.splice(from, to - from, nodesForReplacement);
+        if ($isRangeSelection(selection)) {
+          const currentAnchor = selection.anchor;
+          node.clear();
+
+          const codeNode = $createCodeNode();
+          selection.removeText();
+          selection.insertNodes([codeNode]);
+          selection.insertRawText(code);
+          this.anchor.offset -= currentAnchor.offset;
           return true;
         }
         return false;
       });
-    },
-    {
-      onUpdate: () => {
-        isHighlighting = false;
-      },
-      skipTransforms: true,
-    },
-  );
+    });
+  }
 }
 
 function textNodeTransform(

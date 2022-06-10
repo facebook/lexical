@@ -82,6 +82,17 @@ declare function registerCodeHighlighting(
   editor: LexicalEditor,
   threshold: number,
 ): () => void;
+declare function registerCodeIndent(editor: LexicalEditor): () => void;
+declare function getStartOfCodeInLine(
+  editor: LexicalEditor,
+  node: TextNode | null,
+  offset: number,
+): () => void;
+declare function getEndOfCodeInLine(
+  editor: LexicalEditor,
+  node: TextNode | null,
+  offset: number,
+): () => void;
 
 type SerializedCodeNode = Spread<
   {

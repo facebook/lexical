@@ -7,12 +7,16 @@
  */
 
 // eslint-disable-next-line simple-import-sort/imports
-import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
-import {CodeNode} from './CodeHighlighter';
-
+import {
+  $createCodeHighlightNode,
+  $isCodeHighlightNode,
+  CodeHighlightNode,
+  CodeNode,
+  getFirstCodeHighlightNodeOfLine,
+  getLastCodeHighlightNodeOfLine,
+} from '@lexical/code';
 import {mergeRegister} from '@lexical/utils';
-
 import {
   $getNodeByKey,
   $getSelection,
@@ -22,195 +26,14 @@ import {
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
-  MOVE_TO_START,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
   MOVE_TO_END,
+  MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
-import {
-  CodeHighlightNode,
-  $createCodeHighlightNode,
-  $isCodeHighlightNode,
-} from './HighlighterHelper';
-
-const DEFAULT_CODE_LANGUAGE = 'javascript';
-
-export const getDefaultCodeLanguage = (): string => DEFAULT_CODE_LANGUAGE;
-
-export const getCodeLanguages = (): Array<string> =>
-  Object.keys(Prism.languages)
-    .filter(
-      // Prism has several language helpers mixed into languages object
-      // so filtering them out here to get langs list
-      (language) => typeof Prism.languages[language] !== 'function',
-    )
-    .sort();
-
-export function getFirstCodeHighlightNodeOfLine(
-  anchor: LexicalNode,
-): CodeHighlightNode | null | undefined {
-  let currentNode = null;
-  const previousSiblings = anchor.getPreviousSiblings();
-  previousSiblings.push(anchor);
-  while (previousSiblings.length > 0) {
-    const node = previousSiblings.pop();
-    if ($isCodeHighlightNode(node)) {
-      currentNode = node;
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
-  }
-
-  return currentNode;
-}
-
-export function getLastCodeHighlightNodeOfLine(
-  anchor: LexicalNode,
-): CodeHighlightNode | null | undefined {
-  let currentNode = null;
-  const nextSiblings = anchor.getNextSiblings();
-  nextSiblings.unshift(anchor);
-  while (nextSiblings.length > 0) {
-    const node = nextSiblings.shift();
-    if ($isCodeHighlightNode(node)) {
-      currentNode = node;
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
-  }
-
-  return currentNode;
-}
-
-function isSpaceOrTabChar(char: string): boolean {
-  return char === ' ' || char === '\t';
-}
-
-function findFirstNotSpaceOrTabCharAtText(
-  text: string,
-  isForward: boolean,
-): number {
-  const length = text.length;
-  let offset = -1;
-
-  if (isForward) {
-    for (let i = 0; i < length; i++) {
-      const char = text[i];
-      if (!isSpaceOrTabChar(char)) {
-        offset = i;
-        break;
-      }
-    }
-  } else {
-    for (let i = length - 1; i > -1; i--) {
-      const char = text[i];
-      if (!isSpaceOrTabChar(char)) {
-        offset = i;
-        break;
-      }
-    }
-  }
-
-  return offset;
-}
-
-export function getStartOfCodeInLine(anchor: LexicalNode): {
-  node: TextNode | null;
-  offset: number;
-} {
-  let currentNode = null;
-  let currentNodeOffset = -1;
-  const previousSiblings = anchor.getPreviousSiblings();
-  previousSiblings.push(anchor);
-  while (previousSiblings.length > 0) {
-    const node = previousSiblings.pop();
-    if ($isCodeHighlightNode(node)) {
-      const text = node.getTextContent();
-      const offset = findFirstNotSpaceOrTabCharAtText(text, true);
-      if (offset !== -1) {
-        currentNode = node;
-        currentNodeOffset = offset;
-      }
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
-  }
-
-  if (currentNode === null) {
-    const nextSiblings = anchor.getNextSiblings();
-    while (nextSiblings.length > 0) {
-      const node = nextSiblings.shift();
-      if ($isCodeHighlightNode(node)) {
-        const text = node.getTextContent();
-        const offset = findFirstNotSpaceOrTabCharAtText(text, true);
-        if (offset !== -1) {
-          currentNode = node;
-          currentNodeOffset = offset;
-          break;
-        }
-      }
-      if ($isLineBreakNode(node)) {
-        break;
-      }
-    }
-  }
-
-  return {
-    node: currentNode,
-    offset: currentNodeOffset,
-  };
-}
-
-export function getEndOfCodeInLine(anchor: LexicalNode): {
-  node: TextNode | null;
-  offset: number;
-} {
-  let currentNode = null;
-  let currentNodeOffset = -1;
-  const nextSiblings = anchor.getNextSiblings();
-  nextSiblings.unshift(anchor);
-  while (nextSiblings.length > 0) {
-    const node = nextSiblings.shift();
-    if ($isCodeHighlightNode(node)) {
-      const text = node.getTextContent();
-      const offset = findFirstNotSpaceOrTabCharAtText(text, false);
-      if (offset !== -1) {
-        currentNode = node;
-        currentNodeOffset = offset + 1;
-      }
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
-  }
-
-  if (currentNode === null) {
-    const previousSiblings = anchor.getPreviousSiblings();
-    while (previousSiblings.length > 0) {
-      const node = previousSiblings.pop();
-      if ($isCodeHighlightNode(node)) {
-        const text = node.getTextContent();
-        const offset = findFirstNotSpaceOrTabCharAtText(text, false);
-        if (offset !== -1) {
-          currentNode = node;
-          currentNodeOffset = offset + 1;
-          break;
-        }
-      }
-      if ($isLineBreakNode(node)) {
-        break;
-      }
-    }
-  }
-
-  return {
-    node: currentNode,
-    offset: currentNodeOffset,
-  };
-}
 
 function doIndent(node: CodeHighlightNode, type: LexicalCommand<void>) {
   const text = node.getTextContent();
@@ -380,6 +203,134 @@ function handleShiftLines(
   selection.setTextNodeRange(anchorNode, anchorOffset, focusNode, focusOffset);
 
   return true;
+}
+
+function isSpaceOrTabChar(char: string): boolean {
+  return char === ' ' || char === '\t';
+}
+
+function findFirstNotSpaceOrTabCharAtText(
+  text: string,
+  isForward: boolean,
+): number {
+  const length = text.length;
+  let offset = -1;
+
+  if (isForward) {
+    for (let i = 0; i < length; i++) {
+      const char = text[i];
+      if (!isSpaceOrTabChar(char)) {
+        offset = i;
+        break;
+      }
+    }
+  } else {
+    for (let i = length - 1; i > -1; i--) {
+      const char = text[i];
+      if (!isSpaceOrTabChar(char)) {
+        offset = i;
+        break;
+      }
+    }
+  }
+
+  return offset;
+}
+
+function getStartOfCodeInLine(anchor: LexicalNode): {
+  node: TextNode | null;
+  offset: number;
+} {
+  let currentNode = null;
+  let currentNodeOffset = -1;
+  const previousSiblings = anchor.getPreviousSiblings();
+  previousSiblings.push(anchor);
+  while (previousSiblings.length > 0) {
+    const node = previousSiblings.pop();
+    if ($isCodeHighlightNode(node)) {
+      const text = node.getTextContent();
+      const offset = findFirstNotSpaceOrTabCharAtText(text, true);
+      if (offset !== -1) {
+        currentNode = node;
+        currentNodeOffset = offset;
+      }
+    }
+    if ($isLineBreakNode(node)) {
+      break;
+    }
+  }
+
+  if (currentNode === null) {
+    const nextSiblings = anchor.getNextSiblings();
+    while (nextSiblings.length > 0) {
+      const node = nextSiblings.shift();
+      if ($isCodeHighlightNode(node)) {
+        const text = node.getTextContent();
+        const offset = findFirstNotSpaceOrTabCharAtText(text, true);
+        if (offset !== -1) {
+          currentNode = node;
+          currentNodeOffset = offset;
+          break;
+        }
+      }
+      if ($isLineBreakNode(node)) {
+        break;
+      }
+    }
+  }
+
+  return {
+    node: currentNode,
+    offset: currentNodeOffset,
+  };
+}
+
+function getEndOfCodeInLine(anchor: LexicalNode): {
+  node: TextNode | null;
+  offset: number;
+} {
+  let currentNode = null;
+  let currentNodeOffset = -1;
+  const nextSiblings = anchor.getNextSiblings();
+  nextSiblings.unshift(anchor);
+  while (nextSiblings.length > 0) {
+    const node = nextSiblings.shift();
+    if ($isCodeHighlightNode(node)) {
+      const text = node.getTextContent();
+      const offset = findFirstNotSpaceOrTabCharAtText(text, false);
+      if (offset !== -1) {
+        currentNode = node;
+        currentNodeOffset = offset + 1;
+      }
+    }
+    if ($isLineBreakNode(node)) {
+      break;
+    }
+  }
+
+  if (currentNode === null) {
+    const previousSiblings = anchor.getPreviousSiblings();
+    while (previousSiblings.length > 0) {
+      const node = previousSiblings.pop();
+      if ($isCodeHighlightNode(node)) {
+        const text = node.getTextContent();
+        const offset = findFirstNotSpaceOrTabCharAtText(text, false);
+        if (offset !== -1) {
+          currentNode = node;
+          currentNodeOffset = offset + 1;
+          break;
+        }
+      }
+      if ($isLineBreakNode(node)) {
+        break;
+      }
+    }
+  }
+
+  return {
+    node: currentNode,
+    offset: currentNodeOffset,
+  };
 }
 
 function handleMoveTo(

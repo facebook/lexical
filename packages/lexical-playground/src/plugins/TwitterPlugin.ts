@@ -24,12 +24,12 @@ import {$createTweetNode, TweetNode} from '../nodes/TweetNode';
 
 export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand();
 
-export default function TweetPlugin(): JSX.Element {
+export default function TwitterPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     if (!editor.hasNodes([TweetNode])) {
-      throw new Error('tweetPlugin: TweetNode not registered on editor');
+      throw new Error('TwitterPlugin: TweetNode not registered on editor');
     }
 
     return editor.registerCommand<string>(

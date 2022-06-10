@@ -124,6 +124,7 @@ function getHighlightNodes(
       }
     } else {
       const {content} = token;
+
       if (typeof content === 'string') {
         nodes.push($createCodeHighlightNode(content, token.type));
       } else if (
@@ -233,43 +234,35 @@ function codeNodeTransform(
   // each individual codehighlight node to be transformed again as it's already
   // in its final state
   const code = node.getTextContent();
-  editor.update(
-    () => {
-      updateAndRetainSelection(node, () => {
-        const tokens = Prism.tokenize(
-          code,
-          Prism.languages[node.getLanguage() || ''] ||
-            Prism.languages[DEFAULT_CODE_LANGUAGE],
-        );
-        const highlightNodes = getHighlightNodes(tokens);
-        const diffRange = getDiffRange(node.getChildren(), highlightNodes);
-        const {from, to, nodesForReplacement} = diffRange;
-        if (from !== to || nodesForReplacement.length) {
-          if (code.length <= threshold) {
-            node.splice(from, to - from, nodesForReplacement);
-          } else {
-            const codeContent = code.split('\n');
-            node.clear();
-            for (let i = 0; i < codeContent.length; i++) {
-              node.append($createTextNode(codeContent[i]));
-              if (i !== codeContent.length - 1) {
-                node.append($createLineBreakNode());
-              }
+  editor.update(() => {
+    updateAndRetainSelection(node, () => {
+      const tokens = Prism.tokenize(
+        code,
+        Prism.languages[node.getLanguage() || ''] ||
+          Prism.languages[DEFAULT_CODE_LANGUAGE],
+      );
+      const highlightNodes = getHighlightNodes(tokens);
+      const diffRange = getDiffRange(node.getChildren(), highlightNodes);
+      const {from, to, nodesForReplacement} = diffRange;
+      if (from !== to || nodesForReplacement.length) {
+        if (code.length <= threshold) {
+          node.splice(from, to - from, nodesForReplacement);
+        } else {
+          const codeContent = code.split('\n');
+          node.clear();
+          for (let i = 0; i < codeContent.length; i++) {
+            node.append($createTextNode(codeContent[i]));
+            if (i !== codeContent.length - 1) {
+              node.append($createLineBreakNode());
             }
           }
-
-          return true;
         }
-        return false;
-      });
-    },
-    {
-      onUpdate: () => {
-        isHighlighting = false;
-      },
-      skipTransforms: true,
-    },
-  );
+
+        return true;
+      }
+      return false;
+    });
+  });
 }
 
 function textNodeTransform(

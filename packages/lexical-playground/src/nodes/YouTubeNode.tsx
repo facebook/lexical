@@ -6,7 +6,13 @@
  *
  */
 
-import type {ElementFormatType, LexicalNode, NodeKey, Spread} from 'lexical';
+import type {
+  EditorConfig,
+  ElementFormatType,
+  LexicalNode,
+  NodeKey,
+  Spread,
+} from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
@@ -16,14 +22,26 @@ import {
 import * as React from 'react';
 
 type YouTubeComponentProps = Readonly<{
+  className: Readonly<{
+    base: string;
+    focus: string;
+  }>;
   format: ElementFormatType | null;
   nodeKey: NodeKey;
   videoID: string;
 }>;
 
-function YouTubeComponent({format, nodeKey, videoID}: YouTubeComponentProps) {
+function YouTubeComponent({
+  className,
+  format,
+  nodeKey,
+  videoID,
+}: YouTubeComponentProps) {
   return (
-    <BlockWithAlignableContents format={format} nodeKey={nodeKey}>
+    <BlockWithAlignableContents
+      className={className}
+      format={format}
+      nodeKey={nodeKey}>
       <iframe
         width="560"
         height="315"
@@ -81,9 +99,15 @@ export class YouTubeNode extends DecoratorBlockNode {
     return false;
   }
 
-  decorate(): JSX.Element {
+  decorate(config: EditorConfig): JSX.Element {
+    const embedBlockTheme = config.theme.embedBlock || {};
+    const className = {
+      base: embedBlockTheme.base || '',
+      focus: embedBlockTheme.focus || '',
+    };
     return (
       <YouTubeComponent
+        className={className}
         format={this.__format}
         nodeKey={this.getKey()}
         videoID={this.__id}

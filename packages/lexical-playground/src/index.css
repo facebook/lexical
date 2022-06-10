@@ -1540,11 +1540,6 @@ button.action-button:disabled {
   user-select: none;
 }
 
-.embed-block.focused {
-  outline: 2px solid rgb(60, 132, 244);
-  user-select: none;
-}
-
 .github-corner:hover .octo-arm {
   animation: octocat-wave 560ms ease-in-out;
 }

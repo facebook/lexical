@@ -233,6 +233,10 @@ export type EditorThemeClasses = {
     h5?: EditorThemeClassName,
     h6?: EditorThemeClassName,
   },
+  embedBlock?: {
+    base?: EditorThemeClassName,
+    focus?: EditorThemeClassName,
+  },
   // Handle other generic values
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
@@ -729,7 +733,7 @@ declare export function $isElementNode(
 
 declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
-  decorate(editor: LexicalEditor): X;
+  decorate(config: EditorConfig, editor: LexicalEditor): X;
   isIsolated(): boolean;
   isTopLevel(): boolean;
 }

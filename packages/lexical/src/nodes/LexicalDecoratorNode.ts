@@ -9,6 +9,7 @@
 import type {LexicalEditor} from '../LexicalEditor';
 import type {NodeKey} from '../LexicalNode';
 
+import {EditorConfig} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {LexicalNode} from '../LexicalNode';
@@ -18,7 +19,7 @@ export class DecoratorNode<T> extends LexicalNode {
     super(key);
   }
 
-  decorate(editor: LexicalEditor): T {
+  decorate(config: EditorConfig, editor: LexicalEditor): T {
     invariant(false, 'decorate: base method not extended');
   }
 

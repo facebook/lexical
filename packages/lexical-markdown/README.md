@@ -30,13 +30,13 @@ It can also be used for initializing editor's state from markdown string. Here's
 ```
 
 ## Shortcuts
-Can use `<LexicalMarkdownShortcutPlugin>` if using React
+Can use `<MarkdownShortcutPlugin>` if using React
 ```jsx
 import { TRANSFORMERS } from '@lexical/markdown';
 import {MarkdownShortcutPlugin} from '@lexical/react/LexicalMarkdownShortcutPlugin';
 
 <LexicalComposer>
-  <LexicalMarkdownShortcutPlugin transformers={TRANSFORMERS} />
+  <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
 </LexicalComposer>
 ```
 

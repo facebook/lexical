@@ -19,8 +19,8 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <LexicalPlainTextPlugin
-        contentEditable={<LexicalContentEditable />}
+      <PlainTextPlugin
+        contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
       />
       <CollaborationPlugin

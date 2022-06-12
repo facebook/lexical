@@ -9,6 +9,7 @@
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
+import {SerializedEditor} from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
@@ -793,11 +794,9 @@ export class LexicalEditor {
     triggerListeners('readonly', this, true, readOnly);
   }
 
-  toJSON(): {
-    editorState: EditorState;
-  } {
+  toJSON(): SerializedEditor {
     return {
-      editorState: this._editorState,
+      editorState: this._editorState.toJSON(),
     };
   }
 }

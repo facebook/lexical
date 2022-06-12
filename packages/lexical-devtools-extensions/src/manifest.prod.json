@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "Lexical Developer Tools",
+  "description": "A cross-browser web extension for lexical developer",
+  "version": "0.0.1",
+  "version_name": "0.0.1",
+  "minimum_chrome_version": "100",
+  "content_security_policy": {
+    "script-src": "'self' 'unsafe-eval'",
+    "object-src": "'self'"
+  },
+  "icons": {
+    "16": "icons/lexical.png",
+    "32": "icons/lexical.png",
+    "48": "icons/lexical.png",
+    "128": "icons/lexical.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/lexical.png",
+      "32": "icons/lexical.png",
+      "48": "icons/lexical.png",
+      "128": "icons/lexical.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "devtools.html",
+        "js/background.js",
+        "js/injectGlobalHook.js"
+      ],
+      "matches": ["*://*/*"]
+    }
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "file:///*",
+    "*://*/*"
+  ],
+  "devtools_page": "devtools.html",
+  "background": {
+    "service_worker": "js/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "js/injectGlobalHook.js"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}

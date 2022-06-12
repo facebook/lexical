@@ -1,0 +1,50 @@
+{
+  "name": "lexical-devtools-extensions",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development node ./webpack/scripts/dev.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.11.1",
+    "@babel/node": "^7.14.7",
+    "@babel/parser": "^7.14.8",
+    "@babel/plugin-proposal-class-properties": "^7.10.4",
+    "@babel/plugin-transform-modules-commonjs": "^7.10.4",
+    "@babel/plugin-transform-react-jsx-source": "^7.10.5",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
+    "@types/react": "^18.0.8",
+    "@types/react-dom": "^18.0.3",
+    "@types/webextension-polyfill": "^0.9.0",
+    "babel-core": "^7.0.0-bridge",
+    "babel-eslint": "^9.0.0",
+    "babel-loader": "^8.0.4",
+    "babel-preset-minify": "^0.5.1",
+    "chalk": "^3.0.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "cors": "^2.8.5",
+    "css-loader": "^1.0.1",
+    "express": "^4.18.1",
+    "file-loader": "^6.1.0",
+    "fs-extra": "^4.0.2",
+    "get-port": "^5.1.1",
+    "html-webpack-plugin": "^5.5.0",
+    "lodash.debounce": "4.0.8",
+    "os-name": "^3.1.0",
+    "path": "^0.12.7",
+    "raw-loader": "^3.1.0",
+    "ssestream": "^1.1.0",
+    "style-loader": "^0.23.1",
+    "typescript": "^4.6.4",
+    "webpack": "^5.72.1",
+    "webpack-dev-middleware": "^5.3.3",
+    "webpack-hot-middleware": "^2.25.1",
+    "webpack-merge": "^5.8.0"
+  },
+  "dependencies": {
+    "react": "^18.0.8",
+    "react-dom": "^18.0.8",
+    "webextension-polyfill": "^0.9.0"
+  }
+}

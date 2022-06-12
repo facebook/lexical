@@ -1,6 +1,8 @@
-import React from "react";
-import logo from "./apple-touch-icon.png";
-import "./App.css";
+import './App.css';
+
+import React from 'react';
+
+import logo from './apple-touch-icon.png';
 
 function App() {
   return (

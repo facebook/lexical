@@ -30,7 +30,6 @@ export default function ClickableLinkPlugin({
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     function onClick(e: Event) {
-      // $FlowExpectedError[incompatible-cast] onClick handler will get MouseEvent, safe to cast
       const event = e as MouseEvent;
       const linkDomNode = getLinkDomNode(event, editor);
 

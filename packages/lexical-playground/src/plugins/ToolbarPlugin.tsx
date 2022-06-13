@@ -623,6 +623,11 @@ function InsertEquationDialog({
   return <KatexEquationAlterer onConfirm={onEquationConfirm} />;
 }
 
+function dropDownActiveClass(active: boolean) {
+  if (active) return 'active dropdown-item-active';
+  else return '';
+}
+
 function BlockFormatDropDown({
   editor,
   blockType,
@@ -718,50 +723,59 @@ function BlockFormatDropDown({
       buttonIconClassName={'icon block-type ' + blockType}
       buttonLabel={blockTypeToBlockName[blockType]}
       buttonAriaLabel="Formatting options for text style">
-      <DropDownItem className="item" onClick={formatParagraph}>
-        <span className="icon paragraph" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'paragraph')}
+        onClick={formatParagraph}>
+        <i className="icon paragraph" />
         <span className="text">Normal</span>
-        {blockType === 'paragraph' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={() => formatHeading('h1')}>
-        <span className="icon h1" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'h1')}
+        onClick={() => formatHeading('h1')}>
+        <i className="icon h1" />
         <span className="text">Heading 1</span>
-        {blockType === 'h1' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={() => formatHeading('h2')}>
-        <span className="icon h2" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'h2')}
+        onClick={() => formatHeading('h2')}>
+        <i className="icon h2" />
         <span className="text">Heading 2</span>
-        {blockType === 'h2' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={() => formatHeading('h3')}>
-        <span className="icon h3" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'h3')}
+        onClick={() => formatHeading('h3')}>
+        <i className="icon h3" />
         <span className="text">Heading 3</span>
-        {blockType === 'h3' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={formatBulletList}>
-        <span className="icon bullet-list" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'bullet')}
+        onClick={formatBulletList}>
+        <i className="icon bullet-list" />
         <span className="text">Bullet List</span>
-        {blockType === 'bullet' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={formatNumberedList}>
-        <span className="icon numbered-list" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'number')}
+        onClick={formatNumberedList}>
+        <i className="icon numbered-list" />
         <span className="text">Numbered List</span>
-        {blockType === 'number' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={formatCheckList}>
-        <span className="icon check-list" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'check')}
+        onClick={formatCheckList}>
+        <i className="icon check-list" />
         <span className="text">Check List</span>
-        {blockType === 'check' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={formatQuote}>
-        <span className="icon quote" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'quote')}
+        onClick={formatQuote}>
+        <i className="icon quote" />
         <span className="text">Quote</span>
-        {blockType === 'quote' && <span className="active" />}
       </DropDownItem>
-      <DropDownItem className="item" onClick={formatCode}>
-        <span className="icon code" />
+      <DropDownItem
+        className={'item ' + dropDownActiveClass(blockType === 'code')}
+        onClick={formatCode}>
+        <i className="icon code" />
         <span className="text">Code Block</span>
-        {blockType === 'code' && <span className="active" />}
       </DropDownItem>
     </DropDown>
   );
@@ -1174,9 +1188,7 @@ export default function ToolbarPlugin(): JSX.Element {
                   'strikethrough',
                 );
               }}
-              className={
-                'item ' + (isStrikethrough ? 'active dropdown-item-active' : '')
-              }
+              className={'item ' + dropDownActiveClass(isStrikethrough)}
               title="Strikethrough"
               aria-label="Format text with a strikethrough">
               <i className="icon strikethrough" />
@@ -1186,9 +1198,7 @@ export default function ToolbarPlugin(): JSX.Element {
               onClick={() => {
                 activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
               }}
-              className={
-                'item ' + (isSubscript ? 'active dropdown-item-active' : '')
-              }
+              className={'item ' + dropDownActiveClass(isSubscript)}
               title="Subscript"
               aria-label="Format text with a subscript">
               <i className="icon subscript" />
@@ -1201,9 +1211,7 @@ export default function ToolbarPlugin(): JSX.Element {
                   'superscript',
                 );
               }}
-              className={
-                'item ' + (isSuperscript ? 'active dropdown-item-active' : '')
-              }
+              className={'item ' + dropDownActiveClass(isSuperscript)}
               title="Superscript"
               aria-label="Format text with a superscript">
               <i className="icon superscript" />

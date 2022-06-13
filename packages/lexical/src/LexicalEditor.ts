@@ -243,11 +243,14 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   const conversionCache = new Map();
   const handledConversions = new Set();
   nodes.forEach((node) => {
-    // @ts-expect-error TODO Replace Class utility type with InstanceType
-    const importDOM = node.klass.importDOM.bind(node.klass);
+    const importDOM =
+      // @ts-expect-error TODO Replace Class utility type with InstanceType
+      node.klass.importDOM != null
+        ? // @ts-expect-error TODO Replace Class utility type with InstanceType
+          node.klass.importDOM.bind(node.klass)
+        : null;
 
-    // debugger;
-    if (handledConversions.has(importDOM)) {
+    if (importDOM == null || handledConversions.has(importDOM)) {
       return;
     }
 

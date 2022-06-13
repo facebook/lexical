@@ -15,6 +15,7 @@ import type {
 } from 'lexical';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$createListNode, $isListItemNode} from '@lexical/list';
 import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
@@ -144,52 +145,61 @@ function $insertGeneratedNodes(
     return;
   }
 
-  $basicInsertStrategy(nodes, selection, false);
+  $basicInsertStrategy(nodes, selection);
   return;
 }
 
 function $basicInsertStrategy(
   nodes: LexicalNode[],
   selection: RangeSelection | GridSelection,
-  isFromLexical: boolean,
 ) {
-  let nodesToInsert;
+  // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
+  const topLevelBlocks = [];
+  let currentBlock = null;
+  let list = null;
 
-  if (!isFromLexical) {
-    // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-    const topLevelBlocks = [];
-    let currentBlock = null;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
 
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-
-      if (
-        ($isDecoratorNode(node) && !node.isTopLevel()) ||
-        ($isElementNode(node) && node.isInline()) ||
-        $isTextNode(node) ||
-        $isLineBreakNode(node)
-      ) {
-        if (currentBlock === null) {
-          currentBlock = $createParagraphNode();
-          topLevelBlocks.push(currentBlock);
-        }
-
-        if (currentBlock !== null) {
-          currentBlock.append(node);
-        }
-      } else {
-        topLevelBlocks.push(node);
-        currentBlock = null;
+    /**
+     * There's no good way to add this to importDOM or importJSON directly,
+     * so this is here in order to safely correct faulty clipboard data
+     * that we can't control and avoid crashing the app.
+     * https://github.com/facebook/lexical/issues/2405
+     */
+    if ($isListItemNode(node)) {
+      if (list == null) {
+        list = $createListNode('bullet');
+        topLevelBlocks.push(list);
       }
+      list.append(node);
+      continue;
+    } else if (list != null) {
+      list = null;
     }
 
-    nodesToInsert = topLevelBlocks;
-  } else {
-    nodesToInsert = nodes;
+    if (
+      ($isDecoratorNode(node) && !node.isTopLevel()) ||
+      ($isElementNode(node) && node.isInline()) ||
+      $isTextNode(node) ||
+      $isLineBreakNode(node)
+    ) {
+      if (currentBlock === null) {
+        currentBlock = $createParagraphNode();
+        topLevelBlocks.push(currentBlock);
+      }
+
+      if (currentBlock !== null) {
+        currentBlock.append(node);
+      }
+    } else {
+      topLevelBlocks.push(node);
+      currentBlock = null;
+    }
   }
 
   if ($isRangeSelection(selection)) {
-    selection.insertNodes(nodesToInsert);
+    selection.insertNodes(topLevelBlocks);
   } else if ($isGridSelection(selection)) {
     // If there's an active grid selection and a non grid is pasted, add to the anchor.
     const anchorCell = selection.anchor.getNode();
@@ -198,7 +208,7 @@ function $basicInsertStrategy(
       invariant(false, 'Expected Grid Cell in Grid Selection');
     }
 
-    anchorCell.append(...nodesToInsert);
+    anchorCell.append(...topLevelBlocks);
   }
 }
 

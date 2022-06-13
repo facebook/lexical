@@ -605,47 +605,7 @@ export class LexicalNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
-    const serializedNode = this.exportJSON();
-    element.setAttribute('data-lexical-node-type', this.__type);
-    element.setAttribute(
-      'data-lexical-node-json',
-      JSON.stringify(serializedNode),
-    );
-    element.setAttribute('data-lexical-editor-key', editor._key);
     return {element};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const proto: any = this.prototype.constructor;
-    return {
-      // Catch-all key because we don't know the nodeName of the element returned by exportDOM.
-      '*': (domNode: Node) => {
-        if (!(domNode instanceof HTMLElement)) return null;
-        const editorKey = domNode.getAttribute('data-lexical-editor-key');
-        const nodeType = domNode.getAttribute('data-lexical-node-type');
-        if (editorKey == null || nodeType == null) return null;
-        const editor = getActiveEditor();
-        if (editorKey === editor.getKey() && nodeType === proto.getType()) {
-          try {
-            const json = domNode.getAttribute('data-lexical-node-json');
-            if (json != null) {
-              const serializedNode: SerializedLexicalNode = JSON.parse(json);
-              const node = proto.importJSON(serializedNode);
-              return {
-                conversion: () => ({node}),
-                // Max priority because of the 'data-lexical-node-type' attribute
-                // matching the one on node klass guarantees a match.
-                priority: 4,
-              };
-              // eslint-disable-next-line no-empty
-            }
-            // eslint-disable-next-line no-empty
-          } catch {}
-        }
-        return null;
-      },
-    };
   }
 
   exportJSON(): SerializedLexicalNode {

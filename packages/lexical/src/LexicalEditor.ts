@@ -250,7 +250,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
           node.klass.importDOM.bind(node.klass)
         : null;
 
-    if (importDOM != null && handledConversions.has(importDOM)) {
+    if (importDOM == null || handledConversions.has(importDOM)) {
       return;
     }
 

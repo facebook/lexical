@@ -10,10 +10,18 @@
 .PollNode__container {
   border: 1px solid #eee;
   background-color: #fcfcfc;
-  padding: 15px;
   border-radius: 10px;
   max-width: 600px;
   min-width: 400px;
+  cursor: pointer;
+  user-select: none;
+}
+.PollNode__container.focused {
+  outline: 2px solid rgb(60, 132, 244);
+}
+.PollNode__inner {
+  margin: 15px;
+  cursor: default;
 }
 .PollNode__heading {
   margin-left: 0px;

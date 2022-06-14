@@ -7,6 +7,7 @@
  */
 
 import type {ElementNode, LexicalEditor, LexicalNode, RootNode} from 'lexical';
+import type {Klass} from 'shared/types';
 
 import {
   $createTextNode,
@@ -16,7 +17,6 @@ import {
   TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
 export type TextNodeWithOffset = {
   node: TextNode;
@@ -255,7 +255,7 @@ export type EntityMatch = {end: number; start: number};
 export function registerLexicalTextEntity<N extends TextNode>(
   editor: LexicalEditor,
   getMatch: (text: string) => null | EntityMatch,
-  targetNode: Class<N>,
+  targetNode: Klass<N>,
   createNode: (textNode: TextNode) => N,
 ): Array<() => void> {
   const isTargetNode = (node: LexicalNode | null | undefined): node is N => {

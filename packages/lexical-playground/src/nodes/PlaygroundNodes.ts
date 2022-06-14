@@ -7,6 +7,7 @@
  */
 
 import type {LexicalNode} from 'lexical';
+import type {Klass} from 'shared/types';
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
@@ -17,7 +18,6 @@ import {OverflowNode} from '@lexical/overflow';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {Class} from 'utility-types';
 
 import {AutocompleteNode} from './AutocompleteNode';
 import {EmojiNode} from './EmojiNode';
@@ -32,7 +32,7 @@ import {TweetNode} from './TweetNode';
 import {TypeaheadNode} from './TypeaheadNode';
 import {YouTubeNode} from './YouTubeNode';
 
-const PlaygroundNodes: Array<Class<LexicalNode>> = [
+const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   HeadingNode,
   ListNode,
   ListItemNode,

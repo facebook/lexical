@@ -178,7 +178,8 @@
       ],
       "shared/invariant": ["./packages/shared/src/invariant.ts"],
       "shared/environment": ["./packages/shared/src/environment.ts"],
-      "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"]
+      "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"],
+      "shared/types": ["./packages/shared/src/types.d.ts"]
     }
   },
   "include": ["./libdefs", "./packages"],

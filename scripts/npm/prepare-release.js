@@ -18,7 +18,7 @@ async function prepareLexicalPackage() {
   await exec(`rm -rf ./packages/${LEXICAL_PKG}/npm`);
   await exec(`mkdir ./packages/${LEXICAL_PKG}/npm`);
   await exec(
-    `cp -R ./packages/${LEXICAL_PKG}/dist/*.js ./packages/${LEXICAL_PKG}/npm`,
+    `cp -R ./packages/${LEXICAL_PKG}/dist/* ./packages/${LEXICAL_PKG}/npm`,
   );
 
   // Other bits
@@ -28,10 +28,6 @@ async function prepareLexicalPackage() {
   await exec(`cp -R LICENSE ./packages/${LEXICAL_PKG}/npm`);
   await exec(
     `cp -R ./packages/${LEXICAL_PKG}/README.md ./packages/${LEXICAL_PKG}/npm`,
-  );
-  // TypeScript Types
-  await exec(
-    `cp -R ./packages/${LEXICAL_PKG}/*.d.ts ./packages/${LEXICAL_PKG}/npm`,
   );
   // Flow Types
   await exec(
@@ -44,16 +40,11 @@ async function prepareDefaultPackages() {
     const pkg = DEFAULT_PKGS[i];
     await exec(`rm -rf ./packages/${pkg}/npm`);
     await exec(`mkdir ./packages/${pkg}/npm`);
-    await exec(`cp -R ./packages/${pkg}/dist/*.js ./packages/${pkg}/npm`);
+    await exec(`cp -R ./packages/${pkg}/dist/* ./packages/${pkg}/npm`);
     try {
       await exec(`cp -R ./packages/${pkg}/flow/*.flow ./packages/${pkg}/npm`);
     } catch {
       console.error(`Missing Flow type definitions for package ${pkg}`);
-    }
-    try {
-      await exec(`cp -R ./packages/${pkg}/*.d.ts ./packages/${pkg}/npm`);
-    } catch {
-      console.error(`Missing TypeScript type definitions for package ${pkg}`);
     }
     await exec(`cp -R ./packages/${pkg}/package.json ./packages/${pkg}/npm`);
     await exec(`cp -R LICENSE ./packages/${pkg}/npm`);

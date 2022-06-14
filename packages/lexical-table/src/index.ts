@@ -6,6 +6,7 @@
  *
  */
 
+import type {Cell} from './LexicalTableSelection';
 import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
@@ -65,6 +66,7 @@ export {
   $isTableRowNode,
   $removeTableRowAtIndex,
   applyTableHandlers,
+  Cell,
   getCellFromTarget,
   getTableSelectionFromTableElement,
   TableCellHeaderStates,

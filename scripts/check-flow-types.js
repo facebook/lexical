@@ -11,7 +11,7 @@ const {spawn} = require('child_process');
 
 async function runFlow(renderer, args) {
   return new Promise((resolve) => {
-    let cmd = __dirname + '/../../node_modules/.bin/flow';
+    let cmd = __dirname + '/../node_modules/.bin/flow';
     if (process.platform === 'win32') {
       cmd = cmd.replace(/\//g, '\\') + '.cmd';
     }

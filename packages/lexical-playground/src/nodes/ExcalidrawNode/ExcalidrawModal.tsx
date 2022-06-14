@@ -33,7 +33,7 @@ type Props = {
   /**
    * Completely remove Excalidraw component
    */
-  onDelete: () => boolean;
+  onDelete: () => void;
   /**
    * Handle modal closing
    */

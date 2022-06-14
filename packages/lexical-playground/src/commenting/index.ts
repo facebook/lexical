@@ -6,12 +6,12 @@
  *
  */
 
-import type {Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
 import {TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {COMMAND_PRIORITY_EDITOR} from 'lexical';
 import {useEffect, useState} from 'react';
+import {WebsocketProvider} from 'y-websocket';
 import {Array as YArray, Map as YMap, YArrayEvent} from 'yjs';
 
 export type Comment = {
@@ -86,7 +86,7 @@ export class CommentStore {
   _editor: LexicalEditor;
   _comments: Comments;
   _changeListeners: Set<() => void>;
-  _collabProvider: null | Provider;
+  _collabProvider: null | WebsocketProvider;
 
   constructor(editor: LexicalEditor) {
     this._comments = [];
@@ -219,16 +219,19 @@ export class CommentStore {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _getCollabComments(): null | YArray<any> {
     const provider = this._collabProvider;
     if (provider !== null) {
       // @ts-ignore doc does exist
       const doc = provider.doc;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return doc.get('comments', YArray) as YArray<any>;
     }
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _createCollabSharedMap(commentOrThread: Comment | Thread): YMap<any> {
     const sharedMap = new YMap();
     const type = commentOrThread.type;
@@ -251,7 +254,7 @@ export class CommentStore {
     return sharedMap;
   }
 
-  registerCollaboration(provider: Provider): () => void {
+  registerCollaboration(provider: WebsocketProvider): () => void {
     this._collabProvider = provider;
     const sharedCommentsArray = this._getCollabComments();
 

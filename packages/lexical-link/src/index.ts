@@ -53,7 +53,7 @@ export class LinkNode extends ElementNode {
     this.__url = url;
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
     element.href = this.__url;
     addClassNamesToElement(element, config.theme.link);

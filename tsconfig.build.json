@@ -1,6 +1,12 @@
 {
-  "include": ["packages/**/*"],
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationDir": "./.ts-temp"
+  },
   "exclude": [
+    "**/__tests__/**",
     "node_modules/**/*",
     "packages/lexical-playground/**/*",
     "packages/playwright-core/**/*"

@@ -668,7 +668,6 @@ describe('LexicalNode tests', () => {
                 namespace: '',
                 theme: {},
               },
-              // @ts-expect-error Not sure why editor throws a TS error. The type is correct.
               editor,
             ),
           ).toThrow();

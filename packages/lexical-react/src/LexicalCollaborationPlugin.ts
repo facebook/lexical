@@ -6,11 +6,11 @@
  *
  */
 
-import type {Provider} from '@lexical/yjs';
 import type {Doc} from 'yjs';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {createContext, useContext, useMemo} from 'react';
+import {WebsocketProvider} from 'y-websocket';
 
 import {
   useYjsCollaboration,
@@ -53,8 +53,11 @@ export function CollaborationPlugin({
   username,
 }: {
   id: string;
-  // eslint-disable-next-line no-shadow
-  providerFactory: (id: string, yjsDocMap: Map<string, Doc>) => Provider;
+  providerFactory: (
+    // eslint-disable-next-line no-shadow
+    id: string,
+    yjsDocMap: Map<string, Doc>,
+  ) => WebsocketProvider;
   shouldBootstrap: boolean;
   username?: string;
 }): JSX.Element {

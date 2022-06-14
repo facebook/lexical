@@ -877,10 +877,10 @@ export type SerializedGridCellNode = {
   ...
 };
 
-export interface SerializedEditorState<SerializedNode> {
-  root: SerializedRootNode<SerializedNode>;
+export interface SerializedEditorState {
+  root: SerializedRootNode;
 }
 
-export type SerializedEditor<SerializedNode> = {
-  editorState: SerializedEditorState<SerializedNode>,
+export type SerializedEditor = {
+  editorState: SerializedEditorState,
 };

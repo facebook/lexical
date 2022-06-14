@@ -13,7 +13,7 @@ import invariant from 'shared/invariant';
 
 import {LexicalNode} from '../LexicalNode';
 
-export class DecoratorNode<T = unknown> extends LexicalNode {
+export class DecoratorNode<T> extends LexicalNode {
   constructor(key?: NodeKey) {
     super(key);
   }

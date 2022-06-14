@@ -13,6 +13,7 @@ const {LEXICAL_PKG, DEFAULT_PKGS} = require('./npm/packages');
 
 const packages = [LEXICAL_PKG, ...DEFAULT_PKGS];
 packages.forEach((pkg) => {
+  fs.removeSync(path.resolve(`./.ts-temp`));
   fs.removeSync(path.resolve(`./packages/${pkg}/dist`));
   fs.removeSync(path.resolve(`./packages/${pkg}/npm`));
 });

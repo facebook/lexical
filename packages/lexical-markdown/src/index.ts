@@ -7,12 +7,12 @@
  *
  */
 
-import {
+import type {
   ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from '@lexical/markdown';
+} from './v2/MarkdownTransformers';
 
 import {createMarkdownExport} from './v2/MarkdownExport';
 import {createMarkdownImport} from './v2/MarkdownImport';
@@ -81,13 +81,6 @@ function $convertToMarkdownString(
   return exportMarkdown();
 }
 
-export type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-};
-
 export {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -98,6 +91,7 @@ export {
   CHECK_LIST,
   CODE,
   ELEMENT_TRANSFORMERS,
+  ElementTransformer,
   HEADING,
   INLINE_CODE,
   ITALIC_STAR,
@@ -109,6 +103,9 @@ export {
   STRIKETHROUGH,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
+  TextFormatTransformer,
+  TextMatchTransformer,
+  Transformer,
   TRANSFORMERS,
   UNORDERED_LIST,
 };

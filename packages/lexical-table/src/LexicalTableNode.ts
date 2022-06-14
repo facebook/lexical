@@ -48,14 +48,14 @@ export class TableNode extends GridNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      table: (node: Node) => ({
+      table: (_node: Node) => ({
         conversion: convertTableElement,
         priority: 0,
       }),
     };
   }
 
-  static importJSON(serializedNode: SerializedTableNode): TableNode {
+  static importJSON(_serializedNode: SerializedTableNode): TableNode {
     return $createTableNode();
   }
 
@@ -71,7 +71,7 @@ export class TableNode extends GridNode {
     };
   }
 
-  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
+  createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
 
     addClassNamesToElement(tableElement, config.theme.table);
@@ -223,7 +223,7 @@ export function $getElementGridForTableNode(
   return getTableGrid(tableElement);
 }
 
-export function convertTableElement(domNode: Node): DOMConversionOutput {
+export function convertTableElement(_domNode: Node): DOMConversionOutput {
   return {node: $createTableNode()};
 }
 

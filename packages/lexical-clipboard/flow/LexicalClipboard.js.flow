@@ -20,7 +20,7 @@ import type {
 
 declare export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection | GridSelection | NodeSelection,
+  selection: RangeSelection | GridSelection,
   editor: LexicalEditor,
 ): void;
 

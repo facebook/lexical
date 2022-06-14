@@ -23,7 +23,7 @@ export function LexicalNestedComposer({
   children,
   initialTheme,
 }: {
-  children: JSX.Element;
+  children: JSX.Element | string | (JSX.Element | string)[];
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
 }): JSX.Element {

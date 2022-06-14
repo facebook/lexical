@@ -104,17 +104,17 @@ function $getDepth(node: LexicalNode): number {
 }
 
 export function $getNearestNodeOfType<T extends ElementNode>(
-  node: T,
+  node: LexicalNode,
   klass: Class<T>,
-): T | null {
-  let parent = node;
+): T | LexicalNode {
+  let parent: T | LexicalNode = node;
 
   while (parent != null) {
     if (parent instanceof klass) {
       return parent;
     }
 
-    parent = parent.getParent<T>();
+    parent = parent.getParent();
   }
 
   return parent;
@@ -173,7 +173,7 @@ export function mergeRegister(...func: Array<Func>): () => void {
 
 export function registerNestedElementResolver<N extends ElementNode>(
   editor: LexicalEditor,
-  targetNode: {new (): N},
+  targetNode: {new (...args: unknown[]): N},
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void {
@@ -271,7 +271,9 @@ function unstable_internalCreateNodeFromParse(
       const parsedEditorState = value.editorState;
 
       if (parsedEditorState != null) {
-        const nestedEditor = createEditor();
+        const nestedEditor = createEditor({
+          namespace: parsedEditorState.namespace,
+        });
         nestedEditor._nodes = editor._nodes;
         nestedEditor._parentEditor = editor._parentEditor;
         nestedEditor._pendingEditorState =

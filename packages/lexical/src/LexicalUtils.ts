@@ -408,7 +408,6 @@ export function $setSelection(
 ): void {
   const editorState = getActiveEditorState();
   if (selection !== null) {
-    // @ts-ignore
     if (__DEV__) {
       if (Object.isFrozen(selection)) {
         invariant(

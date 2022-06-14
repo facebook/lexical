@@ -6,99 +6,21 @@
  *
  */
 
-import {
-  COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_HIGH,
-  COMMAND_PRIORITY_LOW,
-  COMMAND_PRIORITY_NORMAL,
-  createEditor,
-} from './LexicalEditor';
-import {
-  $createEmptyGridSelection as $createGridSelection,
-  $createEmptyObjectSelection as $createNodeSelection,
-  $createEmptyRangeSelection as $createRangeSelection,
-  $getPreviousSelection,
-  $getSelection,
-  $isGridSelection,
-  $isNodeSelection,
-  $isRangeSelection,
-} from './LexicalSelection';
-import {$parseSerializedNode} from './LexicalUpdates';
-import {
-  $getDecoratorNode,
-  $getNearestNodeFromDOMNode,
-  $getNodeByKey,
-  $getRoot,
-  $isLeafNode,
-  $nodesOfType,
-  $setCompositionKey,
-  $setSelection,
-} from './LexicalUtils';
-import {VERSION} from './LexicalVersion';
-import {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
-import {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
-import {$isGridCellNode, GridCellNode} from './nodes/LexicalGridCellNode';
-import {$isGridNode, GridNode} from './nodes/LexicalGridNode';
-import {$isGridRowNode, GridRowNode} from './nodes/LexicalGridRowNode';
-import {
-  $createLineBreakNode,
-  $isLineBreakNode,
-  LineBreakNode,
-} from './nodes/LexicalLineBreakNode';
-import {
-  $createParagraphNode,
-  $isParagraphNode,
-  ParagraphNode,
-} from './nodes/LexicalParagraphNode';
-import {$isRootNode, RootNode} from './nodes/LexicalRootNode';
-import {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
-
-export {
-  $createGridSelection,
-  $createLineBreakNode,
-  $createNodeSelection,
-  $createParagraphNode,
-  $createRangeSelection,
-  $createTextNode,
-  $getDecoratorNode,
-  $getNearestNodeFromDOMNode,
-  $getNodeByKey,
-  $getPreviousSelection,
-  $getRoot,
-  $getSelection,
-  $isDecoratorNode,
-  $isElementNode,
-  $isGridCellNode,
-  $isGridNode,
-  $isGridRowNode,
-  $isGridSelection,
-  $isLeafNode,
-  $isLineBreakNode,
-  $isNodeSelection,
-  $isParagraphNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  $nodesOfType,
-  $parseSerializedNode,
-  $setCompositionKey,
-  $setSelection,
-  COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_HIGH,
-  COMMAND_PRIORITY_LOW,
-  COMMAND_PRIORITY_NORMAL,
-  createEditor,
-  DecoratorNode,
-  ElementNode,
-  GridCellNode,
-  GridNode,
-  GridRowNode,
-  LineBreakNode,
-  ParagraphNode,
-  RootNode,
-  TextNode,
-  VERSION,
-};
 export * from './LexicalCommands';
+export * from './LexicalEditor';
+export * from './LexicalEditorState';
+export * from './LexicalEvents';
+export * from './LexicalNode';
+export * from './LexicalSelection';
+export * from './LexicalUpdates';
+export * from './LexicalUtils';
+export * from './LexicalVersion';
+export * from './nodes/LexicalDecoratorNode';
+export * from './nodes/LexicalElementNode';
+export * from './nodes/LexicalGridCellNode';
+export * from './nodes/LexicalGridNode';
+export * from './nodes/LexicalGridRowNode';
+export * from './nodes/LexicalLineBreakNode';
+export * from './nodes/LexicalParagraphNode';
+export * from './nodes/LexicalRootNode';
+export * from './nodes/LexicalTextNode';

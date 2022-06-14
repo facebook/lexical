@@ -454,7 +454,7 @@ export class ElementNode extends LexicalNode {
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
   }
-  excludeFromCopy(): boolean {
+  excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
   canExtractContents(): boolean {

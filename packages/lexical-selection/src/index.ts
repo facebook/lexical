@@ -152,7 +152,6 @@ export function $cloneContents(
 } {
   const clone = $cloneContentsImpl(selection);
 
-  // @ts-ignore
   if (__DEV__) {
     const nodeMap = clone.nodeMap;
 
@@ -556,7 +555,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
   while (node !== null && !$isRootNode(node)) {
     const latest = node.getLatest();
-    const parentNode = node.getParent();
+    const parentNode = node.getParent<ElementNode>();
 
     if (latest.__children.length === 0) {
       node.remove(true);

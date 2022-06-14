@@ -9,7 +9,6 @@
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
-import {SerializedEditor} from 'lexical';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 import {Class} from 'utility-types';
@@ -32,6 +31,8 @@ import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 
+export type Spread<T1, T2> = {[K in Exclude<keyof T1, keyof T2>]: T1[K]} & T2;
+
 export type EditorThemeClassName = string;
 
 export type TextNodeThemeClasses = {
@@ -40,6 +41,8 @@ export type TextNodeThemeClasses = {
   code?: EditorThemeClassName;
   italic?: EditorThemeClassName;
   strikethrough?: EditorThemeClassName;
+  subscript?: EditorThemeClassName;
+  superscript?: EditorThemeClassName;
   underline?: EditorThemeClassName;
   underlineStrikethrough?: EditorThemeClassName;
 };
@@ -140,7 +143,9 @@ export type UpdateListener = (arg0: {
   tags: Set<string>;
 }) => void;
 
-export type DecoratorListener = (decorator: Record<NodeKey, unknown>) => void;
+export type DecoratorListener<T = unknown> = (
+  decorator: Record<NodeKey, T>,
+) => void;
 
 export type RootListener = (
   rootElement: null | HTMLElement,
@@ -201,6 +206,10 @@ type DOMConversionCache = Map<
   string,
   Array<(node: Node) => DOMConversion | null>
 >;
+
+export type SerializedEditor = {
+  editorState: SerializedEditorState;
+};
 
 export function resetEditor(
   editor: LexicalEditor,
@@ -273,7 +282,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(editorConfig: {
+export function createEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
@@ -312,7 +321,6 @@ export function createEditor(editorConfig: {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
       // Ensure custom nodes implement required methods.
-      // @ts-ignore
       if (__DEV__) {
         const name = klass.name;
         if (name !== 'RootNode') {
@@ -497,7 +505,7 @@ export class LexicalEditor {
     };
   }
 
-  registerDecoratorListener(listener: DecoratorListener): () => void {
+  registerDecoratorListener<T>(listener: DecoratorListener<T>): () => void {
     const listenerSetOrMap = this._listeners.decorator;
     listenerSetOrMap.add(listener);
     return () => {
@@ -591,11 +599,9 @@ export class LexicalEditor {
     };
   }
 
-  registerNodeTransform(
-    // There's no Flow-safe way to preserve the T in Transform<T>, but <T = LexicalNode> in the
-    // declaration below guarantees these are LexicalNodes.
-    klass: Class<LexicalNode>,
-    listener: Transform<LexicalNode>,
+  registerNodeTransform<T extends LexicalNode>(
+    klass: Class<T>,
+    listener: Transform<T>,
   ): () => void {
     // @ts-expect-error TODO Replace Class utility type with InstanceType
     const type = klass.getType();
@@ -618,10 +624,12 @@ export class LexicalEditor {
     };
   }
 
-  hasNodes(nodes: Array<Class<LexicalNode>>): boolean {
+  hasNodes<T extends {new (...args: unknown[]): LexicalNode}>(
+    nodes: Array<T>,
+  ): boolean {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
-      // @ts-expect-error TODO Replace Class utility type with InstanceType
+      // @ts-expect-error
       const type = klass.getType();
 
       if (!this._nodes.has(type)) {
@@ -636,8 +644,8 @@ export class LexicalEditor {
     return dispatchCommand(this, type, payload);
   }
 
-  getDecorators(): Record<NodeKey, unknown> {
-    return this._decorators;
+  getDecorators<T>(): Record<NodeKey, T> {
+    return this._decorators as Record<NodeKey, T>;
   }
 
   getRootElement(): null | HTMLElement {

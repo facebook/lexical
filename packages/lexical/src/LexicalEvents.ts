@@ -145,6 +145,7 @@ if (CAN_USE_BEFORE_INPUT) {
 }
 
 let lastKeyDownTimeStamp = 0;
+let lastKeyCode = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
 let isInsertLineBreak = false;
@@ -337,6 +338,13 @@ function $canRemoveText(
   );
 }
 
+function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
+  return (
+    lastKeyCode === 229 &&
+    timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
+  );
+}
+
 function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   const inputType = event.inputType;
 
@@ -359,6 +367,9 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     // we need to insert.
     const composedText = event.data;
 
+    // TODO: evaluate if this is Android only. It doesn't always seem
+    // to have any real impact, so could probably be refactored or removed
+    // for an alternative approach.
     if (composedText) {
       updateEditor(editor, () => {
         const selection = $getSelection();
@@ -413,17 +424,27 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         $setSelection(prevSelection.clone());
       }
 
-      // Used for Android
-      $setCompositionKey(null);
-      event.preventDefault();
-      lastKeyDownTimeStamp = 0;
-      dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
-      // Fixes an Android bug where selection flickers when backspacing
-      setTimeout(() => {
-        updateEditor(editor, () => {
-          $setCompositionKey(null);
-        });
-      }, ANDROID_COMPOSITION_LATENCY);
+      // Used for handling backspace in Android.
+      if (
+        isPossiblyAndroidKeyPress(event.timeStamp) &&
+        (!$isRangeSelection(selection) ||
+          selection.anchor.key === selection.focus.key)
+      ) {
+        $setCompositionKey(null);
+        lastKeyDownTimeStamp = 0;
+        // Fixes an Android bug where selection flickers when backspacing
+        setTimeout(() => {
+          updateEditor(editor, () => {
+            $setCompositionKey(null);
+          });
+        }, ANDROID_COMPOSITION_LATENCY);
+        if ($isRangeSelection(selection)) {
+          selection.anchor.getNode().markDirty();
+        }
+      } else {
+        event.preventDefault();
+        dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
+      }
       return;
     }
 
@@ -741,6 +762,7 @@ function onCompositionEnd(
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
+  lastKeyCode = event.keyCode;
 
   if (editor.isComposing()) {
     return;

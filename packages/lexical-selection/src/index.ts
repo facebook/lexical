@@ -896,10 +896,6 @@ export function createRectsFromDOMRange(
   return selectionRects;
 }
 
-function doesContainGrapheme(str: string): boolean {
-  return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
-}
-
 export function trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
@@ -950,16 +946,8 @@ export function trimTextContentFromAnchor(
     const textNodeSize = text.length;
     const offset = textNodeSize - remaining;
     const slicedText = text.slice(0, offset);
-    // Sometimes the text we're putting in might be a partial grapheme.
-    // So we just remove the entire thing, rather than show a partial unicode grapheme.
-    const containsPartialGraphemeHeuristic =
-      doesContainGrapheme(text) && !doesContainGrapheme(slicedText);
 
-    if (
-      !$isTextNode(currentNode) ||
-      remaining >= textNodeSize ||
-      containsPartialGraphemeHeuristic
-    ) {
+    if (!$isTextNode(currentNode) || remaining >= textNodeSize) {
       const parent = currentNode.getParent();
       currentNode.remove();
       if (parent.getChildrenSize() === 0) {

@@ -17,6 +17,7 @@ import type {
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createListNode, $isListItemNode} from '@lexical/list';
 import {
+  $addNodeStyle,
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
@@ -448,7 +449,11 @@ export function $generateNodesFromSerializedNodes(
   const nodes = [];
   for (let i = 0; i < serializedNodes.length; i++) {
     const serializedNode = serializedNodes[i];
-    nodes.push($parseSerializedNode(serializedNode));
+    const node = $parseSerializedNode(serializedNode);
+    if ($isTextNode(node)) {
+      $addNodeStyle(node);
+    }
+    nodes.push(node);
   }
   return nodes;
 }

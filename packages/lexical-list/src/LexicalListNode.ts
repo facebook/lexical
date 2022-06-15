@@ -136,6 +136,7 @@ export class ListNode extends ElementNode {
       start: this.getStart(),
       tag: this.getTag(),
       type: 'list',
+      version: 1,
     };
   }
 

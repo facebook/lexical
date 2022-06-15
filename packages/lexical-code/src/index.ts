@@ -181,6 +181,7 @@ export class CodeHighlightNode extends TextNode {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
       type: 'code-highlight',
+      version: 1,
     };
   }
 
@@ -333,6 +334,7 @@ export class CodeNode extends ElementNode {
       ...super.exportJSON(),
       language: this.getLanguage(),
       type: 'code',
+      version: 1,
     };
   }
 

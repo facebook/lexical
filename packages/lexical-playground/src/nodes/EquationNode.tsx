@@ -154,7 +154,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return {
       equation: this.getEquation(),
       inline: this.__inline,
-      type: 'emoji',
+      type: 'equation',
       version: 1,
     };
   }

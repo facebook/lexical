@@ -125,6 +125,7 @@ export class ListItemNode extends ElementNode {
       checked: this.getChecked(),
       type: 'listitem',
       value: this.getValue(),
+      version: 1,
     };
   }
 

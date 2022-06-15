@@ -113,6 +113,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-babel": "^5.3.1",
     "eslint-plugin-flowtype": "^8.0.3",
+    "eslint-plugin-header": "^3.1.1",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jest": "^24.4.0",
     "eslint-plugin-jsx-a11y": "^6.4.1",

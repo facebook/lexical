@@ -55,11 +55,12 @@ module.exports = {
       parserOptions: {
         sourceType: 'module',
       },
-      plugins: ['react', '@typescript-eslint'],
+      plugins: ['react', '@typescript-eslint', 'header'],
       rules: {
         '@typescript-eslint/ban-ts-comment': OFF,
         '@typescript-eslint/no-this-alias': OFF,
         '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
+        'header/header': [2, 'scripts/www/headerTemplate.js'],
       },
     },
   ],

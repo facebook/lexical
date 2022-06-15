@@ -12,6 +12,7 @@ import type {
   DOMExportOutput,
   EditorConfig,
   ElementFormatType,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   Spread,
@@ -179,7 +180,7 @@ export class TweetNode extends DecoratorBlockNode {
     return this.__id;
   }
 
-  decorate(config: EditorConfig): JSX.Element {
+  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     const embedBlockTheme = config.theme.embedBlock || {};
     const className = {
       base: embedBlockTheme.base || '',

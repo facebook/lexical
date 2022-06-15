@@ -9,6 +9,7 @@
 import type {
   EditorConfig,
   ElementFormatType,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   Spread,
@@ -99,7 +100,7 @@ export class YouTubeNode extends DecoratorBlockNode {
     return false;
   }
 
-  decorate(config: EditorConfig): JSX.Element {
+  decorate(_editor: LexicalEditor, config: EditorConfig): JSX.Element {
     const embedBlockTheme = config.theme.embedBlock || {};
     const className = {
       base: embedBlockTheme.base || '',

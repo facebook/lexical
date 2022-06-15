@@ -19,7 +19,7 @@ export class DecoratorNode<T> extends LexicalNode {
     super(key);
   }
 
-  decorate(config: EditorConfig, editor: LexicalEditor): T {
+  decorate(editor: LexicalEditor, config: EditorConfig): T {
     invariant(false, 'decorate: base method not extended');
   }
 

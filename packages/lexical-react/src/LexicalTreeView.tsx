@@ -318,7 +318,7 @@ function normalize(text) {
 
 function printNode(node) {
   if ($isTextNode(node)) {
-    const text = node.getTextContent(true);
+    const text = node.getTextContent();
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
     const properties = printAllProperties(node);
     return [title, properties.length !== 0 ? `{ ${properties} }` : null]
@@ -348,7 +348,6 @@ const DETAIL_PREDICATES = [
 const MODE_PREDICATES = [
   (node) => node.isToken() && 'Token',
   (node) => node.isSegmented() && 'Segmented',
-  (node) => node.isInert() && 'Inert',
 ];
 
 function printAllProperties(node) {
@@ -465,7 +464,7 @@ function printSelectedCharsLine({
 function $getSelectionStartEnd(node, selection): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;
-  const textContent = node.getTextContent(true);
+  const textContent = node.getTextContent();
   const textLength = textContent.length;
 
   let start = -1;

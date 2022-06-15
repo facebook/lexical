@@ -28,7 +28,6 @@ import {
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
-  IS_INERT,
   IS_ITALIC,
   IS_SEGMENTED,
   IS_STRIKETHROUGH,
@@ -78,7 +77,7 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 
-export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
+export type TextModeType = 'normal' | 'token' | 'segmented';
 
 export type TextMark = {end: null | number; id: string; start: null | number};
 
@@ -309,11 +308,6 @@ export class TextNode extends LexicalNode {
     return self.__mode === IS_SEGMENTED;
   }
 
-  isInert(): boolean {
-    const self = this.getLatest();
-    return self.__mode === IS_INERT;
-  }
-
   isDirectionless(): boolean {
     const self = this.getLatest();
     return (self.__detail & IS_DIRECTIONLESS) !== 0;
@@ -333,13 +327,7 @@ export class TextNode extends LexicalNode {
     return this.__type === 'text' && this.__mode === 0;
   }
 
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
-    if (
-      (!includeInert && this.isInert()) ||
-      (includeDirectionless === false && this.isDirectionless())
-    ) {
-      return '';
-    }
+  getTextContent(): string {
     const self = this.getLatest();
     return self.__text;
   }

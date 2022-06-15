@@ -74,7 +74,6 @@ import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
   $getNodeByKey,
-  $isTokenOrInert,
   $setSelection,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,
@@ -333,8 +332,8 @@ function $canRemoveText(
     anchorNode !== focusNode ||
     $isElementNode(anchorNode) ||
     $isElementNode(focusNode) ||
-    !$isTokenOrInert(anchorNode) ||
-    !$isTokenOrInert(focusNode)
+    !anchorNode.isToken() ||
+    !focusNode.isToken()
   );
 }
 

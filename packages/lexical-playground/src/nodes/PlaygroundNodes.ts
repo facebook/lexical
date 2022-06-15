@@ -29,7 +29,6 @@ import {MentionNode} from './MentionNode';
 import {PollNode} from './PollNode';
 import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode';
-import {TypeaheadNode} from './TypeaheadNode';
 import {YouTubeNode} from './YouTubeNode';
 
 const PlaygroundNodes: Array<Class<LexicalNode>> = [
@@ -54,7 +53,6 @@ const PlaygroundNodes: Array<Class<LexicalNode>> = [
   ExcalidrawNode,
   EquationNode,
   AutocompleteNode,
-  TypeaheadNode,
   KeywordNode,
   HorizontalRuleNode,
   TweetNode,

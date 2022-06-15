@@ -200,15 +200,6 @@ function createNode(
       if (!node.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
-
-      if (node.isInert()) {
-        const domStyle = dom.style;
-        domStyle.pointerEvents = 'none';
-        domStyle.userSelect = 'none';
-        dom.contentEditable = 'false';
-        // To support Safari
-        domStyle.setProperty('-webkit-user-select', 'none');
-      }
     }
 
     subTreeTextContent += text;

@@ -23,7 +23,6 @@
     "clean": "node scripts/clean.js",
     "extract-codes": "node scripts/build.js --codes",
     "flow": "node ./scripts/check-flow-types.js",
-    "tsc-watch": "tsc -w",
     "collab": "cross-env HOST=localhost PORT=1234 npx y-websocket-server",
     "test-unit": "jest --selectProjects unit --testPathPattern",
     "test-unit-watch": "npm run test-unit -- --watch --coverage=''",

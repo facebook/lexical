@@ -6,7 +6,15 @@
  *
  */
 
-import type {EditorState, EditorThemeClasses, LexicalEditor} from 'lexical';
+import type {
+  EditorState,
+  EditorThemeClasses,
+  LexicalEditor,
+  SerializedElementNode,
+  SerializedLexicalNode,
+  SerializedTextNode,
+  Spread,
+} from 'lexical';
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
@@ -81,6 +89,14 @@ export function initializeUnitTest(
   runTests(testEnv);
 }
 
+export type SerializedTestElementNode = Spread<
+  {
+    type: 'test_block';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
 export class TestElementNode extends ElementNode {
   static getType(): string {
     return 'test_block';
@@ -88,6 +104,20 @@ export class TestElementNode extends ElementNode {
 
   static clone(node: TestElementNode) {
     return new TestElementNode(node.__key);
+  }
+
+  static importJSON(
+    serializedNode: SerializedTestElementNode,
+  ): TestInlineElementNode {
+    const node = $createTestInlineElementNode();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedTestElementNode {
+    return super.exportJSON();
   }
 
   createDOM() {
@@ -103,6 +133,14 @@ export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
+export type SerializedTestInlineElementNode = Spread<
+  {
+    type: 'test_inline_block';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
 export class TestInlineElementNode extends ElementNode {
   static getType(): string {
     return 'test_inline_block';
@@ -110,6 +148,20 @@ export class TestInlineElementNode extends ElementNode {
 
   static clone(node: TestInlineElementNode) {
     return new TestInlineElementNode(node.__key);
+  }
+
+  static importJSON(
+    serializedNode: SerializedTestInlineElementNode,
+  ): TestInlineElementNode {
+    const node = $createTestInlineElementNode();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedTestInlineElementNode {
+    return super.exportJSON();
   }
 
   createDOM() {
@@ -129,6 +181,14 @@ export function $createTestInlineElementNode(): TestInlineElementNode {
   return new TestInlineElementNode();
 }
 
+export type SerializedTestSegmentedNode = Spread<
+  {
+    type: 'test_segmented';
+    version: 1;
+  },
+  SerializedTextNode
+>;
+
 export class TestSegmentedNode extends TextNode {
   static getType(): string {
     return 'test_segmented';
@@ -137,11 +197,34 @@ export class TestSegmentedNode extends TextNode {
   static clone(node: TestSegmentedNode): TestSegmentedNode {
     return new TestSegmentedNode(node.__text, node.__key);
   }
+
+  static importJSON(
+    serializedNode: SerializedTestSegmentedNode,
+  ): TestSegmentedNode {
+    const node = $createTestSegmentedNode(serializedNode.text);
+    node.setFormat(serializedNode.format);
+    node.setDetail(serializedNode.detail);
+    node.setMode(serializedNode.mode);
+    node.setStyle(serializedNode.style);
+    return node;
+  }
+
+  exportJSON(): SerializedTestSegmentedNode {
+    return super.exportJSON();
+  }
 }
 
 export function $createTestSegmentedNode(text): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
+
+export type SerializedTestExcludeFromCopyElementNode = Spread<
+  {
+    type: 'test_inline_block';
+    version: 1;
+  },
+  SerializedElementNode
+>;
 
 export class TestExcludeFromCopyElementNode extends ElementNode {
   static getType(): string {
@@ -150,6 +233,20 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
 
   static clone(node: TestExcludeFromCopyElementNode) {
     return new TestExcludeFromCopyElementNode(node.__key);
+  }
+
+  static importJSON(
+    serializedNode: SerializedTestExcludeFromCopyElementNode,
+  ): TestExcludeFromCopyElementNode {
+    const node = $createTestExcludeFromCopyElementNode();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedTestExcludeFromCopyElementNode {
+    return super.exportJSON();
   }
 
   createDOM() {
@@ -169,6 +266,14 @@ export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElem
   return new TestExcludeFromCopyElementNode();
 }
 
+export type SerializedTestDecoratorNode = Spread<
+  {
+    type: 'test_decorator';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
+
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static getType(): string {
     return 'test_decorator';
@@ -176,6 +281,16 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
 
   static clone(node: TestDecoratorNode) {
     return new TestDecoratorNode(node.__key);
+  }
+
+  static importJSON(
+    serializedNode: SerializedTestDecoratorNode,
+  ): TestDecoratorNode {
+    return $createTestDecoratorNode();
+  }
+
+  exportJSON(): SerializedTestDecoratorNode {
+    return super.exportJSON();
   }
 
   getTextContent() {
@@ -235,6 +350,7 @@ export function TestComposer({
           throw e;
         },
         ...config,
+        namespace: '',
         nodes: DEFAULT_NODES.concat(customNodes),
       }}>
       {children}
@@ -256,6 +372,7 @@ export function createTestEditor(
 ): LexicalEditor {
   const customNodes = config.nodes || [];
   const editor = createEditor({
+    namespace: config.namespace,
     onError: (e) => {
       throw e;
     },

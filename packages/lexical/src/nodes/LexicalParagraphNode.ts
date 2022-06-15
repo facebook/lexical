@@ -18,8 +18,7 @@ import type {
   LexicalNode,
 } from '../LexicalNode';
 import type {SerializedElementNode} from './LexicalElementNode';
-
-import {Spread} from 'libdefs/globals';
+import type {Spread} from 'lexical';
 
 import {getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';

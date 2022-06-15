@@ -64,6 +64,7 @@ function onError(error) {
 
 function Editor() {
   const initialConfig = {
+    namespace: 'MyEditor', 
     theme,
     onError,
   };
@@ -71,7 +72,7 @@ function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <PlainTextPlugin
-        contentEditable={ContentEditable />}
+        contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
       />
       <OnChangePlugin onChange={onChange} />

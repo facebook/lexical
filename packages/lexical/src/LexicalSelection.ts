@@ -88,7 +88,7 @@ export type ElementPointType = {
 
 export type PointType = TextPointType | ElementPointType;
 
-class Point {
+export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
@@ -238,7 +238,7 @@ function $setPointValues(
   point.type = type;
 }
 
-interface BaseSelection {
+export interface BaseSelection {
   clone(): BaseSelection;
   dirty: boolean;
   extract(): Array<LexicalNode>;
@@ -764,6 +764,7 @@ export class RangeSelection implements BaseSelection {
         $isTokenOrInertOrSegmented(nextSibling)
       ) {
         nextSibling = $createTextNode();
+        nextSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextAfter()) {
           firstNodeParent.insertAfter(nextSibling);
         } else {
@@ -790,6 +791,7 @@ export class RangeSelection implements BaseSelection {
         $isTokenOrInertOrSegmented(prevSibling)
       ) {
         prevSibling = $createTextNode();
+        prevSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextBefore()) {
           firstNodeParent.insertBefore(prevSibling);
         } else {
@@ -804,6 +806,7 @@ export class RangeSelection implements BaseSelection {
       }
     } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
       const textNode = $createTextNode(firstNode.getTextContent());
+      textNode.setFormat(format);
       firstNode.replace(textNode);
       firstNode = textNode;
     } else if (!this.isCollapsed() && text !== '') {
@@ -862,10 +865,14 @@ export class RangeSelection implements BaseSelection {
       firstNode = firstNode.spliceText(startOffset, delCount, text, true);
       if (firstNode.getTextContent() === '') {
         firstNode.remove();
-      } else if (firstNode.isComposing() && this.anchor.type === 'text') {
-        // When composing, we need to adjust the anchor offset so that
-        // we correctly replace that right range.
-        this.anchor.offset -= text.length;
+      } else if (this.anchor.type === 'text') {
+        if (firstNode.isComposing()) {
+          // When composing, we need to adjust the anchor offset so that
+          // we correctly replace that right range.
+          this.anchor.offset -= text.length;
+        } else {
+          this.format = firstNodeFormat;
+        }
       }
     } else {
       const markedNodeKeysForKeep = new Set([
@@ -2195,17 +2202,17 @@ export function internalMakeRangeSelection(
   return selection;
 }
 
-export function $createEmptyRangeSelection(): RangeSelection {
+export function $createRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new RangeSelection(anchor, focus, 0);
 }
 
-export function $createEmptyObjectSelection(): NodeSelection {
+export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
-export function $createEmptyGridSelection(): GridSelection {
+export function $createGridSelection(): GridSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new GridSelection('root', anchor, focus);

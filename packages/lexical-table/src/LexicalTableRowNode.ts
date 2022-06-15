@@ -6,6 +6,8 @@
  *
  */
 
+import type {Spread} from 'lexical';
+
 import {addClassNamesToElement} from '@lexical/utils';
 import {
   DOMConversionMap,
@@ -16,7 +18,6 @@ import {
   NodeKey,
   SerializedElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 export type SerializedTableRowNode = Spread<
   {

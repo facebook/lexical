@@ -18,8 +18,9 @@ import type {
   NodeSelection,
   RangeSelection,
 } from '../LexicalSelection';
+import type {Spread} from 'lexical';
 
-import {Spread} from 'libdefs/globals';
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -216,7 +217,9 @@ function setTextContent(
   } else {
     const nodeValue = firstChild.nodeValue;
     if (nodeValue !== text)
-      if (isComposing) {
+      if (isComposing || IS_FIREFOX) {
+        // We also use the diff composed text for general text in FF to avoid
+        // the spellcheck red line from flickering.
         const [index, remove, insert] = diffComposedText(nodeValue, text);
         if (remove !== 0) {
           // @ts-expect-error
@@ -861,7 +864,14 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 function convertTextDOMNode(domNode: Node): DOMConversionOutput {
-  return {node: $createTextNode(domNode.textContent)};
+  const {parentElement, textContent} = domNode;
+  const textContentTrim = textContent.trim();
+  const isPre =
+    parentElement != null && parentElement.tagName.toLowerCase() === 'pre';
+  if (!isPre && textContentTrim.length === 0 && textContent.includes('\n')) {
+    return {node: null};
+  }
+  return {node: $createTextNode(textContent)};
 }
 const nodeNameToTextFormat: Record<string, TextFormatType> = {
   em: 'italic',

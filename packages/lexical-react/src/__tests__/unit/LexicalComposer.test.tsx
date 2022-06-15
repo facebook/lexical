@@ -43,6 +43,7 @@ describe('LexicalNodeHelpers tests', () => {
       return (
         <LexicalComposer
           initialConfig={{
+            namespace: '',
             nodes: [],
             onError: () => {
               throw Error();

@@ -3,6 +3,7 @@
 **/dist/**
 **/config/**
 **/build/**
+**/npm/**
 **/*.js.flow
 **/*.d.ts
 **/playwright*/**

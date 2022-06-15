@@ -14,6 +14,7 @@ import type {
   NodeSelection,
   RangeSelection,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {
@@ -21,7 +22,6 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {$isElementNode, $isRangeSelection, ElementNode} from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 export type SerializedMarkNode = Spread<
   {

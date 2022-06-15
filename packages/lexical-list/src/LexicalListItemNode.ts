@@ -19,6 +19,7 @@ import type {
   ParagraphNode,
   RangeSelection,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {
@@ -32,7 +33,6 @@ import {
   $isRangeSelection,
   ElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
 import {$createListNode, $isListNode} from './';
@@ -209,7 +209,7 @@ export class ListItemNode extends ElementNode {
 
     if ($isListNode(node) && node.getListType() === listNode.getListType()) {
       let child = node;
-      const children = node.getChildren<Array<ListNode>>();
+      const children = node.getChildren<ListNode>();
 
       for (let i = children.length - 1; i >= 0; i--) {
         child = children[i];

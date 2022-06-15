@@ -111,7 +111,6 @@ describe('LexicalUtils tests', () => {
 
         expect(
           isSelectionWithinEditor(
-            // @ts-expect-error Not sure why the below causes a TS error but the editor instance is valid
             editor,
             domSelection.anchorNode,
             domSelection.focusNode,
@@ -126,7 +125,6 @@ describe('LexicalUtils tests', () => {
 
         expect(
           isSelectionWithinEditor(
-            // @ts-expect-error Not sure why the below causes a TS error but the editor instance is valid
             editor,
             domSelection.anchorNode,
             domSelection.focusNode,

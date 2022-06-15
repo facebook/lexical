@@ -665,9 +665,9 @@ describe('LexicalNode tests', () => {
           expect(() =>
             node.createDOM(
               {
+                namespace: '',
                 theme: {},
               },
-              // @ts-expect-error Not sure why editor throws a TS error. The type is correct.
               editor,
             ),
           ).toThrow();

@@ -4,8 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
+
+import type {Spread} from 'lexical';
 
 import {
   addClassNamesToElement,
@@ -23,7 +24,6 @@ import {
   NodeKey,
   SerializedElementNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 import {$createListItemNode, $isListItemNode} from '.';
 import {$getListDepth} from './utils';

@@ -22,9 +22,10 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import {WebsocketProvider} from 'y-websocket';
 import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
 
-import {Binding, Provider} from '.';
+import {Binding} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -39,6 +40,7 @@ import {
   syncWithTransaction,
 } from './Utils';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function syncEvent(binding: Binding, event: any): void {
   const {target} = event;
   const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
@@ -83,7 +85,7 @@ function syncEvent(binding: Binding, event: any): void {
 
 export function syncYjsChangesToLexical(
   binding: Binding,
-  provider: Provider,
+  provider: WebsocketProvider,
   events: Array<YEvent<YText>>,
 ): void {
   const editor = binding.editor;
@@ -214,7 +216,7 @@ function handleNormalizationMergeConflicts(
 
 export function syncLexicalUpdateToYjs(
   binding: Binding,
-  provider: Provider,
+  provider: WebsocketProvider,
   prevEditorState: EditorState,
   currEditorState: EditorState,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,

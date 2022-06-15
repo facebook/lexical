@@ -11,10 +11,15 @@ import type {LexicalEditor} from 'lexical';
 
 import {$isLinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode} from 'lexical';
-import {useEffect, useRef} from 'react';
+import {
+  $getNearestNodeFromDOMNode,
+  $getSelection,
+  $isRangeSelection,
+} from 'lexical';
+import {useEffect} from 'react';
 
 type LinkFilter = (event: MouseEvent, linkNode: LinkNode) => boolean;
+
 export default function ClickableLinkPlugin({
   filter,
   newTab = true,
@@ -23,27 +28,8 @@ export default function ClickableLinkPlugin({
   newTab?: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const hasMoved = useRef(false);
   useEffect(() => {
-    let prevOffsetX;
-    let prevOffsetY;
-
-    function onPointerDown(event: PointerEvent) {
-      prevOffsetX = event.offsetX;
-      prevOffsetY = event.offsetY;
-    }
-
-    function onPointerUp(event: PointerEvent) {
-      hasMoved.current =
-        event.offsetX !== prevOffsetX || event.offsetY !== prevOffsetY;
-    }
-
     function onClick(e: Event) {
-      // Based on pointerdown/up we can check if cursor moved during click event,
-      // and ignore clicks with moves (to allow link text selection)
-      const hasMovedDuringClick = hasMoved.current;
-      hasMoved.current = false;
-      // $FlowExpectedError[incompatible-cast] onClick handler will get MouseEvent, safe to cast
       const event = e as MouseEvent;
       const linkDomNode = getLinkDomNode(event, editor);
 
@@ -57,6 +43,12 @@ export default function ClickableLinkPlugin({
         linkDomNode.getAttribute('contenteditable') === 'false' ||
         href === undefined
       ) {
+        return;
+      }
+
+      // Allow user to select link text without follwing url
+      const selection = editor.getEditorState().read($getSelection);
+      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
         return;
       }
 
@@ -76,10 +68,6 @@ export default function ClickableLinkPlugin({
         return;
       }
 
-      if (hasMovedDuringClick) {
-        return;
-      }
-
       try {
         window.open(
           href,
@@ -96,15 +84,11 @@ export default function ClickableLinkPlugin({
         prevRootElement: null | HTMLElement,
       ) => {
         if (prevRootElement !== null) {
-          prevRootElement.removeEventListener('pointerdown', onPointerDown);
-          prevRootElement.removeEventListener('pointerup', onPointerUp);
           prevRootElement.removeEventListener('click', onClick);
         }
 
         if (rootElement !== null) {
           rootElement.addEventListener('click', onClick);
-          rootElement.addEventListener('pointerdown', onPointerDown);
-          rootElement.addEventListener('pointerup', onPointerUp);
         }
       },
     );

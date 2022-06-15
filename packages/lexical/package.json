@@ -9,12 +9,14 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "main": "Lexical.js",
-  "typings": "Lexical.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical"
+  },
+  "devDependencies": {
+    "utility-types": "^3.10.0"
   }
 }

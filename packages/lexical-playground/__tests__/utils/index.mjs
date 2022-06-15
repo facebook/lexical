@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import {expect, test as base} from '@playwright/test';
@@ -598,6 +597,15 @@ export async function selectFromAdditionalStylesDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
+export async function selectFromBackgroundColorPicker(page) {
+  await click(page, '.toolbar-item[aria-label="Formatting background color"]');
+  await click(page, '.color-picker-basic-color button:first-child'); //Defaulted to red
+}
+
+export async function selectFromColorPicker(page) {
+  await click(page, '.toolbar-item[aria-label="Formatting text color"]');
+  await click(page, '.color-picker-basic-color button:first-child'); //Defaulted to red
+}
 export async function selectFromFormatDropdown(page, selector) {
   await click(
     page,

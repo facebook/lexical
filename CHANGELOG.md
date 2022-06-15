@@ -1,3 +1,15 @@
+## 0.3.3 (June 9, 2022)
+
+- Add stringified LexicalNodes to clipboard for lossless Lexical <-> Lexical copy and paste. (#2370)
+- Fix bad target issue for backspace/delete (#2375)
+- Improve nested editor propagation (#2367)
+- Fix scrolling issues due to browser rounding bugs (#2350)
+- Code cleanup, type definition and docs improvements
+
+Playground
+- Autocomplete v2 (#2343)
+- Add collaboration support for commenting (#2376)
+
 ## 0.3.2 (June 6, 2022)
 
 - added typing for ListItemNode.setChecked, export ListNodeTagType (#2335) 

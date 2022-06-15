@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
-
  */
 
 import type {
@@ -19,13 +18,13 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
 import {
   $getSelection,
   $isElementNode,
   $setSelection,
   createCommand,
   ElementNode,
+  Spread,
 } from 'lexical';
 
 export type SerializedLinkNode = Spread<
@@ -53,7 +52,7 @@ export class LinkNode extends ElementNode {
     this.__url = url;
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
     element.href = this.__url;
     addClassNamesToElement(element, config.theme.link);

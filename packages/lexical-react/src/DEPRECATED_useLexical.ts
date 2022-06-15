@@ -12,17 +12,18 @@ import type {
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
+import type {Klass} from 'shared/types';
 
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';
-import {Class} from 'utility-types';
 
 import {useLexicalEditor} from './DEPRECATED_useLexicalEditor';
 
 export function useLexical(editorConfig: {
   disableEvents?: boolean;
   editorState?: EditorState;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  namespace: string;
+  nodes?: ReadonlyArray<Klass<LexicalNode>>;
   onError: (error: Error) => void;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;

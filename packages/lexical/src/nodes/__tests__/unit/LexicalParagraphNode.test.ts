@@ -68,6 +68,7 @@ describe('LexicalParagraphNode tests', () => {
         );
         expect(
           paragraphNode.createDOM({
+            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<p></p>');

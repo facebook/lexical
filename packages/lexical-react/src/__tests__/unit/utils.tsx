@@ -160,6 +160,7 @@ class Client {
       reactRoot.render(
         <LexicalComposer
           initialConfig={{
+            namespace: '',
             onError: () => {
               throw Error();
             },

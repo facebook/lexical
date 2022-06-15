@@ -18,6 +18,7 @@ import {
 } from '../..';
 
 const editorConfig = Object.freeze({
+  namespace: '',
   theme: {
     list: {
       ol: 'my-ol-list-class',
@@ -83,6 +84,7 @@ describe('LexicalListNode tests', () => {
         );
         expect(
           listNode.createDOM({
+            namespace: '',
             theme: {
               list: {},
             },
@@ -90,6 +92,7 @@ describe('LexicalListNode tests', () => {
         ).toBe('<ul></ul>');
         expect(
           listNode.createDOM({
+            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<ul></ul>');
@@ -129,6 +132,7 @@ describe('LexicalListNode tests', () => {
         );
         expect(
           listNode1.createDOM({
+            namespace: '',
             theme: {
               list: {},
             },
@@ -136,6 +140,7 @@ describe('LexicalListNode tests', () => {
         ).toBe('<ul></ul>');
         expect(
           listNode1.createDOM({
+            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<ul></ul>');
@@ -159,6 +164,7 @@ describe('LexicalListNode tests', () => {
         );
         expect(
           listNode5.createDOM({
+            namespace: '',
             theme: {
               list: {
                 ...editorConfig.theme.list,

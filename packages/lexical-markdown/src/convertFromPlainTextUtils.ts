@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
 import type {ScanningContext} from './utils';
@@ -326,7 +325,7 @@ function convertMarkdownForTextCriteria<T>(
 function getLastTextNodeInElementNode(
   elementNode: ElementNode,
 ): null | TextNode {
-  const children = elementNode.getChildren<Array<TextNode>>();
+  const children = elementNode.getChildren<TextNode>();
   const countOfChildren = children.length;
 
   for (let i = countOfChildren - 1; i >= 0; i--) {

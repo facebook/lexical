@@ -6,14 +6,13 @@
  *
  */
 
-import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
+import type {ElementFormatType, LexicalNode, NodeKey, Spread} from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
   SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
-import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 
 type YouTubeComponentProps = Readonly<{
@@ -47,7 +46,7 @@ export type SerializedYouTubeNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-export class YouTubeNode extends DecoratorBlockNode<JSX.Element> {
+export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
   static getType(): string {

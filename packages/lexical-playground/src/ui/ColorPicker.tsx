@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,6 +12,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
 import DropDown from './DropDown';
+import TextInput from './TextInput';
 
 interface ColorPickerProps {
   buttonAriaLabel?: string;
@@ -52,6 +53,7 @@ export default function ColorPicker({
   ...rest
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
+  const [inputColor, setInputColor] = useState(color);
   const innerDivRef = useRef(null);
 
   const saturationPosition = useMemo(
@@ -69,6 +71,14 @@ export default function ColorPicker({
     [selfColor.hsv],
   );
 
+  const onSetHex = (hex: string) => {
+    setInputColor(hex);
+    if (/^#[0-9A-Fa-f]{6}$/i.test(hex)) {
+      const newColor = transformColor('hex', hex);
+      setSelfColor(newColor);
+    }
+  };
+
   const onMoveSaturation = ({x, y}: Position) => {
     const newHsv = {
       ...selfColor.hsv,
@@ -77,6 +87,7 @@ export default function ColorPicker({
     };
     const newColor = transformColor('hsv', newHsv);
     setSelfColor(newColor);
+    setInputColor(newColor.hex);
   };
 
   const onMoveHue = ({x}: Position) => {
@@ -84,18 +95,22 @@ export default function ColorPicker({
     const newColor = transformColor('hsv', newHsv);
 
     setSelfColor(newColor);
+    setInputColor(newColor.hex);
   };
 
   useEffect(() => {
     // Check if the dropdown is actually active
     if (innerDivRef.current !== null) {
       onChange(selfColor.hex);
+      setInputColor(selfColor.hex);
     }
   }, [selfColor, onChange]);
 
   useEffect(() => {
     if (color === undefined) return;
-    setSelfColor(transformColor('hex', color));
+    const newColor = transformColor('hex', color);
+    setSelfColor(newColor);
+    setInputColor(newColor.hex);
   }, [color]);
 
   return (
@@ -104,13 +119,17 @@ export default function ColorPicker({
         className="color-picker-wrapper"
         style={{width: WIDTH}}
         ref={innerDivRef}>
+        <TextInput label="Hex" onChange={onSetHex} value={inputColor} />
         <div className="color-picker-basic-color">
           {basicColors.map((basicColor) => (
             <button
               className={basicColor === selfColor.hex ? ' active' : ''}
               key={basicColor}
               style={{backgroundColor: basicColor}}
-              onClick={() => setSelfColor(transformColor('hex', basicColor))}
+              onClick={() => {
+                setInputColor(basicColor);
+                setSelfColor(transformColor('hex', basicColor));
+              }}
             />
           ))}
         </div>
@@ -136,13 +155,10 @@ export default function ColorPicker({
             }}
           />
         </MoveWrapper>
-        <div className="color-picker-info">
-          <span>{selfColor.hex}</span>
-          <div
-            className="color-picker-color"
-            style={{backgroundColor: selfColor.hex}}
-          />
-        </div>
+        <div
+          className="color-picker-color"
+          style={{backgroundColor: selfColor.hex}}
+        />
       </div>
       {children}
     </DropDown>

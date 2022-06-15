@@ -3,6 +3,7 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
  */
 
 'use strict';
@@ -18,13 +19,13 @@ const replace = require('@rollup/plugin-replace');
 const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
 const compiler = require('@ampproject/rollup-plugin-closure-compiler');
+const {exec} = require('child-process-promise');
 
 const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.`;
 
-const isWatchMode = argv.watch;
 const isProduction = argv.prod;
 const isRelease = argv.release;
 const isWWW = argv.www;
@@ -142,7 +143,7 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
-async function build(name, inputFile, outputFile, isProd) {
+async function build(name, inputFile, outputPath, outputFile, isProd) {
   const inputOptions = {
     external(modulePath, src) {
       return externals.includes(modulePath);
@@ -250,29 +251,8 @@ ${source}`;
     freeze: false,
     interop: false,
   };
-  if (isWatchMode) {
-    const watcher = rollup.watch({
-      ...inputOptions,
-      output: outputOptions,
-    });
-    watcher.on('event', async (event) => {
-      switch (event.code) {
-        case 'BUNDLE_START':
-          console.log(`Building ${name}...`);
-          break;
-        case 'BUNDLE_END':
-          console.log(`Built ${name}`);
-          break;
-        case 'ERROR':
-        case 'FATAL':
-          console.error(`Build failed for ${name}:\n\n${event.error}`);
-          break;
-      }
-    });
-  } else {
-    const result = await rollup.rollup(inputOptions);
-    await result.write(outputOptions);
-  }
+  const result = await rollup.rollup(inputOptions);
+  await result.write(outputOptions);
 }
 
 function getComment() {
@@ -310,6 +290,7 @@ const packages = [
     ],
     name: 'Lexical Core',
     outputPath: './packages/lexical/dist/',
+    packageName: 'lexical',
     sourcePath: './packages/lexical/src/',
   },
   {
@@ -321,6 +302,7 @@ const packages = [
     ],
     name: 'Lexical List',
     outputPath: './packages/lexical-list/dist/',
+    packageName: 'lexical-list',
     sourcePath: './packages/lexical-list/src/',
   },
   {
@@ -332,6 +314,7 @@ const packages = [
     ],
     name: 'Lexical Table',
     outputPath: './packages/lexical-table/dist/',
+    packageName: 'lexical-table',
     sourcePath: './packages/lexical-table/src/',
   },
   {
@@ -343,6 +326,7 @@ const packages = [
     ],
     name: 'Lexical File',
     outputPath: './packages/lexical-file/dist/',
+    packageName: 'lexical-file',
     sourcePath: './packages/lexical-file/src/',
   },
   {
@@ -354,6 +338,7 @@ const packages = [
     ],
     name: 'Lexical File',
     outputPath: './packages/lexical-clipboard/dist/',
+    packageName: 'lexical-clipboard',
     sourcePath: './packages/lexical-clipboard/src/',
   },
   {
@@ -365,6 +350,7 @@ const packages = [
     ],
     name: 'Lexical Hashtag',
     outputPath: './packages/lexical-hashtag/dist/',
+    packageName: 'lexical-hashtag',
     sourcePath: './packages/lexical-hashtag/src/',
   },
   {
@@ -376,6 +362,7 @@ const packages = [
     ],
     name: 'Lexical History',
     outputPath: './packages/lexical-history/dist/',
+    packageName: 'lexical-history',
     sourcePath: './packages/lexical-history/src/',
   },
   {
@@ -387,6 +374,7 @@ const packages = [
     ],
     name: 'Lexical Selection',
     outputPath: './packages/lexical-selection/dist/',
+    packageName: 'lexical-selection',
     sourcePath: './packages/lexical-selection/src/',
   },
   {
@@ -398,6 +386,7 @@ const packages = [
     ],
     name: 'Lexical Text',
     outputPath: './packages/lexical-text/dist/',
+    packageName: 'lexical-text',
     sourcePath: './packages/lexical-text/src/',
   },
   {
@@ -409,6 +398,7 @@ const packages = [
     ],
     name: 'Lexical Offset',
     outputPath: './packages/lexical-offset/dist/',
+    packageName: 'lexical-offset',
     sourcePath: './packages/lexical-offset/src/',
   },
   {
@@ -420,6 +410,7 @@ const packages = [
     ],
     name: 'Lexical Utils',
     outputPath: './packages/lexical-utils/dist/',
+    packageName: 'lexical-utils',
     sourcePath: './packages/lexical-utils/src/',
   },
   {
@@ -431,6 +422,7 @@ const packages = [
     ],
     name: 'Lexical Code',
     outputPath: './packages/lexical-code/dist/',
+    packageName: 'lexical-code',
     sourcePath: './packages/lexical-code/src/',
   },
   {
@@ -442,6 +434,7 @@ const packages = [
     ],
     name: 'Lexical Dragon',
     outputPath: './packages/lexical-dragon/dist/',
+    packageName: 'lexical-dragon',
     sourcePath: './packages/lexical-dragon/src/',
   },
   {
@@ -453,6 +446,7 @@ const packages = [
     ],
     name: 'Lexical Link',
     outputPath: './packages/lexical-link/dist/',
+    packageName: 'lexical-link',
     sourcePath: './packages/lexical-link/src/',
   },
   {
@@ -464,6 +458,7 @@ const packages = [
     ],
     name: 'Lexical Overflow',
     outputPath: './packages/lexical-overflow/dist/',
+    packageName: 'lexical-overflow',
     sourcePath: './packages/lexical-overflow/src/',
   },
   {
@@ -475,6 +470,7 @@ const packages = [
     ],
     name: 'Lexical Plain Text',
     outputPath: './packages/lexical-plain-text/dist/',
+    packageName: 'lexical-plain-text',
     sourcePath: './packages/lexical-plain-text/src/',
   },
   {
@@ -486,6 +482,7 @@ const packages = [
     ],
     name: 'Lexical Rich Text',
     outputPath: './packages/lexical-rich-text/dist/',
+    packageName: 'lexical-rich-text',
     sourcePath: './packages/lexical-rich-text/src/',
   },
   {
@@ -497,6 +494,7 @@ const packages = [
     ],
     name: 'Lexical Markdown',
     outputPath: './packages/lexical-markdown/dist/',
+    packageName: 'lexical-markdown',
     sourcePath: './packages/lexical-markdown/src/',
   },
   {
@@ -508,6 +506,7 @@ const packages = [
     ],
     name: 'Lexical Headless',
     outputPath: './packages/lexical-headless/dist/',
+    packageName: 'lexical-headless',
     sourcePath: './packages/lexical-headless/src/',
   },
   {
@@ -519,6 +518,7 @@ const packages = [
     ],
     name: 'Lexical HTML',
     outputPath: './packages/lexical-html/dist/',
+    packageName: 'lexical-html',
     sourcePath: './packages/lexical-html/src/',
   },
   {
@@ -530,6 +530,7 @@ const packages = [
     ],
     name: 'Lexical Mark',
     outputPath: './packages/lexical-mark/dist/',
+    packageName: 'lexical-mark',
     sourcePath: './packages/lexical-mark/src/',
   },
   {
@@ -556,6 +557,7 @@ const packages = [
       }),
     name: 'Lexical React',
     outputPath: './packages/lexical-react/dist/',
+    packageName: 'lexical-react',
     sourcePath: './packages/lexical-react/src/',
   },
   {
@@ -567,36 +569,18 @@ const packages = [
     ],
     name: 'Lexical Yjs',
     outputPath: './packages/lexical-yjs/dist/',
+    packageName: 'lexical-yjs',
     sourcePath: './packages/lexical-yjs/src/',
   },
 ];
 
-packages.forEach((pkg) => {
-  const {name, sourcePath, outputPath, modules} = pkg;
-  modules.forEach((module) => {
-    const {sourceFileName, outputFileName} = module;
-    let inputFile = path.resolve(path.join(`${sourcePath}${sourceFileName}`));
-    build(
-      `${name}${module.name ? '-' + module.name : ''}`,
-      inputFile,
-      path.resolve(
-        path.join(`${outputPath}${getFileName(outputFileName, isProduction)}`),
-      ),
-      isProduction,
-    );
-    if (isRelease) {
-      build(
-        name,
-        inputFile,
-        path.resolve(
-          path.join(`${outputPath}${getFileName(outputFileName, false)}`),
-        ),
-        false,
-      );
-      buildForkModule(outputPath, outputFileName);
-    }
-  });
-});
+async function buildTSDeclarationFiles(packageName, outputPath) {
+  await exec('tsc -p ./tsconfig.build.json');
+}
+
+async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
+  await exec(`cp -R ./.ts-temp/${packageName}/src/ ${outputPath}`);
+}
 
 function buildForkModule(outputPath, outputFileName) {
   const lines = [
@@ -611,3 +595,49 @@ function buildForkModule(outputPath, outputFileName) {
     fileContent,
   );
 }
+
+async function buildAll() {
+  if (isRelease || isProduction) {
+    await buildTSDeclarationFiles();
+  }
+
+  for (const pkg of packages) {
+    const {name, sourcePath, outputPath, packageName, modules} = pkg;
+
+    for (const module of modules) {
+      const {sourceFileName, outputFileName} = module;
+      let inputFile = path.resolve(path.join(`${sourcePath}${sourceFileName}`));
+
+      await build(
+        `${name}${module.name ? '-' + module.name : ''}`,
+        inputFile,
+        outputPath,
+        path.resolve(
+          path.join(
+            `${outputPath}${getFileName(outputFileName, isProduction)}`,
+          ),
+        ),
+        isProduction,
+      );
+
+      if (isRelease) {
+        await build(
+          name,
+          inputFile,
+          outputPath,
+          path.resolve(
+            path.join(`${outputPath}${getFileName(outputFileName, false)}`),
+          ),
+          false,
+        );
+        buildForkModule(outputPath, outputFileName);
+      }
+    }
+
+    if (isRelease || isProduction) {
+      await moveTSDeclarationFilesIntoDist(packageName, outputPath);
+    }
+  }
+}
+
+buildAll();

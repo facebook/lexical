@@ -14,6 +14,7 @@ npm
 .env.development.local
 .env.test.local
 .env.production.local
+.ts-temp
 e2e-screenshots
 test-results
 

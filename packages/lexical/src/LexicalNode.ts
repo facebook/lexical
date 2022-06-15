@@ -1,4 +1,3 @@
-/* eslint-disable no-constant-condition */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -7,11 +6,12 @@
  *
  */
 
+/* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
+import type {Klass} from 'shared/types';
 
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
 import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
 import {
@@ -133,6 +133,7 @@ export type DOMConversionFn = (
 
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
+  parentLexicalNode: LexicalNode | null,
 ) => LexicalNode | null | void;
 
 export type DOMConversionMap = Record<
@@ -157,6 +158,7 @@ export type DOMExportOutput = {
 export type NodeKey = string;
 
 export class LexicalNode {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
   __type: string;
   __key: NodeKey;
@@ -189,7 +191,6 @@ export class LexicalNode {
     this.__parent = null;
     $setNodeKey(this, key);
 
-    // @ts-ignore
     if (__DEV__) {
       if (this.__type !== 'root') {
         errorOnReadOnly();
@@ -604,47 +605,7 @@ export class LexicalNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
-    const serializedNode = this.exportJSON();
-    element.setAttribute('data-lexical-node-type', this.__type);
-    element.setAttribute(
-      'data-lexical-node-json',
-      JSON.stringify(serializedNode),
-    );
-    element.setAttribute('data-lexical-editor-key', editor._key);
     return {element};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const proto: any = this.prototype.constructor;
-    return {
-      // Catch-all key because we don't know the nodeName of the element returned by exportDOM.
-      '*': (domNode: Node) => {
-        if (!(domNode instanceof HTMLElement)) return null;
-        const editorKey = domNode.getAttribute('data-lexical-editor-key');
-        const nodeType = domNode.getAttribute('data-lexical-node-type');
-        if (editorKey == null || nodeType == null) return null;
-        const editor = getActiveEditor();
-        if (editorKey === editor.getKey() && nodeType === proto.getType()) {
-          try {
-            const json = domNode.getAttribute('data-lexical-node-json');
-            if (json != null) {
-              const serializedNode: SerializedLexicalNode = JSON.parse(json);
-              const node = proto.importJSON(serializedNode);
-              return {
-                conversion: () => ({node}),
-                // Max priority because of the 'data-lexical-node-type' attribute
-                // matching the one on node klass guarantees a match.
-                priority: 4,
-              };
-              // eslint-disable-next-line no-empty
-            }
-            // eslint-disable-next-line no-empty
-          } catch {}
-        }
-        return null;
-      },
-    };
   }
 
   exportJSON(): SerializedLexicalNode {
@@ -666,7 +627,7 @@ export class LexicalNode {
     removeNode(this, true, preserveEmptyParent);
   }
 
-  replace(replaceWith: LexicalNode): LexicalNode {
+  replace<N extends LexicalNode>(replaceWith: N): N {
     errorOnReadOnly();
     const toReplaceKey = this.__key;
     const writableReplaceWith = replaceWith.getWritable();
@@ -817,7 +778,7 @@ export class LexicalNode {
 
 function errorOnTypeKlassMismatch(
   type: string,
-  klass: Class<LexicalNode>,
+  klass: Klass<LexicalNode>,
 ): void {
   const registeredNode = getActiveEditor()._nodes.get(type);
   // Common error - split in its own invariant

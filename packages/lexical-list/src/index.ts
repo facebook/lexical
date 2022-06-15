@@ -6,6 +6,7 @@
  *
  */
 
+import type {ListType} from './LexicalListNode';
 import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
@@ -36,6 +37,7 @@ export {
   insertList,
   ListItemNode,
   ListNode,
+  ListType,
   outdentList,
   removeList,
 };

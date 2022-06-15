@@ -6,9 +6,12 @@
  *
  */
 
-import type {LexicalNode, NodeKey, SerializedElementNode} from 'lexical';
-
-import {Spread} from 'libdefs/globals';
+import type {
+  LexicalNode,
+  NodeKey,
+  SerializedElementNode,
+  Spread,
+} from 'lexical';
 
 import {ElementNode} from './LexicalElementNode';
 

@@ -17,6 +17,7 @@ import type {
 declare export function createHeadlessEditor(editorConfig?: {
   namespace?: string,
   editorState?: EditorState,
+  namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
   nodes?: $ReadOnlyArray<Class<LexicalNode>>,

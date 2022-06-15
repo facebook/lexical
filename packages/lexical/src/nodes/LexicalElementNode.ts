@@ -13,8 +13,8 @@ import type {
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
+import type {Spread} from 'lexical';
 
-import {Spread} from 'libdefs/globals';
 import invariant from 'shared/invariant';
 
 import {$isRootNode, $isTextNode, TextNode} from '../';
@@ -454,7 +454,7 @@ export class ElementNode extends LexicalNode {
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
   }
-  excludeFromCopy(): boolean {
+  excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
   canExtractContents(): boolean {

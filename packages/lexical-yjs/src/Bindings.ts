@@ -6,7 +6,6 @@
  *
  */
 
-import type {Provider} from '.';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
 import type {CollabElementNode} from './CollabElementNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
@@ -15,6 +14,7 @@ import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
 import type {Doc} from 'yjs';
 
+import {WebsocketProvider} from 'y-websocket';
 import {XmlText} from 'yjs';
 
 import {$createCollabElementNode} from './CollabElementNode';
@@ -41,7 +41,7 @@ export type Binding = {
 
 export function createBinding(
   editor: LexicalEditor,
-  provider: Provider,
+  provider: WebsocketProvider,
   id: string,
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,

@@ -13,6 +13,7 @@ import type {
   ElementFormatType,
   LexicalNode,
   NodeKey,
+  Spread,
 } from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
@@ -20,7 +21,6 @@ import {
   DecoratorBlockNode,
   SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
-import {Spread} from 'libdefs/globals';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -115,7 +115,7 @@ export type SerializedTweetNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-export class TweetNode extends DecoratorBlockNode<JSX.Element> {
+export class TweetNode extends DecoratorBlockNode {
   __id: string;
 
   static getType(): string {

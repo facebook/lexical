@@ -16,7 +16,11 @@ import type {
   LexicalEditor,
 } from 'lexical';
 import {ElementNode} from 'lexical';
-export type InitialEditorStateType = null | string | EditorState | (() => void);
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
 
 declare export class QuoteNode extends ElementNode {
   static getType(): string;
@@ -31,7 +35,7 @@ declare export function $createQuoteNode(): QuoteNode;
 declare export function $isQuoteNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof QuoteNode);
-export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 declare export class HeadingNode extends ElementNode {
   __tag: HeadingTagType;
   static getType(): string;

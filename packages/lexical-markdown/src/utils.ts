@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
 import type {ListNode, ListType} from '@lexical/list';
@@ -83,6 +82,7 @@ export type MarkdownFormatKind =
   | 'paragraphH3'
   | 'paragraphH4'
   | 'paragraphH5'
+  | 'paragraphH6'
   | 'paragraphBlockQuote'
   | 'paragraphUnorderedList'
   | 'paragraphOrderedList'
@@ -242,6 +242,14 @@ const markdownHeader5: MarkdownCriteria = {
   markdownFormatKind: 'paragraphH5',
   regEx: /^(?:##### )/,
   regExForAutoFormatting: /^(?:##### )/,
+};
+
+const markdownHeader6: MarkdownCriteria = {
+  ...paragraphStartBase,
+  export: createHeadingExport(6),
+  markdownFormatKind: 'paragraphH6',
+  regEx: /^(?:###### )/,
+  regExForAutoFormatting: /^(?:###### )/,
 };
 
 const markdownBlockQuote: MarkdownCriteria = {
@@ -422,6 +430,7 @@ const allMarkdownCriteriaForParagraphs: MarkdownCriteriaArray = [
   markdownHeader3,
   markdownHeader4,
   markdownHeader5,
+  markdownHeader6,
   markdownBlockQuote,
   markdownUnorderedListDash,
   markdownUnorderedListAsterisk,
@@ -714,6 +723,15 @@ function getNewNodeForCriteria<T>(
 
       case 'paragraphH5': {
         newNode = $createHeadingNode('h5');
+        newNode.append(...children);
+        return {
+          newNode,
+          shouldDelete,
+        };
+      }
+
+      case 'paragraphH6': {
+        newNode = $createHeadingNode('h6');
         newNode.append(...children);
         return {
           newNode,

@@ -9,14 +9,17 @@
     "text"
   ],
   "license": "MIT",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "main": "LexicalText.js",
   "peerDependencies": {
-    "lexical": "0.3.2"
+    "lexical": "0.3.3"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-text"
+  },
+  "devDependencies": {
+    "utility-types": "^3.10.0"
   }
 }

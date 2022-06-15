@@ -152,7 +152,6 @@ export function $cloneContents(
 } {
   const clone = $cloneContentsImpl(selection);
 
-  // @ts-ignore
   if (__DEV__) {
     const nodeMap = clone.nodeMap;
 
@@ -304,6 +303,18 @@ export function getStyleObjectFromCSS(
   return cssToStyles.get(css) || null;
 }
 
+function getStyleObjectFromRawCSS(css: string): Record<string, string> {
+  const styleObject = {};
+  const styles = css.split(';').slice(0, -1);
+
+  for (const style of styles) {
+    const patch = style.split(': ');
+    styleObject[patch[0]] = patch[1];
+  }
+
+  return styleObject;
+}
+
 function getCSSFromStyleObject(styles: Record<string, string>): string {
   let css = '';
 
@@ -314,6 +325,12 @@ function getCSSFromStyleObject(styles: Record<string, string>): string {
   }
 
   return css;
+}
+
+export function $addNodeStyle(node: TextNode): void {
+  const CSSText = node.getStyle();
+  const styles = getStyleObjectFromRawCSS(CSSText);
+  cssToStyles.set(CSSText, styles);
 }
 
 function $patchNodeStyle(node: TextNode, patch: Record<string, string>): void {
@@ -556,7 +573,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
   while (node !== null && !$isRootNode(node)) {
     const latest = node.getLatest();
-    const parentNode = node.getParent();
+    const parentNode = node.getParent<ElementNode>();
 
     if (latest.__children.length === 0) {
       node.remove(true);
@@ -897,10 +914,6 @@ export function createRectsFromDOMRange(
   return selectionRects;
 }
 
-function doesContainGrapheme(str: string): boolean {
-  return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
-}
-
 export function trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
@@ -951,16 +964,8 @@ export function trimTextContentFromAnchor(
     const textNodeSize = text.length;
     const offset = textNodeSize - remaining;
     const slicedText = text.slice(0, offset);
-    // Sometimes the text we're putting in might be a partial grapheme.
-    // So we just remove the entire thing, rather than show a partial unicode grapheme.
-    const containsPartialGraphemeHeuristic =
-      doesContainGrapheme(text) && !doesContainGrapheme(slicedText);
 
-    if (
-      !$isTextNode(currentNode) ||
-      remaining >= textNodeSize ||
-      containsPartialGraphemeHeuristic
-    ) {
+    if (!$isTextNode(currentNode) || remaining >= textNodeSize) {
       const parent = currentNode.getParent();
       currentNode.remove();
       if (parent.getChildrenSize() === 0) {

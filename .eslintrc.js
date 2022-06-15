@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 'use strict';
 
 const restrictedGlobals = require('confusing-browser-globals');
@@ -55,11 +63,12 @@ module.exports = {
       parserOptions: {
         sourceType: 'module',
       },
-      plugins: ['react', '@typescript-eslint'],
+      plugins: ['react', '@typescript-eslint', 'header'],
       rules: {
         '@typescript-eslint/ban-ts-comment': OFF,
         '@typescript-eslint/no-this-alias': OFF,
         '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
+        'header/header': [2, 'scripts/www/headerTemplate.js'],
       },
     },
   ],
@@ -77,6 +86,8 @@ module.exports = {
   plugins: [
     'sort-keys-fix',
     'simple-import-sort',
+    'header',
+
     // import helps to configure simple-import-sort
     'import',
     'jest',
@@ -91,17 +102,21 @@ module.exports = {
   // and then enable some React specific ones.
   rules: {
     'accessor-pairs': OFF,
+
     'brace-style': [ERROR, '1tbs'],
     'consistent-return': OFF,
     'dot-location': [ERROR, 'property'],
     // We use console['error']() as a signal to not transform it:
     'dot-notation': [ERROR, {allowPattern: '^(error|warn)$'}],
+
     'eol-last': ERROR,
     eqeqeq: [ERROR, 'allow-null'],
     // Prettier forces semicolons in a few places
     'flowtype/object-type-delimiter': OFF,
 
     'flowtype/sort-keys': ERROR,
+
+    'header/header': [2, 'scripts/www/headerTemplate.js'],
 
     // (This helps configure simple-import-sort) Make sure all imports are at the top of the file
     'import/first': ERROR,

@@ -25,11 +25,11 @@ import type {
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
+import type {Klass} from 'shared/types';
 
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
 import {
   $createTextNode,
@@ -408,7 +408,6 @@ export function $setSelection(
 ): void {
   const editorState = getActiveEditorState();
   if (selection !== null) {
-    // @ts-ignore
     if (__DEV__) {
       if (Object.isFrozen(selection)) {
         invariant(
@@ -993,9 +992,7 @@ export function setMutatedNode(
   }
 }
 
-export function $nodesOfType<T extends LexicalNode>(
-  klass: Class<LexicalNode>,
-): Array<T> {
+export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
   const editorState = getActiveEditorState();
   const readOnly = editorState._readOnly;
   // @ts-expect-error TODO Replace Class utility type with InstanceType

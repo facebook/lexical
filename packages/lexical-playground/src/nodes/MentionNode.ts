@@ -6,6 +6,8 @@
  *
  */
 
+import type {Spread} from 'lexical';
+
 import {
   DOMConversionMap,
   DOMConversionOutput,
@@ -16,7 +18,6 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
-import {Spread} from 'libdefs/globals';
 
 export type SerializedMentionNode = Spread<
   {

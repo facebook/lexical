@@ -49,7 +49,7 @@ it as a property of the `initialConfig` to `<LexicalComposer>`, like shown:
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {exampleTheme} from './exampleTheme';
 
-const initialConfig = {theme: exampleTheme};
+const initialConfig = {namespace: 'MyEditor', theme: exampleTheme};
 
 export default function Editor() {
   return (
@@ -66,6 +66,7 @@ If you are using vanilla JS, you can pass it to the `createEditor()` function, l
 import {createEditor} from 'lexical';
 
 const editor = createEditor({
+  namespace: 'MyEditor',
   theme: exampleTheme,
 });
 ```
@@ -85,6 +86,7 @@ const exampleTheme = {
     h3: 'editor-heading-h3',
     h4: 'editor-heading-h4',
     h5: 'editor-heading-h5',
+    h6: 'editor-heading-h6',
   },
   list: {
     nested: {

@@ -15,6 +15,7 @@ import {$createTextNode, $getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
+  namespace: '',
   theme: {
     heading: {
       h1: 'my-h1-class',
@@ -22,6 +23,7 @@ const editorConfig = Object.freeze({
       h3: 'my-h3-class',
       h4: 'my-h4-class',
       h5: 'my-h5-class',
+      h6: 'my-h6-class',
     },
   },
 });
@@ -49,6 +51,7 @@ describe('LexicalHeadingNode tests', () => {
         );
         expect(
           headingNode.createDOM({
+            namespace: '',
             theme: {
               heading: {},
             },
@@ -56,6 +59,7 @@ describe('LexicalHeadingNode tests', () => {
         ).toBe('<h1></h1>');
         expect(
           headingNode.createDOM({
+            namespace: '',
             theme: {},
           }).outerHTML,
         ).toBe('<h1></h1>');

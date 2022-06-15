@@ -80,7 +80,6 @@ import {
   $updateSelectedTextFromDOM,
   $updateTextNodeFromDOMContent,
   dispatchCommand,
-  doesContainGrapheme,
   getDOMTextNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -146,6 +145,7 @@ if (CAN_USE_BEFORE_INPUT) {
 }
 
 let lastKeyDownTimeStamp = 0;
+let lastKeyCode = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
 let isInsertLineBreak = false;
@@ -338,6 +338,13 @@ function $canRemoveText(
   );
 }
 
+function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
+  return (
+    lastKeyCode === 229 &&
+    timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
+  );
+}
+
 function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   const inputType = event.inputType;
 
@@ -360,6 +367,9 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     // we need to insert.
     const composedText = event.data;
 
+    // TODO: evaluate if this is Android only. It doesn't always seem
+    // to have any real impact, so could probably be refactored or removed
+    // for an alternative approach.
     if (composedText) {
       updateEditor(editor, () => {
         const selection = $getSelection();
@@ -414,18 +424,31 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         $setSelection(prevSelection.clone());
       }
 
-      // Used for Android
-      $setCompositionKey(null);
-      event.preventDefault();
-      lastKeyDownTimeStamp = 0;
-      dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
-      // Fixes an Android bug where selection flickers when backspacing
-      setTimeout(() => {
-        updateEditor(editor, () => {
+      if ($isRangeSelection(selection)) {
+        // Used for handling backspace in Android.
+        if (
+          isPossiblyAndroidKeyPress(event.timeStamp) &&
+          selection.anchor.key === selection.focus.key
+        ) {
           $setCompositionKey(null);
-        });
-      }, ANDROID_COMPOSITION_LATENCY);
-      return;
+          lastKeyDownTimeStamp = 0;
+          // Fixes an Android bug where selection flickers when backspacing
+          setTimeout(() => {
+            updateEditor(editor, () => {
+              $setCompositionKey(null);
+            });
+          }, ANDROID_COMPOSITION_LATENCY);
+          if ($isRangeSelection(selection)) {
+            const anchorNode = selection.anchor.getNode();
+            anchorNode.markDirty();
+            selection.format = anchorNode.getFormat();
+          }
+        } else {
+          event.preventDefault();
+          dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
+        }
+        return;
+      }
     }
 
     if (!$isRangeSelection(selection)) {
@@ -603,17 +626,11 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
     const data = event.data;
-    const possibleTextReplacement =
-      event.inputType === 'insertText' &&
-      data != null &&
-      data.length > 1 &&
-      !doesContainGrapheme(data);
 
     if (
       data != null &&
       $isRangeSelection(selection) &&
-      (possibleTextReplacement ||
-        $shouldPreventDefaultAndInsertText(selection, data))
+      $shouldPreventDefaultAndInsertText(selection, data)
     ) {
       // Given we're over-riding the default behavior, we will need
       // to ensure to disable composition before dispatching the
@@ -623,19 +640,6 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         isFirefoxEndingComposition = false;
       }
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
-      if (possibleTextReplacement) {
-        // If the DOM selection offset is higher than the existing
-        // offset, then restore the offset as it's likely correct
-        // in the case of text replacements.
-        const {anchorOffset} = window.getSelection();
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-
-        if (anchorOffset > anchor.offset) {
-          anchor.set(anchor.key, anchorOffset, anchor.type);
-          focus.set(anchor.key, anchorOffset, anchor.type);
-        }
-      }
 
       // This ensures consistency on Android.
       if (!IS_SAFARI && !IS_IOS && editor.isComposing()) {
@@ -761,6 +765,7 @@ function onCompositionEnd(
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
+  lastKeyCode = event.keyCode;
 
   if (editor.isComposing()) {
     return;
@@ -904,6 +909,8 @@ function onDocumentSelectionChange(event: Event): void {
     activeNestedEditorsMap.delete(rootEditorKey);
   }
 }
+
+export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 
 export function addRootElementEvents(
   rootElement: HTMLElement,

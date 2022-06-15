@@ -912,7 +912,7 @@ const IMPORTED_MARKDOWN_HTML = html`
   <h5 class="PlaygroundEditorTheme__h5 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">h5 Heading</span>
   </h5>
-  <h6 class="PlaygroundEditorTheme__ltr" dir="ltr">
+  <h6 class="PlaygroundEditorTheme__h6 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">h6 Heading</span>
   </h6>
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">

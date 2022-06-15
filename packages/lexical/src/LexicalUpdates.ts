@@ -355,7 +355,6 @@ export function parseEditorState(
     // Make the editorState immutable
     editorState._readOnly = true;
 
-    // @ts-ignore
     if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(editorState);
     }
@@ -475,6 +474,9 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         isAttemptingToRecoverFromReconcilerError = true;
         commitPendingUpdates(editor);
         isAttemptingToRecoverFromReconcilerError = false;
+      } else {
+        // To avoid a possible situation of infinite loops, lets throw
+        throw error;
       }
 
       return;
@@ -493,7 +495,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
 
   pendingEditorState._readOnly = true;
 
-  // @ts-ignore
   if (__DEV__) {
     handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
     if ($isRangeSelection(pendingSelection)) {
@@ -891,4 +892,8 @@ export function updateEditor(
   } else {
     beginUpdate(editor, updateFn, options);
   }
+}
+
+export function internalGetActiveEditor(): null | LexicalEditor {
+  return activeEditor;
 }

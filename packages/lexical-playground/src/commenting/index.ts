@@ -317,6 +317,7 @@ export class CommentStore {
                       | undefined);
 
               if (Array.isArray(insert)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 insert.forEach((map: YMap<any>) => {
                   const id = map.get('id');
                   const type = map.get('type');

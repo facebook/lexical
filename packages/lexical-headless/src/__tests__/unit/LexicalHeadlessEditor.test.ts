@@ -6,6 +6,8 @@
 // to ensure that headless editor works within node environment
 // https://jestjs.io/docs/configuration#testenvironment-string
 
+/* eslint-disable header/header */
+
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

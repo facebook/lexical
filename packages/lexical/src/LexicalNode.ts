@@ -1,4 +1,3 @@
-/* eslint-disable no-constant-condition */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -7,6 +6,7 @@
  *
  */
 
+/* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
 import type {Klass} from 'shared/types';

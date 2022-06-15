@@ -764,6 +764,7 @@ export class RangeSelection implements BaseSelection {
         $isTokenOrInertOrSegmented(nextSibling)
       ) {
         nextSibling = $createTextNode();
+        nextSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextAfter()) {
           firstNodeParent.insertAfter(nextSibling);
         } else {
@@ -790,6 +791,7 @@ export class RangeSelection implements BaseSelection {
         $isTokenOrInertOrSegmented(prevSibling)
       ) {
         prevSibling = $createTextNode();
+        prevSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextBefore()) {
           firstNodeParent.insertBefore(prevSibling);
         } else {
@@ -804,6 +806,7 @@ export class RangeSelection implements BaseSelection {
       }
     } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
       const textNode = $createTextNode(firstNode.getTextContent());
+      textNode.setFormat(format);
       firstNode.replace(textNode);
       firstNode = textNode;
     } else if (!this.isCollapsed() && text !== '') {

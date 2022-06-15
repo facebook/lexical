@@ -19,13 +19,13 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
 import {
   $getSelection,
   $isElementNode,
   $setSelection,
   createCommand,
   ElementNode,
+  Spread,
 } from 'lexical';
 
 export type SerializedLinkNode = Spread<

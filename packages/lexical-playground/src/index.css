@@ -1575,6 +1575,10 @@ button.action-button:disabled {
   letter-spacing: -2px;
 }
 
+button.item i {
+  opacity: 0.6;
+}
+
 button.item.dropdown-item-active {
   background-color: rgba(223, 232, 250, 0.3);
 }

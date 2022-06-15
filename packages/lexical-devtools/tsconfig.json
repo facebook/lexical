@@ -2,6 +2,6 @@
   "compilerOptions": {
     "strict": true
   },
-  "extends": "../../tsconfig.json",
+  "extends": "../tsconfig.json",
   "include": ["src"]
 }

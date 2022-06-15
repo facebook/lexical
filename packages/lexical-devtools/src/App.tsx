@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -6,11 +7,13 @@
  *
  */
 
+=======
+>>>>>>> 2e214085... bundle everything with vite
 import './App.css';
 
 import * as React from 'react';
 
-import logo from './apple-touch-icon.png';
+import logo from './images/lexical-white.png';
 
 function App(): JSX.Element {
   return (

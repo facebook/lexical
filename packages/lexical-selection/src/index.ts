@@ -303,6 +303,18 @@ export function getStyleObjectFromCSS(
   return cssToStyles.get(css) || null;
 }
 
+function getStyleObjectFromRawCSS(css: string): Record<string, string> {
+  const styleObject = {};
+  const styles = css.split(';').slice(0, -1);
+
+  for (const style of styles) {
+    const patch = style.split(': ');
+    styleObject[patch[0]] = patch[1];
+  }
+
+  return styleObject;
+}
+
 function getCSSFromStyleObject(styles: Record<string, string>): string {
   let css = '';
 
@@ -313,6 +325,12 @@ function getCSSFromStyleObject(styles: Record<string, string>): string {
   }
 
   return css;
+}
+
+export function $addNodeStyle(node: TextNode): void {
+  const CSSText = node.getStyle();
+  const styles = getStyleObjectFromRawCSS(CSSText);
+  cssToStyles.set(CSSText, styles);
 }
 
 function $patchNodeStyle(node: TextNode, patch: Record<string, string>): void {

@@ -15,6 +15,7 @@ import {
   CodeNode,
   getFirstCodeHighlightNodeOfLine,
   getLastCodeHighlightNodeOfLine,
+  updateCodeGutter,
 } from '@lexical/code';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -366,29 +367,6 @@ function handleMoveTo(
 
   event.preventDefault();
   event.stopPropagation();
-}
-function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
-  const codeElement = editor.getElementByKey(node.getKey());
-  if (codeElement === null) {
-    return;
-  }
-  const children = node.getChildren();
-  const childrenLength = children.length;
-  // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
-    // Avoid updating the attribute if the children length hasn't changed.
-    return;
-  }
-  // @ts-ignore:: internal field
-  codeElement.__cachedChildrenLength = childrenLength;
-  let gutter = '1';
-  let count = 1;
-  for (let i = 0; i < childrenLength; i++) {
-    if ($isLineBreakNode(children[i])) {
-      gutter += '\n' + ++count;
-    }
-  }
-  codeElement.setAttribute('data-gutter', gutter);
 }
 
 export function registerCodeIndent(editor: LexicalEditor): () => void {

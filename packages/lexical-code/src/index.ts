@@ -9,6 +9,7 @@ import {registerCodeIndent} from './EditorShortcuts';
 import {
   getFirstCodeHighlightNodeOfLine,
   getLastCodeHighlightNodeOfLine,
+  updateCodeGutter,
 } from './HighlighterHelper';
 
 export {
@@ -22,4 +23,5 @@ export {
   getLastCodeHighlightNodeOfLine,
   registerCodeHighlighting,
   registerCodeIndent,
+  updateCodeGutter,
 };

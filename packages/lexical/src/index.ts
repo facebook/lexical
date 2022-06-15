@@ -6,21 +6,50 @@
  *
  */
 
-export * from './LexicalCommands';
-export * from './LexicalEditor';
-export * from './LexicalEditorState';
-export * from './LexicalEvents';
-export * from './LexicalNode';
-export * from './LexicalSelection';
-export * from './LexicalUpdates';
-export * from './LexicalUtils';
-export * from './LexicalVersion';
-export * from './nodes/LexicalDecoratorNode';
-export * from './nodes/LexicalElementNode';
-export * from './nodes/LexicalGridCellNode';
-export * from './nodes/LexicalGridNode';
-export * from './nodes/LexicalGridRowNode';
-export * from './nodes/LexicalLineBreakNode';
-export * from './nodes/LexicalParagraphNode';
-export * from './nodes/LexicalRootNode';
-export * from './nodes/LexicalTextNode';
+export {
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_NORMAL,
+  createEditor,
+} from './LexicalEditor';
+export {
+  $createGridSelection,
+  $createNodeSelection,
+  $createRangeSelection,
+  $getPreviousSelection,
+  $getSelection,
+  $isGridSelection,
+  $isNodeSelection,
+  $isRangeSelection,
+} from './LexicalSelection';
+export {$parseSerializedNode} from './LexicalUpdates';
+export {
+  $getDecoratorNode,
+  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
+  $getRoot,
+  $isLeafNode,
+  $nodesOfType,
+  $setCompositionKey,
+  $setSelection,
+} from './LexicalUtils';
+export {VERSION} from './LexicalVersion';
+export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
+export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
+export {$isGridCellNode, GridCellNode} from './nodes/LexicalGridCellNode';
+export {$isGridNode, GridNode} from './nodes/LexicalGridNode';
+export {$isGridRowNode, GridRowNode} from './nodes/LexicalGridRowNode';
+export {
+  $createLineBreakNode,
+  $isLineBreakNode,
+  LineBreakNode,
+} from './nodes/LexicalLineBreakNode';
+export {
+  $createParagraphNode,
+  $isParagraphNode,
+  ParagraphNode,
+} from './nodes/LexicalParagraphNode';
+export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
+export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';

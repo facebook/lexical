@@ -47,8 +47,8 @@ For React it could be something following:
 const initialEditorState = await loadContent();
 const editorStateRef = useRef();
 
-<LexicalComposer ...>
-  <LexicalRichTextPlugin initialEditorState={initialEditorState} />
+<LexicalComposer initialEditorState={initialEditorState}>
+  <LexicalRichTextPlugin />
   <LexicalOnChangePlugin onChange={editorState => editorStateRef.current = editorState} />
   <Button label="Save" onPress={() => {
     if (editorStateRef.current) {

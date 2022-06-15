@@ -265,7 +265,6 @@ function StickyComponent({
                 What's up?
               </Placeholder>
             }
-            initialEditorState={null}
           />
         </LexicalNestedComposer>
       </div>

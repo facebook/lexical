@@ -288,7 +288,6 @@ function ImageComponent({
                     Enter a caption...
                   </Placeholder>
                 }
-                initialEditorState={null}
               />
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
             </LexicalNestedComposer>

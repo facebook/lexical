@@ -74,6 +74,7 @@ import {
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
+// TODO Remove in 0.4
 export type InitialEditorStateType =
   | null
   | string

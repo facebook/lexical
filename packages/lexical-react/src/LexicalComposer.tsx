@@ -7,17 +7,31 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import {createEditor} from 'lexical';
+import {
+  $getRoot,
+  createEditor,
+  EditorState,
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 import {Class} from 'utility-types';
+
+const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
+
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
 
 type Props = {
   children: JSX.Element | string | (JSX.Element | string)[];
@@ -28,6 +42,7 @@ type Props = {
     onError: (error: Error, editor: LexicalEditor) => void;
     readOnly?: boolean;
     theme?: EditorThemeClasses;
+    editorState?: InitialEditorStateType;
   }>;
 };
 
@@ -40,6 +55,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         editor__DEPRECATED: initialEditor,
         nodes,
         onError,
+        editorState: initialEditorState,
       } = initialConfig;
 
       const context: LexicalComposerContextType = createLexicalComposerContext(
@@ -57,6 +73,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
           readOnly: true,
           theme,
         });
+        initializeEditor(newEditor, initialEditorState);
 
         editor = newEditor;
       }
@@ -83,4 +100,50 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
       {children}
     </LexicalComposerContext.Provider>
   );
+}
+
+function initializeEditor(
+  editor: LexicalEditor,
+  initialEditorState?: InitialEditorStateType,
+): void {
+  if (initialEditorState === null) {
+    return;
+  } else if (initialEditorState === undefined) {
+    // TODO Uncomment in 0.4
+    // editor.update(() => {
+    //   const root = $getRoot();
+    //   if (root.isEmpty()) {
+    //     const paragraph = $createParagraphNode();
+    //     root.append(paragraph);
+    //     const activeElement = document.activeElement;
+    //     if (
+    //       $getSelection() !== null ||
+    //       (activeElement !== null && activeElement === editor.getRootElement())
+    //     ) {
+    //       paragraph.select();
+    //     }
+    //   }
+    // }, HISTORY_MERGE_OPTIONS);
+  } else if (initialEditorState !== null) {
+    switch (typeof initialEditorState) {
+      case 'string': {
+        const parsedEditorState = editor.parseEditorState(initialEditorState);
+        editor.setEditorState(parsedEditorState, HISTORY_MERGE_OPTIONS);
+        break;
+      }
+      case 'object': {
+        editor.setEditorState(initialEditorState, HISTORY_MERGE_OPTIONS);
+        break;
+      }
+      case 'function': {
+        editor.update(() => {
+          const root = $getRoot();
+          if (root.isEmpty()) {
+            initialEditorState(editor);
+          }
+        }, HISTORY_MERGE_OPTIONS);
+        break;
+      }
+    }
+  }
 }

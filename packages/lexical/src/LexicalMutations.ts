@@ -6,7 +6,7 @@
  *
  */
 
-import type {TextNode} from '.';
+import type {LexicalNode, TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
 import type {
   GridSelection,
@@ -23,6 +23,7 @@ import {
   $isElementNode,
   $isTextNode,
   $setSelection,
+  $isRangeSelection,
 } from '.';
 import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
@@ -92,6 +93,23 @@ function handleTextMutation(
   $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
 }
 
+function shouldUpdateTextNodeFromMutation(
+  selection: null | RangeSelection | GridSelection | NodeSelection,
+  targetDOM: Node,
+  targetNode: TextNode,
+): boolean {
+  if ($isRangeSelection(selection)) {
+    const anchorNode = selection.anchor.getNode();
+    if (
+      anchorNode.is(targetNode) &&
+      selection.format !== anchorNode.getFormat()
+    ) {
+      return false;
+    }
+  }
+  return targetDOM.nodeType === DOM_TEXT_TYPE && targetNode.isAttached();
+}
+
 export function $flushMutations(
   editor: LexicalEditor,
   mutations: Array<MutationRecord>,
@@ -103,6 +121,7 @@ export function $flushMutations(
 
   try {
     updateEditor(editor, () => {
+      const selection = $getSelection() || getLastSelection(editor);
       const badDOMTargets = new Map();
       const rootElement = editor.getRootElement();
       // We use the current edtior state, as that reflects what is
@@ -129,9 +148,8 @@ export function $flushMutations(
           // processed outside of the Lexical engine.
           if (
             shouldFlushTextMutations &&
-            targetDOM.nodeType === DOM_TEXT_TYPE &&
             $isTextNode(targetNode) &&
-            targetNode.isAttached()
+            shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
             handleTextMutation(
               // nodeType === DOM_TEXT_TYPE is a Text DOM node
@@ -264,8 +282,6 @@ export function $flushMutations(
         // Clear any of those removal mutations
         observer.takeRecords();
       }
-
-      const selection = $getSelection() || getLastSelection(editor);
 
       if (selection !== null) {
         if (shouldRevertSelection) {

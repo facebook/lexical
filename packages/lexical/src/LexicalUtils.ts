@@ -1142,9 +1142,3 @@ export function $hasUpdateTag(tag: string): boolean {
   const editor = getActiveEditor();
   return editor._updateTags.has(tag);
 }
-
-export function $addUpdateTag(tag: string): void {
-  errorOnReadOnly();
-  const editor = getActiveEditor();
-  editor._updateTags.add(tag);
-}

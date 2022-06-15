@@ -439,7 +439,9 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             });
           }, ANDROID_COMPOSITION_LATENCY);
           if ($isRangeSelection(selection)) {
-            selection.anchor.getNode().markDirty();
+            const anchorNode = selection.anchor.getNode();
+            anchorNode.markDirty();
+            selection.format = anchorNode.getFormat();
           }
         } else {
           event.preventDefault();

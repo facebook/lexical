@@ -64,6 +64,7 @@ function onError(error) {
 
 function Editor() {
   const initialConfig = {
+    namespace: 'MyEditor', 
     theme,
     onError,
   };

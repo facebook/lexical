@@ -1774,4 +1774,39 @@ test.describe('CopyAndPaste', () => {
       `,
     );
   });
+
+  test('HTML Copy + paste multi line html with extra newlines', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/html': `
+        <p>Hello
+        
+        </p>
+        
+        <p>World</p>
+        
+      `,
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">World</span>
+        </p>
+      `,
+    );
+  });
 });

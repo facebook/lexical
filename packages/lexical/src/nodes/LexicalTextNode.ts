@@ -864,7 +864,14 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 function convertTextDOMNode(domNode: Node): DOMConversionOutput {
-  return {node: $createTextNode(domNode.textContent)};
+  const {parentElement, textContent} = domNode;
+  const textContentTrim = textContent.trim();
+  const isPre =
+    parentElement != null && parentElement.tagName.toLowerCase() === 'pre';
+  if (!isPre && textContentTrim.length === 0 && textContent.includes('\n')) {
+    return {node: null};
+  }
+  return {node: $createTextNode(textContent)};
 }
 const nodeNameToTextFormat: Record<string, TextFormatType> = {
   em: 'italic',

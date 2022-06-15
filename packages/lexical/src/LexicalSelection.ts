@@ -238,7 +238,7 @@ function $setPointValues(
   point.type = type;
 }
 
-interface BaseSelection {
+export interface BaseSelection {
   clone(): BaseSelection;
   dirty: boolean;
   extract(): Array<LexicalNode>;

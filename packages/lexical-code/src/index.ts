@@ -1,22 +1,15 @@
-import {
-  $createCodeNode,
-  $isCodeNode,
-  CodeNode,
-  registerCodeHighlighting,
-} from './CodeHighlighter';
-import {
-  getCodeLanguages,
-  getDefaultCodeLanguage,
-  getEndOfCodeInLine,
-  getFirstCodeHighlightNodeOfLine,
-  getLastCodeHighlightNodeOfLine,
-  getStartOfCodeInLine,
-  registerCodeIndent,
-} from './EditorShortcuts';
+import {registerCodeHighlighting} from './CodeHighlighter';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
   CodeHighlightNode,
+} from './CodeHighlightNode';
+import {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';
+import {registerCodeIndent} from './EditorShortcuts';
+import {
+  getFirstCodeHighlightNodeOfLine,
+  getLastCodeHighlightNodeOfLine,
+  updateCodeGutter,
 } from './HighlighterHelper';
 
 export {
@@ -26,12 +19,9 @@ export {
   $isCodeNode,
   CodeHighlightNode,
   CodeNode,
-  getCodeLanguages,
-  getDefaultCodeLanguage,
-  getEndOfCodeInLine,
   getFirstCodeHighlightNodeOfLine,
   getLastCodeHighlightNodeOfLine,
-  getStartOfCodeInLine,
   registerCodeHighlighting,
   registerCodeIndent,
+  updateCodeGutter,
 };

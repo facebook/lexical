@@ -7,7 +7,8 @@
  */
 
 // eslint-disable-next-line simple-import-sort/imports
-import type {
+import {
+  $createRangeSelection,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
@@ -600,54 +601,41 @@ function codeNodeTransform(
   // each individual codehighlight node to be transformed again as it's already
   // in its final state
   const code = node.getTextContent();
-
-  if (code.length <= threshold) {
-    editor.update(
-      () => {
-        updateAndRetainSelection(node, () => {
-          const tokens = Prism.tokenize(
-            code,
-            Prism.languages[node.getLanguage() || ''] ||
-              Prism.languages[DEFAULT_CODE_LANGUAGE],
-          );
-
-          const highlightNodes = getHighlightNodes(tokens);
-
-          const diffRange = getDiffRange(node.getChildren(), highlightNodes);
-          const {from, to, nodesForReplacement} = diffRange;
-          if (from !== to || nodesForReplacement.length) {
-            node.splice(from, to - from, nodesForReplacement);
-            return true;
-          }
-          return false;
-        });
-      },
-      {
-        onUpdate: () => {
-          isHighlighting = false;
-        },
-        skipTransforms: true,
-      },
-    );
-  } else {
-    const selection = $getSelection();
-    editor.update(() => {
+  const textNode = $createTextNode(code);
+  editor.update(
+    () => {
       updateAndRetainSelection(node, () => {
-        if ($isRangeSelection(selection)) {
-          const currentAnchor = selection.anchor;
-          node.clear();
+        const tokens = Prism.tokenize(
+          code,
+          Prism.languages[node.getLanguage() || ''] ||
+            Prism.languages[DEFAULT_CODE_LANGUAGE],
+        );
+        const highlightNodes = getHighlightNodes(tokens);
 
-          const codeNode = $createCodeNode();
-          selection.removeText();
-          selection.insertNodes([codeNode]);
-          selection.insertRawText(code);
-          this.anchor.offset -= currentAnchor.offset;
+        const diffRange = getDiffRange(node.getChildren(), highlightNodes);
+        const {from, to, nodesForReplacement} = diffRange;
+        if (from !== to || nodesForReplacement.length) {
+          if (code.length <= threshold) {
+            node.splice(from, to - from, nodesForReplacement);
+          } else {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              node.clear().append(textNode);
+            }
+          }
+
           return true;
         }
         return false;
       });
-    });
-  }
+    },
+    {
+      onUpdate: () => {
+        isHighlighting = false;
+      },
+      skipTransforms: true,
+    },
+  );
 }
 
 function textNodeTransform(

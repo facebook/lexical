@@ -424,28 +424,29 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         $setSelection(prevSelection.clone());
       }
 
-      // Used for handling backspace in Android.
-      if (
-        isPossiblyAndroidKeyPress(event.timeStamp) &&
-        (!$isRangeSelection(selection) ||
-          selection.anchor.key === selection.focus.key)
-      ) {
-        $setCompositionKey(null);
-        lastKeyDownTimeStamp = 0;
-        // Fixes an Android bug where selection flickers when backspacing
-        setTimeout(() => {
-          updateEditor(editor, () => {
-            $setCompositionKey(null);
-          });
-        }, ANDROID_COMPOSITION_LATENCY);
-        if ($isRangeSelection(selection)) {
-          selection.anchor.getNode().markDirty();
+      if ($isRangeSelection(selection)) {
+        // Used for handling backspace in Android.
+        if (
+          isPossiblyAndroidKeyPress(event.timeStamp) &&
+          selection.anchor.key === selection.focus.key
+        ) {
+          $setCompositionKey(null);
+          lastKeyDownTimeStamp = 0;
+          // Fixes an Android bug where selection flickers when backspacing
+          setTimeout(() => {
+            updateEditor(editor, () => {
+              $setCompositionKey(null);
+            });
+          }, ANDROID_COMPOSITION_LATENCY);
+          if ($isRangeSelection(selection)) {
+            selection.anchor.getNode().markDirty();
+          }
+        } else {
+          event.preventDefault();
+          dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
         }
-      } else {
-        event.preventDefault();
-        dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
+        return;
       }
-      return;
     }
 
     if (!$isRangeSelection(selection)) {

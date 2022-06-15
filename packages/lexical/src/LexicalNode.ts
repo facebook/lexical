@@ -9,9 +9,9 @@
 
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
+import type {Klass} from 'shared/types';
 
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
 import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
 import {
@@ -778,7 +778,7 @@ export class LexicalNode {
 
 function errorOnTypeKlassMismatch(
   type: string,
-  klass: Class<LexicalNode>,
+  klass: Klass<LexicalNode>,
 ): void {
   const registeredNode = getActiveEditor()._nodes.get(type);
   // Common error - split in its own invariant

@@ -8,10 +8,10 @@
 
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
+import type {Klass} from 'shared/types';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
@@ -120,7 +120,7 @@ export type EditorConfig = {
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
 export type RegisteredNode = {
-  klass: Class<LexicalNode>;
+  klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
 };
 
@@ -128,9 +128,9 @@ export type Transform<T> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
 
-export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
+export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
 
-export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
+export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 
@@ -286,7 +286,7 @@ export function createEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  nodes?: ReadonlyArray<Klass<LexicalNode>>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
@@ -578,7 +578,7 @@ export class LexicalEditor {
   }
 
   registerMutationListener(
-    klass: Class<LexicalNode>,
+    klass: Klass<LexicalNode>,
     listener: MutationListener,
   ): () => void {
     // @ts-expect-error TODO Replace Class utility type with InstanceType
@@ -600,7 +600,7 @@ export class LexicalEditor {
   }
 
   registerNodeTransform<T extends LexicalNode>(
-    klass: Class<T>,
+    klass: Klass<T>,
     listener: Transform<T>,
   ): () => void {
     // @ts-expect-error TODO Replace Class utility type with InstanceType
@@ -624,9 +624,7 @@ export class LexicalEditor {
     };
   }
 
-  hasNodes<T extends {new (...args: unknown[]): LexicalNode}>(
-    nodes: Array<T>,
-  ): boolean {
+  hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
       // @ts-expect-error

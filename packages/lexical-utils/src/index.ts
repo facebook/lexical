@@ -13,6 +13,7 @@ import type {
   LexicalNode,
   NodeKey,
 } from 'lexical';
+import type {Klass} from 'shared/types';
 
 import {
   $getRoot,
@@ -22,7 +23,6 @@ import {
   createEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -105,7 +105,7 @@ function $getDepth(node: LexicalNode): number {
 
 export function $getNearestNodeOfType<T extends ElementNode>(
   node: LexicalNode,
-  klass: Class<T>,
+  klass: Klass<T>,
 ): T | LexicalNode {
   let parent: T | LexicalNode = node;
 
@@ -173,7 +173,7 @@ export function mergeRegister(...func: Array<Func>): () => void {
 
 export function registerNestedElementResolver<N extends ElementNode>(
   editor: LexicalEditor,
-  targetNode: {new (...args: unknown[]): N},
+  targetNode: Klass<N>,
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void {

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -7,8 +6,6 @@
  *
  */
 
-=======
->>>>>>> 2e214085... bundle everything with vite
 import './App.css';
 
 import * as React from 'react';

@@ -21,9 +21,9 @@ import {
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
-  $isRangeSelection,
 } from '.';
 import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';

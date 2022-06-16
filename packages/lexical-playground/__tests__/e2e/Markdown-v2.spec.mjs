@@ -35,7 +35,7 @@ async function assertMarkdownImportExport(
   await page.keyboard.type('```markdown ');
   await page.keyboard.type(textToImport);
   await click(page, '.action-button .markdown');
-  await assertHTML(page, expectedHTML, {ignoreClasses});
+  await assertHTML(page, expectedHTML, undefined, {ignoreClasses});
 
   // Cycle through import-export to verify it produces the same result
   await click(page, '.action-button .markdown');
@@ -340,7 +340,7 @@ test.describe('Markdown', () => {
     }) => {
       await focusEditor(page);
       await page.keyboard.type(testCase.text);
-      await assertHTML(page, testCase.html, {ignoreClasses: true});
+      await assertHTML(page, testCase.html, undefined, {ignoreClasses: true});
 
       if (!isCollab) {
         const escapedText = testCase.text.replace('>', '&gt;');
@@ -348,10 +348,11 @@ test.describe('Markdown', () => {
         await assertHTML(
           page,
           `<p><span data-lexical-text="true">${escapedText}</span></p>`,
+          undefined,
           {ignoreClasses: true},
         );
         await redo(page);
-        await assertHTML(page, testCase.html, {ignoreClasses: true});
+        await assertHTML(page, testCase.html, undefined, {ignoreClasses: true});
       }
     });
   });
@@ -365,7 +366,7 @@ test.describe('Markdown', () => {
       await page.keyboard.type(testCase.text, {
         delay: LEGACY_EVENTS ? 50 : 0,
       });
-      await assertHTML(page, testCase.html, {ignoreClasses: false});
+      await assertHTML(page, testCase.html, undefined, {ignoreClasses: false});
       await assertMarkdownImportExport(page, testCase.text, testCase.html);
     });
   });
@@ -376,7 +377,7 @@ test.describe('Markdown', () => {
       await page.keyboard.type(testCase.text, {
         delay: LEGACY_EVENTS ? 50 : 0,
       });
-      await assertHTML(page, testCase.html, {ignoreClasses: false});
+      await assertHTML(page, testCase.html, undefined, {ignoreClasses: false});
       await assertMarkdownImportExport(page, testCase.text, testCase.html);
     });
   });

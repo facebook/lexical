@@ -122,6 +122,7 @@ test.describe('BlockWithAlignableContents', () => {
           <br />
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });

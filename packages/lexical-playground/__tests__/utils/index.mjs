@@ -113,16 +113,13 @@ async function assertHTMLOnPageOrFrame(
 export async function assertHTML(
   page,
   expectedHtml,
-  {
-    ignoreSecondFrame = false,
-    ignoreClasses = false,
-    ignoreInlineStyles = false,
-  } = {},
+  expectedHtmlFrameRight = expectedHtml,
+  {ignoreClasses = false, ignoreInlineStyles = false} = {},
 ) {
   if (IS_COLLAB) {
-    await retryAsync(
-      page,
-      async () => {
+    const withRetry = async (fn) => await retryAsync(page, fn, 5);
+    await Promise.all([
+      withRetry(async () => {
         const leftFrame = await page.frame('left');
         return assertHTMLOnPageOrFrame(
           leftFrame,
@@ -130,24 +127,17 @@ export async function assertHTML(
           ignoreClasses,
           ignoreInlineStyles,
         );
-      },
-      5,
-    );
-    if (!ignoreSecondFrame) {
-      await retryAsync(
-        page,
-        async () => {
-          const rightFrame = await page.frame('right');
-          return assertHTMLOnPageOrFrame(
-            rightFrame,
-            expectedHtml,
-            ignoreClasses,
-            ignoreInlineStyles,
-          );
-        },
-        5,
-      );
-    }
+      }),
+      withRetry(async () => {
+        const rightFrame = await page.frame('right');
+        return assertHTMLOnPageOrFrame(
+          rightFrame,
+          expectedHtmlFrameRight,
+          ignoreClasses,
+          ignoreInlineStyles,
+        );
+      }),
+    ]);
   } else {
     await assertHTMLOnPageOrFrame(
       page,

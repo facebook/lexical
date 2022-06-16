@@ -1152,6 +1152,7 @@ test.describe('Links', () => {
           </a>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1184,6 +1185,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">world</span>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1223,6 +1225,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">world</span>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1251,6 +1254,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">world</span>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1279,6 +1283,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">world</span>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });

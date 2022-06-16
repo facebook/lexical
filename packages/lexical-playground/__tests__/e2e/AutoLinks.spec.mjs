@@ -87,7 +87,7 @@ test.describe('Auto Links', () => {
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
 
     // Add non-url text before the link
     await moveToLineBeginning(page);
@@ -103,7 +103,7 @@ test.describe('Auto Links', () => {
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
 
     // Add newline after link
     await moveToLineEnd(page);
@@ -118,7 +118,7 @@ test.describe('Auto Links', () => {
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
   });
 
   test('Can create link when pasting text with urls', async ({

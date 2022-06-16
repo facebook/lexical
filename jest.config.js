@@ -99,6 +99,8 @@ module.exports = {
           '<rootDir>/packages/shared/src/simpleDiffWithCursor.ts',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.ts',
+        '^shared/warnOnlyOnce$':
+          '<rootDir>/packages/shared/src/warnOnlyOnce.ts',
         formatProdErrorMessage:
           '<rootDir>/scripts/error-codes/formatProdErrorMessage.js',
       },

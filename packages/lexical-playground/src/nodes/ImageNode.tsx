@@ -288,6 +288,7 @@ function ImageComponent({
                     Enter a caption...
                   </Placeholder>
                 }
+                // TODO Remove after it's inherited from the parent (LexicalComposer)
                 initialEditorState={null}
               />
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}

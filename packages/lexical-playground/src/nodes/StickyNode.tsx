@@ -265,6 +265,7 @@ function StickyComponent({
                 What's up?
               </Placeholder>
             }
+            // TODO Remove after it's inherited from the parent (LexicalComposer)
             initialEditorState={null}
           />
         </LexicalNestedComposer>

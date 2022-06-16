@@ -40,6 +40,10 @@ export default function ImageResizer({
   showCaption: boolean;
 }): JSX.Element {
   const buttonRef = useRef(null);
+  const userSelect = useRef({
+    priority: '',
+    value: 'default',
+  });
   const positioningRef = useRef<{
     currentHeight: 'inherit' | number;
     currentWidth: 'inherit' | number;
@@ -98,6 +102,17 @@ export default function ImageResizer({
         `${cursorDir}-resize`,
         'important',
       );
+      userSelect.current.value = document.body.style.getPropertyValue(
+        '-webkit-user-select',
+      );
+      userSelect.current.priority = document.body.style.getPropertyPriority(
+        '-webkit-user-select',
+      );
+      document.body.style.setProperty(
+        '-webkit-user-select',
+        `none`,
+        'important',
+      );
     }
   };
 
@@ -107,6 +122,11 @@ export default function ImageResizer({
     }
     if (document.body !== null) {
       document.body.style.setProperty('cursor', 'default');
+      document.body.style.setProperty(
+        '-webkit-user-select',
+        userSelect.current.value,
+        userSelect.current.priority,
+      );
     }
   };
 

@@ -35,7 +35,7 @@ async function assertMarkdownImportExport(
   await page.keyboard.type('```markdown ');
   await page.keyboard.type(textToImport);
   await click(page, '.action-button .markdown');
-  await assertHTML(page, expectedHTML, {ignoreClasses});
+  await assertHTML(page, expectedHTML, undefined, {ignoreClasses});
 
   // Cycle through import-export to verify it produces the same result
   await click(page, '.action-button .markdown');

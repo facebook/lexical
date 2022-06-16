@@ -114,6 +114,8 @@ export default function Editor(): JSX.Element {
             <RichTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
+              // TODO Collab support until 0.4
+              initialEditorState={null}
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
@@ -140,6 +142,8 @@ export default function Editor(): JSX.Element {
             <PlainTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
+              // TODO Collab support until 0.4
+              initialEditorState={null}
             />
             <HistoryPlugin externalHistoryState={historyState} />
           </>

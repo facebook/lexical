@@ -1,3 +1,8 @@
+## 0.3.5 (June 16, 2022)
+
+- Fix bad warnOnlyOnce minification (#2448)
+- add missing flow type (#2447)
+
 ## 0.3.4 (June 16, 2022)
 - Customizable DecoratorBlockNode via theme (#2387)
 - initializeEditorState on LexicalComposer (#2425)

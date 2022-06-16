@@ -33,6 +33,7 @@ import {
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getNodeByKey,
+  $setNodeKey,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from '../LexicalUtils';
@@ -456,11 +457,12 @@ export class ElementNode extends LexicalNode {
     const beforeNodeWritable = beforeNode.getWritable();
 
     // create a node of the same type
-    const afterNode = new self.constructor();
-    const afterNodeWritable = afterNode.getWritable();
+    // @ts-expect-error
+    const afterNode = self.constructor.clone(self);
+    $setNodeKey(afterNode, undefined);
 
     // add the node right after the node we are splitting
-    writableParent.splice(thisIndex + 1, 0, [afterNodeWritable]);
+    writableParent.splice(thisIndex + 1, 0, [afterNode]);
 
     // remove elements after a split point and save them to the variable
     const nodesToMove = beforeNodeWritable.splice(
@@ -468,9 +470,9 @@ export class ElementNode extends LexicalNode {
       childrenLength - index,
       [],
     );
-    afterNodeWritable.append(...nodesToMove);
+    afterNode.append(...nodesToMove);
 
-    return [beforeNodeWritable, splitChild, afterNodeWritable];
+    return [beforeNodeWritable, splitChild, afterNode];
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {

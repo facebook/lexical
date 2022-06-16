@@ -498,7 +498,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      {frame: 'left', ignoreClasses: true},
     );
 
     // Check that the highlight styles are applied.
@@ -611,7 +611,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      {frame: 'left', ignoreClasses: true},
     );
   });
 
@@ -754,7 +754,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      {frame: 'left', ignoreClasses: true},
     );
   });
 
@@ -881,7 +881,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      {frame: 'left', ignoreClasses: true},
     );
   });
 
@@ -1069,7 +1069,7 @@ test.describe('Tables', () => {
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      {frame: 'left', ignoreClasses: true},
     );
   });
 

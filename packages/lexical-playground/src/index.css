@@ -659,7 +659,7 @@ select.font-family {
   display: flex;
   width: 20px;
   height: 20px;
-  /* user-select: none; */
+  user-select: none;
   margin-right: 12px;
   line-height: 16px;
   background-size: contain;
@@ -817,7 +817,7 @@ select.font-family {
   cursor: default;
   display: inline-block;
   position: relative;
-  /* user-select: none; */
+  user-select: none;
 }
 
 .editor-shell .editor-image img {
@@ -826,7 +826,7 @@ select.font-family {
 
 .editor-shell .editor-image img.focused {
   outline: 2px solid rgb(60, 132, 244);
-  /* user-select: none; */
+  user-select: none;
 }
 
 .editor-shell .editor-image .image-caption-container .tree-view-output {
@@ -864,7 +864,7 @@ select.font-family {
   min-width: 100px;
   color: #fff;
   cursor: pointer;
-  /* user-select: none; */
+  user-select: none;
 }
 
 .editor-shell .editor-image .image-caption-button:hover {
@@ -1147,7 +1147,7 @@ button.action-button:disabled {
   text-overflow: ellipsis;
   top: 10px;
   left: 10px;
-  /* user-select: none; */
+  user-select: none;
   white-space: nowrap;
   display: inline-block;
   pointer-events: none;
@@ -1256,7 +1256,7 @@ button.action-button:disabled {
   display: flex;
   width: 20px;
   height: 20px;
-  /* user-select: none; */
+  user-select: none;
   margin-right: 8px;
   line-height: 16px;
   background-size: contain;
@@ -1267,7 +1267,7 @@ button.action-button:disabled {
   width: 16px;
   height: 16px;
   display: flex;
-  /* user-select: none; */
+  user-select: none;
 }
 
 .toolbar i.chevron-down.inside {
@@ -1498,7 +1498,7 @@ button.action-button:disabled {
   display: flex;
   width: 20px;
   height: 20px;
-  /* user-select: none; */
+  user-select: none;
   margin-right: 8px;
   line-height: 16px;
   background-size: contain;
@@ -1509,7 +1509,7 @@ button.action-button:disabled {
   width: 16px;
   height: 16px;
   display: flex;
-  /* user-select: none; */
+  user-select: none;
 }
 
 .character-style-popup i.chevron-down.inside {
@@ -1537,7 +1537,7 @@ button.action-button:disabled {
 
 .excalidraw-button.selected {
   outline: 2px solid rgb(60, 132, 244);
-  /* user-select: none; */
+  user-select: none;
 }
 
 .github-corner:hover .octo-arm {

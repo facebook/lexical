@@ -1097,8 +1097,6 @@ export class RangeSelection implements BaseSelection {
           this.format = firstNextFormat;
           return;
         }
-        // startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
-        // endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
         // No actual text is selected, so do nothing.
         if (startOffset === endOffset) {

@@ -72,7 +72,7 @@ test.describe('Auto Links', () => {
 
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
-    await assertHTML(page, htmlWithLink, {ignoreClasses: true});
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
 
     // Add non-url text after the link
     await page.keyboard.type('!');

@@ -28,9 +28,9 @@ Once the above packages have been built or downloaded, you can build the extensi
 npm run build
 ```
 
-Then load the extension in your browser of choice following these instructions:
+Then load the extension in your browser of choice following these instructions, selecting either the `build` folder or `build/manifest.json`:
 - [Chrome](https://developer.chrome.com/docs/extensions/mv3/getstarted/#unpacked)
 - [Edge](https://docs.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading)
 - [Firefox](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension#trying_it_out)
 
-After the extension has loaded, open the browser DevTools panel, and you should navigate to the *Lexical* panel.
+After the extension has loaded, open the browser DevTools panel, and you should be able to see `Lexical` as one of the panels.

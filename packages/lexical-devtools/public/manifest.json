@@ -5,7 +5,7 @@
   "manifest_version": 2,
   "devtools_page": "devtools.html",
   "browser_action": {
-    "default_popup": "index.html",
+    "default_popup": "../src/index.html",
     "default_title": "Lexical Developer Tools"
   },
   "icons": {

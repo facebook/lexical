@@ -1054,6 +1054,7 @@ export class RangeSelection implements BaseSelection {
     }
     const anchor = this.anchor;
     const focus = this.focus;
+    const anchorOffset = anchor.offset;
     const focusOffset = focus.offset;
     let firstNextFormat = 0;
     let firstNodeTextLength = firstNode.getTextContent().length;
@@ -1065,13 +1066,9 @@ export class RangeSelection implements BaseSelection {
         break;
       }
     }
-    let anchorOffset = anchor.offset;
-    let startOffset;
-    let endOffset;
-
     const isBefore = anchor.isBefore(focus);
-    startOffset = isBefore ? anchorOffset : focusOffset;
-    endOffset = isBefore ? focusOffset : anchorOffset;
+    const endOffset = isBefore ? focusOffset : anchorOffset;
+    let startOffset = isBefore ? anchorOffset : focusOffset;
 
     // This is the case where the user only selected the very end of the
     // first node so we don't want to include it in the formatting change.
@@ -1084,7 +1081,6 @@ export class RangeSelection implements BaseSelection {
 
       if ($isTextNode(nextSibling)) {
         // we basically make the second node the firstNode, changing offsets accordingly
-        anchorOffset = 0;
         startOffset = 0;
         firstNode = nextSibling;
         firstNodeTextLength = nextSibling.getTextContent().length;
@@ -1101,8 +1097,8 @@ export class RangeSelection implements BaseSelection {
           this.format = firstNextFormat;
           return;
         }
-        startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
-        endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
+        // startOffset = anchorOffset > focusOffset ? focusOffset : anchorOffset;
+        // endOffset = anchorOffset > focusOffset ? anchorOffset : focusOffset;
 
         // No actual text is selected, so do nothing.
         if (startOffset === endOffset) {

@@ -1404,14 +1404,21 @@ export class RangeSelection implements BaseSelection {
           lastChild.selectNext();
         }
       }
+      const $isBlockElementNode = (node) =>
+        $isElementNode(node) && !node.isInline();
       if (siblings.length !== 0) {
+        const originalTarget = target;
         for (let i = siblings.length - 1; i >= 0; i--) {
           const sibling = siblings[i];
           const prevParent = sibling.getParentOrThrow();
-          if ($isElementNode(target) && !$isElementNode(sibling)) {
-            target.append(sibling);
+          if ($isElementNode(target) && !$isBlockElementNode(sibling)) {
+            if (originalTarget === target) {
+              target.append(sibling);
+            } else {
+              target.insertBefore(sibling);
+            }
             target = sibling;
-          } else if (!$isElementNode(target) && !$isElementNode(sibling)) {
+          } else if (!$isElementNode(target) && !$isBlockElementNode(sibling)) {
             target.insertBefore(sibling);
             target = sibling;
           } else {

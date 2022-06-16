@@ -234,7 +234,6 @@ function codeNodeTransform(
   // each individual codehighlight node to be transformed again as it's already
   // in its final state
   const code = node.getTextContent();
-  const textNode = $createTextNode(code);
   editor.update(
     () => {
       updateAndRetainSelection(node, () => {
@@ -244,16 +243,19 @@ function codeNodeTransform(
             Prism.languages[DEFAULT_CODE_LANGUAGE],
         );
         const highlightNodes = getHighlightNodes(tokens);
-
         const diffRange = getDiffRange(node.getChildren(), highlightNodes);
         const {from, to, nodesForReplacement} = diffRange;
         if (from !== to || nodesForReplacement.length) {
           if (code.length <= threshold) {
             node.splice(from, to - from, nodesForReplacement);
           } else {
-            const selection = $getSelection();
-            if ($isRangeSelection(selection)) {
-              node.clear().append(textNode);
+            const codeContent = code.split('\n');
+            node.clear();
+            for (let i = 0; i < codeContent.length; i++) {
+              node.append($createTextNode(codeContent[i]));
+              if (i !== codeContent.length - 1) {
+                node.append($createLineBreakNode());
+              }
             }
           }
 

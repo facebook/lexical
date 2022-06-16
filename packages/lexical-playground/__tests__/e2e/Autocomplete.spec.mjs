@@ -38,10 +38,6 @@ test.describe('Autocomplete', () => {
           <br />
         </p>
       `,
-      {frame: 'left'},
-    );
-    await assertHTML(
-      page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -51,7 +47,6 @@ test.describe('Autocomplete', () => {
           <br />
         </p>
       `,
-      {frame: 'right'},
     );
     await page.keyboard.press('Tab');
     await page.keyboard.type(' order:');

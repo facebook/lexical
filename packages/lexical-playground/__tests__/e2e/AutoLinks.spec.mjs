@@ -52,6 +52,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -82,6 +83,7 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true">http://example.com!</span>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
@@ -97,6 +99,7 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true">!http://example.com</span>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
@@ -111,6 +114,7 @@ test.describe('Auto Links', () => {
         html`
           <p><br /></p>
         `,
+      undefined,
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
@@ -147,6 +151,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -168,6 +173,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await moveLeft(page, 1);
@@ -182,6 +188,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -214,6 +221,7 @@ test.describe('Auto Links', () => {
           </a>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });

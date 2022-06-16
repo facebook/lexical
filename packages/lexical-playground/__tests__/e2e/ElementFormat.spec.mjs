@@ -51,6 +51,7 @@ test.describe('Element format', () => {
           <span data-lexical-text="true">world</span>
         </p>
       `,
+      undefined,
       {
         ignoreClasses: false,
         ignoreInlineStyles: false,

@@ -356,6 +356,7 @@ test.describe('Nested List', () => {
           </li>
         </ul>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1135,6 +1136,7 @@ test.describe('Nested List', () => {
           </li>
         </ul>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await selectFromFormatDropdown(page, '.paragraph');
@@ -1143,6 +1145,7 @@ test.describe('Nested List', () => {
       html`
         <p dir="ltr"><span data-lexical-text="true">a</span></p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1167,6 +1170,7 @@ test.describe('Nested List', () => {
           </li>
         </ul>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await selectFromFormatDropdown(page, '.paragraph');
@@ -1180,6 +1184,7 @@ test.describe('Nested List', () => {
         </ul>
         <p dir="ltr"><span data-lexical-text="true">b</span></p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1210,6 +1215,7 @@ test.describe('Nested List', () => {
           </li>
         </ul>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await selectFromFormatDropdown(page, '.paragraph');
@@ -1228,6 +1234,7 @@ test.describe('Nested List', () => {
           </li>
         </ul>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });

@@ -70,6 +70,7 @@ test.describe('Toolbar', () => {
           <br />
         </p>
       `,
+      undefined,
       {
         ignoreClasses: true,
         ignoreInlineStyles: true,
@@ -89,6 +90,7 @@ test.describe('Toolbar', () => {
       html`
         <p><br /></p>
       `,
+      undefined,
       {
         ignoreClasses: true,
         ignoreInlineStyles: true,
@@ -194,6 +196,7 @@ test.describe('Toolbar', () => {
         </table>
         <p><br /></p>
       `,
+      undefined,
       {
         ignoreClasses: true,
         ignoreInlineStyles: true,

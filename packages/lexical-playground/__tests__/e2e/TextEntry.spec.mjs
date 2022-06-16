@@ -119,6 +119,7 @@ test.describe('TextEntry', () => {
           <strong data-lexical-text="true">world</strong>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await assertSelection(page, {

@@ -102,7 +102,7 @@ describe('LexicalElementNode tests', () => {
           direction: null,
           format: '',
           indent: 0,
-          type: 'element',
+          type: 'test_block',
           version: 1,
         });
       });

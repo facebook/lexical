@@ -80,7 +80,9 @@ export class LinkNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedLinkNode): LinkNode {
+  static importJSON(
+    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
+  ): LinkNode {
     const node = $createLinkNode(serializedNode.url);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -88,11 +90,12 @@ export class LinkNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedLinkNode {
+  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
       type: 'link',
       url: this.getURL(),
+      version: 1,
     };
   }
 
@@ -169,9 +172,7 @@ export class AutoLinkNode extends LinkNode {
     return new AutoLinkNode(node.__url, node.__key);
   }
 
-  static importJSON(
-    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
-  ): AutoLinkNode {
+  static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
     const node = $createAutoLinkNode(serializedNode.url);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -188,6 +189,7 @@ export class AutoLinkNode extends LinkNode {
     return {
       ...super.exportJSON(),
       type: 'autolink',
+      version: 1,
     };
   }
 

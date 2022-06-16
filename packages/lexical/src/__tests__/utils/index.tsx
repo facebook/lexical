@@ -117,7 +117,11 @@ export class TestElementNode extends ElementNode {
   }
 
   exportJSON(): SerializedTestElementNode {
-    return super.exportJSON();
+    return {
+      ...super.exportJSON(),
+      type: 'test_block',
+      version: 1,
+    };
   }
 
   createDOM() {
@@ -161,7 +165,11 @@ export class TestInlineElementNode extends ElementNode {
   }
 
   exportJSON(): SerializedTestInlineElementNode {
-    return super.exportJSON();
+    return {
+      ...super.exportJSON(),
+      type: 'test_inline_block',
+      version: 1,
+    };
   }
 
   createDOM() {
@@ -210,7 +218,11 @@ export class TestSegmentedNode extends TextNode {
   }
 
   exportJSON(): SerializedTestSegmentedNode {
-    return super.exportJSON();
+    return {
+      ...super.exportJSON(),
+      type: 'test_segmented',
+      version: 1,
+    };
   }
 }
 
@@ -220,7 +232,7 @@ export function $createTestSegmentedNode(text): TestSegmentedNode {
 
 export type SerializedTestExcludeFromCopyElementNode = Spread<
   {
-    type: 'test_inline_block';
+    type: 'test_exclude_from_copy_block';
     version: 1;
   },
   SerializedElementNode
@@ -246,7 +258,11 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
   }
 
   exportJSON(): SerializedTestExcludeFromCopyElementNode {
-    return super.exportJSON();
+    return {
+      ...super.exportJSON(),
+      type: 'test_exclude_from_copy_block',
+      version: 1,
+    };
   }
 
   createDOM() {
@@ -290,7 +306,11 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   }
 
   exportJSON(): SerializedTestDecoratorNode {
-    return super.exportJSON();
+    return {
+      ...super.exportJSON(),
+      type: 'test_decorator',
+      version: 1,
+    };
   }
 
   getTextContent() {

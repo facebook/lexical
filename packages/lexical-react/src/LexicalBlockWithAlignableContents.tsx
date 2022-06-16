@@ -34,12 +34,17 @@ type Props = Readonly<{
   children: JSX.Element | string | (JSX.Element | string)[];
   format: ElementFormatType | null | undefined;
   nodeKey: NodeKey;
+  className: Readonly<{
+    base: string;
+    focus: string;
+  }>;
 }>;
 
 export function BlockWithAlignableContents({
   children,
   format,
   nodeKey,
+  className,
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -135,7 +140,9 @@ export function BlockWithAlignableContents({
 
   return (
     <div
-      className={`embed-block${isSelected ? ' focused' : ''}`}
+      className={[className.base, isSelected ? className.focus : null]
+        .filter(Boolean)
+        .join(' ')}
       ref={ref}
       style={{
         textAlign: format ? format : null,

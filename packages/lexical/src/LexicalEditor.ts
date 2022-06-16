@@ -96,6 +96,10 @@ export type EditorThemeClasses = {
   tableCellHeader?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
+  embedBlock?: {
+    base?: EditorThemeClassName;
+    focus?: EditorThemeClassName;
+  };
   // Handle other generic values
   [key: string]:
     | EditorThemeClassName

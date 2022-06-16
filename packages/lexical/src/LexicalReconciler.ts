@@ -188,7 +188,7 @@ function createNode(
     const text = node.getTextContent();
 
     if ($isDecoratorNode(node)) {
-      const decorator = node.decorate(activeEditor);
+      const decorator = node.decorate(activeEditor, activeEditorConfig);
 
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
@@ -578,7 +578,7 @@ function reconcileNode(
     const text = nextNode.getTextContent();
 
     if ($isDecoratorNode(nextNode)) {
-      const decorator = nextNode.decorate(activeEditor);
+      const decorator = nextNode.decorate(activeEditor, activeEditorConfig);
 
       if (decorator !== null) {
         reconcileDecorator(key, decorator);

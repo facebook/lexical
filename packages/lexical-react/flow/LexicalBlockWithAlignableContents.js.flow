@@ -19,6 +19,10 @@ type Props = $ReadOnly<{
   children: React$Node,
   format: ?ElementFormatType,
   nodeKey: NodeKey,
+  className: $ReadOnly<{
+    base: string,
+    focus: string,
+  }>,
 }>;
 
 declare export function BlockWithAlignableContents(Props): React$Node;

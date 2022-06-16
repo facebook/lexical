@@ -363,7 +363,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     writable.__color = writable.__color === 'pink' ? 'yellow' : 'pink';
   }
 
-  decorate(editor: LexicalEditor): JSX.Element {
+  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return createPortal(
       <StickyComponent
         color={this.__color}

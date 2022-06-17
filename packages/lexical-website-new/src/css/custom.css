@@ -40,3 +40,7 @@ html[data-theme='dark'] .docusaurus-highlight-code-line {
 .footer__links {
   margin-bottom: 3rem;
 }
+
+html[data-theme='dark'] .button--outline:hover {
+  color: white;
+}

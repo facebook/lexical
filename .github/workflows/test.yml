@@ -318,7 +318,7 @@ jobs:
         node-version: [16.8]
         browser: ['chromium']
         editor-mode: ['rich-text', 'plain-text']
-        events-mode: ['legacy-events', 'modern-events']
+        events-mode: ['modern-events']
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
@@ -358,8 +358,8 @@ jobs:
       matrix:
         node-version: [16.8]
         browser: ['chromium']
-        editor-mode: ['rich-text', 'plain-text']
-        events-mode: ['legacy-events', 'modern-events']
+        editor-mode: ['rich-text']
+        events-mode: ['modern-events']
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}

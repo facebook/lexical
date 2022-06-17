@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vite --host",
-    "build": "vite build",
+    "build-dev": "vite build",
+    "build-prod": "vite build --config vite.prod.config.js",
     "preview": "vite preview"
   },
   "dependencies": {

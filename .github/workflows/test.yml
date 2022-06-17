@@ -310,3 +310,44 @@ jobs:
           name: Test Results
           path: test-results/
           retention-days: 7
+
+  e2e-prod:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [16.8]
+        browser: ['chromium']
+        editor-mode: ['rich-text', 'plain-text']
+        events-mode: ['legacy-events', 'modern-events']
+    env:
+      CI: true
+      E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
+      E2E_EVENTS_MODE: ${{ matrix.events-mode }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            node_modules
+            packages/playwright-core/node_modules
+            ~/Library/Caches/ms-playwright
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Download browsers
+        run: npx playwright install
+      - run: npm run test-e2e-prod-ci:${{ matrix.browser }}
+      - name: Upload Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results
+          path: test-results/
+          retention-days: 7

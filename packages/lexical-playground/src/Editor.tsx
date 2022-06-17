@@ -115,7 +115,7 @@ export default function Editor(): JSX.Element {
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
               // TODO Collab support until 0.4
-              initialEditorState={isCollab ? null : null}
+              initialEditorState={isCollab ? null : undefined}
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
@@ -143,7 +143,7 @@ export default function Editor(): JSX.Element {
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
               // TODO Collab support until 0.4
-              initialEditorState={isCollab ? null : null}
+              initialEditorState={isCollab ? null : undefined}
             />
             <HistoryPlugin externalHistoryState={historyState} />
           </>

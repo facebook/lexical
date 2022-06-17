@@ -483,7 +483,7 @@ export class ElementNode extends LexicalNode {
   }
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+    selection: RangeSelection | NodeSelection | GridSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
     return false;

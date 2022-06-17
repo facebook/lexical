@@ -105,7 +105,11 @@ export const getCodeLanguages = (): Array<string> =>
 export class CodeHighlightNode extends TextNode {
   __highlightType: string | null | undefined;
 
-  constructor(text: string, highlightType?: string, key?: NodeKey) {
+  constructor(
+    text: string,
+    highlightType?: string | null | undefined,
+    key?: NodeKey,
+  ) {
     super(text, key);
     this.__highlightType = highlightType;
   }
@@ -193,8 +197,8 @@ export class CodeHighlightNode extends TextNode {
 
 function getHighlightThemeClass(
   theme: EditorThemeClasses,
-  highlightType: string | undefined,
-): string | undefined {
+  highlightType: string | null | undefined,
+): string | null | undefined {
   return (
     highlightType &&
     theme &&
@@ -205,7 +209,7 @@ function getHighlightThemeClass(
 
 export function $createCodeHighlightNode(
   text: string,
-  highlightType?: string,
+  highlightType?: string | null | undefined,
 ): CodeHighlightNode {
   return new CodeHighlightNode(text, highlightType);
 }
@@ -417,7 +421,9 @@ export class CodeNode extends ElementNode {
   }
 }
 
-export function $createCodeNode(language?: string): CodeNode {
+export function $createCodeNode(
+  language?: string | null | undefined,
+): CodeNode {
   return new CodeNode(language);
 }
 
@@ -1099,6 +1105,8 @@ function handleMoveTo(
 
   event.preventDefault();
   event.stopPropagation();
+
+  return true;
 }
 
 export function registerCodeHighlighting(editor: LexicalEditor): () => void {

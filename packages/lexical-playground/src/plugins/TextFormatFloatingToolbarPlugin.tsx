@@ -57,7 +57,7 @@ function setPopupPosition(
   editor.style.left = `${left}px`;
 }
 
-function FloatingCharacterStylesEditor({
+function TextFormatFloatingToolbar({
   editor,
   isLink,
   isBold,
@@ -92,7 +92,7 @@ function FloatingCharacterStylesEditor({
     editor.dispatchCommand(INSERT_INLINE_COMMAND, null);
   };
 
-  const updateCharacterStylesEditor = useCallback(() => {
+  const updateTextFormatFloatingToolbar = useCallback(() => {
     const selection = $getSelection();
 
     const popupCharStylesEditorElem = popupCharStylesEditorRef.current;
@@ -131,7 +131,7 @@ function FloatingCharacterStylesEditor({
   useEffect(() => {
     const onResize = () => {
       editor.getEditorState().read(() => {
-        updateCharacterStylesEditor();
+        updateTextFormatFloatingToolbar();
       });
     };
     window.addEventListener('resize', onResize);
@@ -139,32 +139,32 @@ function FloatingCharacterStylesEditor({
     return () => {
       window.removeEventListener('resize', onResize);
     };
-  }, [editor, updateCharacterStylesEditor]);
+  }, [editor, updateTextFormatFloatingToolbar]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      updateCharacterStylesEditor();
+      updateTextFormatFloatingToolbar();
     });
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateCharacterStylesEditor();
+          updateTextFormatFloatingToolbar();
         });
       }),
 
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
-          updateCharacterStylesEditor();
+          updateTextFormatFloatingToolbar();
           return false;
         },
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor, updateCharacterStylesEditor]);
+  }, [editor, updateTextFormatFloatingToolbar]);
 
   return (
-    <div ref={popupCharStylesEditorRef} className="character-style-popup">
+    <div ref={popupCharStylesEditorRef} className="floating-text-format-popup">
       <button
         onClick={() => {
           editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
@@ -255,7 +255,9 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   }
 }
 
-function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element | null {
+function useTextFormatFloatingToolbar(
+  editor: LexicalEditor,
+): JSX.Element | null {
   const [isText, setIsText] = useState(false);
   const [isLink, setIsLink] = useState(false);
   const [isBold, setIsBold] = useState(false);
@@ -334,7 +336,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element | null {
   }
 
   return createPortal(
-    <FloatingCharacterStylesEditor
+    <TextFormatFloatingToolbar
       editor={editor}
       isLink={isLink}
       isBold={isBold}
@@ -349,7 +351,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element | null {
   );
 }
 
-export default function CharacterStylesPopupPlugin(): JSX.Element | null {
+export default function TextFormatFloatingToolbarPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  return useCharacterStylesPopup(editor);
+  return useTextFormatFloatingToolbar(editor);
 }

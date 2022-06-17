@@ -29,7 +29,7 @@ export function RichTextPlugin({
   initialEditorState?: InitialEditorStateType;
   placeholder: JSX.Element | string;
 }>): JSX.Element {
-  if (initialEditorState !== undefined) {
+  if (__DEV__ && initialEditorState !== undefined) {
     deprecatedInitialEditorStateWarning();
   }
   const [editor] = useLexicalComposerContext();

@@ -995,7 +995,10 @@ export class RangeSelection implements BaseSelection {
             markedNodeKeysForKeep.delete(parent.__key);
             lastRemovedParent = parent;
           }
-          parent = parent.getParent();
+          const grandParent = parent.getParent();
+          if (grandParent != null) {
+            parent = grandParent;
+          }
         }
       }
 

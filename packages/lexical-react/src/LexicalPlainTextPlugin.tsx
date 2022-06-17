@@ -29,7 +29,7 @@ export function PlainTextPlugin({
   initialEditorState?: InitialEditorStateType;
   placeholder: JSX.Element | string;
 }): JSX.Element {
-  if (__DEV__ && initialEditorState !== undefined) {
+  if (initialEditorState !== undefined) {
     deprecatedInitialEditorStateWarning();
   }
   const [editor] = useLexicalComposerContext();

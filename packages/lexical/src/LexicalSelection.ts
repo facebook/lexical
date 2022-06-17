@@ -982,7 +982,7 @@ export class RangeSelection implements BaseSelection {
         // Check if we have already moved out all the nodes of the
         // last parent, and if so, traverse the parent tree and mark
         // them all as being able to deleted too.
-        let parent = lastElement;
+        let parent: ElementNode | null = lastElement;
         let lastRemovedParent = null;
 
         while (parent !== null) {
@@ -995,10 +995,7 @@ export class RangeSelection implements BaseSelection {
             markedNodeKeysForKeep.delete(parent.__key);
             lastRemovedParent = parent;
           }
-          const grandParent = parent.getParent();
-          if (grandParent != null) {
-            parent = grandParent;
-          }
+          parent = parent.getParent();
         }
       }
 

@@ -1075,7 +1075,7 @@ function handleShiftLines(
 function handleMoveTo(
   type: LexicalCommand<KeyboardEvent>,
   event: KeyboardEvent,
-) {
+): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
     return false;
@@ -1105,6 +1105,8 @@ function handleMoveTo(
 
   event.preventDefault();
   event.stopPropagation();
+
+  return true;
 }
 
 export function registerCodeHighlighting(editor: LexicalEditor): () => void {

@@ -41,8 +41,8 @@ export function transformersByType(transformers: Array<Transformer>): Readonly<{
 
   return {
     element: byType.element as Array<ElementTransformer>,
-    textFormat: byType['text-format'] as Array<TextFormatTransformer>,
-    textMatch: byType['text-match'] as Array<TextMatchTransformer>,
+    textFormat: (byType['text-format'] ?? []) as Array<TextFormatTransformer>,
+    textMatch: (byType['text-match'] ?? []) as Array<TextMatchTransformer>,
   };
 }
 

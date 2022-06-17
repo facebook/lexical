@@ -248,7 +248,7 @@ function getHashtagRegexString(): string {
 
 const REGEX = new RegExp(getHashtagRegexString(), 'i');
 
-export function HashtagPlugin(): JSX.Element {
+export function HashtagPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

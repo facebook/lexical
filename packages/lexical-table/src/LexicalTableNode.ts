@@ -36,7 +36,7 @@ export type SerializedTableNode = Spread<
 >;
 
 export class TableNode extends GridNode {
-  __grid: Grid;
+  __grid?: Grid;
 
   static getType(): 'table' {
     return 'table';

@@ -20,6 +20,7 @@ import {
   $isTableRowNode,
   $removeTableRowAtIndex,
   getTableSelectionFromTableElement,
+  HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
 } from '@lexical/table';
@@ -122,7 +123,9 @@ function TableActionMenu({
     editor.update(() => {
       if (tableCellNode.isAttached()) {
         const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-        const tableElement = editor.getElementByKey(tableNode.getKey());
+        const tableElement = editor.getElementByKey(
+          tableNode.getKey(),
+        ) as HTMLTableElementWithWithTableSelectionState;
 
         if (!tableElement) {
           throw new Error('Expected to find tableElement in DOM');

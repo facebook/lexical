@@ -99,7 +99,7 @@ function runTextMatchTransformers(
       continue;
     }
 
-    const startIndex = match.index;
+    const startIndex = match.index || 0;
     const endIndex = startIndex + match[0].length;
     let replaceNode;
 
@@ -174,7 +174,7 @@ function runTextFormatTransformers(
 
     // Go through text node siblings and search for opening tag
     // if haven't found it within the same text node as closing tag
-    let sibling = openNode;
+    let sibling: TextNode | null = openNode;
 
     while (
       openTagStartIndex < 0 &&

@@ -29,7 +29,7 @@ export type SerializedTableRowNode = Spread<
 >;
 
 export class TableRowNode extends GridRowNode {
-  __height: number;
+  __height?: number;
 
   static getType(): 'tablerow' {
     return 'tablerow';
@@ -52,7 +52,7 @@ export class TableRowNode extends GridRowNode {
     return $createTableRowNode(serializedNode.height);
   }
 
-  constructor(height?: number, key?: NodeKey) {
+  constructor(height?: number | undefined, key?: NodeKey) {
     super(key);
     this.__height = height;
   }
@@ -77,13 +77,13 @@ export class TableRowNode extends GridRowNode {
     return element;
   }
 
-  setHeight(height: number): number {
+  setHeight(height: number): number | null | undefined {
     const self = this.getWritable();
     self.__height = height;
     return this.__height;
   }
 
-  getHeight(): number {
+  getHeight(): number | null | undefined {
     return this.getLatest().__height;
   }
 

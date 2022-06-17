@@ -81,7 +81,6 @@ export class TableSelection {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
-  domListeners: Set<() => void>;
   grid: Grid;
   isHighlightingCells: boolean;
   startX: number;
@@ -244,7 +243,9 @@ export class TableSelection {
 
       if (anchorElement && focusElement) {
         const domSelection = getDOMSelection();
-        domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
+        if (domSelection) {
+          domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
+        }
       }
 
       $updateDOMForSelection(this.grid, this.gridSelection);
@@ -274,7 +275,9 @@ export class TableSelection {
 
       if (this.anchorCell !== null) {
         // Collapse the selection
-        domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+        if (domSelection) {
+          domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+        }
       }
 
       if (
@@ -325,7 +328,9 @@ export class TableSelection {
       this.startX = cell.x;
       this.startY = cell.y;
       const domSelection = getDOMSelection();
-      domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
+      if (domSelection) {
+        domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
+      }
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {

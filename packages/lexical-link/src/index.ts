@@ -138,7 +138,7 @@ export class LinkNode extends ElementNode {
 function convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
   if (domNode instanceof HTMLAnchorElement) {
-    node = $createLinkNode(domNode.getAttribute('href'));
+    node = $createLinkNode(domNode.getAttribute('href') || '');
   }
   return {node};
 }
@@ -267,8 +267,8 @@ export function toggleLink(url: null | string): void {
         }
       }
 
-      let prevParent = null;
-      let linkNode = null;
+      let prevParent: ElementNode | LinkNode | null = null;
+      let linkNode: LinkNode | null = null;
 
       nodes.forEach((node) => {
         const parent = node.getParent();

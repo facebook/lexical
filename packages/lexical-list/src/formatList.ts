@@ -250,7 +250,7 @@ export function removeList(editor: LexicalEditor): void {
 
 export function updateChildrenListItemValue(
   list: ListNode,
-  children?: Array<LexicalNode>,
+  children?: Array<ListItemNode>,
 ): void {
   (children || list.getChildren()).forEach((child: ListItemNode) => {
     const prevValue = child.getValue();
@@ -272,8 +272,12 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
     }
 
     const parent = listItemNode.getParent();
-    const nextSibling = listItemNode.getNextSibling<ListItemNode>();
-    const previousSibling = listItemNode.getPreviousSibling<ListItemNode>();
+
+    // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
+    const nextSibling =
+      listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
+    const previousSibling =
+      listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
     // if there are nested lists on either side, merge them all together.
 
     if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
@@ -337,6 +341,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
 
 export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
+
   listItemNodes.forEach((listItemNode) => {
     if (isNestedListNode(listItemNode)) {
       return;
@@ -404,7 +409,7 @@ function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): void {
     return;
   }
   const selectedNodes = selection.getNodes();
-  let listItemNodes = [];
+  let listItemNodes: Array<ListItemNode> = [];
 
   if (selectedNodes.length === 0) {
     selectedNodes.push(selection.anchor.getNode());

@@ -50,12 +50,11 @@ export function BlockWithAlignableContents({
 
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
-  const ref = useRef();
+  const ref = useRef(null);
 
   const onDelete = useCallback(
-    (payload) => {
+    (event: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
-        const event: KeyboardEvent = payload;
         event.preventDefault();
         editor.update(() => {
           const node = $getNodeByKey(nodeKey);
@@ -145,7 +144,7 @@ export function BlockWithAlignableContents({
         .join(' ')}
       ref={ref}
       style={{
-        textAlign: format ? format : null,
+        textAlign: format ? format : undefined,
       }}>
       {children}
     </div>

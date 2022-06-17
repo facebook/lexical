@@ -33,6 +33,7 @@ import {
   applyTableHandlers,
   getCellFromTarget,
   getTableSelectionFromTableElement,
+  HTMLTableElementWithWithTableSelectionState,
 } from './LexicalTableSelectionHelpers';
 import {
   $createTableNodeWithDimensions,
@@ -69,6 +70,7 @@ export {
   Cell,
   getCellFromTarget,
   getTableSelectionFromTableElement,
+  HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
   TableNode,

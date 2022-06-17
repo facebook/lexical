@@ -31,8 +31,8 @@ export function useEditorEvents(
   editor: LexicalEditor,
 ): void {
   useLayoutEffect(() => {
-    const create = [];
-    const destroy = [];
+    const create: Array<(rootElement: HTMLElement) => void> = [];
+    const destroy: Array<(rootElement: HTMLElement) => void> = [];
 
     for (let i = 0; i < events.length; i++) {
       const [eventName, handler] = events[i];

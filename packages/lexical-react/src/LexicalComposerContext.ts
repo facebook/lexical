@@ -30,7 +30,7 @@ export function createLexicalComposerContext(
   parent: LexicalComposerContextWithEditor | null | undefined,
   theme: EditorThemeClasses | null | undefined,
 ): LexicalComposerContextType {
-  let parentContext = null;
+  let parentContext: LexicalComposerContextType | null = null;
 
   if (parent != null) {
     parentContext = parent[1];

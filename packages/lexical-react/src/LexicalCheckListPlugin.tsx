@@ -158,7 +158,7 @@ function listenPointerDown() {
   };
 }
 
-function handleCheckItemEvent(event: PointerEvent, callback) {
+function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
   const target = event.target;
 
   if (!(target instanceof HTMLElement)) {
@@ -166,10 +166,11 @@ function handleCheckItemEvent(event: PointerEvent, callback) {
   }
 
   // Ignore clicks on LI that have nested lists
-  const firstChild = target.firstChild as HTMLElement;
+  const firstChild = target.firstChild;
 
   if (
     firstChild != null &&
+    firstChild instanceof HTMLElement &&
     (firstChild.tagName === 'UL' || firstChild.tagName === 'OL')
   ) {
     return;
@@ -194,36 +195,41 @@ function handleCheckItemEvent(event: PointerEvent, callback) {
   }
 }
 
-function handleClick(event) {
-  handleCheckItemEvent(event, () => {
-    const editor = findEditor(event.target);
+function handleClick(event: Event) {
+  handleCheckItemEvent(event as PointerEvent, () => {
+    const domNode = event.target as HTMLElement;
+    const editor = findEditor(domNode);
 
     if (editor != null && !editor.isReadOnly()) {
       editor.update(() => {
-        const node = $getNearestNodeFromDOMNode(event.target);
+        if (event.target) {
+          const node = $getNearestNodeFromDOMNode(domNode);
 
-        if ($isListItemNode(node)) {
-          event.target.focus();
-          node.toggleChecked();
+          if ($isListItemNode(node)) {
+            domNode.focus();
+            node.toggleChecked();
+          }
         }
       });
     }
   });
 }
 
-function handlePointerDown(event) {
+function handlePointerDown(event: PointerEvent) {
   handleCheckItemEvent(event, () => {
     // Prevents caret moving when clicking on check mark
     event.preventDefault();
   });
 }
 
-function findEditor(target) {
-  let node = target;
+function findEditor(target: Node) {
+  let node: ParentNode | Node | null = target;
 
   while (node) {
+    // @ts-ignore internal field
     if (node.__lexicalEditor) {
-      return node.__lexicalEditor as LexicalEditor;
+      // @ts-ignore internal field
+      return node.__lexicalEditor;
     }
 
     node = node.parentNode;
@@ -249,7 +255,7 @@ function findCheckListItemSibling(
   backward: boolean,
 ): ListItemNode | null {
   let sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
-  let parent = node;
+  let parent: ListItemNode | null = node;
 
   // Going up in a tree to get non-null sibling
   while (sibling == null && $isListItemNode(parent)) {

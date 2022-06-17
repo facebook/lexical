@@ -29,7 +29,7 @@ import {
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
-export function TablePlugin(): JSX.Element {
+export function TablePlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

@@ -6,6 +6,7 @@
     "dev": "vite --host",
     "build-dev": "vite build",
     "build-prod": "vite build --config vite.prod.config.js",
+    "build-vercel": "(cd ../../ && node ./scripts/build.js) && npm run build-prod",
     "preview": "vite preview"
   },
   "dependencies": {

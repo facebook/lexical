@@ -65,9 +65,9 @@ import {
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
   getNode: () => TextNode;
-  is: (PointType) => boolean;
+  is: (point: PointType) => boolean;
   isAtNodeEnd: () => boolean;
-  isBefore: (PointType) => boolean;
+  isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void;
@@ -77,9 +77,9 @@ export type TextPointType = {
 export type ElementPointType = {
   _selection: RangeSelection | GridSelection;
   getNode: () => ElementNode;
-  is: (PointType) => boolean;
+  is: (point: PointType) => boolean;
   isAtNodeEnd: () => boolean;
-  isBefore: (PointType) => boolean;
+  isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void;
@@ -92,7 +92,7 @@ export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
-  _selection: RangeSelection | GridSelection;
+  _selection: RangeSelection | GridSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
     this._selection = null;
@@ -353,7 +353,7 @@ export class GridSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
-  _cachedNodes: Array<LexicalNode>;
+  _cachedNodes: Array<LexicalNode> | null;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
     this.gridKey = gridKey;
@@ -472,7 +472,7 @@ export class GridSelection implements BaseSelection {
         const children = gridCellNode.getChildren();
 
         while (children.length > 0) {
-          const child = children.shift();
+          const child = children.shift() as LexicalNode;
           nodesSet.add(child);
           if ($isElementNode(child)) {
             children.unshift(...child.getChildren());
@@ -562,7 +562,7 @@ export class RangeSelection implements BaseSelection {
       lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
 
-    let nodes;
+    let nodes: Array<LexicalNode>;
 
     if (firstNode.is(lastNode)) {
       if (
@@ -919,7 +919,7 @@ export class RangeSelection implements BaseSelection {
             lastNode.replace(textNode);
             lastNode = textNode;
           }
-          lastNode = lastNode.spliceText(0, endOffset, '');
+          lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
           const lastNodeParent = lastNode.getParentOrThrow();
@@ -995,7 +995,10 @@ export class RangeSelection implements BaseSelection {
             markedNodeKeysForKeep.delete(parent.__key);
             lastRemovedParent = parent;
           }
-          parent = parent.getParent();
+          const grandParent = parent.getParent();
+          if (grandParent != null) {
+            parent = grandParent;
+          }
         }
       }
 
@@ -1088,7 +1091,7 @@ export class RangeSelection implements BaseSelection {
         startOffset = 0;
         firstNode = nextSibling;
         firstNodeTextLength = nextSibling.getTextContent().length;
-        firstNextFormat = firstNode.getFormatFlags(formatType, null);
+        firstNextFormat = nextSibling.getFormatFlags(formatType, null);
       }
     }
 
@@ -1127,7 +1130,7 @@ export class RangeSelection implements BaseSelection {
       if ($isTextNode(firstNode)) {
         if (startOffset !== 0) {
           // the entire first node isn't selected, so split it
-          [, firstNode] = firstNode.splitText(startOffset);
+          [, firstNode as TextNode] = firstNode.splitText(startOffset);
           startOffset = 0;
         }
         firstNode.setFormat(firstNextFormat);
@@ -1143,7 +1146,7 @@ export class RangeSelection implements BaseSelection {
         if (endOffset !== 0) {
           // if the entire last node isn't selected, split it
           if (endOffset !== lastNodeTextLength) {
-            [lastNode] = lastNode.splitText(endOffset);
+            [lastNode as TextNode] = lastNode.splitText(endOffset);
           }
           lastNode.setFormat(lastNextFormat);
         }
@@ -1457,7 +1460,7 @@ export class RangeSelection implements BaseSelection {
     const anchorOffset = anchor.offset;
     let currentElement;
     let nodesToMove = [];
-    let siblingsToMove = [];
+    let siblingsToMove: Array<LexicalNode> = [];
     if (anchor.type === 'text') {
       const anchorNode = anchor.getNode();
       nodesToMove = anchorNode.getNextSiblings().reverse();
@@ -1713,11 +1716,12 @@ export class RangeSelection implements BaseSelection {
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const focus = this.focus;
-      let anchorNode = anchor.getNode();
+      let anchorNode: TextNode | ElementNode | null = anchor.getNode();
       if (
         !isBackward &&
         // Delete forward handle case
         ((anchor.type === 'element' &&
+          $isElementNode(anchorNode) &&
           anchor.offset === anchorNode.getChildrenSize()) ||
           (anchor.type === 'text' &&
             anchor.offset === anchorNode.getTextContentSize()))
@@ -1834,11 +1838,13 @@ function $swapPoints(selection: RangeSelection): void {
 }
 
 function $moveNativeSelection(
-  domSelection,
+  domSelection: Selection,
   alter: 'move' | 'extend',
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
+  // @ts-expect-error Selection.modify() method applies a change to the current selection or cursor position,
+  // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
 }
 
@@ -1889,7 +1895,7 @@ function $removeSegment(
   const split = textContent.split(/(?=\s)/g);
   const splitLength = split.length;
   let segmentOffset = 0;
-  let restoreOffset = 0;
+  let restoreOffset: number | undefined = 0;
 
   for (let i = 0; i < splitLength; i++) {
     const text = split[i];
@@ -2465,7 +2471,7 @@ export function moveSelectionPointToSibling(
 ): void {
   let siblingKey = null;
   let offset = 0;
-  let type = null;
+  let type: 'text' | 'element' | null = null;
   if (prevSibling !== null) {
     siblingKey = prevSibling.__key;
     if ($isTextNode(prevSibling)) {
@@ -2559,8 +2565,8 @@ export function updateDOMSelection(
   const nextFocusOffset = focus.offset;
   const nextFormat = nextSelection.format;
   const isCollapsed = nextSelection.isCollapsed();
-  let nextAnchorNode: HTMLElement | Text = anchorDOM;
-  let nextFocusNode: HTMLElement | Text = focusDOM;
+  let nextAnchorNode: HTMLElement | Text | null = anchorDOM;
+  let nextFocusNode: HTMLElement | Text | null = focusDOM;
   let anchorFormatChanged = false;
 
   if (anchor.type === 'text') {

@@ -41,7 +41,9 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  DecoratorNode,
   ElementNode,
+  LineBreakNode,
 } from '.';
 import {
   COMPOSITION_SUFFIX,
@@ -195,7 +197,9 @@ export function toggleTextFormatType(
   return format;
 }
 
-export function $isLeafNode(node: LexicalNode | null | undefined): boolean {
+export function $isLeafNode(
+  node: LexicalNode | null | undefined,
+): node is TextNode | LineBreakNode | DecoratorNode<unknown> {
   return $isTextNode(node) || $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
@@ -630,6 +634,7 @@ function $shouldInsertTextAfterOrBeforeTextNode(
 // work as intended between different browsers and across word, line and character
 // boundary/formats. It also is important for text replacement, node schemas and
 // composition mechanics.
+
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   text: string,

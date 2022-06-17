@@ -1075,7 +1075,7 @@ function handleShiftLines(
 function handleMoveTo(
   type: LexicalCommand<KeyboardEvent>,
   event: KeyboardEvent,
-) {
+): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
     return false;

@@ -35,8 +35,10 @@ const DEFAULT_PKGS = [
   'lexical-markdown',
   'lexical-mark',
 ];
+const SHARED_PKG = 'shared';
 
 module.exports = {
   DEFAULT_PKGS,
   LEXICAL_PKG,
+  SHARED_PKG,
 };

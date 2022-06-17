@@ -7,6 +7,7 @@
  */
 
 import type {Cell} from './LexicalTableSelection';
+import type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
@@ -33,7 +34,6 @@ import {
   applyTableHandlers,
   getCellFromTarget,
   getTableSelectionFromTableElement,
-  HTMLTableElementWithWithTableSelectionState,
 } from './LexicalTableSelectionHelpers';
 import {
   $createTableNodeWithDimensions,

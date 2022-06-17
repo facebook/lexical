@@ -28,7 +28,7 @@ import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
-import CharacterStylesPopupPlugin from './plugins/CharacterStylesPopupPlugin';
+import FloatingFormatterPlugin from './plugins/FloatingFormatterPlugin';
 import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CommentPlugin from './plugins/CommentPlugin';
@@ -132,7 +132,7 @@ export default function Editor(): JSX.Element {
             <YouTubePlugin />
             <ClickableLinkPlugin />
             <HorizontalRulePlugin />
-            <CharacterStylesPopupPlugin />
+            <FloatingFormatterPlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />

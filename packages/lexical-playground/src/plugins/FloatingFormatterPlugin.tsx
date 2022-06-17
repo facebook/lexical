@@ -349,7 +349,7 @@ function useCharacterStylesPopup(editor: LexicalEditor): JSX.Element | null {
   );
 }
 
-export default function CharacterStylesPopupPlugin(): JSX.Element | null {
+export default function FloatingFormatterPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   return useCharacterStylesPopup(editor);
 }

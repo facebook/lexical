@@ -103,10 +103,6 @@ const moduleResolution = [
     find: '@lexical/yjs',
     replacement: path.resolve('../lexical-yjs/dist/LexicalYjs.js'),
   },
-  {
-    find: 'shared',
-    replacement: path.resolve('../shared/dist'),
-  },
 ];
 // Lexical React
 [
@@ -141,6 +137,22 @@ const moduleResolution = [
   let resolvedPath = path.resolve(`../lexical-react/dist/${module}.js`);
   moduleResolution.push({
     find: `@lexical/react/${module}`,
+    replacement: resolvedPath,
+  });
+});
+// shared
+[
+  'canUseDOM',
+  'environment',
+  'getDOMSelection',
+  'invariant',
+  'simpleDiffWithCursor',
+  'useLayoutEffect',
+  'warnOnlyOnce',
+].forEach((module) => {
+  let resolvedPath = path.resolve(`../shared/dist/${module}.js`);
+  moduleResolution.push({
+    find: `shared/${module}`,
     replacement: resolvedPath,
   });
 });

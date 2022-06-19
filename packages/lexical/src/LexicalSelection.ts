@@ -1355,7 +1355,8 @@ export class RangeSelection implements BaseSelection {
       } else if (
         !$isElementNode(node) ||
         ($isElementNode(node) && node.isInline()) ||
-        ($isDecoratorNode(target) && target.isTopLevel())
+        ($isDecoratorNode(target) && target.isTopLevel()) ||
+        $isLineBreakNode(target)
       ) {
         lastNodeInserted = node;
         target = target.insertAfter(node);

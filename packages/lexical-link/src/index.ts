@@ -152,7 +152,7 @@ export class LinkNode extends ElementNode {
     return (
       this.isParentOf(anchorNode) &&
       this.isParentOf(focusNode) &&
-      this.getTextContent().length > 0
+      selection.getTextContent().length > 0
     );
   }
 }

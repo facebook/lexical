@@ -708,7 +708,6 @@ function BlockFormatDropDown({
           } else {
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();
-            selection.removeText();
             selection.insertNodes([codeNode]);
             selection.insertRawText(textContent);
           }

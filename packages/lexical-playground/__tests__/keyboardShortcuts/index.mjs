@@ -195,3 +195,9 @@ export async function toggleItalic(page) {
   await page.keyboard.press('i');
   await keyUpCtrlOrMeta(page);
 }
+
+export async function pressShiftEnter(page) {
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('Enter');
+  await page.keyboard.up('Shift');
+}

@@ -7,13 +7,20 @@
  */
 
 import {
+  moveToLineBeginning,
+  pressShiftEnter,
+} from '../keyboardShortcuts/index.mjs';
+import {
+  assertHTML,
   click,
   evaluate,
   expect,
   focusEditor,
+  html,
   initialize,
   insertImageCaption,
   insertSampleImage,
+  selectFromFormatDropdown,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -93,5 +100,39 @@ test.describe('Selection', () => {
     await focusEditor(page, '.image-caption-container');
     expect(await hasSelection('.image-caption-container')).toBe(true);
     expect(await hasSelection('.editor-shell')).toBe(false);
+  });
+
+  test('can wrap post-linebreak nodes into new element', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Line1');
+    await pressShiftEnter(page);
+    await page.keyboard.type('Line2');
+    await page.keyboard.down('Shift');
+    await moveToLineBeginning(page);
+    await page.keyboard.up('Shift');
+    await selectFromFormatDropdown(page, '.code');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line1</span>
+          <br />
+          <code
+            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+            spellcheck="false"
+            dir="ltr"
+            data-highlight-language="javascript"
+            data-gutter="1">
+            <span data-lexical-text="true">Line2</span>
+          </code>
+        </p>
+      `,
+    );
   });
 });

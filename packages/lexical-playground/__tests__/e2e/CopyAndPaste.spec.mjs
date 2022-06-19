@@ -1809,4 +1809,82 @@ test.describe('CopyAndPaste', () => {
       `,
     );
   });
+
+  test('HTML Copy + paste in front of or after a link', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/html': `text<a href="https://test.com/1">link</a>text`,
+    });
+    await moveToEditorBeginning(page);
+    await pasteFromClipboard(page, {
+      'text/html': 'before',
+    });
+    await moveToEditorEnd(page);
+    await pasteFromClipboard(page, {
+      'text/html': 'after',
+    });
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">beforetext</span>
+          <a
+            href="https://test.com/1"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <span data-lexical-text="true">textafter</span>
+        </p>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste link by selecting its (partial) content', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/html': `text<a href="https://test.com/">link</a>text`,
+    });
+    await moveLeft(page, 5);
+    await page.keyboard.down('Shift');
+    await moveLeft(page, 2);
+    await page.keyboard.up('Shift');
+    const clipboard = await copyToClipboard(page);
+    await moveToEditorEnd(page);
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text</span>
+          <a
+            href="https://test.com/"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <span data-lexical-text="true">text</span>
+          <a
+            href="https://test.com/"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">in</span>
+          </a>
+        </p>
+      `,
+    );
+  });
 });

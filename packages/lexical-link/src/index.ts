@@ -10,9 +10,11 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  GridSelection,
   LexicalCommand,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
@@ -21,6 +23,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
   createCommand,
   ElementNode,
@@ -132,6 +135,25 @@ export class LinkNode extends ElementNode {
 
   isInline(): true {
     return true;
+  }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      this.getTextContent().length > 0
+    );
   }
 }
 

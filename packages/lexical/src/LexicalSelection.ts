@@ -1399,13 +1399,18 @@ export class RangeSelection implements BaseSelection {
         }
       }
       if (siblings.length !== 0) {
+        const originalTarget = target;
         for (let i = siblings.length - 1; i >= 0; i--) {
           const sibling = siblings[i];
           const prevParent = sibling.getParentOrThrow();
-          if ($isElementNode(target) && !$isElementNode(sibling)) {
-            target.append(sibling);
+          if ($isElementNode(target) && !$isBlockElementNode(sibling)) {
+            if (originalTarget === target) {
+              target.append(sibling);
+            } else {
+              target.insertBefore(sibling);
+            }
             target = sibling;
-          } else if (!$isElementNode(target) && !$isElementNode(sibling)) {
+          } else if (!$isElementNode(target) && !$isBlockElementNode(sibling)) {
             target.insertBefore(sibling);
             target = sibling;
           } else {
@@ -2174,6 +2179,12 @@ function internalResolveSelectionPoints(
   );
 
   return [resolvedAnchorPoint, resolvedFocusPoint];
+}
+
+function $isBlockElementNode(
+  node: LexicalNode | null | undefined,
+): node is ElementNode {
+  return $isElementNode(node) && !node.isInline();
 }
 
 // This is used to make a selection when the existing
